@@ -5,6 +5,7 @@
  * @author Skamt
  * @source https://github.com/Skamt/BDAddons/tree/main/release/ViewProfilePicture
  */
+
 const config = {
 	info: {
 		name: "ViewProfilePicture",
