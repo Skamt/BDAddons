@@ -1,0 +1,72 @@
+{
+	"info": {
+		"name": "FreeStickers",
+		"version": "1.3.0",
+		"description": "Enables you to send custom Stickers without nitro as links, (custom stickers as in the ones that are added by servers, not officiel discord stickers).",
+		"source": "https://github.com/Skamt/BDAddons/tree/main/release/FreeStickers"
+	},
+	"changelog": [{
+		"title": "Added",
+		"type": "added",
+		"items": ["Option to Highlight animated stickers and emojis."]
+	}],
+	"defaultConfig": [{
+		"type": "slider",
+		"id": "stickerSize",
+		"name": "Sticker Size",
+		"note": "The size of the sticker in pixels. 160 is recommended.",
+		"value": 160,
+		"markers": [20, 40, 80, 160, 320],
+		"stickToMarkers": true
+	}, {
+		"type": "switch",
+		"id": "sendDirectly",
+		"name": "Send Directly",
+		"note": "Send the sticker link in a message directly instead of putting it in the chat box. Sticker sent as attachement will still be sent directly.",
+		"value": true
+	}, {
+		"type": "switch",
+		"id": "sendAnimatedStickers",
+		"name": "Send animated stickers",
+		"note": "Animated stickers do not animate, sending them will only send the first picture of the animation. (still useful)",
+		"value": true
+	}, {
+		"type": "switch",
+		"id": "keepStickersPopoutOpen",
+		"name": "Holding shift keeps stickers menu open",
+		"note": "This functionally has a great chancing of breaking due to other plugins overriding it.",
+		"value": true
+	}, {
+		"type": "switch",
+		"id": "highlightanimated",
+		"name": "Highlight animated stickers/emojis",
+		"value": true
+	}, {
+		"type": "category",
+		"id": "preview",
+		"name": "Preview Settings",
+		"collapsible": true,
+		"shown": false,
+		"settings": [{
+			"type": "switch",
+			"id": "stickerPreview",
+			"name": "Enable Preview for stickers",
+			"note": "Enables a preview for stickers, Sometimes stickers tend to be small or has text that is unreadable",
+			"value": true
+		}, {
+			"type": "switch",
+			"id": "emojiPreview",
+			"name": "Enables Preview for emojis",
+			"note": "Enables a preview for emojis, Emojis tend to be small or has text that is unreadable",
+			"value": true
+		}, {
+			"type": "slider",
+			"id": "previewSize",
+			"name": "Previw Size",
+			"note": "The size of the preview",
+			"value": 300,
+			"markers": [100, 200, 300, 400, 500, 600],
+			"stickToMarkers": true
+		}]
+	}]
+}

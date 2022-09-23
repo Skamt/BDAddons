@@ -1,0 +1,38 @@
+{
+	"name": "BDStuff",
+	"version": "1.0.0",
+	"description": "Mitt BD Stuff",
+	"main": "index.js",
+	"scripts": {
+		"build": "nodemon -e js,jsx,css -w src/ ./scripts/builder/build.js",
+		"new": "node ./scripts/newAddon/newPlugin.js"
+	},
+	"devDependencies": {
+		"@babel/core": "^7.19.1",
+		"@babel/plugin-transform-react-jsx": "^7.19.0",
+		"js-beautify": "^1.14.6",
+		"nodemon": "^2.0.20"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/Skamt/BetterDiscordPlugins.git"
+	},
+	"keywords": [],
+	"author": "Skamt",
+	"license": "ISC",
+	"bugs": {
+		"url": "https://github.com/Skamt/BDAddons/issues"
+	},
+	"homepage": "https://github.com/Skamt/BetterDiscordPlugins#readme",
+	"buildConfig": {
+		"pluginsFolder": "./src/plugins",
+		"releaseFolder": "./release",
+		"baseConfig": {
+			"info": {
+				"authors": [{
+					"name": "Skamt"
+				}]
+			}
+		}
+	}
+}

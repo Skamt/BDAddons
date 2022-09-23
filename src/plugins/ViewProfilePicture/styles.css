@@ -1,0 +1,14 @@
+.\${premiumIconWrapper} + .viewProfilePicture {
+	left: 12px;
+	right: unset;
+	background: var(--background-primary);
+}
+
+.\${pencilContainer} + .viewProfilePicture {
+	right: 48px;
+}
+
+.viewProfilePicture path {
+	transform: scale(0.8);
+	transform-origin: center;
+}

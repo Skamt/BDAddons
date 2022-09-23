@@ -1,0 +1,22 @@
+{
+	"info": {
+		"name": "",
+		"version": "1.0.0",
+		"description": "",
+		"source": "https://github.com/Skamt/BDAddons/tree/main/release/"
+	},
+	"changelog": [{
+		"title": "Added",
+		"type": "added",
+		"items": ["added new feature"]
+	}],
+	"defaultConfig": [{
+		"type": "slider",
+		"id": "id",
+		"name": "name",
+		"note": "note",
+		"value": 160,
+		"markers": [20, 40, 80, 160, 320],
+		"stickToMarkers": true
+	}]
+}
