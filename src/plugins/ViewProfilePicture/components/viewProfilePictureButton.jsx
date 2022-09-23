@@ -1,4 +1,4 @@
-module.exports = ({ onClick ,pencilContainer}) => {
+module.exports = ({ onClick, pencilContainer }) => {
 	return (
 		<Tooltip
 			text="Show profile picture"

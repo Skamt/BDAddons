@@ -4,7 +4,8 @@
 	"description": "Mitt BD Stuff",
 	"main": "index.js",
 	"scripts": {
-		"build": "nodemon -e js,jsx,css -w src/ ./scripts/builder/build.js",
+		"dev": "nodemon -e js,jsx,css -w src/ ./scripts/builder/build.js",
+		"build": "node -e js,jsx,css -w src/ ./scripts/builder/build.js",
 		"new": "node ./scripts/newAddon/newPlugin.js"
 	},
 	"devDependencies": {
