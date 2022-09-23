@@ -5,7 +5,6 @@
  * @author Skamt
  * @source https://github.com/Skamt/BDAddons/tree/main/release/ViewProfilePicture
  */
-
 const config = {
 	info: {
 		name: "ViewProfilePicture",
@@ -15,17 +14,7 @@ const config = {
 		authors: [{
 			name: "Skamt"
 		}]
-	},
-	changelog: [],
-	defaultConfig: [{
-		type: "slider",
-		id: "id",
-		name: "name",
-		note: "note",
-		value: 160,
-		markers: [20, 40, 80, 160, 320],
-		stickToMarkers: true
-	}]
+	}
 };
 class MissinZeresPluginLibraryClass {
 	constructor() { this.config = config; }
