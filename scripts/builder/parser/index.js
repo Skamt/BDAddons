@@ -10,7 +10,7 @@ module.exports = (content, pluginFolder, files) => {
 			const filePath = path.join(pluginFolder, fileName);
 			if (fileName.endsWith(".jsx")) return jsx(filePath);
 			if (fileName.endsWith(".js")) return js(filePath);
-			if (fileName.endsWith(".css")) return css(filePath);
+			// if (fileName.endsWith(".css")) return css(filePath);
 			else return other(filePath);
 		});
 	return content;

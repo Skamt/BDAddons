@@ -45,16 +45,8 @@ module.exports = (Plugin, Api) => {
 		}
 
 		copyHandler(url) {
-			console.log("copyHandler()", url);
-			(d => {
-				const text = url;
-				let input = d.createElement("textarea");
-				input.value = text;
-				d.body.appendChild(input);
-				input.select();
-				d.execCommand("copy");
-				d.body.removeChild(input);
-			})(document);
+			DiscordNative.clipboard.copy(url);
+			BdApi.showToast("Link Copied!", { type: "success" })
 		}
 
 		showImage(imgsArr) {

@@ -15,7 +15,23 @@ module.exports = ({ p, data }) => {
 	}));
 	return (
 		<>
-			<style>{`.modalCarouselWrapper-YK1MX4 {position: static; } .carouselModal-1eUFoq:not(#idontthinkso) {height: auto; width: auto; box-shadow: none; position: static; transform: none !important; } .arrowContainer-2wpC4q {margin: 0 15px; opacity: 0.8; background: var(--background-primary); border-radius: 50%; }`}</style>
+			<style>{`
+				.modalCarouselWrapper-YK1MX4 {
+					position: static; 
+				} 
+				.carouselModal-1eUFoq:not(#idontthinkso) {
+					height: auto; 
+					width: auto; 
+					box-shadow: none; 
+					position: static; 
+					transform: none !important; 
+				} 
+				.arrowContainer-2wpC4q {
+					margin: 0 15px; 
+					opacity: 0.8; 
+					background: var(--background-primary); 
+					border-radius: 50%; 
+				}`}</style>
 			<ModalRoot
 				{...p}
 				className="carouselModal-1eUFoq zoomedCarouselModalRoot-beLNhM">
