@@ -1,7 +1,8 @@
 const path = require("path");
-const jsx = require('./jsxParser.js');
-const js = require('./jsParser.js');
-const other = require('./otherParser.js');
+const jsx = require("./jsxParser.js");
+const js = require("./jsParser.js");
+const css = require("./cssParser.js");
+const other = require("./otherParser.js");
 
 module.exports = (content, pluginFolder, files) => {
 	for (const fileName of files)
@@ -9,6 +10,7 @@ module.exports = (content, pluginFolder, files) => {
 			const filePath = path.join(pluginFolder, fileName);
 			if (fileName.endsWith(".jsx")) return jsx(filePath);
 			if (fileName.endsWith(".js")) return js(filePath);
+			if (fileName.endsWith(".css")) return css(filePath);
 			else return other(filePath);
 		});
 	return content;
