@@ -3,14 +3,16 @@
  * @description description
  * @version 1.0.0
  * @author Skamt
- * @source https://github.com/Skamt/BDAddons/tree/main/release/ViewProfilePicture
+ * @website https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture
+ * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js
  */
 const config = {
 	info: {
 		name: "ViewProfilePicture",
 		version: "1.0.0",
 		description: "description",
-		source: "https://github.com/Skamt/BDAddons/tree/main/release/ViewProfilePicture",
+		source: "https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js",
+		github: "https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture",
 		authors: [{
 			name: "Skamt"
 		}]
