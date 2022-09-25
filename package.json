@@ -30,9 +30,11 @@
 		"releaseFolder": "./release",
 		"baseConfig": {
 			"info": {
-				"authors": [{
-					"name": "Skamt"
-				}]
+				"authors": [
+					{
+						"name": "Skamt"
+					}
+				]
 			}
 		}
 	}

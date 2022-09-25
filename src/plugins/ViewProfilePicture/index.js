@@ -30,61 +30,66 @@ module.exports = (Plugin, Api) => {
 			super();
 		}
 
-		clickHandler({ userObject, rawBannerUrl = "", minHeight }) {
-			const guildId = minHeight === 120 ? SelectedGuildStore.getGuildId() : "";
-			const avatarURL = userObject.getAvatarURL(guildId, IMG_WIDTH, true) || "";
-			const bannerURL = `${rawBannerUrl.match(/(?<=\().*(?=\?)/)?.[0]}?size=${IMG_WIDTH}`;
-			this.showImage([{
-				url: avatarURL,
+		getImageObject(url, options) {
+			return {
+				src: url,
+				original: url,
+				placeholder: url,
+				...options
+			}
+		}
+
+		clickHandler(user, e) {
+			const { backgroundColor, backgroundImage } = Utilities.getNestedProp(e, 'props.children.1.props.children.props.style');
+			const guildId = Utilities.getNestedProp(e, 'props.style.minHeight') === 120 ? SelectedGuildStore.getGuildId() : "";
+			const avatarURL = user.getAvatarURL(guildId, IMG_WIDTH, true);
+			const bannerImageURL = backgroundImage ? `${backgroundImage.match(/(?<=\().*(?=\?)/)?.[0]}?size=${IMG_WIDTH}` : undefined;
+			const bannerColorUrl = backgroundColor;
+			const images = [{
+				src: avatarURL,
 				width: IMG_WIDTH,
 				height: IMG_WIDTH
 			}, {
-				url: bannerURL,
+				src: bannerImageURL,
+				color: bannerColorUrl,
 				width: IMG_WIDTH
-			}]);
+			}]
+			this.showImage(images);
 		}
 
 		copyHandler(url) {
 			DiscordNative.clipboard.copy(url);
-			BdApi.showToast("Link Copied!", { type: "success" })
+			BdApi.showToast(url, { type: "info" });
+			BdApi.showToast("Link Copied!", { type: "success" });
 		}
 
-		showImage(imgsArr) {
+		showImage(imagesArr) {
 			ModalActions.openModal(props => {
 				return React.createElement(displayCarousel, {
-					p: props,
-					data: imgsArr.filter(m => !m.url.includes("undefined"))
+					pees: props,
+					data: imagesArr
 				});
 			});
 		}
 
 		patch() {
+			// View Button
 			Patcher.after(UserBannerMask, "default", (_, [{ user }], returnValue) => {
-				returnValue.props.children[1].props.children.props.children.push(
-					React.createElement(viewProfilePictureButton, {
-						pencilContainer: classes.pencilContainer,
-						onClick: _ => {
-							this.clickHandler({
-								userObject: user,
-								rawBannerUrl: returnValue.props.children[1].props.children.props.style.backgroundImage,
-								minHeight: returnValue.props.style.minHeight
-							});
-						}
-					})
-				);
+				const children = Utilities.getNestedProp(returnValue, "props.children.1.props.children.props.children");
+				children.push(React.createElement(viewProfilePictureButton, {
+					className: `${classes.pencilContainer} viewProfilePicture`,
+					onClick: _ => this.clickHandler(user, returnValue)
+				}));
 			});
 
+			// Copy Button
 			Patcher.after(ImageModal.prototype, "render", (_, __, returnValue) => {
+				const children = Utilities.getNestedProp(returnValue, "props.children");
 				const { className, href } = returnValue.props.children[2].props;
-				returnValue.props.children.push(
-					React.createElement(copyButton, {
-						c: className,
-						className: `${className} anchorUnderlineOnHover-2qPutX`,
-						onClick: _ => {
-							this.copyHandler(href);
-						}
-					})
-				);
+				children.push(React.createElement(copyButton, {
+					className: `${className} anchorUnderlineOnHover-2qPutX copyBtn`,
+					onClick: _ => this.copyHandler(href)
+				}));
 			});
 		}
 

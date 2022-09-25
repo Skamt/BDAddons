@@ -1,18 +1,20 @@
-module.exports = ({ p, data }) => {
-	const items = data.map(({ url, width, height }) => ({
-		"component": (
-			<ImageModal
-				src={url}
-				width={width}
-				height={height}
-				original={url}
-				renderLinkComponent={renderMaskedLinkComponent}
-			/>
-		),
-		"width": width,
-		"height": height,
-		"src": url
-	}));
+module.exports = ({ pees, data }) => {
+	const items = data.map(({ width, height, src, color }) => {
+			return {
+				"component": 
+					src ?
+					<ImageModal
+						src={src}
+						original={src}
+						placeholder={src}
+						width={width}
+						height={height}
+						renderLinkComponent={renderMaskedLinkComponent}
+					/>
+					:
+					<div className={"noBanner"} style={{backgroundColor:color}}></div>
+			};
+	});
 	return (
 		<>
 			<style>{`
@@ -33,7 +35,7 @@ module.exports = ({ p, data }) => {
 					border-radius: 50%; 
 				}`}</style>
 			<ModalRoot
-				{...p}
+				{...pees}
 				className="carouselModal-1eUFoq zoomedCarouselModalRoot-beLNhM">
 				<ModalCarousel
 					className="modalCarouselWrapper-YK1MX4"

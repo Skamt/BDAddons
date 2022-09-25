@@ -26,3 +26,8 @@
     line-height: 30px;
     opacity: .5;
 }
+
+.noBanner{
+	width: 70vw;
+	height: 50vh;
+}

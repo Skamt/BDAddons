@@ -1,4 +1,4 @@
-module.exports = ({ onClick, pencilContainer }) => {
+module.exports = (pees) => {
 	return (
 		<Tooltip
 			text="Show profile picture"
@@ -6,8 +6,7 @@ module.exports = ({ onClick, pencilContainer }) => {
 			{props => (
 				<div
 					{...props}
-					onClick={onClick}
-					className={`${pencilContainer} viewProfilePicture`}>
+					{...pees}>
 					<svg
 						aria-label="Redigera profilen"
 						className="pencilIcon-z04-c5"
