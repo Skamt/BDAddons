@@ -3,7 +3,8 @@
 		"name": "",
 		"version": "1.0.0",
 		"description": "",
-		"source": "https://github.com/Skamt/BDAddons/tree/main/release/"
+		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/",
+		"github": "https://github.com/Skamt/BDAddons/tree/main/"
 	},
 	"changelog": [{
 		"title": "Added",

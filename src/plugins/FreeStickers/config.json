@@ -3,7 +3,8 @@
 		"name": "FreeStickers",
 		"version": "1.3.0",
 		"description": "Enables you to send custom Stickers without nitro as links, (custom stickers as in the ones that are added by servers, not officiel discord stickers).",
-		"source": "https://github.com/Skamt/BDAddons/tree/main/release/FreeStickers"
+		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/FreeStickers/FreeStickers.plugin.js",
+		"github": "https://github.com/Skamt/BDAddons/tree/main/FreeStickers"
 	},
 	"changelog": [{
 		"title": "Added",

@@ -11,6 +11,7 @@ function buildMeta(config) {
 	line("description", config.info.description);
 	line("version", config.info.version);
 	line("author", config.info.authors.map(a => a.name).join(", "));
+	line("website", config.info.github);
 	line("source", config.info.source);
 	metaString.push(" */");
 	metaString.push("");

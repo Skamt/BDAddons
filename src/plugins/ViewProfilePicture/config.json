@@ -3,6 +3,7 @@
 		"name": "ViewProfilePicture",
 		"version": "1.0.0",
 		"description": "description",
-		"source": "https://github.com/Skamt/BDAddons/tree/main/release/ViewProfilePicture"
+		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js",
+		"github": "https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture"
 	}
 }

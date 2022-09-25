@@ -16,7 +16,8 @@ function index(content) {
 
 function config(content) {
 	content.info.name = pluginName;
-	content.info.source = `${content.info.source}${pluginName}`;
+	content.info.source = `${content.info.source}${pluginName}/${pluginName}.plugin.js`;
+	content.info.github = `${content.info.source}${pluginName}`;
 	return JSON.stringify(content, null, 1);
 }
 
