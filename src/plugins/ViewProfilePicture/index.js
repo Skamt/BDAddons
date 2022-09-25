@@ -30,7 +30,7 @@ module.exports = (Plugin, Api) => {
 		}
 
 		clickHandler({ userObject, rawBannerUrl = "", minHeight }) {
-			const guildId = minHeight === 120 ? SelectedGuildStore.getGuildId() : '';
+			const guildId = minHeight === 120 ? SelectedGuildStore.getGuildId() : "";
 			const avatarURL = userObject.getAvatarURL(guildId, IMG_WIDTH, true) || "";
 			const bannerURL = `${rawBannerUrl.match(/(?<=\().*(?=\?)/)?.[0]}?size=${IMG_WIDTH}`;
 			this.showImage([{
@@ -44,7 +44,6 @@ module.exports = (Plugin, Api) => {
 		}
 
 		showImage(imgsArr) {
-			console.log(imgsArr);
 			ModalActions.openModal(props => {
 				return React.createElement(displayCarousel, {
 					p: props,
@@ -52,7 +51,6 @@ module.exports = (Plugin, Api) => {
 				});
 			});
 		}
-
 
 		patch() {
 			Patcher.after(UserBannerMask, "default", (_, [{ user }], returnValue) => {
