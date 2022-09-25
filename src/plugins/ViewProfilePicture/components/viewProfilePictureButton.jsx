@@ -7,10 +7,10 @@ module.exports = ({ onClick, pencilContainer }) => {
 				<div
 					{...props}
 					onClick={onClick}
-					class={`${pencilContainer} viewProfilePicture`}>
+					className={`${pencilContainer} viewProfilePicture`}>
 					<svg
 						aria-label="Redigera profilen"
-						class="pencilIcon-z04-c5"
+						className="pencilIcon-z04-c5"
 						aria-hidden="false"
 						role="img"
 						width="18"

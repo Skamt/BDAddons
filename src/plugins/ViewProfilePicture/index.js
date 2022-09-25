@@ -7,18 +7,21 @@ module.exports = (Plugin, Api) => {
 		DiscordModules: {
 			React,
 			React: { useState },
-			ModalActions
+			ModalActions,
+			SelectedGuildStore
 		}
 	} = Api;
 
-	const UserBanner = WebpackModules.getModule(m => m.default.displayName === "UserBanner");
+	const IMG_WIDTH = 4096;
+	const UserBannerMask = WebpackModules.getModule(m => m.default.displayName === "UserBannerMask");
 	const ImageModal = WebpackModules.getByDisplayName("ImageModal");
+	const ModalCarousel = WebpackModules.getByDisplayName("ModalCarousel");
 	const { ModalRoot } = WebpackModules.getByProps("ModalRoot");
 	const { renderMaskedLinkComponent } = WebpackModules.getByProps("renderMaskedLinkComponent");
 	const Tooltip = WebpackModules.getModule(m => m.default.displayName === "Tooltip").default;
-	const classes = WebpackModules.getByProps("pencilContainer");
-
+	const classes = WebpackModules.getByProps("pencilContainer", "popoutNoBannerPremium");
 	const viewProfilePictureButton = require("components/viewProfilePictureButton.jsx");
+	const displayCarousel = require("components/displayCarousel.jsx");
 	const css = Utilities.formatTString(require("styles.css"), classes);
 
 	return class ViewProfilePicture extends Plugin {
@@ -26,35 +29,42 @@ module.exports = (Plugin, Api) => {
 			super();
 		}
 
-		ClickHandler(user) {
-			const avatarURL = user.getAvatarURL().replace(/(\?size=\d+)/, "?size=4096");
-			console.log(avatarURL);
+		clickHandler({ userObject, rawBannerUrl = "", minHeight }) {
+			const guildId = minHeight === 120 ? SelectedGuildStore.getGuildId() : '';
+			const avatarURL = userObject.getAvatarURL(guildId, IMG_WIDTH, true) || "";
+			const bannerURL = `${rawBannerUrl.match(/(?<=\().*(?=\?)/)?.[0]}?size=${IMG_WIDTH}`;
+			this.showImage([{
+				url: avatarURL,
+				width: IMG_WIDTH,
+				height: IMG_WIDTH
+			}, {
+				url: bannerURL,
+				width: IMG_WIDTH
+			}]);
+		}
+
+		showImage(imgsArr) {
+			console.log(imgsArr);
 			ModalActions.openModal(props => {
-				return React.createElement(
-					ModalRoot, { ...props, className: "modal-3Crloo" },
-					React.createElement(ImageModal, {
-						"src": avatarURL,
-						"original": avatarURL,
-						"animated": false,
-						"placeholder": avatarURL,
-						"className": "image-36HiZc",
-						"shouldAnimate": true,
-						"width": 4096,
-						"height": 4096,
-						"renderLinkComponent": renderMaskedLinkComponent
-					})
-				);
+				return React.createElement(displayCarousel, {
+					p: props,
+					data: imgsArr.filter(m => !m.url.includes("undefined"))
+				});
 			});
 		}
 
+
 		patch() {
-			Patcher.after(UserBanner, "default", (_, args, returnValue) => {
-				const { user } = returnValue.props;
-				returnValue.props.children.props.children.push(
+			Patcher.after(UserBannerMask, "default", (_, [{ user }], returnValue) => {
+				returnValue.props.children[1].props.children.props.children.push(
 					React.createElement(viewProfilePictureButton, {
 						pencilContainer: classes.pencilContainer,
 						onClick: e => {
-							this.ClickHandler(user);
+							this.clickHandler({
+								userObject: user,
+								rawBannerUrl: returnValue.props.children[1].props.children.props.style.backgroundImage,
+								minHeight: returnValue.props.style.minHeight
+							});
 						}
 					})
 				);
@@ -81,10 +91,6 @@ module.exports = (Plugin, Api) => {
 			} catch (e) {
 				console.error(e);
 			}
-		}
-
-		getSettingsPanel() {
-			return this.buildSettingsPanel().getElement();
 		}
 	};
 };
