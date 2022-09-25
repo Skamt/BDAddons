@@ -94,7 +94,23 @@ function initPlugin([Plugin, Api]) {
 			}));
 			return (
 				React.createElement(React.Fragment, null,
-					React.createElement("style", null, `.modalCarouselWrapper-YK1MX4 {position: static; } .carouselModal-1eUFoq:not(#idontthinkso) {height: auto; width: auto; box-shadow: none; position: static; transform: none !important; } .arrowContainer-2wpC4q {margin: 0 15px; opacity: 0.8; background: var(--background-primary); border-radius: 50%; }`),
+					React.createElement("style", null, `
+				.modalCarouselWrapper-YK1MX4 {
+					position: static; 
+				} 
+				.carouselModal-1eUFoq:not(#idontthinkso) {
+					height: auto; 
+					width: auto; 
+					box-shadow: none; 
+					position: static; 
+					transform: none !important; 
+				} 
+				.arrowContainer-2wpC4q {
+					margin: 0 15px; 
+					opacity: 0.8; 
+					background: var(--background-primary); 
+					border-radius: 50%; 
+				}`),
 					React.createElement(ModalRoot, {
 							...
 							p,
@@ -111,7 +127,35 @@ function initPlugin([Plugin, Api]) {
 					React.createElement("span", { className: "copyBtnSpan" }, "|"),
 					React.createElement("a", { onClick: props.onClick, className: `copyBtn ${props.className}` }, "Copy link")));
 		};;
-		const css = Utilities.formatTString(`.\${premiumIconWrapper} + .viewProfilePicture {left: 12px;right: unset;background: var(--background-primary);}.\${pencilContainer} + .viewProfilePicture {right: 48px;}.viewProfilePicture path {transform: scale(0.8);transform-origin: center;}.copyBtn {    left: 95px;}.copyBtnSpan {    left: 85px;    position: absolute;    top: 100%;    font-weight: 500;    color: hsl(0,calc(var(--saturation-factor, 1)*0%),100%)!important;    line-height: 30px;    opacity: .5;}`, classes);
+		const css = Utilities.formatTString(`.\${premiumIconWrapper} + .viewProfilePicture {
+	left: 12px;
+	right: unset;
+	background: var(--background-primary);
+}
+
+.\${pencilContainer} + .viewProfilePicture {
+	right: 48px;
+}
+
+.viewProfilePicture path {
+	transform: scale(0.8);
+	transform-origin: center;
+}
+
+.copyBtn {
+    left: 95px;
+}
+
+.copyBtnSpan {
+    left: 85px;
+    position: absolute;
+    top: 100%;
+    font-weight: 500;
+    color: hsl(0,calc(var(--saturation-factor, 1)*0%),100%)!important;
+    line-height: 30px;
+    opacity: .5;
+}
+`, classes);
 		return class ViewProfilePicture extends Plugin {
 			constructor() {
 				super();
@@ -130,17 +174,8 @@ function initPlugin([Plugin, Api]) {
 				}]);
 			}
 			copyHandler(url) {
-				console.log("copyHandler()", url);
-				(d => {
-					const text = url;
-					let input = d.createElement("textarea");
-					input.setAttribute("type", "text");
-					input.value = text;
-					d.body.appendChild(input);
-					input.select();
-					d.execCommand("copy");
-					d.body.removeChild(input);
-				})(document);
+				DiscordNative.clipboard.copy(url);
+				BdApi.showToast("Link Copied!", { type: "success" })
 			}
 			showImage(imgsArr) {
 				ModalActions.openModal(props => {
