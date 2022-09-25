@@ -105,7 +105,13 @@ function initPlugin([Plugin, Api]) {
 							items: items
 						}))));
 		};;
-		const css = Utilities.formatTString(`.\${premiumIconWrapper} + .viewProfilePicture {left: 12px;right: unset;background: var(--background-primary);}.\${pencilContainer} + .viewProfilePicture {right: 48px;}.viewProfilePicture path {transform: scale(0.8);transform-origin: center;}`, classes);
+		const copyButton = (props) => {
+			return (
+				React.createElement(React.Fragment, null,
+					React.createElement("span", { className: "copyBtnSpan" }, "|"),
+					React.createElement("a", { onClick: props.onClick, className: `copyBtn ${props.className}` }, "Copy link")));
+		};;
+		const css = Utilities.formatTString(`.\${premiumIconWrapper} + .viewProfilePicture {left: 12px;right: unset;background: var(--background-primary);}.\${pencilContainer} + .viewProfilePicture {right: 48px;}.viewProfilePicture path {transform: scale(0.8);transform-origin: center;}.copyBtn {    left: 95px;}.copyBtnSpan {    left: 85px;    position: absolute;    top: 100%;    font-weight: 500;    color: hsl(0,calc(var(--saturation-factor, 1)*0%),100%)!important;    line-height: 30px;    opacity: .5;}`, classes);
 		return class ViewProfilePicture extends Plugin {
 			constructor() {
 				super();
@@ -123,6 +129,19 @@ function initPlugin([Plugin, Api]) {
 					width: IMG_WIDTH
 				}]);
 			}
+			copyHandler(url) {
+				console.log("copyHandler()", url);
+				(d => {
+					const text = url;
+					let input = d.createElement("textarea");
+					input.setAttribute("type", "text");
+					input.value = text;
+					d.body.appendChild(input);
+					input.select();
+					d.execCommand("copy");
+					d.body.removeChild(input);
+				})(document);
+			}
 			showImage(imgsArr) {
 				ModalActions.openModal(props => {
 					return React.createElement(displayCarousel, {
@@ -136,12 +155,24 @@ function initPlugin([Plugin, Api]) {
 					returnValue.props.children[1].props.children.props.children.push(
 						React.createElement(viewProfilePictureButton, {
 							pencilContainer: classes.pencilContainer,
-							onClick: e => {
+							onClick: _ => {
 								this.clickHandler({
 									userObject: user,
 									rawBannerUrl: returnValue.props.children[1].props.children.props.style.backgroundImage,
 									minHeight: returnValue.props.style.minHeight
 								});
+							}
+						})
+					);
+				});
+				Patcher.after(ImageModal.prototype, "render", (_, __, returnValue) => {
+					const { className, href } = returnValue.props.children[2].props;
+					returnValue.props.children.push(
+						React.createElement(copyButton, {
+							c: className,
+							className: `${className} anchorUnderlineOnHover-2qPutX`,
+							onClick: _ => {
+								this.copyHandler(href);
 							}
 						})
 					);
