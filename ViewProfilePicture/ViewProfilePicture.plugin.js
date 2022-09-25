@@ -38,15 +38,18 @@ function initPlugin([Plugin, Api]) {
 			DiscordModules: {
 				React,
 				React: { useState },
-				ModalActions
+				ModalActions,
+				SelectedGuildStore
 			}
 		} = Api;
-		const UserBanner = WebpackModules.getModule(m => m.default.displayName === "UserBanner");
+		const IMG_WIDTH = 4096;
+		const UserBannerMask = WebpackModules.getModule(m => m.default.displayName === "UserBannerMask");
 		const ImageModal = WebpackModules.getByDisplayName("ImageModal");
+		const ModalCarousel = WebpackModules.getByDisplayName("ModalCarousel");
 		const { ModalRoot } = WebpackModules.getByProps("ModalRoot");
 		const { renderMaskedLinkComponent } = WebpackModules.getByProps("renderMaskedLinkComponent");
 		const Tooltip = WebpackModules.getModule(m => m.default.displayName === "Tooltip").default;
-		const classes = WebpackModules.getByProps("pencilContainer");
+		const classes = WebpackModules.getByProps("pencilContainer", "popoutNoBannerPremium");
 		const viewProfilePictureButton = ({ onClick, pencilContainer }) => {
 			return (
 				React.createElement(Tooltip, {
@@ -58,11 +61,11 @@ function initPlugin([Plugin, Api]) {
 							...
 							props,
 							onClick: onClick,
-							class: `${pencilContainer} viewProfilePicture`
+							className: `${pencilContainer} viewProfilePicture`
 						},
 						React.createElement("svg", {
 								"aria-label": "Redigera profilen",
-								class: "pencilIcon-z04-c5",
+								className: "pencilIcon-z04-c5",
 								"aria-hidden": "false",
 								role: "img",
 								width: "18",
@@ -73,6 +76,30 @@ function initPlugin([Plugin, Api]) {
 								fill: "currentColor",
 								d: "M341.333,0H42.667C19.093,0,0,19.093,0,42.667v298.667C0,364.907,19.093,384,42.667,384h298.667 C364.907,384,384,364.907,384,341.333V42.667C384,19.093,364.907,0,341.333,0z M42.667,320l74.667-96l53.333,64.107L245.333,192l96,128H42.667z"
 							})))));
+		};;
+		const displayCarousel = ({ p, data }) => {
+			const items = data.map(({ url, width, height }) => ({
+				"component": React.createElement(ImageModal, {
+					src: url,
+					width: width,
+					height: height,
+					original: url,
+					renderLinkComponent: renderMaskedLinkComponent
+				}),
+				"width": width,
+				"height": height,
+				"src": url
+			}));
+			return (
+				React.createElement(ModalRoot, {
+						...
+						p,
+						className: "carouselModal-1eUFoq zoomedCarouselModalRoot-beLNhM"
+					},
+					React.createElement(ModalCarousel, {
+						className: "modalCarouselWrapper-YK1MX4",
+						items: items
+					})));
 		};;
 		const css = Utilities.formatTString(`.\${premiumIconWrapper} + .viewProfilePicture {
 	left: 12px;
@@ -88,39 +115,62 @@ function initPlugin([Plugin, Api]) {
 	transform: scale(0.8);
 	transform-origin: center;
 }
-`, classes);
+
+.modalCarouselWrapper-YK1MX4 {
+    position: static;
+}
+
+.carouselModal-1eUFoq:not(#idontthinkso) {
+    height: auto;
+    width: auto;
+    box-shadow: none;
+    position: static;
+    transform: none !important;
+}
+
+.arrowContainer-2wpC4q {
+    margin: 0 15px;
+    opacity:.8;
+    background: var(--background-primary);
+    border-radius:50%;
+}`, classes);
 		return class ViewProfilePicture extends Plugin {
 			constructor() {
 				super();
 			}
-			ClickHandler(user) {
-				const avatarURL = user.getAvatarURL().replace(/(\?size=\d+)/, "?size=4096");
-				console.log(avatarURL);
+			clickHandler({ userObject, rawBannerUrl = "", minHeight }) {
+				const guildId = minHeight === 120 ? SelectedGuildStore.getGuildId() : '';
+				const avatarURL = userObject.getAvatarURL(guildId, IMG_WIDTH, true) || "";
+				const bannerURL = `${rawBannerUrl.match(/(?<=\().*(?=\?)/)?.[0]}?size=${IMG_WIDTH}`;
+				this.showImage([{
+					url: avatarURL,
+					width: IMG_WIDTH,
+					height: IMG_WIDTH
+				}, {
+					url: bannerURL,
+					width: IMG_WIDTH
+				}]);
+			}
+			showImage(imgsArr) {
+				console.log(imgsArr);
 				ModalActions.openModal(props => {
-					return React.createElement(
-						ModalRoot, { ...props, className: "modal-3Crloo" },
-						React.createElement(ImageModal, {
-							"src": avatarURL,
-							"original": avatarURL,
-							"animated": false,
-							"placeholder": avatarURL,
-							"className": "image-36HiZc",
-							"shouldAnimate": true,
-							"width": 4096,
-							"height": 4096,
-							"renderLinkComponent": renderMaskedLinkComponent
-						})
-					);
+					return React.createElement(displayCarousel, {
+						p: props,
+						data: imgsArr.filter(m => !m.url.includes("undefined"))
+					});
 				});
 			}
 			patch() {
-				Patcher.after(UserBanner, "default", (_, args, returnValue) => {
-					const { user } = returnValue.props;
-					returnValue.props.children.props.children.push(
+				Patcher.after(UserBannerMask, "default", (_, [{ user }], returnValue) => {
+					returnValue.props.children[1].props.children.props.children.push(
 						React.createElement(viewProfilePictureButton, {
 							pencilContainer: classes.pencilContainer,
 							onClick: e => {
-								this.ClickHandler(user);
+								this.clickHandler({
+									userObject: user,
+									rawBannerUrl: returnValue.props.children[1].props.children.props.style.backgroundImage,
+									minHeight: returnValue.props.style.minHeight
+								});
 							}
 						})
 					);
@@ -144,9 +194,6 @@ function initPlugin([Plugin, Api]) {
 				} catch (e) {
 					console.error(e);
 				}
-			}
-			getSettingsPanel() {
-				return this.buildSettingsPanel().getElement();
 			}
 		};
 	};
