@@ -101,39 +101,7 @@ function initPlugin([Plugin, Api]) {
 						items: items
 					})));
 		};;
-		const css = Utilities.formatTString(`.\${premiumIconWrapper} + .viewProfilePicture {
-	left: 12px;
-	right: unset;
-	background: var(--background-primary);
-}
-
-.\${pencilContainer} + .viewProfilePicture {
-	right: 48px;
-}
-
-.viewProfilePicture path {
-	transform: scale(0.8);
-	transform-origin: center;
-}
-
-.modalCarouselWrapper-YK1MX4 {
-    position: static;
-}
-
-.carouselModal-1eUFoq:not(#idontthinkso) {
-    height: auto;
-    width: auto;
-    box-shadow: none;
-    position: static;
-    transform: none !important;
-}
-
-.arrowContainer-2wpC4q {
-    margin: 0 15px;
-    opacity:.8;
-    background: var(--background-primary);
-    border-radius:50%;
-}`, classes);
+		const css = Utilities.formatTString(`.\${premiumIconWrapper} + .viewProfilePicture {left: 12px;right: unset;background: var(--background-primary);}.\${pencilContainer} + .viewProfilePicture {right: 48px;}.viewProfilePicture path {transform: scale(0.8);transform-origin: center;}.modalCarouselWrapper-YK1MX4 {position: static;}.carouselModal-1eUFoq:not(#idontthinkso) {height: auto;width: auto;box-shadow: none;position: static;transform: none !important;}.arrowContainer-2wpC4q {margin: 0 15px;opacity: 0.8;background: var(--background-primary);border-radius: 50%;}`, classes);
 		return class ViewProfilePicture extends Plugin {
 			constructor() {
 				super();
