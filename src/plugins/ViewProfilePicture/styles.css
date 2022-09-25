@@ -12,3 +12,17 @@
 	transform: scale(0.8);
 	transform-origin: center;
 }
+
+.copyBtn {
+    left: 95px;
+}
+
+.copyBtnSpan {
+    left: 85px;
+    position: absolute;
+    top: 100%;
+    font-weight: 500;
+    color: hsl(0,calc(var(--saturation-factor, 1)*0%),100%)!important;
+    line-height: 30px;
+    opacity: .5;
+}

@@ -22,6 +22,7 @@ module.exports = (Plugin, Api) => {
 	const classes = WebpackModules.getByProps("pencilContainer", "popoutNoBannerPremium");
 	const viewProfilePictureButton = require("components/viewProfilePictureButton.jsx");
 	const displayCarousel = require("components/displayCarousel.jsx");
+	const copyButton = require("components/copyButton.jsx");
 	const css = Utilities.formatTString(require("styles.css"), classes);
 
 	return class ViewProfilePicture extends Plugin {
@@ -43,6 +44,19 @@ module.exports = (Plugin, Api) => {
 			}]);
 		}
 
+		copyHandler(url) {
+			console.log("copyHandler()", url);
+			(d => {
+				const text = url;
+				let input = d.createElement("textarea");
+				input.value = text;
+				d.body.appendChild(input);
+				input.select();
+				d.execCommand("copy");
+				d.body.removeChild(input);
+			})(document);
+		}
+
 		showImage(imgsArr) {
 			ModalActions.openModal(props => {
 				return React.createElement(displayCarousel, {
@@ -57,12 +71,25 @@ module.exports = (Plugin, Api) => {
 				returnValue.props.children[1].props.children.props.children.push(
 					React.createElement(viewProfilePictureButton, {
 						pencilContainer: classes.pencilContainer,
-						onClick: e => {
+						onClick: _ => {
 							this.clickHandler({
 								userObject: user,
 								rawBannerUrl: returnValue.props.children[1].props.children.props.style.backgroundImage,
 								minHeight: returnValue.props.style.minHeight
 							});
+						}
+					})
+				);
+			});
+
+			Patcher.after(ImageModal.prototype, "render", (_, __, returnValue) => {
+				const { className, href } = returnValue.props.children[2].props;
+				returnValue.props.children.push(
+					React.createElement(copyButton, {
+						c: className,
+						className: `${className} anchorUnderlineOnHover-2qPutX`,
+						onClick: _ => {
+							this.copyHandler(href);
 						}
 					})
 				);
