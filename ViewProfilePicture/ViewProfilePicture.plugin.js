@@ -91,23 +91,25 @@ function initPlugin([Plugin, Api]) {
 				"src": url
 			}));
 			return (
-				React.createElement(ModalRoot, {
-						...
-						p,
-						className: "carouselModal-1eUFoq zoomedCarouselModalRoot-beLNhM"
-					},
-					React.createElement(ModalCarousel, {
-						className: "modalCarouselWrapper-YK1MX4",
-						items: items
-					})));
+				React.createElement(React.Fragment, null,
+					React.createElement("style", null, `.modalCarouselWrapper-YK1MX4 {position: static; } .carouselModal-1eUFoq:not(#idontthinkso) {height: auto; width: auto; box-shadow: none; position: static; transform: none !important; } .arrowContainer-2wpC4q {margin: 0 15px; opacity: 0.8; background: var(--background-primary); border-radius: 50%; }`),
+					React.createElement(ModalRoot, {
+							...
+							p,
+							className: "carouselModal-1eUFoq zoomedCarouselModalRoot-beLNhM"
+						},
+						React.createElement(ModalCarousel, {
+							className: "modalCarouselWrapper-YK1MX4",
+							items: items
+						}))));
 		};;
-		const css = Utilities.formatTString(`.\${premiumIconWrapper} + .viewProfilePicture {left: 12px;right: unset;background: var(--background-primary);}.\${pencilContainer} + .viewProfilePicture {right: 48px;}.viewProfilePicture path {transform: scale(0.8);transform-origin: center;}.modalCarouselWrapper-YK1MX4 {position: static;}.carouselModal-1eUFoq:not(#idontthinkso) {height: auto;width: auto;box-shadow: none;position: static;transform: none !important;}.arrowContainer-2wpC4q {margin: 0 15px;opacity: 0.8;background: var(--background-primary);border-radius: 50%;}`, classes);
+		const css = Utilities.formatTString(`.\${premiumIconWrapper} + .viewProfilePicture {left: 12px;right: unset;background: var(--background-primary);}.\${pencilContainer} + .viewProfilePicture {right: 48px;}.viewProfilePicture path {transform: scale(0.8);transform-origin: center;}`, classes);
 		return class ViewProfilePicture extends Plugin {
 			constructor() {
 				super();
 			}
 			clickHandler({ userObject, rawBannerUrl = "", minHeight }) {
-				const guildId = minHeight === 120 ? SelectedGuildStore.getGuildId() : '';
+				const guildId = minHeight === 120 ? SelectedGuildStore.getGuildId() : "";
 				const avatarURL = userObject.getAvatarURL(guildId, IMG_WIDTH, true) || "";
 				const bannerURL = `${rawBannerUrl.match(/(?<=\().*(?=\?)/)?.[0]}?size=${IMG_WIDTH}`;
 				this.showImage([{
@@ -120,7 +122,6 @@ function initPlugin([Plugin, Api]) {
 				}]);
 			}
 			showImage(imgsArr) {
-				console.log(imgsArr);
 				ModalActions.openModal(props => {
 					return React.createElement(displayCarousel, {
 						p: props,
