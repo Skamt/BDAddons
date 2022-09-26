@@ -51,8 +51,11 @@ function initPlugin([Plugin, Api]) {
 		const { ModalRoot } = WebpackModules.getByProps("ModalRoot");
 		const { renderMaskedLinkComponent } = WebpackModules.getByProps("renderMaskedLinkComponent");
 		const Tooltip = WebpackModules.getModule(m => m.default.displayName === "Tooltip").default;
-		const classes = WebpackModules.getByProps("pencilContainer", "popoutNoBannerPremium");
-		const viewProfilePictureButton = ({ onClick, pencilContainer }) => {
+		const classes = {
+			...WebpackModules.getByProps("pencilContainer", "popoutNoBannerPremium"),
+			...WebpackModules.getByProps("anchorUnderlineOnHover")
+		};
+		const viewProfilePictureButton = ({ style, className, onClick, isUserPopout }) => {
 			return (
 				React.createElement(Tooltip, {
 						text: "Show profile picture",
@@ -62,16 +65,17 @@ function initPlugin([Plugin, Api]) {
 					React.createElement("div", {
 							...
 							props,
-							onClick: onClick,
-							className: `${pencilContainer} viewProfilePicture`
+							style: style,
+							className: className,
+							onClick: onClick
 						},
 						React.createElement("svg", {
 								"aria-label": "Redigera profilen",
 								className: "pencilIcon-z04-c5",
 								"aria-hidden": "false",
 								role: "img",
-								width: "18",
-								height: "18",
+								width: isUserPopout ? 18 : 24,
+								height: isUserPopout ? 18 : 24,
 								viewBox: "0 0 384 384"
 							},
 							React.createElement("path", {
@@ -79,19 +83,20 @@ function initPlugin([Plugin, Api]) {
 								d: "M341.333,0H42.667C19.093,0,0,19.093,0,42.667v298.667C0,364.907,19.093,384,42.667,384h298.667 C364.907,384,384,364.907,384,341.333V42.667C384,19.093,364.907,0,341.333,0z M42.667,320l74.667-96l53.333,64.107L245.333,192l96,128H42.667z"
 							})))));
 		};;
-		const displayCarousel = ({ p, data }) => {
-			const items = data.map(({ url, width, height }) => ({
-				"component": React.createElement(ImageModal, {
-					src: url,
-					width: width,
-					height: height,
-					original: url,
-					renderLinkComponent: renderMaskedLinkComponent
-				}),
-				"width": width,
-				"height": height,
-				"src": url
-			}));
+		const displayCarousel = ({ props, data }) => {
+			const items = data.map(({ width, height, src, color }) => {
+				return {
+					"component": src ?
+						React.createElement(ImageModal, {
+							src: src,
+							original: src,
+							placeholder: src,
+							width: width,
+							height: height,
+							renderLinkComponent: renderMaskedLinkComponent
+						}) : React.createElement("div", { className: "noBanner", style: { backgroundColor: color } })
+				};
+			});
 			return (
 				React.createElement(React.Fragment, null,
 					React.createElement("style", null, `
@@ -113,7 +118,7 @@ function initPlugin([Plugin, Api]) {
 				}`),
 					React.createElement(ModalRoot, {
 							...
-							p,
+							props,
 							className: "carouselModal-1eUFoq zoomedCarouselModalRoot-beLNhM"
 						},
 						React.createElement(ModalCarousel, {
@@ -121,22 +126,23 @@ function initPlugin([Plugin, Api]) {
 							items: items
 						}))));
 		};;
-		const copyButton = (props) => {
+		const copyButton = ({ className, onClick }) => {
 			return (
 				React.createElement(React.Fragment, null,
 					React.createElement("span", { className: "copyBtnSpan" }, "|"),
-					React.createElement("a", { onClick: props.onClick, className: `copyBtn ${props.className}` }, "Copy link")));
+					React.createElement("a", {
+						className: className,
+						onClick: onClick
+					}, "Copy link")));
 		};;
 		const css = Utilities.formatTString(`.\${premiumIconWrapper} + .viewProfilePicture {
 	left: 12px;
 	right: unset;
 	background: var(--background-primary);
 }
-
-.\${pencilContainer} + .viewProfilePicture {
-	right: 48px;
+.\${premiumIconWrapper} + .viewProfilePicture {
+	right: var(--r);
 }
-
 .viewProfilePicture path {
 	transform: scale(0.8);
 	transform-origin: center;
@@ -155,60 +161,66 @@ function initPlugin([Plugin, Api]) {
     line-height: 30px;
     opacity: .5;
 }
-`, classes);
+
+.noBanner{
+	width: 70vw;
+	height: 50vh;
+}`, classes);
 		return class ViewProfilePicture extends Plugin {
 			constructor() {
 				super();
 			}
-			clickHandler({ userObject, rawBannerUrl = "", minHeight }) {
-				const guildId = minHeight === 120 ? SelectedGuildStore.getGuildId() : "";
-				const avatarURL = userObject.getAvatarURL(guildId, IMG_WIDTH, true) || "";
-				const bannerURL = `${rawBannerUrl.match(/(?<=\().*(?=\?)/)?.[0]}?size=${IMG_WIDTH}`;
+			clickHandler(user, e, isUserPopout) {
+				const { backgroundColor, backgroundImage } = Utilities.getNestedProp(e, "props.children.1.props.children.props.style");
+				const guildId = isUserPopout ? SelectedGuildStore.getGuildId() : "";
+				const avatarURL = user.getAvatarURL(guildId, IMG_WIDTH, true);
+				const bannerImageURL = backgroundImage ? `${backgroundImage.match(/(?<=\().*(?=\?)/)?.[0]}?size=${IMG_WIDTH}` : undefined;
+				const bannerColorUrl = backgroundColor;
 				this.showImage([{
-					url: avatarURL,
+					src: avatarURL,
 					width: IMG_WIDTH,
 					height: IMG_WIDTH
 				}, {
-					url: bannerURL,
+					src: bannerImageURL,
+					color: bannerColorUrl,
 					width: IMG_WIDTH
 				}]);
 			}
 			copyHandler(url) {
 				DiscordNative.clipboard.copy(url);
-				BdApi.showToast("Link Copied!", { type: "success" })
+				BdApi.showToast(url, { type: "info" });
+				BdApi.showToast("Link Copied!", { type: "success" });
 			}
-			showImage(imgsArr) {
+			showImage(imagesArr) {
 				ModalActions.openModal(props => {
 					return React.createElement(displayCarousel, {
-						p: props,
-						data: imgsArr.filter(m => !m.url.includes("undefined"))
+						props,
+						data: imagesArr
 					});
 				});
 			}
-			patch() {
+			patchViewButton() {
 				Patcher.after(UserBannerMask, "default", (_, [{ user }], returnValue) => {
-					returnValue.props.children[1].props.children.props.children.push(
+					const isUserPopout = Utilities.getNestedProp(returnValue, "props.style.minHeight") === 60;
+					const children = Utilities.getNestedProp(returnValue, "props.children.1.props.children.props.children");
+					children.push(
 						React.createElement(viewProfilePictureButton, {
-							pencilContainer: classes.pencilContainer,
-							onClick: _ => {
-								this.clickHandler({
-									userObject: user,
-									rawBannerUrl: returnValue.props.children[1].props.children.props.style.backgroundImage,
-									minHeight: returnValue.props.style.minHeight
-								});
-							}
+							isUserPopout,
+							style: { "--r": isUserPopout ? "48px" : "58px" },
+							className: `${classes.pencilContainer} viewProfilePicture`,
+							onClick: _ => this.clickHandler(user, returnValue, isUserPopout)
 						})
 					);
 				});
+			}
+			patchCopyButton() {
 				Patcher.after(ImageModal.prototype, "render", (_, __, returnValue) => {
-					const { className, href } = returnValue.props.children[2].props;
-					returnValue.props.children.push(
+					const children = Utilities.getNestedProp(returnValue, "props.children");
+					const { className, href } = Utilities.getNestedProp(returnValue, "props.children.2.props");
+					children.push(
 						React.createElement(copyButton, {
-							c: className,
-							className: `${className} anchorUnderlineOnHover-2qPutX`,
-							onClick: _ => {
-								this.copyHandler(href);
-							}
+							className: `${className} ${classes.anchorUnderlineOnHover} copyBtn`,
+							onClick: _ => this.copyHandler(href)
 						})
 					);
 				});
@@ -219,7 +231,8 @@ function initPlugin([Plugin, Api]) {
 			}
 			onStart() {
 				try {
-					this.patch();
+					this.patchViewButton();
+					this.patchCopyButton();
 					PluginUtilities.addStyle(this.getName(), css);
 				} catch (e) {
 					console.error(e);
