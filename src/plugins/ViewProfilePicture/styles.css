@@ -3,11 +3,9 @@
 	right: unset;
 	background: var(--background-primary);
 }
-
-.\${pencilContainer} + .viewProfilePicture {
-	right: 48px;
+.\${premiumIconWrapper} + .viewProfilePicture {
+	right: var(--r);
 }
-
 .viewProfilePicture path {
 	transform: scale(0.8);
 	transform-origin: center;

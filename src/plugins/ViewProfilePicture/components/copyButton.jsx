@@ -1,8 +1,12 @@
-module.exports = props => {
+module.exports = ({ className, onClick }) => {
 	return (
 		<>
 			<span className="copyBtnSpan">|</span>
-			<a {...props}>Copy link</a>
+			<a
+				className={className}
+				onClick={onClick}>
+				Copy link
+			</a>
 		</>
 	);
 };

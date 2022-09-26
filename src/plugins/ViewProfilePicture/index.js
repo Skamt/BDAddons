@@ -19,7 +19,11 @@ module.exports = (Plugin, Api) => {
 	const { ModalRoot } = WebpackModules.getByProps("ModalRoot");
 	const { renderMaskedLinkComponent } = WebpackModules.getByProps("renderMaskedLinkComponent");
 	const Tooltip = WebpackModules.getModule(m => m.default.displayName === "Tooltip").default;
-	const classes = WebpackModules.getByProps("pencilContainer", "popoutNoBannerPremium");
+	const classes = {
+		...WebpackModules.getByProps("pencilContainer", "popoutNoBannerPremium"),
+		...WebpackModules.getByProps("anchorUnderlineOnHover")
+	};
+
 	const viewProfilePictureButton = require("components/viewProfilePictureButton.jsx");
 	const displayCarousel = require("components/displayCarousel.jsx");
 	const copyButton = require("components/copyButton.jsx");
@@ -30,22 +34,13 @@ module.exports = (Plugin, Api) => {
 			super();
 		}
 
-		getImageObject(url, options) {
-			return {
-				src: url,
-				original: url,
-				placeholder: url,
-				...options
-			}
-		}
-
-		clickHandler(user, e) {
-			const { backgroundColor, backgroundImage } = Utilities.getNestedProp(e, 'props.children.1.props.children.props.style');
-			const guildId = Utilities.getNestedProp(e, 'props.style.minHeight') === 120 ? SelectedGuildStore.getGuildId() : "";
+		clickHandler(user, e, isUserPopout) {
+			const { backgroundColor, backgroundImage } = Utilities.getNestedProp(e, "props.children.1.props.children.props.style");
+			const guildId = isUserPopout ? SelectedGuildStore.getGuildId() : "";
 			const avatarURL = user.getAvatarURL(guildId, IMG_WIDTH, true);
 			const bannerImageURL = backgroundImage ? `${backgroundImage.match(/(?<=\().*(?=\?)/)?.[0]}?size=${IMG_WIDTH}` : undefined;
 			const bannerColorUrl = backgroundColor;
-			const images = [{
+			this.showImage([{
 				src: avatarURL,
 				width: IMG_WIDTH,
 				height: IMG_WIDTH
@@ -53,8 +48,7 @@ module.exports = (Plugin, Api) => {
 				src: bannerImageURL,
 				color: bannerColorUrl,
 				width: IMG_WIDTH
-			}]
-			this.showImage(images);
+			}]);
 		}
 
 		copyHandler(url) {
@@ -66,30 +60,37 @@ module.exports = (Plugin, Api) => {
 		showImage(imagesArr) {
 			ModalActions.openModal(props => {
 				return React.createElement(displayCarousel, {
-					pees: props,
+					props,
 					data: imagesArr
 				});
 			});
 		}
 
-		patch() {
-			// View Button
+		patchViewButton() {
 			Patcher.after(UserBannerMask, "default", (_, [{ user }], returnValue) => {
+				const isUserPopout = Utilities.getNestedProp(returnValue, "props.style.minHeight") === 60;
 				const children = Utilities.getNestedProp(returnValue, "props.children.1.props.children.props.children");
-				children.push(React.createElement(viewProfilePictureButton, {
-					className: `${classes.pencilContainer} viewProfilePicture`,
-					onClick: _ => this.clickHandler(user, returnValue)
-				}));
+				children.push(
+					React.createElement(viewProfilePictureButton, {
+						isUserPopout,
+						style: { "--r": isUserPopout ? "48px" : "58px" },
+						className: `${classes.pencilContainer} viewProfilePicture`,
+						onClick: _ => this.clickHandler(user, returnValue, isUserPopout)
+					})
+				);
 			});
+		}
 
-			// Copy Button
+		patchCopyButton() {
 			Patcher.after(ImageModal.prototype, "render", (_, __, returnValue) => {
 				const children = Utilities.getNestedProp(returnValue, "props.children");
-				const { className, href } = returnValue.props.children[2].props;
-				children.push(React.createElement(copyButton, {
-					className: `${className} anchorUnderlineOnHover-2qPutX copyBtn`,
-					onClick: _ => this.copyHandler(href)
-				}));
+				const { className, href } = Utilities.getNestedProp(returnValue, "props.children.2.props");
+				children.push(
+					React.createElement(copyButton, {
+						className: `${className} ${classes.anchorUnderlineOnHover} copyBtn`,
+						onClick: _ => this.copyHandler(href)
+					})
+				);
 			});
 		}
 
@@ -100,7 +101,8 @@ module.exports = (Plugin, Api) => {
 
 		onStart() {
 			try {
-				this.patch();
+				this.patchViewButton();
+				this.patchCopyButton();
 				PluginUtilities.addStyle(this.getName(), css);
 			} catch (e) {
 				console.error(e);

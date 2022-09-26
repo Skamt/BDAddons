@@ -1,4 +1,4 @@
-module.exports = (pees) => {
+module.exports = ({ style, className, onClick, isUserPopout }) => {
 	return (
 		<Tooltip
 			text="Show profile picture"
@@ -6,14 +6,16 @@ module.exports = (pees) => {
 			{props => (
 				<div
 					{...props}
-					{...pees}>
+					style={style}
+					className={className}
+					onClick={onClick}>
 					<svg
 						aria-label="Redigera profilen"
 						className="pencilIcon-z04-c5"
 						aria-hidden="false"
 						role="img"
-						width="18"
-						height="18"
+						width={isUserPopout ? 18 : 24}
+						height={isUserPopout ? 18 : 24}
 						viewBox="0 0 384 384">
 						<path
 							fill="currentColor"

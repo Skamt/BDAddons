@@ -1,4 +1,4 @@
-module.exports = ({ pees, data }) => {
+module.exports = ({ props, data }) => {
 	const items = data.map(({ width, height, src, color }) => {
 			return {
 				"component": 
@@ -35,7 +35,7 @@ module.exports = ({ pees, data }) => {
 					border-radius: 50%; 
 				}`}</style>
 			<ModalRoot
-				{...pees}
+				{...props}
 				className="carouselModal-1eUFoq zoomedCarouselModalRoot-beLNhM">
 				<ModalCarousel
 					className="modalCarouselWrapper-YK1MX4"
