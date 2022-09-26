@@ -1,12 +1,12 @@
-module.exports = ({ className, onClick }) => {
+module.exports = ({ onClick }) => {
 	return (
 		<>
 			<span className="copyBtnSpan">|</span>
 			<a
-				className={className}
+				className={`${classes.downloadLink} ${classes.anchorUnderlineOnHover} copyBtn`}
 				onClick={onClick}>
 				Copy link
 			</a>
 		</>
 	);
-};
+}
