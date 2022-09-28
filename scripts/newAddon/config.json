@@ -6,11 +6,6 @@
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/"
 	},
-	"changelog": [{
-		"title": "Added",
-		"type": "added",
-		"items": ["added new feature"]
-	}],
 	"defaultConfig": [{
 		"type": "slider",
 		"id": "id",
