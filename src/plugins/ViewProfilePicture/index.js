@@ -81,7 +81,6 @@ module.exports = (Plugin, Api) => {
 				);
 			});
 		}
-
 		patchCopyButton() {
 			Patcher.after(ImageModal.prototype, "render", (_, __, returnValue) => {
 				const children = Utilities.getNestedProp(returnValue, "props.children");
