@@ -55,7 +55,19 @@ function initPlugin([Plugin, Api]) {
 						onClick: onClick
 					}, "Copy link")));
 		};;
-		const css = Utilities.formatTString(require("styles.css"), classes);
+		const css = Utilities.formatTString(`.copyBtn {
+	left: 95px;
+}
+
+.copyBtnSpan {
+	left: 85px;
+	position: absolute;
+	top: 100%;
+	font-weight: 500;
+	color: hsl(0, calc(var(--saturation-factor, 1) * 0%), 100%) !important;
+	line-height: 30px;
+	opacity: 0.5;
+}`, classes);
 		return class CopyImageLink extends Plugin {
 			constructor() {
 				super();
