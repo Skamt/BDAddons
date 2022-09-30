@@ -1,17 +1,17 @@
-.stickersPreview {
-	width:400px;
-	font-size: 14px;
-	background: var(--background-floating);
-	border-radius: 5px;
-	padding: .5em;
-	box-shadow: var(--elevation-high);
+.upsellWrapper-3KE9GX {
+    display: none;
 }
-.stickersPreview img{
-	min-width:100%;
-	max-width:100%;
+
+.stickerUnsendable-PkQAxI{
+    filter:unset;
 }
-.animated img{
+
+.stickerUnsendable-PkQAxI img[alt$="ANIMATED_STICKER_TAG"]{
 	border:1px dashed #ff8f09;
 	padding:1px;
 	box-sizing:border-box;
+}
+
+.stickerUnsendable-PkQAxI img[aria-label$="LOTTIE_STICKER_TAG"]{
+	filter: grayscale(100%);
 }

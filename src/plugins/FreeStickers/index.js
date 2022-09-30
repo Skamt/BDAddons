@@ -1,219 +1,48 @@
 module.exports = (Plugin, Api) => {
 	const {
-		Settings,
+		Filters,
 		Patcher,
+		Settings,
 		WebpackModules,
 		PluginUtilities,
 		DiscordModules: {
-			React,
-			React: { useState },
 			Permissions,
-			DiscordPermissions,
 			UserStore,
 			ChannelStore,
-			SelectedChannelStore
+			SelectedChannelStore,
+			MessageActions
 		}
 	} = Api;
 
-	const StickerType = WebpackModules.getByProps('MetaStickerType')
-	const StickersFunctions = WebpackModules.getByProps('getStickerById');
-	const StickersSendability = WebpackModules.getByProps('isSendableSticker');
-	const MessageUtilities = WebpackModules.getByProps("sendStickers");
-	const closeExpressionPicker = WebpackModules.getByProps("closeExpressionPicker");
-	const ReactionPopout = WebpackModules.getByProps("isSelected");
-	const ExpressionPickerInspector = WebpackModules.find(e => e.default.displayName === "ExpressionPickerInspector");
-	const StickerPickerLoader = WebpackModules.find(m => m.default.displayName === 'StickerPickerLoader');
-	const Sticker = WebpackModules.find(m => m.default.displayName === 'Sticker');
-	const Popout = WebpackModules.getByDisplayName("Popout");
-	const EmojiPickerListRow = WebpackModules.find(m => m.default.displayName === 'EmojiPickerListRow');
-	const { ComponentDispatch } = WebpackModules.getByProps("ComponentDispatch");
+	const ANIMATED_STICKER_TAG = "ANIMATED_STICKER_TAG";
+	const LOTTIE_STICKER_TAG = "LOTTIE_STICKER_TAG";
+	const getStickerSendability = WebpackModules.getModule(Filters.byString("SENDABLE_WITH_PREMIUM", "canUseStickersEverywhere"));
+	const StickerStore = WebpackModules.getByProps("getStickerById");
+	const StickSendEnum = WebpackModules.getByProps("SENDABLE_WITH_BOOSTED_GUILD");
+	const StickerFormat = WebpackModules.getByProps("APNG", "LOTTIE");
+	const ComponentDispatch = WebpackModules.getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners("INSERT_TEXT").length);
 
-	const css = require('styles.css');
+	const listeners = [];
+	const removeListeners = () => listeners.forEach(({ el, event, func }) => el.removeEventListener(event, func));
 
-	const previewComponent = require('components/previewComponent.jsx');
+	const addListener = (el, event, func) => {
+		el.addEventListener(event, func);
+		listeners.push({ el, event, func });
+	};
+
+	const css = require("styles.css");
 
 	return class FreeStickers extends Plugin {
 		constructor() {
 			super();
-			// a boolean for whether to close ExpressionPicker
-			this.canClosePicker = true;
-			// keydown/keyup listeners checking for shift key
-			this.listeners = [
-				(e) => this.canClosePicker = !(e.keyCode === 16),
-				(e) => this.canClosePicker = true
-			]
 		}
 
-		patchAddPreview() {
-			// Add a zoom/preview popout to stickers
-			Patcher.after(Sticker, 'default', (_, [{ size, sticker }], ret) => {
-				if (size < 40) return;
-				return (this.settings.preview.stickerPreview && sticker.type === StickerType.MetaStickerType.GUILD) ?
-					React.createElement(previewComponent, {
-						previewSize: this.settings.preview.previewSize,
-						sticker: true,
-						element: ret,
-						animated: sticker["format_type"] === StickerType.StickerFormat.APNG && this.settings.highlightanimated,
-						data: sticker
-					}) : ret;
-			})
-			// Add a zoom/preview popout to Emojis 
-			Patcher.after(EmojiPickerListRow, 'default', (_, args, ret) => {
-				if (!this.settings.preview.emojiPreview) return;
-				ret.props.children = ret.props.children.map(emojiData => {
-					if (!emojiData.props.children.props.emoji) return emojiData;
-					const emoji = emojiData.props.children.props.emoji;
-					emojiData.props.children = React.createElement(previewComponent, {
-						previewSize: this.settings.preview.previewSize,
-						element: emojiData.props.children,
-						animated: emoji.animated && this.settings.highlightanimated,
-						data: emoji
-					})
-					return emojiData;
-				})
-			})
-		}
-
-		patchStickerAttachement() {
-			Patcher.before(MessageUtilities, 'sendMessage', (_, args, ret) => {
-				const [channelId, , , attachments] = args;
-				if (attachments && attachments.stickerIds && attachments.stickerIds.filter) {
-					const [stickerId] = attachments.stickerIds;
-					const { SENDABLE } = StickersSendability.StickerSendability;
-					const [state, sticker] = this.isStickerSendable(stickerId);
-					if (state !== SENDABLE) {
-						args[3] = {};
-						setTimeout(() => {
-							this.sendStickerAsLink(sticker, channelId, true);
-						}, 0)
-					}
-				}
-			})
-		}
-
-		patchStickerPickerLoader() {
-			// Bypass send external stickers permission by adding current user as exception to the channel
-			// Weirdly enough 'Use External Stickers' permission doesn't do anything
-			// 'Use External Emoji' is needed
-			Patcher.before(StickerPickerLoader, 'default', (_, args, ret) => {
-				const temp = {};
-				temp[UserStore.getCurrentUser().id] = {
-					id: UserStore.getCurrentUser().id,
-					type: 1,
-					allow: 137439215616n,
-					deny: 0n
-				};
-				args[0].channel.permissionOverwrites = {
-					...args[0].channel.permissionOverwrites,
-					...temp
-				};
-			})
-		}
-		patchStickerClickability() {
-			// if it's a guild sticker return true to make it clickable 
-			// ignoreing discord's stickers because ToS, and they're not regular images
-			Patcher.after(StickersSendability, 'isSendableSticker', (_, args, returnValue) => {
-				return args[0].type === StickerType.MetaStickerType.GUILD;
-			});
-		}
-
-		patchStickerSuggestion() {
-			// Enable suggestions for custom stickers only 
-			Patcher.after(StickersSendability, 'getStickerSendability', (_, args, returnValue) => {
-				if (args[0].type === StickerType.MetaStickerType.GUILD) {
-					const { SENDABLE } = StickersSendability.StickerSendability;
-					return returnValue !== SENDABLE ? SENDABLE : returnValue;
-				}
-			});
-		}
-
-		patchSendSticker() {
-			Patcher.instead(MessageUtilities, 'sendStickers', (_, args, originalFunc) => {
-				const [channelId, [stickerId]] = args;
-				const { SENDABLE } = StickersSendability.StickerSendability;
-				const [state, sticker] = this.isStickerSendable(stickerId);
-				if (state === SENDABLE)
-					originalFunc.apply(_, args)
-				else {
-					this.sendStickerAsLink(sticker, channelId);
-				}
-			});
-		}
-
-		patchExpressionsPicker() {
-			// Checking if shift is held to whether close the picker or not 
-			// also clearing the preview
-			Patcher.instead(closeExpressionPicker, 'closeExpressionPicker', (_, args, originalFunc) => {
-				if (this.settings.keepStickersPopoutOpen) {
-					if (this.canClosePicker) {
-						originalFunc();
-					}
-				} else {
-					originalFunc();
-				}
-			});
-		}
-
-		sendStickerAsLink(sticker, channelId, direct) {
-			if (sticker["format_type"] === StickerType.StickerFormat.APNG && !this.settings.sendAnimatedStickers) return;
-			const url = `https://media.discordapp.net/stickers/${sticker.id}.webp?size=${this.settings.stickerSize}&passthrough=false&quality=lossless`;
-			if (this.checkEmbedPerms(channelId))
-				if (this.settings.sendDirectly || direct)
-					MessageUtilities.sendMessage(channelId, {
-						content: url,
-						validNonShortcutEmojis: []
-					});
-				else
-					setTimeout(() => {
-						ComponentDispatch.dispatchToLastSubscribed("INSERT_TEXT", {
-							plainText: url
-						});
-					}, 0)
-			else
-				BdApi.showToast("Missing Embed Permissions");
-		}
-
-
-		checkEmbedPerms(channelId) {
-			const channel = ChannelStore.getChannel(channelId);
-			if (!channel.guild_id) return true;
-			return Permissions.can({ permission: DiscordPermissions.EMBED_LINKS, context: channel, user: UserStore.getCurrentUser().id })
-		}
-
-
-		isStickerSendable(stickerId) {
-			// Checking if sticker can be sent normally, Nitro / Guild's sticker
-			const sticker = StickersFunctions.getStickerById(stickerId);
-			const channel = ChannelStore.getChannel(SelectedChannelStore.getChannelId());
-			return [StickersSendability.getStickerSendability.__originalFunction(sticker, UserStore.getCurrentUser(), channel), sticker];
-		}
-
-		setupKeyListeners() {
-			document.addEventListener("keydown", this.listeners[0]);
-			document.addEventListener("keyup", this.listeners[1]);
-		}
-
-		removeKeyListeners() {
-			document.removeEventListener("keydown", this.listeners[0]);
-			document.removeEventListener("keyup", this.listeners[1]);
-		}
-
-		patch() {
-			PluginUtilities.addStyle(this.getName(), css);
-			this.setupKeyListeners();
-			this.patchStickerClickability();
-			this.patchStickerSuggestion();
-			this.patchSendSticker();
-			this.patchExpressionsPicker();
-			this.patchStickerPickerLoader();
-			this.patchStickerAttachement();
-			this.patchAddPreview();
-		}
-		clean() {
+		onStop() {
 			PluginUtilities.removeStyle(this.getName());
-			this.removeKeyListeners();
 			Patcher.unpatchAll();
+			removeListeners();
 		}
+
 		onStart() {
 			try {
 				this.patch();
@@ -222,11 +51,104 @@ module.exports = (Plugin, Api) => {
 			}
 		}
 
-		onStop() {
-			this.clean();
+		getSettingsPanel() {
+			const panel = this.buildSettingsPanel();
+			panel.addListener((id, checked) => {
+				if (id === "highlightanimated")
+					this.updateStickers();
+			});
+			return panel.getElement();
 		}
 
-		getSettingsPanel() { return this.buildSettingsPanel().getElement(); }
-	};
+		patch() {
+			this.patchGetStickerById();
+			PluginUtilities.addStyle(this.getName(), css);
+			addListener(document, "click", (e) => { this.stickerClickHandler(e) });
+			this.updateStickers();
+		}
 
+		updateStickers() {
+			// trigger the patch
+			StickerStore.stickerMetadata.forEach((value, key) => StickerStore.getStickerById(key));
+		}
+
+		checkEmbedPerms(channelId) {
+			const channel = ChannelStore.getChannel(channelId);
+			if (!channel.guild_id) return true;
+			return Permissions.can({ permission: 16384n, context: channel, user: UserStore.getCurrentUser().id });
+		}
+
+		isLottieSticker(sticker) {
+			// only lottie stickers have packs (i hope)
+			return sticker["pack_id"] || sticker["format_type"] === StickerFormat.LOTTIE;
+		}
+
+		isStickerSendable(stickerId, channel) {
+			const sticker = StickerStore.getStickerById(stickerId);
+			const StickerSendableState = getStickerSendability(sticker, UserStore.getCurrentUser(), channel) === StickSendEnum.SENDABLE;
+			return [StickerSendableState, sticker];
+		}
+
+		sendStickerAsLink(sticker, channelId) {
+			if (this.isLottieSticker(sticker)) return;
+			if (sticker["format_type"] === StickerFormat.APNG && !this.settings.sendAnimatedStickers) return;
+			const url = `https://media.discordapp.net/stickers/${sticker.id}.webp?size=${this.settings.stickerSize}&passthrough=false&quality=lossless`;
+			if (this.checkEmbedPerms(channelId))
+				if (this.settings.sendDirectly)
+			MessageActions.sendMessage(channelId, {
+						content: url,
+						validNonShortcutEmojis: []
+					});
+				else
+					ComponentDispatch.dispatchToLastSubscribed("INSERT_TEXT", {
+						plainText: url
+					})
+			else
+				BdApi.showToast("Missing Embed Permissions");
+		}
+
+		stickerClickHandler(e) {
+			const targetProps = e.target.__reactProps$;
+			if (targetProps && targetProps["data-type"] && targetProps["data-type"].toLowerCase() === "sticker") {
+				console.log(e.target);
+				console.log(targetProps);
+				const channel = ChannelStore.getChannel(SelectedChannelStore.getChannelId());
+				const stickerId = targetProps["data-id"];
+				const [sendable, sticker] = this.isStickerSendable(stickerId, channel);
+				console.log(sendable, sticker)
+				if (!sendable) {
+					this.sendStickerAsLink(sticker, channel.id);
+				}
+			}
+		}
+
+		patcheStickerStore(args, ret) {
+			const sticker = ret;
+			if (sticker && !sticker.fixed) {
+				let result = "";
+				if (this.isLottieSticker(sticker))
+					result = LOTTIE_STICKER_TAG
+				else if (sticker["format_type"] === StickerFormat.APNG)
+					result = ANIMATED_STICKER_TAG;
+				sticker.description = `${sticker.description} ${result}`;
+				sticker.fixed = true;
+			}
+		}
+		unpatcheStickerStore(args, ret) {
+			const sticker = ret;
+			if (sticker && sticker.fixed) {
+				sticker.description = sticker.description.replace(LOTTIE_STICKER_TAG, '').replace(ANIMATED_STICKER_TAG, '');
+				sticker.fixed = false;
+			}
+		}
+
+		patchGetStickerById() {
+			Patcher.after(StickerStore, "getStickerById", (_, args, ret) => {
+				if (this.settings.highlightanimated)
+					this.patcheStickerStore(args, ret);
+				else
+					this.unpatcheStickerStore(args, ret);
+			});
+		}
+	};
 };
