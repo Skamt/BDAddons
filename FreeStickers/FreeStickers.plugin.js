@@ -20,7 +20,7 @@ const config = {
 	changelog: [{
 		title: "v2",
 		type: "added",
-		items: ["Plugin Rewrite as per discord new update."]
+		items: ["Plugin Rewrite as per discord new update. Naturally some features are removed because they are impossible to implement"]
 	}],
 	defaultConfig: [{
 		type: "slider",
