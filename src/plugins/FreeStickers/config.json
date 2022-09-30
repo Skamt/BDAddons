@@ -7,9 +7,9 @@
 		"github": "https://github.com/Skamt/BDAddons/tree/main/FreeStickers"
 	},
 	"changelog": [{
-		"title": "Added",
+		"title": "v2",
 		"type": "added",
-		"items": ["Option to Highlight animated stickers and emojis."]
+		"items": ["Plugin Rewrite as per discord new update. Naturally some features are removed because they are impossible to implement"]
 	}],
 	"defaultConfig": [{
 		"type": "slider",
@@ -27,13 +27,19 @@
 		"value": true
 	}, {
 		"type": "switch",
+		"id": "ignoreEmbedPermissions",
+		"name": "Ignore Embed Permissions",
+		"note": "Send sticker links regardless of embed permissions, meaning links will not turn into images.",
+		"value": true
+	}, {
+		"type": "switch",
 		"id": "sendAnimatedStickers",
 		"name": "Send animated stickers",
 		"note": "Animated stickers do not animate, sending them will only send the first picture of the animation. (still useful)",
 		"value": true
 	}, {
 		"type": "switch",
-		"id": "highlightanimated",
+		"id": "highlightAnimated",
 		"name": "Highlight animated stickers",
 		"value": true
 	}]
