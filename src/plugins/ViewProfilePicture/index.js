@@ -1,45 +1,60 @@
 module.exports = (Plugin, Api) => {
 	const {
 		Patcher,
+		Filters,
 		Utilities,
 		WebpackModules,
 		PluginUtilities,
-		DiscordModules: {
-			React,
-			ModalActions,
-			SelectedGuildStore
-		}
+		DiscordModules: { React, ModalActions, SelectedGuildStore }
 	} = Api;
 
 	const IMG_WIDTH = 4096;
-	const UserBannerMask = WebpackModules.getModule(m => m.default.displayName === "UserBannerMask");
-	const ImageModal = WebpackModules.getByDisplayName("ImageModal");
-	const ModalCarousel = WebpackModules.getByDisplayName("ModalCarousel");
-	const { ModalRoot } = WebpackModules.getByProps("ModalRoot");
-	const { renderMaskedLinkComponent } = WebpackModules.getByProps("renderMaskedLinkComponent");
-	const Tooltip = WebpackModules.getByDisplayName("Tooltip");
+	const filter = (exp) => Object.keys(exp).find(k => exp[k].toString().includes("overrideAvatarDecorationURL"));
+	const UserBannerMask = BdApi.Webpack.getModule((exp) => filter(exp), { searchGetters: false });
+	const key = filter(UserBannerMask);
+	Object.defineProperty(UserBannerMask, key, {
+		value: UserBannerMask[key],
+		configurable: true,
+		enumerable: true,
+		writable: true
+	});
+	const ImageModal = WebpackModules.getModule(m => m?.prototype?.render?.toString().includes("OPEN_ORIGINAL_IMAGE"));
+	const ModalCarousel = WebpackModules.getModule(m => m.prototype.navigateTo && m.prototype.preloadImage);
+	const ModalRoot = WebpackModules.getModule(Filters.byString("onAnimationEnd"));
+	const renderMaskedLinkComponent = e => BdApi.React.createElement(BdApi.Webpack.getModule(m => m.type.toString().includes("MASKED_LINK")), e);
+	const Tooltip = WebpackModules.getModule(m => m.defaultProps.shouldShow);
+
 	const classes = {
 		...WebpackModules.getByProps("downloadLink"),
 		...WebpackModules.getByProps("anchorUnderlineOnHover"),
 		...WebpackModules.getByProps("pencilContainer", "popoutNoBannerPremium")
 	};
 
-	const viewProfilePictureButton = require("components/viewProfilePictureButton.jsx");
-	const displayCarousel = require("components/displayCarousel.jsx");
-	const copyButton = require("components/copyButton.jsx");
+	const ViewProfilePictureButton = require("components/ViewProfilePictureButton.jsx");
+	const DisplayCarousel = require("components/DisplayCarousel.jsx");
+	const ColorModal = require("components/ColorModal.jsx");
+
 	const css = Utilities.formatTString(require("styles.css"), classes);
+
+	const getImage = (Url, props) => {
+		return React.createElement(ImageModal, {
+			...props,
+			src: Url,
+			original: Url,
+			renderLinkComponent: renderMaskedLinkComponent
+		});
+	}
 
 	return class ViewProfilePicture extends Plugin {
 		constructor() {
 			super();
 		}
 
-		showImage(imagesArr) {
+		showImage(items) {
 			ModalActions.openModal(props => {
-				return React.createElement(displayCarousel, {
+				return React.createElement(DisplayCarousel, {
 					props,
-					imagesArr,
-					bannerColorCopyHandler: this.copyHandler
+					items
 				});
 			});
 		}
@@ -48,17 +63,18 @@ module.exports = (Plugin, Api) => {
 			const { backgroundColor, backgroundImage } = bannerStyleObject;
 			const guildId = isUserPopout ? SelectedGuildStore.getGuildId() : "";
 			const avatarURL = userObject.getAvatarURL(guildId, IMG_WIDTH, true);
-			const bannerImageURL = backgroundImage ? `${backgroundImage.match(/(?<=\().*(?=\?)/)?.[0]}?size=${IMG_WIDTH}` : undefined;
+			const bannerURL = backgroundImage ? `${backgroundImage.match(/(?<=\().*(?=\?)/)?.[0]}?size=${IMG_WIDTH}` : undefined;
 			const bannerColorUrl = backgroundColor;
-			this.showImage([{
-				src: avatarURL,
-				width: IMG_WIDTH,
-				height: IMG_WIDTH
-			}, {
-				src: bannerImageURL,
-				color: bannerColorUrl,
-				width: IMG_WIDTH
-			}]);
+
+			this.showImage([
+				getImage(avatarURL, { width: IMG_WIDTH, height: IMG_WIDTH }),
+				bannerURL ?
+				getImage(bannerImageURL, { width: IMG_WIDTH }) :
+				React.createElement(ColorModal, {
+					color: bannerColorUrl,
+					bannerColorCopyHandler: this.copyHandler
+				})
+			]);
 		}
 
 		copyHandler(data) {
@@ -68,12 +84,12 @@ module.exports = (Plugin, Api) => {
 		}
 
 		patchViewButton() {
-			Patcher.after(UserBannerMask, "default", (_, [{ user }], returnValue) => {
+			Patcher.after(UserBannerMask, "Z", (_, [{ user }], returnValue) => {
 				const isUserPopout = Utilities.getNestedProp(returnValue, "props.style.minHeight") === 60;
 				const bannerStyleObject = Utilities.getNestedProp(returnValue, "props.children.1.props.children.props.style");
 				const children = Utilities.getNestedProp(returnValue, "props.children.1.props.children.props.children");
 				children.push(
-					React.createElement(viewProfilePictureButton, {
+					React.createElement(ViewProfilePictureButton, {
 						isUserPopout,
 						style: { "--r": isUserPopout ? "48px" : "58px" },
 						onClick: _ => this.clickHandler(user, isUserPopout, bannerStyleObject)
@@ -100,7 +116,6 @@ module.exports = (Plugin, Api) => {
 
 		patch() {
 			this.patchViewButton();
-			this.patchCopyButton();
 		}
 
 		onStart() {

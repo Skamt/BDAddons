@@ -1,12 +1,13 @@
 
-.\${premiumIconWrapper} + .viewProfilePicture {
+.\${pencilContainer} + .viewProfilePicture {
 	left: 12px;
 	right: unset;
-	background: var(--background-primary);
+	/*background: var(--background-primary);*/
 }
 
-.\${premiumIconWrapper} + .viewProfilePicture {
+.\${pencilContainer} + .viewProfilePicture {
 	right: var(--r);
+	left: unset;
 }
 
 .viewProfilePicture path {
