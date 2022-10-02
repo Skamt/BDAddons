@@ -57,6 +57,7 @@ function initPlugin([Plugin, Api]) {
 		};;
 		const css = Utilities.formatTString(`.copyBtn {
 	left: 95px;
+	white-space: nowrap;
 }
 
 .copyBtnSpan {
