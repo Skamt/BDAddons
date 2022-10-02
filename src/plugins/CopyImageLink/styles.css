@@ -1,5 +1,6 @@
 .copyBtn {
 	left: 95px;
+	white-space: nowrap;
 }
 
 .copyBtnSpan {
