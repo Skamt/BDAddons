@@ -55,11 +55,6 @@ function initPlugin([Plugin, Api]) {
 		const ModalRoot = WebpackModules.getModule(Filters.byString("onAnimationEnd"));
 		const renderMaskedLinkComponent = e => BdApi.React.createElement(BdApi.Webpack.getModule(m => m.type.toString().includes("MASKED_LINK")), e);
 		const Tooltip = WebpackModules.getModule(m => m.defaultProps.shouldShow);
-		const classes = {
-			...WebpackModules.getByProps("downloadLink"),
-			...WebpackModules.getByProps("anchorUnderlineOnHover"),
-			...WebpackModules.getByProps("pencilContainer", "popoutNoBannerPremium")
-		};
 		const ViewProfilePictureButton = ({ style, onClick, isUserPopout }) => {
 			return React.createElement(Tooltip, {
 					text: "Show profile picture",
@@ -70,7 +65,7 @@ function initPlugin([Plugin, Api]) {
 						...
 						props,
 						style: style,
-						className: `${classes.pencilContainer} viewProfilePicture`,
+						className: "pencilContainer-11Kuga viewProfilePicture",
 						onClick: onClick
 					},
 					React.createElement("svg", {
@@ -107,28 +102,23 @@ function initPlugin([Plugin, Api]) {
 						style: { backgroundColor: color }
 					},
 					React.createElement("a", {
-						className: `${classes.downloadLink} ${classes.anchorUnderlineOnHover}`,
+						className: "downloadLink-1OAglv anchorUnderlineOnHover-2qPutX",
 						onClick: (_) => bannerColorCopyHandler(color)
 					}, "Copy Color")));
 		};;
-		const css = Utilities.formatTString(`
-.\${pencilContainer} + .viewProfilePicture {
+		const css = `.premiumIconWrapper-yyGDql + .viewProfilePicture {
 	left: 12px;
 	right: unset;
-	/*background: var(--background-primary);*/
 }
 
-.\${pencilContainer} + .viewProfilePicture {
+.pencilContainer-11Kuga + .viewProfilePicture {
 	right: var(--r);
-	left: unset;
 }
 
 .viewProfilePicture path {
 	transform: scale(0.8);
 	transform-origin: center;
 }
-
-
 
 .noBanner {
 	width: 70vw;
@@ -152,7 +142,8 @@ function initPlugin([Plugin, Api]) {
 	opacity: 0.8;
 	background: var(--background-primary);
 	border-radius: 50%;
-}`, classes);
+}
+`
 		const getImage = (Url, props) => {
 			return React.createElement(ImageModal, {
 				...props,
@@ -177,11 +168,11 @@ function initPlugin([Plugin, Api]) {
 				const { backgroundColor, backgroundImage } = bannerStyleObject;
 				const guildId = isUserPopout ? SelectedGuildStore.getGuildId() : "";
 				const avatarURL = userObject.getAvatarURL(guildId, IMG_WIDTH, true);
-				const bannerURL = backgroundImage ? `${backgroundImage.match(/(?<=\().*(?=\?)/)?.[0]}?size=${IMG_WIDTH}` : undefined;
+				const bannerImageURL = backgroundImage ? `${backgroundImage.match(/(?<=\().*(?=\?)/)?.[0]}?size=${IMG_WIDTH}` : undefined;
 				const bannerColorUrl = backgroundColor;
 				this.showImage([
 					getImage(avatarURL, { width: IMG_WIDTH, height: IMG_WIDTH }),
-					bannerURL ?
+					bannerImageURL ?
 					getImage(bannerImageURL, { width: IMG_WIDTH }) :
 					React.createElement(ColorModal, {
 						color: bannerColorUrl,
@@ -196,9 +187,16 @@ function initPlugin([Plugin, Api]) {
 			}
 			patchViewButton() {
 				Patcher.after(UserBannerMask, "Z", (_, [{ user }], returnValue) => {
-					const isUserPopout = Utilities.getNestedProp(returnValue, "props.style.minHeight") === 60;
-					const bannerStyleObject = Utilities.getNestedProp(returnValue, "props.children.1.props.children.props.style");
-					const children = Utilities.getNestedProp(returnValue, "props.children.1.props.children.props.children");
+					let bannerStyleObject, children;
+					const isSettings = Utilities.getNestedProp(returnValue, "props.children.props.children");
+					const isUserPopout = Utilities.getNestedProp(returnValue, "props.style.minWidth") === 340;
+					if (isSettings) {
+						bannerStyleObject = Utilities.getNestedProp(returnValue, "props.children.props.style");
+						children = isSettings;
+					} else {
+						bannerStyleObject = Utilities.getNestedProp(returnValue, "props.children.1.props.children.props.style");
+						children = Utilities.getNestedProp(returnValue, "props.children.1.props.children.props.children");
+					}
 					children.push(
 						React.createElement(ViewProfilePictureButton, {
 							isUserPopout,
