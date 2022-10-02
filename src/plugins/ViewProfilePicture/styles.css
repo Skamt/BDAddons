@@ -1,21 +1,16 @@
-
-.\${pencilContainer} + .viewProfilePicture {
+.premiumIconWrapper-yyGDql + .viewProfilePicture {
 	left: 12px;
 	right: unset;
-	/*background: var(--background-primary);*/
 }
 
-.\${pencilContainer} + .viewProfilePicture {
+.pencilContainer-11Kuga + .viewProfilePicture {
 	right: var(--r);
-	left: unset;
 }
 
 .viewProfilePicture path {
 	transform: scale(0.8);
 	transform-origin: center;
 }
-
-
 
 .noBanner {
 	width: 70vw;

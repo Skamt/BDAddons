@@ -24,17 +24,11 @@ module.exports = (Plugin, Api) => {
 	const renderMaskedLinkComponent = e => BdApi.React.createElement(BdApi.Webpack.getModule(m => m.type.toString().includes("MASKED_LINK")), e);
 	const Tooltip = WebpackModules.getModule(m => m.defaultProps.shouldShow);
 
-	const classes = {
-		...WebpackModules.getByProps("downloadLink"),
-		...WebpackModules.getByProps("anchorUnderlineOnHover"),
-		...WebpackModules.getByProps("pencilContainer", "popoutNoBannerPremium")
-	};
-
 	const ViewProfilePictureButton = require("components/ViewProfilePictureButton.jsx");
 	const DisplayCarousel = require("components/DisplayCarousel.jsx");
 	const ColorModal = require("components/ColorModal.jsx");
 
-	const css = Utilities.formatTString(require("styles.css"), classes);
+	const css = require("styles.css")
 
 	const getImage = (Url, props) => {
 		return React.createElement(ImageModal, {
@@ -63,12 +57,12 @@ module.exports = (Plugin, Api) => {
 			const { backgroundColor, backgroundImage } = bannerStyleObject;
 			const guildId = isUserPopout ? SelectedGuildStore.getGuildId() : "";
 			const avatarURL = userObject.getAvatarURL(guildId, IMG_WIDTH, true);
-			const bannerURL = backgroundImage ? `${backgroundImage.match(/(?<=\().*(?=\?)/)?.[0]}?size=${IMG_WIDTH}` : undefined;
+			const bannerImageURL = backgroundImage ? `${backgroundImage.match(/(?<=\().*(?=\?)/)?.[0]}?size=${IMG_WIDTH}` : undefined;
 			const bannerColorUrl = backgroundColor;
 
 			this.showImage([
 				getImage(avatarURL, { width: IMG_WIDTH, height: IMG_WIDTH }),
-				bannerURL ?
+				bannerImageURL ?
 				getImage(bannerImageURL, { width: IMG_WIDTH }) :
 				React.createElement(ColorModal, {
 					color: bannerColorUrl,
@@ -84,10 +78,17 @@ module.exports = (Plugin, Api) => {
 		}
 
 		patchViewButton() {
-			Patcher.after(UserBannerMask, "Z", (_, [{ user }], returnValue) => {
-				const isUserPopout = Utilities.getNestedProp(returnValue, "props.style.minHeight") === 60;
-				const bannerStyleObject = Utilities.getNestedProp(returnValue, "props.children.1.props.children.props.style");
-				const children = Utilities.getNestedProp(returnValue, "props.children.1.props.children.props.children");
+			Patcher.after(UserBannerMask, key, (_, [{ user }], returnValue) => {
+				let bannerStyleObject, children;
+				const isSettings = Utilities.getNestedProp(returnValue, "props.children.props.children");
+				const isUserPopout = Utilities.getNestedProp(returnValue, "props.style.minWidth") === 340;
+				if (isSettings) {
+					bannerStyleObject = Utilities.getNestedProp(returnValue, "props.children.props.style");
+					children = isSettings;
+				} else {
+					bannerStyleObject = Utilities.getNestedProp(returnValue, "props.children.1.props.children.props.style");
+					children = Utilities.getNestedProp(returnValue, "props.children.1.props.children.props.children");
+				}
 				children.push(
 					React.createElement(ViewProfilePictureButton, {
 						isUserPopout,

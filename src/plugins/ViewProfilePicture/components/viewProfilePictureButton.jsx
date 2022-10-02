@@ -6,7 +6,7 @@ module.exports = ({ style, onClick, isUserPopout }) => {
 			<div
 				{...props}
 				style={style}
-				className={`${classes.pencilContainer} viewProfilePicture`}
+				className="pencilContainer-11Kuga viewProfilePicture"
 				onClick={onClick}>
 				<svg
 					aria-label="Redigera profilen"
