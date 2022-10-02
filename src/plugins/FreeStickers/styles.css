@@ -1,17 +1,22 @@
+/* Hide *Can't use this sticker* popout */
 .upsellWrapper-3KE9GX {
     display: none;
 }
-
+/* remove stickers grayscale */
 .stickerUnsendable-PkQAxI{
     filter:unset;
 }
 
+/* Highlight animated stickers */
 .stickerUnsendable-PkQAxI img[alt$="ANIMATED_STICKER_TAG"]{
-	border:1px dashed #ff8f09;
 	padding:1px;
-	box-sizing:border-box;
+    border-radius: 12px;
+    box-sizing:border-box;
+    border: 2px dotted #ff8f09;
 }
 
-.stickerUnsendable-PkQAxI img[aria-label$="LOTTIE_STICKER_TAG"]{
+/* Put grayscale back on lottie stickers */
+.stickerUnsendable-PkQAxI img[alt$="LOTTIE_STICKER_TAG"],
+.stickerUnsendable-PkQAxI[aria-label$="LOTTIE_STICKER_TAG"]{
 	filter: grayscale(100%);
 }
