@@ -1,6 +1,7 @@
 module.exports = (Plugin, Api) => {
 	const {
 		Patcher,
+		Logger,
 		WebpackModules,
 		PluginUtilities,
 		DiscordModules: {
@@ -20,23 +21,16 @@ module.exports = (Plugin, Api) => {
 			});
 		}
 
-		clean() {
-			PluginUtilities.removeStyle(this.getName());
-			Patcher.unpatchAll();
-		}
 		onStart() {
 			try {
 				this.patch();
 			} catch (e) {
-				console.error(e);
+				Logger.err(e);
 			}
 		}
 		onStop() {
-			try {
-				this.clean();
-			} catch (e) {
-				console.error(e);
-			}
+			PluginUtilities.removeStyle(this.getName());
+			Patcher.unpatchAll();
 		}
 		getSettingsPanel() {
 			return this.buildSettingsPanel().getElement();
