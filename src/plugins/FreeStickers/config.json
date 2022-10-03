@@ -39,7 +39,7 @@
 		"value": true
 	}, {
 		"type": "switch",
-	"id": "shouldHighlightAnimated",
+		"id": "shouldHighlightAnimated",
 		"name": "Highlight animated stickers",
 		"value": true
 	}]
