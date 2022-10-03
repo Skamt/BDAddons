@@ -1,5 +1,6 @@
 module.exports = (Plugin, Api) => {
 	const {
+		Logger,
 		Filters,
 		Patcher,
 		Settings,
@@ -117,7 +118,7 @@ module.exports = (Plugin, Api) => {
 				this.patchGetStickerById();
 				updateStickers();
 			} catch (e) {
-				console.error(e);
+				Logger.err(e);
 			}
 		}
 
