@@ -6,7 +6,13 @@ module.exports = (Plugin, Api) => {
 		Settings,
 		WebpackModules,
 		PluginUtilities,
-		DiscordModules: { Permissions, UserStore, ChannelStore, SelectedChannelStore, MessageActions }
+		DiscordModules: {
+			Permissions,
+			UserStore,
+			ChannelStore,
+			SelectedChannelStore,
+			MessageActions
+		}
 	} = Api;
 
 	// Modules

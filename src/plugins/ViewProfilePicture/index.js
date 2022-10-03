@@ -6,7 +6,11 @@ module.exports = (Plugin, Api) => {
 		Utilities,
 		WebpackModules,
 		PluginUtilities,
-		DiscordModules: { React, ModalActions, SelectedGuildStore }
+		DiscordModules: {
+			React,
+			ModalActions,
+			SelectedGuildStore
+		}
 	} = Api;
 
 	const IMG_WIDTH = 4096;
