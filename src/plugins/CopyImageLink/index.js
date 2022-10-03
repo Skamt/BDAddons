@@ -1,5 +1,6 @@
 module.exports = (Plugin, Api) => {
 	const {
+		Logger,
 		Patcher,
 		Utilities,
 		WebpackModules,
@@ -10,57 +11,36 @@ module.exports = (Plugin, Api) => {
 	} = Api;
 
 	const ImageModal = WebpackModules.getModule(m => m?.prototype?.render?.toString().includes("OPEN_ORIGINAL_IMAGE"));
-	const classes = {
-		...WebpackModules.getByProps("downloadLink"),
-		...WebpackModules.getByProps("anchorUnderlineOnHover")
-	};
+	const copy = (data) => {
+		DiscordNative.clipboard.copy(data);
+		BdApi.showToast(data, { type: "info" });
+		BdApi.showToast("Copied!", { type: "success" });
+	}
 
 	const copyButton = require("components/copyButton.jsx");
-	const css = Utilities.formatTString(require("styles.css"), classes);
+	const css = require("styles.css");
 
 	return class CopyImageLink extends Plugin {
 		constructor() {
 			super();
 		}
 
-		copyHandler(data) {
-			DiscordNative.clipboard.copy(data);
-			BdApi.showToast(data, { type: "info" });
-			BdApi.showToast("Copied!", { type: "success" });
-		}
-
-		patch() {
-			Patcher.after(ImageModal.prototype, "render", (_, __, returnValue) => {
-				const children = Utilities.getNestedProp(returnValue, "props.children");
-				const { href } = Utilities.getNestedProp(returnValue, "props.children.2.props");
-				children.push(
-					React.createElement(copyButton, {
-						onClick: _ => this.copyHandler(href)
-					})
-				);
-			});
-		}
-
-		clean() {
-			PluginUtilities.removeStyle(this.getName());
-			Patcher.unpatchAll();
-		}
-		
 		onStart() {
 			try {
-				this.patch();
 				PluginUtilities.addStyle(this.getName(), css);
+				Patcher.after(ImageModal.prototype, "render", (_, __, returnValue) => {
+					const children = Utilities.getNestedProp(returnValue, "props.children");
+					const { href } = Utilities.getNestedProp(returnValue, "props.children.2.props");
+					children.push(React.createElement(copyButton, { onClick: e => copy(href) }));
+				});
 			} catch (e) {
-				console.error(e);
+				Logger.err(e);
 			}
 		}
 
 		onStop() {
-			try {
-				this.clean();
-			} catch (e) {
-				console.error(e);
-			}
+			PluginUtilities.removeStyle(this.getName());
+			Patcher.unpatchAll();
 		}
 	};
 };
