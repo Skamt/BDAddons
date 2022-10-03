@@ -77,18 +77,10 @@ module.exports = (Plugin, Api) => {
 				this.emojiHandler(props.children.props.emoji);
 		}
 
-		patchGetEmojiUnavailableReason() {
-			Patcher.after(EmojiFunctions, "getEmojiUnavailableReason", (_, [{ intention }], ret) => {
-				// return intention === EmojiIntentionEnum.CHAT;
-			})
-		}
-
 		onStart() {
 			try {
 				PluginUtilities.addStyle(this.getName(), css);
 				document.addEventListener("mouseup", this.emojiClickHandler);
-				// this.patchGetEmojiUnavailableReason();
-
 			} catch (e) {
 				Logger.err(e);
 			}
@@ -96,7 +88,6 @@ module.exports = (Plugin, Api) => {
 		onStop() {
 			document.removeEventListener("mouseup", this.emojiClickHandler);
 			PluginUtilities.removeStyle(this.getName());
-			// Patcher.unpatchAll();
 		}
 		getSettingsPanel() {
 			return this.buildSettingsPanel().getElement();
