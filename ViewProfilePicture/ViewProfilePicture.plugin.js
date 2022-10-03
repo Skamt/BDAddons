@@ -33,6 +33,7 @@ class MissinZeresPluginLibraryClass {
 function initPlugin([Plugin, Api]) {
 	const plugin = (Plugin, Api) => {
 		const {
+			Logger,
 			Patcher,
 			Filters,
 			Utilities,
@@ -55,6 +56,17 @@ function initPlugin([Plugin, Api]) {
 		const ModalRoot = WebpackModules.getModule(Filters.byString("onAnimationEnd"));
 		const renderMaskedLinkComponent = e => BdApi.React.createElement(BdApi.Webpack.getModule(m => m.type.toString().includes("MASKED_LINK")), e);
 		const Tooltip = WebpackModules.getModule(m => m.defaultProps.shouldShow);
+		const copy = (data) => {
+			DiscordNative.clipboard.copy(data);
+			BdApi.showToast(data, { type: "info" });
+			BdApi.showToast("Copied!", { type: "success" });
+		}
+		const getImage = (Url, props) => React.createElement(ImageModal, {
+			...props,
+			src: Url,
+			original: Url,
+			renderLinkComponent: renderMaskedLinkComponent
+		});
 		const ViewProfilePictureButton = ({ style, onClick, isUserPopout }) => {
 			return React.createElement(Tooltip, {
 					text: "Show profile picture",
@@ -103,7 +115,7 @@ function initPlugin([Plugin, Api]) {
 					},
 					React.createElement("a", {
 						className: "downloadLink-1OAglv anchorUnderlineOnHover-2qPutX",
-						onClick: (_) => bannerColorCopyHandler(color)
+						onClick: (_) => copy(color)
 					}, "Copy Color")));
 		};;
 		const css = `.premiumIconWrapper-yyGDql + .viewProfilePicture,
@@ -150,26 +162,13 @@ function initPlugin([Plugin, Api]) {
     background: var(--background-primary);
     border-radius: 50%;
 }
-`
-		const getImage = (Url, props) => {
-			return React.createElement(ImageModal, {
-				...props,
-				src: Url,
-				original: Url,
-				renderLinkComponent: renderMaskedLinkComponent
-			});
-		}
+`;
 		return class ViewProfilePicture extends Plugin {
 			constructor() {
 				super();
 			}
 			showImage(items) {
-				ModalActions.openModal(props => {
-					return React.createElement(DisplayCarousel, {
-						props,
-						items
-					});
-				});
+				ModalActions.openModal(props => React.createElement(DisplayCarousel, { props, items }));
 			}
 			clickHandler(userObject, isUserPopout, bannerStyleObject) {
 				const { backgroundColor, backgroundImage } = bannerStyleObject;
@@ -182,69 +181,39 @@ function initPlugin([Plugin, Api]) {
 					bannerImageURL ?
 					getImage(bannerImageURL, { width: IMG_WIDTH }) :
 					React.createElement(ColorModal, {
-						color: bannerColorUrl,
-						bannerColorCopyHandler: this.copyHandler
+						color: bannerColorUrl
 					})
 				]);
 			}
-			copyHandler(data) {
-				DiscordNative.clipboard.copy(data);
-				BdApi.showToast(data, { type: "info" });
-				BdApi.showToast("Copied!", { type: "success" });
-			}
-			patchViewButton() {
-				Patcher.after(UserBannerMask, key, (_, [{ user }], returnValue) => {
-					let bannerStyleObject, children;
-					const isSettings = Utilities.getNestedProp(returnValue, "props.children.props.children");
-					const isUserPopout = Utilities.getNestedProp(returnValue, "props.style.minWidth") === 340;
-					if (isSettings) {
-						bannerStyleObject = Utilities.getNestedProp(returnValue, "props.children.props.style");
-						children = isSettings;
-					} else {
-						bannerStyleObject = Utilities.getNestedProp(returnValue, "props.children.1.props.children.props.style");
-						children = Utilities.getNestedProp(returnValue, "props.children.1.props.children.props.children");
-					}
-					children.push(
-						React.createElement(ViewProfilePictureButton, {
-							isUserPopout,
-							style: { "--r": isUserPopout ? "48px" : "58px" },
-							onClick: _ => this.clickHandler(user, isUserPopout, bannerStyleObject)
-						})
-					);
-				});
-			}
-			patchCopyButton() {
-				Patcher.after(ImageModal.prototype, "render", (_, __, returnValue) => {
-					const children = Utilities.getNestedProp(returnValue, "props.children");
-					const { href } = Utilities.getNestedProp(returnValue, "props.children.2.props");
-					children.push(
-						React.createElement(copyButton, {
-							onClick: _ => this.copyHandler(href)
-						})
-					);
-				});
-			}
-			clean() {
-				PluginUtilities.removeStyle(this.getName());
-				Patcher.unpatchAll();
-			}
-			patch() {
-				this.patchViewButton();
-			}
 			onStart() {
 				try {
-					this.patch();
 					PluginUtilities.addStyle(this.getName(), css);
+					Patcher.after(UserBannerMask, key, (_, [{ user }], returnValue) => {
+						let bannerStyleObject, children;
+						const isSettings = Utilities.getNestedProp(returnValue, "props.children.props.children");
+						const isUserPopout = Utilities.getNestedProp(returnValue, "props.style.minWidth") === 340;
+						if (isSettings) {
+							bannerStyleObject = Utilities.getNestedProp(returnValue, "props.children.props.style");
+							children = isSettings;
+						} else {
+							bannerStyleObject = Utilities.getNestedProp(returnValue, "props.children.1.props.children.props.style");
+							children = Utilities.getNestedProp(returnValue, "props.children.1.props.children.props.children");
+						}
+						children.push(
+							React.createElement(ViewProfilePictureButton, {
+								isUserPopout,
+								style: { "--r": isUserPopout ? "48px" : "58px" },
+								onClick: _ => this.clickHandler(user, isUserPopout, bannerStyleObject)
+							})
+						);
+					});
 				} catch (e) {
-					console.error(e);
+					Logger.err(e);
 				}
 			}
 			onStop() {
-				try {
-					this.clean();
-				} catch (e) {
-					console.error(e);
-				}
+				PluginUtilities.removeStyle(this.getName());
+				Patcher.unpatchAll();
 			}
 		};
 	};

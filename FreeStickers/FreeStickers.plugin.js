@@ -70,6 +70,7 @@ class MissinZeresPluginLibraryClass {
 function initPlugin([Plugin, Api]) {
 	const plugin = (Plugin, Api) => {
 		const {
+			Logger,
 			Filters,
 			Patcher,
 			Settings,
@@ -193,7 +194,7 @@ function initPlugin([Plugin, Api]) {
 					this.patchGetStickerById();
 					updateStickers();
 				} catch (e) {
-					console.error(e);
+					Logger.err(e);
 				}
 			}
 			onStop() {
