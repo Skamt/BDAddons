@@ -39,7 +39,11 @@ function initPlugin([Plugin, Api]) {
 			Utilities,
 			WebpackModules,
 			PluginUtilities,
-			DiscordModules: { React, ModalActions, SelectedGuildStore }
+			DiscordModules: {
+				React,
+				ModalActions,
+				SelectedGuildStore
+			}
 		} = Api;
 		const IMG_WIDTH = 4096;
 		const filter = (exp) => Object.keys(exp).find(k => exp[k].toString().includes("overrideAvatarDecorationURL"));
