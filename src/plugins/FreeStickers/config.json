@@ -33,13 +33,13 @@
 		"value": true
 	}, {
 		"type": "switch",
-		"id": "sendAnimatedStickers",
+		"id": "shouldSendAnimatedStickers",
 		"name": "Send animated stickers",
 		"note": "Animated stickers do not animate, sending them will only send the first picture of the animation. (still useful)",
 		"value": true
 	}, {
 		"type": "switch",
-		"id": "highlightAnimated",
+	"id": "shouldHighlightAnimated",
 		"name": "Highlight animated stickers",
 		"value": true
 	}]
