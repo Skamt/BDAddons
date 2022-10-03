@@ -106,42 +106,49 @@ function initPlugin([Plugin, Api]) {
 						onClick: (_) => bannerColorCopyHandler(color)
 					}, "Copy Color")));
 		};;
-		const css = `.premiumIconWrapper-yyGDql + .viewProfilePicture {
-	left: 12px;
-	right: unset;
+		const css = `.premiumIconWrapper-yyGDql + .viewProfilePicture,
+.viewProfilePicture:first-child {
+    background: rgba(32, 34, 37,.8);
+    box-shadow: 0px 0px 3px 1px rgba(32, 34, 37,.8);
+}
+
+.premiumIconWrapper-yyGDql + .viewProfilePicture {
+    left: 12px;
+    right: unset;
+
 }
 
 .pencilContainer-11Kuga + .viewProfilePicture {
-	right: var(--r);
+    right: var(--r);
 }
 
 .viewProfilePicture path {
-	transform: scale(0.8);
-	transform-origin: center;
+    transform: scale(0.8);
+    transform-origin: center;
 }
 
 .noBanner {
-	width: 70vw;
-	height: 50vh;
+    width: 70vw;
+    height: 50vh;
 }
 
 .viewProfilePicture.carouselModal-1eUFoq:not(#idontthinkso) {
-	height: auto;
-	width: auto;
-	box-shadow: none;
-	position: static;
-	transform: none !important;
+    height: auto;
+    width: auto;
+    box-shadow: none;
+    position: static;
+    transform: none !important;
 }
 
 .viewProfilePicture .modalCarouselWrapper-YK1MX4 {
-	position: static;
+    position: static;
 }
 
 .viewProfilePicture .arrowContainer-2wpC4q {
-	margin: 0 15px;
-	opacity: 0.8;
-	background: var(--background-primary);
-	border-radius: 50%;
+    margin: 0 15px;
+    opacity: 0.8;
+    background: var(--background-primary);
+    border-radius: 50%;
 }
 `
 		const getImage = (Url, props) => {
@@ -186,7 +193,7 @@ function initPlugin([Plugin, Api]) {
 				BdApi.showToast("Copied!", { type: "success" });
 			}
 			patchViewButton() {
-				Patcher.after(UserBannerMask, "Z", (_, [{ user }], returnValue) => {
+				Patcher.after(UserBannerMask, key, (_, [{ user }], returnValue) => {
 					let bannerStyleObject, children;
 					const isSettings = Utilities.getNestedProp(returnValue, "props.children.props.children");
 					const isUserPopout = Utilities.getNestedProp(returnValue, "props.style.minWidth") === 340;
