@@ -1,0 +1,41 @@
+{
+	"info": {
+		"name": "Emojis",
+		"version": "1.0.0",
+		"description": "Send Emojis as links,",
+		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/Emojis/Emojis.plugin.js",
+		"github": "https://github.com/Skamt/BDAddons/tree/main/Emojis"
+	},
+	"defaultConfig": [{
+		"type": "slider",
+		"id": "emojiSize",
+		"name": "Emoji Size",
+		"note": "The size of the Emoji in pixels.",
+		"value": 60,
+		"markers": [40, 48, 60, 64, 80],
+		"stickToMarkers": true
+	}, {
+		"type": "switch",
+		"id": "sendDirectly",
+		"name": "Send Directly",
+		"note": "Send the emoji link in a message directly instead of putting it in the chat box.",
+		"value": true
+	}, {
+		"type": "switch",
+		"id": "ignoreEmbedPermissions",
+		"name": "Ignore Embed Permissions",
+		"note": "Send emoji links regardless of embed permissions, meaning links will not turn into images.",
+		"value": true
+	}, {
+		"type": "switch",
+		"id": "shouldSendAnimatedEmojis",
+		"name": "Send animated emojis",
+		"note": "Animated emojis do not animate, sending them will only send the first picture of the animation. (still useful)",
+		"value": true
+	}, {
+		"type": "switch",
+		"id": "shouldHighlightAnimated",
+		"name": "Highlight animated emojis",
+		"value": true
+	}]
+}
