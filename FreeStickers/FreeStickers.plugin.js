@@ -44,13 +44,13 @@ const config = {
 		value: true
 	}, {
 		type: "switch",
-		id: "sendAnimatedStickers",
+		id: "shouldSendAnimatedStickers",
 		name: "Send animated stickers",
 		note: "Animated stickers do not animate, sending them will only send the first picture of the animation. (still useful)",
 		value: true
 	}, {
 		type: "switch",
-		id: "highlightAnimated",
+		id: "shouldHighlightAnimated",
 		name: "Highlight animated stickers",
 		value: true
 	}]
@@ -89,9 +89,9 @@ function initPlugin([Plugin, Api]) {
 		const ANIMATED_STICKER_TAG = "ANIMATED_STICKER_TAG";
 		const LOTTIE_STICKER_TAG = "LOTTIE_STICKER_TAG";
 		const STRINGS = {
-			sendLottieSticker: "Official Discord Stickers are not supported.",
-			missingEmbedPermissions: "Missing Embed Permissions",
-			disabledAnimatedStickers: "You have disabled animated stickers in settings."
+			sendLottieStickerErrorMessage: "Official Discord Stickers are not supported.",
+			missingEmbedPermissionsErrorMessage: "Missing Embed Permissions",
+			disabledAnimatedStickersErrorMessage: "You have disabled animated stickers in settings."
 		};
 		// Helper functions
 		const showToast = (content, options) => BdApi.showToast(`${config.info.name}: ${content}`, options);
@@ -132,11 +132,11 @@ function initPlugin([Plugin, Api]) {
 			}
 			handleUnsendableSticker(sticker, channel, user) {
 				if (isLottieSticker(sticker))
-					return showToast(STRINGS.sendLottieSticker, { type: "danger" });
-				if (isAnimatedSticker(sticker) && !this.settings.sendAnimatedStickers)
-					return showToast(STRINGS.disabledAnimatedStickers, { type: "info" });
+					return showToast(STRINGS.sendLottieStickerErrorMessage, { type: "danger" });
+				if (isAnimatedSticker(sticker) && !this.settings.shouldSendAnimatedStickers)
+					return showToast(STRINGS.disabledAnimatedStickersErrorMessage, { type: "info" });
 				if (!hasEmbedPerms(channel, user) && !this.settings.ignoreEmbedPermissions)
-					return showToast(STRINGS.missingEmbedPermissions, { type: "info" });
+					return showToast(STRINGS.missingEmbedPermissionsErrorMessage, { type: "info" });
 				this.sendStickerAsLink(sticker, channel);
 			}
 			sendStickerAsLink(sticker, channel) {
@@ -163,12 +163,17 @@ function initPlugin([Plugin, Api]) {
 					this.stickerHandler(props["data-id"]);
 			}
 			patchGetStickerById() {
+				/** 
+				 * this patch is to add a tag to lottie and animated stickers, so that they can be styled with css
+				 * lottie stickers will be put back to grayscale
+				 * animated stickers will be highlighted if setting is set to true
+				 */
 				Patcher.after(StickerStore, "getStickerById", (_, args, sticker) => {
 					if (sticker) {
 						if (isLottieSticker(sticker))
 							this.tagLottieSticker(sticker);
 						else if (isAnimatedSticker(sticker)) {
-							if (this.settings.highlightAnimated)
+							if (this.settings.shouldHighlightAnimated)
 								this.addAnimatedStickerHighlightTag(sticker);
 							else
 								this.removeAnimatedStickerHighlightTag(sticker);
@@ -206,7 +211,7 @@ function initPlugin([Plugin, Api]) {
 			getSettingsPanel() {
 				const panel = this.buildSettingsPanel();
 				panel.addListener((id, checked) => {
-					if (id === "highlightAnimated")
+					if (id === "shouldHighlightAnimated")
 						updateStickers();
 				});
 				return panel.getElement();
