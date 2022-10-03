@@ -33,6 +33,7 @@ class MissinZeresPluginLibraryClass {
 function initPlugin([Plugin, Api]) {
 	const plugin = (Plugin, Api) => {
 		const {
+			Logger,
 			Patcher,
 			Utilities,
 			WebpackModules,
@@ -42,20 +43,21 @@ function initPlugin([Plugin, Api]) {
 			}
 		} = Api;
 		const ImageModal = WebpackModules.getModule(m => m?.prototype?.render?.toString().includes("OPEN_ORIGINAL_IMAGE"));
-		const classes = {
-			...WebpackModules.getByProps("downloadLink"),
-			...WebpackModules.getByProps("anchorUnderlineOnHover")
-		};
+		const copy = (data) => {
+			DiscordNative.clipboard.copy(data);
+			BdApi.showToast(data, { type: "info" });
+			BdApi.showToast("Copied!", { type: "success" });
+		}
 		const copyButton = ({ onClick }) => {
 			return (
 				React.createElement(React.Fragment, null,
 					React.createElement("span", { className: "copyBtnSpan" }, "|"),
 					React.createElement("a", {
-						className: `${classes.downloadLink} ${classes.anchorUnderlineOnHover} copyBtn`,
+						className: "downloadLink-1OAglv anchorUnderlineOnHover-2qPutX copyBtn",
 						onClick: onClick
 					}, "Copy link")));
 		};;
-		const css = Utilities.formatTString(`.copyBtn {
+		const css = `.copyBtn {
 	left: 95px;
 	white-space: nowrap;
 }
@@ -68,45 +70,26 @@ function initPlugin([Plugin, Api]) {
 	color: hsl(0, calc(var(--saturation-factor, 1) * 0%), 100%) !important;
 	line-height: 30px;
 	opacity: 0.5;
-}`, classes);
+}`;
 		return class CopyImageLink extends Plugin {
 			constructor() {
 				super();
 			}
-			copyHandler(data) {
-				DiscordNative.clipboard.copy(data);
-				BdApi.showToast(data, { type: "info" });
-				BdApi.showToast("Copied!", { type: "success" });
-			}
-			patch() {
-				Patcher.after(ImageModal.prototype, "render", (_, __, returnValue) => {
-					const children = Utilities.getNestedProp(returnValue, "props.children");
-					const { href } = Utilities.getNestedProp(returnValue, "props.children.2.props");
-					children.push(
-						React.createElement(copyButton, {
-							onClick: _ => this.copyHandler(href)
-						})
-					);
-				});
-			}
-			clean() {
-				PluginUtilities.removeStyle(this.getName());
-				Patcher.unpatchAll();
-			}
 			onStart() {
 				try {
-					this.patch();
 					PluginUtilities.addStyle(this.getName(), css);
+					Patcher.after(ImageModal.prototype, "render", (_, __, returnValue) => {
+						const children = Utilities.getNestedProp(returnValue, "props.children");
+						const { href } = Utilities.getNestedProp(returnValue, "props.children.2.props");
+						children.push(React.createElement(copyButton, { onClick: e => copy(href) }));
+					});
 				} catch (e) {
-					console.error(e);
+					Logger.err(e);
 				}
 			}
 			onStop() {
-				try {
-					this.clean();
-				} catch (e) {
-					console.error(e);
-				}
+				PluginUtilities.removeStyle(this.getName());
+				Patcher.unpatchAll();
 			}
 		};
 	};
