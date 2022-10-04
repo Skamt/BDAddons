@@ -1,6 +1,6 @@
 /**
  * @name Emojis
- * @description Send Emojis as links,
+ * @description Send emoji as link if it can't be sent it normally.
  * @version 1.0.0
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/Emojis
@@ -10,7 +10,7 @@ const config = {
 	info: {
 		name: "Emojis",
 		version: "1.0.0",
-		description: "Send Emojis as links,",
+		description: "Send emoji as link if it can't be sent it normally.",
 		source: "https://raw.githubusercontent.com/Skamt/BDAddons/main/Emojis/Emojis.plugin.js",
 		github: "https://github.com/Skamt/BDAddons/tree/main/Emojis",
 		authors: [{
@@ -36,13 +36,13 @@ const config = {
 		id: "ignoreEmbedPermissions",
 		name: "Ignore Embed Permissions",
 		note: "Send emoji links regardless of embed permissions, meaning links will not turn into images.",
-		value: true
+		value: false
 	}, {
 		type: "switch",
 		id: "shouldSendAnimatedEmojis",
 		name: "Send animated emojis",
 		note: "Animated emojis do not animate, sending them will only send the first picture of the animation. (still useful)",
-		value: true
+		value: false
 	}, {
 		type: "switch",
 		id: "shouldHighlightAnimated",

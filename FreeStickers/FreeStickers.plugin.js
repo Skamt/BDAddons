@@ -41,7 +41,7 @@ const config = {
 		id: "ignoreEmbedPermissions",
 		name: "Ignore Embed Permissions",
 		note: "Send sticker links regardless of embed permissions, meaning links will not turn into images.",
-		value: true
+		value: false
 	}, {
 		type: "switch",
 		id: "shouldSendAnimatedStickers",
