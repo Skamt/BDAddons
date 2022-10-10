@@ -1,7 +1,7 @@
 /**
  * @name FreeStickers
  * @description Enables you to send custom Stickers without nitro as links, (custom stickers as in the ones that are added by servers, not officiel discord stickers).
- * @version 2.0.1
+ * @version 2.0.2
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/FreeStickers
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/FreeStickers/FreeStickers.plugin.js
@@ -9,7 +9,7 @@
 const config = {
 	info: {
 		name: "FreeStickers",
-		version: "2.0.1",
+		version: "2.0.2",
 		description: "Enables you to send custom Stickers without nitro as links, (custom stickers as in the ones that are added by servers, not officiel discord stickers).",
 		source: "https://raw.githubusercontent.com/Skamt/BDAddons/main/FreeStickers/FreeStickers.plugin.js",
 		github: "https://github.com/Skamt/BDAddons/tree/main/FreeStickers",
@@ -18,9 +18,9 @@ const config = {
 		}]
 	},
 	changelog: [{
-		title: "v2",
+		title: "Feature",
 		type: "added",
-		items: ["Plugin Rewrite as per discord new update. Naturally some features are removed because they are impossible to implement"]
+		items: ["Stickers will now show up in the Picker even if the user does not have permission."]
 	}],
 	defaultConfig: [{
 		type: "slider",
@@ -69,9 +69,9 @@ class MissinZeresPluginLibraryClass {
 
 function initPlugin([Plugin, Api]) {
 	const plugin = (Plugin, Api) => {
+		const { Filters, getModule } = BdApi.Webpack;
 		const {
 			Logger,
-			Filters,
 			Patcher,
 			Settings,
 			WebpackModules,
@@ -85,13 +85,14 @@ function initPlugin([Plugin, Api]) {
 			}
 		} = Api;
 		// Modules
-		const StickerStore = WebpackModules.getByProps("getStickerById");
-		const StickSendEnum = WebpackModules.getByProps("SENDABLE_WITH_BOOSTED_GUILD");
-		const StickTypeEnum = WebpackModules.getByProps("GUILD", "STANDARD");
-		const StickerFormat = WebpackModules.getByProps("APNG", "LOTTIE");
-		const ComponentDispatch = WebpackModules.getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners("INSERT_TEXT").length);
-		const DiscordPermissions = WebpackModules.getModule(m => m.ADMINISTRATOR && typeof(m.ADMINISTRATOR) === "bigint");
-		const getStickerSendability = WebpackModules.getModule(Filters.byString("SENDABLE_WITH_PREMIUM", "canUseStickersEverywhere"));
+		const ChannelTextArea = getModule((m) => m.type.render.toString().includes('CHANNEL_TEXT_AREA'));
+		const StickerStore = getModule(Filters.byProps("getStickerById"), { searchExports: true });
+		const StickSendEnum = getModule(Filters.byProps("SENDABLE_WITH_BOOSTED_GUILD"), { searchExports: true });
+		const StickTypeEnum = getModule(Filters.byProps("GUILD", "STANDARD"), { searchExports: true });
+		const StickerFormat = getModule(Filters.byProps("APNG", "LOTTIE"), { searchExports: true });
+		const ComponentDispatch = getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners("INSERT_TEXT").length, { searchExports: true });
+		const DiscordPermissions = getModule(m => m.ADMINISTRATOR && typeof(m.ADMINISTRATOR) === "bigint", { searchExports: true });
+		const getStickerSendability = getModule(Filters.byStrings("SENDABLE_WITH_PREMIUM", "canUseStickersEverywhere"), { searchExports: true });
 		// Strings & Constants
 		const TAGS = {
 			ANIMATED_STICKER_TAG: "ANIMATED_STICKER_TAG",
@@ -179,12 +180,23 @@ function initPlugin([Plugin, Api]) {
 				 * lottie stickers will be put back to grayscale
 				 * animated stickers will be highlighted if setting is set to true
 				 */
-				Patcher.after(StickerStore, "getStickerById", (_, args, sticker) => {
+				Patcher.after(StickerStore.__proto__, "getStickerById", (_, args, sticker) => {
 					if (!sticker) return;
 					if (!Utils.isTagged(sticker.description || ""))
 						this.tagSticker(sticker)
 					else if (!this.settings.shouldHighlightAnimated)
 						this.unTagSticker(sticker)
+				});
+			}
+			patchChannelTextArea() {
+				Patcher.before(ChannelTextArea.type, "render", (_, [{ channel }]) => {
+					const userId = UserStore.getCurrentUser().id;
+					channel.permissionOverwrites[userId] = {
+						id: userId,
+						type: 1,
+						allow: 262144n,
+						deny: 0n
+					}
 				});
 			}
 			tagSticker(sticker) {
@@ -201,6 +213,7 @@ function initPlugin([Plugin, Api]) {
 					PluginUtilities.addStyle(this.getName(), css);
 					document.addEventListener("click", this.stickerClickHandler);
 					this.patchGetStickerById();
+					this.patchChannelTextArea();
 					Utils.updateStickers();
 				} catch (e) {
 					Logger.err(e);

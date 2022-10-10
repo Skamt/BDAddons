@@ -32,22 +32,27 @@ class MissinZeresPluginLibraryClass {
 
 function initPlugin([Plugin, Api]) {
 	const plugin = (Plugin, Api) => {
+		const { getModule } = BdApi.Webpack;
 		const {
 			Logger,
 			Patcher,
 			Utilities,
-			WebpackModules,
 			PluginUtilities,
 			DiscordModules: {
 				React
 			}
 		} = Api;
-		const ImageModal = WebpackModules.getModule(m => m?.prototype?.render?.toString().includes("OPEN_ORIGINAL_IMAGE"));
-		const copy = (data) => {
-			DiscordNative.clipboard.copy(data);
-			BdApi.showToast(data, { type: "info" });
-			BdApi.showToast("Copied!", { type: "success" });
+		// Modules
+		const ImageModal = getModule(m => m?.prototype?.render?.toString().includes("OPEN_ORIGINAL_IMAGE"));
+		// Helper functions
+		const Utils = {
+			copy: (data) => {
+				DiscordNative.clipboard.copy(data);
+				BdApi.showToast(data, { type: "info" });
+				BdApi.showToast("Copied!", { type: "success" });
+			}
 		}
+		// components
 		const copyButton = ({ onClick }) => {
 			return (
 				React.createElement(React.Fragment, null,
@@ -57,6 +62,7 @@ function initPlugin([Plugin, Api]) {
 						onClick: onClick
 					}, "Copy link")));
 		};;
+		// styles
 		const css = `.copyBtn {
 	left: 95px;
 	white-space: nowrap;
@@ -81,7 +87,7 @@ function initPlugin([Plugin, Api]) {
 					Patcher.after(ImageModal.prototype, "render", (_, __, returnValue) => {
 						const children = Utilities.getNestedProp(returnValue, "props.children");
 						const { href } = Utilities.getNestedProp(returnValue, "props.children.2.props");
-						children.push(React.createElement(copyButton, { onClick: e => copy(href) }));
+						children.push(React.createElement(copyButton, { onClick: e => Utils.copy(href) }));
 					});
 				} catch (e) {
 					Logger.err(e);
