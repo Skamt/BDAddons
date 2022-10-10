@@ -1,15 +1,15 @@
 {
 	"info": {
 		"name": "FreeStickers",
-		"version": "2.0.1",
+		"version": "2.0.2",
 		"description": "Enables you to send custom Stickers without nitro as links, (custom stickers as in the ones that are added by servers, not officiel discord stickers).",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/FreeStickers/FreeStickers.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/FreeStickers"
 	},
 	"changelog": [{
-		"title": "v2",
+		"title": "Feature",
 		"type": "added",
-		"items": ["Plugin Rewrite as per discord new update. Naturally some features are removed because they are impossible to implement"]
+		"items": ["Stickers will now show up in the Picker even if the user does not have permission."]
 	}],
 	"defaultConfig": [{
 		"type": "slider",

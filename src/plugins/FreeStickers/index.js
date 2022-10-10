@@ -16,6 +16,7 @@ module.exports = (Plugin, Api) => {
 	} = Api;
 
 	// Modules
+	const ChannelTextArea = WebpackModules.getModule((m) => m.type.render.toString().includes('CHANNEL_TEXT_AREA'));
 	const StickerStore = WebpackModules.getByProps("getStickerById");
 	const StickSendEnum = WebpackModules.getByProps("SENDABLE_WITH_BOOSTED_GUILD");
 	const StickTypeEnum = WebpackModules.getByProps("GUILD", "STANDARD");
@@ -108,6 +109,19 @@ module.exports = (Plugin, Api) => {
 			});
 		}
 
+
+		patchChannelTextArea() {
+			Patcher.before(ChannelTextArea.type, "render", (_, [{ channel }]) => {
+				const userId = UserStore.getCurrentUser().id;
+				channel.permissionOverwrites[userId] = {
+					id: userId,
+					type: 1,
+					allow: 262144n,
+					deny: 0n
+				}
+			});
+		}
+
 		tagSticker(sticker) {
 			if (Utils.isLottieSticker(sticker))
 				return sticker.description += TAGS.LOTTIE_STICKER_TAG;
@@ -124,6 +138,7 @@ module.exports = (Plugin, Api) => {
 				PluginUtilities.addStyle(this.getName(), css);
 				document.addEventListener("click", this.stickerClickHandler);
 				this.patchGetStickerById();
+				this.patchChannelTextArea();
 				Utils.updateStickers();
 			} catch (e) {
 				Logger.err(e);
