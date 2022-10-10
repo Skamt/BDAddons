@@ -5,7 +5,7 @@ module.exports = ({ color,bannerColorCopyHandler }) => {
 				style={{ backgroundColor: color }}>
 				<a
 					className="downloadLink-1OAglv anchorUnderlineOnHover-2qPutX"
-					onClick={_ => copy(color)}>
+					onClick={_ => Utils.copy(color)}>
 					Copy Color
 				</a>
 			</div>

@@ -1,7 +1,7 @@
 module.exports = (Plugin, Api) => {
+	const { Filters, getModule } = BdApi.Webpack;
 	const {
 		Logger,
-		Filters,
 		Patcher,
 		Settings,
 		WebpackModules,
@@ -15,11 +15,11 @@ module.exports = (Plugin, Api) => {
 		}
 	} = Api;
 
-	const EmojiIntentionEnum = WebpackModules.getByProps('GUILD_ROLE_BENEFIT_EMOJI');
-	const EmojiSendAvailabilityEnum = WebpackModules.getByProps('GUILD_SUBSCRIPTION_UNAVAILABLE');
-	const EmojiFunctions = WebpackModules.getByProps('getEmojiUnavailableReason');
-	const DiscordPermissions = WebpackModules.getModule(m => m.ADMINISTRATOR && typeof(m.ADMINISTRATOR) === "bigint");
-	const ComponentDispatch = WebpackModules.getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners("INSERT_TEXT").length);
+	const EmojiIntentionEnum = getModule(Filters.byProps("GUILD_ROLE_BENEFIT_EMOJI"), { searchExports: true });
+	const EmojiSendAvailabilityEnum = getModule(Filters.byProps("GUILD_SUBSCRIPTION_UNAVAILABLE"), { searchExports: true });
+	const EmojiFunctions = getModule(Filters.byProps("getEmojiUnavailableReason"), { searchExports: true });
+	const DiscordPermissions = getModule(m => m.ADMINISTRATOR && typeof(m.ADMINISTRATOR) === "bigint", { searchExports: true });
+	const ComponentDispatch = getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners("INSERT_TEXT").length, { searchExports: true });
 
 	// Helper functions
 	const showToast = (content, options) => BdApi.showToast(`${config.info.name}: ${content}`, options);

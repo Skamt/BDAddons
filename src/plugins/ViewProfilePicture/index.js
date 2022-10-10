@@ -1,50 +1,58 @@
 module.exports = (Plugin, Api) => {
+	const { getModule } = BdApi.Webpack;
 	const {
 		Logger,
 		Patcher,
 		Filters,
 		Utilities,
-		WebpackModules,
 		PluginUtilities,
 		DiscordModules: {
 			React,
-			ModalActions,
+			// ModalActions,
 			SelectedGuildStore
 		}
 	} = Api;
 
-	const IMG_WIDTH = 4096;
-	const filter = (exp) => Object.keys(exp).find(k => exp[k].toString().includes("overrideAvatarDecorationURL"));
-	const UserBannerMask = BdApi.Webpack.getModule((exp) => filter(exp), { searchGetters: false });
-	const key = filter(UserBannerMask);
-	Object.defineProperty(UserBannerMask, key, {
-		value: UserBannerMask[key],
-		configurable: true,
-		enumerable: true,
-		writable: true
-	});
-	const ImageModal = WebpackModules.getModule(m => m?.prototype?.render?.toString().includes("OPEN_ORIGINAL_IMAGE"));
-	const ModalCarousel = WebpackModules.getModule(m => m.prototype.navigateTo && m.prototype.preloadImage);
-	const ModalRoot = WebpackModules.getModule(Filters.byString("onAnimationEnd"));
-	const renderMaskedLinkComponent = e => BdApi.React.createElement(BdApi.Webpack.getModule(m => m.type.toString().includes("MASKED_LINK")), e);
-	const Tooltip = WebpackModules.getModule(m => m.defaultProps.shouldShow);
-
-	const copy = (data) => {
-		DiscordNative.clipboard.copy(data);
-		BdApi.showToast(data, { type: "info" });
-		BdApi.showToast("Copied!", { type: "success" });
+	const ModalActions = {
+		openModal: getModule(Filters.byString("onCloseCallback", "Layer"), { searchExports: true })
 	}
 
-	const getImage = (Url, props) => React.createElement(ImageModal, {
-		...props,
-		src: Url,
-		original: Url,
-		renderLinkComponent: renderMaskedLinkComponent
-	});
+	// Filters
+	const UserBannerMaskFilter = (exp) => Object.keys(exp).find(k => exp[k].toString().includes("overrideAvatarDecorationURL"));
 
+	// Modules
+	const UserBannerMask = getModule((exp) => UserBannerMaskFilter(exp), { searchGetters: false });
+	const UserBannerMaskPatchFunctionName = UserBannerMaskFilter(UserBannerMask);
+	const ImageModal = getModule(m => m?.prototype?.render?.toString().includes("OPEN_ORIGINAL_IMAGE"));
+	const ModalCarousel = getModule(m => m.prototype.navigateTo && m.prototype.preloadImage);
+	const ModalRoot = getModule(Filters.byString("onAnimationEnd"), { searchExports: true });
+	const renderMaskedLinkComponent = e => BdApi.React.createElement(getModule(m => m.type.toString().includes("MASKED_LINK")), e);
+	const Tooltip = getModule(m => m.defaultProps.shouldShow);
+
+	// Constants
+	const IMG_WIDTH = 4096;
+
+	// Helper functions
+	const Utils = {
+		copy: (data) => {
+			DiscordNative.clipboard.copy(data);
+			BdApi.showToast(data, { type: "info" });
+			BdApi.showToast("Copied!", { type: "success" });
+		},
+		getImage: (Url, props) => React.createElement(ImageModal, {
+			...props,
+			src: Url,
+			original: Url,
+			renderLinkComponent: renderMaskedLinkComponent
+		})
+	}
+
+	// components
 	const ViewProfilePictureButton = require("components/ViewProfilePictureButton.jsx");
 	const DisplayCarousel = require("components/DisplayCarousel.jsx");
 	const ColorModal = require("components/ColorModal.jsx");
+
+	// styles
 	const css = require("styles.css");
 
 	return class ViewProfilePicture extends Plugin {
@@ -64,37 +72,41 @@ module.exports = (Plugin, Api) => {
 			const bannerColorUrl = backgroundColor;
 
 			this.showImage([
-				getImage(avatarURL, { width: IMG_WIDTH, height: IMG_WIDTH }),
+				Utils.getImage(avatarURL, { width: IMG_WIDTH, height: IMG_WIDTH }),
 				bannerImageURL ?
-				getImage(bannerImageURL, { width: IMG_WIDTH }) :
+				Utils.getImage(bannerImageURL, { width: IMG_WIDTH }) :
 				React.createElement(ColorModal, {
 					color: bannerColorUrl
 				})
 			]);
 		}
 
+		patchUserBannerMask() {
+			Patcher.after(UserBannerMask, UserBannerMaskPatchFunctionName, (_, [{ user }], returnValue) => {
+				let bannerStyleObject, children;
+				const isSettings = Utilities.getNestedProp(returnValue, "props.children.props.children");
+				const isUserPopout = Utilities.getNestedProp(returnValue, "props.style.minWidth") === 340;
+				if (isSettings) {
+					bannerStyleObject = Utilities.getNestedProp(returnValue, "props.children.props.style");
+					children = isSettings;
+				} else {
+					bannerStyleObject = Utilities.getNestedProp(returnValue, "props.children.1.props.children.props.style");
+					children = Utilities.getNestedProp(returnValue, "props.children.1.props.children.props.children");
+				}
+				children.push(
+					React.createElement(ViewProfilePictureButton, {
+						isUserPopout,
+						style: { "--r": isUserPopout ? "48px" : "58px" },
+						onClick: _ => this.clickHandler(user, isUserPopout, bannerStyleObject)
+					})
+				);
+			});
+		}
+
 		onStart() {
 			try {
 				PluginUtilities.addStyle(this.getName(), css);
-				Patcher.after(UserBannerMask, key, (_, [{ user }], returnValue) => {
-					let bannerStyleObject, children;
-					const isSettings = Utilities.getNestedProp(returnValue, "props.children.props.children");
-					const isUserPopout = Utilities.getNestedProp(returnValue, "props.style.minWidth") === 340;
-					if (isSettings) {
-						bannerStyleObject = Utilities.getNestedProp(returnValue, "props.children.props.style");
-						children = isSettings;
-					} else {
-						bannerStyleObject = Utilities.getNestedProp(returnValue, "props.children.1.props.children.props.style");
-						children = Utilities.getNestedProp(returnValue, "props.children.1.props.children.props.children");
-					}
-					children.push(
-						React.createElement(ViewProfilePictureButton, {
-							isUserPopout,
-							style: { "--r": isUserPopout ? "48px" : "58px" },
-							onClick: _ => this.clickHandler(user, isUserPopout, bannerStyleObject)
-						})
-					);
-				});
+				this.patchUserBannerMask();
 			} catch (e) {
 				Logger.err(e);
 			}

@@ -1,7 +1,8 @@
 module.exports = (Plugin, Api) => {
+	const { Filters, getModule } = BdApi.Webpack;
 	const {
 		Logger,
-		Filters,
+
 		Patcher,
 		Settings,
 		WebpackModules,
@@ -16,14 +17,14 @@ module.exports = (Plugin, Api) => {
 	} = Api;
 
 	// Modules
-	const ChannelTextArea = WebpackModules.getModule((m) => m.type.render.toString().includes('CHANNEL_TEXT_AREA'));
-	const StickerStore = WebpackModules.getByProps("getStickerById");
-	const StickSendEnum = WebpackModules.getByProps("SENDABLE_WITH_BOOSTED_GUILD");
-	const StickTypeEnum = WebpackModules.getByProps("GUILD", "STANDARD");
-	const StickerFormat = WebpackModules.getByProps("APNG", "LOTTIE");
-	const ComponentDispatch = WebpackModules.getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners("INSERT_TEXT").length);
-	const DiscordPermissions = WebpackModules.getModule(m => m.ADMINISTRATOR && typeof(m.ADMINISTRATOR) === "bigint");
-	const getStickerSendability = WebpackModules.getModule(Filters.byString("SENDABLE_WITH_PREMIUM", "canUseStickersEverywhere"));
+	const ChannelTextArea = getModule((m) => m.type.render.toString().includes('CHANNEL_TEXT_AREA'));
+	const StickerStore = getModule(Filters.byProps("getStickerById"), { searchExports: true });
+	const StickSendEnum = getModule(Filters.byProps("SENDABLE_WITH_BOOSTED_GUILD"), { searchExports: true });
+	const StickTypeEnum = getModule(Filters.byProps("GUILD", "STANDARD"), { searchExports: true });
+	const StickerFormat = getModule(Filters.byProps("APNG", "LOTTIE"), { searchExports: true });
+	const ComponentDispatch = getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners("INSERT_TEXT").length, { searchExports: true });
+	const DiscordPermissions = getModule(m => m.ADMINISTRATOR && typeof(m.ADMINISTRATOR) === "bigint", { searchExports: true });
+	const getStickerSendability = getModule(Filters.byStrings("SENDABLE_WITH_PREMIUM", "canUseStickersEverywhere"), { searchExports: true });
 
 	// Strings & Constants
 	const TAGS = {
@@ -100,7 +101,7 @@ module.exports = (Plugin, Api) => {
 			 * lottie stickers will be put back to grayscale
 			 * animated stickers will be highlighted if setting is set to true
 			 */
-			Patcher.after(StickerStore, "getStickerById", (_, args, sticker) => {
+			Patcher.after(StickerStore.__proto__, "getStickerById", (_, args, sticker) => {
 				if (!sticker) return;
 				if (!Utils.isTagged(sticker.description || ""))
 					this.tagSticker(sticker)
@@ -108,7 +109,6 @@ module.exports = (Plugin, Api) => {
 					this.unTagSticker(sticker)
 			});
 		}
-
 
 		patchChannelTextArea() {
 			Patcher.before(ChannelTextArea.type, "render", (_, [{ channel }]) => {
