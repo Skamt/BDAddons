@@ -81,7 +81,7 @@ function initPlugin([Plugin, Api]) {
 						...
 						props,
 						style: style,
-						className: "pencilContainer-11Kuga viewProfilePicture",
+						className: "pencilContainer-11Kuga viewProfilePicture-Button",
 						onClick: onClick
 					},
 					React.createElement("svg", {
@@ -103,7 +103,7 @@ function initPlugin([Plugin, Api]) {
 				React.createElement(ModalRoot, {
 						...
 						props,
-						className: "viewProfilePicture carouselModal-1eUFoq zoomedCarouselModalRoot-beLNhM"
+						className: "viewProfilePicture-carousel carouselModal-1eUFoq zoomedCarouselModalRoot-beLNhM"
 					},
 					React.createElement(ModalCarousel, {
 						startWith: 0,
@@ -114,7 +114,7 @@ function initPlugin([Plugin, Api]) {
 		const ColorModal = ({ color, bannerColorCopyHandler }) => {
 			return (
 				React.createElement("div", {
-						className: "noBanner wrapper-2bCXfR",
+						className: "viewProfilePicture-NoBanner wrapper-2bCXfR",
 						style: { backgroundColor: color }
 					},
 					React.createElement("a", {
@@ -122,51 +122,51 @@ function initPlugin([Plugin, Api]) {
 						onClick: (_) => copy(color)
 					}, "Copy Color")));
 		};;
-		const css = `.premiumIconWrapper-yyGDql + .viewProfilePicture,
-.viewProfilePicture:first-child {
-    background: rgba(32, 34, 37,.8);
-    box-shadow: 0px 0px 3px 1px rgba(32, 34, 37,.8);
-}
-
-.premiumIconWrapper-yyGDql + .viewProfilePicture {
+		const css = `.premiumIconWrapper-yyGDql + .viewProfilePicture-Button {
     left: 12px;
     right: unset;
-
 }
 
-.pencilContainer-11Kuga + .viewProfilePicture {
+.pencilContainer-11Kuga + .viewProfilePicture-Button {
     right: var(--r);
 }
 
-.viewProfilePicture path {
+.viewProfilePicture-Button path {
     transform: scale(0.8);
     transform-origin: center;
 }
 
-.noBanner {
+.viewProfilePicture-NoBanner {
     width: 70vw;
     height: 50vh;
 }
 
-.viewProfilePicture.carouselModal-1eUFoq:not(#idontthinkso) {
+.viewProfilePicture-carousel.carouselModal-1eUFoq:not(#idontthinkso) {
     height: auto;
     width: auto;
+    position: static;
     box-shadow: none;
-    position: static;
     transform: none !important;
+    background:none;
 }
 
-.viewProfilePicture .modalCarouselWrapper-YK1MX4 {
+.viewProfilePicture-carousel .modalCarouselWrapper-YK1MX4 {
     position: static;
 }
 
-.viewProfilePicture .arrowContainer-2wpC4q {
+.viewProfilePicture-carousel .arrowContainer-2wpC4q {
     margin: 0 15px;
     opacity: 0.8;
     background: var(--background-primary);
     border-radius: 50%;
 }
-`;
+
+.viewProfilePicture-carousel .imageWrapper-oMkQl4.imageWrapperBackground-3Vss_C {
+    min-height: 50vh;
+}
+.viewProfilePicture-carousel .imageWrapper-oMkQl4 > img{
+     max-height: 80vh;
+}`;
 		return class ViewProfilePicture extends Plugin {
 			constructor() {
 				super();
