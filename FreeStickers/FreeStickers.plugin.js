@@ -35,7 +35,7 @@ const config = {
 		id: "sendDirectly",
 		name: "Send Directly",
 		note: "Send the sticker link in a message directly instead of putting it in the chat box.",
-		value: true
+		value: false
 	}, {
 		type: "switch",
 		id: "ignoreEmbedPermissions",
@@ -47,7 +47,7 @@ const config = {
 		id: "shouldSendAnimatedStickers",
 		name: "Send animated stickers",
 		note: "Animated stickers do not animate, sending them will only send the first picture of the animation. (still useful)",
-		value: true
+		value: false
 	}, {
 		type: "switch",
 		id: "shouldHighlightAnimated",
@@ -69,12 +69,12 @@ class MissinZeresPluginLibraryClass {
 
 function initPlugin([Plugin, Api]) {
 	const plugin = (Plugin, Api) => {
-		const { Filters, getModule } = BdApi.Webpack;
+		const { Filters, getModule, waitForModule } = BdApi.Webpack;
 		const {
 			Logger,
 			Patcher,
+			Utilities,
 			Settings,
-			WebpackModules,
 			PluginUtilities,
 			DiscordModules: {
 				Permissions,
@@ -90,7 +90,13 @@ function initPlugin([Plugin, Api]) {
 		const StickSendEnum = getModule(Filters.byProps("SENDABLE_WITH_BOOSTED_GUILD"), { searchExports: true });
 		const StickTypeEnum = getModule(Filters.byProps("GUILD", "STANDARD"), { searchExports: true });
 		const StickerFormat = getModule(Filters.byProps("APNG", "LOTTIE"), { searchExports: true });
-		const ComponentDispatch = getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners("INSERT_TEXT").length, { searchExports: true });
+		const InsertText = (() => {
+			let ComponentDispatch;
+			return (...args) => {
+				if (!ComponentDispatch) ComponentDispatch = getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners("INSERT_TEXT").length, { searchExports: true })
+				ComponentDispatch.dispatchToLastSubscribed(...args);
+			}
+		})()
 		const DiscordPermissions = getModule(m => m.ADMINISTRATOR && typeof(m.ADMINISTRATOR) === "bigint", { searchExports: true });
 		const getStickerSendability = getModule(Filters.byStrings("SENDABLE_WITH_PREMIUM", "canUseStickersEverywhere"), { searchExports: true });
 		// Strings & Constants
@@ -111,7 +117,7 @@ function initPlugin([Plugin, Api]) {
 			isLottieSticker: sticker => sticker.type === StickTypeEnum.STANDARD,
 			isStickerSendable: (sticker, channel, user) => getStickerSendability(sticker, user, channel) === StickSendEnum.SENDABLE,
 			updateStickers: () => StickerStore.stickerMetadata.forEach((value, key) => StickerStore.getStickerById(key)),
-			getStickerUrl: (stickerId, size) => `https://media.discordapp.net/stickers/${stickerId}.webp?size=${size}&passthrough=false&quality=lossless`,
+			getStickerUrl: (stickerId, size) => `https://media.discordapp.net/stickers/${stickerId}.webp?passthrough=false&quality=lossless&size=${size}`,
 			isTagged: (str) => Object.values(TAGS).some(tag => str.includes(tag)),
 		}
 		// styles
@@ -158,7 +164,7 @@ function initPlugin([Plugin, Api]) {
 						validNonShortcutEmojis: []
 					});
 				else
-					ComponentDispatch.dispatchToLastSubscribed("INSERT_TEXT", {
+					InsertText("INSERT_TEXT", {
 						plainText: Utils.getStickerUrl(sticker.id, this.settings.stickerSize)
 					});
 			}
@@ -176,7 +182,8 @@ function initPlugin([Plugin, Api]) {
 			}
 			patchGetStickerById() {
 				/** 
-				 * this patch is to add a tag to lottie and animated stickers, to style them
+				 * this patch is for adding a tag to lottie and animated stickers, to style them
+				 * the sticker description gets added to the alt/aria-label DOM attributes
 				 * lottie stickers will be put back to grayscale
 				 * animated stickers will be highlighted if setting is set to true
 				 */
@@ -189,6 +196,14 @@ function initPlugin([Plugin, Api]) {
 				});
 			}
 			patchChannelTextArea() {
+				/** 
+				 * this patch is for adding a local permission override to the current channel
+				 * so that stickers show up in the picker.
+				 * 262144n is for Sending external Emojis permission
+				 * which is what's needed to let stickers show up in the picker.
+				 * While this may feel like a feature bypass, I believe if a sticker is posted as an image, 
+				 * it's no a sticker anymore.
+				 */
 				Patcher.before(ChannelTextArea.type, "render", (_, [{ channel }]) => {
 					const userId = UserStore.getCurrentUser().id;
 					channel.permissionOverwrites[userId] = {

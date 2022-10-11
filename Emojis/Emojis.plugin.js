@@ -30,7 +30,7 @@ const config = {
 		id: "sendDirectly",
 		name: "Send Directly",
 		note: "Send the emoji link in a message directly instead of putting it in the chat box.",
-		value: true
+		value: false
 	}, {
 		type: "switch",
 		id: "ignoreEmbedPermissions",
@@ -79,16 +79,23 @@ function initPlugin([Plugin, Api]) {
 				MessageActions
 			}
 		} = Api;
+		// Modules
 		const EmojiIntentionEnum = getModule(Filters.byProps("GUILD_ROLE_BENEFIT_EMOJI"), { searchExports: true });
 		const EmojiSendAvailabilityEnum = getModule(Filters.byProps("GUILD_SUBSCRIPTION_UNAVAILABLE"), { searchExports: true });
 		const EmojiFunctions = getModule(Filters.byProps("getEmojiUnavailableReason"), { searchExports: true });
 		const DiscordPermissions = getModule(m => m.ADMINISTRATOR && typeof(m.ADMINISTRATOR) === "bigint", { searchExports: true });
-		const ComponentDispatch = getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners("INSERT_TEXT").length, { searchExports: true });
+		const InsertText = (() => {
+			let ComponentDispatch;
+			return (...args) => {
+				if (!ComponentDispatch) ComponentDispatch = getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners("INSERT_TEXT").length, { searchExports: true })
+				ComponentDispatch.dispatchToLastSubscribed(...args);
+			}
+		})()
 		// Helper functions
 		const showToast = (content, options) => BdApi.showToast(`${config.info.name}: ${content}`, options);
 		const hasEmbedPerms = (channel, user) => !channel.guild_id || Permissions.can({ permission: DiscordPermissions.EMBED_LINKS, context: channel, user });
 		const isEmojiSendable = (e) => EmojiFunctions.getEmojiUnavailableReason(e) === null;
-		const getEmojiUrl = (emoji, size) => emoji.url.replace(/([?&]size=)(\d+)/, `$1${size}`)
+		const getEmojiUrl = (emoji, size) => `${emoji.url.replace(/(size=)(\d+)[&]/, '')}?size=${size}`;
 		// Strings & Constants
 		const STRINGS = {
 			missingEmbedPermissionsErrorMessage: "Missing Embed Permissions",
@@ -113,7 +120,7 @@ function initPlugin([Plugin, Api]) {
 						validNonShortcutEmojis: []
 					});
 				else
-					ComponentDispatch.dispatchToLastSubscribed("INSERT_TEXT", {
+					InsertText("INSERT_TEXT", {
 						plainText: getEmojiUrl(emoji, this.settings.emojiSize)
 					});
 			}
