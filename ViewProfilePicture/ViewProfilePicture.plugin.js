@@ -44,7 +44,6 @@ function initPlugin([Plugin, Api]) {
 				SelectedGuildStore
 			}
 		} = Api;
-		ModalActions.openModal = getModule(Filters.byStrings("onCloseCallback", "Layer"), { searchExports: true });
 		// Filters
 		const UserBannerMaskFilter = (exp) => Object.keys(exp).find(k => exp[k].toString().includes("overrideAvatarDecorationURL"));
 		// Modules
