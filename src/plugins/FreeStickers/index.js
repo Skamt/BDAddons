@@ -1,8 +1,9 @@
 module.exports = (Plugin, Api) => {
-	const { Filters, getModule } = BdApi.Webpack;
+	const { Filters, getModule, waitForModule } = BdApi.Webpack;
 	const {
 		Logger,
 		Patcher,
+		Utilities,
 		Settings,
 		PluginUtilities,
 		DiscordModules: {
@@ -20,7 +21,16 @@ module.exports = (Plugin, Api) => {
 	const StickSendEnum = getModule(Filters.byProps("SENDABLE_WITH_BOOSTED_GUILD"), { searchExports: true });
 	const StickTypeEnum = getModule(Filters.byProps("GUILD", "STANDARD"), { searchExports: true });
 	const StickerFormat = getModule(Filters.byProps("APNG", "LOTTIE"), { searchExports: true });
-	const ComponentDispatch = getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners("INSERT_TEXT").length, { searchExports: true });
+	const InsertText = (() => {
+		let ComponentDispatch;
+		return (...args) => {
+			if (!ComponentDispatch) ComponentDispatch = getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners("INSERT_TEXT").length, { searchExports: true })
+			ComponentDispatch.dispatchToLastSubscribed(...args);
+		}
+	})()
+
+
+
 	const DiscordPermissions = getModule(m => m.ADMINISTRATOR && typeof(m.ADMINISTRATOR) === "bigint", { searchExports: true });
 	const getStickerSendability = getModule(Filters.byStrings("SENDABLE_WITH_PREMIUM", "canUseStickersEverywhere"), { searchExports: true });
 
@@ -74,7 +84,7 @@ module.exports = (Plugin, Api) => {
 					validNonShortcutEmojis: []
 				});
 			else
-				ComponentDispatch.dispatchToLastSubscribed("INSERT_TEXT", {
+				InsertText("INSERT_TEXT", {
 					plainText: Utils.getStickerUrl(sticker.id, this.settings.stickerSize)
 				});
 		}

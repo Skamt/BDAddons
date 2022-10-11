@@ -20,7 +20,13 @@ module.exports = (Plugin, Api) => {
 	const EmojiSendAvailabilityEnum = getModule(Filters.byProps("GUILD_SUBSCRIPTION_UNAVAILABLE"), { searchExports: true });
 	const EmojiFunctions = getModule(Filters.byProps("getEmojiUnavailableReason"), { searchExports: true });
 	const DiscordPermissions = getModule(m => m.ADMINISTRATOR && typeof(m.ADMINISTRATOR) === "bigint", { searchExports: true });
-	const ComponentDispatch = getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners("INSERT_TEXT").length, { searchExports: true });
+	const InsertText = (() => {
+		let ComponentDispatch;
+		return (...args) => {
+			if (!ComponentDispatch) ComponentDispatch = getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners("INSERT_TEXT").length, { searchExports: true })
+			ComponentDispatch.dispatchToLastSubscribed(...args);
+		}
+	})()
 
 	// Helper functions
 	const showToast = (content, options) => BdApi.showToast(`${config.info.name}: ${content}`, options);
@@ -50,7 +56,7 @@ module.exports = (Plugin, Api) => {
 					validNonShortcutEmojis: []
 				});
 			else
-				ComponentDispatch.dispatchToLastSubscribed("INSERT_TEXT", {
+				InsertText("INSERT_TEXT", {
 					plainText: getEmojiUrl(emoji, this.settings.emojiSize)
 				});
 		}
