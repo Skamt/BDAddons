@@ -4,12 +4,12 @@ module.exports = (Plugin, Api) => {
 		Logger,
 		Patcher,
 		Utilities,
-		Settings,
 		PluginUtilities,
 		DiscordModules: {
 			Permissions,
 			UserStore,
 			ChannelStore,
+			DiscordPermissions,
 			SelectedChannelStore,
 			MessageActions
 		}
@@ -21,21 +21,20 @@ module.exports = (Plugin, Api) => {
 	const StickSendEnum = getModule(Filters.byProps("SENDABLE_WITH_BOOSTED_GUILD"), { searchExports: true });
 	const StickTypeEnum = getModule(Filters.byProps("GUILD", "STANDARD"), { searchExports: true });
 	const StickerFormat = getModule(Filters.byProps("APNG", "LOTTIE"), { searchExports: true });
-	const DiscordPermissions = getModule(m => m.ADMINISTRATOR && typeof(m.ADMINISTRATOR) === "bigint", { searchExports: true });
 	const getStickerSendability = getModule(Filters.byStrings("SENDABLE_WITH_PREMIUM", "canUseStickersEverywhere"), { searchExports: true });
 	const InsertText = (() => {
 		let ComponentDispatch;
 		return (...args) => {
-			if (!ComponentDispatch) ComponentDispatch = getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners("INSERT_TEXT").length, { searchExports: true })
+			if (!ComponentDispatch) ComponentDispatch = getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners("INSERT_TEXT").length, { searchExports: true });
 			ComponentDispatch.dispatchToLastSubscribed(...args);
 		}
-	})()
+	})();
 
 	// Strings & Constants
 	const TAGS = {
 		ANIMATED_STICKER_TAG: "ANIMATED_STICKER_TAG",
 		LOTTIE_STICKER_TAG: "LOTTIE_STICKER_TAG"
-	}
+	};
 	const STRINGS = {
 		sendLottieStickerErrorMessage: "Official Discord Stickers are not supported.",
 		missingEmbedPermissionsErrorMessage: "Missing Embed Permissions",
@@ -52,7 +51,7 @@ module.exports = (Plugin, Api) => {
 		updateStickers: () => StickerStore.stickerMetadata.forEach((value, key) => StickerStore.getStickerById(key)),
 		getStickerUrl: (stickerId, size) => `https://media.discordapp.net/stickers/${stickerId}.webp?passthrough=false&quality=lossless&size=${size}`,
 		isTagged: (str) => Object.values(TAGS).some(tag => str.includes(tag)),
-	}
+	};
 
 	// styles
 	const css = require("styles.css");
@@ -110,9 +109,9 @@ module.exports = (Plugin, Api) => {
 			Patcher.after(StickerStore.__proto__, "getStickerById", (_, args, sticker) => {
 				if (!sticker) return;
 				if (!Utils.isTagged(sticker.description || ""))
-					this.tagSticker(sticker)
+					this.tagSticker(sticker);
 				else if (!this.settings.shouldHighlightAnimated)
-					this.unTagSticker(sticker)
+					this.unTagSticker(sticker);
 			});
 		}
 
@@ -132,7 +131,7 @@ module.exports = (Plugin, Api) => {
 					type: 1,
 					allow: 262144n,
 					deny: 0n
-				}
+				};
 			});
 		}
 

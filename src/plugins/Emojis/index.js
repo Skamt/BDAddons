@@ -3,13 +3,12 @@ module.exports = (Plugin, Api) => {
 	const {
 		Logger,
 		Patcher,
-		Settings,
-		WebpackModules,
 		PluginUtilities,
 		DiscordModules: {
 			Permissions,
 			UserStore,
 			ChannelStore,
+			DiscordPermissions,
 			SelectedChannelStore,
 			MessageActions
 		}
@@ -19,14 +18,13 @@ module.exports = (Plugin, Api) => {
 	const EmojiIntentionEnum = getModule(Filters.byProps("GUILD_ROLE_BENEFIT_EMOJI"), { searchExports: true });
 	const EmojiSendAvailabilityEnum = getModule(Filters.byProps("GUILD_SUBSCRIPTION_UNAVAILABLE"), { searchExports: true });
 	const EmojiFunctions = getModule(Filters.byProps("getEmojiUnavailableReason"), { searchExports: true });
-	const DiscordPermissions = getModule(m => m.ADMINISTRATOR && typeof(m.ADMINISTRATOR) === "bigint", { searchExports: true });
 	const InsertText = (() => {
 		let ComponentDispatch;
 		return (...args) => {
-			if (!ComponentDispatch) ComponentDispatch = getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners("INSERT_TEXT").length, { searchExports: true })
+			if (!ComponentDispatch) ComponentDispatch = getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners("INSERT_TEXT").length, { searchExports: true });
 			ComponentDispatch.dispatchToLastSubscribed(...args);
 		}
-	})()
+	})();
 
 	// Helper functions
 	const showToast = (content, options) => BdApi.showToast(`${config.info.name}: ${content}`, options);
@@ -85,10 +83,10 @@ module.exports = (Plugin, Api) => {
 		}
 
 		patchEmojiPickerUnavailable() {
-			Patcher.after(EmojiFunctions, "isEmojiFiltered", (_, args, ret) => false)
+			Patcher.after(EmojiFunctions, "isEmojiFiltered", (_, args, ret) => false);
 			Patcher.after(EmojiFunctions, "getEmojiUnavailableReason", (_, args, ret) =>
 				ret === EmojiSendAvailabilityEnum.DISALLOW_EXTERNAL ? EmojiSendAvailabilityEnum.PREMIUM_LOCKED : ret
-			)
+			);
 		}
 
 		onStart() {

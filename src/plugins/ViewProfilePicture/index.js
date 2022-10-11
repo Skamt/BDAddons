@@ -40,7 +40,7 @@ module.exports = (Plugin, Api) => {
 			original: Url,
 			renderLinkComponent: renderMaskedLinkComponent
 		})
-	}
+	};
 
 	// components
 	const ViewProfilePictureButton = require("components/ViewProfilePictureButton.jsx");
