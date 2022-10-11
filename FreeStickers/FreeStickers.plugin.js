@@ -1,6 +1,6 @@
 /**
  * @name FreeStickers
- * @description Enables you to send custom Stickers without nitro as links, (custom stickers as in the ones that are added by servers, not officiel discord stickers).
+ * @description Enables you to send custom Stickers without nitro as links, (custom stickers as in the ones that are added by servers, not official discord stickers).
  * @version 2.0.2
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/FreeStickers
@@ -10,7 +10,7 @@ const config = {
 	info: {
 		name: "FreeStickers",
 		version: "2.0.2",
-		description: "Enables you to send custom Stickers without nitro as links, (custom stickers as in the ones that are added by servers, not officiel discord stickers).",
+		description: "Enables you to send custom Stickers without nitro as links, (custom stickers as in the ones that are added by servers, not official discord stickers).",
 		source: "https://raw.githubusercontent.com/Skamt/BDAddons/main/FreeStickers/FreeStickers.plugin.js",
 		github: "https://github.com/Skamt/BDAddons/tree/main/FreeStickers",
 		authors: [{
@@ -74,12 +74,12 @@ function initPlugin([Plugin, Api]) {
 			Logger,
 			Patcher,
 			Utilities,
-			Settings,
 			PluginUtilities,
 			DiscordModules: {
 				Permissions,
 				UserStore,
 				ChannelStore,
+				DiscordPermissions,
 				SelectedChannelStore,
 				MessageActions
 			}
@@ -90,6 +90,7 @@ function initPlugin([Plugin, Api]) {
 		const StickSendEnum = getModule(Filters.byProps("SENDABLE_WITH_BOOSTED_GUILD"), { searchExports: true });
 		const StickTypeEnum = getModule(Filters.byProps("GUILD", "STANDARD"), { searchExports: true });
 		const StickerFormat = getModule(Filters.byProps("APNG", "LOTTIE"), { searchExports: true });
+		const getStickerSendability = getModule(Filters.byStrings("SENDABLE_WITH_PREMIUM", "canUseStickersEverywhere"), { searchExports: true });
 		const InsertText = (() => {
 			let ComponentDispatch;
 			return (...args) => {
@@ -97,8 +98,6 @@ function initPlugin([Plugin, Api]) {
 				ComponentDispatch.dispatchToLastSubscribed(...args);
 			}
 		})()
-		const DiscordPermissions = getModule(m => m.ADMINISTRATOR && typeof(m.ADMINISTRATOR) === "bigint", { searchExports: true });
-		const getStickerSendability = getModule(Filters.byStrings("SENDABLE_WITH_PREMIUM", "canUseStickersEverywhere"), { searchExports: true });
 		// Strings & Constants
 		const TAGS = {
 			ANIMATED_STICKER_TAG: "ANIMATED_STICKER_TAG",

@@ -1,11 +1,21 @@
 # FreeStickers
 
-With this plugin you can send custom stickers as their link counterpart , custom stickers means those that are added by guilds and not discord's own stickers. 
+Allows you to send custom Stickers as links (basically an image). 
+
+***Custom Stickers:** Stickers that are added by servers and not discord's own Stickers.* 
+
+## Features
+
+- If sticker can be sent as normal sticker, it will be.
+- Setting to highlight animated Stickers.
+- Setting to ignore Embed permissions.
+- Setting to not send animated Stickers.
 
 #### Notes:
-- If sticker can be sent as normal sticker, it will be.
-- Animated stickers cannot be used as they are, because of the limitations discord has put into place, which means if you send an animated sticker it will only show the first frame.
-- ~Side features includes preview popout for Stickers and emojis.~ **(broken)**
-- Preview below may not be as accurate, some features have been removed because they are impossible to implement.
-## Preview:
+
+- Animated Stickers cannot be used as they are, because of the limitations discord has put in place, which means if you send an animated sticker it will only show the first frame.
+- Preview below may not be as accurate, some features have been removed because they are impossible to reimplement.
+
+## Preview
+
 ![showcase](https://raw.githubusercontent.com/Skamt/BDAddons/main/FreeStickers/assets/showcase.gif)

@@ -1,5 +1,24 @@
 # ViewProfilePicture
 
+Allows you to view users's avatar and banner. 
+
+The view button will show you what you are already seeing, **Which means:**
+
+- For regular users, you will see their current avatar and banner color.
+- For premium users, you will see their current avatar and banner image.
+- For premium users with guild specific avatar and banner: 
+    - **In the userpopout:** you will see the guild specific avatar and banner image.
+    - **In the profile:** you will see the user's avatar and banner image.
+
+**Note:** Pairs well with *CopyImageLink* Plugin.
+## Features
+
+- View **Avatar/Banner**.
+- Copy Banner color.
+- Copy Image Link *(soon)*
+
+## Preview
+
 ![preview1](https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/assets/preview1.png)
 ![preview2](https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/assets/preview2.png)
 ![preview3](https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/assets/preview3.png)

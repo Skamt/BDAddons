@@ -1,3 +1,9 @@
 # Emojis
 
-Send emoji as link if it can't be sent it normally.
+Allows you to send Emojis as links.
+
+## Features
+
+- If emoji can be sent as normallly, it will be.
+- Setting to ignore Embed permissions.
+- Setting to not send animated Emojis.
