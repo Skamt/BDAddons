@@ -1,4 +1,4 @@
-module.exports = ({ style, onClick, isUserPopout }) => {
+module.exports = ({ style, onClick, width,height }) => {
 	return <Tooltip
 		text="Show profile picture"
 		position="top">
@@ -13,8 +13,8 @@ module.exports = ({ style, onClick, isUserPopout }) => {
 					className="pencilIcon-z04-c5"
 					aria-hidden="false"
 					role="img"
-					width={isUserPopout ? 18 : 24}
-					height={isUserPopout ? 18 : 24}
+					width={width}
+					height={height}
 					viewBox="0 0 384 384">
 					<path
 						fill="currentColor"
