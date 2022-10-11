@@ -21,6 +21,8 @@ module.exports = (Plugin, Api) => {
 	const StickSendEnum = getModule(Filters.byProps("SENDABLE_WITH_BOOSTED_GUILD"), { searchExports: true });
 	const StickTypeEnum = getModule(Filters.byProps("GUILD", "STANDARD"), { searchExports: true });
 	const StickerFormat = getModule(Filters.byProps("APNG", "LOTTIE"), { searchExports: true });
+	const DiscordPermissions = getModule(m => m.ADMINISTRATOR && typeof(m.ADMINISTRATOR) === "bigint", { searchExports: true });
+	const getStickerSendability = getModule(Filters.byStrings("SENDABLE_WITH_PREMIUM", "canUseStickersEverywhere"), { searchExports: true });
 	const InsertText = (() => {
 		let ComponentDispatch;
 		return (...args) => {
@@ -28,11 +30,6 @@ module.exports = (Plugin, Api) => {
 			ComponentDispatch.dispatchToLastSubscribed(...args);
 		}
 	})()
-
-
-
-	const DiscordPermissions = getModule(m => m.ADMINISTRATOR && typeof(m.ADMINISTRATOR) === "bigint", { searchExports: true });
-	const getStickerSendability = getModule(Filters.byStrings("SENDABLE_WITH_PREMIUM", "canUseStickersEverywhere"), { searchExports: true });
 
 	// Strings & Constants
 	const TAGS = {
