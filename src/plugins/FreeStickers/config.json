@@ -24,7 +24,7 @@
 		"id": "sendDirectly",
 		"name": "Send Directly",
 		"note": "Send the sticker link in a message directly instead of putting it in the chat box.",
-		"value": true
+		"value": false
 	}, {
 		"type": "switch",
 		"id": "ignoreEmbedPermissions",
@@ -36,7 +36,7 @@
 		"id": "shouldSendAnimatedStickers",
 		"name": "Send animated stickers",
 		"note": "Animated stickers do not animate, sending them will only send the first picture of the animation. (still useful)",
-		"value": true
+		"value": false
 	}, {
 		"type": "switch",
 		"id": "shouldHighlightAnimated",

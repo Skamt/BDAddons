@@ -2,10 +2,8 @@ module.exports = (Plugin, Api) => {
 	const { Filters, getModule } = BdApi.Webpack;
 	const {
 		Logger,
-
 		Patcher,
 		Settings,
-		WebpackModules,
 		PluginUtilities,
 		DiscordModules: {
 			Permissions,
@@ -45,7 +43,7 @@ module.exports = (Plugin, Api) => {
 		isLottieSticker: sticker => sticker.type === StickTypeEnum.STANDARD,
 		isStickerSendable: (sticker, channel, user) => getStickerSendability(sticker, user, channel) === StickSendEnum.SENDABLE,
 		updateStickers: () => StickerStore.stickerMetadata.forEach((value, key) => StickerStore.getStickerById(key)),
-		getStickerUrl: (stickerId, size) => `https://media.discordapp.net/stickers/${stickerId}.webp?size=${size}&passthrough=false&quality=lossless`,
+		getStickerUrl: (stickerId, size) => `https://media.discordapp.net/stickers/${stickerId}.webp?passthrough=false&quality=lossless&size=${size}`,
 		isTagged: (str) => Object.values(TAGS).some(tag => str.includes(tag)),
 	}
 
@@ -97,7 +95,8 @@ module.exports = (Plugin, Api) => {
 
 		patchGetStickerById() {
 			/** 
-			 * this patch is to add a tag to lottie and animated stickers, to style them
+			 * this patch is for adding a tag to lottie and animated stickers, to style them
+			 * the sticker description gets added to the alt/aria-label DOM attributes
 			 * lottie stickers will be put back to grayscale
 			 * animated stickers will be highlighted if setting is set to true
 			 */
@@ -111,6 +110,14 @@ module.exports = (Plugin, Api) => {
 		}
 
 		patchChannelTextArea() {
+			/** 
+			 * this patch is for adding a local permission override to the current channel
+			 * so that stickers show up in the picker.
+			 * 262144n is for Sending external Emojis permission
+			 * which is what's needed to let stickers show up in the picker.
+			 * While this may feel like a feature bypass, I believe if a sticker is posted as an image, 
+			 * it's no a sticker anymore.
+			 */
 			Patcher.before(ChannelTextArea.type, "render", (_, [{ channel }]) => {
 				const userId = UserStore.getCurrentUser().id;
 				channel.permissionOverwrites[userId] = {
