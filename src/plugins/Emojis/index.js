@@ -15,6 +15,7 @@ module.exports = (Plugin, Api) => {
 		}
 	} = Api;
 
+	// Modules
 	const EmojiIntentionEnum = getModule(Filters.byProps("GUILD_ROLE_BENEFIT_EMOJI"), { searchExports: true });
 	const EmojiSendAvailabilityEnum = getModule(Filters.byProps("GUILD_SUBSCRIPTION_UNAVAILABLE"), { searchExports: true });
 	const EmojiFunctions = getModule(Filters.byProps("getEmojiUnavailableReason"), { searchExports: true });
@@ -25,7 +26,7 @@ module.exports = (Plugin, Api) => {
 	const showToast = (content, options) => BdApi.showToast(`${config.info.name}: ${content}`, options);
 	const hasEmbedPerms = (channel, user) => !channel.guild_id || Permissions.can({ permission: DiscordPermissions.EMBED_LINKS, context: channel, user });
 	const isEmojiSendable = (e) => EmojiFunctions.getEmojiUnavailableReason(e) === null;
-	const getEmojiUrl = (emoji, size) => emoji.url.replace(/([?&]size=)(\d+)/, `$1${size}`)
+	const getEmojiUrl = (emoji, size) => `${emoji.url.replace(/(size=)(\d+)[&]/, '')}?size=${size}`;
 
 	// Strings & Constants
 	const STRINGS = {
@@ -85,10 +86,12 @@ module.exports = (Plugin, Api) => {
 				Logger.err(e);
 			}
 		}
+
 		onStop() {
 			document.removeEventListener("mouseup", this.emojiClickHandler);
 			PluginUtilities.removeStyle(this.getName());
 		}
+
 		getSettingsPanel() {
 			return this.buildSettingsPanel().getElement();
 		}

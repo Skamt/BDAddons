@@ -19,7 +19,7 @@
 		"id": "sendDirectly",
 		"name": "Send Directly",
 		"note": "Send the emoji link in a message directly instead of putting it in the chat box.",
-		"value": true
+		"value": false
 	}, {
 		"type": "switch",
 		"id": "ignoreEmbedPermissions",
