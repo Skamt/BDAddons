@@ -37,17 +37,6 @@ const config = {
 		name: "Ignore Embed Permissions",
 		note: "Send emoji links regardless of embed permissions, meaning links will not turn into images.",
 		value: false
-	}, {
-		type: "switch",
-		id: "shouldSendAnimatedEmojis",
-		name: "Send animated emojis",
-		note: "Animated emojis do not animate, sending them will only send the first picture of the animation. (still useful)",
-		value: false
-	}, {
-		type: "switch",
-		id: "shouldHighlightAnimated",
-		name: "Highlight animated emojis",
-		value: true
 	}]
 };
 class MissinZeresPluginLibraryClass {
