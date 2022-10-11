@@ -132,10 +132,17 @@ function initPlugin([Plugin, Api]) {
 				if (props && props["data-type"] && props["data-type"].toLowerCase() === "emoji")
 					this.emojiHandler(props.children.props.emoji);
 			}
+			patchEmojiPickerUnavailable() {
+				Patcher.after(EmojiFunctions, "isEmojiFiltered", (_, args, ret) => false)
+				Patcher.after(EmojiFunctions, "getEmojiUnavailableReason", (_, args, ret) =>
+					ret === EmojiSendAvailabilityEnum.DISALLOW_EXTERNAL ? EmojiSendAvailabilityEnum.PREMIUM_LOCKED : ret
+				)
+			}
 			onStart() {
 				try {
 					PluginUtilities.addStyle(this.getName(), css);
 					document.addEventListener("mouseup", this.emojiClickHandler);
+					this.patchEmojiPickerUnavailable();
 				} catch (e) {
 					Logger.err(e);
 				}
@@ -143,6 +150,7 @@ function initPlugin([Plugin, Api]) {
 			onStop() {
 				document.removeEventListener("mouseup", this.emojiClickHandler);
 				PluginUtilities.removeStyle(this.getName());
+				Patcher.unpatchAll();
 			}
 			getSettingsPanel() {
 				return this.buildSettingsPanel().getElement();
