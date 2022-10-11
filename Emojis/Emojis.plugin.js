@@ -95,7 +95,7 @@ function initPlugin([Plugin, Api]) {
 		const showToast = (content, options) => BdApi.showToast(`${config.info.name}: ${content}`, options);
 		const hasEmbedPerms = (channel, user) => !channel.guild_id || Permissions.can({ permission: DiscordPermissions.EMBED_LINKS, context: channel, user });
 		const isEmojiSendable = (e) => EmojiFunctions.getEmojiUnavailableReason(e) === null;
-		const getEmojiUrl = (emoji, size) => `${emoji.url.replace(/(size=)(\d+)[&]/, '')}?size=${size}`;
+		const getEmojiUrl = (emoji, size) => `${emoji.url.replace(/(size=)(\d+)[&]/, '')}&size=${size}`;
 		// Strings & Constants
 		const STRINGS = {
 			missingEmbedPermissionsErrorMessage: "Missing Embed Permissions",
