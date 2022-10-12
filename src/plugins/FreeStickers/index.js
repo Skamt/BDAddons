@@ -1,7 +1,8 @@
 module.exports = (Plugin, Api) => {
-	const { Filters, getModule, waitForModule } = BdApi.Webpack;
+	const { Filters, getModule } = BdApi.Webpack;
 	const {
 		Logger,
+		Toasts,
 		Patcher,
 		Utilities,
 		PluginUtilities,
@@ -43,7 +44,7 @@ module.exports = (Plugin, Api) => {
 
 	// Helper functions
 	const Utils = {
-		showToast: (content, options) => BdApi.showToast(`${config.info.name}: ${content}`, options),
+		showToast: (content, type) => Toasts[type](`[${config.info.name}] ${content}`),
 		hasEmbedPerms: (channel, user) => !channel.guild_id || Permissions.can({ permission: DiscordPermissions.EMBED_LINKS, context: channel, user }),
 		isAnimatedSticker: sticker => sticker["format_type"] === StickerFormat.APNG,
 		isLottieSticker: sticker => sticker.type === StickTypeEnum.STANDARD,
@@ -64,11 +65,11 @@ module.exports = (Plugin, Api) => {
 
 		handleUnsendableSticker(sticker, channel, user) {
 			if (Utils.isLottieSticker(sticker))
-				return Utils.showToast(STRINGS.sendLottieStickerErrorMessage, { type: "danger" });
+				return Utils.showToast(STRINGS.sendLottieStickerErrorMessage, "danger");
 			if (Utils.isAnimatedSticker(sticker) && !this.settings.shouldSendAnimatedStickers)
-				return Utils.showToast(STRINGS.disabledAnimatedStickersErrorMessage, { type: "info" });
+				return Utils.showToast(STRINGS.disabledAnimatedStickersErrorMessage, "info");
 			if (!Utils.hasEmbedPerms(channel, user) && !this.settings.ignoreEmbedPermissions)
-				return Utils.showToast(STRINGS.missingEmbedPermissionsErrorMessage, { type: "info" });
+				return Utils.showToast(STRINGS.missingEmbedPermissionsErrorMessage, "info");
 
 			this.sendStickerAsLink(sticker, channel);
 		}

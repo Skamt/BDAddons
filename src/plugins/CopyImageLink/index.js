@@ -2,6 +2,7 @@ module.exports = (Plugin, Api) => {
 	const { getModule } = BdApi.Webpack;
 	const {
 		Logger,
+		Toasts,
 		Patcher,
 		Utilities,
 		PluginUtilities,
@@ -15,10 +16,11 @@ module.exports = (Plugin, Api) => {
 
 	// Helper functions
 	const Utils = {
+		showToast: (content, type) => Toasts[type](`[${config.info.name}] ${content}`),
 		copy: (data) => {
 			DiscordNative.clipboard.copy(data);
-			BdApi.showToast(data, { type: "info" });
-			BdApi.showToast("Copied!", { type: "success" });
+			Utils.showToast(data, "info");
+			Utils.showToast("Copied!", "success");
 		}
 	}
 
