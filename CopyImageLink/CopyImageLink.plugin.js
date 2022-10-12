@@ -35,6 +35,7 @@ function initPlugin([Plugin, Api]) {
 		const { getModule } = BdApi.Webpack;
 		const {
 			Logger,
+			Toasts,
 			Patcher,
 			Utilities,
 			PluginUtilities,
@@ -46,10 +47,11 @@ function initPlugin([Plugin, Api]) {
 		const ImageModal = getModule(m => m?.prototype?.render?.toString().includes("OPEN_ORIGINAL_IMAGE"));
 		// Helper functions
 		const Utils = {
+			showToast: (content, type) => Toasts[type](`[${config.info.name}] ${content}`),
 			copy: (data) => {
 				DiscordNative.clipboard.copy(data);
-				BdApi.showToast(data, { type: "info" });
-				BdApi.showToast("Copied!", { type: "success" });
+				Utils.showToast(data, "info");
+				Utils.showToast("Copied!", "success");
 			}
 		}
 		// components

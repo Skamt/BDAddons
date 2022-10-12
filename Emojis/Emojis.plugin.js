@@ -62,6 +62,7 @@ function initPlugin([Plugin, Api]) {
 		const { Filters, getModule } = BdApi.Webpack;
 		const {
 			Logger,
+			Toasts,
 			Patcher,
 			PluginUtilities,
 			DiscordModules: {
@@ -85,10 +86,12 @@ function initPlugin([Plugin, Api]) {
 			}
 		})();
 		// Helper functions
-		const showToast = (content, options) => BdApi.showToast(`${config.info.name}: ${content}`, options);
-		const hasEmbedPerms = (channel, user) => !channel.guild_id || Permissions.can({ permission: DiscordPermissions.EMBED_LINKS, context: channel, user });
-		const isEmojiSendable = (e) => EmojiFunctions.getEmojiUnavailableReason(e) === null;
-		const getEmojiUrl = (emoji, size) => `${emoji.url.replace(/(size=)(\d+)[&]/, '')}&size=${size}`;
+		const Utils = {
+			showToast: (content, type) => Toasts[type](`[${config.info.name}] ${content}`),
+			hasEmbedPerms: (channel, user) => !channel.guild_id || Permissions.can({ permission: DiscordPermissions.EMBED_LINKS, context: channel, user }),
+			isEmojiSendable: (e) => EmojiFunctions.getEmojiUnavailableReason(e) === null,
+			getEmojiUrl: (emoji, size) => `${emoji.url.replace(/(size=)(\d+)[&]/, '')}&size=${size}`,
+		}
 		// Strings & Constants
 		const STRINGS = {
 			missingEmbedPermissionsErrorMessage: "Missing Embed Permissions",
@@ -109,26 +112,26 @@ function initPlugin([Plugin, Api]) {
 			sendEmojiAsLink(emoji, channel) {
 				if (this.settings.sendDirectly)
 					MessageActions.sendMessage(channel.id, {
-						content: getEmojiUrl(emoji, this.settings.emojiSize),
+						content: Utils.getEmojiUrl(emoji, this.settings.emojiSize),
 						validNonShortcutEmojis: []
 					});
 				else
 					InsertText("INSERT_TEXT", {
-						plainText: getEmojiUrl(emoji, this.settings.emojiSize)
+						plainText: Utils.getEmojiUrl(emoji, this.settings.emojiSize)
 					});
 			}
 			handleUnsendableEmoji(emoji, channel, user) {
 				if (emoji.animated && !this.settings.shouldSendAnimatedEmojis)
-					return showToast(STRINGS.disabledAnimatedEmojiErrorMessage, { type: "info" });
-				if (!hasEmbedPerms(channel, user) && !this.settings.ignoreEmbedPermissions)
-					return showToast(STRINGS.missingEmbedPermissionsErrorMessage, { type: "info" });
+					return Utils.showToast(STRINGS.disabledAnimatedEmojiErrorMessage, "info");
+				if (!Utils.hasEmbedPerms(channel, user) && !this.settings.ignoreEmbedPermissions)
+					return Utils.showToast(STRINGS.missingEmbedPermissionsErrorMessage, "info");
 				this.sendEmojiAsLink(emoji, channel);
 			}
 			emojiHandler(emoji) {
 				const user = UserStore.getCurrentUser();
 				const intention = EmojiIntentionEnum.CHAT;
 				const channel = ChannelStore.getChannel(SelectedChannelStore.getChannelId());
-				if (!isEmojiSendable({ emoji, channel, intention }))
+				if (!Utils.isEmojiSendable({ emoji, channel, intention }))
 					this.handleUnsendableEmoji(emoji, channel, user);
 			}
 			emojiClickHandler(e) {

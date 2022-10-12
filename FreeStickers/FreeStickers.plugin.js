@@ -69,9 +69,10 @@ class MissinZeresPluginLibraryClass {
 
 function initPlugin([Plugin, Api]) {
 	const plugin = (Plugin, Api) => {
-		const { Filters, getModule, waitForModule } = BdApi.Webpack;
+		const { Filters, getModule } = BdApi.Webpack;
 		const {
 			Logger,
+			Toasts,
 			Patcher,
 			Utilities,
 			PluginUtilities,
@@ -94,15 +95,15 @@ function initPlugin([Plugin, Api]) {
 		const InsertText = (() => {
 			let ComponentDispatch;
 			return (...args) => {
-				if (!ComponentDispatch) ComponentDispatch = getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners("INSERT_TEXT").length, { searchExports: true })
+				if (!ComponentDispatch) ComponentDispatch = getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners("INSERT_TEXT").length, { searchExports: true });
 				ComponentDispatch.dispatchToLastSubscribed(...args);
 			}
-		})()
+		})();
 		// Strings & Constants
 		const TAGS = {
 			ANIMATED_STICKER_TAG: "ANIMATED_STICKER_TAG",
 			LOTTIE_STICKER_TAG: "LOTTIE_STICKER_TAG"
-		}
+		};
 		const STRINGS = {
 			sendLottieStickerErrorMessage: "Official Discord Stickers are not supported.",
 			missingEmbedPermissionsErrorMessage: "Missing Embed Permissions",
@@ -110,7 +111,7 @@ function initPlugin([Plugin, Api]) {
 		};
 		// Helper functions
 		const Utils = {
-			showToast: (content, options) => BdApi.showToast(`${config.info.name}: ${content}`, options),
+			showToast: (content, type) => Toasts[type](`[${config.info.name}] ${content}`),
 			hasEmbedPerms: (channel, user) => !channel.guild_id || Permissions.can({ permission: DiscordPermissions.EMBED_LINKS, context: channel, user }),
 			isAnimatedSticker: sticker => sticker["format_type"] === StickerFormat.APNG,
 			isLottieSticker: sticker => sticker.type === StickTypeEnum.STANDARD,
@@ -118,7 +119,7 @@ function initPlugin([Plugin, Api]) {
 			updateStickers: () => StickerStore.stickerMetadata.forEach((value, key) => StickerStore.getStickerById(key)),
 			getStickerUrl: (stickerId, size) => `https://media.discordapp.net/stickers/${stickerId}.webp?passthrough=false&quality=lossless&size=${size}`,
 			isTagged: (str) => Object.values(TAGS).some(tag => str.includes(tag)),
-		}
+		};
 		// styles
 		const css = `/* Hide *Can't use this sticker* popout */
 .upsellWrapper-3KE9GX {
@@ -149,11 +150,11 @@ function initPlugin([Plugin, Api]) {
 			}
 			handleUnsendableSticker(sticker, channel, user) {
 				if (Utils.isLottieSticker(sticker))
-					return Utils.showToast(STRINGS.sendLottieStickerErrorMessage, { type: "danger" });
+					return Utils.showToast(STRINGS.sendLottieStickerErrorMessage, "danger");
 				if (Utils.isAnimatedSticker(sticker) && !this.settings.shouldSendAnimatedStickers)
-					return Utils.showToast(STRINGS.disabledAnimatedStickersErrorMessage, { type: "info" });
+					return Utils.showToast(STRINGS.disabledAnimatedStickersErrorMessage, "info");
 				if (!Utils.hasEmbedPerms(channel, user) && !this.settings.ignoreEmbedPermissions)
-					return Utils.showToast(STRINGS.missingEmbedPermissionsErrorMessage, { type: "info" });
+					return Utils.showToast(STRINGS.missingEmbedPermissionsErrorMessage, "info");
 				this.sendStickerAsLink(sticker, channel);
 			}
 			sendStickerAsLink(sticker, channel) {
@@ -189,9 +190,9 @@ function initPlugin([Plugin, Api]) {
 				Patcher.after(StickerStore.__proto__, "getStickerById", (_, args, sticker) => {
 					if (!sticker) return;
 					if (!Utils.isTagged(sticker.description || ""))
-						this.tagSticker(sticker)
+						this.tagSticker(sticker);
 					else if (!this.settings.shouldHighlightAnimated)
-						this.unTagSticker(sticker)
+						this.unTagSticker(sticker);
 				});
 			}
 			patchChannelTextArea() {
@@ -210,7 +211,7 @@ function initPlugin([Plugin, Api]) {
 						type: 1,
 						allow: 262144n,
 						deny: 0n
-					}
+					};
 				});
 			}
 			tagSticker(sticker) {
