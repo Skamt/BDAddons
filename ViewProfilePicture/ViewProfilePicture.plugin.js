@@ -36,6 +36,7 @@ function initPlugin([Plugin, Api]) {
 		const {
 			Logger,
 			Patcher,
+			Toasts,
 			Utilities,
 			PluginUtilities,
 			DiscordModules: {
@@ -44,33 +45,31 @@ function initPlugin([Plugin, Api]) {
 				SelectedGuildStore
 			}
 		} = Api;
-		// Filters
-		const UserBannerMaskFilter = (exp) => Object.keys(exp).find(k => exp[k].toString().includes("overrideAvatarDecorationURL"));
 		// Modules
-		const UserBannerMask = getModule((exp) => UserBannerMaskFilter(exp), { searchGetters: false });
-		const UserBannerMaskPatchFunctionName = UserBannerMaskFilter(UserBannerMask);
-		const ProfileTypeEnum = getModule(Filters.byProps("POPOUT"), { searchExports: true });;
+		const UserBannerMask = getModule((m) => m.Z && m.Z.toString().includes("overrideAvatarDecorationURL"));
+		const ProfileTypeEnum = getModule(Filters.byProps("POPOUT"), { searchExports: true });
 		const ImageModal = getModule(m => m?.prototype?.render?.toString().includes("OPEN_ORIGINAL_IMAGE"));
 		const ModalCarousel = getModule(m => m.prototype.navigateTo && m.prototype.preloadImage);
 		const ModalRoot = getModule(Filters.byStrings("onAnimationEnd"), { searchExports: true });
-		const renderMaskedLinkComponent = e => BdApi.React.createElement(getModule(m => m.type.toString().includes("MASKED_LINK")), e);
 		const Tooltip = getModule(m => m.defaultProps.shouldShow);
+		const renderLinkComponent = getModule(m => m.type.toString().includes("MASKED_LINK"));
 		// Constants
 		const IMG_WIDTH = 4096;
 		// Helper functions
 		const Utils = {
+			showToast: (content, type) => Toasts[type](`[${config.info.name}] ${content}`),
 			copy: (data) => {
 				DiscordNative.clipboard.copy(data);
-				BdApi.showToast(data, { type: "info" });
-				BdApi.showToast("Copied!", { type: "success" });
+				Utils.showToast(data, "info");
+				Utils.showToast("Copied!", "success");
 			},
 			getImageModalComponent: (Url, props) => React.createElement(ImageModal, {
 				...props,
 				src: Url,
 				original: Url,
-				renderLinkComponent: renderMaskedLinkComponent
+				renderLinkComponent: p => React.createElement(renderLinkComponent, p)
 			})
-		}
+		};
 		// components
 		const ViewProfilePictureButton = ({ style, onClick, width, height }) => {
 			return React.createElement(Tooltip, {
@@ -187,7 +186,7 @@ function initPlugin([Plugin, Api]) {
 				this.openCarousel([AvatarImageComponent, BannerImageComponent]);
 			}
 			patchUserBannerMask() {
-				Patcher.after(UserBannerMask, UserBannerMaskPatchFunctionName, (_, [{ user, profileType }], returnValue) => {
+				Patcher.after(UserBannerMask, "Z", (_, [{ user, profileType }], returnValue) => {
 					let bannerStyleObject, children, isUserPopout;
 					if (ProfileTypeEnum.MODAL === profileType || ProfileTypeEnum.POPOUT === profileType) {
 						if (ProfileTypeEnum.POPOUT === profileType) isUserPopout = true;
