@@ -50,7 +50,7 @@ module.exports = () => {
 		load() {}
 		getName() { return "PermissionsOverride" }
 		patch() {
-			Patcher.after(this.getName(), GuildPermissions, "can", (_, [perm], ret) => {
+			Patcher.after(config.info.name, GuildPermissions, "can", (_, [perm], ret) => {
 				return ret || ALLOWED.some(a => a === perm);
 			})
 		}
@@ -62,6 +62,6 @@ module.exports = () => {
 			}
 
 		}
-		stop() { Patcher.unpatchAll(this.getName()); }
+		stop() { Patcher.unpatchAll(config.info.name); }
 	}
 }
