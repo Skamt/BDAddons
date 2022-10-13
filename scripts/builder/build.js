@@ -7,15 +7,16 @@ const { pluginsFolder, releaseFolder, baseConfig } = require(path.join(projectPa
 
 const pluginsPath = path.join(projectPath, pluginsFolder);
 const releasePath = path.join(projectPath, releaseFolder);
-const args = process.argv.slice(2);
+
+
 const bdFolder = `${process.env.APPDATA}/BetterDiscord/`;
 const pluginFolder = process.env.PWD || process.env.INIT_CWD;
 const configPath = path.join(pluginFolder, "config.json");
 
+
 if (fs.existsSync(configPath)) {
 	const config = mergeDeep(require(configPath), baseConfig);
 
-	console.log("");
 	console.log(`Building ${config.info.name}`);
 	console.time("Build took");
 
