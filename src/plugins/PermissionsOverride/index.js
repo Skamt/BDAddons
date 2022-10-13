@@ -1,5 +1,5 @@
-module.exports = () => {
-	const { Patcher, Webpack: { Filters, getModule } } = BdApi;
+module.exports = (API) => {
+	const { Patcher, Webpack: { Filters, getModule } } = API;
 	const GuildPermissions = getModule(Filters.byProps("getGuildPermissions"), { searchExports: true });
 	const DiscordPermissions = getModule(m => m.ADD_REACTIONS, { searchExports: true });
 	const ALLOWED = [
