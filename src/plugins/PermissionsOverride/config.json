@@ -1,0 +1,9 @@
+{
+	"info": {
+		"name": "PermissionsOverride",
+		"version": "1.0.0",
+		"description": "Override certain harmless permissions",
+		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/PermissionsOverride/PermissionsOverride.plugin.js",
+		"github": "https://github.com/Skamt/BDAddons/tree/main/PermissionsOverride"
+	}
+}
