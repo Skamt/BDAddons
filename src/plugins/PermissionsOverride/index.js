@@ -2,6 +2,21 @@ module.exports = (API) => {
 	const { Patcher, Webpack: { Filters, getModule } } = API;
 	const GuildPermissions = getModule(Filters.byProps("getGuildPermissions"), { searchExports: true });
 	const DiscordPermissions = getModule(m => m.ADD_REACTIONS, { searchExports: true });
+
+	class PermissionsOverride {
+		stop() {
+			Patcher.unpatchAll(config.info.name);
+		}
+		start() {
+			try {
+				Patcher.after(config.info.name, GuildPermissions, "can", (_, [perm], ret) => {
+					return ret || ALLOWED.some(a => a === perm);
+				})
+			} catch (e) {
+				Logger.err(e);
+			}
+		}
+	}
 	const ALLOWED = [
 		// DiscordPermissions.ADD_REACTIONS,
 		// DiscordPermissions.ADMINISTRATOR,
@@ -46,22 +61,6 @@ module.exports = (API) => {
 		// DiscordPermissions.VIEW_CREATOR_MONETIZATION_ANALYTICS,
 		// DiscordPermissions.VIEW_GUILD_ANALYTICS,
 	];
-	return class PermissionsOverride {
-		load() {}
-		getName() { return "PermissionsOverride" }
-		patch() {
-			Patcher.after(config.info.name, GuildPermissions, "can", (_, [perm], ret) => {
-				return ret || ALLOWED.some(a => a === perm);
-			})
-		}
-		start() {
-			try {
-				this.patch();
-			} catch (e) {
-				Logger.err(e);
-			}
 
-		}
-		stop() { Patcher.unpatchAll(config.info.name); }
-	}
+	return PermissionsOverride
 }
