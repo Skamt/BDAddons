@@ -11,32 +11,44 @@ module.exports = (Plugin, Api) => {
 			UserStore,
 			ChannelStore,
 			DiscordPermissions,
-			SelectedChannelStore,
 			MessageActions
 		}
 	} = Api;
 
 	// Modules
-	const ChannelTextArea = getModule((m) => m.type.render.toString().includes('CHANNEL_TEXT_AREA'));
+	let StickersSendabilityEnumKey, getStickerSendabilityKey, isSendableStickerKey;
+	const StickersSendability = getModule(exp => {
+		const keys = Object.keys(exp);
+		if (keys.some(key => exp[key].SENDABLE_WITH_BOOSTED_GUILD)) {
+			StickersSendabilityEnumKey = keys.find(key => exp[key].SENDABLE_WITH_BOOSTED_GUILD);
+			getStickerSendabilityKey = keys.find(key => exp[key].toString().includes('SENDABLE_WITH_PREMIUM'));
+			isSendableStickerKey = keys.find(key => !exp[key].toString().includes('SENDABLE_WITH_PREMIUM') && !exp[key].SENDABLE_WITH_BOOSTED_GUILD);
+			return true;
+		}
+	});
+
+	const ChannelTextArea = getModule((exp) => exp.type.render.toString().includes('CHANNEL_TEXT_AREA'));
 	const StickerStore = getModule(Filters.byProps("getStickerById"), { searchExports: true });
-	const StickSendEnum = getModule(Filters.byProps("SENDABLE_WITH_BOOSTED_GUILD"), { searchExports: true });
-	const StickTypeEnum = getModule(Filters.byProps("GUILD", "STANDARD"), { searchExports: true });
-	const StickerFormat = getModule(Filters.byProps("APNG", "LOTTIE"), { searchExports: true });
-	const getStickerSendability = getModule(Filters.byStrings("SENDABLE_WITH_PREMIUM", "canUseStickersEverywhere"), { searchExports: true });
+	const StickerTypeEnum = getModule(Filters.byProps("GUILD", "STANDARD"), { searchExports: true });
+	const StickerFormatEnum = getModule(Filters.byProps("APNG", "LOTTIE"), { searchExports: true });
+	const StickersSendabilityEnum = StickersSendability[StickersSendabilityEnumKey];
+	const getStickerSendability = StickersSendability[getStickerSendabilityKey];;
 	const InsertText = (() => {
 		let ComponentDispatch;
 		return (content) => {
 			if (!ComponentDispatch) ComponentDispatch = getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners("INSERT_TEXT").length, { searchExports: true });
-			ComponentDispatch.dispatchToLastSubscribed("INSERT_TEXT", {
-				plainText: content
-			});
+			setTimeout(() => {
+				ComponentDispatch.dispatchToLastSubscribed("INSERT_TEXT", {
+					plainText: content,
+					rawText: content
+				});
+			}, 0)
 		}
 	})();
 
 	// Strings & Constants
 	const TAGS = {
-		ANIMATED_STICKER_TAG: "ANIMATED_STICKER_TAG",
-		LOTTIE_STICKER_TAG: "LOTTIE_STICKER_TAG"
+		ANIMATED_STICKER_TAG: "ANIMATED_STICKER_TAG"
 	};
 	const STRINGS = {
 		sendLottieStickerErrorMessage: "Official Discord Stickers are not supported.",
@@ -46,14 +58,14 @@ module.exports = (Plugin, Api) => {
 
 	// Helper functions
 	const Utils = {
-		showToast: (content, type) => Toasts[type](`[${config.info.name}] ${content}`),
-		hasEmbedPerms: (channel, user) => !channel.guild_id || Permissions.can({ permission: DiscordPermissions.EMBED_LINKS, context: channel, user }),
-		isAnimatedSticker: sticker => sticker["format_type"] === StickerFormat.APNG,
-		isLottieSticker: sticker => sticker.type === StickTypeEnum.STANDARD,
-		isStickerSendable: (sticker, channel, user) => getStickerSendability(sticker, user, channel) === StickSendEnum.SENDABLE,
-		updateStickers: () => StickerStore.stickerMetadata.forEach((value, key) => StickerStore.getStickerById(key)),
-		getStickerUrl: (stickerId, size) => `https://media.discordapp.net/stickers/${stickerId}.webp?passthrough=false&quality=lossless&size=${size}`,
 		isTagged: (str) => Object.values(TAGS).some(tag => str.includes(tag)),
+		showToast: (content, type) => Toasts[type](`[${config.info.name}] ${content}`),
+		getStickerUrl: (stickerId, size) => `https://media.discordapp.net/stickers/${stickerId}.webp?passthrough=false&quality=lossless&size=${size}`,
+		hasEmbedPerms: (channel, user) => !channel.guild_id || Permissions.can({ permission: DiscordPermissions.EMBED_LINKS, context: channel, user }),
+		updateStickers: () => StickerStore.stickerMetadata.forEach((value, key) => StickerStore.getStickerById(key)),
+		isLottieSticker: sticker => sticker.type === StickerTypeEnum.STANDARD,
+		isAnimatedSticker: sticker => sticker["format_type"] === StickerFormatEnum.APNG,
+		isStickerSendable: (sticker, channel, user) => getStickerSendability(sticker, user, channel) === StickersSendabilityEnum.SENDABLE,
 	};
 
 	// styles
@@ -62,22 +74,19 @@ module.exports = (Plugin, Api) => {
 	return class FreeStickers extends Plugin {
 		constructor() {
 			super();
-			this.stickerClickHandler = this.stickerClickHandler.bind(this);
 		}
 
-		handleUnsendableSticker(sticker, channel, user) {
-			if (Utils.isLottieSticker(sticker))
-				return Utils.showToast(STRINGS.sendLottieStickerErrorMessage, "danger");
+		handleUnsendableSticker({ user, sticker, channel }, direct) {
 			if (Utils.isAnimatedSticker(sticker) && !this.settings.shouldSendAnimatedStickers)
 				return Utils.showToast(STRINGS.disabledAnimatedStickersErrorMessage, "info");
 			if (!Utils.hasEmbedPerms(channel, user) && !this.settings.ignoreEmbedPermissions)
 				return Utils.showToast(STRINGS.missingEmbedPermissionsErrorMessage, "info");
 
-			this.sendStickerAsLink(sticker, channel);
+			this.sendStickerAsLink(sticker, channel, direct);
 		}
 
-		sendStickerAsLink(sticker, channel) {
-			if (this.settings.sendDirectly)
+		sendStickerAsLink(sticker, channel, direct) {
+			if (this.settings.sendDirectly || direct)
 				MessageActions.sendMessage(channel.id, {
 					content: Utils.getStickerUrl(sticker.id, this.settings.stickerSize),
 					validNonShortcutEmojis: []
@@ -86,44 +95,63 @@ module.exports = (Plugin, Api) => {
 				InsertText(Utils.getStickerUrl(sticker.id, this.settings.stickerSize));
 		}
 
-		stickerHandler(stickerId) {
+		handleSticker(channelId, stickerId) {
 			const user = UserStore.getCurrentUser();
 			const sticker = StickerStore.getStickerById(stickerId);
-			const channel = ChannelStore.getChannel(SelectedChannelStore.getChannelId());
-			if (!Utils.isStickerSendable(sticker, channel, user))
-				this.handleUnsendableSticker(sticker, channel, user);
+			const channel = ChannelStore.getChannel(channelId);
+			return {
+				user,
+				sticker,
+				channel,
+				isSendable: Utils.isStickerSendable(sticker, channel, user)
+			}
 		}
 
-		stickerClickHandler(e) {
-			const props = e.target.__reactProps$;
-			if (props && props["data-type"] && props["data-type"].toLowerCase() === "sticker")
-				this.stickerHandler(props["data-id"]);
-		}
-
-		patchGetStickerById() {
+		patchSendSticker() {
 			/** 
-			 * this patch is for adding a tag to lottie and animated stickers, to style them
-			 * the sticker description gets added to the alt/aria-label DOM attributes
-			 * lottie stickers will be put back to grayscale
-			 * animated stickers will be highlighted if setting is set to true
+			 * The existance of this plugin implies the existance of this patch 
 			 */
-			Patcher.after(StickerStore.__proto__, "getStickerById", (_, args, sticker) => {
-				if (!sticker) return;
-				if (!Utils.isTagged(sticker.description || ""))
-					this.tagSticker(sticker);
-				else if (!this.settings.shouldHighlightAnimated)
-					this.unTagSticker(sticker);
+			Patcher.instead(MessageActions, 'sendStickers', (_, args, originalFunc) => {
+				const [channelId, [stickerId]] = args;
+				const stickerObj = this.handleSticker(channelId, stickerId);
+				if (stickerObj.isSendable)
+					originalFunc.apply(_, args)
+				else
+					this.handleUnsendableSticker(stickerObj);
 			});
+		}
+
+		patchStickerAttachement() {
+			/** 
+			 * Since we enabled stickers to be clickable
+			 * If you click on a sticker while the textarea has some text
+			 * the sticker will be added as attachment, and therefore triggers an api request
+			 * must intercept and send as link
+			 */
+			Patcher.before(MessageActions, 'sendMessage', (_, args) => {
+				const [channelId, , , attachments] = args;
+				if (attachments && attachments.stickerIds && attachments.stickerIds.filter) {
+					const [stickerId] = attachments.stickerIds;
+					const stickerObj = this.handleSticker(channelId, stickerId);
+					if (!stickerObj.isSendable) {
+						args[3] = {};
+						setTimeout(() => {
+							this.handleUnsendableSticker(stickerObj, true);
+						}, 0)
+					}
+				}
+			})
 		}
 
 		patchChannelTextArea() {
 			/** 
 			 * this patch is for adding a local permission override to the current channel
-			 * so that stickers show up in the picker.
-			 * 262144n is for Sending external Emojis permission
-			 * which is what's needed to let stickers show up in the picker.
+			 * so that stickers show up in the picker. in channels that disable external stickers
 			 * While this may feel like a feature bypass, I believe if a sticker is posted as an image, 
-			 * it's no a sticker anymore.
+			 * it's no longer a sticker anymore.
+
+			 * 262144n is for Sending external Emojis permission
+			 * which is what's needed to let stickers show up in the picker. ¯\_(ツ)_/¯
 			 */
 			Patcher.before(ChannelTextArea.type, "render", (_, [{ channel }]) => {
 				const userId = UserStore.getCurrentUser().id;
@@ -136,24 +164,48 @@ module.exports = (Plugin, Api) => {
 			});
 		}
 
-		tagSticker(sticker) {
-			if (Utils.isLottieSticker(sticker))
-				return sticker.description += TAGS.LOTTIE_STICKER_TAG;
-			if (Utils.isAnimatedSticker(sticker) && this.settings.shouldHighlightAnimated)
-				return sticker.description += TAGS.ANIMATED_STICKER_TAG;
+		patchStickerClickability() {
+			// if it's a guild sticker return true to make it clickable 
+			// ignoreing discord's stickers because ToS, and they're not regular images
+			Patcher.after(StickersSendability, isSendableStickerKey, (_, args, returnValue) => {
+				return args[0].type === StickerTypeEnum.GUILD;
+			});
 		}
 
-		unTagSticker(sticker) {
-			sticker.description = sticker.description.replace(TAGS.ANIMATED_STICKER_TAG, "");
+		patchGetStickerById() {
+			/** 
+			 * this patch is for adding a tag to animated stickers
+			 * to style highlight them if setting is set to true
+			 * the sticker description gets added to the alt DOM attributes
+			 */
+			Patcher.after(StickerStore, "getStickerById", (_, args, sticker) => {
+				if (!sticker) return;
+				if (!Utils.isTagged(sticker.description || "") && !Utils.isLottieSticker(sticker) && Utils.isAnimatedSticker(sticker) && this.settings.shouldHighlightAnimated)
+					sticker.description += TAGS.ANIMATED_STICKER_TAG;
+				else if (!this.settings.shouldHighlightAnimated)
+					sticker.description = sticker.description.replace(TAGS.ANIMATED_STICKER_TAG, "");
+			});
+		}
+
+		patchStickerSuggestion() {
+			// Enable suggestions for custom stickers only 
+			Patcher.after(StickersSendability, getStickerSendabilityKey, (_, args, returnValue) => {
+				if (args[0].type === StickerTypeEnum.GUILD) {
+					const { SENDABLE } = StickersSendabilityEnum;
+					return returnValue !== SENDABLE ? SENDABLE : returnValue;
+				}
+			});
 		}
 
 		onStart() {
 			try {
 				PluginUtilities.addStyle(this.getName(), css);
-				document.addEventListener("click", this.stickerClickHandler);
+				this.patchStickerClickability();
+				this.patchSendSticker();
 				this.patchGetStickerById();
+				this.patchStickerAttachement();
+				this.patchStickerSuggestion();
 				this.patchChannelTextArea();
-				Utils.updateStickers();
 			} catch (e) {
 				Logger.err(e);
 			}
@@ -161,9 +213,7 @@ module.exports = (Plugin, Api) => {
 
 		onStop() {
 			PluginUtilities.removeStyle(this.getName());
-			document.removeEventListener("click", this.stickerClickHandler);
 			Patcher.unpatchAll();
-			Utils.updateStickers();
 		}
 
 		getSettingsPanel() {

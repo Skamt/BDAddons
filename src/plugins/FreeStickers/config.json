@@ -1,7 +1,7 @@
 {
 	"info": {
 		"name": "FreeStickers",
-		"version": "2.0.2",
+		"version": "2.0.3",
 		"description": "Enables you to send custom Stickers without nitro as links, (custom stickers as in the ones that are added by servers, not official discord stickers).",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/FreeStickers/FreeStickers.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/FreeStickers"
@@ -9,17 +9,9 @@
 	"changelog": [{
 		"title": "Feature",
 		"type": "added",
-		"items": ["Stickers will now show up in the Picker even if the user does not have permission."]
+		"items": ["Support for Sticker suggestions is back."]
 	}],
 	"defaultConfig": [{
-		"type": "slider",
-		"id": "stickerSize",
-		"name": "Sticker Size",
-		"note": "The size of the sticker in pixels. 160 is recommended.",
-		"value": 160,
-		"markers": [20, 40, 80, 160, 320],
-		"stickToMarkers": true
-	}, {
 		"type": "switch",
 		"id": "sendDirectly",
 		"name": "Send Directly",
@@ -42,5 +34,13 @@
 		"id": "shouldHighlightAnimated",
 		"name": "Highlight animated stickers",
 		"value": true
+	}, {
+		"type": "slider",
+		"id": "stickerSize",
+		"name": "Sticker Size",
+		"note": "The size of the sticker in pixels. 160 is recommended.",
+		"value": 160,
+		"markers": [20, 40, 80, 160, 320],
+		"stickToMarkers": true
 	}]
 }
