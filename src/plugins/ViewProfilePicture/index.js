@@ -82,9 +82,6 @@ module.exports = (Plugin, Api) => {
 				}
 				children.push(
 					React.createElement(ViewProfilePictureButton, {
-						width: isUserPopout ? 18 : 24,
-						height: isUserPopout ? 18 : 24,
-						style: { "--r": isUserPopout ? "48px" : "58px" },
 						onClick: _ => this.clickHandler(user, isUserPopout, bannerStyleObject)
 					})
 				);

@@ -1,23 +1,29 @@
-.premiumIconWrapper-yyGDql + .viewProfilePicture-Button {
-    left: 12px;
-    right: unset;
+/* View Profile Button */
+
+.popoutBanner-16rVDY > div + .VPP-Button{
+    right:48px;
 }
 
-.pencilContainer-11Kuga + .viewProfilePicture-Button {
-    right: var(--r);
+.profileBanner-2zIsK7 > div + .VPP-Button {
+    right:58px;
+    top:14px;
 }
 
-.viewProfilePicture-Button path {
-    transform: scale(0.8);
-    transform-origin: center;
+.profileBanner-2zIsK7 .VPP-Button > svg{
+    height: 24px;
+    width: 24px;
 }
 
-.viewProfilePicture-NoBanner {
+/* div replacement if No banner */
+
+.VPP-NoBanner {
     width: 70vw;
     height: 50vh;
 }
 
-.viewProfilePicture-carousel.carouselModal-1eUFoq:not(#idontthinkso) {
+/* Carousel Modal */
+
+.VPP-carousel.carouselModal-1eUFoq:not(#idontthinkso) {
     height: auto;
     width: auto;
     position: static;
@@ -26,20 +32,20 @@
     background:none;
 }
 
-.viewProfilePicture-carousel .modalCarouselWrapper-YK1MX4 {
+.VPP-carousel .modalCarouselWrapper-YK1MX4 {
     position: static;
 }
 
-.viewProfilePicture-carousel .arrowContainer-2wpC4q {
+.VPP-carousel .arrowContainer-2wpC4q {
     margin: 0 15px;
     opacity: 0.8;
     background: var(--background-primary);
     border-radius: 50%;
 }
 
-.viewProfilePicture-carousel .imageWrapper-oMkQl4.imageWrapperBackground-3Vss_C {
+.VPP-carousel .imageWrapper-oMkQl4.imageWrapperBackground-3Vss_C {
     min-height: 50vh;
 }
-.viewProfilePicture-carousel .imageWrapper-oMkQl4 > img{
+.VPP-carousel .imageWrapper-oMkQl4 > img{
      max-height: 80vh;
 }
