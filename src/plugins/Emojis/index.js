@@ -21,9 +21,11 @@ module.exports = (Plugin, Api) => {
 	const EmojiFunctions = getModule(Filters.byProps("getEmojiUnavailableReason"), { searchExports: true });
 	const InsertText = (() => {
 		let ComponentDispatch;
-		return (...args) => {
+		return (content) => {
 			if (!ComponentDispatch) ComponentDispatch = getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners("INSERT_TEXT").length, { searchExports: true });
-			ComponentDispatch.dispatchToLastSubscribed(...args);
+			ComponentDispatch.dispatchToLastSubscribed("INSERT_TEXT", {
+				plainText: content
+			});
 		}
 	})();
 
@@ -57,9 +59,7 @@ module.exports = (Plugin, Api) => {
 					validNonShortcutEmojis: []
 				});
 			else
-				InsertText("INSERT_TEXT", {
-					plainText: Utils.getEmojiUrl(emoji, this.settings.emojiSize)
-				});
+				InsertText(Utils.getEmojiUrl(emoji, this.settings.emojiSize));
 		}
 
 		handleUnsendableEmoji(emoji, channel, user) {

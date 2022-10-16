@@ -25,9 +25,11 @@ module.exports = (Plugin, Api) => {
 	const getStickerSendability = getModule(Filters.byStrings("SENDABLE_WITH_PREMIUM", "canUseStickersEverywhere"), { searchExports: true });
 	const InsertText = (() => {
 		let ComponentDispatch;
-		return (...args) => {
+		return (content) => {
 			if (!ComponentDispatch) ComponentDispatch = getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners("INSERT_TEXT").length, { searchExports: true });
-			ComponentDispatch.dispatchToLastSubscribed(...args);
+			ComponentDispatch.dispatchToLastSubscribed("INSERT_TEXT", {
+				plainText: content
+			});
 		}
 	})();
 
@@ -81,9 +83,7 @@ module.exports = (Plugin, Api) => {
 					validNonShortcutEmojis: []
 				});
 			else
-				InsertText("INSERT_TEXT", {
-					plainText: Utils.getStickerUrl(sticker.id, this.settings.stickerSize)
-				});
+				InsertText(Utils.getStickerUrl(sticker.id, this.settings.stickerSize));
 		}
 
 		stickerHandler(stickerId) {
