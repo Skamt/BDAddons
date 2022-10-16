@@ -58,7 +58,7 @@ module.exports = (Plugin, Api) => {
 			ModalActions.openModal(props => React.createElement(DisplayCarousel, { props, items }));
 		}
 
-		clickHandler(userObject, isUserPopout, bannerStyleObject) {
+		clickHandler(userObject, bannerStyleObject, isUserPopout) {
 			const { backgroundColor, backgroundImage } = bannerStyleObject;
 			const guildId = isUserPopout ? SelectedGuildStore.getGuildId() : "";
 			const avatarURL = userObject.getAvatarURL(guildId, IMG_WIDTH, true);
@@ -71,9 +71,8 @@ module.exports = (Plugin, Api) => {
 
 		patchUserBannerMask() {
 			Patcher.after(UserBannerMask, "Z", (_, [{ user, profileType }], returnValue) => {
-				let bannerStyleObject, children, isUserPopout;
+				let bannerStyleObject, children;
 				if (ProfileTypeEnum.MODAL === profileType || ProfileTypeEnum.POPOUT === profileType) {
-					if (ProfileTypeEnum.POPOUT === profileType) isUserPopout = true;
 					bannerStyleObject = Utilities.getNestedProp(returnValue, "props.children.1.props.children.props.style");
 					children = Utilities.getNestedProp(returnValue, "props.children.1.props.children.props.children");
 				} else if (ProfileTypeEnum.SETTINGS === profileType) {
@@ -82,7 +81,7 @@ module.exports = (Plugin, Api) => {
 				}
 				children.push(
 					React.createElement(ViewProfilePictureButton, {
-						onClick: _ => this.clickHandler(user, isUserPopout, bannerStyleObject)
+						onClick: _ => this.clickHandler(user, bannerStyleObject, ProfileTypeEnum.POPOUT === profileType)
 					})
 				);
 			});
