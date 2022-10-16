@@ -51,7 +51,7 @@ const config = {
 		name: "Sticker Size",
 		note: "The size of the sticker in pixels. 160 is recommended.",
 		value: 160,
-		markers: [20, 40, 80, 160, 320],
+		markers: [20, 32, 48, 60, 80, 100, 128, 160],
 		stickToMarkers: true
 	}]
 };

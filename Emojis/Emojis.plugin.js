@@ -18,14 +18,6 @@ const config = {
 		}]
 	},
 	defaultConfig: [{
-		type: "slider",
-		id: "emojiSize",
-		name: "Emoji Size",
-		note: "The size of the Emoji in pixels.",
-		value: 60,
-		markers: [40, 48, 60, 64, 80],
-		stickToMarkers: true
-	}, {
 		type: "switch",
 		id: "sendDirectly",
 		name: "Send Directly",
@@ -43,6 +35,14 @@ const config = {
 		name: "Send animated emojis",
 		note: "Animated emojis do not animate, sending them will only send the first picture of the animation. (still useful)",
 		value: false
+	}, {
+		type: "slider",
+		id: "emojiSize",
+		name: "Emoji Size",
+		note: "The size of the Emoji in pixels.",
+		value: 60,
+		markers: [40, 48, 60, 64, 80],
+		stickToMarkers: true
 	}]
 };
 class MissinZeresPluginLibraryClass {
