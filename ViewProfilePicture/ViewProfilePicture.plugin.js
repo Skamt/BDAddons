@@ -71,7 +71,7 @@ function initPlugin([Plugin, Api]) {
 			})
 		};
 		// components
-		const ViewProfilePictureButton = ({ style, onClick, width, height }) => {
+		const ViewProfilePictureButton = ({ onClick }) => {
 			return React.createElement(Tooltip, {
 					text: "Show profile picture",
 					position: "top"
@@ -80,18 +80,17 @@ function initPlugin([Plugin, Api]) {
 				React.createElement("div", {
 						...
 						props,
-						style: style,
-						className: "pencilContainer-11Kuga viewProfilePicture-Button",
+						className: "VPP-Button pencilContainer-11Kuga",
 						onClick: onClick
 					},
 					React.createElement("svg", {
-							"aria-label": "Redigera profilen",
+							"aria-label": props["aria-label"],
 							className: "pencilIcon-z04-c5",
 							"aria-hidden": "false",
 							role: "img",
-							width: width,
-							height: height,
-							viewBox: "0 0 384 384"
+							width: "18",
+							height: "18",
+							viewBox: "-50 -50 484 484"
 						},
 						React.createElement("path", {
 							fill: "currentColor",
@@ -103,7 +102,7 @@ function initPlugin([Plugin, Api]) {
 				React.createElement(ModalRoot, {
 						...
 						props,
-						className: "viewProfilePicture-carousel carouselModal-1eUFoq zoomedCarouselModalRoot-beLNhM"
+						className: "VPP-carousel carouselModal-1eUFoq zoomedCarouselModalRoot-beLNhM"
 					},
 					React.createElement(ModalCarousel, {
 						startWith: 0,
@@ -114,7 +113,7 @@ function initPlugin([Plugin, Api]) {
 		const ColorModal = ({ color, bannerColorCopyHandler }) => {
 			return (
 				React.createElement("div", {
-						className: "viewProfilePicture-NoBanner wrapper-2bCXfR",
+						className: "VPP-NoBanner wrapper-2bCXfR",
 						style: { backgroundColor: color }
 					},
 					React.createElement("a", {
@@ -123,26 +122,31 @@ function initPlugin([Plugin, Api]) {
 					}, "Copy Color")));
 		};;
 		// styles
-		const css = `.premiumIconWrapper-yyGDql + .viewProfilePicture-Button {
-    left: 12px;
-    right: unset;
+		const css = `/* View Profile Button */
+.popoutBanner-16rVDY > div + .VPP-Button{
+    right:48px;
 }
 
-.pencilContainer-11Kuga + .viewProfilePicture-Button {
-    right: var(--r);
+.profileBanner-2zIsK > div + .VPP-Button {
+    right:58px;
+    top:14px;
 }
 
-.viewProfilePicture-Button path {
-    transform: scale(0.8);
-    transform-origin: center;
+.profileBanner-2zIsK .VPP-Button > svg{
+    height: 24px;
+    width: 24px;
 }
 
-.viewProfilePicture-NoBanner {
+/* div replacement if No banner */
+
+.VPP-NoBanner {
     width: 70vw;
     height: 50vh;
 }
 
-.viewProfilePicture-carousel.carouselModal-1eUFoq:not(#idontthinkso) {
+/* Carousel Modal */
+
+.VPP-carousel.carouselModal-1eUFoq:not(#idontthinkso) {
     height: auto;
     width: auto;
     position: static;
@@ -151,21 +155,21 @@ function initPlugin([Plugin, Api]) {
     background:none;
 }
 
-.viewProfilePicture-carousel .modalCarouselWrapper-YK1MX4 {
+.VPP-carousel .modalCarouselWrapper-YK1MX4 {
     position: static;
 }
 
-.viewProfilePicture-carousel .arrowContainer-2wpC4q {
+.VPP-carousel .arrowContainer-2wpC4q {
     margin: 0 15px;
     opacity: 0.8;
     background: var(--background-primary);
     border-radius: 50%;
 }
 
-.viewProfilePicture-carousel .imageWrapper-oMkQl4.imageWrapperBackground-3Vss_C {
+.VPP-carousel .imageWrapper-oMkQl4.imageWrapperBackground-3Vss_C {
     min-height: 50vh;
 }
-.viewProfilePicture-carousel .imageWrapper-oMkQl4 > img{
+.VPP-carousel .imageWrapper-oMkQl4 > img{
      max-height: 80vh;
 }`;
 		return class ViewProfilePicture extends Plugin {
@@ -198,9 +202,6 @@ function initPlugin([Plugin, Api]) {
 					}
 					children.push(
 						React.createElement(ViewProfilePictureButton, {
-							width: isUserPopout ? 18 : 24,
-							height: isUserPopout ? 18 : 24,
-							style: { "--r": isUserPopout ? "48px" : "58px" },
 							onClick: _ => this.clickHandler(user, isUserPopout, bannerStyleObject)
 						})
 					);
