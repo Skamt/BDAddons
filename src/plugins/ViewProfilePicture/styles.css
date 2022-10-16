@@ -1,15 +1,15 @@
 /* View Profile Button */
 
-.popoutBanner-16rVDY > div + .VPP-Button{
+[class*=popoutBanner-] > div + .VPP-Button{
     right:48px;
 }
 
-.profileBanner-2zIsK7 > div + .VPP-Button {
+[class*=profileBanner-] > div + .VPP-Button {
     right:58px;
     top:14px;
 }
 
-.profileBanner-2zIsK7 .VPP-Button > svg{
+[class*=profileBanner-] .VPP-Button > svg{
     height: 24px;
     width: 24px;
 }
