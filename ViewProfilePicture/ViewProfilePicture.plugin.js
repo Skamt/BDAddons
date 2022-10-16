@@ -1,6 +1,6 @@
 /**
  * @name ViewProfilePicture
- * @description Adds a button to the user popout and profile that allows you to open up the Avatar and banner.
+ * @description Adds a button to the user popout and profile that allows you to view the Avatar and banner.
  * @version 1.0.0
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture
@@ -10,7 +10,7 @@ const config = {
 	info: {
 		name: "ViewProfilePicture",
 		version: "1.0.0",
-		description: "Adds a button to the user popout and profile that allows you to open up the Avatar and banner.",
+		description: "Adds a button to the user popout and profile that allows you to view the Avatar and banner.",
 		source: "https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js",
 		github: "https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture",
 		authors: [{
@@ -72,30 +72,31 @@ function initPlugin([Plugin, Api]) {
 		};
 		// components
 		const ViewProfilePictureButton = ({ onClick }) => {
-			return React.createElement(Tooltip, {
-					text: "Show profile picture",
-					position: "top"
-				},
-				(props) =>
-				React.createElement("div", {
-						...
-						props,
-						className: "VPP-Button pencilContainer-11Kuga",
-						onClick: onClick
+			return (
+				React.createElement(Tooltip, {
+						text: "Show profile picture",
+						position: "top"
 					},
-					React.createElement("svg", {
-							"aria-label": props["aria-label"],
-							className: "pencilIcon-z04-c5",
-							"aria-hidden": "false",
-							role: "img",
-							width: "18",
-							height: "18",
-							viewBox: "-50 -50 484 484"
+					(props) =>
+					React.createElement("div", {
+							...
+							props,
+							className: "VPP-Button pencilContainer-11Kuga",
+							onClick: onClick
 						},
-						React.createElement("path", {
-							fill: "currentColor",
-							d: "M341.333,0H42.667C19.093,0,0,19.093,0,42.667v298.667C0,364.907,19.093,384,42.667,384h298.667 C364.907,384,384,364.907,384,341.333V42.667C384,19.093,364.907,0,341.333,0z M42.667,320l74.667-96l53.333,64.107L245.333,192l96,128H42.667z"
-						}))));
+						React.createElement("svg", {
+								"aria-label": props["aria-label"],
+								className: "pencilIcon-z04-c5",
+								"aria-hidden": "false",
+								role: "img",
+								width: "18",
+								height: "18",
+								viewBox: "-50 -50 484 484"
+							},
+							React.createElement("path", {
+								fill: "currentColor",
+								d: "M341.333,0H42.667C19.093,0,0,19.093,0,42.667v298.667C0,364.907,19.093,384,42.667,384h298.667 C364.907,384,384,364.907,384,341.333V42.667C384,19.093,364.907,0,341.333,0z M42.667,320l74.667-96l53.333,64.107L245.333,192l96,128H42.667z"
+							})))));
 		};;
 		const DisplayCarousel = ({ props, items }) => {
 			return (
@@ -123,16 +124,17 @@ function initPlugin([Plugin, Api]) {
 		};;
 		// styles
 		const css = `/* View Profile Button */
-.popoutBanner-16rVDY > div + .VPP-Button{
+
+[class*=popoutBanner-] > div + .VPP-Button{
     right:48px;
 }
 
-.profileBanner-2zIsK > div + .VPP-Button {
+[class*=profileBanner-] > div + .VPP-Button {
     right:58px;
     top:14px;
 }
 
-.profileBanner-2zIsK .VPP-Button > svg{
+[class*=profileBanner-] .VPP-Button > svg{
     height: 24px;
     width: 24px;
 }
@@ -179,7 +181,7 @@ function initPlugin([Plugin, Api]) {
 			openCarousel(items) {
 				ModalActions.openModal(props => React.createElement(DisplayCarousel, { props, items }));
 			}
-			clickHandler(userObject, isUserPopout, bannerStyleObject) {
+			clickHandler(userObject, bannerStyleObject, isUserPopout) {
 				const { backgroundColor, backgroundImage } = bannerStyleObject;
 				const guildId = isUserPopout ? SelectedGuildStore.getGuildId() : "";
 				const avatarURL = userObject.getAvatarURL(guildId, IMG_WIDTH, true);
@@ -191,9 +193,8 @@ function initPlugin([Plugin, Api]) {
 			}
 			patchUserBannerMask() {
 				Patcher.after(UserBannerMask, "Z", (_, [{ user, profileType }], returnValue) => {
-					let bannerStyleObject, children, isUserPopout;
+					let bannerStyleObject, children;
 					if (ProfileTypeEnum.MODAL === profileType || ProfileTypeEnum.POPOUT === profileType) {
-						if (ProfileTypeEnum.POPOUT === profileType) isUserPopout = true;
 						bannerStyleObject = Utilities.getNestedProp(returnValue, "props.children.1.props.children.props.style");
 						children = Utilities.getNestedProp(returnValue, "props.children.1.props.children.props.children");
 					} else if (ProfileTypeEnum.SETTINGS === profileType) {
@@ -202,7 +203,7 @@ function initPlugin([Plugin, Api]) {
 					}
 					children.push(
 						React.createElement(ViewProfilePictureButton, {
-							onClick: _ => this.clickHandler(user, isUserPopout, bannerStyleObject)
+							onClick: _ => this.clickHandler(user, bannerStyleObject, ProfileTypeEnum.POPOUT === profileType)
 						})
 					);
 				});
