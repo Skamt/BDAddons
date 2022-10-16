@@ -1,7 +1,7 @@
 module.exports = ({ color,bannerColorCopyHandler }) => {
 	return (
 			<div
-				className={"viewProfilePicture-NoBanner wrapper-2bCXfR"}
+				className={"VPP-NoBanner wrapper-2bCXfR"}
 				style={{ backgroundColor: color }}>
 				<a
 					className="downloadLink-1OAglv anchorUnderlineOnHover-2qPutX"
