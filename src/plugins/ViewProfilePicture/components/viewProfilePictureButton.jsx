@@ -1,15 +1,14 @@
-module.exports = ({ onClick }) => {
+module.exports = (props) => {
 	return (
 		<Tooltip
 			text="Show profile picture"
 			position="top">
-			{props => (
+			{p => (
 				<div
-					{...props}
-					className="VPP-Button pencilContainer-11Kuga"
-					onClick={onClick}>
+					{...p}
+					{...props}>
 					<svg
-						aria-label={props["aria-label"]}
+						aria-label={p["aria-label"]}
 						className="pencilIcon-z04-c5"
 						aria-hidden="false"
 						role="img"
