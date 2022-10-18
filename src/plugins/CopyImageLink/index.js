@@ -1,28 +1,28 @@
-module.exports = (Plugin, Api) => {
-	const { getModule } = BdApi.Webpack;
+module.exports = () => {
 	const {
-		Logger,
-		Toasts,
+		UI,
+		DOM,
+		React,
 		Patcher,
-		Utilities,
-		PluginUtilities,
-		DiscordModules: {
-			React
+		Webpack: {
+			getModule
 		}
-	} = Api;
+	} = BdApi;
 
 	// Modules
 	const ImageModal = getModule(m => m?.prototype?.render?.toString().includes("OPEN_ORIGINAL_IMAGE"));
 
 	// Helper functions
 	const Utils = {
-		showToast: (content, type) => Toasts[type](`[${config.info.name}] ${content}`),
+		showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`,{type}),
 		copy: (data) => {
 			DiscordNative.clipboard.copy(data);
-			Utils.showToast(data, "info");
-			Utils.showToast("Copied!", "success");
-		}
-	}
+			Utils.showToast("Link Copied!", "success");
+		},
+		getNestedProp: (obj, path) => path.split(".").reduce(function(ob, prop) {
+			return ob && ob[prop];
+		}, obj)
+	};
 
 	// components
 	const copyButton = require("components/copyButton.jsx");
@@ -30,27 +30,25 @@ module.exports = (Plugin, Api) => {
 	// styles
 	const css = require("styles.css");
 
-	return class CopyImageLink extends Plugin {
-		constructor() {
-			super();
-		}
+	return class CopyImageLink {
+		get name() { return config.info.name }
 
-		onStart() {
+		start() {
 			try {
-				PluginUtilities.addStyle(this.getName(), css);
-				Patcher.after(ImageModal.prototype, "render", (_, __, returnValue) => {
-					const children = Utilities.getNestedProp(returnValue, "props.children");
-					const { href } = Utilities.getNestedProp(returnValue, "props.children.2.props");
-					children.push(React.createElement(copyButton, { onClick: e => Utils.copy(href) }));
+				DOM.addStyle(this.name,css);
+				Patcher.after(this.name, ImageModal.prototype, "render", (_, __, returnValue) => {
+					const children = Utils.getNestedProp(returnValue, "props.children");
+					const { href } = Utils.getNestedProp(returnValue, "props.children.2.props");
+					children.push(React.createElement(copyButton, { href }));
 				});
 			} catch (e) {
-				Logger.err(e);
+				console.error(e);
 			}
 		}
 
-		onStop() {
-			PluginUtilities.removeStyle(this.getName());
-			Patcher.unpatchAll();
+		stop() {
+			DOM.removeStyle(this.name);
+			Patcher.unpatchAll(this.name);
 		}
 	};
 };
