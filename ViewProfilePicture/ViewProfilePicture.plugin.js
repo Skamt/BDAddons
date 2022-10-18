@@ -46,6 +46,7 @@ function initPlugin([Plugin, Api]) {
 			}
 		} = Api;
 		// Modules
+		const CurrentUserStore = getModule(Filters.byProps("getCurrentUser", "getUsers"));;
 		const UserBannerMask = getModule((m) => m.Z && m.Z.toString().includes("overrideAvatarDecorationURL"));
 		const ProfileTypeEnum = getModule(Filters.byProps("POPOUT"), { searchExports: true });
 		const ImageModal = getModule(m => m?.prototype?.render?.toString().includes("OPEN_ORIGINAL_IMAGE"));
@@ -71,21 +72,21 @@ function initPlugin([Plugin, Api]) {
 			})
 		};
 		// components
-		const ViewProfilePictureButton = ({ onClick }) => {
+		const ViewProfilePictureButton = (props) => {
 			return (
 				React.createElement(Tooltip, {
 						text: "Show profile picture",
 						position: "top"
 					},
-					(props) =>
+					(p) =>
 					React.createElement("div", {
 							...
-							props,
-							className: "VPP-Button pencilContainer-11Kuga",
-							onClick: onClick
+							p,
+							...
+							props
 						},
 						React.createElement("svg", {
-								"aria-label": props["aria-label"],
+								"aria-label": p["aria-label"],
 								className: "pencilIcon-z04-c5",
 								"aria-hidden": "false",
 								role: "img",
@@ -124,55 +125,87 @@ function initPlugin([Plugin, Api]) {
 		};;
 		// styles
 		const css = `/* View Profile Button */
-
-[class*=popoutBanner-] > div + .VPP-Button{
-    right:48px;
-}
-
-[class*=profileBanner-] > div + .VPP-Button {
-    right:58px;
-    top:14px;
-}
-
-[class*=profileBanner-] .VPP-Button > svg{
-    height: 24px;
-    width: 24px;
-}
-
-/* div replacement if No banner */
-
-.VPP-NoBanner {
-    width: 70vw;
-    height: 50vh;
-}
-
-/* Carousel Modal */
-
-.VPP-carousel.carouselModal-1eUFoq:not(#idontthinkso) {
-    height: auto;
-    width: auto;
-    position: static;
-    box-shadow: none;
-    transform: none !important;
-    background:none;
-}
-
-.VPP-carousel .modalCarouselWrapper-YK1MX4 {
-    position: static;
-}
-
-.VPP-carousel .arrowContainer-2wpC4q {
-    margin: 0 15px;
-    opacity: 0.8;
-    background: var(--background-primary);
+.VPP-Button{
+    background-color: rgba(32, 34, 37, 0.8);
+    cursor: pointer;
+    position: absolute;
+    display: flex;
+    padding: 5px;
     border-radius: 50%;
 }
 
-.VPP-carousel .imageWrapper-oMkQl4.imageWrapperBackground-3Vss_C {
-    min-height: 50vh;
+/* Popout */
+.VPP-normal{
+    top: 10px;
+    right:12px;
 }
-.VPP-carousel .imageWrapper-oMkQl4 > img{
-     max-height: 80vh;
+
+.VPP-current {
+    top: 10px;
+	right: 48px;
+}
+
+.VPP-premium {
+    top: 10px;
+	left: 12px;
+}
+
+/* Profile */
+.VPP-profile.VPP-normal{
+	top: 14px;
+	right: 16px;
+}
+
+.VPP-profile.VPP-current{
+	top: 14px;
+	right: 58px;
+}
+
+.VPP-profile.VPP-premium {
+	top: 14px;
+	left: 16px;
+}
+
+/* Bigger icon on profile */
+.VPP-settings svg,
+.VPP-profile svg{
+	height: 24px;
+	width: 24px;
+}
+
+/* div replacement if No banner */
+.VPP-NoBanner {
+	width: 70vw;
+	height: 50vh;
+}
+
+/* Carousel Modal */
+.VPP-carousel.carouselModal-1eUFoq:not(#idontthinkso) {
+	height: auto;
+	width: auto;
+	position: static;
+	box-shadow: none;
+	transform: none !important;
+	background: none;
+}
+
+.VPP-carousel .modalCarouselWrapper-YK1MX4 {
+	position: static;
+}
+
+.VPP-carousel .arrowContainer-2wpC4q {
+	margin: 0 15px;
+	opacity: 0.8;
+	background: var(--background-primary);
+	border-radius: 50%;
+}
+
+.VPP-carousel .imageWrapper-oMkQl4.imageWrapperBackground-3Vss_C {
+	min-height: 50vh;
+}
+
+.VPP-carousel .imageWrapper-oMkQl4 > img {
+	max-height: 80vh;
 }`;
 		return class ViewProfilePicture extends Plugin {
 			constructor() {
@@ -192,17 +225,24 @@ function initPlugin([Plugin, Api]) {
 				this.openCarousel([AvatarImageComponent, BannerImageComponent]);
 			}
 			patchUserBannerMask() {
-				Patcher.after(UserBannerMask, "Z", (_, [{ user, profileType }], returnValue) => {
-					let bannerStyleObject, children;
+				Patcher.after(UserBannerMask, "Z", (_, [{ user, isPremium, profileType }], returnValue) => {
+					const currentUser = CurrentUserStore.getCurrentUser();
+					let bannerStyleObject, children, className = "VPP-Button";
 					if (ProfileTypeEnum.MODAL === profileType || ProfileTypeEnum.POPOUT === profileType) {
 						bannerStyleObject = Utilities.getNestedProp(returnValue, "props.children.1.props.children.props.style");
 						children = Utilities.getNestedProp(returnValue, "props.children.1.props.children.props.children");
+						if (user.id === currentUser.id) className += " VPP-current"
+						if (isPremium) className += " VPP-premium"
+						if (!isPremium && user.id !== currentUser.id) className += " VPP-normal"
+						if (ProfileTypeEnum.MODAL === profileType) className += " VPP-profile"
 					} else if (ProfileTypeEnum.SETTINGS === profileType) {
 						bannerStyleObject = Utilities.getNestedProp(returnValue, "props.children.props.style");
 						children = Utilities.getNestedProp(returnValue, "props.children.props.children");
+						className += " VPP-settings VPP-normal"
 					}
 					children.push(
 						React.createElement(ViewProfilePictureButton, {
+							className,
 							onClick: _ => this.clickHandler(user, bannerStyleObject, ProfileTypeEnum.POPOUT === profileType)
 						})
 					);
