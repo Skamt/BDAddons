@@ -4,17 +4,18 @@ module.exports = (API) => {
 	const DiscordPermissions = getModule(m => m.ADD_REACTIONS, { searchExports: true });
 
 	class PermissionsOverride {
-		stop() {
-			Patcher.unpatchAll(config.info.name);
-		}
+		get name() { return config.info.name }
 		start() {
 			try {
-				Patcher.after(config.info.name, GuildPermissions, "can", (_, [perm], ret) => {
+				Patcher.after(this.name, GuildPermissions, "can", (_, [perm], ret) => {
 					return ret || ALLOWED.some(a => a === perm);
 				})
 			} catch (e) {
 				Logger.err(e);
 			}
+		}
+		stop() {
+			Patcher.unpatchAll(this.name);
 		}
 	}
 	const ALLOWED = [

@@ -14,6 +14,7 @@ module.exports = (Plugin, Api) => {
 	} = Api;
 
 	// Modules
+	const CurrentUserStore = getModule(Filters.byProps("getCurrentUser", "getUsers"));;
 	const UserBannerMask = getModule((m) => m.Z && m.Z.toString().includes("overrideAvatarDecorationURL"));
 	const ProfileTypeEnum = getModule(Filters.byProps("POPOUT"), { searchExports: true });
 	const ImageModal = getModule(m => m?.prototype?.render?.toString().includes("OPEN_ORIGINAL_IMAGE"));
@@ -70,17 +71,24 @@ module.exports = (Plugin, Api) => {
 		}
 
 		patchUserBannerMask() {
-			Patcher.after(UserBannerMask, "Z", (_, [{ user, profileType }], returnValue) => {
-				let bannerStyleObject, children;
+			Patcher.after(UserBannerMask, "Z", (_, [{ user, isPremium, profileType }], returnValue) => {
+				const currentUser = CurrentUserStore.getCurrentUser();
+				let bannerStyleObject, children, className = "VPP-Button";
 				if (ProfileTypeEnum.MODAL === profileType || ProfileTypeEnum.POPOUT === profileType) {
 					bannerStyleObject = Utilities.getNestedProp(returnValue, "props.children.1.props.children.props.style");
 					children = Utilities.getNestedProp(returnValue, "props.children.1.props.children.props.children");
+					if (user.id === currentUser.id) className += " VPP-current"
+					if (isPremium) className += " VPP-premium"
+					if (!isPremium && user.id !== currentUser.id) className += " VPP-normal"
+					if (ProfileTypeEnum.MODAL === profileType) className += " VPP-profile"
 				} else if (ProfileTypeEnum.SETTINGS === profileType) {
 					bannerStyleObject = Utilities.getNestedProp(returnValue, "props.children.props.style");
 					children = Utilities.getNestedProp(returnValue, "props.children.props.children");
+					className += " VPP-settings VPP-normal"
 				}
 				children.push(
 					React.createElement(ViewProfilePictureButton, {
+						className,
 						onClick: _ => this.clickHandler(user, bannerStyleObject, ProfileTypeEnum.POPOUT === profileType)
 					})
 				);
