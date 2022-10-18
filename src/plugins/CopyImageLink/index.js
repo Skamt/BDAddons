@@ -19,6 +19,7 @@ module.exports = () => {
 			DiscordNative.clipboard.copy(data);
 			Utils.showToast("Link Copied!", "success");
 		},
+		/* Stolen from Zlib until it gets added to BdApi */
 		getNestedProp: (obj, path) => path.split(".").reduce(function(ob, prop) {
 			return ob && ob[prop];
 		}, obj)
