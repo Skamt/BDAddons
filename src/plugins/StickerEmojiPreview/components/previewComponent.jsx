@@ -1,7 +1,5 @@
-module.exports = ({ sticker, element, data, previewSize }) => {
-	const url = sticker ? `https://media.discordapp.net/stickers/${data.id}.webp?size=640&quality=lossless` : data.replace(/(size=)(\d+)[&]/, `&size=640`);
+module.exports = ({ target, previewComponent, previewSize }) => {
 	const [show, setShow] = useState(false);
-
 	useEffect(() => {
 		function keyupHandler() {
 			setShow(!show);
@@ -15,7 +13,7 @@ module.exports = ({ sticker, element, data, previewSize }) => {
 				<div
 					className="stickersPreview"
 					style={{ width: `${previewSize}px` }}>
-					<img src={url}></img>
+					{previewComponent}
 				</div>
 			)}
 			shouldShow={show}
@@ -23,7 +21,7 @@ module.exports = ({ sticker, element, data, previewSize }) => {
 			align={Popout.Align.BOTTOM}
 			animation={Popout.Animation["SCALE"]}
 			spacing={60}>
-			{() => element}
+			{() => target}
 		</Popout>
 	);
 };

@@ -11,6 +11,8 @@ module.exports = (API) => {
 	const Popout = getModule(Filters.byStrings("renderPopout", "animationPosition"), { searchExports: true });
 	const ExpressionPickerInspector = getModule((m) => m.Z && m.Z.toString().includes("EMOJI_IS_FAVORITE_ARIA_LABEL"));
 
+	// Constants
+	const PREVIEW_SIZE = 300;
 	// components
 	const previewComponent = require("components/previewComponent.jsx");
 	// styles
@@ -20,21 +22,17 @@ module.exports = (API) => {
 		start() {
 			try {
 				DOM.addStyle(config.info.name, css);
-				Patcher.after(config.info.name, ExpressionPickerInspector, "Z", (_, args, ret) => {
-					if (ret.props.children[0].props.children.props.sticker)
-						return React.createElement(previewComponent, {
-							previewSize: 300,
-							sticker: true,
-							element: ret,
-							data: ret.props.children[0].props.children.props.sticker
+				Patcher.after(config.info.name, ExpressionPickerInspector, "Z", (_, [{ graphicPrimary }], ret) => {
+					return React.createElement(previewComponent, {
+						previewSize: PREVIEW_SIZE,
+						target: ret,
+						previewComponent : React.createElement(graphicPrimary.type,{
+							...graphicPrimary.props,
+							src : graphicPrimary.props.src?.replace(/([?&]size=)(\d+)/, `$1${PREVIEW_SIZE}`),
+							disableAnimation: false,
+							size: PREVIEW_SIZE
 						})
-					else {
-						return React.createElement(previewComponent, {
-							previewSize: 300,
-							element: ret,
-							data: ret.props.children[0].props.children.props.src || ""
-						})
-					}
+					})
 				})
 			} catch (e) {
 				console.error(e);
