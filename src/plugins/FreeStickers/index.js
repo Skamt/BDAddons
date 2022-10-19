@@ -1,19 +1,13 @@
 module.exports = (Plugin, Api) => {
-	const { Filters, getModule } = BdApi.Webpack;
 	const {
-		Logger,
-		Toasts,
+		UI,
+		DOM,
 		Patcher,
-		Utilities,
-		PluginUtilities,
-		DiscordModules: {
-			Permissions,
-			UserStore,
-			ChannelStore,
-			DiscordPermissions,
-			MessageActions
+		Webpack: {
+			Filters,
+			getModule
 		}
-	} = Api;
+	} = BdApi;
 
 	// Modules
 	let StickersSendabilityEnumKey, getStickerSendabilityKey, isSendableStickerKey;
@@ -27,8 +21,13 @@ module.exports = (Plugin, Api) => {
 		}
 	});
 
+	const Permissions = getModule(Filters.byProps("computePermissions"));
+	const ChannelStore = getModule(Filters.byProps("getChannel", "getDMFromUserId"));
+	const DiscordPermissions = getModule(Filters.byProps("ADD_REACTIONS"), { searchExports: true });
+	const MessageActions = getModule(Filters.byProps("jumpToMessage", "_sendMessage"));
+	const UserStore = getModule(Filters.byProps("getCurrentUser","getUser"));
+	const StickerStore = getModule(Filters.byProps("getStickerById"));
 	const ChannelTextArea = getModule((exp) => exp.type.render.toString().includes('CHANNEL_TEXT_AREA'));
-	const StickerStore = getModule(Filters.byProps("getStickerById"), { searchExports: true });
 	const StickerTypeEnum = getModule(Filters.byProps("GUILD", "STANDARD"), { searchExports: true });
 	const StickerFormatEnum = getModule(Filters.byProps("APNG", "LOTTIE"), { searchExports: true });
 	const StickersSendabilityEnum = StickersSendability[StickersSendabilityEnumKey];
@@ -59,7 +58,7 @@ module.exports = (Plugin, Api) => {
 	// Helper functions
 	const Utils = {
 		isTagged: (str) => Object.values(TAGS).some(tag => str.includes(tag)),
-		showToast: (content, type) => Toasts[type](`[${config.info.name}] ${content}`),
+		showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`,{type}),
 		getStickerUrl: (stickerId, size) => `https://media.discordapp.net/stickers/${stickerId}.webp?passthrough=false&quality=lossless&size=${size}`,
 		hasEmbedPerms: (channel, user) => !channel.guild_id || Permissions.can({ permission: DiscordPermissions.EMBED_LINKS, context: channel, user }),
 		updateStickers: () => StickerStore.stickerMetadata.forEach((value, key) => StickerStore.getStickerById(key)),
@@ -75,6 +74,7 @@ module.exports = (Plugin, Api) => {
 		constructor() {
 			super();
 		}
+		get name() { return config.info.name }		
 
 		handleUnsendableSticker({ user, sticker, channel }, direct) {
 			if (Utils.isAnimatedSticker(sticker) && !this.settings.shouldSendAnimatedStickers)
@@ -111,7 +111,7 @@ module.exports = (Plugin, Api) => {
 			/** 
 			 * The existance of this plugin implies the existance of this patch 
 			 */
-			Patcher.instead(MessageActions, 'sendStickers', (_, args, originalFunc) => {
+			Patcher.instead(this.name,MessageActions, 'sendStickers', (_, args, originalFunc) => {
 				const [channelId, [stickerId]] = args;
 				const stickerObj = this.handleSticker(channelId, stickerId);
 				if (stickerObj.isSendable)
@@ -128,7 +128,7 @@ module.exports = (Plugin, Api) => {
 			 * the sticker will be added as attachment, and therefore triggers an api request
 			 * must intercept and send as link
 			 */
-			Patcher.before(MessageActions, 'sendMessage', (_, args) => {
+			Patcher.before(this.name,MessageActions, 'sendMessage', (_, args) => {
 				const [channelId, , , attachments] = args;
 				if (attachments && attachments.stickerIds && attachments.stickerIds.filter) {
 					const [stickerId] = attachments.stickerIds;
@@ -153,7 +153,7 @@ module.exports = (Plugin, Api) => {
 			 * 262144n is for Sending external Emojis permission
 			 * which is what's needed to let stickers show up in the picker. ¯\_(ツ)_/¯
 			 */
-			Patcher.before(ChannelTextArea.type, "render", (_, [{ channel }]) => {
+			Patcher.before(this.name,ChannelTextArea.type, "render", (_, [{ channel }]) => {
 				const userId = UserStore.getCurrentUser().id;
 				channel.permissionOverwrites[userId] = {
 					id: userId,
@@ -167,7 +167,7 @@ module.exports = (Plugin, Api) => {
 		patchStickerClickability() {
 			// if it's a guild sticker return true to make it clickable 
 			// ignoreing discord's stickers because ToS, and they're not regular images
-			Patcher.after(StickersSendability, isSendableStickerKey, (_, args, returnValue) => {
+			Patcher.after(this.name,StickersSendability, isSendableStickerKey, (_, args, returnValue) => {
 				return args[0].type === StickerTypeEnum.GUILD;
 			});
 		}
@@ -178,7 +178,7 @@ module.exports = (Plugin, Api) => {
 			 * to style highlight them if setting is set to true
 			 * the sticker description gets added to the alt DOM attributes
 			 */
-			Patcher.after(StickerStore, "getStickerById", (_, args, sticker) => {
+			Patcher.after(this.name,StickerStore, "getStickerById", (_, args, sticker) => {
 				if (!sticker) return;
 				if (!Utils.isTagged(sticker.description || "") && !Utils.isLottieSticker(sticker) && Utils.isAnimatedSticker(sticker) && this.settings.shouldHighlightAnimated)
 					sticker.description += TAGS.ANIMATED_STICKER_TAG;
@@ -189,7 +189,7 @@ module.exports = (Plugin, Api) => {
 
 		patchStickerSuggestion() {
 			// Enable suggestions for custom stickers only 
-			Patcher.after(StickersSendability, getStickerSendabilityKey, (_, args, returnValue) => {
+			Patcher.after(this.name,StickersSendability, getStickerSendabilityKey, (_, args, returnValue) => {
 				if (args[0].type === StickerTypeEnum.GUILD) {
 					const { SENDABLE } = StickersSendabilityEnum;
 					return returnValue !== SENDABLE ? SENDABLE : returnValue;
@@ -199,7 +199,7 @@ module.exports = (Plugin, Api) => {
 
 		onStart() {
 			try {
-				PluginUtilities.addStyle(this.getName(), css);
+				DOM.addStyle(this.name,css);
 				this.patchStickerClickability();
 				this.patchSendSticker();
 				this.patchGetStickerById();
@@ -207,13 +207,13 @@ module.exports = (Plugin, Api) => {
 				this.patchStickerSuggestion();
 				this.patchChannelTextArea();
 			} catch (e) {
-				Logger.err(e);
+				console.error(e);
 			}
 		}
 
 		onStop() {
-			PluginUtilities.removeStyle(this.getName());
-			Patcher.unpatchAll();
+			DOM.removeStyle(this.name);
+			Patcher.unpatchAll(this.name);
 		}
 
 		getSettingsPanel() {
