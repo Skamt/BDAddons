@@ -1,11 +1,11 @@
-module.exports = (API) => {
+module.exports = () => {
 	const {
 		DOM,
 		React,
 		Patcher,
 		React: { useEffect, useState },
 		Webpack: { Filters, getModule }
-	} = API;
+	} = BdApi;
 
 	// Modules
 	const Popout = getModule(Filters.byStrings("renderPopout", "animationPosition"), { searchExports: true });
