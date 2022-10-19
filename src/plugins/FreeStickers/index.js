@@ -1,4 +1,4 @@
-module.exports = (Plugin, Api) => {
+module.exports = () => {
 	const {
 		UI,
 		DOM,
