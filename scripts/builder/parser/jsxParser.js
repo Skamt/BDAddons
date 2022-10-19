@@ -6,7 +6,7 @@ module.exports = filePath => {
 		.readFileSync(filePath)
 		.toString()
 		.replace(/module\.exports\s*=\s*/, "");
-	return babel.transformSync(code, {
+	const formatterCode = babel.transformSync(code, {
 		retainLines: true,
 		plugins: [
 			[
@@ -17,4 +17,6 @@ module.exports = filePath => {
 			]
 		]
 	}).code;
+
+	return formatterCode.slice(0, -1);
 };
