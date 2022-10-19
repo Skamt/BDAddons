@@ -20,7 +20,6 @@ module.exports = () => {
 			return true;
 		}
 	});
-
 	const Permissions = getModule(Filters.byProps("computePermissions"));
 	const ChannelStore = getModule(Filters.byProps("getChannel", "getDMFromUserId"));
 	const DiscordPermissions = getModule(Filters.byProps("ADD_REACTIONS"), { searchExports: true });
@@ -36,12 +35,17 @@ module.exports = () => {
 		let ComponentDispatch;
 		return (content) => {
 			if (!ComponentDispatch) ComponentDispatch = getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners("INSERT_TEXT").length, { searchExports: true });
+			/**
+			 * Not sure why but when i call this within the patch below it just doesn't work
+			 * i did trace through and got into a deep rabbit so i just gave up on it.
+			 * Yet as we all know, when in doubt wait for the stack to empty out
+			 */
 			setTimeout(() => {
 				ComponentDispatch.dispatchToLastSubscribed("INSERT_TEXT", {
 					plainText: content,
 					rawText: content
 				});
-			}, 0)
+			}, 0);
 		}
 	})();
 
