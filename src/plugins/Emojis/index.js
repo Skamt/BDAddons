@@ -1,21 +1,21 @@
-module.exports = (Plugin, Api) => {
-	const { Filters, getModule } = BdApi.Webpack;
+module.exports = () => {
 	const {
-		Logger,
-		Toasts,
+		UI,
+		DOM,
 		Patcher,
-		PluginUtilities,
-		DiscordModules: {
-			Permissions,
-			UserStore,
-			ChannelStore,
-			DiscordPermissions,
-			SelectedChannelStore,
-			MessageActions
+		Webpack: {
+			Filters,
+			getModule
 		}
-	} = Api;
+	} = BdApi;
 
 	// Modules
+	const SelectedChannelStore = getModule(Filters.byProps("getLastSelectedChannelId"));
+	const UserStore = getModule(Filters.byProps("getCurrentUser", "getUser"));
+	const Permissions = getModule(Filters.byProps("computePermissions"));
+	const ChannelStore = getModule(Filters.byProps("getChannel", "getDMFromUserId"));
+	const DiscordPermissions = getModule(Filters.byProps("ADD_REACTIONS"), { searchExports: true });
+	const MessageActions = getModule(Filters.byProps("jumpToMessage", "_sendMessage"));
 	const EmojiIntentionEnum = getModule(Filters.byProps("GUILD_ROLE_BENEFIT_EMOJI"), { searchExports: true });
 	const EmojiSendAvailabilityEnum = getModule(Filters.byProps("GUILD_SUBSCRIPTION_UNAVAILABLE"), { searchExports: true });
 	const EmojiFunctions = getModule(Filters.byProps("getEmojiUnavailableReason"), { searchExports: true });
@@ -31,7 +31,7 @@ module.exports = (Plugin, Api) => {
 
 	// Helper functions
 	const Utils = {
-		showToast: (content, type) => Toasts[type](`[${config.info.name}] ${content}`),
+		showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),
 		hasEmbedPerms: (channel, user) => !channel.guild_id || Permissions.can({ permission: DiscordPermissions.EMBED_LINKS, context: channel, user }),
 		isEmojiSendable: (e) => EmojiFunctions.getEmojiUnavailableReason(e) === null,
 		getEmojiUrl: (emoji, size) => `${emoji.url.replace(/(size=)(\d+)[&]/, '')}&size=${size}`,
@@ -51,6 +51,7 @@ module.exports = (Plugin, Api) => {
 			super();
 			this.emojiClickHandler = this.emojiClickHandler.bind(this);
 		}
+		get name() { return config.info.name }
 
 		sendEmojiAsLink(emoji, channel) {
 			if (this.settings.sendDirectly)
@@ -86,26 +87,26 @@ module.exports = (Plugin, Api) => {
 		}
 
 		patchEmojiPickerUnavailable() {
-			Patcher.after(EmojiFunctions, "isEmojiFiltered", (_, args, ret) => false);
-			Patcher.after(EmojiFunctions, "getEmojiUnavailableReason", (_, args, ret) =>
+			Patcher.after(this.name, EmojiFunctions, "isEmojiFiltered", (_, args, ret) => false);
+			Patcher.after(this.name, EmojiFunctions, "getEmojiUnavailableReason", (_, args, ret) =>
 				ret === EmojiSendAvailabilityEnum.DISALLOW_EXTERNAL ? EmojiSendAvailabilityEnum.PREMIUM_LOCKED : ret
 			);
 		}
 
 		onStart() {
 			try {
-				PluginUtilities.addStyle(this.getName(), css);
+				DOM.addStyle(this.name, css);
 				document.addEventListener("mouseup", this.emojiClickHandler);
 				this.patchEmojiPickerUnavailable();
 			} catch (e) {
-				Logger.err(e);
+				console.error(e);
 			}
 		}
 
 		onStop() {
 			document.removeEventListener("mouseup", this.emojiClickHandler);
-			PluginUtilities.removeStyle(this.getName());
-			Patcher.unpatchAll();
+			DOM.removeStyle(this.name);
+			Patcher.unpatchAll(this.name);
 		}
 
 		getSettingsPanel() {
