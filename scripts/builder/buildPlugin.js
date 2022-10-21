@@ -22,14 +22,12 @@ module.exports = (pluginRootFile, pluginFolder, pluginFiles, config) => {
 
 	const content = parser(pluginRootFile, pluginFolder, pluginFiles);
 	let result = buildMeta(config);
-	if (process.argv.slice(2).length) {
-		result += `{{CONFIG_TEMPLATE}}module.exports = ({{PLUGIN_TEMPLATE}})()`;
-		result = result.replace(`{{CONFIG_TEMPLATE}}`, `const config = ${beautify(JSON.stringify(config),{"brace_style": "collapse"}).replace(/"((?:[A-Za-z]|[0-9]|_)+)"\s?:/g, "$1:")};`)
-		result = result.replace(`{{PLUGIN_TEMPLATE}}`, `${content}`);
-	} else {
+	if (config["no-zpl"]) {
+		result += `const config = {{ PLUGIN__CONFIG }};module.exports = ({{ PLUGIN__BODY }})();`;
+		delete config["no-zpl"]; // Temporary
+	} else
 		result += template;
-		result = result.replace(`const config = "";`, `const config = ${beautify(JSON.stringify(config),{"brace_style": "collapse"}).replace(/"((?:[A-Za-z]|[0-9]|_)+)"\s?:/g, "$1:")};`)
-		result = result.replace(`const plugin = "";`, `const plugin = ${content};`);
-	}
+	result = result.replace(`{{ PLUGIN__CONFIG }}`, `${beautify(JSON.stringify(config),{"brace_style": "collapse"}).replace(/"((?:[A-Za-z]|[0-9]|_)+)"\s?:/g, "$1:")}`)
+	result = result.replace(`{{ PLUGIN__BODY }}`, `${content}`);
 	return beautify(result);
 }
