@@ -1,7 +1,7 @@
 /**
  * @name CopyImageLink
  * @description Adds (Copy Link) button next to (Open Original) under images
- * @version 1.0.0
+ * @version 1.0.1
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/CopyImageLink
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/CopyImageLink/CopyImageLink.plugin.js
@@ -9,7 +9,7 @@
 const config = {
 	info: {
 		name: "CopyImageLink",
-		version: "1.0.0",
+		version: "1.0.1",
 		description: "Adds (Copy Link) button next to (Open Original) under images",
 		source: "https://raw.githubusercontent.com/Skamt/BDAddons/main/CopyImageLink/CopyImageLink.plugin.js",
 		github: "https://github.com/Skamt/BDAddons/tree/main/CopyImageLink",
@@ -18,54 +18,42 @@ const config = {
 		}]
 	}
 };
-class MissinZeresPluginLibraryClass {
-	constructor() { this.config = config; }
-	load() {
-		BdApi.showConfirmationModal('Library plugin is needed',
-			[`**ZeresPluginLibrary** is needed to run **${this.config.info.name}**.`, `Please download it from the officiel website`, 'https://betterdiscord.app/plugin/ZeresPluginLibrary'], {
-				confirmText: 'Ok'
-			});
-	}
-	start() {}
-	stop() {}
-}
-
-function initPlugin([Plugin, Api]) {
-	const plugin = (Plugin, Api) => {
-		const { getModule } = BdApi.Webpack;
-		const {
-			Logger,
-			Toasts,
-			Patcher,
-			Utilities,
-			PluginUtilities,
-			DiscordModules: {
-				React
-			}
-		} = Api;
-		// Modules
-		const ImageModal = getModule(m => m?.prototype?.render?.toString().includes("OPEN_ORIGINAL_IMAGE"));
-		// Helper functions
-		const Utils = {
-			showToast: (content, type) => Toasts[type](`[${config.info.name}] ${content}`),
-			copy: (data) => {
-				DiscordNative.clipboard.copy(data);
-				Utils.showToast(data, "info");
-				Utils.showToast("Copied!", "success");
-			}
+module.exports = (() => {
+	const {
+		UI,
+		DOM,
+		React,
+		Patcher,
+		Webpack: {
+			getModule
 		}
-		// components
-		const copyButton = ({ onClick }) => {
-			return (
-				React.createElement(React.Fragment, null,
-					React.createElement("span", { className: "copyBtnSpan" }, "|"),
-					React.createElement("a", {
-						className: "downloadLink-1OAglv anchorUnderlineOnHover-2qPutX copyBtn",
-						onClick: onClick
-					}, "Copy link")));
-		};;
-		// styles
-		const css = `.copyBtn {
+	} = BdApi;
+	// Modules
+	const ImageModal = getModule(m => m?.prototype?.render?.toString().includes("OPEN_ORIGINAL_IMAGE"));
+	// Helper functions
+	const Utils = {
+		showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),
+		copy: (data) => {
+			DiscordNative.clipboard.copy(data);
+			Utils.showToast("Link Copied!", "success");
+		},
+		/* Stolen from Zlib until it gets added to BdApi */
+		getNestedProp: (obj, path) => path.split(".").reduce(function(ob, prop) {
+			return ob && ob[prop];
+		}, obj)
+	};
+	// components
+	const copyButton = ({ href }) => {
+		return (
+			React.createElement(React.Fragment, null,
+				React.createElement("span", { className: "copyBtnSpan" }, "|"),
+				React.createElement("a", {
+					className: "downloadLink-1OAglv anchorUnderlineOnHover-2qPutX copyBtn",
+					onClick: (_) => Utils.copy(href)
+				}, "Copy link")));
+	};
+	// styles
+	const css = `.copyBtn {
 	left: 95px;
 	white-space: nowrap;
 }
@@ -79,28 +67,23 @@ function initPlugin([Plugin, Api]) {
 	line-height: 30px;
 	opacity: 0.5;
 }`;
-		return class CopyImageLink extends Plugin {
-			constructor() {
-				super();
+	return class CopyImageLink {
+		get name() { return config.info.name }
+		start() {
+			try {
+				DOM.addStyle(this.name, css);
+				Patcher.after(this.name, ImageModal.prototype, "render", (_, __, returnValue) => {
+					const children = Utils.getNestedProp(returnValue, "props.children");
+					const { href } = Utils.getNestedProp(returnValue, "props.children.2.props");
+					children.push(React.createElement(copyButton, { href }));
+				});
+			} catch (e) {
+				console.error(e);
 			}
-			onStart() {
-				try {
-					PluginUtilities.addStyle(this.getName(), css);
-					Patcher.after(ImageModal.prototype, "render", (_, __, returnValue) => {
-						const children = Utilities.getNestedProp(returnValue, "props.children");
-						const { href } = Utilities.getNestedProp(returnValue, "props.children.2.props");
-						children.push(React.createElement(copyButton, { onClick: e => Utils.copy(href) }));
-					});
-				} catch (e) {
-					Logger.err(e);
-				}
-			}
-			onStop() {
-				PluginUtilities.removeStyle(this.getName());
-				Patcher.unpatchAll();
-			}
-		};
+		}
+		stop() {
+			DOM.removeStyle(this.name);
+			Patcher.unpatchAll(this.name);
+		}
 	};
-	return plugin(Plugin, Api);
-}
-module.exports = !global.ZeresPluginLibrary ? MissinZeresPluginLibraryClass : initPlugin(global.ZeresPluginLibrary.buildPlugin(config));
+})();
