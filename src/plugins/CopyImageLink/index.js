@@ -26,7 +26,7 @@ module.exports = () => {
 	};
 
 	// components
-	const copyButton = require("components/copyButton.jsx");
+	const copyButton = require("components/CopyButton.jsx");
 
 	// styles
 	const css = require("styles.css");
