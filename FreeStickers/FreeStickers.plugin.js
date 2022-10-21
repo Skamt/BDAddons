@@ -55,35 +55,18 @@ const config = {
 		stickToMarkers: true
 	}]
 };
-class MissinZeresPluginLibraryClass {
-	constructor() { this.config = config; }
-	load() {
-		BdApi.showConfirmationModal('Library plugin is needed',
-			[`**ZeresPluginLibrary** is needed to run **${this.config.info.name}**.`, `Please download it from the officiel website`, 'https://betterdiscord.app/plugin/ZeresPluginLibrary'], {
-				confirmText: 'Ok'
-			});
-	}
-	start() {}
-	stop() {}
-}
 
 function initPlugin([Plugin, Api]) {
-	const plugin = (Plugin, Api) => {
-		const { Filters, getModule } = BdApi.Webpack;
+	const plugin = () => {
 		const {
-			Logger,
-			Toasts,
+			UI,
+			DOM,
 			Patcher,
-			Utilities,
-			PluginUtilities,
-			DiscordModules: {
-				Permissions,
-				UserStore,
-				ChannelStore,
-				DiscordPermissions,
-				MessageActions
+			Webpack: {
+				Filters,
+				getModule
 			}
-		} = Api;
+		} = BdApi;
 		// Modules
 		let StickersSendabilityEnumKey, getStickerSendabilityKey, isSendableStickerKey;
 		const StickersSendability = getModule(exp => {
@@ -95,8 +78,13 @@ function initPlugin([Plugin, Api]) {
 				return true;
 			}
 		});
+		const Permissions = getModule(Filters.byProps("computePermissions"));
+		const ChannelStore = getModule(Filters.byProps("getChannel", "getDMFromUserId"));
+		const DiscordPermissions = getModule(Filters.byProps("ADD_REACTIONS"), { searchExports: true });
+		const MessageActions = getModule(Filters.byProps("jumpToMessage", "_sendMessage"));
+		const UserStore = getModule(Filters.byProps("getCurrentUser", "getUser"));
+		const StickerStore = getModule(Filters.byProps("getStickerById"));
 		const ChannelTextArea = getModule((exp) => exp.type.render.toString().includes('CHANNEL_TEXT_AREA'));
-		const StickerStore = getModule(Filters.byProps("getStickerById"), { searchExports: true });
 		const StickerTypeEnum = getModule(Filters.byProps("GUILD", "STANDARD"), { searchExports: true });
 		const StickerFormatEnum = getModule(Filters.byProps("APNG", "LOTTIE"), { searchExports: true });
 		const StickersSendabilityEnum = StickersSendability[StickersSendabilityEnumKey];
@@ -105,12 +93,17 @@ function initPlugin([Plugin, Api]) {
 			let ComponentDispatch;
 			return (content) => {
 				if (!ComponentDispatch) ComponentDispatch = getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners("INSERT_TEXT").length, { searchExports: true });
+				/**
+				 * Not sure why but when i call this within the patch below it just doesn't work
+				 * i did trace through and got into a deep rabbit so i just gave up on it.
+				 * Yet as we all know, when in doubt wait for the stack to empty out
+				 */
 				setTimeout(() => {
 					ComponentDispatch.dispatchToLastSubscribed("INSERT_TEXT", {
 						plainText: content,
 						rawText: content
 					});
-				}, 0)
+				}, 0);
 			}
 		})();
 		// Strings & Constants
@@ -125,7 +118,7 @@ function initPlugin([Plugin, Api]) {
 		// Helper functions
 		const Utils = {
 			isTagged: (str) => Object.values(TAGS).some(tag => str.includes(tag)),
-			showToast: (content, type) => Toasts[type](`[${config.info.name}] ${content}`),
+			showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),
 			getStickerUrl: (stickerId, size) => `https://media.discordapp.net/stickers/${stickerId}.webp?passthrough=false&quality=lossless&size=${size}`,
 			hasEmbedPerms: (channel, user) => !channel.guild_id || Permissions.can({ permission: DiscordPermissions.EMBED_LINKS, context: channel, user }),
 			updateStickers: () => StickerStore.stickerMetadata.forEach((value, key) => StickerStore.getStickerById(key)),
@@ -146,6 +139,7 @@ function initPlugin([Plugin, Api]) {
 			constructor() {
 				super();
 			}
+			get name() { return config.info.name }
 			handleUnsendableSticker({ user, sticker, channel }, direct) {
 				if (Utils.isAnimatedSticker(sticker) && !this.settings.shouldSendAnimatedStickers)
 					return Utils.showToast(STRINGS.disabledAnimatedStickersErrorMessage, "info");
@@ -177,7 +171,7 @@ function initPlugin([Plugin, Api]) {
 				/** 
 				 * The existance of this plugin implies the existance of this patch 
 				 */
-				Patcher.instead(MessageActions, 'sendStickers', (_, args, originalFunc) => {
+				Patcher.instead(this.name, MessageActions, 'sendStickers', (_, args, originalFunc) => {
 					const [channelId, [stickerId]] = args;
 					const stickerObj = this.handleSticker(channelId, stickerId);
 					if (stickerObj.isSendable)
@@ -193,7 +187,7 @@ function initPlugin([Plugin, Api]) {
 				 * the sticker will be added as attachment, and therefore triggers an api request
 				 * must intercept and send as link
 				 */
-				Patcher.before(MessageActions, 'sendMessage', (_, args) => {
+				Patcher.before(this.name, MessageActions, 'sendMessage', (_, args) => {
 					const [channelId, , , attachments] = args;
 					if (attachments && attachments.stickerIds && attachments.stickerIds.filter) {
 						const [stickerId] = attachments.stickerIds;
@@ -213,11 +207,11 @@ function initPlugin([Plugin, Api]) {
 				 * so that stickers show up in the picker. in channels that disable external stickers
 				 * While this may feel like a feature bypass, I believe if a sticker is posted as an image, 
 				 * it's no longer a sticker anymore.
-
+				 
 				 * 262144n is for Sending external Emojis permission
 				 * which is what's needed to let stickers show up in the picker. ¯\_(ツ)_/¯
 				 */
-				Patcher.before(ChannelTextArea.type, "render", (_, [{ channel }]) => {
+				Patcher.before(this.name, ChannelTextArea.type, "render", (_, [{ channel }]) => {
 					const userId = UserStore.getCurrentUser().id;
 					channel.permissionOverwrites[userId] = {
 						id: userId,
@@ -230,7 +224,7 @@ function initPlugin([Plugin, Api]) {
 			patchStickerClickability() {
 				// if it's a guild sticker return true to make it clickable 
 				// ignoreing discord's stickers because ToS, and they're not regular images
-				Patcher.after(StickersSendability, isSendableStickerKey, (_, args, returnValue) => {
+				Patcher.after(this.name, StickersSendability, isSendableStickerKey, (_, args, returnValue) => {
 					return args[0].type === StickerTypeEnum.GUILD;
 				});
 			}
@@ -240,7 +234,7 @@ function initPlugin([Plugin, Api]) {
 				 * to style highlight them if setting is set to true
 				 * the sticker description gets added to the alt DOM attributes
 				 */
-				Patcher.after(StickerStore, "getStickerById", (_, args, sticker) => {
+				Patcher.after(this.name, StickerStore, "getStickerById", (_, args, sticker) => {
 					if (!sticker) return;
 					if (!Utils.isTagged(sticker.description || "") && !Utils.isLottieSticker(sticker) && Utils.isAnimatedSticker(sticker) && this.settings.shouldHighlightAnimated)
 						sticker.description += TAGS.ANIMATED_STICKER_TAG;
@@ -250,7 +244,7 @@ function initPlugin([Plugin, Api]) {
 			}
 			patchStickerSuggestion() {
 				// Enable suggestions for custom stickers only 
-				Patcher.after(StickersSendability, getStickerSendabilityKey, (_, args, returnValue) => {
+				Patcher.after(this.name, StickersSendability, getStickerSendabilityKey, (_, args, returnValue) => {
 					if (args[0].type === StickerTypeEnum.GUILD) {
 						const { SENDABLE } = StickersSendabilityEnum;
 						return returnValue !== SENDABLE ? SENDABLE : returnValue;
@@ -259,7 +253,7 @@ function initPlugin([Plugin, Api]) {
 			}
 			onStart() {
 				try {
-					PluginUtilities.addStyle(this.getName(), css);
+					DOM.addStyle(this.name, css);
 					this.patchStickerClickability();
 					this.patchSendSticker();
 					this.patchGetStickerById();
@@ -267,12 +261,12 @@ function initPlugin([Plugin, Api]) {
 					this.patchStickerSuggestion();
 					this.patchChannelTextArea();
 				} catch (e) {
-					Logger.err(e);
+					console.error(e);
 				}
 			}
 			onStop() {
-				PluginUtilities.removeStyle(this.getName());
-				Patcher.unpatchAll();
+				DOM.removeStyle(this.name);
+				Patcher.unpatchAll(this.name);
 			}
 			getSettingsPanel() {
 				const panel = this.buildSettingsPanel();
@@ -286,4 +280,13 @@ function initPlugin([Plugin, Api]) {
 	};
 	return plugin(Plugin, Api);
 }
-module.exports = !global.ZeresPluginLibrary ? MissinZeresPluginLibraryClass : initPlugin(global.ZeresPluginLibrary.buildPlugin(config));
+module.exports = !global.ZeresPluginLibrary ?
+	() => ({
+		stop() {},
+		start() {
+			BdApi.UI.showConfirmationModal("Library plugin is needed", [`**ZeresPluginLibrary** is needed to run **${this.config.info.name}**.`, `Please download it from the officiel website`, "https://betterdiscord.app/plugin/ZeresPluginLibrary"], {
+				confirmText: "Ok"
+			});
+		}
+	}) :
+	initPlugin(global.ZeresPluginLibrary.buildPlugin(config));

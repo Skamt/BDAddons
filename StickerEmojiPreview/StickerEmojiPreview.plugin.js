@@ -18,14 +18,14 @@ const config = {
 		}]
 	}
 };
-module.exports = ((API) => {
+module.exports = (() => {
 	const {
 		DOM,
 		React,
 		Patcher,
 		React: { useEffect, useState },
 		Webpack: { Filters, getModule }
-	} = API;
+	} = BdApi;
 	// Modules
 	const Popout = getModule(Filters.byStrings("renderPopout", "animationPosition"), { searchExports: true });
 	const ExpressionPickerInspector = getModule((m) => m.Z && m.Z.toString().includes("EMOJI_IS_FAVORITE_ARIA_LABEL"));
@@ -56,7 +56,7 @@ module.exports = ((API) => {
 					spacing: 60
 				},
 				() => target));
-	};;
+	};
 	// styles
 	const css = `.stickersPreview {
 	width:400px;
@@ -100,4 +100,4 @@ module.exports = ((API) => {
 			Patcher.unpatchAll(config.info.name);
 		}
 	};
-})(BdApi)
+})();

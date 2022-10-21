@@ -1,7 +1,7 @@
 /**
  * @name Emojis
  * @description Send emoji as link if it can't be sent it normally.
- * @version 1.0.0
+ * @version 1.0.1
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/Emojis
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/Emojis/Emojis.plugin.js
@@ -9,7 +9,7 @@
 const config = {
 	info: {
 		name: "Emojis",
-		version: "1.0.0",
+		version: "1.0.1",
 		description: "Send emoji as link if it can't be sent it normally.",
 		source: "https://raw.githubusercontent.com/Skamt/BDAddons/main/Emojis/Emojis.plugin.js",
 		github: "https://github.com/Skamt/BDAddons/tree/main/Emojis",
@@ -45,36 +45,25 @@ const config = {
 		stickToMarkers: true
 	}]
 };
-class MissinZeresPluginLibraryClass {
-	constructor() { this.config = config; }
-	load() {
-		BdApi.showConfirmationModal('Library plugin is needed',
-			[`**ZeresPluginLibrary** is needed to run **${this.config.info.name}**.`, `Please download it from the officiel website`, 'https://betterdiscord.app/plugin/ZeresPluginLibrary'], {
-				confirmText: 'Ok'
-			});
-	}
-	start() {}
-	stop() {}
-}
 
 function initPlugin([Plugin, Api]) {
-	const plugin = (Plugin, Api) => {
-		const { Filters, getModule } = BdApi.Webpack;
+	const plugin = () => {
 		const {
-			Logger,
-			Toasts,
+			UI,
+			DOM,
 			Patcher,
-			PluginUtilities,
-			DiscordModules: {
-				Permissions,
-				UserStore,
-				ChannelStore,
-				DiscordPermissions,
-				SelectedChannelStore,
-				MessageActions
+			Webpack: {
+				Filters,
+				getModule
 			}
-		} = Api;
+		} = BdApi;
 		// Modules
+		const SelectedChannelStore = getModule(Filters.byProps("getLastSelectedChannelId"));
+		const UserStore = getModule(Filters.byProps("getCurrentUser", "getUser"));
+		const Permissions = getModule(Filters.byProps("computePermissions"));
+		const ChannelStore = getModule(Filters.byProps("getChannel", "getDMFromUserId"));
+		const DiscordPermissions = getModule(Filters.byProps("ADD_REACTIONS"), { searchExports: true });
+		const MessageActions = getModule(Filters.byProps("jumpToMessage", "_sendMessage"));
 		const EmojiIntentionEnum = getModule(Filters.byProps("GUILD_ROLE_BENEFIT_EMOJI"), { searchExports: true });
 		const EmojiSendAvailabilityEnum = getModule(Filters.byProps("GUILD_SUBSCRIPTION_UNAVAILABLE"), { searchExports: true });
 		const EmojiFunctions = getModule(Filters.byProps("getEmojiUnavailableReason"), { searchExports: true });
@@ -89,7 +78,7 @@ function initPlugin([Plugin, Api]) {
 		})();
 		// Helper functions
 		const Utils = {
-			showToast: (content, type) => Toasts[type](`[${config.info.name}] ${content}`),
+			showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),
 			hasEmbedPerms: (channel, user) => !channel.guild_id || Permissions.can({ permission: DiscordPermissions.EMBED_LINKS, context: channel, user }),
 			isEmojiSendable: (e) => EmojiFunctions.getEmojiUnavailableReason(e) === null,
 			getEmojiUrl: (emoji, size) => `${emoji.url.replace(/(size=)(\d+)[&]/, '')}&size=${size}`,
@@ -111,6 +100,7 @@ function initPlugin([Plugin, Api]) {
 				super();
 				this.emojiClickHandler = this.emojiClickHandler.bind(this);
 			}
+			get name() { return config.info.name }
 			sendEmojiAsLink(emoji, channel) {
 				if (this.settings.sendDirectly)
 					MessageActions.sendMessage(channel.id, {
@@ -140,24 +130,24 @@ function initPlugin([Plugin, Api]) {
 					this.emojiHandler(props.children.props.emoji);
 			}
 			patchEmojiPickerUnavailable() {
-				Patcher.after(EmojiFunctions, "isEmojiFiltered", (_, args, ret) => false);
-				Patcher.after(EmojiFunctions, "getEmojiUnavailableReason", (_, args, ret) =>
+				Patcher.after(this.name, EmojiFunctions, "isEmojiFiltered", (_, args, ret) => false);
+				Patcher.after(this.name, EmojiFunctions, "getEmojiUnavailableReason", (_, args, ret) =>
 					ret === EmojiSendAvailabilityEnum.DISALLOW_EXTERNAL ? EmojiSendAvailabilityEnum.PREMIUM_LOCKED : ret
 				);
 			}
 			onStart() {
 				try {
-					PluginUtilities.addStyle(this.getName(), css);
+					DOM.addStyle(this.name, css);
 					document.addEventListener("mouseup", this.emojiClickHandler);
 					this.patchEmojiPickerUnavailable();
 				} catch (e) {
-					Logger.err(e);
+					console.error(e);
 				}
 			}
 			onStop() {
 				document.removeEventListener("mouseup", this.emojiClickHandler);
-				PluginUtilities.removeStyle(this.getName());
-				Patcher.unpatchAll();
+				DOM.removeStyle(this.name);
+				Patcher.unpatchAll(this.name);
 			}
 			getSettingsPanel() {
 				return this.buildSettingsPanel().getElement();
@@ -166,4 +156,13 @@ function initPlugin([Plugin, Api]) {
 	};
 	return plugin(Plugin, Api);
 }
-module.exports = !global.ZeresPluginLibrary ? MissinZeresPluginLibraryClass : initPlugin(global.ZeresPluginLibrary.buildPlugin(config));
+module.exports = !global.ZeresPluginLibrary ?
+	() => ({
+		stop() {},
+		start() {
+			BdApi.UI.showConfirmationModal("Library plugin is needed", [`**ZeresPluginLibrary** is needed to run **${this.config.info.name}**.`, `Please download it from the officiel website`, "https://betterdiscord.app/plugin/ZeresPluginLibrary"], {
+				confirmText: "Ok"
+			});
+		}
+	}) :
+	initPlugin(global.ZeresPluginLibrary.buildPlugin(config));
