@@ -11,15 +11,15 @@ module.exports = () => {
 	} = BdApi;
 
 	// Modules
+	const Tooltip = getModule(m => m.defaultProps.shouldShow);
+	const ModalRoot = getModule(Filters.byStrings("onAnimationEnd"), { searchExports: true });
 	const openModal = getModule(Filters.byStrings("onCloseCallback", "Layer"), { searchExports: true });
-	const SelectedGuildStore = getModule(Filters.byProps("getLastSelectedGuildId"));
-	const CurrentUserStore = getModule(Filters.byProps("getCurrentUser", "getUsers"));
-	const UserBannerMask = getModule((m) => m.Z && m.Z.toString().includes("overrideAvatarDecorationURL"));
-	const ProfileTypeEnum = getModule(Filters.byProps("POPOUT"), { searchExports: true });
 	const ImageModal = getModule(m => m?.prototype?.render?.toString().includes("OPEN_ORIGINAL_IMAGE"));
 	const ModalCarousel = getModule(m => m.prototype.navigateTo && m.prototype.preloadImage);
-	const ModalRoot = getModule(Filters.byStrings("onAnimationEnd"), { searchExports: true });
-	const Tooltip = getModule(m => m.defaultProps.shouldShow);
+	const UserBannerMask = getModule((m) => m.Z && m.Z.toString().includes("overrideAvatarDecorationURL"));
+	const ProfileTypeEnum = getModule(Filters.byProps("POPOUT"), { searchExports: true });
+	const CurrentUserStore = getModule(Filters.byProps("getCurrentUser", "getUsers"));
+	const SelectedGuildStore = getModule(Filters.byProps("getLastSelectedGuildId"));
 	const renderLinkComponent = getModule(m => m.type.toString().includes("MASKED_LINK"));
 
 	// Constants
@@ -61,37 +61,47 @@ module.exports = () => {
 			openModal(props => React.createElement(DisplayCarousel, { props, items }));
 		}
 
-		clickHandler(userObject, bannerStyleObject, isUserPopout) {
-			const { backgroundColor, backgroundImage } = bannerStyleObject;
+		clickHandler(user, bannerObject, isUserPopout) {
+			const { backgroundColor, backgroundImage } = bannerObject;
 			const guildId = isUserPopout ? SelectedGuildStore.getGuildId() : "";
-			const avatarURL = userObject.getAvatarURL(guildId, IMG_WIDTH, true);
+			const avatarURL = user.getAvatarURL(guildId, IMG_WIDTH, true);
 			const AvatarImageComponent = Utils.getImageModalComponent(avatarURL, { width: IMG_WIDTH, height: IMG_WIDTH });
-			const BannerImageComponent = backgroundImage ?
-				Utils.getImageModalComponent(`${backgroundImage.match(/(?<=\().*(?=\?)/)?.[0]}?size=${IMG_WIDTH}`, { width: IMG_WIDTH }) :
-				React.createElement(ColorModal, { color: backgroundColor });
+			const BannerImageComponent = backgroundImage 
+				? Utils.getImageModalComponent(`${backgroundImage.match(/(?<=\().*(?=\?)/)?.[0]}?size=${IMG_WIDTH}`, { width: IMG_WIDTH }) 
+				: React.createElement(ColorModal, { color: backgroundColor });
 			this.openCarousel([AvatarImageComponent, BannerImageComponent]);
 		}
 
 		patchUserBannerMask() {
 			Patcher.after(this.name, UserBannerMask, "Z", (_, [{ user, isPremium, profileType }], returnValue) => {
 				const currentUser = CurrentUserStore.getCurrentUser();
-				let bannerStyleObject, children, className = "VPP-Button";
-				if (ProfileTypeEnum.MODAL === profileType || ProfileTypeEnum.POPOUT === profileType) {
-					bannerStyleObject = Utils.getNestedProp(returnValue, "props.children.1.props.children.props.style");
-					children = Utils.getNestedProp(returnValue, "props.children.1.props.children.props.children");
-					if (user.id === currentUser.id) className += " VPP-current"
-					if (isPremium) className += " VPP-premium"
-					if (!isPremium && user.id !== currentUser.id) className += " VPP-normal"
-					if (ProfileTypeEnum.MODAL === profileType) className += " VPP-profile"
-				} else if (ProfileTypeEnum.SETTINGS === profileType) {
-					bannerStyleObject = Utils.getNestedProp(returnValue, "props.children.props.style");
-					children = Utils.getNestedProp(returnValue, "props.children.props.children");
-					className += " VPP-settings VPP-normal"
+				let bannerObject, children, className = "VPP-Button";
+				switch (profileType) {
+					case ProfileTypeEnum.MODAL:
+						className += " VPP-profile"
+					case ProfileTypeEnum.POPOUT:
+						bannerObject = Utils.getNestedProp(returnValue, "props.children.1.props.children.props.style");
+						children = Utils.getNestedProp(returnValue, "props.children.1.props.children.props.children");
+						className += user.id === currentUser.id 
+							? " VPP-current" 
+							: bannerObject.backgroundImage 
+								? " VPP-left" 
+								: " VPP-right"
+						break;
+					case ProfileTypeEnum.SETTINGS:
+						bannerObject = Utils.getNestedProp(returnValue, "props.children.props.style");
+						children = Utils.getNestedProp(returnValue, "props.children.props.children");
+						className += " VPP-settings VPP-right"
+						break;
+					default:
+						console.log(`Unknown profileType: ${profileType}`)
+						break;
 				}
+
 				children.push(
 					React.createElement(ViewProfilePictureButton, {
 						className,
-						onClick: _ => this.clickHandler(user, bannerStyleObject, ProfileTypeEnum.POPOUT === profileType)
+						onClick: _ => this.clickHandler(user, bannerObject, ProfileTypeEnum.POPOUT === profileType)
 					})
 				);
 			});
