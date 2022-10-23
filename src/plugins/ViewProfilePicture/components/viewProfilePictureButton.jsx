@@ -1,7 +1,7 @@
 module.exports = (props) => {
 	return (
 		<Tooltip
-			text="Show profile picture"
+			text="View profile picture"
 			position="top">
 			{p => (
 				<div

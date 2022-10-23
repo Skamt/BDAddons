@@ -1,42 +1,41 @@
 /* View Profile Button */
 .VPP-Button{
-    background-color: rgba(32, 34, 37, 0.8);
+    background-color: hsla(0,calc(var(--saturation-factor, 1)*0%),0%,.3);
     cursor: pointer;
     position: absolute;
     display: flex;
     padding: 5px;
     border-radius: 50%;
+    top: 10px;
 }
 
 /* Popout */
-.VPP-normal{
-    top: 10px;
+.VPP-right{
     right:12px;
 }
 
-.VPP-current {
-    top: 10px;
-	right: 48px;
-}
-
-.VPP-premium {
-    top: 10px;
+.VPP-left {
 	left: 12px;
 }
 
+.VPP-current {
+	right: 48px;
+}
+
 /* Profile */
-.VPP-profile.VPP-normal{
+.VPP-profile {
 	top: 14px;
-	right: 16px;
+}
+
+.VPP-profile..VPP-right{
+    right:16px;
 }
 
 .VPP-profile.VPP-current{
-	top: 14px;
 	right: 58px;
 }
 
-.VPP-profile.VPP-premium {
-	top: 14px;
+.VPP-profile.VPP-left {
 	left: 16px;
 }
 
