@@ -11,16 +11,16 @@ module.exports = () => {
 	} = BdApi;
 
 	// Modules
-	const Tooltip = getModule(m => m.defaultProps.shouldShow);
+	const Tooltip = getModule(m => m.defaultProps?.shouldShow);
 	const ModalRoot = getModule(Filters.byStrings("onAnimationEnd"), { searchExports: true });
 	const openModal = getModule(Filters.byStrings("onCloseCallback", "Layer"), { searchExports: true });
 	const ImageModal = getModule(m => m?.prototype?.render?.toString().includes("OPEN_ORIGINAL_IMAGE"));
-	const ModalCarousel = getModule(m => m.prototype.navigateTo && m.prototype.preloadImage);
+	const ModalCarousel = getModule(m => m.prototype?.navigateTo && m.prototype?.preloadImage);
 	const UserBannerMask = getModule((m) => m.Z && m.Z.toString().includes("overrideAvatarDecorationURL"));
 	const ProfileTypeEnum = getModule(Filters.byProps("POPOUT"), { searchExports: true });
 	const CurrentUserStore = getModule(Filters.byProps("getCurrentUser", "getUsers"));
 	const SelectedGuildStore = getModule(Filters.byProps("getLastSelectedGuildId"));
-	const renderLinkComponent = getModule(m => m.type.toString().includes("MASKED_LINK"));
+	const renderLinkComponent = getModule(m => m.type?.toString().includes("MASKED_LINK"));
 
 	// Constants
 	const IMG_WIDTH = 4096;
