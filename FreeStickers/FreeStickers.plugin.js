@@ -71,7 +71,7 @@ function initPlugin([Plugin, Api]) {
 		let StickersSendabilityEnumKey, getStickerSendabilityKey, isSendableStickerKey;
 		const StickersSendability = getModule(exp => {
 			const keys = Object.keys(exp);
-			if (keys.some(key => exp[key].SENDABLE_WITH_BOOSTED_GUILD)) {
+			if (keys.some(key => exp[key]?.SENDABLE_WITH_BOOSTED_GUILD)) {
 				StickersSendabilityEnumKey = keys.find(key => exp[key].SENDABLE_WITH_BOOSTED_GUILD);
 				getStickerSendabilityKey = keys.find(key => exp[key].toString().includes('SENDABLE_WITH_PREMIUM'));
 				isSendableStickerKey = keys.find(key => !exp[key].toString().includes('SENDABLE_WITH_PREMIUM') && !exp[key].SENDABLE_WITH_BOOSTED_GUILD);
@@ -84,7 +84,7 @@ function initPlugin([Plugin, Api]) {
 		const MessageActions = getModule(Filters.byProps("jumpToMessage", "_sendMessage"));
 		const UserStore = getModule(Filters.byProps("getCurrentUser", "getUser"));
 		const StickerStore = getModule(Filters.byProps("getStickerById"));
-		const ChannelTextArea = getModule((exp) => exp.type.render.toString().includes('CHANNEL_TEXT_AREA'));
+		const ChannelTextArea = getModule((exp) => exp?.type?.render?.toString().includes('CHANNEL_TEXT_AREA'));
 		const StickerTypeEnum = getModule(Filters.byProps("GUILD", "STANDARD"), { searchExports: true });
 		const StickerFormatEnum = getModule(Filters.byProps("APNG", "LOTTIE"), { searchExports: true });
 		const StickersSendabilityEnum = StickersSendability[StickersSendabilityEnumKey];
