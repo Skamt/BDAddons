@@ -35,8 +35,9 @@ module.exports = (() => {
 	const previewComponent = ({ target, previewComponent, previewSize }) => {
 		const [show, setShow] = useState(false);
 		useEffect(() => {
-			function keyupHandler() {
-				setShow(!show);
+			function keyupHandler(e) {
+				if (e.key === "Control")
+					setShow(!show);
 			}
 			document.addEventListener("keyup", keyupHandler);
 			return () => document.removeEventListener("keyup", keyupHandler);

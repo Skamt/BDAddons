@@ -4,7 +4,7 @@ Adds a zoomed preview to those tiny Stickers and Emojis
 
 ## Usage:
 
-After opening the Emojis/Sticker picker press any key to open/close the preview
+After opening the Emojis/Sticker picker press Control key to open/close the preview
 
 ## Preview
 
