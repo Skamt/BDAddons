@@ -1,7 +1,7 @@
 module.exports = () => {
 	const { Patcher, Webpack: { Filters, getModule } } = BdApi;
-	const GuildPermissions = getModule(Filters.byProps("getGuildPermissions"), { searchExports: true });
-	const DiscordPermissions = getModule(m => m.ADD_REACTIONS, { searchExports: true });
+	const GuildPermissions = DiscordModules.GuildPermissions;
+	const DiscordPermissions = DiscordModules.DiscordPermissions;
 
 	class PermissionsOverride {
 		get name() { return config.info.name }

@@ -10,7 +10,7 @@ module.exports = () => {
 	} = BdApi;
 
 	// Modules
-	const ImageModal = getModule(m => m?.prototype?.render?.toString().includes("OPEN_ORIGINAL_IMAGE"));
+	const ImageModal = DiscordModules.ImageModal;
 
 	// Helper functions
 	const Utils = {

@@ -8,8 +8,8 @@ module.exports = () => {
 	} = BdApi;
 
 	// Modules
-	const Popout = getModule(Filters.byStrings("renderPopout", "animationPosition"), { searchExports: true });
-	const ExpressionPickerInspector = getModule((m) => m.Z && m.Z.toString().includes("EMOJI_IS_FAVORITE_ARIA_LABEL"));
+	const Popout = DiscordModules.Popout;
+	const ExpressionPickerInspector = DiscordModules.ExpressionPickerInspector;
 
 	// Constants
 	const PREVIEW_SIZE = 300;
