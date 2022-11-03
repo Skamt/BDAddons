@@ -18,9 +18,9 @@ function buildMeta(config) {
 	return metaString.join("\n");
 }
 
-module.exports = (pluginRootFile, pluginFolder, pluginFiles, config) => {
+module.exports = (pluginContent, pluginFolder, pluginFiles, config) => {
 
-	const content = parser(pluginRootFile, pluginFolder, pluginFiles);
+	const content = parser(pluginContent, pluginFolder, pluginFiles);
 	let result = buildMeta(config);
 	if (config["no-zpl"]) {
 		result += `const config = {{ PLUGIN__CONFIG }};module.exports = ({{ PLUGIN__BODY }})();`;

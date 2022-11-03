@@ -10,19 +10,19 @@ module.exports = () => {
 	} = BdApi;
 
 	// Modules
-	const SelectedChannelStore = getModule(Filters.byProps("getLastSelectedChannelId"));
-	const UserStore = getModule(Filters.byProps("getCurrentUser", "getUser"));
-	const Permissions = getModule(Filters.byProps("computePermissions"));
-	const ChannelStore = getModule(Filters.byProps("getChannel", "getDMFromUserId"));
-	const DiscordPermissions = getModule(Filters.byProps("ADD_REACTIONS"), { searchExports: true });
-	const MessageActions = getModule(Filters.byProps("jumpToMessage", "_sendMessage"));
-	const EmojiIntentionEnum = getModule(Filters.byProps("GUILD_ROLE_BENEFIT_EMOJI"), { searchExports: true });
-	const EmojiSendAvailabilityEnum = getModule(Filters.byProps("GUILD_SUBSCRIPTION_UNAVAILABLE"), { searchExports: true });
-	const EmojiFunctions = getModule(Filters.byProps("getEmojiUnavailableReason"), { searchExports: true });
+	const SelectedChannelStore = DiscordModules.SelectedChannelStore;
+	const UserStore = DiscordModules.UserStore;
+	const Permissions = DiscordModules.Permissions;
+	const ChannelStore = DiscordModules.ChannelStore;
+	const DiscordPermissions = DiscordModules.DiscordPermissions;
+	const MessageActions = DiscordModules.MessageActions;
+	const EmojiIntentionEnum = DiscordModules.EmojiIntentionEnum;
+	const EmojiSendAvailabilityEnum = DiscordModules.EmojiSendAvailabilityEnum;
+	const EmojiFunctions = DiscordModules.EmojiFunctions;
 	const InsertText = (() => {
 		let ComponentDispatch;
 		return (content) => {
-			if (!ComponentDispatch) ComponentDispatch = getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners("INSERT_TEXT").length, { searchExports: true });
+			if (!ComponentDispatch) ComponentDispatch = DiscordModules.ComponentDispatch;
 			ComponentDispatch.dispatchToLastSubscribed("INSERT_TEXT", {
 				plainText: content
 			});

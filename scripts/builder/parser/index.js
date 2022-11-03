@@ -3,9 +3,10 @@ const jsx = require("./jsxParser.js");
 const js = require("./jsParser.js");
 const css = require("./cssParser.js");
 const other = require("./otherParser.js");
+const DiscordModules = require("./../../../DiscordModules.json");
 
-module.exports = (content, pluginFolder, files) => {
-	for (const fileName of files)
+module.exports = (content, pluginFolder, pluginFiles) => {
+	for (const fileName of pluginFiles)
 		content = content.replace(new RegExp(`require\\(('|"|\`)${fileName}('|"|\`)\\)`, "g"), () => {
 			const filePath = path.join(pluginFolder, fileName);
 			if (fileName.endsWith(".jsx")) return jsx(filePath);
@@ -13,5 +14,8 @@ module.exports = (content, pluginFolder, files) => {
 			// if (fileName.endsWith(".css")) return css(filePath);
 			else return other(filePath);
 		});
+	Object.keys(DiscordModules).forEach(Module => {
+		content = content.replace(new RegExp(`DiscordModules.${Module}`, "g"), () => DiscordModules[Module]);
+	});
 	return content;
 };
