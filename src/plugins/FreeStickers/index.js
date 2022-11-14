@@ -189,7 +189,7 @@ module.exports = () => {
 				if (!Utils.isTagged(sticker.description || "") && !Utils.isLottieSticker(sticker) && Utils.isAnimatedSticker(sticker) && this.settings.shouldHighlightAnimated)
 					sticker.description += TAGS.ANIMATED_STICKER_TAG;
 				else if (!this.settings.shouldHighlightAnimated)
-					sticker.description = sticker.description.replace(TAGS.ANIMATED_STICKER_TAG, "");
+					sticker.description = typeof(sticker.description) === 'string' ?  sticker.description.replace(TAGS.ANIMATED_STICKER_TAG, "") : sticker.description;
 			});
 		}
 
