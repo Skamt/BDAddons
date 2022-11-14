@@ -68,6 +68,15 @@ function initPlugin([Plugin, Api]) {
 			}
 		} = BdApi;
 		// Modules
+		const Permissions = getModule(Filters.byProps('computePermissions'));
+		const ChannelStore = getModule(Filters.byProps('getChannel', 'getDMFromUserId'));
+		const DiscordPermissions = getModule(Filters.byProps('ADD_REACTIONS'), { searchExports: true });
+		const MessageActions = getModule(Filters.byProps('jumpToMessage', '_sendMessage'));
+		const UserStore = getModule(Filters.byProps('getCurrentUser', 'getUser'));
+		const StickerStore = getModule(Filters.byProps('getStickerById'));
+		const ChannelTextArea = getModule((exp) => exp?.type?.render?.toString().includes('CHANNEL_TEXT_AREA'));
+		const StickerTypeEnum = getModule(Filters.byProps('GUILD', 'STANDARD'), { searchExports: true });
+		const StickerFormatEnum = getModule(Filters.byProps('APNG', 'LOTTIE'), { searchExports: true });
 		let StickersSendabilityEnumKey, getStickerSendabilityKey, isSendableStickerKey;
 		const StickersSendability = getModule(exp => {
 			const keys = Object.keys(exp);
@@ -78,24 +87,17 @@ function initPlugin([Plugin, Api]) {
 				return true;
 			}
 		});
-		const Permissions = getModule(Filters.byProps("computePermissions"));
-		const ChannelStore = getModule(Filters.byProps("getChannel", "getDMFromUserId"));
-		const DiscordPermissions = getModule(Filters.byProps("ADD_REACTIONS"), { searchExports: true });
-		const MessageActions = getModule(Filters.byProps("jumpToMessage", "_sendMessage"));
-		const UserStore = getModule(Filters.byProps("getCurrentUser", "getUser"));
-		const StickerStore = getModule(Filters.byProps("getStickerById"));
-		const ChannelTextArea = getModule((exp) => exp?.type?.render?.toString().includes('CHANNEL_TEXT_AREA'));
-		const StickerTypeEnum = getModule(Filters.byProps("GUILD", "STANDARD"), { searchExports: true });
-		const StickerFormatEnum = getModule(Filters.byProps("APNG", "LOTTIE"), { searchExports: true });
 		const StickersSendabilityEnum = StickersSendability[StickersSendabilityEnumKey];
 		const getStickerSendability = StickersSendability[getStickerSendabilityKey];;
 		const InsertText = (() => {
 			let ComponentDispatch;
 			return (content) => {
-				if (!ComponentDispatch) ComponentDispatch = getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners("INSERT_TEXT").length, { searchExports: true });
+				if (!ComponentDispatch) ComponentDispatch = getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners('INSERT_TEXT').length, { searchExports: true });
 				/**
-				 * Not sure why but when i call this within the patch below it just doesn't work
-				 * i did trace through and got into a deep rabbit so i just gave up on it.
+				 * Not sure why but when using this method of inserting text 
+				 * from whiting a patch or maybe this patch 'patchSendSticker' 
+				 * it just doesn't work
+				 * i did trace through and got into a deep rabbit hole so i just gave up on it.
 				 * Yet as we all know, when in doubt wait for the stack to empty out
 				 */
 				setTimeout(() => {
@@ -239,7 +241,7 @@ function initPlugin([Plugin, Api]) {
 					if (!Utils.isTagged(sticker.description || "") && !Utils.isLottieSticker(sticker) && Utils.isAnimatedSticker(sticker) && this.settings.shouldHighlightAnimated)
 						sticker.description += TAGS.ANIMATED_STICKER_TAG;
 					else if (!this.settings.shouldHighlightAnimated)
-						sticker.description = sticker.description.replace(TAGS.ANIMATED_STICKER_TAG, "");
+						sticker.description = typeof(sticker.description) === 'string' ? sticker.description.replace(TAGS.ANIMATED_STICKER_TAG, "") : sticker.description;
 				});
 			}
 			patchStickerSuggestion() {
