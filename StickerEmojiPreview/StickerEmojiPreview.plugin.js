@@ -27,8 +27,8 @@ module.exports = (() => {
 		Webpack: { Filters, getModule }
 	} = BdApi;
 	// Modules
-	const Popout = getModule(Filters.byStrings("renderPopout", "animationPosition"), { searchExports: true });
-	const ExpressionPickerInspector = getModule((m) => m.Z && m.Z.toString().includes("EMOJI_IS_FAVORITE_ARIA_LABEL"));
+	const Popout = getModule(Filters.byStrings('renderPopout', 'animationPosition'), { searchExports: true });
+	const ExpressionPickerInspector = getModule((m) => m.Z && m.Z.toString().includes('EMOJI_IS_FAVORITE_ARIA_LABEL'));
 	// Constants
 	const PREVIEW_SIZE = 300;
 	// components

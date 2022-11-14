@@ -29,7 +29,7 @@ module.exports = (() => {
 		}
 	} = BdApi;
 	// Modules
-	const ImageModal = getModule(m => m?.prototype?.render?.toString().includes("OPEN_ORIGINAL_IMAGE"));
+	const ImageModal = getModule(m => m?.prototype?.render?.toString().includes('OPEN_ORIGINAL_IMAGE'));
 	// Helper functions
 	const Utils = {
 		showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),
