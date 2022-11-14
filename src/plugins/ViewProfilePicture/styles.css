@@ -18,7 +18,7 @@
 	left: 12px;
 }
 
-.VPP-current {
+.VPP-self {
 	right: 48px;
 }
 
@@ -31,7 +31,7 @@
     right:16px;
 }
 
-.VPP-profile.VPP-current{
+.VPP-profile.VPP-self{
 	right: 58px;
 }
 
