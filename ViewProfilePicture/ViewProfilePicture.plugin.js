@@ -78,7 +78,6 @@ function initPlugin([Plugin, Api]) {
 						},
 						React.createElement("svg", {
 								"aria-label": p["aria-label"],
-								className: "pencilIcon-z04-c5",
 								"aria-hidden": "false",
 								role: "img",
 								width: "18",
@@ -124,6 +123,7 @@ function initPlugin([Plugin, Api]) {
     padding: 5px;
     border-radius: 50%;
     top: 10px;
+    color:#fff;
 }
 
 /* Popout */

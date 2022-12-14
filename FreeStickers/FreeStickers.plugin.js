@@ -215,12 +215,13 @@ function initPlugin([Plugin, Api]) {
 				 */
 				Patcher.before(this.name, ChannelTextArea.type, "render", (_, [{ channel }]) => {
 					const userId = UserStore.getCurrentUser().id;
-					channel.permissionOverwrites[userId] = {
-						id: userId,
-						type: 1,
-						allow: 262144n,
-						deny: 0n
-					};
+					if (channel.guild_id)
+						channel.permissionOverwrites[userId] = {
+							id: userId,
+							type: 1,
+							allow: 262144n,
+							deny: 0n
+						};
 				});
 			}
 			patchStickerClickability() {
