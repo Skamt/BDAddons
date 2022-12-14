@@ -161,12 +161,13 @@ module.exports = () => {
 			 */
 			Patcher.before(this.name, ChannelTextArea.type, "render", (_, [{ channel }]) => {
 				const userId = UserStore.getCurrentUser().id;
-				channel.permissionOverwrites[userId] = {
-					id: userId,
-					type: 1,
-					allow: 262144n,
-					deny: 0n
-				};
+				if (channel.guild_id)
+					channel.permissionOverwrites[userId] = {
+						id: userId,
+						type: 1,
+						allow: 262144n,
+						deny: 0n
+					};
 			});
 		}
 
@@ -189,7 +190,7 @@ module.exports = () => {
 				if (!Utils.isTagged(sticker.description || "") && !Utils.isLottieSticker(sticker) && Utils.isAnimatedSticker(sticker) && this.settings.shouldHighlightAnimated)
 					sticker.description += TAGS.ANIMATED_STICKER_TAG;
 				else if (!this.settings.shouldHighlightAnimated)
-					sticker.description = typeof(sticker.description) === 'string' ?  sticker.description.replace(TAGS.ANIMATED_STICKER_TAG, "") : sticker.description;
+					sticker.description = typeof(sticker.description) === 'string' ? sticker.description.replace(TAGS.ANIMATED_STICKER_TAG, "") : sticker.description;
 			});
 		}
 

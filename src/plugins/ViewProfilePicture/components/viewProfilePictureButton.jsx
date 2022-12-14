@@ -9,7 +9,6 @@ module.exports = (props) => {
 					{...props}>
 					<svg
 						aria-label={p["aria-label"]}
-						className="pencilIcon-z04-c5"
 						aria-hidden="false"
 						role="img"
 						width="18"
