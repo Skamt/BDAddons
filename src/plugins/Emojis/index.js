@@ -3,6 +3,9 @@ module.exports = () => {
 		UI,
 		DOM,
 		Patcher,
+		ReactUtils: {
+			getInternalInstance
+		},
 		Webpack: {
 			Filters,
 			getModule
@@ -81,7 +84,7 @@ module.exports = () => {
 		}
 
 		emojiClickHandler(e) {
-			const props = e.target.__reactProps$;
+			const props = getInternalInstance(e.target).pendingProps;
 			if (props && props["data-type"] && props["data-type"].toLowerCase() === "emoji")
 				this.emojiHandler(props.children.props.emoji);
 		}
