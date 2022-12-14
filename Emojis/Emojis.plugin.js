@@ -52,6 +52,9 @@ function initPlugin([Plugin, Api]) {
 			UI,
 			DOM,
 			Patcher,
+			ReactUtils: {
+				getInternalInstance
+			},
 			Webpack: {
 				Filters,
 				getModule
@@ -125,7 +128,7 @@ function initPlugin([Plugin, Api]) {
 					this.handleUnsendableEmoji(emoji, channel, user);
 			}
 			emojiClickHandler(e) {
-				const props = e.target.__reactProps$;
+				const props = getInternalInstance(e.target).pendingProps;
 				if (props && props["data-type"] && props["data-type"].toLowerCase() === "emoji")
 					this.emojiHandler(props.children.props.emoji);
 			}
