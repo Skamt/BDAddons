@@ -76,7 +76,7 @@ module.exports = () => {
 	// styles
 	const css = require("styles.css");
 
-	return class FreeStickers extends Plugin {
+	return class SendStickersAsLinks extends Plugin {
 		constructor() {
 			super();
 		}
