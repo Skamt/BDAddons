@@ -1,4 +1,4 @@
-# FreeStickers
+# SendStickersAsLinks
 
 Allows you to send custom Stickers as links (basically an image). 
 
@@ -18,4 +18,4 @@ Allows you to send custom Stickers as links (basically an image).
 
 ## Preview
 
-![showcase](https://raw.githubusercontent.com/Skamt/BDAddons/main/FreeStickers/assets/showcase.gif)
+![showcase](https://raw.githubusercontent.com/Skamt/BDAddons/main/SendStickersAsLinks/assets/showcase.gif)

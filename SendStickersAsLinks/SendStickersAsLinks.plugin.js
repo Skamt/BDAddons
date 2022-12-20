@@ -1,18 +1,18 @@
 /**
- * @name FreeStickers
- * @description Enables you to send custom Stickers without nitro as links, (custom stickers as in the ones that are added by servers, not official discord stickers).
+ * @name SendStickersAsLinks
+ * @description Enables you to send custom Stickers as links, (custom stickers as in the ones that are added by servers, not official discord stickers).
  * @version 2.0.3
  * @author Skamt
- * @website https://github.com/Skamt/BDAddons/tree/main/FreeStickers
- * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/FreeStickers/FreeStickers.plugin.js
+ * @website https://github.com/Skamt/BDAddons/tree/main/SendStickersAsLinks
+ * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/SendStickersAsLinks/SendStickersAsLinks.plugin.js
  */
 const config = {
 	info: {
-		name: "FreeStickers",
+		name: "SendStickersAsLinks",
 		version: "2.0.3",
-		description: "Enables you to send custom Stickers without nitro as links, (custom stickers as in the ones that are added by servers, not official discord stickers).",
-		source: "https://raw.githubusercontent.com/Skamt/BDAddons/main/FreeStickers/FreeStickers.plugin.js",
-		github: "https://github.com/Skamt/BDAddons/tree/main/FreeStickers",
+		description: "Enables you to send custom Stickers as links, (custom stickers as in the ones that are added by servers, not official discord stickers).",
+		source: "https://raw.githubusercontent.com/Skamt/BDAddons/main/SendStickersAsLinks/SendStickersAsLinks.plugin.js",
+		github: "https://github.com/Skamt/BDAddons/tree/main/SendStickersAsLinks",
 		authors: [{
 			name: "Skamt"
 		}]
@@ -137,7 +137,7 @@ function initPlugin([Plugin, Api]) {
     border: 2px dotted #ff8f09;
 }
 `;
-		return class FreeStickers extends Plugin {
+		return class SendStickersAsLinks extends Plugin {
 			constructor() {
 				super();
 			}
