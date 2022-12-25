@@ -1,5 +1,5 @@
-module.exports = ({ target, previewComponent, previewSize }) => {
-	const [show, setShow] = useState(false);
+module.exports = ({ target, previewComponent, previewSize, defaultState }) => {
+	const [show, setShow] = useState(defaultState);
 	useEffect(() => {
 		function keyupHandler(e) {
 			if(e.key === "Control")
