@@ -1,4 +1,5 @@
 {
+	"SwitchRow" :"getModule(m => m.toString().includes('helpdeskArticleId'))",
 	"ImageModal" :"getModule(m => m?.prototype?.render?.toString().includes('OPEN_ORIGINAL_IMAGE'))",
 	"SelectedChannelStore": "getModule(Filters.byProps('getLastSelectedChannelId'))",
 	"UserStore": "getModule(Filters.byProps('getCurrentUser', 'getUser'))",
