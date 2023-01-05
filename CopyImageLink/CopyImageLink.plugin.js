@@ -1,7 +1,7 @@
 /**
  * @name CopyImageLink
  * @description Adds (Copy Link) button next to (Open Original) under images
- * @version 1.0.1
+ * @version 1.0.2
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/CopyImageLink
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/CopyImageLink/CopyImageLink.plugin.js
@@ -9,7 +9,7 @@
 const config = {
 	info: {
 		name: "CopyImageLink",
-		version: "1.0.1",
+		version: "1.0.2",
 		description: "Adds (Copy Link) button next to (Open Original) under images",
 		source: "https://raw.githubusercontent.com/Skamt/BDAddons/main/CopyImageLink/CopyImageLink.plugin.js",
 		github: "https://github.com/Skamt/BDAddons/tree/main/CopyImageLink",
@@ -29,7 +29,14 @@ module.exports = (() => {
 		}
 	} = BdApi;
 	// Modules
-	const ImageModal = getModule(m => m?.prototype?.render?.toString().includes('OPEN_ORIGINAL_IMAGE'));
+	const ImageModal = getModule(m => {
+		if (!m?.toString || typeof(m?.toString) !== "function" || !m.prototype?.render) return;
+		const strs = ["original", "maxHeight", "maxWidth", "noreferrer noopener"];
+		const funcStr = m?.prototype?.render?.toString();
+		for (const s of strs)
+			if (!funcStr.includes(s)) return false;
+		return true;
+	});
 	// Helper functions
 	const Utils = {
 		showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),
@@ -54,12 +61,12 @@ module.exports = (() => {
 	};
 	// styles
 	const css = `.copyBtn {
-	left: 95px;
+	left: 115px;
 	white-space: nowrap;
 }
 
 .copyBtnSpan {
-	left: 85px;
+	left: 105px;
 	position: absolute;
 	top: 100%;
 	font-weight: 500;

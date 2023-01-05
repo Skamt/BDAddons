@@ -1,7 +1,7 @@
 /**
  * @name ViewProfilePicture
  * @description Adds a button to the user popout and profile that allows you to view the Avatar and banner.
- * @version 1.0.1
+ * @version 1.0.2
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js
@@ -9,7 +9,7 @@
 const config = {
 	info: {
 		name: "ViewProfilePicture",
-		version: "1.0.1",
+		version: "1.0.2",
 		description: "Adds a button to the user popout and profile that allows you to view the Avatar and banner.",
 		source: "https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js",
 		github: "https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture",
@@ -35,10 +35,17 @@ function initPlugin([Plugin, Api]) {
 		const Tooltip = getModule(m => m.defaultProps?.shouldShow);
 		const ModalRoot = getModule(Filters.byStrings('onAnimationEnd'), { searchExports: true });
 		const openModal = getModule(Filters.byStrings('onCloseCallback', 'Layer'), { searchExports: true });
-		const ImageModal = getModule(m => m?.prototype?.render?.toString().includes('OPEN_ORIGINAL_IMAGE'));
+		const ImageModal = getModule(m => {
+			if (!m?.toString || typeof(m?.toString) !== "function" || !m.prototype?.render) return;
+			const strs = ["original", "maxHeight", "maxWidth", "noreferrer noopener"];
+			const funcStr = m?.prototype?.render?.toString();
+			for (const s of strs)
+				if (!funcStr.includes(s)) return false;
+			return true;
+		});
 		const ModalCarousel = getModule(m => m.prototype?.navigateTo && m.prototype?.preloadImage);
 		const UserBannerMask = getModule((m) => m.Z && m.Z.toString().includes('overrideAvatarDecorationURL'));
-		const ProfileTypeEnum = getModule(Filters.byProps('POPOUT'), { searchExports: true });
+		const ProfileTypeEnum = getModule(Filters.byProps('POPOUT', 'SETTINGS'), { searchExports: true });
 		const CurrentUserStore = getModule(Filters.byProps('getCurrentUser', 'getUsers'));
 		const SelectedGuildStore = getModule(Filters.byProps('getLastSelectedGuildId'));
 		const renderLinkComponent = getModule(m => m.type?.toString().includes('MASKED_LINK'));
