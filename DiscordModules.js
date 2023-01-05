@@ -1,6 +1,13 @@
-{
-	"SwitchRow" :"getModule(m => m.toString().includes('helpdeskArticleId'))",
-	"ImageModal" :"getModule(m => m?.prototype?.render?.toString().includes('OPEN_ORIGINAL_IMAGE'))",
+module.exports ={
+	"SwitchRow": "getModule(m => m.toString().includes('helpdeskArticleId'))",
+	"ImageModal": `getModule(m => {
+	    if (!m?.toString || typeof (m?.toString) !== "function" || !m.prototype?.render) return;
+	    const strs = ["original","maxHeight","maxWidth","noreferrer noopener"];
+	    const funcStr = m?.prototype?.render?.toString();
+	    for(const s of strs)
+	        if (!funcStr.includes(s)) return false;
+	    return true;
+	})`,
 	"SelectedChannelStore": "getModule(Filters.byProps('getLastSelectedChannelId'))",
 	"UserStore": "getModule(Filters.byProps('getCurrentUser', 'getUser'))",
 	"Permissions": "getModule(Filters.byProps('computePermissions'))",
@@ -22,7 +29,7 @@
 	"openModal": "getModule(Filters.byStrings('onCloseCallback', 'Layer'), { searchExports: true })",
 	"ModalCarousel": "getModule(m => m.prototype?.navigateTo && m.prototype?.preloadImage)",
 	"UserBannerMask": "getModule((m) => m.Z && m.Z.toString().includes('overrideAvatarDecorationURL'))",
-	"ProfileTypeEnum": "getModule(Filters.byProps('POPOUT'), { searchExports: true })",
+	"ProfileTypeEnum": "getModule(Filters.byProps('POPOUT','SETTINGS'), { searchExports: true})",
 	"CurrentUserStore": "getModule(Filters.byProps('getCurrentUser', 'getUsers'))",
 	"SelectedGuildStore": "getModule(Filters.byProps('getLastSelectedGuildId'))",
 	"ComponentDispatch": "getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners('INSERT_TEXT').length, { searchExports: true })",
