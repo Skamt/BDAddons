@@ -3,7 +3,7 @@ const jsx = require("./jsxParser.js");
 const js = require("./jsParser.js");
 const css = require("./cssParser.js");
 const other = require("./otherParser.js");
-const DiscordModules = require("./../../../DiscordModules.json");
+const DiscordModules = require("./../../../DiscordModules.js");
 
 module.exports = (content, pluginFolder, pluginFiles) => {
 	for (const fileName of pluginFiles)
