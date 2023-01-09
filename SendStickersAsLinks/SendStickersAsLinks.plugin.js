@@ -51,7 +51,7 @@ const config = {
 		name: "Sticker Size",
 		note: "The size of the sticker in pixels. 160 is recommended.",
 		value: 160,
-		markers: [20, 32, 48, 60, 80, 100, 128, 160],
+		markers: [80, 100, 128, 160],
 		stickToMarkers: true
 	}]
 };
@@ -121,7 +121,7 @@ function initPlugin([Plugin, Api]) {
 		const Utils = {
 			isTagged: (str) => Object.values(TAGS).some(tag => str.includes(tag)),
 			showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),
-			getStickerUrl: (stickerId, size) => `https://media.discordapp.net/stickers/${stickerId}.webp?passthrough=false&quality=lossless&size=${size}`,
+			getStickerUrl: (stickerId, size) => `https://media.discordapp.net/stickers/${stickerId}?size=${size}&passthrough=false`,
 			hasEmbedPerms: (channel, user) => !channel.guild_id || Permissions.can({ permission: DiscordPermissions.EMBED_LINKS, context: channel, user }),
 			updateStickers: () => StickerStore.stickerMetadata.forEach((value, key) => StickerStore.getStickerById(key)),
 			isLottieSticker: sticker => sticker.type === StickerTypeEnum.STANDARD,
