@@ -65,7 +65,7 @@ module.exports = () => {
 	const Utils = {
 		isTagged: (str) => Object.values(TAGS).some(tag => str.includes(tag)),
 		showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),
-		getStickerUrl: (stickerId, size) => `https://media.discordapp.net/stickers/${stickerId}.webp?passthrough=false&quality=lossless&size=${size}`,
+		getStickerUrl: (stickerId, size) => `https://media.discordapp.net/stickers/${stickerId}?size=${size}&passthrough=false`,
 		hasEmbedPerms: (channel, user) => !channel.guild_id || Permissions.can({ permission: DiscordPermissions.EMBED_LINKS, context: channel, user }),
 		updateStickers: () => StickerStore.stickerMetadata.forEach((value, key) => StickerStore.getStickerById(key)),
 		isLottieSticker: sticker => sticker.type === StickerTypeEnum.STANDARD,
