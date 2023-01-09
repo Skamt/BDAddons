@@ -1,3 +1,8 @@
+/* Warning circle in popouts of users who left server overlaps VPP button */
+svg.warningCircleIcon-2osUEe {
+    top: 75px;
+}
+
 /* View Profile Button */
 .VPP-Button{
     background-color: hsla(0,calc(var(--saturation-factor, 1)*0%),0%,.3);
