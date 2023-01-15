@@ -7,7 +7,7 @@ module.exports = () => {
 		Webpack: {
 			getModule
 		}
-	} = BdApi;
+	} = new BdApi(config.info.name);
 
 	// Modules
 	const ImageModal = DiscordModules.ImageModal;
@@ -32,12 +32,10 @@ module.exports = () => {
 	const css = require("styles.css");
 
 	return class CopyImageLink {
-		get name() { return config.info.name }
-
 		start() {
 			try {
-				DOM.addStyle(this.name,css);
-				Patcher.after(this.name, ImageModal.prototype, "render", (_, __, returnValue) => {
+				DOM.addStyle(css);
+				Patcher.after(ImageModal.prototype, "render", (_, __, returnValue) => {
 					const children = Utils.getNestedProp(returnValue, "props.children");
 					const { href } = Utils.getNestedProp(returnValue, "props.children.2.props");
 					children.push(React.createElement(copyButton, { href }));
@@ -48,8 +46,8 @@ module.exports = () => {
 		}
 
 		stop() {
-			DOM.removeStyle(this.name);
-			Patcher.unpatchAll(this.name);
+			DOM.removeStyle();
+			Patcher.unpatchAll();
 		}
 	};
 };

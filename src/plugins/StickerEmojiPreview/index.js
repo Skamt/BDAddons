@@ -5,7 +5,7 @@ module.exports = () => {
 		Patcher,
 		React: { useEffect, useState },
 		Webpack: { Filters, getModule }
-	} = BdApi;
+	} = new BdApi(config.info.name);
 
 	// Modules
 	const Popout = DiscordModules.Popout;
@@ -34,9 +34,9 @@ module.exports = () => {
 	return class StickerEmojiPreview {
 		start() {
 			try {
-				this.settings = BdApi.loadData(config.info.name, "settings") || { previewDefaultState: false };
-				DOM.addStyle(config.info.name, css);
-				Patcher.after(config.info.name, ExpressionPickerInspector, "Z", (_, [{ graphicPrimary }], ret) => {
+				this.settings = BdApi.loadData("settings") || { previewDefaultState: false };
+				DOM.addStyle(css);
+				Patcher.after(ExpressionPickerInspector, "Z", (_, [{ graphicPrimary }], ret) => {
 					return React.createElement(previewComponent, {
 						previewSize: PREVIEW_SIZE,
 						target: ret,
@@ -55,8 +55,8 @@ module.exports = () => {
 		}
 
 		stop() {
-			DOM.removeStyle(config.info.name);
-			Patcher.unpatchAll(config.info.name);
+			DOM.removeStyle();
+			Patcher.unpatchAll();
 		}
 
 		getSettingsPanel() {
@@ -65,7 +65,7 @@ module.exports = () => {
 				value: this.settings.previewDefaultState,
 				onChange: e => {
 					this.settings.previewDefaultState = e;
-					BdApi.saveData(config.info.name, "settings", this.settings);
+					BdApi.saveData("settings", this.settings);
 				}
 			});
 		}

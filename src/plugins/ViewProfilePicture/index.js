@@ -8,7 +8,7 @@ module.exports = () => {
 			Filters,
 			getModule
 		}
-	} = BdApi;
+	} = new BdApi(config.info.name);
 
 	// Modules
 	const Tooltip = DiscordModules.Tooltip;
@@ -52,10 +52,8 @@ module.exports = () => {
 	// styles
 	const css = require("styles.css");
 
-	return class ViewProfilePicture extends Plugin {
-		constructor() {
-			super();
-		}
+	return class ViewProfilePicture {
+		constructor() {}
 
 		openCarousel(items) {
 			openModal(props => React.createElement(DisplayCarousel, { props, items }));
@@ -73,7 +71,7 @@ module.exports = () => {
 		}
 
 		patchUserBannerMask() {
-			Patcher.after(this.name, UserBannerMask, "Z", (_, [{ user, isPremium, profileType }], returnValue) => {
+			Patcher.after(UserBannerMask, "Z", (_, [{ user, isPremium, profileType }], returnValue) => {
 				if (profileType === ProfileTypeEnum.SETTINGS) return;
 
 				const currentUser = CurrentUserStore.getCurrentUser();
@@ -99,18 +97,18 @@ module.exports = () => {
 			});
 		}
 
-		onStart() {
+		start() {
 			try {
-				DOM.addStyle(this.name, css);
+				DOM.addStyle(css);
 				this.patchUserBannerMask();
 			} catch (e) {
 				console.error(e);
 			}
 		}
 
-		onStop() {
-			DOM.removeStyle(this.name);
-			Patcher.unpatchAll(this.name);
+		stop() {
+			DOM.removeStyle();
+			Patcher.unpatchAll();
 		}
 	};
 };
