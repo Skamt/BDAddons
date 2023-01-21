@@ -3,7 +3,7 @@ module.exports = ({ href }) => {
 		<>
 			<span className="copyBtnSpan">|</span>
 			<a
-				className="downloadLink-1OAglv anchorUnderlineOnHover-2qPutX copyBtn"
+				className="anchorUnderlineOnHover-2qPutX downloadLink-3cavAH copyBtn"
 				onClick={_ => Utils.copy(href)}>
 				Copy link
 			</a>

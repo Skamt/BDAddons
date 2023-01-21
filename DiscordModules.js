@@ -1,13 +1,13 @@
-module.exports ={
+module.exports = {
 	"SwitchRow": "getModule(m => m.toString().includes('helpdeskArticleId'))",
-	"ImageModal": `getModule(m => {
-	    if (!m?.toString || typeof (m?.toString) !== "function" || !m.prototype?.render) return;
-	    const strs = ["original","maxHeight","maxWidth","noreferrer noopener"];
-	    const funcStr = m?.prototype?.render?.toString();
-	    for(const s of strs)
-	        if (!funcStr.includes(s)) return false;
-	    return true;
-	})`,
+	"ImageModal": `m => {
+		if (!m?.toString || typeof (m?.toString) !== "function") return;
+		const strs = ["original","maxHeight","maxWidth","noreferrer noopener"];
+		const funcStr = m?.toString();
+		for(const s of strs)
+			if (!funcStr.includes(s)) return false;
+		return true;
+	}`,
 	"SelectedChannelStore": "getModule(Filters.byProps('getLastSelectedChannelId'))",
 	"UserStore": "getModule(Filters.byProps('getCurrentUser', 'getUser'))",
 	"Permissions": "getModule(Filters.byProps('computePermissions'))",

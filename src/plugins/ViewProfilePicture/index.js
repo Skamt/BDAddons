@@ -10,11 +10,18 @@ module.exports = () => {
 		}
 	} = new BdApi(config.info.name);
 
+	// https://discord.com/channels/86004744966914048/196782758045941760/1062604534922367107
+	function getModuleAndKey(filter) {
+		let module;
+		const target = BdApi.Webpack.getModule((entry, m) => filter(entry) ? (module = m) : false, { searchExports: true })
+		return [module.exports, Object.keys(module.exports).find(k => module.exports[k] === target)];
+	}
+	
 	// Modules
 	const Tooltip = DiscordModules.Tooltip;
 	const ModalRoot = DiscordModules.ModalRoot;
 	const openModal = DiscordModules.openModal;
-	const ImageModal = DiscordModules.ImageModal;
+	const [ImageModalModule, ImageModalKey] = getModuleAndKey(DiscordModules.ImageModal);
 	const ModalCarousel = DiscordModules.ModalCarousel;
 	const UserBannerMask = DiscordModules.UserBannerMask;
 	const ProfileTypeEnum = DiscordModules.ProfileTypeEnum;
@@ -36,7 +43,7 @@ module.exports = () => {
 		getNestedProp: (obj, path) => path.split(".").reduce(function(ob, prop) {
 			return ob && ob[prop];
 		}, obj),
-		getImageModalComponent: (Url, props) => React.createElement(ImageModal, {
+		getImageModalComponent: (Url, props) => React.createElement(ImageModalModule[ImageModalKey], {
 			...props,
 			src: Url,
 			original: Url,

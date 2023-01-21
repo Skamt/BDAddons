@@ -85,8 +85,8 @@ module.exports = () => {
 
 		emojiClickHandler(e) {
 			if(e.button === 2) return;
-			const props = getInternalInstance(e.target).pendingProps;
-			if (props && props["data-type"] && props["data-type"].toLowerCase() === "emoji")
+			const props = getInternalInstance(e.target)?.pendingProps;
+			if (props && props["data-type"]?.toLowerCase() === "emoji" && props.children)
 				this.emojiHandler(props.children.props.emoji);
 		}
 

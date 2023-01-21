@@ -56,6 +56,7 @@ svg.warningCircleIcon-2osUEe {
 .VPP-NoBanner {
 	width: 70vw;
 	height: 50vh;
+	position: relative;
 }
 
 /* Carousel Modal */
