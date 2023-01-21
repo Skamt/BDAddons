@@ -128,8 +128,9 @@ function initPlugin([Plugin, Api]) {
 					this.handleUnsendableEmoji(emoji, channel, user);
 			}
 			emojiClickHandler(e) {
-				const props = getInternalInstance(e.target).pendingProps;
-				if (props && props["data-type"] && props["data-type"].toLowerCase() === "emoji")
+				if (e.button === 2) return;
+				const props = getInternalInstance(e.target)?.pendingProps;
+				if (props && props["data-type"]?.toLowerCase() === "emoji" && props.children)
 					this.emojiHandler(props.children.props.emoji);
 			}
 			patchEmojiPickerUnavailable() {
