@@ -1,7 +1,7 @@
 /**
  * @name CopyImageLink
  * @description Adds (Copy Link) button next to (Open Original) under images
- * @version 1.0.2
+ * @version 1.0.3
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/CopyImageLink
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/CopyImageLink/CopyImageLink.plugin.js
@@ -9,7 +9,7 @@
 const config = {
 	info: {
 		name: "CopyImageLink",
-		version: "1.0.2",
+		version: "1.0.3",
 		description: "Adds (Copy Link) button next to (Open Original) under images",
 		source: "https://raw.githubusercontent.com/Skamt/BDAddons/main/CopyImageLink/CopyImageLink.plugin.js",
 		github: "https://github.com/Skamt/BDAddons/tree/main/CopyImageLink",
@@ -27,12 +27,18 @@ module.exports = (() => {
 		Webpack: {
 			getModule
 		}
-	} = BdApi;
+	} = new BdApi(config.info.name);
+	// https://discord.com/channels/86004744966914048/196782758045941760/1062604534922367107
+	function getModuleAndKey(filter) {
+		let module;
+		const target = BdApi.Webpack.getModule((entry, m) => filter(entry) ? (module = m) : false, { searchExports: true })
+		return [module.exports, Object.keys(module.exports).find(k => module.exports[k] === target)];
+	}
 	// Modules
-	const ImageModal = getModule(m => {
-		if (!m?.toString || typeof(m?.toString) !== "function" || !m.prototype?.render) return;
+	const [ImageModalModule, ImageModalKey] = getModuleAndKey(m => {
+		if (!m?.toString || typeof(m?.toString) !== "function") return;
 		const strs = ["original", "maxHeight", "maxWidth", "noreferrer noopener"];
-		const funcStr = m?.prototype?.render?.toString();
+		const funcStr = m?.toString();
 		for (const s of strs)
 			if (!funcStr.includes(s)) return false;
 		return true;
@@ -55,7 +61,7 @@ module.exports = (() => {
 			React.createElement(React.Fragment, null,
 				React.createElement("span", { className: "copyBtnSpan" }, "|"),
 				React.createElement("a", {
-					className: "downloadLink-1OAglv anchorUnderlineOnHover-2qPutX copyBtn",
+					className: "anchorUnderlineOnHover-2qPutX downloadLink-3cavAH copyBtn",
 					onClick: (_) => Utils.copy(href)
 				}, "Copy link")));
 	};
@@ -75,11 +81,10 @@ module.exports = (() => {
 	opacity: 0.5;
 }`;
 	return class CopyImageLink {
-		get name() { return config.info.name }
 		start() {
 			try {
-				DOM.addStyle(this.name, css);
-				Patcher.after(this.name, ImageModal.prototype, "render", (_, __, returnValue) => {
+				DOM.addStyle(css);
+				Patcher.after(ImageModalModule, ImageModalKey, (_, __, returnValue) => {
 					const children = Utils.getNestedProp(returnValue, "props.children");
 					const { href } = Utils.getNestedProp(returnValue, "props.children.2.props");
 					children.push(React.createElement(copyButton, { href }));
@@ -89,8 +94,8 @@ module.exports = (() => {
 			}
 		}
 		stop() {
-			DOM.removeStyle(this.name);
-			Patcher.unpatchAll(this.name);
+			DOM.removeStyle();
+			Patcher.unpatchAll();
 		}
 	};
 })();
