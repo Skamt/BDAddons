@@ -1,7 +1,7 @@
 /**
  * @name StickerEmojiPreview
  * @description Adds a zoomed preview to those tiny Stickers and Emojis
- * @version 1.0.1
+ * @version 1.0.2
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/StickerEmojiPreview
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/StickerEmojiPreview/StickerEmojiPreview.plugin.js
@@ -9,7 +9,7 @@
 const config = {
 	info: {
 		name: "StickerEmojiPreview",
-		version: "1.0.1",
+		version: "1.0.2",
 		description: "Adds a zoomed preview to those tiny Stickers and Emojis",
 		source: "https://raw.githubusercontent.com/Skamt/BDAddons/main/StickerEmojiPreview/StickerEmojiPreview.plugin.js",
 		github: "https://github.com/Skamt/BDAddons/tree/main/StickerEmojiPreview",
@@ -25,11 +25,11 @@ module.exports = (() => {
 		Patcher,
 		React: { useEffect, useState },
 		Webpack: { Filters, getModule }
-	} = BdApi;
+	} = new BdApi(config.info.name);
 	// Modules
 	const Popout = getModule(Filters.byStrings('renderPopout', 'animationPosition'), { searchExports: true });
 	const ExpressionPickerInspector = getModule((m) => m.Z && m.Z.toString().includes('EMOJI_IS_FAVORITE_ARIA_LABEL'));
-	const SwitchRow = getModule(m => m.toString().includes('helpdeskArticleId'));
+	const SwitchRow = getModule(m => m.toString().includes('tooltipNote'), { searchExports: true });
 	// Constants
 	const PREVIEW_SIZE = 300;
 	// components
@@ -62,13 +62,12 @@ module.exports = (() => {
 	const settingComponent = (props) => {
 		const [enabled, setEnabled] = useState(props.value);
 		return React.createElement(SwitchRow, {
-			children: props.description,
 			value: enabled,
 			onChange: e => {
 				props.onChange(e);
 				setEnabled(e);
 			}
-		});
+		}, props.description);
 	}
 	// styles
 	const css = `.stickersPreview {
@@ -91,9 +90,9 @@ module.exports = (() => {
 	return class StickerEmojiPreview {
 		start() {
 			try {
-				this.settings = BdApi.loadData(config.info.name, "settings") || { previewDefaultState: false };
-				DOM.addStyle(config.info.name, css);
-				Patcher.after(config.info.name, ExpressionPickerInspector, "Z", (_, [{ graphicPrimary }], ret) => {
+				this.settings = BdApi.loadData("settings") || { previewDefaultState: false };
+				DOM.addStyle(css);
+				Patcher.after(ExpressionPickerInspector, "Z", (_, [{ graphicPrimary }], ret) => {
 					return React.createElement(previewComponent, {
 						previewSize: PREVIEW_SIZE,
 						target: ret,
@@ -111,8 +110,8 @@ module.exports = (() => {
 			}
 		}
 		stop() {
-			DOM.removeStyle(config.info.name);
-			Patcher.unpatchAll(config.info.name);
+			DOM.removeStyle();
+			Patcher.unpatchAll();
 		}
 		getSettingsPanel() {
 			return React.createElement(settingComponent, {
@@ -120,7 +119,7 @@ module.exports = (() => {
 				value: this.settings.previewDefaultState,
 				onChange: e => {
 					this.settings.previewDefaultState = e;
-					BdApi.saveData(config.info.name, "settings", this.settings);
+					BdApi.saveData("settings", this.settings);
 				}
 			});
 		}
