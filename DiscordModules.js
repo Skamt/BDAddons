@@ -1,5 +1,5 @@
 module.exports = {
-	"SwitchRow": "getModule(m => m.toString().includes('helpdeskArticleId'))",
+	"SwitchRow": "getModule(m => m.toString().includes('tooltipNote'), { searchExports: true })",
 	"ImageModal": `m => {
 		if (!m?.toString || typeof (m?.toString) !== "function") return;
 		const strs = ["original","maxHeight","maxWidth","noreferrer noopener"];
