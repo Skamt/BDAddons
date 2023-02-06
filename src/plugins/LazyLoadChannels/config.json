@@ -1,0 +1,9 @@
+{
+	"info": {
+		"name": "LazyLoadChannels",
+		"version": "1.0.0",
+		"description": "empty",
+		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js",
+		"github": "https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels"
+	}
+}
