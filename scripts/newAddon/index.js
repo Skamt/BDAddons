@@ -1,16 +1,16 @@
 module.exports = (Plugin, Api) => {
 	const {
+		UI,
+		DOM,
 		Patcher,
-		Logger,
-		WebpackModules,
-		PluginUtilities,
-		DiscordModules: {
-			React,
-			React: { useState }
+		Webpack: {
+			Filters,
+			getModule
 		}
-	} = Api;
+	} = new BdApi(config.info.name);
 
 	return class pluginTEMPLATE extends Plugin {
+
 		constructor() {
 			super();
 		}
@@ -25,15 +25,18 @@ module.exports = (Plugin, Api) => {
 			try {
 				this.patch();
 			} catch (e) {
-				Logger.err(e);
+				console.err(e);
 			}
 		}
+
 		onStop() {
-			PluginUtilities.removeStyle(this.getName());
+			DOM.removeStyle();
 			Patcher.unpatchAll();
 		}
+
 		getSettingsPanel() {
 			return this.buildSettingsPanel().getElement();
 		}
+		
 	};
 };
