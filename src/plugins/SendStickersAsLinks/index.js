@@ -159,6 +159,7 @@ module.exports = () => {
 			 * which is what's needed to let stickers show up in the picker. ¯\_(ツ)_/¯
 			 */
 			Patcher.before(ChannelTextArea.type, "render", (_, [{ channel }]) => {
+				if(!channel.hasOwnProperty('permissionOverwrites')) return;
 				const userId = UserStore.getCurrentUser().id;
 				if (channel.guild_id)
 					channel.permissionOverwrites[userId] = {

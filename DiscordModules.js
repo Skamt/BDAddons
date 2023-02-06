@@ -9,6 +9,8 @@ module.exports = {
 		return true;
 	}`,
 	"SelectedChannelStore": "getModule(Filters.byProps('getLastSelectedChannelId'))",
+	"ChannelContent": "getModule(m => m && m.Z && m.Z.type && m.Z.type.toString().includes('showingSpamBanner'))",
+	"ChannelActions": "getModule(Filters.byProps('actions', 'fetchMessages'), { searchExports: true })",
 	"UserStore": "getModule(Filters.byProps('getCurrentUser', 'getUser'))",
 	"Permissions": "getModule(Filters.byProps('computePermissions'))",
 	"DiscordPermissions": "getModule(Filters.byProps('ADD_REACTIONS'), { searchExports: true })",

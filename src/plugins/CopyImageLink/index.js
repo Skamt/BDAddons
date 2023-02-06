@@ -31,7 +31,7 @@ module.exports = () => {
 		}, obj)
 	};
 
-	// components
+	// Components
 	const copyButton = require("components/CopyButton.jsx");
 
 	// styles

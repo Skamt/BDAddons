@@ -15,7 +15,7 @@ module.exports = () => {
 	// Constants
 	const PREVIEW_SIZE = 300;
 
-	// components
+	// Components
 	const previewComponent = require("components/PreviewComponent.jsx");
 
 	const settingComponent = (props) => {

@@ -51,7 +51,7 @@ module.exports = () => {
 		})
 	};
 
-	// components
+	// Components
 	const ViewProfilePictureButton = require("components/ViewProfilePictureButton.jsx");
 	const DisplayCarousel = require("components/DisplayCarousel.jsx");
 	const ColorModal = require("components/ColorModal.jsx");
