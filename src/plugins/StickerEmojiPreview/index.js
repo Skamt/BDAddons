@@ -2,6 +2,7 @@ module.exports = () => {
 	const {
 		DOM,
 		React,
+		Data,
 		Patcher,
 		React: { useEffect, useState },
 		Webpack: { Filters, getModule }
@@ -17,7 +18,6 @@ module.exports = () => {
 
 	// Components
 	const previewComponent = require("components/PreviewComponent.jsx");
-
 	const settingComponent = (props) => {
 		const [enabled, setEnabled] = useState(props.value);
 		return React.createElement(SwitchRow, {
@@ -28,13 +28,14 @@ module.exports = () => {
 			}
 		}, props.description);
 	}
+	
 	// styles
 	const css = require("styles.css");
 
 	return class StickerEmojiPreview {
 		start() {
 			try {
-				this.settings = BdApi.loadData("settings") || { previewDefaultState: false };
+				this.settings = Data.load("settings") || { previewDefaultState: false };
 				DOM.addStyle(css);
 				Patcher.after(ExpressionPickerInspector, "Z", (_, [{ graphicPrimary }], ret) => {
 					return React.createElement(previewComponent, {
@@ -65,7 +66,7 @@ module.exports = () => {
 				value: this.settings.previewDefaultState,
 				onChange: e => {
 					this.settings.previewDefaultState = e;
-					BdApi.saveData("settings", this.settings);
+					Data.save("settings", this.settings);
 				}
 			});
 		}

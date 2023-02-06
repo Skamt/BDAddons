@@ -1,23 +1,24 @@
-.lazyLoader .container-31PmuA {
-	padding: 10px;
-	margin: 0;
-	width: 160px;
-	border: 1px solid #4f545c;
+.lazyLoader .switch  {
+    min-width: auto;
+    margin: 10px;
+    padding: 0 5px;
+
 }
 
-.lazyLoader .container-31PmuA:hover {
-	background: #3c3f46;
+.lazyLoader .switch  > div {
+	flex-direction: row-reverse;
+	gap:10px;
 }
-.lazyLoader .container-31PmuA.true:hover {
-	background: rgb(32 122 60);
+
+.lazyLoader .switch.true .title-2yADjX {
+    color: rgb(14 216 77);
 }
-.lazyLoader .container-31PmuA.true {
-	border: 1px solid rgb(59, 165, 92);
-}
+
+
 
 .lazyLoader .image-20MDYu {
-	flex: 0 1 auto;
-	width: 376px;
-	height: 162px;
-	background-image: url("/assets/b5eb2f7d6b3f8cc9b60be4a5dcf28015.svg");
+    flex: 0 1 auto;
+    width: 376px;
+    height: 162px;
+    background-image: url("/assets/b5eb2f7d6b3f8cc9b60be4a5dcf28015.svg");
 }

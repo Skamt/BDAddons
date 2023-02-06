@@ -5,5 +5,12 @@
 		"description": "empty",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels"
-	}
+	},
+	"defaultConfig": [{
+		"type": "switch",
+		"id": "includeDm",
+		"name": "Include DM",
+		"note": "Whether or not to lazy load DMs",
+		"value": false
+	}]
 }
