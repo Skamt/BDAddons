@@ -12,7 +12,8 @@ module.exports = (Plugin, Api) => {
 		}
 	} = new BdApi(config.info.name);
 
-	const { DiscordModules: { Dispatcher } } = Api;
+	// Getting Dispatcher from Zlib just in case it has already been requsted by other plugins
+	const { DiscordModules: { Dispatcher } } = Api; 
 
 	// Modules
 	const ChannelTypeEnum = DiscordModules.ChannelTypeEnum;
@@ -61,7 +62,8 @@ module.exports = (Plugin, Api) => {
 		}
 
 		channelSelectHandler(e) {
-			if (Data.load(e.channelId)) ChannelActions.actions[EVENTS.CHANNEL_SELECT](e);
+			// if channel set to auto load || if DM and DMs not included in lazy loading 
+			if (Data.load(e.channelId) || (!e.guildId && !this.settings.includeDm)) return ChannelActions.actions[EVENTS.CHANNEL_SELECT](e);
 		}
 
 		channelCreateHandler({ channel }) {
@@ -77,7 +79,7 @@ module.exports = (Plugin, Api) => {
 				Object.keys(EVENTS).forEach(event => Dispatcher.unsubscribe(event, ChannelActions.actions[event]));
 				this.patchChannelContent();
 			} catch (e) {
-				Logger.err(e);
+				console.error(e);
 			}
 		}
 

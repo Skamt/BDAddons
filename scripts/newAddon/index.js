@@ -25,7 +25,7 @@ module.exports = (Plugin, Api) => {
 			try {
 				this.patch();
 			} catch (e) {
-				console.err(e);
+				console.error(e);
 			}
 		}
 
