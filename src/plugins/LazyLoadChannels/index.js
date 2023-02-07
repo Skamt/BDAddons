@@ -45,8 +45,8 @@ module.exports = (Plugin, Api) => {
 
 		patchChannelContent() {
 			Patcher.after(ChannelContent.Z, "type", (_, [{ channel: { type, id, guild_id, lastMessageId } }], returnValue) => {
-				if(type === ChannelTypeEnum.DM && !this.settings.includeDm) return;
-				if(type !== ChannelTypeEnum.DM && this.newlyCreatedChannels.has(id)) return;
+				if (type === ChannelTypeEnum.DM && !this.settings.includeDm) return;
+				if (type !== ChannelTypeEnum.DM && this.newlyCreatedChannels.has(id)) return;
 				if (Data.load(id)) return;
 
 				return React.createElement(LazyLoader, {
@@ -61,12 +61,10 @@ module.exports = (Plugin, Api) => {
 		}
 
 		channelSelectHandler(e) {
-			if (Data.load(e.channelId))
-				ChannelActions.actions[EVENTS.CHANNEL_SELECT](e);
+			if (Data.load(e.channelId)) ChannelActions.actions[EVENTS.CHANNEL_SELECT](e);
 		}
 
-		channelCreateHandler({channel}) {
-			// console.log(channel);
+		channelCreateHandler({ channel }) {
 			this.newlyCreatedChannels.add(channel.id);
 		}
 
