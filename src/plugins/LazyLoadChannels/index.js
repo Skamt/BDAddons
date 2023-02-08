@@ -30,20 +30,8 @@ module.exports = (Plugin, Api) => {
 
 	const DataManager = {
 		add(channel) {
-			let data = Data.load(channel.guild_id) || {};
-			if (channel.isDM()) {
-				const { avatar, username } = channel.rawRecipients[0];
-				data = { ...data, channels: [...data.channels, { id: channel.id, avatar, username }] };
-			} else {
-				const { name, icon } = GuildStore.getGuild(channel.guild_id);
-				data = {
-					...data,
-					name,
-					icon,
-					channels: [...data.channels, { id: channel.id, name: channel.name }]
-				};
-			}
-			Data.save(channel.guild_id, data);
+			let data = Data.load(channel.guild_id) || [];
+			Data.save(channel.guild_id, [...data, channel.id]);
 		},
 		remove(guildId, channelId) {
 			const old = Data.load(guildId);
@@ -56,7 +44,7 @@ module.exports = (Plugin, Api) => {
 		has(guildId, channelId) {
 			const data = Data.load(guildId);
 			if (!data) return false;
-			return data.channels.some(({ id }) => id === channelId);
+			return data.some(id => id === channelId);
 		}
 	}
 
@@ -85,7 +73,7 @@ module.exports = (Plugin, Api) => {
 				return React.createElement(LazyLoader, {
 					loadedChannels: this.loadedChannels,
 					originalComponent: returnValue,
-					messageId:this.messageId,
+					messageId: this.messageId,
 					channel
 				});
 			});

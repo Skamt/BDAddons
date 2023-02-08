@@ -5,7 +5,7 @@ module.exports = ({ loadedChannels, originalComponent, channel,messageId }) => {
 		ChannelActions.actions[EVENTS.CHANNEL_SELECT]({
 			channelId: channel.id,
 			guildId: channel.guild_id,
-			messageId
+			messageId: messageId || channel.lastMessageId
 		});
 		setRender(false);
 		loadedChannels.add(channel.id);
