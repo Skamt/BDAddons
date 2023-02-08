@@ -18,7 +18,7 @@ module.exports = (Plugin, Api) => {
 	// Modules
 	const ChannelTypeEnum = DiscordModules.ChannelTypeEnum;
 	const ChannelActions = DiscordModules.ChannelActions;
-	const ChannelContent = getModule(m => m && m.Z && m.Z.type && m.Z.type.toString().includes('showQuarantinedUserBanner')) || DiscordModules.ChannelContent;
+	const ChannelContent = DiscordModules.ChannelContent;
 	const SwitchRow = DiscordModules.SwitchRow;
 
 	// Constants
@@ -86,7 +86,13 @@ module.exports = (Plugin, Api) => {
 				if (channel.type === ChannelTypeEnum.DM && !this.settings.includeDm) return;
 				if (channel.type !== ChannelTypeEnum.DM && this.newlyCreatedChannels.has(channel.id)) return;
 				if (DataManager.has(guild.id, channel.id)) return;
-				return React.createElement(LazyLoader, { loadedChannel:this.loadedChannels,channel, guild, returnValue });
+				return React.createElement(LazyLoader, {
+					loadedChannels: this.loadedChannels,
+					message: this.messageId,
+					channel,
+					guild,
+					returnValue
+				});
 			});
 
 			Utils.forceReRender('chat-2ZfjoI');
@@ -94,6 +100,7 @@ module.exports = (Plugin, Api) => {
 
 		channelSelectHandler(e) {
 			// if channel set to auto load || if DM and DMs not included in lazy loading 
+			this.messageId = e.messageId;
 			if (this.loadedChannels.has(e.channelId) || DataManager.has(e.guildId, e.channelId) || (!e.guildId && !this.settings.includeDm))
 				return ChannelActions.actions[EVENTS.CHANNEL_SELECT](e);
 		}

@@ -1,15 +1,15 @@
-module.exports = ({ loadedChannel,returnValue, channel, guild }) => {
+module.exports = ({ loadedChannels, message, returnValue, channel, guild }) => {
 	const [state, setState] = useState({ render: true, checked: false });	
 	const loadHandler = () => {
 		ChannelActions.actions[EVENTS.CHANNEL_SELECT]({
 			channelId: channel.id,
 			guildId: guild.id,
-			messageId: channel.lastMessageId
+			messageId: message 
 		});
 		setState({ render: false, checked: false });
 		if (state.checked) 
 			DataManager.add(guild, channel);
-		loadedChannel.add(channel.id);
+		loadedChannels.add(channel.id);
 	};
 	useEffect(() => { setState({ render: true, checked: false });}, [channel]);
 	return state.render ? <div className="lazyLoader">

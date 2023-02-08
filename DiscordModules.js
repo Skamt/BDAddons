@@ -10,7 +10,7 @@ module.exports = {
 	}`,
 	"ChannelTypeEnum": "getModule(Filters.byProps('GUILD_TEXT','DM') ,{searchExports:true})",
 	"SelectedChannelStore": "getModule(Filters.byProps('getLastSelectedChannelId'))",
-	"ChannelContent": "getModule(m => m && m.Z && m.Z.type && m.Z.type.toString().includes('showingSpamBanner'))",
+	"ChannelContent": "getModule(m => m && m.Z && m.Z.type && m.Z.type.toString().includes('showQuarantinedUserBanner'))",
 	"ChannelActions": "getModule(Filters.byProps('actions', 'fetchMessages'), { searchExports: true })",
 	"UserStore": "getModule(Filters.byProps('getCurrentUser', 'getUser'))",
 	"Permissions": "getModule(Filters.byProps('computePermissions'))",
