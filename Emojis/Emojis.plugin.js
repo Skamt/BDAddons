@@ -59,7 +59,7 @@ function initPlugin([Plugin, Api]) {
 				Filters,
 				getModule
 			}
-		} = BdApi;
+		} = new BdApi(config.info.name);
 		// Modules
 		const SelectedChannelStore = getModule(Filters.byProps('getLastSelectedChannelId'));
 		const UserStore = getModule(Filters.byProps('getCurrentUser', 'getUser'));
@@ -103,7 +103,6 @@ function initPlugin([Plugin, Api]) {
 				super();
 				this.emojiClickHandler = this.emojiClickHandler.bind(this);
 			}
-			get name() { return config.info.name }
 			sendEmojiAsLink(emoji, channel) {
 				if (this.settings.sendDirectly)
 					MessageActions.sendMessage(channel.id, {
@@ -134,14 +133,14 @@ function initPlugin([Plugin, Api]) {
 					this.emojiHandler(props.children.props.emoji);
 			}
 			patchEmojiPickerUnavailable() {
-				Patcher.after(this.name, EmojiFunctions, "isEmojiFiltered", (_, args, ret) => false);
-				Patcher.after(this.name, EmojiFunctions, "getEmojiUnavailableReason", (_, args, ret) =>
+				Patcher.after(EmojiFunctions, "isEmojiFiltered", (_, args, ret) => false);
+				Patcher.after(EmojiFunctions, "getEmojiUnavailableReason", (_, args, ret) =>
 					ret === EmojiSendAvailabilityEnum.DISALLOW_EXTERNAL ? EmojiSendAvailabilityEnum.PREMIUM_LOCKED : ret
 				);
 			}
 			onStart() {
 				try {
-					DOM.addStyle(this.name, css);
+					DOM.addStyle(css);
 					document.addEventListener("mouseup", this.emojiClickHandler);
 					this.patchEmojiPickerUnavailable();
 				} catch (e) {
@@ -150,8 +149,8 @@ function initPlugin([Plugin, Api]) {
 			}
 			onStop() {
 				document.removeEventListener("mouseup", this.emojiClickHandler);
-				DOM.removeStyle(this.name);
-				Patcher.unpatchAll(this.name);
+				DOM.removeStyle();
+				Patcher.unpatchAll();
 			}
 			getSettingsPanel() {
 				return this.buildSettingsPanel().getElement();
