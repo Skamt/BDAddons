@@ -5,7 +5,7 @@ module.exports = (Plugin, Api) => {
 		Data,
 		Patcher,
 		React,
-		React: { useState },
+		React: { useState, useEffect },
 		Webpack: {
 			Filters,
 			getModule
@@ -13,12 +13,12 @@ module.exports = (Plugin, Api) => {
 	} = new BdApi(config.info.name);
 
 	// Getting Dispatcher from Zlib just in case it has already been requsted by other plugins
-	const { DiscordModules: { Dispatcher } } = Api; 
+	const { DiscordModules: { Dispatcher } } = Api;
 
 	// Modules
 	const ChannelTypeEnum = DiscordModules.ChannelTypeEnum;
 	const ChannelActions = DiscordModules.ChannelActions;
-	const ChannelContent = DiscordModules.ChannelContent;
+	const ChannelContent = getModule(m => m && m.Z && m.Z.type && m.Z.type.toString().includes('showQuarantinedUserBanner')) || DiscordModules.ChannelContent;
 	const SwitchRow = DiscordModules.SwitchRow;
 
 	// Constants
@@ -27,6 +27,42 @@ module.exports = (Plugin, Api) => {
 		THREAD_CREATE: "THREAD_CREATE",
 		CHANNEL_SELECT: "CHANNEL_SELECT",
 		CHANNEL_PRELOAD: "CHANNEL_PRELOAD",
+	};
+
+	const DataManager = {
+		add({ id = 'DM', name = 'DM', icon = 'DM' }, channel) {
+			const data = Data.load(id) || { name, icon, channels: [] };
+			Data.save(id, {
+				...data,
+				channels: [...data.channels, channel.id]
+			});
+		},
+		remove(guildId, channelId) {
+			guildId = guildId.id || 'DM';
+			const old = Data.load(guildId);
+			if (!old) return;
+			const index = old.channels.indexOf(channelId);
+			if (index === -1) return;
+			old.channels.splice(index, 1);
+			Data.save(guildId, old);
+		},
+		has(guildId, channelId) {
+			guildId = guildId || 'DM';
+			const data = Data.load(guildId);
+			if (!data) return false;
+			return data.channels.some(id => id === channelId);
+		}
+	}
+
+	// Helper functions
+	const Utils = {
+		forceReRender: (className) => {
+			const target = document.querySelector(`.${className}`);
+			if (!target) return;
+			const instance = BdApi.ReactUtils.getOwnerInstance(target);
+			const unpatch = Patcher.instead(instance, 'render', () => unpatch());
+			instance.forceUpdate(() => instance.forceUpdate());
+		}
 	};
 
 	// styles
@@ -42,28 +78,24 @@ module.exports = (Plugin, Api) => {
 			this.channelSelectHandler = this.channelSelectHandler.bind(this);
 			this.channelCreateHandler = this.channelCreateHandler.bind(this);
 			this.newlyCreatedChannels = new Set();
+			this.loadedChannels = new Set();
 		}
 
 		patchChannelContent() {
-			Patcher.after(ChannelContent.Z, "type", (_, [{ channel: { type, id, guild_id, lastMessageId } }], returnValue) => {
-				if (type === ChannelTypeEnum.DM && !this.settings.includeDm) return;
-				if (type !== ChannelTypeEnum.DM && this.newlyCreatedChannels.has(id)) return;
-				if (Data.load(id)) return;
-
-				return React.createElement(LazyLoader, {
-					options: {
-						channelId: id,
-						guildId: guild_id,
-						messageId: lastMessageId
-					},
-					original: returnValue
-				});;
+			Patcher.after(ChannelContent.Z, "type", (_, [{ channel, guild = {} }], returnValue) => {
+				if (channel.type === ChannelTypeEnum.DM && !this.settings.includeDm) return;
+				if (channel.type !== ChannelTypeEnum.DM && this.newlyCreatedChannels.has(channel.id)) return;
+				if (DataManager.has(guild.id, channel.id)) return;
+				return React.createElement(LazyLoader, { loadedChannel:this.loadedChannels,channel, guild, returnValue });
 			});
+
+			Utils.forceReRender('chat-2ZfjoI');
 		}
 
 		channelSelectHandler(e) {
 			// if channel set to auto load || if DM and DMs not included in lazy loading 
-			if (Data.load(e.channelId) || (!e.guildId && !this.settings.includeDm)) return ChannelActions.actions[EVENTS.CHANNEL_SELECT](e);
+			if (this.loadedChannels.has(e.channelId) || DataManager.has(e.guildId, e.channelId) || (!e.guildId && !this.settings.includeDm))
+				return ChannelActions.actions[EVENTS.CHANNEL_SELECT](e);
 		}
 
 		channelCreateHandler({ channel }) {
