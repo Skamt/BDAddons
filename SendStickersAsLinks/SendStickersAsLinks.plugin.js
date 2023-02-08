@@ -66,7 +66,7 @@ function initPlugin([Plugin, Api]) {
 				Filters,
 				getModule
 			}
-		} = BdApi;
+		} = new BdApi(config.info.name);
 		// Modules
 		const Permissions = getModule(Filters.byProps('computePermissions'));
 		const ChannelStore = getModule(Filters.byProps('getChannel', 'getDMFromUserId'));
@@ -141,7 +141,6 @@ function initPlugin([Plugin, Api]) {
 			constructor() {
 				super();
 			}
-			get name() { return config.info.name }
 			handleUnsendableSticker({ user, sticker, channel }, direct) {
 				if (Utils.isAnimatedSticker(sticker) && !this.settings.shouldSendAnimatedStickers)
 					return Utils.showToast(STRINGS.disabledAnimatedStickersErrorMessage, "info");
@@ -173,7 +172,7 @@ function initPlugin([Plugin, Api]) {
 				/** 
 				 * The existance of this plugin implies the existance of this patch 
 				 */
-				Patcher.instead(this.name, MessageActions, 'sendStickers', (_, args, originalFunc) => {
+				Patcher.instead(MessageActions, 'sendStickers', (_, args, originalFunc) => {
 					const [channelId, [stickerId]] = args;
 					const stickerObj = this.handleSticker(channelId, stickerId);
 					if (stickerObj.isSendable)
@@ -189,7 +188,7 @@ function initPlugin([Plugin, Api]) {
 				 * the sticker will be added as attachment, and therefore triggers an api request
 				 * must intercept and send as link
 				 */
-				Patcher.before(this.name, MessageActions, 'sendMessage', (_, args) => {
+				Patcher.before(MessageActions, 'sendMessage', (_, args) => {
 					const [channelId, , , attachments] = args;
 					if (attachments && attachments.stickerIds && attachments.stickerIds.filter) {
 						const [stickerId] = attachments.stickerIds;
@@ -213,7 +212,8 @@ function initPlugin([Plugin, Api]) {
 				 * 262144n is for Sending external Emojis permission
 				 * which is what's needed to let stickers show up in the picker. ¯\_(ツ)_/¯
 				 */
-				Patcher.before(this.name, ChannelTextArea.type, "render", (_, [{ channel }]) => {
+				Patcher.before(ChannelTextArea.type, "render", (_, [{ channel }]) => {
+					if (!channel.hasOwnProperty('permissionOverwrites')) return;
 					const userId = UserStore.getCurrentUser().id;
 					if (channel.guild_id)
 						channel.permissionOverwrites[userId] = {
@@ -227,7 +227,7 @@ function initPlugin([Plugin, Api]) {
 			patchStickerClickability() {
 				// if it's a guild sticker return true to make it clickable 
 				// ignoreing discord's stickers because ToS, and they're not regular images
-				Patcher.after(this.name, StickersSendability, isSendableStickerKey, (_, args, returnValue) => {
+				Patcher.after(StickersSendability, isSendableStickerKey, (_, args, returnValue) => {
 					return args[0].type === StickerTypeEnum.GUILD;
 				});
 			}
@@ -237,7 +237,7 @@ function initPlugin([Plugin, Api]) {
 				 * to style highlight them if setting is set to true
 				 * the sticker description gets added to the alt DOM attributes
 				 */
-				Patcher.after(this.name, StickerStore, "getStickerById", (_, args, sticker) => {
+				Patcher.after(StickerStore, "getStickerById", (_, args, sticker) => {
 					if (!sticker) return;
 					if (!Utils.isTagged(sticker.description || "") && !Utils.isLottieSticker(sticker) && Utils.isAnimatedSticker(sticker) && this.settings.shouldHighlightAnimated)
 						sticker.description += TAGS.ANIMATED_STICKER_TAG;
@@ -247,7 +247,7 @@ function initPlugin([Plugin, Api]) {
 			}
 			patchStickerSuggestion() {
 				// Enable suggestions for custom stickers only 
-				Patcher.after(this.name, StickersSendability, getStickerSendabilityKey, (_, args, returnValue) => {
+				Patcher.after(StickersSendability, getStickerSendabilityKey, (_, args, returnValue) => {
 					if (args[0].type === StickerTypeEnum.GUILD) {
 						const { SENDABLE } = StickersSendabilityEnum;
 						return returnValue !== SENDABLE ? SENDABLE : returnValue;
@@ -256,7 +256,7 @@ function initPlugin([Plugin, Api]) {
 			}
 			onStart() {
 				try {
-					DOM.addStyle(this.name, css);
+					DOM.addStyle(css);
 					this.patchStickerClickability();
 					this.patchSendSticker();
 					this.patchGetStickerById();
@@ -268,8 +268,8 @@ function initPlugin([Plugin, Api]) {
 				}
 			}
 			onStop() {
-				DOM.removeStyle(this.name);
-				Patcher.unpatchAll(this.name);
+				DOM.removeStyle();
+				Patcher.unpatchAll();
 			}
 			getSettingsPanel() {
 				const panel = this.buildSettingsPanel();
