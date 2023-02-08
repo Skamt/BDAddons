@@ -1,30 +1,30 @@
-module.exports = ({ loadedChannels, message, returnValue, channel, guild }) => {
-	const [state, setState] = useState({ render: true, checked: false });	
+module.exports = ({ loadedChannels, originalComponent, channel,messageId }) => {
+	const [render, setRender] = useState(true);	
+	const [checked, setChecked] = useState(false);	
 	const loadHandler = () => {
 		ChannelActions.actions[EVENTS.CHANNEL_SELECT]({
 			channelId: channel.id,
-			guildId: guild.id,
-			messageId: message 
+			guildId: channel.guild_id,
+			messageId
 		});
-		setState({ render: false, checked: false });
-		if (state.checked) 
-			DataManager.add(guild, channel);
+		setRender(false);
 		loadedChannels.add(channel.id);
+		if (checked) DataManager.add(channel);
 	};
-	useEffect(() => { setState({ render: true, checked: false });}, [channel]);
-	return state.render ? <div className="lazyLoader">
+
+	return render ? <div className="lazyLoader">
 			<div className="logo"></div>
 			<div className="title">Lazy loading is Enabled!</div>
 			<div className="description">This channel is lazy loaded, If you want to auto load this channel in the future, make sure you enable <b>Auto load</b> down below before you load it.</div>
 			<div className="controls">
 				<button onClick={loadHandler} className="load-btn">Load</button>
 				<SwitchRow
-					className={`${state.checked} switch`}
+					className={`${checked} switch`}
 					hideBorder="true"
-					value={state.checked}
-					onChange={e => setState({...state, checked: e})}>
+					value={checked}
+					onChange={setChecked}>
 					Auto load
 				</SwitchRow>
 			</div>
-		</div> : returnValue ;
+		</div> : originalComponent;
 };
