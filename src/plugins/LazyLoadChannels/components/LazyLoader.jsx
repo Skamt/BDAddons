@@ -9,7 +9,7 @@ module.exports = ({ loadedChannels, originalComponent, channel,messageId }) => {
 		});
 		setRender(false);
 		loadedChannels.add(channel.id);
-		if (checked) DataManager.add(channel);
+		if (checked) DataManager.add(channel.guild_id,  channel.id);
 	};
 
 	return render ? <div className="lazyLoader">
