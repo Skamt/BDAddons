@@ -32,16 +32,16 @@ function initPlugin([Plugin, Api]) {
 			UI,
 			DOM,
 			Data,
-			Patcher,
 			React,
+			Patcher,
+			ContextMenu,
 			React: { useState, useEffect },
 			Webpack: {
 				Filters,
 				getModule
 			}
 		} = new BdApi(config.info.name);
-		// Common modules from Zlib just in case they've already been requsted by other plugins
-		const { DiscordModules: { Dispatcher, GuildStore, SwitchRow } } = Api;
+		const { DiscordModules: { Dispatcher, GuildStore, GuildChannelsStore, SwitchRow } } = Api;
 		// Modules
 		const ChannelTypeEnum = getModule(Filters.byProps('GUILD_TEXT', 'DM'), { searchExports: true });
 		const ChannelActions = getModule(Filters.byProps('actions', 'fetchMessages'), { searchExports: true });
@@ -54,22 +54,23 @@ function initPlugin([Plugin, Api]) {
 			CHANNEL_PRELOAD: "CHANNEL_PRELOAD",
 		};
 		const DataManager = {
-			add(channel) {
-				let data = Data.load(channel.guild_id) || [];
-				Data.save(channel.guild_id, [...data, channel.id]);
+			add(key, target) {
+				let data = Data.load(key) || [];
+				Data.save(key, [...data, ...(Array.isArray(target) ? target : [target])])
 			},
-			remove(guildId, channelId) {
-				const old = Data.load(guildId);
-				if (!old) return;
-				const index = old.channels.indexOf(channelId);
+			remove(key, target) {
+				if (!target) return Data.save(key, []);
+				const data = Data.load(key);
+				if (!data) return;
+				const index = data.indexOf(target);
 				if (index === -1) return;
-				old.channels.splice(index, 1);
-				Data.save(guildId, old);
+				data.splice(index, 1);
+				Data.save(key, data);
 			},
-			has(guildId, channelId) {
-				const data = Data.load(guildId);
+			has(key, target) {
+				const data = Data.load(key);
 				if (!data) return false;
-				return data.some(id => id === channelId);
+				return data.some(id => id === target);
 			}
 		}
 		// styles
@@ -145,10 +146,7 @@ function initPlugin([Plugin, Api]) {
 
 .lazyLoader .switch.true > div > label {
 	color: var(--text-positive);
-}
-
-
-`;
+}`;
 		// Components
 		const LazyLoader = ({ loadedChannels, originalComponent, channel, messageId }) => {
 			const [render, setRender] = useState(true);
@@ -161,7 +159,7 @@ function initPlugin([Plugin, Api]) {
 				});
 				setRender(false);
 				loadedChannels.add(channel.id);
-				if (checked) DataManager.add(channel);
+				if (checked) DataManager.add(channel.guild_id, channel.id);
 			};
 			return render ? React.createElement("div", { className: "lazyLoader" },
 					React.createElement("div", { className: "logo" }),
@@ -188,9 +186,9 @@ function initPlugin([Plugin, Api]) {
 			patchChannelContent() {
 				Patcher.after(ChannelContent.Z, "type", (_, [{ channel }], returnValue) => {
 					// console.log(channel);
+					if (DataManager.has(channel.guild_id, channel.id)) return;
 					if (channel.isDM() && !this.settings.includeDm) return;
 					if (!channel.isDM() && this.newlyCreatedChannels.has(channel.id)) return;
-					if (DataManager.has(channel.guild_id, channel.id)) return;
 					return React.createElement(LazyLoader, {
 						loadedChannels: this.loadedChannels,
 						originalComponent: returnValue,
@@ -199,10 +197,43 @@ function initPlugin([Plugin, Api]) {
 					});
 				});
 			}
+			patchContextMenu() {
+				this.unpatchContextMenu = [
+					ContextMenu.patch("channel-context", (retVal, { channel }) => {
+						retVal.props.children.splice(1, 0, ContextMenu.buildItem({
+							type: "toggle",
+							label: "Auto load",
+							active: DataManager.has(channel.guild_id, channel.id),
+							action: (e) => {
+								if (DataManager.has(channel.guild_id, channel.id)) DataManager.remove(channel.guild_id, channel.id);
+								else DataManager.add(channel.guild_id, channel.id);
+							}
+						}));
+					}),
+					ContextMenu.patch("guild-context", (retVal, { guild: { id } }) => {
+						retVal.props.children.splice(1, 0, ContextMenu.buildItem({
+							type: "button",
+							label: "Lazy load all channels",
+							action: (e) => {
+								DataManager.remove(id);
+							}
+						}));
+					}),
+					ContextMenu.patch("guild-context", (retVal, { guild: { id } }) => {
+						retVal.props.children.splice(1, 0, ContextMenu.buildItem({
+							type: "button",
+							label: "Auto load all channels",
+							action: (e) => {
+								DataManager.add(id, GuildChannelsStore.getChannels(id).SELECTABLE.map(({ channel }) => channel.id));
+							}
+						}));
+					})
+				]
+			}
 			channelSelectHandler(e) {
 				// if channel already loaded () || if channel set to auto load || if DM and DMs not included in lazy loading 
 				this.messageId = e.messageId;
-				if (DataManager.has(e.guildId, e.channelId) || (!e.guildId && !this.settings.includeDm))
+				if (DataManager.has('guild', e.guildId) || DataManager.has(e.guildId, e.channelId) || (!e.guildId && !this.settings.includeDm))
 					return ChannelActions.actions[EVENTS.CHANNEL_SELECT](e);
 			}
 			channelCreateHandler({ channel }) {
@@ -216,6 +247,7 @@ function initPlugin([Plugin, Api]) {
 					Dispatcher.subscribe("THREAD_CREATE", this.channelCreateHandler);
 					Object.keys(EVENTS).forEach(event => Dispatcher.unsubscribe(event, ChannelActions.actions[event]));
 					this.patchChannelContent();
+					this.patchContextMenu();
 				} catch (e) {
 					console.error(e);
 				}
@@ -227,6 +259,7 @@ function initPlugin([Plugin, Api]) {
 				Object.keys(EVENTS).forEach(event => Dispatcher.subscribe(event, ChannelActions.actions[event]));
 				DOM.removeStyle();
 				Patcher.unpatchAll();
+				this.unpatchContextMenu.forEach(p => p());
 			}
 			getSettingsPanel() {
 				return this.buildSettingsPanel().getElement();
