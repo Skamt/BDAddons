@@ -35,23 +35,45 @@ function initPlugin([Plugin, Api]) {
 			React,
 			Patcher,
 			ContextMenu,
-			React: { useState, useEffect },
+			React: { useState },
 			Webpack: {
 				Filters,
 				getModule
 			}
 		} = new BdApi(config.info.name);
-		const { DiscordModules: { Dispatcher, GuildStore, GuildChannelsStore, SwitchRow } } = Api;
 		// Modules
+		const { DiscordModules: { Dispatcher, GuildStore, GuildChannelsStore, SwitchRow } } = Api;
 		const ChannelTypeEnum = getModule(Filters.byProps('GUILD_TEXT', 'DM'), { searchExports: true });
 		const ChannelActions = getModule(Filters.byProps('actions', 'fetchMessages'), { searchExports: true });
 		const ChannelContent = getModule(m => m && m.Z && m.Z.type && m.Z.type.toString().includes('showingSpamBanner'));
+		// Utilities
+		const Utils = {
+			getChannelStats(messages) {
+				return messages.reduce((stats, { reactions, embeds, attachments }) => {
+					stats.reactions += reactions.length;
+					stats.embeds += embeds.filter(e => e.type?.includes("rich")).length;
+					stats.links += embeds.filter(e => e.type?.includes("rich")).length;
+					stats.images += attachments.filter(Utils.filters.attachments("image")).length + embeds.filter(Utils.filters.embeds("image")).length;
+					stats.videos += attachments.filter(Utils.filters.attachments("video")).length + embeds.filter(Utils.filters.embeds("video")).length;
+					return stats;
+				}, { messages: messages.length, reactions: 0, embeds: 0, links: 0, images: 0, videos: 0 });
+			},
+			filters: {
+				attachments: type => a => a.content_type?.includes("type") || Utils.REGEX[type].test(a.filename),
+				embeds: type => e => e.type === type
+			},
+			REGEX: {
+				image: /(jpg|jpeg|png|bmp|tiff|psd|raw|cr2|nef|orf|sr2)/i,
+				video: /(mp4|avi|wmv|mov|flv|mkv|webm|vob|ogv|m4v|3gp|3g2|mpeg|mpg|m2v|m4v|svi|3gpp|3gpp2|mxf|roq|nsv|flv|f4v|f4p|f4a|f4b)/i
+			}
+		}
 		// Constants
 		const EVENTS = {
 			THREAD_LIST_SYNC: "THREAD_LIST_SYNC",
 			THREAD_CREATE: "THREAD_CREATE",
 			CHANNEL_SELECT: "CHANNEL_SELECT",
 			CHANNEL_PRELOAD: "CHANNEL_PRELOAD",
+			GUILD_CREATE: "GUILD_CREATE",
 		};
 		const DataManager = {
 			add(key, target) {
@@ -83,6 +105,7 @@ function initPlugin([Plugin, Api]) {
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
+	user-select: text;
 }
 
 .lazyLoader .logo {
@@ -94,44 +117,48 @@ function initPlugin([Plugin, Api]) {
 	background-size: 100% 100%;
 }
 
-.lazyLoader .title{
+.lazyLoader .title {
 	color: var(--white-500);
 	font-size: 24px;
-    line-height: 28px;
-    font-weight: 600;
-    max-width: 640px;
-    padding: 0 20px;
-    text-align: center;
-    margin-bottom: 8px;
+	line-height: 28px;
+	font-weight: 600;
+	max-width: 640px;
+	padding: 0 20px;
+	text-align: center;
+	margin-bottom: 8px;
 }
 
-.lazyLoader .description{
+.lazyLoader .description {
 	color: var(--primary-dark-300);
-    font-size: 16px;
-    line-height: 1.4;
-    max-width: 440px;
-    text-align: center;
-    margin-bottom: 20px;
+	font-size: 16px;
+	line-height: 1.4;
+	max-width: 440px;
+	text-align: center;
+	margin-bottom: 20px;
 }
 
-.lazyLoader .controls{
+.lazyLoader .controls {
 	display: flex;
 	flex-direction: column;
 }
 
-.lazyLoader .load-btn {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border-radius: 3px;
-    font-size: 1em;
-    font-weight: 500;
-    color: var(--white-500);
-    background-color: var(--button-positive-background);
-    min-width: 130px;
-    min-height: 44px;
+.lazyLoader .buttons-container{
+	display: flex;
+	gap:10px;
 }
 
+.lazyLoader .load-btn {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	border-radius: 3px;
+	font-size: 1em;
+	font-weight: 500;
+	color: var(--white-500);
+	background-color: var(--button-positive-background);
+	min-width: 130px;
+	min-height: 44px;
+}
 
 .lazyLoader .switch {
 	min-width: auto;
@@ -140,18 +167,66 @@ function initPlugin([Plugin, Api]) {
 }
 
 .lazyLoader .switch > div {
-	flex-direction: row-reverse;
 	gap: 10px;
 }
 
 .lazyLoader .switch.true > div > label {
 	color: var(--text-positive);
-}`;
+}
+
+.lazyLoader + form {
+	display: none;
+}
+
+.lazyLoader .channelIcon {
+	color: var(--channel-icon);
+	margin: 5px;
+	font-size: 0;
+}
+
+.lazyLoader .channel {
+	background: #2e3136;
+	box-sizing: border-box;
+	padding: 5px;
+	min-width: 200px;
+	border-radius: 5px ;
+	display: flex;
+	align-items: center;
+	font-weight: 500;
+	font-size: 1.3em;
+	margin-bottom: 20px;
+}
+
+.lazyLoader .channelName {
+	color: var(--channels-default);
+}
+
+.lazyLoader .stats {
+    padding:10px 20px;
+	background: #2e3136;
+	color: var(--channels-default);
+	box-sizing: border-box;
+	display: flex;
+	gap:5px;
+	border:2px solid;
+	flex-direction: column;
+	min-width: 200px;
+	position:absolute;
+	bottom:20px;
+	left:20px;
+    text-transform:capitalize;
+}
+
+.lazyLoader .stats > div:before{
+    content:'- ';
+}
+
+`;
 		// Components
-		const LazyLoader = ({ loadedChannels, originalComponent, channel, messageId }) => {
+		const LazyLoader = ({ loadedChannels, originalComponent, messageId, channel, channelStats }) => {
 			const [render, setRender] = useState(true);
 			const [checked, setChecked] = useState(false);
-			const loadHandler = () => {
+			const loadChannelHandler = () => {
 				ChannelActions.actions[EVENTS.CHANNEL_SELECT]({
 					channelId: channel.id,
 					guildId: channel.guild_id,
@@ -161,12 +236,38 @@ function initPlugin([Plugin, Api]) {
 				loadedChannels.add(channel.id);
 				if (checked) DataManager.add(channel.guild_id, channel.id);
 			};
+			const loadMessagesHandler = () => {
+				ChannelActions.actions[EVENTS.CHANNEL_SELECT]({
+					channelId: channel.id,
+					guildId: channel.guild_id
+				});
+			};
 			return render ? React.createElement("div", { className: "lazyLoader" },
 					React.createElement("div", { className: "logo" }),
+					React.createElement("div", { className: "channel" },
+						React.createElement("div", { className: "channelIcon" },
+							React.createElement("svg", {
+									width: "24",
+									height: "24",
+									viewBox: "0 0 24 24",
+									"aria-hidden": "true",
+									role: "img"
+								},
+								React.createElement("path", {
+									fill: "currentColor",
+									"fill-rule": "evenodd",
+									"clip-rule": "evenodd",
+									d: "M5.88657 21C5.57547 21 5.3399 20.7189 5.39427 20.4126L6.00001 17H2.59511C2.28449 17 2.04905 16.7198 2.10259 16.4138L2.27759 15.4138C2.31946 15.1746 2.52722 15 2.77011 15H6.35001L7.41001 9H4.00511C3.69449 9 3.45905 8.71977 3.51259 8.41381L3.68759 7.41381C3.72946 7.17456 3.93722 7 4.18011 7H7.76001L8.39677 3.41262C8.43914 3.17391 8.64664 3 8.88907 3H9.87344C10.1845 3 10.4201 3.28107 10.3657 3.58738L9.76001 7H15.76L16.3968 3.41262C16.4391 3.17391 16.6466 3 16.8891 3H17.8734C18.1845 3 18.4201 3.28107 18.3657 3.58738L17.76 7H21.1649C21.4755 7 21.711 7.28023 21.6574 7.58619L21.4824 8.58619C21.4406 8.82544 21.2328 9 20.9899 9H17.41L16.35 15H19.7549C20.0655 15 20.301 15.2802 20.2474 15.5862L20.0724 16.5862C20.0306 16.8254 19.8228 17 19.5799 17H16L15.3632 20.5874C15.3209 20.8261 15.1134 21 14.8709 21H13.8866C13.5755 21 13.3399 20.7189 13.3943 20.4126L14 17H8.00001L7.36325 20.5874C7.32088 20.8261 7.11337 21 6.87094 21H5.88657ZM9.41045 9L8.35045 15H14.3504L15.4104 9H9.41045Z"
+								}))),
+						React.createElement("div", { className: "channelName" }, channel.name)),
+					React.createElement("div", { className: "stats" },
+						Object.keys(channelStats).map((stat) => React.createElement("div", null, stat, ": ", channelStats[stat]))),
 					React.createElement("div", { className: "title" }, "Lazy loading is Enabled!"),
 					React.createElement("div", { className: "description" }, "This channel is lazy loaded, If you want to auto load this channel in the future, make sure you enable ", React.createElement("b", null, "Auto load"), " down below before you load it."),
 					React.createElement("div", { className: "controls" },
-						React.createElement("button", { onClick: loadHandler, className: "load-btn" }, "Load"),
+						React.createElement("div", { className: "buttons-container" },
+							React.createElement("button", { onClick: loadChannelHandler, className: "load-btn" }, "Load Channel"),
+							React.createElement("button", { onClick: loadMessagesHandler, className: "load-btn" }, "Load Messages")),
 						React.createElement(SwitchRow, {
 							className: `${checked} switch`,
 							hideBorder: "true",
@@ -180,12 +281,13 @@ function initPlugin([Plugin, Api]) {
 				super();
 				this.channelSelectHandler = this.channelSelectHandler.bind(this);
 				this.channelCreateHandler = this.channelCreateHandler.bind(this);
+				this.guildCreateHandler = this.guildCreateHandler.bind(this);
 				this.newlyCreatedChannels = new Set();
 				this.loadedChannels = new Set();
 			}
 			patchChannelContent() {
 				Patcher.after(ChannelContent.Z, "type", (_, [{ channel }], returnValue) => {
-					// console.log(channel);
+					console.log(returnValue.props.children.props.messages);
 					if (DataManager.has(channel.guild_id, channel.id)) return;
 					if (channel.isDM() && !this.settings.includeDm) return;
 					if (!channel.isDM() && this.newlyCreatedChannels.has(channel.id)) return;
@@ -193,7 +295,8 @@ function initPlugin([Plugin, Api]) {
 						loadedChannels: this.loadedChannels,
 						originalComponent: returnValue,
 						messageId: this.messageId,
-						channel
+						channelStats: Utils.getChannelStats(returnValue.props.children.props.messages),
+						channel,
 					});
 				});
 			}
@@ -224,27 +327,31 @@ function initPlugin([Plugin, Api]) {
 							type: "button",
 							label: "Auto load all channels",
 							action: (e) => {
-								DataManager.add(id, GuildChannelsStore.getChannels(id).SELECTABLE.map(({ channel }) => channel.id));
+								const { SELECTABLE, VOCAL } = GuildChannelsStore.getChannels(id)
+								DataManager.add(id, [...SELECTABLE.map(({ channel }) => channel.id), ...VOCAL.map(({ channel }) => channel.id)]);
 							}
 						}));
-					})
+					}),
+					ContextMenu.patch("guild-context", (r) => r.props.children.splice(1, 0, ContextMenu.buildItem({ type: "separator" }))),
+					ContextMenu.patch("channel-context", (r) => r.props.children.splice(1, 0, ContextMenu.buildItem({ type: "separator" })))
 				]
 			}
 			channelSelectHandler(e) {
-				// if channel already loaded () || if channel set to auto load || if DM and DMs not included in lazy loading 
+				// Saving message ID to jump to it, this triggered when doing a search and we need the message ID
+				// if message ID undefined then the last message in the channel is used 
 				this.messageId = e.messageId;
-				if (DataManager.has('guild', e.guildId) || DataManager.has(e.guildId, e.channelId) || (!e.guildId && !this.settings.includeDm))
-					return ChannelActions.actions[EVENTS.CHANNEL_SELECT](e);
+				if (this.newlyCreatedChannels.has(e.channelId) || DataManager.has(e.guildId, e.channelId) || (!e.guildId && !this.settings.includeDm))
+					ChannelActions.actions[EVENTS.CHANNEL_SELECT](e);
 			}
-			channelCreateHandler({ channel }) {
-				this.newlyCreatedChannels.add(channel.id);
-			}
+			channelCreateHandler({ channel }) { this.newlyCreatedChannels.add(channel.id); }
+			guildCreateHandler({ guild }) { guild.channels.forEach(({ id }) => this.newlyCreatedChannels.add(id)) }
 			onStart() {
 				try {
 					DOM.addStyle(css);
-					Dispatcher.subscribe("CHANNEL_SELECT", this.channelSelectHandler);
 					Dispatcher.subscribe("CHANNEL_CREATE", this.channelCreateHandler);
-					Dispatcher.subscribe("THREAD_CREATE", this.channelCreateHandler);
+					Dispatcher.subscribe(EVENTS.CHANNEL_SELECT, this.channelSelectHandler);
+					Dispatcher.subscribe(EVENTS.THREAD_CREATE, this.channelCreateHandler);
+					Dispatcher.subscribe(EVENTS.GUILD_CREATE, this.guildCreateHandler);
 					Object.keys(EVENTS).forEach(event => Dispatcher.unsubscribe(event, ChannelActions.actions[event]));
 					this.patchChannelContent();
 					this.patchContextMenu();
@@ -253,11 +360,12 @@ function initPlugin([Plugin, Api]) {
 				}
 			}
 			onStop() {
-				Dispatcher.unsubscribe("CHANNEL_SELECT", this.channelSelectHandler);
-				Dispatcher.unsubscribe("CHANNEL_CREATE", this.channelCreateHandler);
-				Dispatcher.unsubscribe("THREAD_CREATE", this.channelCreateHandler);
-				Object.keys(EVENTS).forEach(event => Dispatcher.subscribe(event, ChannelActions.actions[event]));
 				DOM.removeStyle();
+				Dispatcher.unsubscribe("CHANNEL_CREATE", this.channelCreateHandler);
+				Dispatcher.unsubscribe(EVENTS.CHANNEL_SELECT, this.channelSelectHandler);
+				Dispatcher.unsubscribe(EVENTS.THREAD_CREATE, this.channelCreateHandler);
+				Dispatcher.unsubscribe(EVENTS.GUILD_CREATE, this.guildCreateHandler);
+				Object.keys(EVENTS).forEach(event => Dispatcher.subscribe(event, ChannelActions.actions[event]));
 				Patcher.unpatchAll();
 				this.unpatchContextMenu.forEach(p => p());
 			}
