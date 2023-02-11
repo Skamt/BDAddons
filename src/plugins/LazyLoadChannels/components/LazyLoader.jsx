@@ -13,6 +13,7 @@ module.exports = ({ loadedChannels, originalComponent, messageId, channel, chann
 	};
 
 	const loadMessagesHandler = () => {
+		show = true;
 		ChannelActions.actions[EVENTS.CHANNEL_SELECT]({
 			channelId: channel.id,
 			guildId: channel.guild_id

@@ -13,7 +13,7 @@ module.exports = (Plugin, Api) => {
 		}
 	} = new BdApi(config.info.name);
 
-
+	let show = false;
 	// Modules
 	const { DiscordModules: { Dispatcher, GuildStore, GuildChannelsStore, SwitchRow } } = Api;
 	const ChannelTypeEnum = DiscordModules.ChannelTypeEnum;
@@ -22,6 +22,7 @@ module.exports = (Plugin, Api) => {
 
 	// Utilities
 	const Utils = {
+		showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),
 		getChannelStats(messages) {
 			return messages.reduce((stats, { reactions, embeds, attachments }) => {
 				stats.reactions += reactions.length;
@@ -85,13 +86,13 @@ module.exports = (Plugin, Api) => {
 			this.channelSelectHandler = this.channelSelectHandler.bind(this);
 			this.channelCreateHandler = this.channelCreateHandler.bind(this);
 			this.guildCreateHandler = this.guildCreateHandler.bind(this);
+			this.loadMessagesSuccess = this.loadMessagesSuccess.bind(this);
 			this.newlyCreatedChannels = new Set();
 			this.loadedChannels = new Set();
 		}
 
 		patchChannelContent() {
 			Patcher.after(ChannelContent.Z, "type", (_, [{ channel }], returnValue) => {
-				console.log(returnValue.props.children.props.messages);
 				if (DataManager.has(channel.guild_id, channel.id)) return;
 				if (channel.isDM() && !this.settings.includeDm) return;
 				if (!channel.isDM() && this.newlyCreatedChannels.has(channel.id)) return;
@@ -152,12 +153,20 @@ module.exports = (Plugin, Api) => {
 
 		channelCreateHandler({ channel }) { this.newlyCreatedChannels.add(channel.id); }
 
-		guildCreateHandler({ guild }) { guild.channels.forEach(({ id }) => this.newlyCreatedChannels.add(id)) }
+		guildCreateHandler({ guild }) { guild.member_count === 1 && guild.channels.forEach(({ id }) => this.newlyCreatedChannels.add(id)) }
+
+		loadMessagesSuccess() {
+			if (show) {
+				Utils.showToast("Loaded!", "success");
+				show = false;
+			}
+		}
 
 		onStart() {
 			try {
 				DOM.addStyle(css);
 				Dispatcher.subscribe("CHANNEL_CREATE", this.channelCreateHandler);
+				Dispatcher.subscribe("LOAD_MESSAGES_SUCCESS", this.loadMessagesSuccess);
 				Dispatcher.subscribe(EVENTS.CHANNEL_SELECT, this.channelSelectHandler);
 				Dispatcher.subscribe(EVENTS.THREAD_CREATE, this.channelCreateHandler);
 				Dispatcher.subscribe(EVENTS.GUILD_CREATE, this.guildCreateHandler);
@@ -172,6 +181,7 @@ module.exports = (Plugin, Api) => {
 		onStop() {
 			DOM.removeStyle();
 			Dispatcher.unsubscribe("CHANNEL_CREATE", this.channelCreateHandler);
+			Dispatcher.unsubscribe("LOAD_MESSAGES_SUCCESS", this.loadMessagesSuccess);
 			Dispatcher.unsubscribe(EVENTS.CHANNEL_SELECT, this.channelSelectHandler);
 			Dispatcher.unsubscribe(EVENTS.THREAD_CREATE, this.channelCreateHandler);
 			Dispatcher.unsubscribe(EVENTS.GUILD_CREATE, this.guildCreateHandler);
