@@ -13,16 +13,26 @@ module.exports = (Plugin, Api) => {
 		}
 	} = new BdApi(config.info.name);
 
+
 	const Utils = {
 		getChannelStats(messages) {
-			return {
-				messages: messages.length,
-				reactions: messages.reduce((acc, m) => acc + m.reactions.length, 0),
-				embeds: messages.reduce((acc, m) => acc + m.embeds.filter(e => e.type.includes("rich")).length, 0),
-				links: messages.reduce((acc, m) => acc + m.embeds.filter(e => e.type === "link").length, 0),
-				images: messages.reduce((acc, m) => acc + m.attachments.filter(e => e.content_type.includes("image")).length + m.embeds.filter(e => e.type === "image").length, 0),
-				videos: messages.reduce((acc, m) => acc + m.attachments.filter(e => e.content_type.includes("video")).length + m.embeds.filter(e => e.type === "video").length, 0),
-			}
+			const stats = { messages: messages.length, reactions: 0, embeds: 0, links: 0, images: 0, videos: 0 };
+			messages.forEach(({ reactions, embeds, attachments }) => {
+				stats.reactions += reactions.length;
+				stats.embeds += embeds.filter(e => e.type?.includes("rich")).length;
+				stats.links += embeds.filter(e => e.type?.includes("rich")).length;
+				stats.images += attachments.filter(Utils.filters.attachments("image")).length + embeds.filter(Utils.filters.embeds("image")).length;
+				stats.videos += attachments.filter(Utils.filters.attachments("video")).length + embeds.filter(Utils.filters.embeds("video")).length;
+			});
+			return stats;
+		},
+		filters: {
+			attachments: type => a => a.content_type?.includes("type") || Utils.REGEX[type].test(a.filename),
+			embeds: type => e => e.type === type
+		},
+		REGEX: {
+			image: /(jpg|jpeg|png|bmp|tiff|psd|raw|cr2|nef|orf|sr2)/i,
+			video: /(mp4|avi|wmv|mov|flv|mkv|webm|vob|ogv|m4v|3gp|3g2|mpeg|mpg|m2v|m4v|svi|3gpp|3gpp2|mxf|roq|nsv|flv|f4v|f4p|f4a|f4b)/i
 		}
 	}
 	// Modules
@@ -31,12 +41,14 @@ module.exports = (Plugin, Api) => {
 	const ChannelActions = DiscordModules.ChannelActions;
 	const ChannelContent = DiscordModules.ChannelContent;
 
+
 	// Constants
 	const EVENTS = {
 		THREAD_LIST_SYNC: "THREAD_LIST_SYNC",
 		THREAD_CREATE: "THREAD_CREATE",
 		CHANNEL_SELECT: "CHANNEL_SELECT",
 		CHANNEL_PRELOAD: "CHANNEL_PRELOAD",
+		GUILD_CREATE: "GUILD_CREATE",
 	};
 
 	const DataManager = {
@@ -72,13 +84,14 @@ module.exports = (Plugin, Api) => {
 			super();
 			this.channelSelectHandler = this.channelSelectHandler.bind(this);
 			this.channelCreateHandler = this.channelCreateHandler.bind(this);
+			this.guildCreateHandler = this.guildCreateHandler.bind(this);
 			this.newlyCreatedChannels = new Set();
 			this.loadedChannels = new Set();
 		}
 
 		patchChannelContent() {
 			Patcher.after(ChannelContent.Z, "type", (_, [{ channel }], returnValue) => {
-				console.log();
+				console.log(returnValue.props.children.props.messages);
 				if (DataManager.has(channel.guild_id, channel.id)) return;
 				if (channel.isDM() && !this.settings.includeDm) return;
 				if (!channel.isDM() && this.newlyCreatedChannels.has(channel.id)) return;
@@ -91,6 +104,7 @@ module.exports = (Plugin, Api) => {
 				});
 			});
 		}
+
 		patchContextMenu() {
 			this.unpatchContextMenu = [
 				ContextMenu.patch("channel-context", (retVal, { channel }) => {
@@ -129,22 +143,25 @@ module.exports = (Plugin, Api) => {
 		}
 
 		channelSelectHandler(e) {
+			// Saving message ID to jump to it, this triggered when doing a search and we need the message ID
+			// if message ID undefined then the last message in the channel is used 
 			this.messageId = e.messageId;
 			// if channel set to auto load || if DM and DMs not included in lazy loading 
 			if (DataManager.has(e.guildId, e.channelId) || (!e.guildId && !this.settings.includeDm))
-				return ChannelActions.actions[EVENTS.CHANNEL_SELECT](e);
+				ChannelActions.actions[EVENTS.CHANNEL_SELECT](e);
 		}
 
-		channelCreateHandler({ channel }) {
-			this.newlyCreatedChannels.add(channel.id);
-		}
+		channelCreateHandler({ channel }) { this.newlyCreatedChannels.add(channel.id); }
+
+		guildCreateHandler({ guild }) { guild.channels.forEach(({ id }) => this.newlyCreatedChannels.add(id)) }
 
 		onStart() {
 			try {
 				DOM.addStyle(css);
-				Dispatcher.subscribe("CHANNEL_SELECT", this.channelSelectHandler);
 				Dispatcher.subscribe("CHANNEL_CREATE", this.channelCreateHandler);
-				Dispatcher.subscribe("THREAD_CREATE", this.channelCreateHandler);
+				Dispatcher.subscribe(EVENTS.CHANNEL_SELECT, this.channelSelectHandler);
+				Dispatcher.subscribe(EVENTS.THREAD_CREATE, this.channelCreateHandler);
+				Dispatcher.subscribe(EVENTS.GUILD_CREATE, this.guildCreateHandler);
 				Object.keys(EVENTS).forEach(event => Dispatcher.unsubscribe(event, ChannelActions.actions[event]));
 				this.patchChannelContent();
 				this.patchContextMenu();
@@ -155,9 +172,10 @@ module.exports = (Plugin, Api) => {
 
 		onStop() {
 			DOM.removeStyle();
-			Dispatcher.unsubscribe("CHANNEL_SELECT", this.channelSelectHandler);
 			Dispatcher.unsubscribe("CHANNEL_CREATE", this.channelCreateHandler);
-			Dispatcher.unsubscribe("THREAD_CREATE", this.channelCreateHandler);
+			Dispatcher.unsubscribe(EVENTS.CHANNEL_SELECT, this.channelSelectHandler);
+			Dispatcher.unsubscribe(EVENTS.THREAD_CREATE, this.channelCreateHandler);
+			Dispatcher.unsubscribe(EVENTS.GUILD_CREATE, this.guildCreateHandler);
 			Object.keys(EVENTS).forEach(event => Dispatcher.subscribe(event, ChannelActions.actions[event]));
 			Patcher.unpatchAll();
 			this.unpatchContextMenu.forEach(p => p());

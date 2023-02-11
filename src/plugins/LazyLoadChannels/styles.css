@@ -44,6 +44,11 @@
 	flex-direction: column;
 }
 
+.lazyLoader .buttons-container{
+	display: flex;
+	gap:10px;
+}
+
 .lazyLoader .load-btn {
 	display: flex;
 	justify-content: center;
@@ -64,7 +69,6 @@
 }
 
 .lazyLoader .switch > div {
-	flex-direction: row-reverse;
 	gap: 10px;
 }
 
@@ -87,30 +91,35 @@
 	box-sizing: border-box;
 	padding: 5px;
 	min-width: 200px;
-	border-radius: 5px 5px 0 0;
+	border-radius: 5px ;
 	display: flex;
 	align-items: center;
 	font-weight: 500;
 	font-size: 1.3em;
-	margin-bottom: 5px;
+	margin-bottom: 20px;
 }
 
 .lazyLoader .channelName {
 	color: var(--channels-default);
 }
+
 .lazyLoader .stats {
-    padding:10px;
+    padding:10px 20px;
 	background: #2e3136;
-	color: var(--interactive-active);
+	color: var(--channels-default);
 	box-sizing: border-box;
-	padding-left: 25px;
-	display:flex;
-	border-radius:  0 0 5px 5px;
 	display: flex;
 	gap:5px;
-	margin-bottom: 20px;
+	border:2px solid;
 	flex-direction: column;
 	min-width: 200px;
+	position:absolute;
+	bottom:20px;
+	left:20px;
+}
+
+.lazyLoader .stats > div {
+    text-transform:capitalize;
 }
 
 .lazyLoader .stats > div:before{
