@@ -1,4 +1,4 @@
-module.exports = ({ loadedChannels, originalComponent, messageId, channel, messages }) => {
+module.exports = ({ loadedChannels, originalComponent, messageId, channel, channelStats }) => {
 	const [render, setRender] = useState(true);	
 	const [checked, setChecked] = useState(false);	
 	const loadHandler = () => {
@@ -32,11 +32,14 @@ module.exports = ({ loadedChannels, originalComponent, messageId, channel, messa
 					<div className="channelName">{channel.name}</div>
 				</div>
 				<div className="stats">
-					{<div>Cached Messages: {messages.length}</div>}
-					{<div>Reactions count: {messages.reduce((acc, msg)=>{ return acc + msg.reactions.length},0)}</div>}
-					{<div>Embeds count: {messages.reduce((acc, msg)=>{ return acc + msg.embeds.length},0)}</div>}
+					{<div>Messages: {channelStats.messages}</div>}
+					{<div>Reactions: {channelStats.reactions}</div>}
+					{<div>Embeds: {channelStats.embeds}</div>}
+					{<div>Embeded Links: {channelStats.links}</div>}
+					{<div>Images: {channelStats.images}</div>}
+					{<div>Videos: {channelStats.videos}</div>}
 				</div>
-			
+
 			<div className="title">Lazy loading is Enabled!</div>
 			<div className="description">This channel is lazy loaded, If you want to auto load this channel in the future, make sure you enable <b>Auto load</b> down below before you load it.</div>
 			<div className="controls">

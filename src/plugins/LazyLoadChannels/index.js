@@ -13,7 +13,18 @@ module.exports = (Plugin, Api) => {
 		}
 	} = new BdApi(config.info.name);
 
-
+	const Utils = {
+		getChannelStats(messages) {
+			return {
+				messages: messages.length,
+				reactions: messages.reduce((acc, m) => acc + m.reactions.length, 0),
+				embeds: messages.reduce((acc, m) => acc + m.embeds.filter(e => e.type.includes("rich")).length, 0),
+				links: messages.reduce((acc, m) => acc + m.embeds.filter(e => e.type === "link").length, 0),
+				images: messages.reduce((acc, m) => acc + m.attachments.filter(e => e.content_type.includes("image")).length + m.embeds.filter(e => e.type === "image").length, 0),
+				videos: messages.reduce((acc, m) => acc + m.attachments.filter(e => e.content_type.includes("video")).length + m.embeds.filter(e => e.type === "video").length, 0),
+			}
+		}
+	}
 	// Modules
 	const { DiscordModules: { Dispatcher, GuildStore, GuildChannelsStore, SwitchRow } } = Api;
 	const ChannelTypeEnum = DiscordModules.ChannelTypeEnum;
@@ -67,7 +78,7 @@ module.exports = (Plugin, Api) => {
 
 		patchChannelContent() {
 			Patcher.after(ChannelContent.Z, "type", (_, [{ channel }], returnValue) => {
-				console.log(returnValue.props.children.props.messages);
+				console.log();
 				if (DataManager.has(channel.guild_id, channel.id)) return;
 				if (channel.isDM() && !this.settings.includeDm) return;
 				if (!channel.isDM() && this.newlyCreatedChannels.has(channel.id)) return;
@@ -75,8 +86,8 @@ module.exports = (Plugin, Api) => {
 					loadedChannels: this.loadedChannels,
 					originalComponent: returnValue,
 					messageId: this.messageId,
+					channelStats: Utils.getChannelStats(returnValue.props.children.props.messages),
 					channel,
-					messages:returnValue.props.children.props.messages
 				});
 			});
 		}
