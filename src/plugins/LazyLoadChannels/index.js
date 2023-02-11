@@ -6,16 +6,16 @@ module.exports = (Plugin, Api) => {
 		React,
 		Patcher,
 		ContextMenu,
-		React: { useState, useEffect },
+		React: { useState },
 		Webpack: {
 			Filters,
 			getModule
 		}
 	} = new BdApi(config.info.name);
 
-	const { DiscordModules: { Dispatcher, GuildStore, GuildChannelsStore, SwitchRow } } = Api;
 
 	// Modules
+	const { DiscordModules: { Dispatcher, GuildStore, GuildChannelsStore, SwitchRow } } = Api;
 	const ChannelTypeEnum = DiscordModules.ChannelTypeEnum;
 	const ChannelActions = DiscordModules.ChannelActions;
 	const ChannelContent = DiscordModules.ChannelContent;
@@ -67,7 +67,7 @@ module.exports = (Plugin, Api) => {
 
 		patchChannelContent() {
 			Patcher.after(ChannelContent.Z, "type", (_, [{ channel }], returnValue) => {
-				// console.log(channel);
+				console.log(returnValue.props.children.props.messages);
 				if (DataManager.has(channel.guild_id, channel.id)) return;
 				if (channel.isDM() && !this.settings.includeDm) return;
 				if (!channel.isDM() && this.newlyCreatedChannels.has(channel.id)) return;
@@ -75,7 +75,8 @@ module.exports = (Plugin, Api) => {
 					loadedChannels: this.loadedChannels,
 					originalComponent: returnValue,
 					messageId: this.messageId,
-					channel
+					channel,
+					messages:returnValue.props.children.props.messages
 				});
 			});
 		}
@@ -106,17 +107,20 @@ module.exports = (Plugin, Api) => {
 						type: "button",
 						label: "Auto load all channels",
 						action: (e) => {
-							DataManager.add(id, GuildChannelsStore.getChannels(id).SELECTABLE.map(({ channel }) => channel.id));
+							const { SELECTABLE, VOCAL } = GuildChannelsStore.getChannels(id)
+							DataManager.add(id, [...SELECTABLE.map(({ channel }) => channel.id), ...VOCAL.map(({ channel }) => channel.id)]);
 						}
 					}));
-				})
+				}),
+				ContextMenu.patch("guild-context", (r) => r.props.children.splice(1, 0, ContextMenu.buildItem({ type: "separator" }))),
+				ContextMenu.patch("channel-context", (r) => r.props.children.splice(1, 0, ContextMenu.buildItem({ type: "separator" })))
 			]
 		}
 
 		channelSelectHandler(e) {
-			// if channel already loaded () || if channel set to auto load || if DM and DMs not included in lazy loading 
 			this.messageId = e.messageId;
-			if (DataManager.has('guild', e.guildId) || DataManager.has(e.guildId, e.channelId) || (!e.guildId && !this.settings.includeDm))
+			// if channel set to auto load || if DM and DMs not included in lazy loading 
+			if (DataManager.has(e.guildId, e.channelId) || (!e.guildId && !this.settings.includeDm))
 				return ChannelActions.actions[EVENTS.CHANNEL_SELECT](e);
 		}
 
@@ -139,11 +143,11 @@ module.exports = (Plugin, Api) => {
 		}
 
 		onStop() {
+			DOM.removeStyle();
 			Dispatcher.unsubscribe("CHANNEL_SELECT", this.channelSelectHandler);
 			Dispatcher.unsubscribe("CHANNEL_CREATE", this.channelCreateHandler);
 			Dispatcher.unsubscribe("THREAD_CREATE", this.channelCreateHandler);
 			Object.keys(EVENTS).forEach(event => Dispatcher.subscribe(event, ChannelActions.actions[event]));
-			DOM.removeStyle();
 			Patcher.unpatchAll();
 			this.unpatchContextMenu.forEach(p => p());
 		}
