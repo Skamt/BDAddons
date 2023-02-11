@@ -14,17 +14,23 @@ module.exports = (Plugin, Api) => {
 	} = new BdApi(config.info.name);
 
 
+	// Modules
+	const { DiscordModules: { Dispatcher, GuildStore, GuildChannelsStore, SwitchRow } } = Api;
+	const ChannelTypeEnum = DiscordModules.ChannelTypeEnum;
+	const ChannelActions = DiscordModules.ChannelActions;
+	const ChannelContent = DiscordModules.ChannelContent;
+
+	// Utilities
 	const Utils = {
 		getChannelStats(messages) {
-			const stats = { messages: messages.length, reactions: 0, embeds: 0, links: 0, images: 0, videos: 0 };
-			messages.forEach(({ reactions, embeds, attachments }) => {
+			return messages.reduce((stats, { reactions, embeds, attachments }) => {
 				stats.reactions += reactions.length;
 				stats.embeds += embeds.filter(e => e.type?.includes("rich")).length;
 				stats.links += embeds.filter(e => e.type?.includes("rich")).length;
 				stats.images += attachments.filter(Utils.filters.attachments("image")).length + embeds.filter(Utils.filters.embeds("image")).length;
 				stats.videos += attachments.filter(Utils.filters.attachments("video")).length + embeds.filter(Utils.filters.embeds("video")).length;
-			});
-			return stats;
+				return stats;
+			}, { messages: messages.length, reactions: 0, embeds: 0, links: 0, images: 0, videos: 0 });
 		},
 		filters: {
 			attachments: type => a => a.content_type?.includes("type") || Utils.REGEX[type].test(a.filename),
@@ -35,12 +41,6 @@ module.exports = (Plugin, Api) => {
 			video: /(mp4|avi|wmv|mov|flv|mkv|webm|vob|ogv|m4v|3gp|3g2|mpeg|mpg|m2v|m4v|svi|3gpp|3gpp2|mxf|roq|nsv|flv|f4v|f4p|f4a|f4b)/i
 		}
 	}
-	// Modules
-	const { DiscordModules: { Dispatcher, GuildStore, GuildChannelsStore, SwitchRow } } = Api;
-	const ChannelTypeEnum = DiscordModules.ChannelTypeEnum;
-	const ChannelActions = DiscordModules.ChannelActions;
-	const ChannelContent = DiscordModules.ChannelContent;
-
 
 	// Constants
 	const EVENTS = {
@@ -146,8 +146,7 @@ module.exports = (Plugin, Api) => {
 			// Saving message ID to jump to it, this triggered when doing a search and we need the message ID
 			// if message ID undefined then the last message in the channel is used 
 			this.messageId = e.messageId;
-			// if channel set to auto load || if DM and DMs not included in lazy loading 
-			if (DataManager.has(e.guildId, e.channelId) || (!e.guildId && !this.settings.includeDm))
+			if (this.newlyCreatedChannels.has(e.channelId) || DataManager.has(e.guildId, e.channelId) || (!e.guildId && !this.settings.includeDm))
 				ChannelActions.actions[EVENTS.CHANNEL_SELECT](e);
 		}
 
