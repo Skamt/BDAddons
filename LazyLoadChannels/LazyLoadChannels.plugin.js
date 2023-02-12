@@ -42,7 +42,7 @@ function initPlugin([Plugin, Api]) {
 			}
 		} = new BdApi(config.info.name);
 		// Modules
-		const { DiscordModules: { Dispatcher, GuildStore, GuildChannelsStore, SwitchRow, ButtonData } } = Api;
+		const { DiscordModules: { Dispatcher, GuildStore, GuildChannelsStore, MessageActions, SwitchRow, ButtonData } } = Api;
 		const ChannelTypeEnum = getModule(Filters.byProps('GUILD_TEXT', 'DM'), { searchExports: true });
 		const ChannelActions = getModule(Filters.byProps('actions', 'fetchMessages'), { searchExports: true });
 		const ChannelContent = getModule(m => m && m.Z && m.Z.type && m.Z.type.toString().includes('showingSpamBanner'));
@@ -223,22 +223,19 @@ function initPlugin([Plugin, Api]) {
 }
 `;
 		// Components
-		const LazyLoader = ({ originalComponent, onLoadChannel, onLoadMessages, channelStats, channel }) => {
+		const LazyLoader = ({ originalComponent, handlers, channel, messages }) => {
 			const [render, setRender] = useState(true);
 			const [checked, setChecked] = useState(false);
-			const messagesLoadedRef = useRef(false);
+			const [channelStats, setChannelStats] = useState({});
 			useEffect(() => {
-				if (messagesLoadedRef.current)
+				setChannelStats(Utils.getChannelStats(messages));
+				if (channelStats.messages && render) {
 					Utils.showToast("Loaded!", "success");
-			}, [channelStats.messages]);
-			const loadChannelHandler = () => {
-				onLoadChannel(channel, checked);
-				setRender(false);
-			};
-			const loadMessagesHandler = () => {
-				onLoadMessages(channel);
-				messagesLoadedRef.current = true;
-			};
+				}
+			}, [messages.length]);
+			const loadMessagesHandler = () => handlers.onLoadMessages(channel);
+			const loadChannelHandler = () => handlers.onLoadChannel(channel, checked) & setRender(false);
+			const loadMoreMessagesHandler = () => handlers.onLoadMoreMessages(channel, messages.first());
 			return render ? React.createElement("div", { className: "lazyLoader" },
 					React.createElement("div", { className: "logo" }),
 					React.createElement("div", { className: "channel" },
@@ -267,11 +264,12 @@ function initPlugin([Plugin, Api]) {
 								size: ButtonData.Sizes.LARGE
 							}, "Load Channel"),
 							React.createElement(ButtonData, {
-								onClick: loadMessagesHandler,
-								color: ButtonData.Colors.PRIMARY,
-								look: ButtonData.Looks.OUTLINED,
-								size: ButtonData.Sizes.LARGE
-							}, "Load Messages")),
+									onClick: channelStats.messages ? loadMoreMessagesHandler : loadMessagesHandler,
+									color: ButtonData.Colors.PRIMARY,
+									look: ButtonData.Looks.OUTLINED,
+									size: ButtonData.Sizes.LARGE
+								},
+								channelStats.messages ? "Load More Messages" : "Load Messages")),
 						React.createElement(SwitchRow, {
 							className: `${checked} switch`,
 							hideBorder: "true",
@@ -291,11 +289,14 @@ function initPlugin([Plugin, Api]) {
 					if (Utils.DataManager.has(channel.guild_id, channel.id)) return;
 					if (channel.isDM() && !this.settings.includeDm) return;
 					return React.createElement(LazyLoader, {
-						originalComponent: returnValue,
-						onLoadChannel: this.loadChannel,
-						onLoadMessages: this.loadMessages,
-						channelStats: Utils.getChannelStats(returnValue.props.children.props.messages),
 						channel,
+						originalComponent: returnValue,
+						handlers: {
+							onLoadChannel: this.loadChannel,
+							onLoadMessages: this.loadMessages,
+							onLoadMoreMessages: this.loadMoreMessages
+						},
+						messages: returnValue.props.children.props.messages
 					});
 				});
 			}
@@ -348,6 +349,14 @@ function initPlugin([Plugin, Api]) {
 				ChannelActions.actions[EVENTS.CHANNEL_SELECT]({
 					channelId: channel.id,
 					guildId: channel.guild_id
+				});
+			}
+			loadMoreMessages(channel, lastMessage) {
+				MessageActions.fetchMessages({
+					channelId: channel.id,
+					before: lastMessage.id,
+					limit: 50,
+					truncate: true
 				});
 			}
 			// Event Handlers
