@@ -8,6 +8,7 @@ module.exports = {
 			if (!funcStr.includes(s)) return false;
 		return true;
 	}`,
+	"DMChannel": "getModule(Filters.byStrings('isMobileOnline', 'channel'),{searchExports:true})",
 	"ChannelTypeEnum": "getModule(Filters.byProps('GUILD_TEXT','DM') ,{searchExports:true})",
 	"SelectedChannelStore": "getModule(Filters.byProps('getLastSelectedChannelId'))",
 	"ChannelContent": "getModule(m => m && m.Z && m.Z.type && m.Z.type.toString().includes('showingSpamBanner'))",

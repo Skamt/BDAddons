@@ -10,86 +10,22 @@
 	user-select: text;
 }
 
-.lazyLoader .logo {
-	flex: 0 1 auto;
-	width: 376px;
-	height: 162px;
-	margin-bottom: 40px;
-	background-image: url("/assets/b5eb2f7d6b3f8cc9b60be4a5dcf28015.svg");
-	background-size: 100% 100%;
-}
-
-.lazyLoader .title {
-	color: var(--white-500);
-	font-size: 24px;
-	line-height: 28px;
-	font-weight: 600;
-	max-width: 640px;
-	padding: 0 20px;
-	text-align: center;
-	margin-bottom: 8px;
-}
-
-.lazyLoader .description {
-	color: var(--primary-dark-300);
-	font-size: 16px;
-	line-height: 1.4;
-	max-width: 440px;
-	text-align: center;
-	margin-bottom: 20px;
-}
-
-.lazyLoader .controls {
-	display: flex;
-	flex-direction: column;
-}
-
-.lazyLoader .buttons-container {
-	display: flex;
-	gap: 10px;
-}
-
-.lazyLoader .load-btn {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	border-radius: 3px;
-	font-size: 1em;
-	font-weight: 500;
-	color: var(--white-500);
-	background-color: var(--button-positive-background);
-	min-width: 130px;
-	min-height: 44px;
-}
-
-.lazyLoader .switch {
-	min-width: auto;
-	margin: 10px;
-	padding: 0 5px;
-}
-
-.lazyLoader .switch > div {
-	gap: 10px;
-}
-
-.lazyLoader .switch.true > div > label {
-	color: var(--text-positive);
-}
-
 .lazyLoader + form {
 	display: none;
 }
 
-.lazyLoader .channelIcon {
-	color: var(--channel-icon);
-	margin: 5px;
-	font-size: 0;
+.lazyLoader > .logo {
+	flex: 0 1 auto;
+	width: 376px;
+	height: 162px;
+	margin-bottom: 20px;
+	background-image: url("/assets/b5eb2f7d6b3f8cc9b60be4a5dcf28015.svg");
+	background-size: 100% 100%;
 }
 
-.lazyLoader .channel {
+.lazyLoader > .channel {
 	background: #2e3136;
 	box-sizing: border-box;
-	padding: 5px 25px 5px 5px;
 	min-width: 200px;
 	border-radius: 5px;
 	display: flex;
@@ -99,8 +35,21 @@
 	margin-bottom: 20px;
 }
 
-.lazyLoader .channelName {
+.lazyLoader > .channel > li{
+	max-width: 100%;
+	width: 100%;
+	margin: 5px;
+}
+
+.lazyLoader > .channel > .channelName {
 	color: var(--channels-default);
+	padding: 5px 25px 5px 5px;
+}
+
+.lazyLoader > .channel > .channelIcon {
+	color: var(--channel-icon);
+	margin: 5px;
+	font-size: 0;
 }
 
 .lazyLoader .stats {
@@ -121,4 +70,44 @@
 
 .lazyLoader .stats > div:before {
 	content: "- ";
+}
+
+.lazyLoader > .title {
+	color: var(--white-500);
+	font-size: 24px;
+	line-height: 28px;
+	font-weight: 600;
+	max-width: 640px;
+	padding: 0 20px;
+	text-align: center;
+	margin-bottom: 8px;
+}
+
+.lazyLoader > .description {
+	color: var(--primary-dark-300);
+	font-size: 16px;
+	line-height: 1.4;
+	max-width: 440px;
+	text-align: center;
+	margin-bottom: 20px;
+}
+
+.lazyLoader > .controls {
+	display: flex;
+	flex-direction: column;
+}
+
+.lazyLoader > .controls > .buttons-container {
+	display: flex;
+	gap: 10px;
+}
+
+.lazyLoader > .controls > .switch {
+	min-width: auto;
+	margin: 10px;
+	padding: 0 5px;
+}
+
+.lazyLoader > .controls > .switch.true > div > label {
+	color: var(--text-positive);
 }

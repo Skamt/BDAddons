@@ -18,6 +18,7 @@ module.exports = (Plugin, Api) => {
 	const ChannelTypeEnum = DiscordModules.ChannelTypeEnum;
 	const ChannelActions = DiscordModules.ChannelActions;
 	const ChannelContent = DiscordModules.ChannelContent;
+	const DMChannel = DiscordModules.DMChannel;
 
 	// Utilities
 	const Utils = {
@@ -104,6 +105,17 @@ module.exports = (Plugin, Api) => {
 
 		patchContextMenu() {
 			this.unpatchContextMenu = [
+				ContextMenu.patch("user-context", (retVal, { user }) => {
+					retVal.props.children.splice(1, 0, ContextMenu.buildItem({
+						type: "toggle",
+						label: "Auto load",
+						active: Utils.DataManager.has(null, user.id),
+						action: (e) => {
+							if (Utils.DataManager.has(null, user.id)) Utils.DataManager.remove(null, user.id);
+							else Utils.DataManager.add(null, user.id);
+						}
+					}));
+				}),
 				ContextMenu.patch("channel-context", (retVal, { channel }) => {
 					retVal.props.children.splice(1, 0, ContextMenu.buildItem({
 						type: "toggle",
@@ -134,6 +146,7 @@ module.exports = (Plugin, Api) => {
 						}
 					}));
 				}),
+				ContextMenu.patch("user-context", (r) => r.props.children.splice(1, 0, ContextMenu.buildItem({ type: "separator" }))),
 				ContextMenu.patch("guild-context", (r) => r.props.children.splice(1, 0, ContextMenu.buildItem({ type: "separator" }))),
 				ContextMenu.patch("channel-context", (r) => r.props.children.splice(1, 0, ContextMenu.buildItem({ type: "separator" })))
 			]
