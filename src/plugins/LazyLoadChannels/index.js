@@ -14,7 +14,7 @@ module.exports = (Plugin, Api) => {
 	} = new BdApi(config.info.name);
 
 	// Modules
-	const { DiscordModules: { Dispatcher, GuildStore, GuildChannelsStore, SwitchRow, ButtonData } } = Api;
+	const { DiscordModules: { Dispatcher, GuildStore, GuildChannelsStore, MessageActions, SwitchRow, ButtonData } } = Api;
 	const ChannelTypeEnum = DiscordModules.ChannelTypeEnum;
 	const ChannelActions = DiscordModules.ChannelActions;
 	const ChannelContent = DiscordModules.ChannelContent;
@@ -90,11 +90,14 @@ module.exports = (Plugin, Api) => {
 				if (Utils.DataManager.has(channel.guild_id, channel.id)) return;
 				if (channel.isDM() && !this.settings.includeDm) return;
 				return React.createElement(LazyLoader, {
-					originalComponent: returnValue,
-					onLoadChannel: this.loadChannel,
-					onLoadMessages: this.loadMessages,
-					channelStats: Utils.getChannelStats(returnValue.props.children.props.messages),
 					channel,
+					originalComponent: returnValue,
+					handlers: {
+						onLoadChannel: this.loadChannel,
+						onLoadMessages: this.loadMessages,
+						onLoadMoreMessages: this.loadMoreMessages
+					},
+					messages: returnValue.props.children.props.messages
 				});
 			});
 		}
@@ -153,6 +156,14 @@ module.exports = (Plugin, Api) => {
 			});
 		}
 
+		loadMoreMessages(channel, lastMessage) {
+			MessageActions.fetchMessages({
+				channelId: channel.id,
+				before: lastMessage.id,
+				limit: 50,
+				truncate: true
+			});
+		}
 		// Event Handlers
 		channelSelectHandler(e) {
 			this.messageId = e.messageId;

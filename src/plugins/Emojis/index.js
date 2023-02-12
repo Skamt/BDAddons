@@ -37,7 +37,7 @@ module.exports = () => {
 		showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),
 		hasEmbedPerms: (channel, user) => !channel.guild_id || Permissions.can({ permission: DiscordPermissions.EMBED_LINKS, context: channel, user }),
 		isEmojiSendable: (e) => EmojiFunctions.getEmojiUnavailableReason(e) === null,
-		getEmojiUrl: (emoji, size) => `${emoji.url.replace(/(size=)(\d+)[&]/, '')}&size=${size}`,
+		getEmojiUrl: (emoji, size) => `${emoji.url.replace(/(size=)(\d+)[&]/, '').replace('gif','webp')}&size=${size}`,
 	}
 
 	// Strings & Constants

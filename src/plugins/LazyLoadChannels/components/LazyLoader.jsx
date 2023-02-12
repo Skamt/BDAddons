@@ -1,23 +1,19 @@
-module.exports = ({ originalComponent, onLoadChannel, onLoadMessages, channelStats, channel }) => {
+module.exports = ({ originalComponent, handlers, channel, messages }) => {
 	const [render, setRender] = useState(true);	
 	const [checked, setChecked] = useState(false);
-	const messagesLoadedRef = useRef(false);
+	const [channelStats, setChannelStats] = useState({});
 
 	useEffect(()=>{ 
-		if(messagesLoadedRef.current) 
+		setChannelStats(Utils.getChannelStats(messages));
+		if(channelStats.messages && render) {
 			Utils.showToast("Loaded!", "success");
-	},[channelStats.messages]);
+		}
+	},[messages.length]);
 	
-	const loadChannelHandler = () => {
-		onLoadChannel(channel, checked);
-		setRender(false);
-	};
-
-	const loadMessagesHandler = () => {
-		onLoadMessages(channel);
-		messagesLoadedRef.current = true;
-	};
-
+	const loadMessagesHandler = () => handlers.onLoadMessages(channel);
+	const loadChannelHandler = () => handlers.onLoadChannel(channel, checked) & setRender(false);
+	const loadMoreMessagesHandler = () => handlers.onLoadMoreMessages(channel, messages.first());
+	
 	return render ? <div className="lazyLoader">
 			<div className="logo"></div>
 			<div className="channel">
@@ -48,11 +44,11 @@ module.exports = ({ originalComponent, onLoadChannel, onLoadMessages, channelSta
 						size={ButtonData.Sizes.LARGE}
 					>Load Channel</ButtonData>
 					<ButtonData 
-						onClick={loadMessagesHandler} 
+						onClick={channelStats.messages ? loadMoreMessagesHandler : loadMessagesHandler} 
 						color={ButtonData.Colors.PRIMARY}
 						look={ButtonData.Looks.OUTLINED}
 						size={ButtonData.Sizes.LARGE}
-					>Load Messages</ButtonData>
+					>{channelStats.messages ? "Load More Messages" : "Load Messages"}</ButtonData>
 
 				</div>
 				<SwitchRow
