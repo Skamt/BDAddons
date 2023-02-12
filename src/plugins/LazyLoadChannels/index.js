@@ -6,16 +6,15 @@ module.exports = (Plugin, Api) => {
 		React,
 		Patcher,
 		ContextMenu,
-		React: { useState },
+		React: { useState, useEffect, useRef },
 		Webpack: {
 			Filters,
 			getModule
 		}
 	} = new BdApi(config.info.name);
 
-	let show = false;
 	// Modules
-	const { DiscordModules: { Dispatcher, GuildStore, GuildChannelsStore, SwitchRow } } = Api;
+	const { DiscordModules: { Dispatcher, GuildStore, GuildChannelsStore, SwitchRow, ButtonData } } = Api;
 	const ChannelTypeEnum = DiscordModules.ChannelTypeEnum;
 	const ChannelActions = DiscordModules.ChannelActions;
 	const ChannelContent = DiscordModules.ChannelContent;
@@ -40,6 +39,26 @@ module.exports = (Plugin, Api) => {
 		REGEX: {
 			image: /(jpg|jpeg|png|bmp|tiff|psd|raw|cr2|nef|orf|sr2)/i,
 			video: /(mp4|avi|wmv|mov|flv|mkv|webm|vob|ogv|m4v|3gp|3g2|mpeg|mpg|m2v|m4v|svi|3gpp|3gpp2|mxf|roq|nsv|flv|f4v|f4p|f4a|f4b)/i
+		},
+		DataManager: {
+			add(key, target) {
+				let data = Data.load(key) || [];
+				Data.save(key, [...data, ...(Array.isArray(target) ? target : [target])])
+			},
+			remove(key, target) {
+				if (!target) return Data.save(key, []);
+				const data = Data.load(key);
+				if (!data) return;
+				const index = data.indexOf(target);
+				if (index === -1) return;
+				data.splice(index, 1);
+				Data.save(key, data);
+			},
+			has(key, target) {
+				const data = Data.load(key);
+				if (!data) return false;
+				return data.some(id => id === target);
+			}
 		}
 	}
 
@@ -52,27 +71,6 @@ module.exports = (Plugin, Api) => {
 		GUILD_CREATE: "GUILD_CREATE",
 	};
 
-	const DataManager = {
-		add(key, target) {
-			let data = Data.load(key) || [];
-			Data.save(key, [...data, ...(Array.isArray(target) ? target : [target])])
-		},
-		remove(key, target) {
-			if (!target) return Data.save(key, []);
-			const data = Data.load(key);
-			if (!data) return;
-			const index = data.indexOf(target);
-			if (index === -1) return;
-			data.splice(index, 1);
-			Data.save(key, data);
-		},
-		has(key, target) {
-			const data = Data.load(key);
-			if (!data) return false;
-			return data.some(id => id === target);
-		}
-	}
-
 	// styles
 	const css = require("styles.css");
 
@@ -83,23 +81,18 @@ module.exports = (Plugin, Api) => {
 
 		constructor() {
 			super();
-			this.channelSelectHandler = this.channelSelectHandler.bind(this);
-			this.channelCreateHandler = this.channelCreateHandler.bind(this);
-			this.guildCreateHandler = this.guildCreateHandler.bind(this);
-			this.loadMessagesSuccess = this.loadMessagesSuccess.bind(this);
-			this.newlyCreatedChannels = new Set();
-			this.loadedChannels = new Set();
+			this.loadChannel = this.loadChannel.bind(this);
 		}
 
+		// Patches
 		patchChannelContent() {
 			Patcher.after(ChannelContent.Z, "type", (_, [{ channel }], returnValue) => {
-				if (DataManager.has(channel.guild_id, channel.id)) return;
+				if (Utils.DataManager.has(channel.guild_id, channel.id)) return;
 				if (channel.isDM() && !this.settings.includeDm) return;
-				if (!channel.isDM() && this.newlyCreatedChannels.has(channel.id)) return;
 				return React.createElement(LazyLoader, {
-					loadedChannels: this.loadedChannels,
 					originalComponent: returnValue,
-					messageId: this.messageId,
+					onLoadChannel: this.loadChannel,
+					onLoadMessages: this.loadMessages,
 					channelStats: Utils.getChannelStats(returnValue.props.children.props.messages),
 					channel,
 				});
@@ -112,10 +105,10 @@ module.exports = (Plugin, Api) => {
 					retVal.props.children.splice(1, 0, ContextMenu.buildItem({
 						type: "toggle",
 						label: "Auto load",
-						active: DataManager.has(channel.guild_id, channel.id),
+						active: Utils.DataManager.has(channel.guild_id, channel.id),
 						action: (e) => {
-							if (DataManager.has(channel.guild_id, channel.id)) DataManager.remove(channel.guild_id, channel.id);
-							else DataManager.add(channel.guild_id, channel.id);
+							if (Utils.DataManager.has(channel.guild_id, channel.id)) Utils.DataManager.remove(channel.guild_id, channel.id);
+							else Utils.DataManager.add(channel.guild_id, channel.id);
 						}
 					}));
 				}),
@@ -124,7 +117,7 @@ module.exports = (Plugin, Api) => {
 						type: "button",
 						label: "Lazy load all channels",
 						action: (e) => {
-							DataManager.remove(id);
+							Utils.DataManager.remove(id);
 						}
 					}));
 				}),
@@ -134,7 +127,7 @@ module.exports = (Plugin, Api) => {
 						label: "Auto load all channels",
 						action: (e) => {
 							const { SELECTABLE, VOCAL } = GuildChannelsStore.getChannels(id)
-							DataManager.add(id, [...SELECTABLE.map(({ channel }) => channel.id), ...VOCAL.map(({ channel }) => channel.id)]);
+							Utils.DataManager.add(id, [...SELECTABLE.map(({ channel }) => channel.id), ...VOCAL.map(({ channel }) => channel.id)]);
 						}
 					}));
 				}),
@@ -143,36 +136,54 @@ module.exports = (Plugin, Api) => {
 			]
 		}
 
+		// Component events ? 
+		loadChannel(channel, autoLoad) {
+			if (autoLoad) Utils.DataManager.add(channel.guild_id, channel.id);
+			ChannelActions.actions[EVENTS.CHANNEL_SELECT]({
+				channelId: channel.id,
+				guildId: channel.guild_id,
+				messageId: this.messageId || channel.lastMessageId
+			});
+		}
+
+		loadMessages(channel) {
+			ChannelActions.actions[EVENTS.CHANNEL_SELECT]({
+				channelId: channel.id,
+				guildId: channel.guild_id
+			});
+		}
+
+		// Event Handlers
 		channelSelectHandler(e) {
-			// Saving message ID to jump to it, this triggered when doing a search and we need the message ID
-			// if message ID undefined then the last message in the channel is used 
 			this.messageId = e.messageId;
-			if (this.newlyCreatedChannels.has(e.channelId) || DataManager.has(e.guildId, e.channelId) || (!e.guildId && !this.settings.includeDm))
+			if (Utils.DataManager.has(e.guildId, e.channelId) || (!e.guildId && !this.settings.includeDm))
 				ChannelActions.actions[EVENTS.CHANNEL_SELECT](e);
 		}
 
-		channelCreateHandler({ channel }) { this.newlyCreatedChannels.add(channel.id); }
+		channelCreateHandler({ channel }) {!channel.isDM() && Utils.DataManager.add(channel.guild_id, channel.id); }
 
-		guildCreateHandler({ guild }) { guild.member_count === 1 && guild.channels.forEach(({ id }) => this.newlyCreatedChannels.add(id)) }
+		guildCreateHandler({ guild }) { guild.member_count === 1 && guild.channels.forEach(channel => Utils.DataManager.add(channel.guild_id, channel.id)) }
 
-		loadMessagesSuccess() {
-			if (show) {
-				Utils.showToast("Loaded!", "success");
-				show = false;
-			}
+		setupHandlers() {
+			this.handlers = [
+				["CHANNEL_CREATE", this.channelCreateHandler],
+				["THREAD_CREATE", this.channelCreateHandler],
+				["GUILD_CREATE", this.guildCreateHandler],
+				["CHANNEL_SELECT", this.channelSelectHandler],
+			].map(([event, handler]) => {
+				const boundHandler = handler.bind(this);
+				Dispatcher.subscribe(event, boundHandler);
+				return () => Dispatcher.unsubscribe(event, boundHandler);
+			});
 		}
 
 		onStart() {
 			try {
 				DOM.addStyle(css);
-				Dispatcher.subscribe("CHANNEL_CREATE", this.channelCreateHandler);
-				Dispatcher.subscribe("LOAD_MESSAGES_SUCCESS", this.loadMessagesSuccess);
-				Dispatcher.subscribe(EVENTS.CHANNEL_SELECT, this.channelSelectHandler);
-				Dispatcher.subscribe(EVENTS.THREAD_CREATE, this.channelCreateHandler);
-				Dispatcher.subscribe(EVENTS.GUILD_CREATE, this.guildCreateHandler);
-				Object.keys(EVENTS).forEach(event => Dispatcher.unsubscribe(event, ChannelActions.actions[event]));
+				this.setupHandlers();
 				this.patchChannelContent();
 				this.patchContextMenu();
+				Object.keys(EVENTS).forEach(event => Dispatcher.unsubscribe(event, ChannelActions.actions[event]));
 			} catch (e) {
 				console.error(e);
 			}
@@ -180,14 +191,10 @@ module.exports = (Plugin, Api) => {
 
 		onStop() {
 			DOM.removeStyle();
-			Dispatcher.unsubscribe("CHANNEL_CREATE", this.channelCreateHandler);
-			Dispatcher.unsubscribe("LOAD_MESSAGES_SUCCESS", this.loadMessagesSuccess);
-			Dispatcher.unsubscribe(EVENTS.CHANNEL_SELECT, this.channelSelectHandler);
-			Dispatcher.unsubscribe(EVENTS.THREAD_CREATE, this.channelCreateHandler);
-			Dispatcher.unsubscribe(EVENTS.GUILD_CREATE, this.guildCreateHandler);
-			Object.keys(EVENTS).forEach(event => Dispatcher.subscribe(event, ChannelActions.actions[event]));
 			Patcher.unpatchAll();
 			this.unpatchContextMenu.forEach(p => p());
+			this.handlers.forEach(h => h());
+			Object.keys(EVENTS).forEach(event => Dispatcher.subscribe(event, ChannelActions.actions[event]));
 		}
 
 		getSettingsPanel() {
