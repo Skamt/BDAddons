@@ -1,20 +1,17 @@
-module.exports = ({ originalComponent, channel, messages, lastMessageId }) => {
+module.exports = ({ originalComponent, channel, messages, messageId }) => {
 	const [render, setRender] = useState(true);	
 	const [checked, setChecked] = useState(false);
 	const [channelStats, setChannelStats] = useState({ messages: 0, reactions: 0, embeds: 0, links: 0, images: 0, videos: 0 });
 
 	useEffect(()=>{ 
 		setChannelStats(Utils.getChannelStats(messages));
-		if(channelStats.messages && render) {
-			Utils.showToast("Loaded!", "success");
-		}
 	},[messages.length]);
 	
-	const loadMessages = () => Utils.loadChannelMessages(channel, lastMessageId);
-	const loadMoreMessages = () => Utils.loadMoreChannelMessages(channel, messages.first());
+	const loadMessages = () => Utils.loadChannelMessages(channel);
+	const loadMoreMessages = () => Utils.loadMoreChannelMessages(channel.id, messages.first().id);
 	const loadChannel = () => {
 		if(checked) Utils.DataManager.add(channel.guild_id, channel.id); 
-		loadMessages();
+		if(!channelStats.messages) Utils.loadChannelMessages(channel);
 		setRender(false);
 	}
 	

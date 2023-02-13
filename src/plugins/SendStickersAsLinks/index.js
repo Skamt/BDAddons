@@ -10,6 +10,7 @@ module.exports = () => {
 	} = new BdApi(config.info.name);
 
 	// Modules
+	const GuildPermissions = DiscordModules.GuildPermissions;
 	const Permissions = DiscordModules.Permissions;
 	const ChannelStore = DiscordModules.ChannelStore;
 	const DiscordPermissions = DiscordModules.DiscordPermissions;
@@ -148,27 +149,10 @@ module.exports = () => {
 			})
 		}
 
-		patchChannelTextArea() {
-			/** 
-			 * this patch is for adding a local permission override to the current channel
-			 * so that stickers show up in the picker. in channels that disable external stickers
-			 * While this may feel like a feature bypass, I believe if a sticker is posted as an image, 
-			 * it's no longer a sticker anymore.
-			 
-			 * 262144n is for Sending external Emojis permission
-			 * which is what's needed to let stickers show up in the picker. ¯\_(ツ)_/¯
-			 */
-			Patcher.before(ChannelTextArea.type, "render", (_, [{ channel }]) => {
-				if(!channel.hasOwnProperty('permissionOverwrites')) return;
-				const userId = UserStore.getCurrentUser().id;
-				if (channel.guild_id)
-					channel.permissionOverwrites[userId] = {
-						id: userId,
-						type: 1,
-						allow: 262144n,
-						deny: 0n
-					};
-			});
+		patchChannelGuildPermissions() {
+			Patcher.after(Permissions, "can", (_, [{permission}], ret) => 
+				ret || DiscordPermissions.USE_EXTERNAL_EMOJIS === permission
+			);
 		}
 
 		patchStickerClickability() {
@@ -212,7 +196,7 @@ module.exports = () => {
 				this.patchGetStickerById();
 				this.patchStickerAttachement();
 				this.patchStickerSuggestion();
-				this.patchChannelTextArea();
+				this.patchChannelGuildPermissions();
 			} catch (e) {
 				console.error(e);
 			}

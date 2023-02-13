@@ -33,19 +33,14 @@ module.exports = (Plugin, Api) => {
 				return stats;
 			}, { messages: messages.length, reactions: 0, embeds: 0, links: 0, images: 0, videos: 0 });
 		},
-		loadChannelMessages(channel, lastMessageId) {
-			ChannelActions.actions[EVENTS.CHANNEL_SELECT]({
-				channelId: channel.id,
-				guildId: channel.guild_id,
-				messageId: lastMessageId || channel.lastMessageId
-			});
+		loadChannelMessages(channel, ) {
+			MessageActions.fetchMessages({ channelId: channel.id });
 		},
-		loadMoreChannelMessages(channelId, lastMessageId) {
+		loadMoreChannelMessages(channelId, messageId) {
 			MessageActions.fetchMessages({
 				channelId,
-				before: lastMessageId,
-				limit: 50,
-				truncate: true
+				before: messageId,
+				limit: 25
 			});
 		},
 		filters: {
@@ -99,26 +94,9 @@ module.exports = (Plugin, Api) => {
 			super();
 		}
 
-
-		loadChannel(channel, autoLoad) {
-			if (autoLoad) Utils.DataManager.add(channel.guild_id, channel.id);
-			Utils.loadChannelMessages(channel);
-		}
-
-		loadMessages(channel) {
-			Utils.loadChannelMessages(channel);
-		}
-
-		loadMoreMessages(channelId, lastMessageId) {
-			Utils.loadMoreChannelMessages(channelId, lastMessageId);
-		}
-
 		// Patches
 		patchChannelContent() {
-			Patcher.after(ChannelContent.Z, "type", (_, args, returnValue) => {
-				const [{ channel }] = args;
-				console.log(channel);
-				console.log(returnValue);
+			Patcher.after(ChannelContent.Z, "type", (_, [{ channel }], returnValue) => {
 				if (Utils.DataManager.has(channel.guild_id, channel.id)) return;
 				if (channel.isDM() && !this.settings.includeDm) return;
 				return React.createElement(LazyLoader, {
