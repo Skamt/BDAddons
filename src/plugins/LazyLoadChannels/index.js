@@ -33,6 +33,21 @@ module.exports = (Plugin, Api) => {
 				return stats;
 			}, { messages: messages.length, reactions: 0, embeds: 0, links: 0, images: 0, videos: 0 });
 		},
+		loadChannelMessages(channel, lastMessageId) {
+			ChannelActions.actions[EVENTS.CHANNEL_SELECT]({
+				channelId: channel.id,
+				guildId: channel.guild_id,
+				messageId: lastMessageId || channel.lastMessageId
+			});
+		},
+		loadMoreChannelMessages(channelId, lastMessageId) {
+			MessageActions.fetchMessages({
+				channelId,
+				before: lastMessageId,
+				limit: 50,
+				truncate: true
+			});
+		},
 		filters: {
 			attachments: type => a => a.content_type?.includes("type") || Utils.REGEX[type].test(a.filename),
 			embeds: type => e => e.type === type
@@ -82,22 +97,34 @@ module.exports = (Plugin, Api) => {
 
 		constructor() {
 			super();
-			this.loadChannel = this.loadChannel.bind(this);
+		}
+
+
+		loadChannel(channel, autoLoad) {
+			if (autoLoad) Utils.DataManager.add(channel.guild_id, channel.id);
+			Utils.loadChannelMessages(channel);
+		}
+
+		loadMessages(channel) {
+			Utils.loadChannelMessages(channel);
+		}
+
+		loadMoreMessages(channelId, lastMessageId) {
+			Utils.loadMoreChannelMessages(channelId, lastMessageId);
 		}
 
 		// Patches
 		patchChannelContent() {
-			Patcher.after(ChannelContent.Z, "type", (_, [{ channel }], returnValue) => {
+			Patcher.after(ChannelContent.Z, "type", (_, args, returnValue) => {
+				const [{ channel }] = args;
+				console.log(channel);
+				console.log(returnValue);
 				if (Utils.DataManager.has(channel.guild_id, channel.id)) return;
 				if (channel.isDM() && !this.settings.includeDm) return;
 				return React.createElement(LazyLoader, {
 					channel,
 					originalComponent: returnValue,
-					handlers: {
-						onLoadChannel: this.loadChannel,
-						onLoadMessages: this.loadMessages,
-						onLoadMoreMessages: this.loadMoreMessages
-					},
+					lastMessageId: this.lastMessageId, // in case of jumping
 					messages: returnValue.props.children.props.messages
 				});
 			});
@@ -152,36 +179,15 @@ module.exports = (Plugin, Api) => {
 			]
 		}
 
-		// Component events ? 
-		loadChannel(channel, autoLoad) {
-			if (autoLoad) Utils.DataManager.add(channel.guild_id, channel.id);
-			ChannelActions.actions[EVENTS.CHANNEL_SELECT]({
-				channelId: channel.id,
-				guildId: channel.guild_id,
-				messageId: this.messageId || channel.lastMessageId
-			});
-		}
-
-		loadMessages(channel) {
-			ChannelActions.actions[EVENTS.CHANNEL_SELECT]({
-				channelId: channel.id,
-				guildId: channel.guild_id
-			});
-		}
-
-		loadMoreMessages(channel, lastMessage) {
-			MessageActions.fetchMessages({
-				channelId: channel.id,
-				before: lastMessage.id,
-				limit: 50,
-				truncate: true
-			});
-		}
 		// Event Handlers
-		channelSelectHandler(e) {
-			this.messageId = e.messageId;
-			if (Utils.DataManager.has(e.guildId, e.channelId) || (!e.guildId && !this.settings.includeDm))
-				ChannelActions.actions[EVENTS.CHANNEL_SELECT](e);
+		channelSelectHandler({ channelId, guildId, messageId }) {
+			this.lastMessageId = messageId;
+			if (Utils.DataManager.has(guildId, channelId) || (!guildId && !this.settings.includeDm))
+				Utils.loadChannelMessages({
+					id: channelId,
+					guild_id: guildId,
+					lastMessageId: messageId
+				});
 		}
 
 		channelCreateHandler({ channel }) {!channel.isDM() && Utils.DataManager.add(channel.guild_id, channel.id); }

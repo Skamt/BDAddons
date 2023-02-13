@@ -1,4 +1,4 @@
-module.exports = ({ originalComponent, handlers, channel, messages }) => {
+module.exports = ({ originalComponent, channel, messages, lastMessageId }) => {
 	const [render, setRender] = useState(true);	
 	const [checked, setChecked] = useState(false);
 	const [channelStats, setChannelStats] = useState({ messages: 0, reactions: 0, embeds: 0, links: 0, images: 0, videos: 0 });
@@ -10,13 +10,16 @@ module.exports = ({ originalComponent, handlers, channel, messages }) => {
 		}
 	},[messages.length]);
 	
-	const loadMessagesHandler = () => handlers.onLoadMessages(channel);
-	const loadChannelHandler = () => handlers.onLoadChannel(channel, checked) & setRender(false);
-	const loadMoreMessagesHandler = () => handlers.onLoadMoreMessages(channel, messages.first());
+	const loadMessages = () => Utils.loadChannelMessages(channel, lastMessageId);
+	const loadMoreMessages = () => Utils.loadMoreChannelMessages(channel, messages.first());
+	const loadChannel = () => {
+		if(checked) Utils.DataManager.add(channel.guild_id, channel.id); 
+		loadMessages();
+		setRender(false);
+	}
 	
 	return render ? <div className="lazyLoader">
 			<div className="logo"></div>
-			 
 			<div className="channel">
 			{channel.name ?
 				<><div className="channelIcon">
@@ -42,12 +45,12 @@ module.exports = ({ originalComponent, handlers, channel, messages }) => {
 			<div className="controls">
 				<div className="buttons-container">
 					<ButtonData 
-						onClick={loadChannelHandler} 
+						onClick={loadChannel} 
 						color={ButtonData.Colors.GREEN}
 						size={ButtonData.Sizes.LARGE}
 					>Load Channel</ButtonData>
 					<ButtonData 
-						onClick={channelStats.messages ? loadMoreMessagesHandler : loadMessagesHandler} 
+						onClick={channelStats.messages ? loadMoreMessages : loadMessages} 
 						color={ButtonData.Colors.PRIMARY}
 						look={ButtonData.Looks.OUTLINED}
 						size={ButtonData.Sizes.LARGE}
