@@ -61,19 +61,19 @@ function initPlugin([Plugin, Api]) {
 				}, { messages: messages.length, reactions: 0, embeds: 0, links: 0, images: 0, videos: 0 });
 			},
 			loadChannelMessages(channel, lastMessageId) {
-				ChannelActions.actions[EVENTS.CHANNEL_SELECT]({
-					channelId: channel.id,
-					guildId: channel.guild_id,
-					messageId: lastMessageId || channel.lastMessageId
-				});
+				// ChannelActions.actions[EVENTS.CHANNEL_SELECT]({
+				// 	channelId: channel.id,
+				// 	guildId: channel.guild_id,
+				// 	messageId: lastMessageId || channel.lastMessageId
+				// });
+				console.log(MessageActions.fetchMessages({ channelId: channel.id }));
 			},
-			loadMoreChannelMessages(channelId, lastMessageId) {
-				MessageActions.fetchMessages({
+			loadMoreChannelMessages(channelId, messageId) {
+				console.log(MessageActions.fetchMessages({
 					channelId,
-					before: lastMessageId,
-					limit: 50,
-					truncate: true
-				});
+					before: messageId,
+					limit: 50
+				}));
 			},
 			filters: {
 				attachments: type => a => a.content_type?.includes("type") || Utils.REGEX[type].test(a.filename),
@@ -227,21 +227,18 @@ function initPlugin([Plugin, Api]) {
 	color: var(--text-positive);
 }`;
 		// Components
-		const LazyLoader = ({ originalComponent, channel, messages, lastMessageId }) => {
+		const LazyLoader = ({ originalComponent, channel, messages, messageId }) => {
 			const [render, setRender] = useState(true);
 			const [checked, setChecked] = useState(false);
 			const [channelStats, setChannelStats] = useState({ messages: 0, reactions: 0, embeds: 0, links: 0, images: 0, videos: 0 });
 			useEffect(() => {
 				setChannelStats(Utils.getChannelStats(messages));
-				if (channelStats.messages && render) {
-					Utils.showToast("Loaded!", "success");
-				}
 			}, [messages.length]);
-			const loadMessages = () => Utils.loadChannelMessages(channel, lastMessageId);
-			const loadMoreMessages = () => Utils.loadMoreChannelMessages(channel, messages.first());
+			const loadMessages = () => Utils.loadChannelMessages(channel, channel.lastMessageId);
+			const loadMoreMessages = () => Utils.loadMoreChannelMessages(channel.id, messages.first().id);
 			const loadChannel = () => {
 				if (checked) Utils.DataManager.add(channel.guild_id, channel.id);
-				loadMessages();
+				if (!channelStats.messages) Utils.loadChannelMessages(channel, messageId);
 				setRender(false);
 			};
 			return render ? React.createElement("div", { className: "lazyLoader" },
@@ -292,22 +289,9 @@ function initPlugin([Plugin, Api]) {
 			constructor() {
 				super();
 			}
-			loadChannel(channel, autoLoad) {
-				if (autoLoad) Utils.DataManager.add(channel.guild_id, channel.id);
-				Utils.loadChannelMessages(channel);
-			}
-			loadMessages(channel) {
-				Utils.loadChannelMessages(channel);
-			}
-			loadMoreMessages(channelId, lastMessageId) {
-				Utils.loadMoreChannelMessages(channelId, lastMessageId);
-			}
 			// Patches
 			patchChannelContent() {
-				Patcher.after(ChannelContent.Z, "type", (_, args, returnValue) => {
-					const [{ channel }] = args;
-					console.log(channel);
-					console.log(returnValue);
+				Patcher.after(ChannelContent.Z, "type", (_, [{ channel }], returnValue) => {
 					if (Utils.DataManager.has(channel.guild_id, channel.id)) return;
 					if (channel.isDM() && !this.settings.includeDm) return;
 					return React.createElement(LazyLoader, {
