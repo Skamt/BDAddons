@@ -10,7 +10,6 @@ module.exports = () => {
 	} = new BdApi(config.info.name);
 
 	// Modules
-	const GuildPermissions = DiscordModules.GuildPermissions;
 	const Permissions = DiscordModules.Permissions;
 	const ChannelStore = DiscordModules.ChannelStore;
 	const DiscordPermissions = DiscordModules.DiscordPermissions;

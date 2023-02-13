@@ -33,14 +33,13 @@ module.exports = (Plugin, Api) => {
 				return stats;
 			}, { messages: messages.length, reactions: 0, embeds: 0, links: 0, images: 0, videos: 0 });
 		},
-		loadChannelMessages(channel, ) {
-			MessageActions.fetchMessages({ channelId: channel.id });
+		loadChannelMessages(channel) {
+			return MessageActions.fetchMessages({ channelId: channel.id });
 		},
-		loadMoreChannelMessages(channelId, messageId) {
-			MessageActions.fetchMessages({
-				channelId,
-				before: messageId,
-				limit: 25
+		loadChannel(channel, messages) {
+			ChannelActions.actions[EVENTS.CHANNEL_SELECT]({
+				channelId: channel.id,
+				guildId: channel.guild_id
 			});
 		},
 		filters: {
@@ -94,16 +93,14 @@ module.exports = (Plugin, Api) => {
 			super();
 		}
 
-		// Patches
 		patchChannelContent() {
 			Patcher.after(ChannelContent.Z, "type", (_, [{ channel }], returnValue) => {
+				if (this.jumpedToMessage) return;
 				if (Utils.DataManager.has(channel.guild_id, channel.id)) return;
 				if (channel.isDM() && !this.settings.includeDm) return;
 				return React.createElement(LazyLoader, {
 					channel,
-					originalComponent: returnValue,
-					lastMessageId: this.lastMessageId, // in case of jumping
-					messages: returnValue.props.children.props.messages
+					originalComponent: returnValue
 				});
 			});
 		}
@@ -157,15 +154,10 @@ module.exports = (Plugin, Api) => {
 			]
 		}
 
-		// Event Handlers
-		channelSelectHandler({ channelId, guildId, messageId }) {
-			this.lastMessageId = messageId;
-			if (Utils.DataManager.has(guildId, channelId) || (!guildId && !this.settings.includeDm))
-				Utils.loadChannelMessages({
-					id: channelId,
-					guild_id: guildId,
-					lastMessageId: messageId
-				});
+		channelSelectHandler(e) {
+			this.jumpedToMessage = e.messageId;
+			if (this.jumpedToMessage || Utils.DataManager.has(e.guildId, e.channelId) || (!e.guildId && !this.settings.includeDm))
+				ChannelActions.actions[e.type](e);
 		}
 
 		channelCreateHandler({ channel }) {!channel.isDM() && Utils.DataManager.add(channel.guild_id, channel.id); }
@@ -177,7 +169,7 @@ module.exports = (Plugin, Api) => {
 				["CHANNEL_CREATE", this.channelCreateHandler],
 				["THREAD_CREATE", this.channelCreateHandler],
 				["GUILD_CREATE", this.guildCreateHandler],
-				["CHANNEL_SELECT", this.channelSelectHandler],
+				["CHANNEL_SELECT", this.channelSelectHandler]
 			].map(([event, handler]) => {
 				const boundHandler = handler.bind(this);
 				Dispatcher.subscribe(event, boundHandler);

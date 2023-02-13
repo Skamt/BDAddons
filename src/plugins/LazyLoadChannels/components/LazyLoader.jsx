@@ -1,4 +1,5 @@
-module.exports = ({ originalComponent, channel, messages, messageId }) => {
+module.exports = ({ originalComponent, channel }) => {
+	const messages = originalComponent.props.children.props.messages;
 	const [render, setRender] = useState(true);	
 	const [checked, setChecked] = useState(false);
 	const [channelStats, setChannelStats] = useState({ messages: 0, reactions: 0, embeds: 0, links: 0, images: 0, videos: 0 });
@@ -7,11 +8,18 @@ module.exports = ({ originalComponent, channel, messages, messageId }) => {
 		setChannelStats(Utils.getChannelStats(messages));
 	},[messages.length]);
 	
-	const loadMessages = () => Utils.loadChannelMessages(channel);
-	const loadMoreMessages = () => Utils.loadMoreChannelMessages(channel.id, messages.first().id);
-	const loadChannel = () => {
+	const loadMessagesHandler = () => {
+		if(!channelStats.messages) 
+			Utils.loadChannelMessages(channel)
+				.then(()=> Utils.showToast('Messages are Loaded!!','success'))
+		else
+			Utils.showToast('Messages are alreayd Loaded!!','warning')
+	}
+	
+	const loadChannelHandler = () => {
 		if(checked) Utils.DataManager.add(channel.guild_id, channel.id); 
-		if(!channelStats.messages) Utils.loadChannelMessages(channel);
+		Utils.loadChannel(channel, messages);
+		messages.jumpTargetId = messages.last()?.id;
 		setRender(false);
 	}
 	
@@ -42,16 +50,16 @@ module.exports = ({ originalComponent, channel, messages, messageId }) => {
 			<div className="controls">
 				<div className="buttons-container">
 					<ButtonData 
-						onClick={loadChannel} 
+						onClick={loadChannelHandler} 
 						color={ButtonData.Colors.GREEN}
 						size={ButtonData.Sizes.LARGE}
 					>Load Channel</ButtonData>
 					<ButtonData 
-						onClick={channelStats.messages ? loadMoreMessages : loadMessages} 
+						onClick={loadMessagesHandler} 
 						color={ButtonData.Colors.PRIMARY}
 						look={ButtonData.Looks.OUTLINED}
 						size={ButtonData.Sizes.LARGE}
-					>{channelStats.messages ? "Load More Messages" : "Load Messages"}</ButtonData>
+					>Load Messages</ButtonData>
 
 				</div>
 				<SwitchRow
