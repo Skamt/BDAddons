@@ -6,7 +6,7 @@ module.exports = (Plugin, Api) => {
 		React,
 		Patcher,
 		ContextMenu,
-		React: { useState, useEffect, useRef },
+		React: { useState, useEffect },
 		Webpack: {
 			Filters,
 			getModule
@@ -14,8 +14,7 @@ module.exports = (Plugin, Api) => {
 	} = new BdApi(config.info.name);
 
 	// Modules
-	const { DiscordModules: { Dispatcher, GuildStore, GuildChannelsStore, MessageActions, SwitchRow, ButtonData } } = Api;
-	const ChannelTypeEnum = DiscordModules.ChannelTypeEnum;
+	const { DiscordModules: { Dispatcher, GuildChannelsStore, MessageActions, SwitchRow, ButtonData } } = Api;
 	const ChannelActions = DiscordModules.ChannelActions;
 	const ChannelContent = DiscordModules.ChannelContent;
 	const DMChannel = DiscordModules.DMChannel;
@@ -35,12 +34,6 @@ module.exports = (Plugin, Api) => {
 		},
 		loadChannelMessages(channel) {
 			return MessageActions.fetchMessages({ channelId: channel.id });
-		},
-		loadChannel(channel, messages) {
-			ChannelActions.actions[EVENTS.CHANNEL_SELECT]({
-				channelId: channel.id,
-				guildId: channel.guild_id
-			});
 		},
 		filters: {
 			attachments: type => a => a.content_type?.includes("type") || Utils.REGEX[type].test(a.filename),
@@ -69,17 +62,27 @@ module.exports = (Plugin, Api) => {
 				if (!data) return false;
 				return data.some(id => id === target);
 			}
-		}
+		},
+		reRender: (() => {
+			let target = null;
+			return () => {
+				if (!target) target = document.querySelector(`#${CLASS_NAME}`);
+				const instance = BdApi.ReactUtils.getOwnerInstance(target);
+				const unpatch = Patcher.instead(instance, 'render', () => unpatch());
+				instance.forceUpdate(() => instance.forceUpdate());
+			}
+		})()
 	}
 
 	// Constants
-	const EVENTS = {
-		THREAD_LIST_SYNC: "THREAD_LIST_SYNC",
-		THREAD_CREATE: "THREAD_CREATE",
-		CHANNEL_SELECT: "CHANNEL_SELECT",
-		CHANNEL_PRELOAD: "CHANNEL_PRELOAD",
-		GUILD_CREATE: "GUILD_CREATE",
-	};
+	const EVENTS = [
+		"THREAD_LIST_SYNC",
+		"THREAD_CREATE",
+		"CHANNEL_SELECT",
+		"CHANNEL_PRELOAD",
+		"GUILD_CREATE",
+	];
+	const CLASS_NAME = "lazyLoader";
 
 	// styles
 	const css = require("styles.css");
@@ -88,20 +91,32 @@ module.exports = (Plugin, Api) => {
 	const LazyLoader = require("components/LazyLoader.jsx");
 
 	return class LazyLoadChannels extends Plugin {
-
 		constructor() {
 			super();
+			this.loadChannel = this.loadChannel.bind(this);
+			this.autoLoad = false;
+			this.comp = React.createElement(LazyLoader, null);
+		}
+
+		loadChannel(channel) {
+			ChannelActions.fetchMessages({
+				channelId: channel.id,
+				guildId: channel.guild_id,
+				messageId: null,
+			});
+			this.autoLoad = true;
 		}
 
 		patchChannelContent() {
-			Patcher.after(ChannelContent.Z, "type", (_, [{ channel }], returnValue) => {
-				if (this.jumpedToMessage) return;
-				if (Utils.DataManager.has(channel.guild_id, channel.id)) return;
-				if (channel.isDM() && !this.settings.includeDm) return;
-				return React.createElement(LazyLoader, {
+			Patcher.after(ChannelContent.Z, "type", (_, [{ channel }], { props }) => {
+				if (this.autoLoad) return;
+				this.comp.props = {
 					channel,
-					originalComponent: returnValue
-				});
+					css,
+					loadChannel: this.loadChannel,
+					messages: props.children.props.messages
+				};
+				return this.comp;
 			});
 		}
 
@@ -154,10 +169,11 @@ module.exports = (Plugin, Api) => {
 			]
 		}
 
-		channelSelectHandler(e) {
-			this.jumpedToMessage = e.messageId;
-			if (this.jumpedToMessage || Utils.DataManager.has(e.guildId, e.channelId) || (!e.guildId && !this.settings.includeDm))
-				ChannelActions.actions[e.type](e);
+		channelSelectHandler({ channelId, guildId, messageId }) {
+			if (messageId || Utils.DataManager.has(guildId, channelId) || (!guildId && !this.settings.includeDm)) {
+				this.loadChannel({ id: channelId, guild_id: guildId });
+			} else
+				this.autoLoad = false;
 		}
 
 		channelCreateHandler({ channel }) {!channel.isDM() && Utils.DataManager.add(channel.guild_id, channel.id); }
@@ -179,22 +195,20 @@ module.exports = (Plugin, Api) => {
 
 		onStart() {
 			try {
-				DOM.addStyle(css);
 				this.setupHandlers();
 				this.patchChannelContent();
 				this.patchContextMenu();
-				Object.keys(EVENTS).forEach(event => Dispatcher.unsubscribe(event, ChannelActions.actions[event]));
+				EVENTS.forEach(event => Dispatcher.unsubscribe(event, ChannelActions.actions[event]));
 			} catch (e) {
 				console.error(e);
 			}
 		}
 
 		onStop() {
-			DOM.removeStyle();
 			Patcher.unpatchAll();
 			this.unpatchContextMenu.forEach(p => p());
 			this.handlers.forEach(h => h());
-			Object.keys(EVENTS).forEach(event => Dispatcher.subscribe(event, ChannelActions.actions[event]));
+			EVENTS.forEach(event => Dispatcher.subscribe(event, ChannelActions.actions[event]));
 		}
 
 		getSettingsPanel() {

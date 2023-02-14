@@ -1,6 +1,5 @@
-module.exports = ({ originalComponent, channel }) => {
-	const messages = originalComponent.props.children.props.messages;
-	const [render, setRender] = useState(true);	
+module.exports = ({  channel, css, loadChannel, messages}) => {
+	const [blink, setBlink] = useState("");
 	const [checked, setChecked] = useState(false);
 	const [channelStats, setChannelStats] = useState({ messages: 0, reactions: 0, embeds: 0, links: 0, images: 0, videos: 0 });
 
@@ -9,21 +8,23 @@ module.exports = ({ originalComponent, channel }) => {
 	},[messages.length]);
 	
 	const loadMessagesHandler = () => {
-		if(!channelStats.messages) 
+		if(channelStats.messages) 
+			Utils.showToast('Messages are alreayd Loaded!!','warning')
+		else
 			Utils.loadChannelMessages(channel)
 				.then(()=> Utils.showToast('Messages are Loaded!!','success'))
-		else
-			Utils.showToast('Messages are alreayd Loaded!!','warning')
+		setBlink("blink");
+		setTimeout(() => {setBlink("")},1000);	
 	}
-	
+
 	const loadChannelHandler = () => {
 		if(checked) Utils.DataManager.add(channel.guild_id, channel.id); 
-		Utils.loadChannel(channel, messages);
-		messages.jumpTargetId = messages.last()?.id;
-		setRender(false);
+		loadChannel(channel);
+		Utils.reRender();
 	}
 	
-	return render ? <div className="lazyLoader">
+	return <div id={CLASS_NAME}>
+			<style>{css}</style>
 			<div className="logo"></div>
 			<div className="channel">
 			{channel.name ?
@@ -42,8 +43,8 @@ module.exports = ({ originalComponent, channel }) => {
 				<div className="channelName">{channel.name}</div></>
 				: <DMChannel channel={channel} selected={false}/>}
 			</div> 
-			<div className="stats">
-				{Object.keys(channelStats).map(stat => <div>{stat}: {channelStats[stat]}</div>)}
+			<div className={`stats ${blink}`}>
+				{Object.entries(channelStats).map(([label,stat]) => <div>{label}: {stat}</div>)}
 			</div>
 			<div className="title">Lazy loading is Enabled!</div>
 			<div className="description">This channel is lazy loaded, If you want to auto load this channel in the future, make sure you enable <b>Auto load</b> down below before you load it.</div>
@@ -70,5 +71,5 @@ module.exports = ({ originalComponent, channel }) => {
 					Auto load
 				</SwitchRow>
 			</div>
-		</div> : originalComponent;
+		</div> ;
 };
