@@ -1,7 +1,7 @@
 /**
  * @name SendStickersAsLinks
  * @description Enables you to send custom Stickers as links, (custom stickers as in the ones that are added by servers, not official discord stickers).
- * @version 2.0.3
+ * @version 2.0.4
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/SendStickersAsLinks
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/SendStickersAsLinks/SendStickersAsLinks.plugin.js
@@ -9,7 +9,7 @@
 const config = {
 	info: {
 		name: "SendStickersAsLinks",
-		version: "2.0.3",
+		version: "2.0.4",
 		description: "Enables you to send custom Stickers as links, (custom stickers as in the ones that are added by servers, not official discord stickers).",
 		source: "https://raw.githubusercontent.com/Skamt/BDAddons/main/SendStickersAsLinks/SendStickersAsLinks.plugin.js",
 		github: "https://github.com/Skamt/BDAddons/tree/main/SendStickersAsLinks",
@@ -17,11 +17,6 @@ const config = {
 			name: "Skamt"
 		}]
 	},
-	changelog: [{
-		title: "Feature",
-		type: "added",
-		items: ["Support for Sticker suggestions is back."]
-	}],
 	defaultConfig: [{
 		type: "switch",
 		id: "sendDirectly",
