@@ -8,6 +8,7 @@ module.exports = {
 			if (!funcStr.includes(s)) return false;
 		return true;
 	}`,
+	"PendingReplyStore": "getModule(m =>  m.getPendingReply)",
 	"DMChannel": "getModule(Filters.byStrings('isMobileOnline', 'channel'),{searchExports:true})",
 	"ChannelTypeEnum": "getModule(Filters.byProps('GUILD_TEXT','DM') ,{searchExports:true})",
 	"SelectedChannelStore": "getModule(Filters.byProps('getLastSelectedChannelId'))",

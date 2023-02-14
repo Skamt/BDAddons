@@ -10,6 +10,7 @@ module.exports = () => {
 	} = new BdApi(config.info.name);
 
 	// Modules
+	const PendingReplyStore = DiscordModules.PendingReplyStore;
 	const Permissions = DiscordModules.Permissions;
 	const ChannelStore = DiscordModules.ChannelStore;
 	const DiscordPermissions = DiscordModules.DiscordPermissions;
@@ -95,9 +96,25 @@ module.exports = () => {
 				MessageActions.sendMessage(channel.id, {
 					content: Utils.getStickerUrl(sticker.id, this.settings.stickerSize),
 					validNonShortcutEmojis: []
-				});
+				}, undefined, this.getReply(channel.id));
 			else
 				InsertText(Utils.getStickerUrl(sticker.id, this.settings.stickerSize));
+		}
+
+		getReply(channelId) {
+			const reply = PendingReplyStore.getPendingReply(channelId);
+			if (!reply) return {};
+			return {
+				messageReference: {
+					guild_id: reply.channel.guild_id,
+					channel_id: reply.channel.id,
+					message_id: reply.message.id
+				},
+				allowedMentions: reply.shouldMention ? undefined : {
+					parse: ["users", "roles", "everyone"],
+					replied_user: false
+				}
+			}
 		}
 
 		handleSticker(channelId, stickerId) {
@@ -131,7 +148,7 @@ module.exports = () => {
 			 * Since we enabled stickers to be clickable
 			 * If you click on a sticker while the textarea has some text
 			 * the sticker will be added as attachment, and therefore triggers an api request
-			 * must intercept and send as link
+			 * must intercept, adapt, overcome, what..?
 			 */
 			Patcher.before(MessageActions, 'sendMessage', (_, args) => {
 				const [channelId, , , attachments] = args;
@@ -139,7 +156,7 @@ module.exports = () => {
 					const [stickerId] = attachments.stickerIds;
 					const stickerObj = this.handleSticker(channelId, stickerId);
 					if (!stickerObj.isSendable) {
-						args[3] = {};
+						delete args[3].stickerIds;
 						setTimeout(() => {
 							this.handleUnsendableSticker(stickerObj, true);
 						}, 0)
@@ -149,7 +166,7 @@ module.exports = () => {
 		}
 
 		patchChannelGuildPermissions() {
-			Patcher.after(Permissions, "can", (_, [{permission}], ret) => 
+			Patcher.after(Permissions, "can", (_, [{ permission }], ret) =>
 				ret || DiscordPermissions.USE_EXTERNAL_EMOJIS === permission
 			);
 		}
