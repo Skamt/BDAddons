@@ -223,22 +223,39 @@ function initPlugin([Plugin, Api]) {
 }
 
 #lazyLoader .stats.blink {
-    animation: blink-stats .5s steps(1) infinite;
+    animation: de-wobble 1s;
 }
 
-@keyframes blink-stats{
-    0%,50%{
-        color: var(--channels-default);
-    }
-    50%,100%{
-        color:#5cef89;
-    }
+@keyframes de-wobble {
+
+  16.666666666666668% {    
+    transform: translateX(-30px) rotate(-6deg);
+  }
+  33.333333333333336% {    
+    transform: translateX(15px) rotate(6deg);
+  }
+  50% {    
+    transform: translateX(-15px) rotate(-3.6deg);
+  }
+  66.66666666666667% {    
+    transform: translateX(9px) rotate(2.4deg);
+  }
+  83.33333333333334% {    
+    transform: translateX(-6px) rotate(-1.2deg);
+  }
+  100% {    
+    transform: translateX(0px) rotate(0deg);
+  }
 }`;
 		// Components
 		const LazyLoader = ({ channel, css, loadChannel, messages }) => {
 			const [blink, setBlink] = useState("");
 			const [checked, setChecked] = useState(false);
 			const [channelStats, setChannelStats] = useState({ messages: 0, reactions: 0, embeds: 0, links: 0, images: 0, videos: 0 });
+			const startBlinking = () => {
+				setBlink("blink");
+				setTimeout(() => setBlink(""), 1200);
+			};
 			useEffect(() => {
 				setChannelStats(Utils.getChannelStats(messages));
 			}, [messages.length]);
@@ -247,9 +264,10 @@ function initPlugin([Plugin, Api]) {
 					Utils.showToast('Messages are alreayd Loaded!!', 'warning');
 				else
 					Utils.loadChannelMessages(channel).
-				then(() => Utils.showToast('Messages are Loaded!!', 'success'));
-				setBlink("blink");
-				setTimeout(() => { setBlink(""); }, 1000);
+				then(() => {
+					Utils.showToast('Messages are Loaded!!', 'success');
+					startBlinking();
+				});
 			};
 			const loadChannelHandler = () => {
 				if (checked) Utils.DataManager.add(channel.guild_id, channel.id);
