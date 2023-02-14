@@ -90,15 +90,13 @@ function initPlugin([Plugin, Api]) {
 					return data.some(id => id === target);
 				}
 			},
-			reRender: (() => {
-				let target = null;
-				return () => {
-					if (!target) target = document.querySelector(`#${CLASS_NAME}`);
-					const instance = BdApi.ReactUtils.getOwnerInstance(target);
-					const unpatch = Patcher.instead(instance, 'render', () => unpatch());
-					instance.forceUpdate(() => instance.forceUpdate());
-				}
-			})()
+			reRender: () => {
+				const target = document.querySelector(`#${CLASS_NAME}`);
+				if (!target) return;
+				const instance = BdApi.ReactUtils.getOwnerInstance(target);
+				const unpatch = Patcher.instead(instance, 'render', () => unpatch());
+				instance.forceUpdate(() => instance.forceUpdate());
+			}
 		}
 		// Constants
 		const EVENTS = [
@@ -308,11 +306,11 @@ function initPlugin([Plugin, Api]) {
 				this.autoLoad = false;
 				this.comp = React.createElement(LazyLoader, null);
 			}
-			loadChannel(channel) {
+			loadChannel(channel, messageId) {
 				ChannelActions.fetchMessages({
 					channelId: channel.id,
 					guildId: channel.guild_id,
-					messageId: null,
+					messageId
 				});
 				this.autoLoad = true;
 			}
@@ -378,7 +376,7 @@ function initPlugin([Plugin, Api]) {
 			}
 			channelSelectHandler({ channelId, guildId, messageId }) {
 				if (messageId || Utils.DataManager.has(guildId, channelId) || (!guildId && !this.settings.includeDm)) {
-					this.loadChannel({ id: channelId, guild_id: guildId });
+					this.loadChannel({ id: channelId, guild_id: guildId }, messageId);
 				} else
 					this.autoLoad = false;
 			}
