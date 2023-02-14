@@ -63,15 +63,14 @@ module.exports = (Plugin, Api) => {
 				return data.some(id => id === target);
 			}
 		},
-		reRender: (() => {
-			let target = null;
-			return () => {
-				if (!target) target = document.querySelector(`#${CLASS_NAME}`);
+		reRender: () => {
+				const target = document.querySelector(`#${CLASS_NAME}`);
+				if (!target) return;
 				const instance = BdApi.ReactUtils.getOwnerInstance(target);
 				const unpatch = Patcher.instead(instance, 'render', () => unpatch());
 				instance.forceUpdate(() => instance.forceUpdate());
-			}
-		})()
+			
+		}
 	}
 
 	// Constants
@@ -98,11 +97,11 @@ module.exports = (Plugin, Api) => {
 			this.comp = React.createElement(LazyLoader, null);
 		}
 
-		loadChannel(channel) {
+		loadChannel(channel,messageId) {
 			ChannelActions.fetchMessages({
 				channelId: channel.id,
 				guildId: channel.guild_id,
-				messageId: null,
+				messageId
 			});
 			this.autoLoad = true;
 		}
@@ -171,7 +170,7 @@ module.exports = (Plugin, Api) => {
 
 		channelSelectHandler({ channelId, guildId, messageId }) {
 			if (messageId || Utils.DataManager.has(guildId, channelId) || (!guildId && !this.settings.includeDm)) {
-				this.loadChannel({ id: channelId, guild_id: guildId });
+				this.loadChannel({ id: channelId, guild_id: guildId }, messageId);
 			} else
 				this.autoLoad = false;
 		}
