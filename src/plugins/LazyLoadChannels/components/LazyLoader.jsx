@@ -2,19 +2,24 @@ module.exports = ({  channel, css, loadChannel, messages}) => {
 	const [blink, setBlink] = useState("");
 	const [checked, setChecked] = useState(false);
 	const [channelStats, setChannelStats] = useState({ messages: 0, reactions: 0, embeds: 0, links: 0, images: 0, videos: 0 });
-
+	const startBlinking = () => {
+		setBlink("blink");
+		setTimeout(() => setBlink(""),1200);	
+	}
 	useEffect(()=>{ 
 		setChannelStats(Utils.getChannelStats(messages));
 	},[messages.length]);
 	
 	const loadMessagesHandler = () => {
 		if(channelStats.messages) 
-			Utils.showToast('Messages are alreayd Loaded!!','warning')
+			Utils.showToast('Messages are alreayd Loaded!!','warning');
 		else
 			Utils.loadChannelMessages(channel)
-				.then(()=> Utils.showToast('Messages are Loaded!!','success'))
-		setBlink("blink");
-		setTimeout(() => {setBlink("")},1000);	
+				.then(()=> {
+					Utils.showToast('Messages are Loaded!!','success');
+					startBlinking();
+				});
+
 	}
 
 	const loadChannelHandler = () => {

@@ -94,7 +94,7 @@ module.exports = (Plugin, Api) => {
 			super();
 			this.loadChannel = this.loadChannel.bind(this);
 			this.autoLoad = false;
-			this.comp = React.createElement(LazyLoader, null);
+			this.comp = React.createElement(LazyLoader, {});
 		}
 
 		loadChannel(channel,messageId) {
