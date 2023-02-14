@@ -35,15 +35,14 @@ function initPlugin([Plugin, Api]) {
 			React,
 			Patcher,
 			ContextMenu,
-			React: { useState, useEffect, useRef },
+			React: { useState, useEffect },
 			Webpack: {
 				Filters,
 				getModule
 			}
 		} = new BdApi(config.info.name);
 		// Modules
-		const { DiscordModules: { Dispatcher, GuildStore, GuildChannelsStore, MessageActions, SwitchRow, ButtonData } } = Api;
-		const ChannelTypeEnum = getModule(Filters.byProps('GUILD_TEXT', 'DM'), { searchExports: true });
+		const { DiscordModules: { Dispatcher, GuildChannelsStore, MessageActions, SwitchRow, ButtonData } } = Api;
 		const ChannelActions = getModule(Filters.byProps('actions', 'fetchMessages'), { searchExports: true });
 		const ChannelContent = getModule(m => m && m.Z && m.Z.type && m.Z.type.toString().includes('showingSpamBanner'));
 		const DMChannel = getModule(Filters.byStrings('isMobileOnline', 'channel'), { searchExports: true });
@@ -62,12 +61,6 @@ function initPlugin([Plugin, Api]) {
 			},
 			loadChannelMessages(channel) {
 				return MessageActions.fetchMessages({ channelId: channel.id });
-			},
-			loadChannel(channel, messages) {
-				ChannelActions.actions[EVENTS.CHANNEL_SELECT]({
-					channelId: channel.id,
-					guildId: channel.guild_id
-				});
 			},
 			filters: {
 				attachments: type => a => a.content_type?.includes("type") || Utils.REGEX[type].test(a.filename),
@@ -96,18 +89,28 @@ function initPlugin([Plugin, Api]) {
 					if (!data) return false;
 					return data.some(id => id === target);
 				}
-			}
+			},
+			reRender: (() => {
+				let target = null;
+				return () => {
+					if (!target) target = document.querySelector(`#${CLASS_NAME}`);
+					const instance = BdApi.ReactUtils.getOwnerInstance(target);
+					const unpatch = Patcher.instead(instance, 'render', () => unpatch());
+					instance.forceUpdate(() => instance.forceUpdate());
+				}
+			})()
 		}
 		// Constants
-		const EVENTS = {
-			THREAD_LIST_SYNC: "THREAD_LIST_SYNC",
-			THREAD_CREATE: "THREAD_CREATE",
-			CHANNEL_SELECT: "CHANNEL_SELECT",
-			CHANNEL_PRELOAD: "CHANNEL_PRELOAD",
-			GUILD_CREATE: "GUILD_CREATE",
-		};
+		const EVENTS = [
+			"THREAD_LIST_SYNC",
+			"THREAD_CREATE",
+			"CHANNEL_SELECT",
+			"CHANNEL_PRELOAD",
+			"GUILD_CREATE",
+		];
+		const CLASS_NAME = "lazyLoader";
 		// styles
-		const css = `.lazyLoader {
+		const css = `#lazyLoader {
 	width: 100%;
 	height: 100%;
 	margin: auto;
@@ -119,11 +122,11 @@ function initPlugin([Plugin, Api]) {
 	user-select: text;
 }
 
-.lazyLoader + form {
+#lazyLoader + form {
 	display: none;
 }
 
-.lazyLoader > .logo {
+#lazyLoader > .logo {
 	flex: 0 1 auto;
 	width: 376px;
 	height: 162px;
@@ -132,7 +135,7 @@ function initPlugin([Plugin, Api]) {
 	background-size: 100% 100%;
 }
 
-.lazyLoader > .channel {
+#lazyLoader > .channel {
 	background: #2e3136;
 	box-sizing: border-box;
 	min-width: 200px;
@@ -144,24 +147,24 @@ function initPlugin([Plugin, Api]) {
 	margin-bottom: 20px;
 }
 
-.lazyLoader > .channel > li{
+#lazyLoader > .channel > li{
 	max-width: 100%;
 	width: 100%;
 	margin: 5px;
 }
 
-.lazyLoader > .channel > .channelName {
+#lazyLoader > .channel > .channelName {
 	color: var(--channels-default);
 	padding: 5px 25px 5px 5px;
 }
 
-.lazyLoader > .channel > .channelIcon {
+#lazyLoader > .channel > .channelIcon {
 	color: var(--channel-icon);
 	margin: 5px;
 	font-size: 0;
 }
 
-.lazyLoader .stats {
+#lazyLoader .stats {
 	padding: 10px 20px;
 	background: #2e3136;
 	color: var(--channels-default);
@@ -177,11 +180,11 @@ function initPlugin([Plugin, Api]) {
 	text-transform: capitalize;
 }
 
-.lazyLoader .stats > div:before {
+#lazyLoader .stats > div:before {
 	content: "- ";
 }
 
-.lazyLoader > .title {
+#lazyLoader > .title {
 	color: var(--white-500);
 	font-size: 24px;
 	line-height: 28px;
@@ -192,7 +195,7 @@ function initPlugin([Plugin, Api]) {
 	margin-bottom: 8px;
 }
 
-.lazyLoader > .description {
+#lazyLoader > .description {
 	color: var(--primary-dark-300);
 	font-size: 16px;
 	line-height: 1.4;
@@ -201,103 +204,128 @@ function initPlugin([Plugin, Api]) {
 	margin-bottom: 20px;
 }
 
-.lazyLoader > .controls {
+#lazyLoader > .controls {
 	display: flex;
 	flex-direction: column;
 }
 
-.lazyLoader > .controls > .buttons-container {
+#lazyLoader > .controls > .buttons-container {
 	display: flex;
 	gap: 10px;
 }
 
-.lazyLoader > .controls > .switch {
+#lazyLoader > .controls > .switch {
 	min-width: auto;
 	margin: 10px;
 	padding: 0 5px;
 }
 
-.lazyLoader > .controls > .switch.true > div > label {
+#lazyLoader > .controls > .switch.true > div > label {
 	color: var(--text-positive);
+}
+
+#lazyLoader .stats.blink {
+    animation: blink-stats .5s steps(1) infinite;
+}
+
+@keyframes blink-stats{
+    0%,50%{
+        color: var(--channels-default);
+    }
+    50%,100%{
+        color:#5cef89;
+    }
 }`;
 		// Components
-		const LazyLoader = ({ originalComponent, channel }) => {
-			const messages = originalComponent.props.children.props.messages;
-			const [render, setRender] = useState(true);
+		const LazyLoader = ({ channel, css, loadChannel, messages }) => {
+			const [blink, setBlink] = useState("");
 			const [checked, setChecked] = useState(false);
 			const [channelStats, setChannelStats] = useState({ messages: 0, reactions: 0, embeds: 0, links: 0, images: 0, videos: 0 });
 			useEffect(() => {
 				setChannelStats(Utils.getChannelStats(messages));
 			}, [messages.length]);
 			const loadMessagesHandler = () => {
-				if (!channelStats.messages)
+				if (channelStats.messages)
+					Utils.showToast('Messages are alreayd Loaded!!', 'warning');
+				else
 					Utils.loadChannelMessages(channel).
 				then(() => Utils.showToast('Messages are Loaded!!', 'success'));
-				else
-					Utils.showToast('Messages are alreayd Loaded!!', 'warning');
+				setBlink("blink");
+				setTimeout(() => { setBlink(""); }, 1000);
 			};
 			const loadChannelHandler = () => {
 				if (checked) Utils.DataManager.add(channel.guild_id, channel.id);
-				Utils.loadChannel(channel, messages);
-				messages.jumpTargetId = messages.last()?.id;
-				setRender(false);
+				loadChannel(channel);
+				Utils.reRender();
 			};
-			return render ? React.createElement("div", { className: "lazyLoader" },
-					React.createElement("div", { className: "logo" }),
-					React.createElement("div", { className: "channel" },
-						channel.name ?
-						React.createElement(React.Fragment, null, React.createElement("div", { className: "channelIcon" },
-								React.createElement("svg", {
-										width: "24",
-										height: "24",
-										viewBox: "0 0 24 24"
-									},
-									React.createElement("path", {
-										fill: "currentColor",
-										"fill-rule": "evenodd",
-										"clip-rule": "evenodd",
-										d: "M5.88657 21C5.57547 21 5.3399 20.7189 5.39427 20.4126L6.00001 17H2.59511C2.28449 17 2.04905 16.7198 2.10259 16.4138L2.27759 15.4138C2.31946 15.1746 2.52722 15 2.77011 15H6.35001L7.41001 9H4.00511C3.69449 9 3.45905 8.71977 3.51259 8.41381L3.68759 7.41381C3.72946 7.17456 3.93722 7 4.18011 7H7.76001L8.39677 3.41262C8.43914 3.17391 8.64664 3 8.88907 3H9.87344C10.1845 3 10.4201 3.28107 10.3657 3.58738L9.76001 7H15.76L16.3968 3.41262C16.4391 3.17391 16.6466 3 16.8891 3H17.8734C18.1845 3 18.4201 3.28107 18.3657 3.58738L17.76 7H21.1649C21.4755 7 21.711 7.28023 21.6574 7.58619L21.4824 8.58619C21.4406 8.82544 21.2328 9 20.9899 9H17.41L16.35 15H19.7549C20.0655 15 20.301 15.2802 20.2474 15.5862L20.0724 16.5862C20.0306 16.8254 19.8228 17 19.5799 17H16L15.3632 20.5874C15.3209 20.8261 15.1134 21 14.8709 21H13.8866C13.5755 21 13.3399 20.7189 13.3943 20.4126L14 17H8.00001L7.36325 20.5874C7.32088 20.8261 7.11337 21 6.87094 21H5.88657ZM9.41045 9L8.35045 15H14.3504L15.4104 9H9.41045Z"
-									}))),
-							React.createElement("div", { className: "channelName" }, channel.name)) :
-						React.createElement(DMChannel, { channel: channel, selected: false })),
-					React.createElement("div", { className: "stats" },
-						Object.keys(channelStats).map((stat) => React.createElement("div", null, stat, ": ", channelStats[stat]))),
-					React.createElement("div", { className: "title" }, "Lazy loading is Enabled!"),
-					React.createElement("div", { className: "description" }, "This channel is lazy loaded, If you want to auto load this channel in the future, make sure you enable ", React.createElement("b", null, "Auto load"), " down below before you load it."),
-					React.createElement("div", { className: "controls" },
-						React.createElement("div", { className: "buttons-container" },
-							React.createElement(ButtonData, {
-								onClick: loadChannelHandler,
-								color: ButtonData.Colors.GREEN,
-								size: ButtonData.Sizes.LARGE
-							}, "Load Channel"),
-							React.createElement(ButtonData, {
-								onClick: loadMessagesHandler,
-								color: ButtonData.Colors.PRIMARY,
-								look: ButtonData.Looks.OUTLINED,
-								size: ButtonData.Sizes.LARGE
-							}, "Load Messages")),
-						React.createElement(SwitchRow, {
-							className: `${checked} switch`,
-							hideBorder: "true",
-							value: checked,
-							onChange: setChecked
-						}, "Auto load"))) :
-				originalComponent;
+			return React.createElement("div", { id: CLASS_NAME },
+				React.createElement("style", null, css),
+				React.createElement("div", { className: "logo" }),
+				React.createElement("div", { className: "channel" },
+					channel.name ?
+					React.createElement(React.Fragment, null, React.createElement("div", { className: "channelIcon" },
+							React.createElement("svg", {
+									width: "24",
+									height: "24",
+									viewBox: "0 0 24 24"
+								},
+								React.createElement("path", {
+									fill: "currentColor",
+									"fill-rule": "evenodd",
+									"clip-rule": "evenodd",
+									d: "M5.88657 21C5.57547 21 5.3399 20.7189 5.39427 20.4126L6.00001 17H2.59511C2.28449 17 2.04905 16.7198 2.10259 16.4138L2.27759 15.4138C2.31946 15.1746 2.52722 15 2.77011 15H6.35001L7.41001 9H4.00511C3.69449 9 3.45905 8.71977 3.51259 8.41381L3.68759 7.41381C3.72946 7.17456 3.93722 7 4.18011 7H7.76001L8.39677 3.41262C8.43914 3.17391 8.64664 3 8.88907 3H9.87344C10.1845 3 10.4201 3.28107 10.3657 3.58738L9.76001 7H15.76L16.3968 3.41262C16.4391 3.17391 16.6466 3 16.8891 3H17.8734C18.1845 3 18.4201 3.28107 18.3657 3.58738L17.76 7H21.1649C21.4755 7 21.711 7.28023 21.6574 7.58619L21.4824 8.58619C21.4406 8.82544 21.2328 9 20.9899 9H17.41L16.35 15H19.7549C20.0655 15 20.301 15.2802 20.2474 15.5862L20.0724 16.5862C20.0306 16.8254 19.8228 17 19.5799 17H16L15.3632 20.5874C15.3209 20.8261 15.1134 21 14.8709 21H13.8866C13.5755 21 13.3399 20.7189 13.3943 20.4126L14 17H8.00001L7.36325 20.5874C7.32088 20.8261 7.11337 21 6.87094 21H5.88657ZM9.41045 9L8.35045 15H14.3504L15.4104 9H9.41045Z"
+								}))),
+						React.createElement("div", { className: "channelName" }, channel.name)) :
+					React.createElement(DMChannel, { channel: channel, selected: false })),
+				React.createElement("div", { className: `stats ${blink}` },
+					Object.entries(channelStats).map(([label, stat]) => React.createElement("div", null, label, ": ", stat))),
+				React.createElement("div", { className: "title" }, "Lazy loading is Enabled!"),
+				React.createElement("div", { className: "description" }, "This channel is lazy loaded, If you want to auto load this channel in the future, make sure you enable ", React.createElement("b", null, "Auto load"), " down below before you load it."),
+				React.createElement("div", { className: "controls" },
+					React.createElement("div", { className: "buttons-container" },
+						React.createElement(ButtonData, {
+							onClick: loadChannelHandler,
+							color: ButtonData.Colors.GREEN,
+							size: ButtonData.Sizes.LARGE
+						}, "Load Channel"),
+						React.createElement(ButtonData, {
+							onClick: loadMessagesHandler,
+							color: ButtonData.Colors.PRIMARY,
+							look: ButtonData.Looks.OUTLINED,
+							size: ButtonData.Sizes.LARGE
+						}, "Load Messages")),
+					React.createElement(SwitchRow, {
+						className: `${checked} switch`,
+						hideBorder: "true",
+						value: checked,
+						onChange: setChecked
+					}, "Auto load")));
 		};
 		return class LazyLoadChannels extends Plugin {
 			constructor() {
 				super();
+				this.loadChannel = this.loadChannel.bind(this);
+				this.autoLoad = false;
+				this.comp = React.createElement(LazyLoader, null);
+			}
+			loadChannel(channel) {
+				ChannelActions.fetchMessages({
+					channelId: channel.id,
+					guildId: channel.guild_id,
+					messageId: null,
+				});
+				this.autoLoad = true;
 			}
 			patchChannelContent() {
-				Patcher.after(ChannelContent.Z, "type", (_, [{ channel }], returnValue) => {
-					if (this.jumpedToMessage) return;
-					if (Utils.DataManager.has(channel.guild_id, channel.id)) return;
-					if (channel.isDM() && !this.settings.includeDm) return;
-					return React.createElement(LazyLoader, {
+				Patcher.after(ChannelContent.Z, "type", (_, [{ channel }], { props }) => {
+					if (this.autoLoad) return;
+					this.comp.props = {
 						channel,
-						originalComponent: returnValue
-					});
+						css,
+						loadChannel: this.loadChannel,
+						messages: props.children.props.messages
+					};
+					return this.comp;
 				});
 			}
 			patchContextMenu() {
@@ -348,10 +376,11 @@ function initPlugin([Plugin, Api]) {
 					ContextMenu.patch("channel-context", (r) => r.props.children.splice(1, 0, ContextMenu.buildItem({ type: "separator" })))
 				]
 			}
-			channelSelectHandler(e) {
-				this.jumpedToMessage = e.messageId;
-				if (this.jumpedToMessage || Utils.DataManager.has(e.guildId, e.channelId) || (!e.guildId && !this.settings.includeDm))
-					ChannelActions.actions[e.type](e);
+			channelSelectHandler({ channelId, guildId, messageId }) {
+				if (messageId || Utils.DataManager.has(guildId, channelId) || (!guildId && !this.settings.includeDm)) {
+					this.loadChannel({ id: channelId, guild_id: guildId });
+				} else
+					this.autoLoad = false;
 			}
 			channelCreateHandler({ channel }) {!channel.isDM() && Utils.DataManager.add(channel.guild_id, channel.id); }
 			guildCreateHandler({ guild }) { guild.member_count === 1 && guild.channels.forEach(channel => Utils.DataManager.add(channel.guild_id, channel.id)) }
@@ -369,21 +398,19 @@ function initPlugin([Plugin, Api]) {
 			}
 			onStart() {
 				try {
-					DOM.addStyle(css);
 					this.setupHandlers();
 					this.patchChannelContent();
 					this.patchContextMenu();
-					Object.keys(EVENTS).forEach(event => Dispatcher.unsubscribe(event, ChannelActions.actions[event]));
+					EVENTS.forEach(event => Dispatcher.unsubscribe(event, ChannelActions.actions[event]));
 				} catch (e) {
 					console.error(e);
 				}
 			}
 			onStop() {
-				DOM.removeStyle();
 				Patcher.unpatchAll();
 				this.unpatchContextMenu.forEach(p => p());
 				this.handlers.forEach(h => h());
-				Object.keys(EVENTS).forEach(event => Dispatcher.subscribe(event, ChannelActions.actions[event]));
+				EVENTS.forEach(event => Dispatcher.subscribe(event, ChannelActions.actions[event]));
 			}
 			getSettingsPanel() {
 				return this.buildSettingsPanel().getElement();
