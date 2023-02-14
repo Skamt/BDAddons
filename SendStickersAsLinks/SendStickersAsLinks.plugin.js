@@ -68,6 +68,7 @@ function initPlugin([Plugin, Api]) {
 			}
 		} = new BdApi(config.info.name);
 		// Modules
+		const PendingReplyStore = getModule(m => m.getPendingReply);
 		const Permissions = getModule(Filters.byProps('computePermissions'));
 		const ChannelStore = getModule(Filters.byProps('getChannel', 'getDMFromUserId'));
 		const DiscordPermissions = getModule(Filters.byProps('ADD_REACTIONS'), { searchExports: true });
@@ -153,9 +154,24 @@ function initPlugin([Plugin, Api]) {
 					MessageActions.sendMessage(channel.id, {
 						content: Utils.getStickerUrl(sticker.id, this.settings.stickerSize),
 						validNonShortcutEmojis: []
-					});
+					}, undefined, this.getReply(channel.id));
 				else
 					InsertText(Utils.getStickerUrl(sticker.id, this.settings.stickerSize));
+			}
+			getReply(channelId) {
+				const reply = PendingReplyStore.getPendingReply(channelId);
+				if (!reply) return {};
+				return {
+					messageReference: {
+						guild_id: reply.channel.guild_id,
+						channel_id: reply.channel.id,
+						message_id: reply.message.id
+					},
+					allowedMentions: reply.shouldMention ? undefined : {
+						parse: ["users", "roles", "everyone"],
+						replied_user: false
+					}
+				}
 			}
 			handleSticker(channelId, stickerId) {
 				const user = UserStore.getCurrentUser();
@@ -186,7 +202,7 @@ function initPlugin([Plugin, Api]) {
 				 * Since we enabled stickers to be clickable
 				 * If you click on a sticker while the textarea has some text
 				 * the sticker will be added as attachment, and therefore triggers an api request
-				 * must intercept and send as link
+				 * must intercept, adapt, overcome, what..?
 				 */
 				Patcher.before(MessageActions, 'sendMessage', (_, args) => {
 					const [channelId, , , attachments] = args;
@@ -194,7 +210,7 @@ function initPlugin([Plugin, Api]) {
 						const [stickerId] = attachments.stickerIds;
 						const stickerObj = this.handleSticker(channelId, stickerId);
 						if (!stickerObj.isSendable) {
-							args[3] = {};
+							delete args[3].stickerIds;
 							setTimeout(() => {
 								this.handleUnsendableSticker(stickerObj, true);
 							}, 0)
