@@ -13,12 +13,9 @@ module.exports = () => {
 	} = new BdApi(config.info.name);
 
 	// Modules
-	const SelectedChannelStore = DiscordModules.SelectedChannelStore;
-	const UserStore = DiscordModules.UserStore;
-	const Permissions = DiscordModules.Permissions;
-	const ChannelStore = DiscordModules.ChannelStore;
-	const DiscordPermissions = DiscordModules.DiscordPermissions;
-	const MessageActions = DiscordModules.MessageActions;
+	const { DiscordModules: { Dispatcher, DiscordPermissions, SelectedChannelStore, MessageActions, Permissions, ChannelStore, UserStore } } = Api;
+	
+	const PendingReplyStore = DiscordModules.PendingReplyStore;
 	const EmojiIntentionEnum = DiscordModules.EmojiIntentionEnum;
 	const EmojiSendAvailabilityEnum = DiscordModules.EmojiSendAvailabilityEnum;
 	const EmojiFunctions = DiscordModules.EmojiFunctions;
@@ -59,9 +56,26 @@ module.exports = () => {
 				MessageActions.sendMessage(channel.id, {
 					content: Utils.getEmojiUrl(emoji, this.settings.emojiSize),
 					validNonShortcutEmojis: []
-				});
+				}, undefined, this.getReply(channel.id));
 			else
 				InsertText(Utils.getEmojiUrl(emoji, this.settings.emojiSize));
+		}
+
+		getReply(channelId) {
+			const reply = PendingReplyStore.getPendingReply(channelId);
+			if (!reply) return {};
+			Dispatcher.dispatch({ type: "DELETE_PENDING_REPLY", channelId });
+			return {
+				messageReference: {
+					guild_id: reply.channel.guild_id,
+					channel_id: reply.channel.id,
+					message_id: reply.message.id
+				},
+				allowedMentions: reply.shouldMention ? undefined : {
+					parse: ["users", "roles", "everyone"],
+					replied_user: false
+				}
+			}
 		}
 
 		handleUnsendableEmoji(emoji, channel, user) {
@@ -82,7 +96,7 @@ module.exports = () => {
 		}
 
 		emojiClickHandler(e) {
-			if(e.button === 2) return;
+			if (e.button === 2) return;
 			const props = getInternalInstance(e.target)?.pendingProps;
 			if (props && props["data-type"]?.toLowerCase() === "emoji" && props.children)
 				this.emojiHandler(props.children.props.emoji);
