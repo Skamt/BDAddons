@@ -18,7 +18,7 @@ You can chose to auto load a specefic channel, or a whole server. *DMs can be in
 
 ## Load messages see if the channel is heavy
 
-![preview2](https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/assets/preview2.png)
+![preview2](https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/assets/preview2.gif)
 
 ## Server context menu
 
