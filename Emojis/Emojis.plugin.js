@@ -61,12 +61,8 @@ function initPlugin([Plugin, Api]) {
 			}
 		} = new BdApi(config.info.name);
 		// Modules
-		const SelectedChannelStore = getModule(Filters.byProps('getLastSelectedChannelId'));
-		const UserStore = getModule(Filters.byProps('getCurrentUser', 'getUser'));
-		const Permissions = getModule(Filters.byProps('computePermissions'));
-		const ChannelStore = getModule(Filters.byProps('getChannel', 'getDMFromUserId'));
-		const DiscordPermissions = getModule(Filters.byProps('ADD_REACTIONS'), { searchExports: true });
-		const MessageActions = getModule(Filters.byProps('jumpToMessage', '_sendMessage'));
+		const { DiscordModules: { Dispatcher, DiscordPermissions, SelectedChannelStore, MessageActions, Permissions, ChannelStore, UserStore } } = Api;
+		const PendingReplyStore = getModule(m => m.getPendingReply);
 		const EmojiIntentionEnum = getModule(Filters.byProps('GUILD_ROLE_BENEFIT_EMOJI'), { searchExports: true });
 		const EmojiSendAvailabilityEnum = getModule(Filters.byProps('GUILD_SUBSCRIPTION_UNAVAILABLE'), { searchExports: true });
 		const EmojiFunctions = getModule(Filters.byProps('getEmojiUnavailableReason'), { searchExports: true });
@@ -108,9 +104,25 @@ function initPlugin([Plugin, Api]) {
 					MessageActions.sendMessage(channel.id, {
 						content: Utils.getEmojiUrl(emoji, this.settings.emojiSize),
 						validNonShortcutEmojis: []
-					});
+					}, undefined, this.getReply(channel.id));
 				else
 					InsertText(Utils.getEmojiUrl(emoji, this.settings.emojiSize));
+			}
+			getReply(channelId) {
+				const reply = PendingReplyStore.getPendingReply(channelId);
+				if (!reply) return {};
+				Dispatcher.dispatch({ type: "DELETE_PENDING_REPLY", channelId });
+				return {
+					messageReference: {
+						guild_id: reply.channel.guild_id,
+						channel_id: reply.channel.id,
+						message_id: reply.message.id
+					},
+					allowedMentions: reply.shouldMention ? undefined : {
+						parse: ["users", "roles", "everyone"],
+						replied_user: false
+					}
+				}
 			}
 			handleUnsendableEmoji(emoji, channel, user) {
 				if (emoji.animated && !this.settings.shouldSendAnimatedEmojis)
