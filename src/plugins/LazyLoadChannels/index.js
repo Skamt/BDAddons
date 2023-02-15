@@ -180,24 +180,20 @@ module.exports = (Plugin, Api) => {
 		}
 
 		channelSelectHandler({ channelId, guildId, messageId }) {
-			if (messageId || Utils.DataManager.has(guildId, channelId) || (!guildId && !this.settings.includeDm)) {
+			if (messageId || Utils.DataManager.has(guildId, channelId) || (!guildId && !this.settings.includeDm))
 				this.loadChannel({ id: channelId, guild_id: guildId }, messageId);
-			} else
+			else
 				this.autoLoad = false;
 		}
 
 		channelCreateHandler({ channel }) {
-			if (!channel.isDM()) {
-				this.autoLoad = true;
-				Utils.DataManager.add(channel.guild_id, channel.id);
-			}
+			if (!channel.isDM()) 
+				Utils.DataManager.add(channel.guild_id, channel.id);	
 		}
 
 		guildCreateHandler({ guild }) {
-			if (guild.member_count === 1) {
-				this.autoLoad = true;
+			if (guild.member_count === 1) 
 				guild.channels.forEach(channel => Utils.DataManager.add(channel.guild_id, channel.id))
-			}
 		}
 
 		setupHandlers() {
