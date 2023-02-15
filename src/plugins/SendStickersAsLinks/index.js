@@ -9,7 +9,24 @@ module.exports = () => {
 		}
 	} = new BdApi(config.info.name);
 
+	// Helper functions
+	const Utils = {
+		isTagged: (str) => Object.values(TAGS).some(tag => str.includes(tag)),
+		showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),
+		getStickerUrl: (stickerId, size) => `https://media.discordapp.net/stickers/${stickerId}?size=${size}&passthrough=false`,
+		hasEmbedPerms: (channel, user) => !channel.guild_id || Permissions.can({ permission: DiscordPermissions.EMBED_LINKS, context: channel, user }),
+		isLottieSticker: sticker => sticker.type === StickerTypeEnum.STANDARD,
+		isAnimatedSticker: sticker => sticker["format_type"] === StickerFormatEnum.APNG,
+		isStickerSendable: (sticker, channel, user) => getStickerSendability(sticker, user, channel) === StickersSendabilityEnum.SENDABLE,
+		getModuleAndKey(filter) {
+			let module;
+			const target = BdApi.Webpack.getModule((entry, m) => filter(entry) ? (module = m) : false, { searchExports: true })
+			return [module.exports, Object.keys(module.exports).find(k => module.exports[k] === target)];
+		}
+	};
+
 	// Modules
+	const [StickerModule, StickerModulePatchTarget] = Utils.getModuleAndKey(Filters.byStrings('sticker', 'withLoadingIndicator'));
 	const PendingReplyStore = DiscordModules.PendingReplyStore;
 	const Permissions = DiscordModules.Permissions;
 	const ChannelStore = DiscordModules.ChannelStore;
@@ -60,18 +77,6 @@ module.exports = () => {
 		sendLottieStickerErrorMessage: "Official Discord Stickers are not supported.",
 		missingEmbedPermissionsErrorMessage: "Missing Embed Permissions",
 		disabledAnimatedStickersErrorMessage: "You have disabled animated stickers in settings."
-	};
-
-	// Helper functions
-	const Utils = {
-		isTagged: (str) => Object.values(TAGS).some(tag => str.includes(tag)),
-		showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),
-		getStickerUrl: (stickerId, size) => `https://media.discordapp.net/stickers/${stickerId}?size=${size}&passthrough=false`,
-		hasEmbedPerms: (channel, user) => !channel.guild_id || Permissions.can({ permission: DiscordPermissions.EMBED_LINKS, context: channel, user }),
-		updateStickers: () => StickerStore.stickerMetadata.forEach((value, key) => StickerStore.getStickerById(key)),
-		isLottieSticker: sticker => sticker.type === StickerTypeEnum.STANDARD,
-		isAnimatedSticker: sticker => sticker["format_type"] === StickerFormatEnum.APNG,
-		isStickerSendable: (sticker, channel, user) => getStickerSendability(sticker, user, channel) === StickersSendabilityEnum.SENDABLE,
 	};
 
 	// styles
@@ -180,17 +185,13 @@ module.exports = () => {
 		}
 
 		patchGetStickerById() {
-			/** 
-			 * this patch is for adding a tag to animated stickers
-			 * to style highlight them if setting is set to true
-			 * the sticker description gets added to the alt DOM attributes
-			 */
-			Patcher.after(StickerStore, "getStickerById", (_, args, sticker) => {
-				if (!sticker) return;
-				if (!Utils.isTagged(sticker.description || "") && !Utils.isLottieSticker(sticker) && Utils.isAnimatedSticker(sticker) && this.settings.shouldHighlightAnimated)
-					sticker.description += TAGS.ANIMATED_STICKER_TAG;
-				else if (!this.settings.shouldHighlightAnimated)
-					sticker.description = typeof(sticker.description) === 'string' ? sticker.description.replace(TAGS.ANIMATED_STICKER_TAG, "") : sticker.description;
+			Patcher.after(StickerModule, StickerModulePatchTarget, (_, args, returnValue) => {
+				const {size,sticker} = returnValue.props.children[0].props;
+				if (size === 96) {
+					if (this.settings.shouldHighlightAnimated && !Utils.isLottieSticker(sticker) && Utils.isAnimatedSticker(sticker)) {
+						returnValue.props.children[0].props.className += " animatedSticker"
+					}
+				}
 			});
 		}
 
@@ -225,10 +226,6 @@ module.exports = () => {
 
 		getSettingsPanel() {
 			const panel = this.buildSettingsPanel();
-			panel.addListener((id, checked) => {
-				if (id === "shouldHighlightAnimated")
-					Utils.updateStickers();
-			});
 			return panel.getElement();
 		}
 	};
