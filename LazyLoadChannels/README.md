@@ -8,6 +8,22 @@ Do you get annoyed when navigating servers and you run into channels full of Emb
 
 Well Not anymore.
 
+The main goal of **LazyLoadChannels** is to prevent channels from loading untill you choose to do so, solving all the issues mentioned above.
+
+You can chose to auto load a specefic channel, or a whole server. *DMs can be included in settings*
+
 ## Preview
 
 ![preview](https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/assets/preview.png)
+
+## Load messages see if the channel is heavy
+
+![preview2](https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/assets/preview2.png)
+
+## Server context menu
+
+![preview2](https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/assets/preview3.png)
+
+## Channel context menu
+
+![preview2](https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/assets/preview3.png)

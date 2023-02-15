@@ -322,7 +322,7 @@ function initPlugin([Plugin, Api]) {
 				super();
 				this.loadChannel = this.loadChannel.bind(this);
 				this.autoLoad = false;
-				this.comp = React.createElement(LazyLoader, null);
+				this.comp = React.createElement(LazyLoader, {});
 			}
 			loadChannel(channel, messageId) {
 				ChannelActions.fetchMessages({
@@ -354,6 +354,17 @@ function initPlugin([Plugin, Api]) {
 							action: (e) => {
 								if (Utils.DataManager.has(null, user.id)) Utils.DataManager.remove(null, user.id);
 								else Utils.DataManager.add(null, user.id);
+							}
+						}));
+					}),
+					ContextMenu.patch("thread-context", (retVal, { channel }) => {
+						retVal.props.children.splice(1, 0, ContextMenu.buildItem({
+							type: "toggle",
+							label: "Auto load",
+							active: Utils.DataManager.has(channel.guild_id, channel.id),
+							action: (e) => {
+								if (Utils.DataManager.has(channel.guild_id, channel.id)) Utils.DataManager.remove(channel.guild_id, channel.id);
+								else Utils.DataManager.add(channel.guild_id, channel.id);
 							}
 						}));
 					}),
@@ -398,8 +409,18 @@ function initPlugin([Plugin, Api]) {
 				} else
 					this.autoLoad = false;
 			}
-			channelCreateHandler({ channel }) {!channel.isDM() && Utils.DataManager.add(channel.guild_id, channel.id); }
-			guildCreateHandler({ guild }) { guild.member_count === 1 && guild.channels.forEach(channel => Utils.DataManager.add(channel.guild_id, channel.id)) }
+			channelCreateHandler({ channel }) {
+				if (!channel.isDM()) {
+					this.autoLoad = true;
+					Utils.DataManager.add(channel.guild_id, channel.id);
+				}
+			}
+			guildCreateHandler({ guild }) {
+				if (guild.member_count === 1) {
+					this.autoLoad = true;
+					guild.channels.forEach(channel => Utils.DataManager.add(channel.guild_id, channel.id))
+				}
+			}
 			setupHandlers() {
 				this.handlers = [
 					["CHANNEL_CREATE", this.channelCreateHandler],
