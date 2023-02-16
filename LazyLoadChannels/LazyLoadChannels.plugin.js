@@ -23,6 +23,12 @@ const config = {
 		name: "Include DM",
 		note: "Whether or not to lazy load DMs",
 		value: false
+	}, {
+		type: "switch",
+		id: "autoloadedChannelIndicator",
+		name: "Auto load indicator",
+		note: "Whether or not to show an indicator for channels set to auto load",
+		value: false
 	}]
 };
 
@@ -41,11 +47,18 @@ function initPlugin([Plugin, Api]) {
 				getModule
 			}
 		} = new BdApi(config.info.name);
+
+		function getModuleAndKey(filter) {
+			let module;
+			const target = getModule((entry, m) => filter(entry) ? (module = m) : false, { searchExports: true })
+			return [module.exports, Object.keys(module.exports).find(k => module.exports[k] === target)];
+		}
 		// Modules
 		const { DiscordModules: { Dispatcher, GuildChannelsStore, MessageActions, SwitchRow, ButtonData } } = Api;
 		const ChannelActions = getModule(Filters.byProps('actions', 'fetchMessages'), { searchExports: true });
 		const ChannelContent = getModule(m => m && m.Z && m.Z.type && m.Z.type.toString().includes('showingSpamBanner'));
 		const DMChannel = getModule(Filters.byStrings('isMobileOnline', 'channel'), { searchExports: true });
+		const [Channel, ChannelKey] = getModuleAndKey(Filters.byStrings("canHaveDot", "isFavoriteSuggestion", "mentionCount"));
 		// Utilities
 		const Utils = {
 			showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),
@@ -118,6 +131,7 @@ function initPlugin([Plugin, Api]) {
 	align-items: center;
 	justify-content: center;
 	user-select: text;
+	visibility: visible !important;
 }
 
 #lazyLoader + form {
@@ -226,6 +240,10 @@ function initPlugin([Plugin, Api]) {
     animation: de-wobble 1s;
 }
 
+.autoload{
+	border-left:4px solid #2e7d46;
+}
+
 @keyframes de-wobble {
 
   16.666666666666668% {    
@@ -274,8 +292,12 @@ function initPlugin([Plugin, Api]) {
 				loadChannel(channel);
 				Utils.reRender();
 			};
-			return React.createElement("div", { id: CLASS_NAME },
-				React.createElement("style", null, css),
+			/** 
+			 * visibility set to hidden by default because when the plugin unloads 
+			 * the css is removed while the component is still on screen, 
+			 * and it looks like a Steaming Pile of Hot Garbage
+			 */
+			return React.createElement("div", { id: CLASS_NAME, style: { "visibility": "hidden", "height": "100%" } },
 				React.createElement("div", { className: "logo" }),
 				React.createElement("div", { className: "channel" },
 					channel.name ?
@@ -344,6 +366,13 @@ function initPlugin([Plugin, Api]) {
 					return this.comp;
 				});
 			}
+			patchChannel() {
+				Patcher.after(Channel, ChannelKey, (_, [{ channel }], returnValue) => {
+					if (!this.settings.autoloadedChannelIndicator) return;
+					if (Utils.DataManager.has(channel.guild_id, channel.id))
+						returnValue.props.children.props.children[1].props.className += " autoload";
+				});
+			}
 			patchContextMenu() {
 				this.unpatchContextMenu = [
 					ContextMenu.patch("user-context", (retVal, { user }) => {
@@ -404,22 +433,19 @@ function initPlugin([Plugin, Api]) {
 				]
 			}
 			channelSelectHandler({ channelId, guildId, messageId }) {
-				if (messageId || Utils.DataManager.has(guildId, channelId) || (!guildId && !this.settings.includeDm)) {
+				// messageId means it's a jump, if not it's set to undefined
+				if (messageId || Utils.DataManager.has(guildId, channelId) || (!guildId && !this.settings.includeDm))
 					this.loadChannel({ id: channelId, guild_id: guildId }, messageId);
-				} else
+				else
 					this.autoLoad = false;
 			}
 			channelCreateHandler({ channel }) {
-				if (!channel.isDM()) {
-					this.autoLoad = true;
+				if (!channel.isDM())
 					Utils.DataManager.add(channel.guild_id, channel.id);
-				}
 			}
 			guildCreateHandler({ guild }) {
-				if (guild.member_count === 1) {
-					this.autoLoad = true;
+				if (guild.member_count === 1)
 					guild.channels.forEach(channel => Utils.DataManager.add(channel.guild_id, channel.id))
-				}
 			}
 			setupHandlers() {
 				this.handlers = [
@@ -435,6 +461,8 @@ function initPlugin([Plugin, Api]) {
 			}
 			onStart() {
 				try {
+					DOM.addStyle(css);
+					this.patchChannel();
 					this.setupHandlers();
 					this.patchChannelContent();
 					this.patchContextMenu();
@@ -444,6 +472,7 @@ function initPlugin([Plugin, Api]) {
 				}
 			}
 			onStop() {
+				DOM.removeStyle();
 				Patcher.unpatchAll();
 				this.unpatchContextMenu.forEach(p => p());
 				this.handlers.forEach(h => h());
