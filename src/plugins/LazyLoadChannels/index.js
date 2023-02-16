@@ -13,12 +13,18 @@ module.exports = (Plugin, Api) => {
 		}
 	} = new BdApi(config.info.name);
 
+	function getModuleAndKey(filter) {
+		let module;
+		const target = getModule((entry, m) => filter(entry) ? (module = m) : false, { searchExports: true })
+		return [module.exports, Object.keys(module.exports).find(k => module.exports[k] === target)];
+	}
+
 	// Modules
 	const { DiscordModules: { Dispatcher, GuildChannelsStore, MessageActions, SwitchRow, ButtonData } } = Api;
 	const ChannelActions = DiscordModules.ChannelActions;
 	const ChannelContent = DiscordModules.ChannelContent;
 	const DMChannel = DiscordModules.DMChannel;
-	const Channel = BdApi.Webpack.getModule((m, e, i) => i === "298586");
+	const [Channel, ChannelKey] = getModuleAndKey(Filters.byStrings("canHaveDot","isFavoriteSuggestion","mentionCount"));
 
 	// Utilities
 	const Utils = {
@@ -70,7 +76,6 @@ module.exports = (Plugin, Api) => {
 			const instance = BdApi.ReactUtils.getOwnerInstance(target);
 			const unpatch = Patcher.instead(instance, 'render', () => unpatch());
 			instance.forceUpdate(() => instance.forceUpdate());
-
 		}
 	}
 
@@ -121,8 +126,8 @@ module.exports = (Plugin, Api) => {
 		}
 
 		patchChannel() {
-			Patcher.after(Channel, "Z", (_, [{ channel }], returnValue) => {
-				if(!this.settings.autoloadedChannelIndicator) return;
+			Patcher.after(Channel, ChannelKey, (_, [{ channel }], returnValue) => {
+				if (!this.settings.autoloadedChannelIndicator) return;
 				if (Utils.DataManager.has(channel.guild_id, channel.id))
 					returnValue.props.children.props.children[1].props.className += " autoload";
 			});
@@ -188,7 +193,8 @@ module.exports = (Plugin, Api) => {
 			]
 		}
 
-		channelSelectHandler({ channelId, guildId, messageId }) {
+		channelSelectHandler({ channelId, guildId, messageId }) {	
+			// messageId means it's a jump, if not it's set to undefined
 			if (messageId || Utils.DataManager.has(guildId, channelId) || (!guildId && !this.settings.includeDm))
 				this.loadChannel({ id: channelId, guild_id: guildId }, messageId);
 			else
@@ -226,7 +232,6 @@ module.exports = (Plugin, Api) => {
 				this.patchChannelContent();
 				this.patchContextMenu();
 				EVENTS.forEach(event => Dispatcher.unsubscribe(event, ChannelActions.actions[event]));
-
 			} catch (e) {
 				console.error(e);
 			}
@@ -238,7 +243,6 @@ module.exports = (Plugin, Api) => {
 			this.unpatchContextMenu.forEach(p => p());
 			this.handlers.forEach(h => h());
 			EVENTS.forEach(event => Dispatcher.subscribe(event, ChannelActions.actions[event]));
-			Utils.reRender();
 		}
 
 		getSettingsPanel() {

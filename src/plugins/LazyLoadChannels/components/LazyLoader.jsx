@@ -19,7 +19,6 @@ module.exports = ({  channel, css, loadChannel, messages}) => {
 					Utils.showToast('Messages are Loaded!!','success');
 					startBlinking();
 				});
-
 	}
 
 	const loadChannelHandler = () => {
@@ -27,8 +26,13 @@ module.exports = ({  channel, css, loadChannel, messages}) => {
 		loadChannel(channel);
 		Utils.reRender();
 	}
-	
-	return <div id={CLASS_NAME}>
+
+	/** 
+	 * visibility set to hidden by default because when the plugin unloads 
+	 * the css is removed while the component is still on screen, 
+	 * and it looks like a Steaming Pile of Hot Garbage
+	 */
+	return <div id={CLASS_NAME} style={{"visibility":"hidden","height": "100%"}}>
 			<div className="logo"></div>
 			<div className="channel">
 			{channel.name ?
