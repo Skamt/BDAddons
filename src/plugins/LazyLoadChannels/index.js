@@ -18,6 +18,7 @@ module.exports = (Plugin, Api) => {
 	const ChannelActions = DiscordModules.ChannelActions;
 	const ChannelContent = DiscordModules.ChannelContent;
 	const DMChannel = DiscordModules.DMChannel;
+	const Channel = BdApi.Webpack.getModule((m, e, i) => i === "298586");
 
 	// Utilities
 	const Utils = {
@@ -119,6 +120,14 @@ module.exports = (Plugin, Api) => {
 			});
 		}
 
+		patchChannel() {
+			Patcher.after(Channel, "Z", (_, [{ channel }], returnValue) => {
+				if(!this.settings.autoloadedChannelIndicator) return;
+				if (Utils.DataManager.has(channel.guild_id, channel.id))
+					returnValue.props.children.props.children[1].props.className += " autoload";
+			});
+		}
+
 		patchContextMenu() {
 			this.unpatchContextMenu = [
 				ContextMenu.patch("user-context", (retVal, { user }) => {
@@ -187,12 +196,12 @@ module.exports = (Plugin, Api) => {
 		}
 
 		channelCreateHandler({ channel }) {
-			if (!channel.isDM()) 
-				Utils.DataManager.add(channel.guild_id, channel.id);	
+			if (!channel.isDM())
+				Utils.DataManager.add(channel.guild_id, channel.id);
 		}
 
 		guildCreateHandler({ guild }) {
-			if (guild.member_count === 1) 
+			if (guild.member_count === 1)
 				guild.channels.forEach(channel => Utils.DataManager.add(channel.guild_id, channel.id))
 		}
 
@@ -211,20 +220,25 @@ module.exports = (Plugin, Api) => {
 
 		onStart() {
 			try {
+				DOM.addStyle(css);
+				this.patchChannel();
 				this.setupHandlers();
 				this.patchChannelContent();
 				this.patchContextMenu();
 				EVENTS.forEach(event => Dispatcher.unsubscribe(event, ChannelActions.actions[event]));
+
 			} catch (e) {
 				console.error(e);
 			}
 		}
 
 		onStop() {
+			DOM.removeStyle();
 			Patcher.unpatchAll();
 			this.unpatchContextMenu.forEach(p => p());
 			this.handlers.forEach(h => h());
 			EVENTS.forEach(event => Dispatcher.subscribe(event, ChannelActions.actions[event]));
+			Utils.reRender();
 		}
 
 		getSettingsPanel() {

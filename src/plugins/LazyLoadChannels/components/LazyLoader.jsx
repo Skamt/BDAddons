@@ -29,7 +29,6 @@ module.exports = ({  channel, css, loadChannel, messages}) => {
 	}
 	
 	return <div id={CLASS_NAME}>
-			<style>{css}</style>
 			<div className="logo"></div>
 			<div className="channel">
 			{channel.name ?

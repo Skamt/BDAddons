@@ -12,5 +12,11 @@
 		"name": "Include DM",
 		"note": "Whether or not to lazy load DMs",
 		"value": false
+	},{
+		"type": "switch",
+		"id": "autoloadedChannelIndicator",
+		"name": "Auto load indicator",
+		"note": "Whether or not to show an indicator for channels set to auto load",
+		"value": false
 	}]
 }
