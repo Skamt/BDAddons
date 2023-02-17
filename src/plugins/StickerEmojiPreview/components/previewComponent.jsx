@@ -1,4 +1,4 @@
-module.exports = ({ target, previewComponent, previewSize, defaultState }) => {
+module.exports = ({ target,  defaultState, previewComponent }) => {
 	const [show, setShow] = useState(defaultState);
 	useEffect(() => {
 		function keyupHandler(e) {
@@ -13,7 +13,7 @@ module.exports = ({ target, previewComponent, previewSize, defaultState }) => {
 			renderPopout={() => (
 				<div
 					className="stickersPreview"
-					style={{ width: `${previewSize}px` }}>
+					style={{ width: `${PREVIEW_SIZE}px` }}>
 					{previewComponent}
 				</div>
 			)}

@@ -12,6 +12,7 @@ module.exports = () => {
 	const Popout = DiscordModules.Popout;
 	const ExpressionPickerInspector = DiscordModules.ExpressionPickerInspector;
 	const SwitchRow = DiscordModules.SwitchRow;
+	const DefaultEmojisManager = DiscordModules.DefaultEmojisManager;
 
 	// Constants
 	const PREVIEW_SIZE = 300;
@@ -28,28 +29,43 @@ module.exports = () => {
 			}
 		}, props.description);
 	}
-	
+
 	// styles
 	const css = require("styles.css");
 
 	return class StickerEmojiPreview {
+
+		getMediaInfo({ props, type }, titlePrimary) {
+			if (props.sticker)
+				return [type, props];
+			if (props.src)
+				return [type, { src: props.src.replace(/([?&]size=)(\d+)/, `$1${PREVIEW_SIZE}`) }]
+			if (titlePrimary)
+				return ['img', { src: DefaultEmojisManager.getByName(titlePrimary.split(":")[1]).url }];
+
+			return ['div', {}];
+		}
+
+		getPreviewComponent(graphicPrimary, titlePrimary) {
+			const [type, props] = this.getMediaInfo(graphicPrimary, titlePrimary);
+
+			return React.createElement(type, {
+				...props,
+				disableAnimation: false,
+				size: PREVIEW_SIZE
+			});
+		}
 		start() {
 			try {
 				this.settings = Data.load("settings") || { previewDefaultState: false };
 				DOM.addStyle(css);
-				Patcher.after(ExpressionPickerInspector, "Z", (_, [{ graphicPrimary }], ret) => {
+				Patcher.after(ExpressionPickerInspector, "Z", (_, [{ graphicPrimary, titlePrimary }], ret) => {
 					return React.createElement(previewComponent, {
-						previewSize: PREVIEW_SIZE,
 						target: ret,
 						defaultState: this.settings.previewDefaultState,
-						previewComponent: React.createElement(graphicPrimary.type, {
-							...graphicPrimary.props,
-							src: graphicPrimary.props.src?.replace(/([?&]size=)(\d+)/, `$1${PREVIEW_SIZE}`),
-							disableAnimation: false,
-							size: PREVIEW_SIZE
-						})
+						previewComponent: this.getPreviewComponent(graphicPrimary, titlePrimary)
 					})
-				})
+				});
 			} catch (e) {
 				console.error(e);
 			}

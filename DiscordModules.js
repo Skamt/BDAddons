@@ -36,6 +36,7 @@ module.exports = {
 	"UserBannerMask": "getModule((m) => m.Z && m.Z.toString().includes('overrideAvatarDecorationURL'))",
 	"ProfileTypeEnum": "getModule(Filters.byProps('POPOUT','SETTINGS'), { searchExports: true})",
 	"CurrentUserStore": "getModule(Filters.byProps('getCurrentUser', 'getUsers'))",
+	"DefaultEmojisManager": "getModule(m => m.getByName && m.EMOJI_NAME_RE)",
 	"SelectedGuildStore": "getModule(Filters.byProps('getLastSelectedGuildId'))",
 	"ComponentDispatch": "getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners('INSERT_TEXT').length, { searchExports: true })",
 	"renderLinkComponent": "getModule(m => m.type?.toString().includes('MASKED_LINK'))"
