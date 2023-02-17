@@ -22,7 +22,13 @@
 		"type": "switch",
 		"id": "shouldSendAnimatedEmojis",
 		"name": "Send animated emojis",
-		"note": "Animated emojis do not animate, sending them will only send the first picture of the animation. (still useful)",
+		"note": "Animated emojis are sent as GIFs, making most of them hidden by discord's GIF tag.",
+		"value": false
+	}, {
+		"type": "switch",
+		"id": "sendEmojiAsWebp",
+		"name": "Send animated as webp",
+		"note": "Meaning the emoji will show only the first frame, making them act as normal emoji, unless the first frame is empty.",
 		"value": false
 	}, {
 		"type": "slider",

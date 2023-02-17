@@ -34,7 +34,9 @@ module.exports = () => {
 		showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),
 		hasEmbedPerms: (channel, user) => !channel.guild_id || Permissions.can({ permission: DiscordPermissions.EMBED_LINKS, context: channel, user }),
 		isEmojiSendable: (e) => EmojiFunctions.getEmojiUnavailableReason(e) === null,
-		getEmojiUrl: (emoji, size) => `${emoji.url.replace(/(size=)(\d+)[&]/, '').replace('gif','webp')}&size=${size}`,
+		getEmojiUrl: (emoji, size) => `${emoji.url.replace(/(size=)(\d+)[&]/, '')}&size=${size}`,
+		getEmojiWebpUrl: (emoji, size) => Utils.getEmojiUrl(emoji, size).replace('gif','webp'),
+		getEmojiGifUrl: (emoji, size) => Utils.getEmojiUrl(emoji, size).split('?')[0]
 	}
 
 	// Strings & Constants
@@ -51,10 +53,17 @@ module.exports = () => {
 			super();
 			this.emojiClickHandler = this.emojiClickHandler.bind(this);
 		}
+
+		getEmojiUrl(emoji, size){
+			if(this.settings.sendEmojiAsWebp)
+				return Utils.getEmojiWebpUrl(emoji, size);
+			
+			return	Utils.getEmojiGifUrl(emoji);
+		}
 		sendEmojiAsLink(emoji, channel) {
 			if (this.settings.sendDirectly)
 				MessageActions.sendMessage(channel.id, {
-					content: Utils.getEmojiUrl(emoji, this.settings.emojiSize),
+					content: this.getEmojiUrl(emoji, this.settings.emojiSize),
 					validNonShortcutEmojis: []
 				}, undefined, this.getReply(channel.id));
 			else
@@ -117,7 +126,7 @@ module.exports = () => {
 			} catch (e) {
 				console.error(e);
 			}
-		}
+		}	
 
 		onStop() {
 			document.removeEventListener("mouseup", this.emojiClickHandler);
