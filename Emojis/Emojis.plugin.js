@@ -33,7 +33,13 @@ const config = {
 		type: "switch",
 		id: "shouldSendAnimatedEmojis",
 		name: "Send animated emojis",
-		note: "Animated emojis do not animate, sending them will only send the first picture of the animation. (still useful)",
+		note: "Animated emojis are sent as GIFs, making most of them hidden by discord's GIF tag.",
+		value: false
+	}, {
+		type: "switch",
+		id: "sendEmojiAsWebp",
+		name: "Send animated as webp",
+		note: "Meaning the emoji will show only the first frame, making them act as normal emoji, unless the first frame is empty.",
 		value: false
 	}, {
 		type: "slider",
@@ -80,7 +86,9 @@ function initPlugin([Plugin, Api]) {
 			showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),
 			hasEmbedPerms: (channel, user) => !channel.guild_id || Permissions.can({ permission: DiscordPermissions.EMBED_LINKS, context: channel, user }),
 			isEmojiSendable: (e) => EmojiFunctions.getEmojiUnavailableReason(e) === null,
-			getEmojiUrl: (emoji, size) => `${emoji.url.replace(/(size=)(\d+)[&]/, '').replace('gif','webp')}&size=${size}`,
+			getEmojiUrl: (emoji, size) => `${emoji.url.replace(/(size=)(\d+)[&]/, '')}&size=${size}`,
+			getEmojiWebpUrl: (emoji, size) => Utils.getEmojiUrl(emoji, size).replace('gif', 'webp'),
+			getEmojiGifUrl: (emoji, size) => Utils.getEmojiUrl(emoji, size).split('?')[0]
 		}
 		// Strings & Constants
 		const STRINGS = {
@@ -99,10 +107,15 @@ function initPlugin([Plugin, Api]) {
 				super();
 				this.emojiClickHandler = this.emojiClickHandler.bind(this);
 			}
+			getEmojiUrl(emoji, size) {
+				if (this.settings.sendEmojiAsWebp)
+					return Utils.getEmojiWebpUrl(emoji, size);
+				return Utils.getEmojiGifUrl(emoji);
+			}
 			sendEmojiAsLink(emoji, channel) {
 				if (this.settings.sendDirectly)
 					MessageActions.sendMessage(channel.id, {
-						content: Utils.getEmojiUrl(emoji, this.settings.emojiSize),
+						content: this.getEmojiUrl(emoji, this.settings.emojiSize),
 						validNonShortcutEmojis: []
 					}, undefined, this.getReply(channel.id));
 				else
