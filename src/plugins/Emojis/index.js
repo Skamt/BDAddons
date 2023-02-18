@@ -14,7 +14,7 @@ module.exports = () => {
 
 	// Modules
 	const { DiscordModules: { Dispatcher, DiscordPermissions, SelectedChannelStore, MessageActions, Permissions, ChannelStore, UserStore } } = Api;
-	
+
 	const PendingReplyStore = DiscordModules.PendingReplyStore;
 	const EmojiIntentionEnum = DiscordModules.EmojiIntentionEnum;
 	const EmojiSendAvailabilityEnum = DiscordModules.EmojiSendAvailabilityEnum;
@@ -35,7 +35,7 @@ module.exports = () => {
 		hasEmbedPerms: (channel, user) => !channel.guild_id || Permissions.can({ permission: DiscordPermissions.EMBED_LINKS, context: channel, user }),
 		isEmojiSendable: (e) => EmojiFunctions.getEmojiUnavailableReason(e) === null,
 		getEmojiUrl: (emoji, size) => `${emoji.url.replace(/(size=)(\d+)[&]/, '')}&size=${size}`,
-		getEmojiWebpUrl: (emoji, size) => Utils.getEmojiUrl(emoji, size).replace('gif','webp'),
+		getEmojiWebpUrl: (emoji, size) => Utils.getEmojiUrl(emoji, size).replace('gif', 'webp'),
 		getEmojiGifUrl: (emoji, size) => Utils.getEmojiUrl(emoji, size).split('?')[0]
 	}
 
@@ -54,11 +54,13 @@ module.exports = () => {
 			this.emojiClickHandler = this.emojiClickHandler.bind(this);
 		}
 
-		getEmojiUrl(emoji, size){
-			if(this.settings.sendEmojiAsWebp)
+		getEmojiUrl(emoji, size) {
+			if (this.settings.sendEmojiAsWebp)
 				return Utils.getEmojiWebpUrl(emoji, size);
+			if (emoji.animated) 
+				return Utils.getEmojiGifUrl(emoji);
 			
-			return	Utils.getEmojiGifUrl(emoji);
+			return Utils.getEmojiUrl(emoji, size);
 		}
 		sendEmojiAsLink(emoji, channel) {
 			if (this.settings.sendDirectly)
@@ -126,7 +128,7 @@ module.exports = () => {
 			} catch (e) {
 				console.error(e);
 			}
-		}	
+		}
 
 		onStop() {
 			document.removeEventListener("mouseup", this.emojiClickHandler);

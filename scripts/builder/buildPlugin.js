@@ -25,8 +25,13 @@ module.exports = (pluginContent, pluginFolder, pluginFiles, config) => {
 	if (config["no-zpl"]) {
 		result += `const config = {{ PLUGIN__CONFIG }};module.exports = ({{ PLUGIN__BODY }})();`;
 		delete config["no-zpl"]; // Temporary
+	} else if (config.keep) {
+		result += `const config = {{ PLUGIN__CONFIG }}; {{ PLUGIN__BODY }};`;
+		delete config.keep; // Temporary
 	} else
 		result += template;
+
+
 	result = result.replace(`{{ PLUGIN__CONFIG }}`, `${beautify(JSON.stringify(config),{"brace_style": "collapse"}).replace(/"((?:[A-Za-z]|[0-9]|_)+)"\s?:/g, "$1:")}`)
 	result = result.replace(`{{ PLUGIN__BODY }}`, `${content}`);
 	return beautify(result);

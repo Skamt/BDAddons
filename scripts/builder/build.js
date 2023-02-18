@@ -29,7 +29,7 @@ list.forEach(pluginFolder => {
 			.filter(p => p != "config.json" && p != "index.js")
 			.map(f => f.substr(1).replace(/\\/g, "/"));
 
-		const pluginContent = require(path.join(pluginFolder, "index.js")).toString();
+		const pluginContent = fs.readFileSync(path.join(pluginFolder, "index.js")).toString();
 		const pluginSource = buildPlugin(pluginContent, pluginFolder, pluginFiles, config);
 
 		const buildDir = path.join(releasePath, config.info.name);
