@@ -53,7 +53,7 @@ const config = {
 };
 
 function initPlugin([Plugin, Api]) {
-	const plugin = () => {
+	const plugin = module.exports = () => {
 		const {
 			UI,
 			DOM,
@@ -110,7 +110,9 @@ function initPlugin([Plugin, Api]) {
 			getEmojiUrl(emoji, size) {
 				if (this.settings.sendEmojiAsWebp)
 					return Utils.getEmojiWebpUrl(emoji, size);
-				return Utils.getEmojiGifUrl(emoji);
+				if (emoji.animated)
+					return Utils.getEmojiGifUrl(emoji);
+				return Utils.getEmojiUrl(emoji, size);
 			}
 			sendEmojiAsLink(emoji, channel) {
 				if (this.settings.sendDirectly)
