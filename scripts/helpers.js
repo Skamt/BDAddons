@@ -8,7 +8,7 @@ const isObject = item => (item && typeof item === 'object' && !Array.isArray(ite
 const config = {
 	"indent_size": "1",
 	"indent_char": "\t",
-	"max_preserve_newlines": "-1",
+	"max_preserve_newlines": "2",
 	"preserve_newlines": true,
 	"keep_array_indentation": false,
 	"break_chained_methods": false,

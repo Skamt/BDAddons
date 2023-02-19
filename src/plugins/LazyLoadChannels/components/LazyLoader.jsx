@@ -1,11 +1,11 @@
-module.exports = ({  channel, css, loadChannel, messages}) => {
+module.exports = ({  channel, loadChannel, messages}) => {
 	const [blink, setBlink] = useState("");
 	const [checked, setChecked] = useState(false);
 	const [channelStats, setChannelStats] = useState({ messages: 0, reactions: 0, embeds: 0, links: 0, images: 0, videos: 0 });
 	const startBlinking = () => {
 		setBlink("blink");
 		setTimeout(() => setBlink(""),1200);	
-	}
+	};
 	useEffect(()=>{ 
 		setChannelStats(Utils.getChannelStats(messages));
 	},[messages.length]);
@@ -19,13 +19,18 @@ module.exports = ({  channel, css, loadChannel, messages}) => {
 					Utils.showToast('Messages are Loaded!!','success');
 					startBlinking();
 				});
-	}
+	};
 
 	const loadChannelHandler = () => {
 		if(checked) Utils.DataManager.add(channel.guild_id, channel.id); 
 		loadChannel(channel);
+		/**
+		* rerending like this because i needed this component to be removed from the vDom
+		* otherwise some stores don't get updated since this component is replacing 
+		* a context provider, i could just throw a minor error instead, not sure which is better.
+		*/
 		Utils.reRender();
-	}
+	};
 
 	/** 
 	 * visibility set to hidden by default because when the plugin unloads 

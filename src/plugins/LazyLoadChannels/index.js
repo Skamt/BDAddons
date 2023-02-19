@@ -15,7 +15,7 @@ module.exports = (Plugin, Api) => {
 
 	function getModuleAndKey(filter) {
 		let module;
-		const target = getModule((entry, m) => filter(entry) ? (module = m) : false, { searchExports: true })
+		const target = getModule((entry, m) => filter(entry) ? (module = m) : false, { searchExports: true });
 		return [module.exports, Object.keys(module.exports).find(k => module.exports[k] === target)];
 	}
 
@@ -24,7 +24,17 @@ module.exports = (Plugin, Api) => {
 	const ChannelActions = DiscordModules.ChannelActions;
 	const ChannelContent = DiscordModules.ChannelContent;
 	const DMChannel = DiscordModules.DMChannel;
-	const [Channel, ChannelKey] = getModuleAndKey(Filters.byStrings("canHaveDot","isFavoriteSuggestion","mentionCount"));
+	const [Channel, ChannelKey] = getModuleAndKey(Filters.byStrings("canHaveDot", "isFavoriteSuggestion", "mentionCount"));
+
+	// Constants
+	const EVENTS = [
+		"THREAD_LIST_SYNC",
+		"THREAD_CREATE",
+		"CHANNEL_SELECT",
+		"CHANNEL_PRELOAD",
+		"GUILD_CREATE",
+	];
+	const CLASS_NAME = "lazyLoader";
 
 	// Utilities
 	const Utils = {
@@ -40,6 +50,11 @@ module.exports = (Plugin, Api) => {
 			}, { messages: messages.length, reactions: 0, embeds: 0, links: 0, images: 0, videos: 0 });
 		},
 		loadChannelMessages(channel) {
+			/**
+			 * This method does not check the cache 
+			 * therefore it is only called when messages.length === 0
+			 * it also returns a promise, it is used to load messages and show toast 
+			 */
 			return MessageActions.fetchMessages({ channelId: channel.id });
 		},
 		filters: {
@@ -68,6 +83,11 @@ module.exports = (Plugin, Api) => {
 				const data = Data.load(key);
 				if (!data) return false;
 				return data.some(id => id === target);
+			},
+			toggelChannel(channel) {
+				if (Utils.DataManager.has(channel.guild_id, channel.id))
+					Utils.DataManager.remove(channel.guild_id, channel.id);
+				else Utils.DataManager.add(channel.guild_id, channel.id);
 			}
 		},
 		reRender: () => {
@@ -78,16 +98,6 @@ module.exports = (Plugin, Api) => {
 			instance.forceUpdate(() => instance.forceUpdate());
 		}
 	}
-
-	// Constants
-	const EVENTS = [
-		"THREAD_LIST_SYNC",
-		"THREAD_CREATE",
-		"CHANNEL_SELECT",
-		"CHANNEL_PRELOAD",
-		"GUILD_CREATE",
-	];
-	const CLASS_NAME = "lazyLoader";
 
 	// styles
 	const css = require("styles.css");
@@ -100,10 +110,15 @@ module.exports = (Plugin, Api) => {
 			super();
 			this.loadChannel = this.loadChannel.bind(this);
 			this.autoLoad = false;
-			this.comp = React.createElement(LazyLoader, {});
+			this.comp = React.createElement(LazyLoader);
 		}
 
 		loadChannel(channel, messageId) {
+			/**
+			 * This is what discord uses when a channel is selected
+			 * it handles message jumping, and checks the cache
+			 * that is why it is used as opossed to MessageActions.fetchMessages
+			 */
 			ChannelActions.fetchMessages({
 				channelId: channel.id,
 				guildId: channel.guild_id,
@@ -113,11 +128,13 @@ module.exports = (Plugin, Api) => {
 		}
 
 		patchChannelContent() {
+			/**
+			 * main patch for the plugin.
+			 */
 			Patcher.after(ChannelContent.Z, "type", (_, [{ channel }], { props }) => {
 				if (this.autoLoad) return;
 				this.comp.props = {
 					channel,
-					css,
 					loadChannel: this.loadChannel,
 					messages: props.children.props.messages
 				};
@@ -126,6 +143,10 @@ module.exports = (Plugin, Api) => {
 		}
 
 		patchChannel() {
+			/**
+			 * adds a class to channels set to be auto loaded
+			 * for highlighting them
+			 */
 			Patcher.after(Channel, ChannelKey, (_, [{ channel }], returnValue) => {
 				if (!this.settings.autoloadedChannelIndicator) return;
 				if (Utils.DataManager.has(channel.guild_id, channel.id))
@@ -135,78 +156,54 @@ module.exports = (Plugin, Api) => {
 
 		patchContextMenu() {
 			this.unpatchContextMenu = [
-				ContextMenu.patch("user-context", (retVal, { user }) => {
-					retVal.props.children.splice(1, 0, ContextMenu.buildItem({
-						type: "toggle",
-						label: "Auto load",
-						active: Utils.DataManager.has(null, user.id),
-						action: (e) => {
-							if (Utils.DataManager.has(null, user.id)) Utils.DataManager.remove(null, user.id);
-							else Utils.DataManager.add(null, user.id);
-						}
-					}));
-				}),
-				ContextMenu.patch("thread-context", (retVal, { channel }) => {
-					retVal.props.children.splice(1, 0, ContextMenu.buildItem({
-						type: "toggle",
-						label: "Auto load",
-						active: Utils.DataManager.has(channel.guild_id, channel.id),
-						action: (e) => {
-							if (Utils.DataManager.has(channel.guild_id, channel.id)) Utils.DataManager.remove(channel.guild_id, channel.id);
-							else Utils.DataManager.add(channel.guild_id, channel.id);
-						}
-					}));
-				}),
-				ContextMenu.patch("channel-context", (retVal, { channel }) => {
-					retVal.props.children.splice(1, 0, ContextMenu.buildItem({
-						type: "toggle",
-						label: "Auto load",
-						active: Utils.DataManager.has(channel.guild_id, channel.id),
-						action: (e) => {
-							if (Utils.DataManager.has(channel.guild_id, channel.id)) Utils.DataManager.remove(channel.guild_id, channel.id);
-							else Utils.DataManager.add(channel.guild_id, channel.id);
-						}
-					}));
-				}),
-				ContextMenu.patch("guild-context", (retVal, { guild: { id } }) => {
-					retVal.props.children.splice(1, 0, ContextMenu.buildItem({
-						type: "button",
-						label: "Lazy load all channels",
-						action: (e) => {
-							Utils.DataManager.remove(id);
-						}
-					}));
-				}),
-				ContextMenu.patch("guild-context", (retVal, { guild: { id } }) => {
-					retVal.props.children.splice(1, 0, ContextMenu.buildItem({
-						type: "button",
-						label: "Auto load all channels",
-						action: (e) => {
-							const { SELECTABLE, VOCAL } = GuildChannelsStore.getChannels(id)
-							Utils.DataManager.add(id, [...SELECTABLE.map(({ channel }) => channel.id), ...VOCAL.map(({ channel }) => channel.id)]);
-						}
-					}));
-				}),
-				ContextMenu.patch("user-context", (r) => r.props.children.splice(1, 0, ContextMenu.buildItem({ type: "separator" }))),
-				ContextMenu.patch("guild-context", (r) => r.props.children.splice(1, 0, ContextMenu.buildItem({ type: "separator" }))),
-				ContextMenu.patch("channel-context", (r) => r.props.children.splice(1, 0, ContextMenu.buildItem({ type: "separator" })))
+				...[
+					["Lazy load all channels", id => Utils.DataManager.remove(id)],
+					["Auto load all channels", id => {
+						const { SELECTABLE, VOCAL } = GuildChannelsStore.getChannels(id);
+						Utils.DataManager.add(id, [...SELECTABLE.map(({ channel }) => channel.id), ...VOCAL.map(({ channel }) => channel.id)]);
+					}]
+				].map(([label, cb]) => ContextMenu.patch("guild-context", (retVal, { guild: { id } }) => {
+					retVal.props.children.unshift(ContextMenu.buildItem({ type: "button", label, action: () => cb(id) }));
+				})),
+				...["user-context", "channel-context", "thread-context"].map(context =>
+					ContextMenu.patch(context, (retVal, { channel }) => {
+						retVal.props.children.unshift(ContextMenu.buildItem({
+							type: "toggle",
+							label: "Auto load",
+							active: Utils.DataManager.has(channel.guild_id, channel.id),
+							action: _ => Utils.DataManager.toggelChannel(channel)
+						}));
+					})
+				),
+				...["user-context", "guild-context", "channel-context"].map(context =>
+					ContextMenu.patch(context, _ => _.props.children.unshift(ContextMenu.buildItem({ type: "separator" }))),
+				)
 			]
 		}
 
-		channelSelectHandler({ channelId, guildId, messageId }) {	
-			// messageId means it's a jump, if not it's set to undefined
-			if (messageId || Utils.DataManager.has(guildId, channelId) || (!guildId && !this.settings.includeDm))
+		channelSelectHandler({ channelId, guildId, messageId }) {
+			/** Ignore if 
+			* messageId !== undefined means it's a jump
+			* OR channel is autoloaded
+			*/
+			if (messageId || Utils.DataManager.has(guildId, channelId))
 				this.loadChannel({ id: channelId, guild_id: guildId }, messageId);
 			else
 				this.autoLoad = false;
 		}
 
 		channelCreateHandler({ channel }) {
+			/**
+			* No need to lazy load, channel or thread if first created 
+			*/
 			if (!channel.isDM())
 				Utils.DataManager.add(channel.guild_id, channel.id);
 		}
 
 		guildCreateHandler({ guild }) {
+			/**
+			* No need to lazy load created guild, save all channels
+			*/
 			if (guild.member_count === 1)
 				guild.channels.forEach(channel => Utils.DataManager.add(channel.guild_id, channel.id))
 		}
@@ -226,12 +223,15 @@ module.exports = (Plugin, Api) => {
 
 		onStart() {
 			try {
+				/**
+				* removing all listeners that fetches channel messages  
+				*/
+				EVENTS.forEach(event => Dispatcher.unsubscribe(event, ChannelActions.actions[event]));
 				DOM.addStyle(css);
 				this.patchChannel();
 				this.setupHandlers();
 				this.patchChannelContent();
 				this.patchContextMenu();
-				EVENTS.forEach(event => Dispatcher.unsubscribe(event, ChannelActions.actions[event]));
 			} catch (e) {
 				console.error(e);
 			}
