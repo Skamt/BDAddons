@@ -1,7 +1,7 @@
 /**
  * @name StickerEmojiPreview
  * @description Adds a zoomed preview to those tiny Stickers and Emojis
- * @version 1.0.2
+ * @version 1.0.3
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/StickerEmojiPreview
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/StickerEmojiPreview/StickerEmojiPreview.plugin.js
@@ -9,7 +9,7 @@
 const config = {
 	info: {
 		name: "StickerEmojiPreview",
-		version: "1.0.2",
+		version: "1.0.3",
 		description: "Adds a zoomed preview to those tiny Stickers and Emojis",
 		source: "https://raw.githubusercontent.com/Skamt/BDAddons/main/StickerEmojiPreview/StickerEmojiPreview.plugin.js",
 		github: "https://github.com/Skamt/BDAddons/tree/main/StickerEmojiPreview",
@@ -22,18 +22,23 @@ module.exports = (() => {
 	const {
 		DOM,
 		React,
+		Data,
 		Patcher,
 		React: { useEffect, useState },
 		Webpack: { Filters, getModule }
 	} = new BdApi(config.info.name);
+
 	// Modules
 	const Popout = getModule(Filters.byStrings('renderPopout', 'animationPosition'), { searchExports: true });
 	const ExpressionPickerInspector = getModule((m) => m.Z && m.Z.toString().includes('EMOJI_IS_FAVORITE_ARIA_LABEL'));
 	const SwitchRow = getModule(m => m.toString().includes('tooltipNote'), { searchExports: true });
+	const DefaultEmojisManager = getModule(m => m.getByName && m.EMOJI_NAME_RE);
+
 	// Constants
 	const PREVIEW_SIZE = 300;
-	// components
-	const previewComponent = ({ target, previewComponent, previewSize, defaultState }) => {
+
+	// Components
+	const previewComponent = ({ target, defaultState, previewComponent }) => {
 		const [show, setShow] = useState(defaultState);
 		useEffect(() => {
 			function keyupHandler(e) {
@@ -48,9 +53,10 @@ module.exports = (() => {
 					renderPopout: () =>
 						React.createElement("div", {
 								className: "stickersPreview",
-								style: { width: `${previewSize}px` }
+								style: { width: `${PREVIEW_SIZE}px` }
 							},
 							previewComponent),
+
 					shouldShow: show,
 					position: Popout.Positions.LEFT,
 					align: Popout.Align.BOTTOM,
@@ -58,6 +64,7 @@ module.exports = (() => {
 					spacing: 60
 				},
 				() => target));
+
 	};
 	const settingComponent = (props) => {
 		const [enabled, setEnabled] = useState(props.value);
@@ -69,6 +76,7 @@ module.exports = (() => {
 			}
 		}, props.description);
 	}
+
 	// styles
 	const css = `.stickersPreview {
 	width:400px;
@@ -87,39 +95,57 @@ module.exports = (() => {
 	padding:1px;
 	box-sizing:border-box;
 }`;
+
 	return class StickerEmojiPreview {
+
+		getMediaInfo({ props, type }, titlePrimary) {
+			if (props.sticker)
+				return [type, props];
+			if (props.src)
+				return [type, { src: props.src.replace(/([?&]size=)(\d+)/, `$1${PREVIEW_SIZE}`) }]
+			if (titlePrimary)
+				return ['img', { src: DefaultEmojisManager.getByName(titlePrimary.split(":")[1]).url }];
+
+			return ['div', {}];
+		}
+
+		getPreviewComponent(graphicPrimary, titlePrimary) {
+			const [type, props] = this.getMediaInfo(graphicPrimary, titlePrimary);
+
+			return React.createElement(type, {
+				...props,
+				disableAnimation: false,
+				size: PREVIEW_SIZE
+			});
+		}
 		start() {
 			try {
-				this.settings = BdApi.loadData("settings") || { previewDefaultState: false };
+				this.settings = Data.load("settings") || { previewDefaultState: false };
 				DOM.addStyle(css);
-				Patcher.after(ExpressionPickerInspector, "Z", (_, [{ graphicPrimary }], ret) => {
+				Patcher.after(ExpressionPickerInspector, "Z", (_, [{ graphicPrimary, titlePrimary }], ret) => {
 					return React.createElement(previewComponent, {
-						previewSize: PREVIEW_SIZE,
 						target: ret,
 						defaultState: this.settings.previewDefaultState,
-						previewComponent: React.createElement(graphicPrimary.type, {
-							...graphicPrimary.props,
-							src: graphicPrimary.props.src?.replace(/([?&]size=)(\d+)/, `$1${PREVIEW_SIZE}`),
-							disableAnimation: false,
-							size: PREVIEW_SIZE
-						})
+						previewComponent: this.getPreviewComponent(graphicPrimary, titlePrimary)
 					})
-				})
+				});
 			} catch (e) {
 				console.error(e);
 			}
 		}
+
 		stop() {
 			DOM.removeStyle();
 			Patcher.unpatchAll();
 		}
+
 		getSettingsPanel() {
 			return React.createElement(settingComponent, {
 				description: "Preview open by default.",
 				value: this.settings.previewDefaultState,
 				onChange: e => {
 					this.settings.previewDefaultState = e;
-					BdApi.saveData("settings", this.settings);
+					Data.save("settings", this.settings);
 				}
 			});
 		}
