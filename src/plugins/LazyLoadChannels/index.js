@@ -110,7 +110,6 @@ module.exports = (Plugin, Api) => {
 			super();
 			this.loadChannel = this.loadChannel.bind(this);
 			this.autoLoad = false;
-			this.comp = React.createElement(LazyLoader);
 		}
 
 		loadChannel(channel, messageId) {
@@ -133,12 +132,11 @@ module.exports = (Plugin, Api) => {
 			 */
 			Patcher.after(ChannelContent.Z, "type", (_, [{ channel }], { props }) => {
 				if (this.autoLoad) return;
-				this.comp.props = {
+				return React.createElement(LazyLoader, {
 					channel,
 					loadChannel: this.loadChannel,
 					messages: props.children.props.messages
-				};
-				return this.comp;
+				});
 			});
 		}
 
@@ -183,9 +181,9 @@ module.exports = (Plugin, Api) => {
 
 		channelSelectHandler({ channelId, guildId, messageId }) {
 			/** Ignore if 
-			* messageId !== undefined means it's a jump
-			* OR channel is autoloaded
-			*/
+			 * messageId !== undefined means it's a jump
+			 * OR channel is autoloaded
+			 */
 			if (messageId || Utils.DataManager.has(guildId, channelId))
 				this.loadChannel({ id: channelId, guild_id: guildId }, messageId);
 			else
@@ -194,16 +192,16 @@ module.exports = (Plugin, Api) => {
 
 		channelCreateHandler({ channel }) {
 			/**
-			* No need to lazy load, channel or thread if first created 
-			*/
+			 * No need to lazy load, channel or thread if first created 
+			 */
 			if (!channel.isDM())
 				Utils.DataManager.add(channel.guild_id, channel.id);
 		}
 
 		guildCreateHandler({ guild }) {
 			/**
-			* No need to lazy load created guild, save all channels
-			*/
+			 * No need to lazy load created guild, save all channels
+			 */
 			if (guild.member_count === 1)
 				guild.channels.forEach(channel => Utils.DataManager.add(channel.guild_id, channel.id))
 		}
@@ -224,8 +222,8 @@ module.exports = (Plugin, Api) => {
 		onStart() {
 			try {
 				/**
-				* removing all listeners that fetches channel messages  
-				*/
+				 * removing all listeners that fetches channel messages  
+				 */
 				EVENTS.forEach(event => Dispatcher.unsubscribe(event, ChannelActions.actions[event]));
 				DOM.addStyle(css);
 				this.patchChannel();
