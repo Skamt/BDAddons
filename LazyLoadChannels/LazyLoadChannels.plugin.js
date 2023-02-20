@@ -369,7 +369,6 @@ function initPlugin([Plugin, Api]) {
 				super();
 				this.loadChannel = this.loadChannel.bind(this);
 				this.autoLoad = false;
-				this.comp = React.createElement(LazyLoader);
 			}
 
 			loadChannel(channel, messageId) {
@@ -392,12 +391,11 @@ function initPlugin([Plugin, Api]) {
 				 */
 				Patcher.after(ChannelContent.Z, "type", (_, [{ channel }], { props }) => {
 					if (this.autoLoad) return;
-					this.comp.props = {
+					return React.createElement(LazyLoader, {
 						channel,
 						loadChannel: this.loadChannel,
 						messages: props.children.props.messages
-					};
-					return this.comp;
+					});
 				});
 			}
 
