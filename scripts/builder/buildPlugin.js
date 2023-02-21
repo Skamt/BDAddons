@@ -23,6 +23,7 @@ module.exports = (pluginContent, pluginFolder, pluginFiles, config) => {
 	const content = parser(pluginContent, pluginFolder, pluginFiles);
 	let result = buildMeta(config);
 	if (config["no-zpl"]) {
+		result = result.replace('module.exports = ','');
 		result += `const config = {{ PLUGIN__CONFIG }};module.exports = ({{ PLUGIN__BODY }})();`;
 		delete config["no-zpl"]; // Temporary
 	} else if (config.keep) {

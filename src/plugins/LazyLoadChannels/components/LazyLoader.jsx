@@ -84,5 +84,5 @@ module.exports = ({  channel, loadChannel, messages}) => {
 					Auto load
 				</SwitchRow>
 			</div>
-		</div> ;
+		</div>;
 };
