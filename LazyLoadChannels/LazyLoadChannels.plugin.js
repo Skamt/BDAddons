@@ -419,21 +419,20 @@ function initPlugin([Plugin, Api]) {
 							const { SELECTABLE, VOCAL } = GuildChannelsStore.getChannels(id);
 							Utils.DataManager.add(id, [...SELECTABLE.map(({ channel }) => channel.id), ...VOCAL.map(({ channel }) => channel.id)]);
 						}]
-					].map(([label, cb]) => ContextMenu.patch("guild-context", (retVal, { guild: { id } }) => {
-						retVal.props.children.unshift(ContextMenu.buildItem({ type: "button", label, action: () => cb(id) }));
+					].map(([label, cb]) => ContextMenu.patch("guild-context", (retVal, { guild }) => {
+						if (guild)
+							retVal.props.children.unshift(ContextMenu.buildItem({ type: "button", label, action: () => cb(guild.id) }));
 					})),
 					...["user-context", "channel-context", "thread-context"].map(context =>
 						ContextMenu.patch(context, (retVal, { channel }) => {
-							retVal.props.children.unshift(ContextMenu.buildItem({
-								type: "toggle",
-								label: "Auto load",
-								active: Utils.DataManager.has(channel.guild_id, channel.id),
-								action: _ => Utils.DataManager.toggelChannel(channel)
-							}));
+							if (channel)
+								retVal.props.children.unshift(ContextMenu.buildItem({
+									type: "toggle",
+									label: "Auto load",
+									active: Utils.DataManager.has(channel.guild_id, channel.id),
+									action: _ => Utils.DataManager.toggelChannel(channel)
+								}));
 						})
-					),
-					...["user-context", "guild-context", "channel-context"].map(context =>
-						ContextMenu.patch(context, _ => _.props.children.unshift(ContextMenu.buildItem({ type: "separator" }))),
 					)
 				]
 			}
