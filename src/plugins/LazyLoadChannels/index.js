@@ -160,8 +160,9 @@ module.exports = (Plugin, Api) => {
 						const { SELECTABLE, VOCAL } = GuildChannelsStore.getChannels(id);
 						Utils.DataManager.add(id, [...SELECTABLE.map(({ channel }) => channel.id), ...VOCAL.map(({ channel }) => channel.id)]);
 					}]
-				].map(([label, cb]) => ContextMenu.patch("guild-context", (retVal, { guild: { id } }) => {
-					retVal.props.children.unshift(ContextMenu.buildItem({ type: "button", label, action: () => cb(id) }));
+				].map(([label, cb]) => ContextMenu.patch("guild-context", (retVal, { guild }) => {
+					if(guild)
+						retVal.props.children.unshift(ContextMenu.buildItem({ type: "button", label, action: () => cb(guild.id) }));
 				})),
 				...["user-context", "channel-context", "thread-context"].map(context =>
 					ContextMenu.patch(context, (retVal, { channel }) => {
