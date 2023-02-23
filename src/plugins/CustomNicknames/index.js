@@ -3,7 +3,7 @@ module.exports = (Plugin, Api) => {
 		UI,
 		Data,
 		React,
-		React: { useState },
+		React: { useState, useEffect },
 		Patcher,
 		ContextMenu,
 		Webpack: {
