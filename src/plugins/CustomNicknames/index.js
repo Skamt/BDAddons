@@ -3,7 +3,7 @@ module.exports = (Plugin, Api) => {
 		UI,
 		Data,
 		React,
-		React: { useCallback },
+		React: { useState },
 		Patcher,
 		ContextMenu,
 		Webpack: {
@@ -12,39 +12,41 @@ module.exports = (Plugin, Api) => {
 		}
 	} = new BdApi(config.info.name);
 
+	// Helper functions
+	const Utils = {
+		showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),
+	};
+
 	const MessageHeader = getModule((m) => m.Z?.toString().includes("userOverride") && m.Z?.toString().includes("withMentionPrefix"));
-	const TextInput = getModule((m) => m?.Sizes?.MINI && m?.defaultProps, { searchExports: true });
 	const Markdown = getModule((m) => m.Z?.rules && m.Z?.defaultProps?.parser).Z;
 	const UserStore = getModule((m, e, i) => m.getCurrentUser && m.getUser);
 
+	const { DiscordModules: { ButtonData, Textbox, TextElement } } = Api;
+	const openModal = DiscordModules.openModal;
+	const ModalRoot = DiscordModules.ModalRoot;
+	const Text = BdApi.Webpack.getModule(BdApi.Webpack.Filters.byStrings('data-text-variant'), { searchExports: true });
+	const Label = getModule(Filters.byStrings('LEGEND', 'LABEL', 'h5'), { searchExports: true });
+	let ModalHeader, ModalBody, ModalFooter;
+	getModule((m, e) => {
+		if (m.toString().includes('onAnimationEnd')) {
+			const funcs = Object.values(e.exports);
+			ModalHeader = funcs.find(Filters.byStrings('headerIdIsManaged', 'headerId', 'separator'));
+			ModalBody = funcs.find(Filters.byStrings('scrollerRef', 'content', 'children'));
+			ModalFooter = funcs.find(Filters.byStrings('footerSeparator'));
+			return true;
+		}
+	}, { searchExports: true });
+
+	const AddUserNickname = require("components/AddUserNickname.jsx");
 	return class CustomNicknames extends Plugin {
 
 		constructor() {
 			super();
 		}
-		openCarousel(items) {
-			openModal(props => React.createElement(DisplayCarousel, { props, items }));
-		}
+
+
 		setUserNickName(user) {
-			let username = user.username;
-			UI.showConfirmationModal(
-				'Add User Nickname',
-				[
-					React.createElement(Markdown, null, "USER NICKNAME"),
-					React.createElement(TextInput, {
-						type: "text",
-						placeholder: "Nickname",
-						onChange: (name) => {
-							username = name;
-						},
-					})
-				], {
-					confirmText: "Set",
-					onConfirm: () => {
-						Data.save(user.id, username);
-					},
-				}
-			);
+			openModal(props => React.createElement(AddUserNickname, { props, user }));
 		}
 
 		patch() {
