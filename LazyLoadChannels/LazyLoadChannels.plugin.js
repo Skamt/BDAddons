@@ -53,6 +53,7 @@ function initPlugin([Plugin, Api]) {
 		const ChannelActions = getModule(Filters.byProps('actions', 'fetchMessages'), { searchExports: true });
 		const ChannelContent = getModule(m => m && m.Z && m.Z.type && m.Z.type.toString().includes('showingSpamBanner'));
 		const DMChannel = getModule(Filters.byStrings('isMobileOnline', 'channel'), { searchExports: true });
+		const ChannelTypeEnum = getModule(Filters.byProps('GUILD_TEXT', 'DM'), { searchExports: true });
 		const [Channel, ChannelKey] = getModuleAndKey(Filters.byStrings("canHaveDot", "isFavoriteSuggestion", "mentionCount"));
 
 		// Constants
@@ -425,7 +426,7 @@ function initPlugin([Plugin, Api]) {
 					})),
 					...["user-context", "channel-context", "thread-context"].map(context =>
 						ContextMenu.patch(context, (retVal, { channel }) => {
-							if (channel)
+							if (channel && channel.type !== ChannelTypeEnum.GUILD_CATEGORY)
 								retVal.props.children.unshift(ContextMenu.buildItem({
 									type: "toggle",
 									label: "Auto load",
