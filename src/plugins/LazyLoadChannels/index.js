@@ -24,6 +24,7 @@ module.exports = (Plugin, Api) => {
 	const ChannelActions = DiscordModules.ChannelActions;
 	const ChannelContent = DiscordModules.ChannelContent;
 	const DMChannel = DiscordModules.DMChannel;
+	const ChannelTypeEnum = DiscordModules.ChannelTypeEnum;
 	const [Channel, ChannelKey] = getModuleAndKey(Filters.byStrings("canHaveDot", "isFavoriteSuggestion", "mentionCount"));
 
 	// Constants
@@ -166,7 +167,7 @@ module.exports = (Plugin, Api) => {
 				})),
 				...["user-context", "channel-context", "thread-context"].map(context =>
 					ContextMenu.patch(context, (retVal, { channel }) => {
-						if (channel)
+						if (channel && channel.type !== ChannelTypeEnum.GUILD_CATEGORY)
 							retVal.props.children.unshift(ContextMenu.buildItem({
 								type: "toggle",
 								label: "Auto load",
