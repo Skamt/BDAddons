@@ -34,7 +34,7 @@ function initPlugin([Plugin, Api]) {
 			UI,
 			Data,
 			React,
-			React: { useState },
+			React: { useState, useEffect },
 			Patcher,
 			ContextMenu,
 			Webpack: {
@@ -71,18 +71,25 @@ function initPlugin([Plugin, Api]) {
 		const AddUserNickname = ({ props, user }) => {
 			const [value, setValue] = useState(Data.load(user.id) || "");
 
-			const saveHandler = () => {
+			useEffect(() => {
+				const keyupHandler = (e) => e.key === "Enter" && Save();
+				document.addEventListener("keyup", keyupHandler);
+				return () => document.removeEventListener("keyup", keyupHandler);
+			}, []);
+			const Save = () => {
 				try {
 					Data.save(user.id, value);
 					props.onClose();
 					Utils.showToast(`Nickname ${value} for ${user.username} Has been saved.`, "success");
 				} catch (e) {
-					Utils.showToast(`Error occured while saving nickname, Check the console for more info.`, "danger");
 					console.error(e);
+					props.onClose();
+					Utils.showToast(`Error occured while saving nickname, Check the console for more info.`, "danger");
+					require('electron').ipcRenderer.send('bd-toggle-devtools');
 				}
 			};
 
-			const clearHandler = () => setValue("");
+			const Clear = () => setValue("");
 
 			return (
 				React.createElement(ModalRoot, { ...props },
@@ -114,7 +121,7 @@ function initPlugin([Plugin, Api]) {
 							children: "Reset user nickname",
 							className: "reset-Gp82ub",
 							size: "",
-							onClick: clearHandler,
+							onClick: Clear,
 							color: ButtonData.Colors.LINK,
 							look: ButtonData.Looks.LINK
 						})),
@@ -122,7 +129,7 @@ function initPlugin([Plugin, Api]) {
 					React.createElement(ModalFooter, null,
 						React.createElement(ButtonData, {
 							children: "Save",
-							onClick: saveHandler
+							onClick: Save
 						}),
 
 						React.createElement(ButtonData, {
