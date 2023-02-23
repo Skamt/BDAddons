@@ -1,0 +1,194 @@
+/**
+ * @name CustomNicknames
+ * @description Empty description
+ * @version 1.0.0
+ * @author Skamt
+ * @website https://github.com/Skamt/BDAddons/tree/main/CustomNicknames
+ * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/CustomNicknames/CustomNicknames.plugin.js
+ */
+const config = {
+	info: {
+		name: "CustomNicknames",
+		version: "1.0.0",
+		description: "Empty description",
+		source: "https://raw.githubusercontent.com/Skamt/BDAddons/main/CustomNicknames/CustomNicknames.plugin.js",
+		github: "https://github.com/Skamt/BDAddons/tree/main/CustomNicknames",
+		authors: [{
+			name: "Skamt"
+		}]
+	},
+	defaultConfig: [{
+		type: "slider",
+		id: "id",
+		name: "name",
+		note: "note",
+		value: 160,
+		markers: [20, 40, 80, 160, 320],
+		stickToMarkers: true
+	}]
+};
+
+function initPlugin([Plugin, Api]) {
+	const plugin = (Plugin, Api) => {
+		const {
+			UI,
+			Data,
+			React,
+			React: { useState },
+			Patcher,
+			ContextMenu,
+			Webpack: {
+				Filters,
+				getModule
+			}
+		} = new BdApi(config.info.name);
+
+		// Helper functions
+		const Utils = {
+			showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),
+		};
+
+		const MessageHeader = getModule((m) => m.Z?.toString().includes("userOverride") && m.Z?.toString().includes("withMentionPrefix"));
+		const Markdown = getModule((m) => m.Z?.rules && m.Z?.defaultProps?.parser).Z;
+		const UserStore = getModule((m, e, i) => m.getCurrentUser && m.getUser);
+
+		const { DiscordModules: { ButtonData, Textbox, TextElement } } = Api;
+		const openModal = getModule(Filters.byStrings('onCloseCallback', 'Layer'), { searchExports: true });
+		const ModalRoot = getModule(Filters.byStrings('onAnimationEnd'), { searchExports: true });
+		const Text = BdApi.Webpack.getModule(BdApi.Webpack.Filters.byStrings('data-text-variant'), { searchExports: true });
+		const Label = getModule(Filters.byStrings('LEGEND', 'LABEL', 'h5'), { searchExports: true });
+		let ModalHeader, ModalBody, ModalFooter;
+		getModule((m, e) => {
+			if (m.toString().includes('onAnimationEnd')) {
+				const funcs = Object.values(e.exports);
+				ModalHeader = funcs.find(Filters.byStrings('headerIdIsManaged', 'headerId', 'separator'));
+				ModalBody = funcs.find(Filters.byStrings('scrollerRef', 'content', 'children'));
+				ModalFooter = funcs.find(Filters.byStrings('footerSeparator'));
+				return true;
+			}
+		}, { searchExports: true });
+
+		const AddUserNickname = ({ props, user }) => {
+			const [value, setValue] = useState(Data.load(user.id) || "");
+
+			const saveHandler = () => {
+				try {
+					Data.save(user.id, value);
+					props.onClose();
+					Utils.showToast(`Nickname ${value} for ${user.username} Has been saved.`, "success");
+				} catch (e) {
+					Utils.showToast(`Error occured while saving nickname, Check the console for more info.`, "danger");
+					console.error(e);
+				}
+			};
+
+			const clearHandler = () => setValue("");
+
+			return (
+				React.createElement(ModalRoot, { ...props },
+					React.createElement(ModalHeader, { separator: false },
+						React.createElement(Text, {
+							children: "Add User Nickname",
+							variant: "heading-lg/semibold"
+						})),
+
+					React.createElement(ModalBody, null,
+						React.createElement(Text, {
+							children: "Find a friend faster with a personal nickname. It will only be visible to you in your direct messages.",
+							className: "description-2pRfjZ",
+							variant: "text-md/normal"
+						}),
+
+						React.createElement(Label, { children: "User Nickname" }),
+						React.createElement(Textbox, {
+							...
+							Textbox.defaultProps,
+							className: "input-2i7ay7",
+							autoFocus: true,
+							placeholder: user.username,
+							onChange: setValue,
+							value: value
+						}),
+
+						React.createElement(ButtonData, {
+							children: "Reset user nickname",
+							className: "reset-Gp82ub",
+							size: "",
+							onClick: clearHandler,
+							color: ButtonData.Colors.LINK,
+							look: ButtonData.Looks.LINK
+						})),
+
+					React.createElement(ModalFooter, null,
+						React.createElement(ButtonData, {
+							children: "Save",
+							onClick: saveHandler
+						}),
+
+						React.createElement(ButtonData, {
+							children: "Cancel",
+							onClick: props.onClose,
+							color: ButtonData.Colors.PRIMARY,
+							look: ButtonData.Looks.LINK
+						}))));
+
+		};
+		return class CustomNicknames extends Plugin {
+
+			constructor() {
+				super();
+			}
+
+			setUserNickName(user) {
+				openModal(props => React.createElement(AddUserNickname, { props, user }));
+			}
+
+			patch() {
+				this.patches = [Patcher.before(MessageHeader, "Z", (_, [{ author, message }]) => {
+						const authorId = message.author.id;
+						const nick = Data.load(authorId);
+						if (nick && !author.nick.includes(`| ${nick}`))
+							author.nick = `${author.nick} | ${nick}`
+					}),
+					ContextMenu.patch("user-context", (retVal, { user }) => {
+						if (user.id !== UserStore.getCurrentUser().id)
+							retVal.props.children.unshift(ContextMenu.buildItem({
+								type: "button",
+								label: "Add user nickname",
+								action: () => this.setUserNickName(user)
+							}));
+					})
+				]
+			}
+
+			onStart() {
+				try {
+					this.patch();
+				} catch (e) {
+					console.error(e);
+				}
+			}
+
+			onStop() {
+				this.patches.forEach(p => p())
+			}
+
+			getSettingsPanel() {
+				return this.buildSettingsPanel().getElement();
+			}
+
+		};
+	};
+	return plugin(Plugin, Api);
+}
+
+module.exports = !global.ZeresPluginLibrary ?
+	() => ({
+		stop() {},
+		start() {
+			BdApi.UI.showConfirmationModal("Library plugin is needed", [`**ZeresPluginLibrary** is needed to run **${this.config.info.name}**.`, `Please download it from the officiel website`, "https://betterdiscord.app/plugin/ZeresPluginLibrary"], {
+				confirmText: "Ok"
+			});
+		}
+	}) :
+	initPlugin(global.ZeresPluginLibrary.buildPlugin(config));
