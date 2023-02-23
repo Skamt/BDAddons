@@ -422,18 +422,21 @@ function initPlugin([Plugin, Api]) {
 						}]
 					].map(([label, cb]) => ContextMenu.patch("guild-context", (retVal, { guild }) => {
 						if (guild)
-							retVal.props.children.unshift(ContextMenu.buildItem({ type: "button", label, action: () => cb(guild.id) }));
+							retVal.props.children.splice(1, 0, ContextMenu.buildItem({ type: "button", label, action: () => cb(guild.id) }));
 					})),
-					...["user-context", "channel-context", "thread-context"].map(context =>
+					...["channel-context", "thread-context"].map(context =>
 						ContextMenu.patch(context, (retVal, { channel }) => {
 							if (channel && channel.type !== ChannelTypeEnum.GUILD_CATEGORY)
-								retVal.props.children.unshift(ContextMenu.buildItem({
+								retVal.props.children.splice(1, 0, ContextMenu.buildItem({
 									type: "toggle",
 									label: "Auto load",
 									active: Utils.DataManager.has(channel.guild_id, channel.id),
 									action: _ => Utils.DataManager.toggelChannel(channel)
 								}));
 						})
+					),
+					...["channel-context", "thread-context", "guild-context"].map(context =>
+						ContextMenu.patch(context, retVal => retVal.props.children.splice(1, 0, ContextMenu.buildItem({ type: "separator" })))
 					)
 				]
 			}
@@ -460,8 +463,10 @@ function initPlugin([Plugin, Api]) {
 			guildCreateHandler({ guild }) {
 				/**
 				 * No need to lazy load created guild, save all channels
+				 * guild.member_count < 5 just to be safe for now
+				 * TODO: Detect guild created properly 
 				 */
-				if (guild.member_count === 1)
+				if (guild.member_count < 5)
 					guild.channels.forEach(channel => Utils.DataManager.add(channel.guild_id, channel.id))
 			}
 
