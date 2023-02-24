@@ -19,6 +19,7 @@ function buildMeta(config) {
 }
 
 module.exports = (pluginContent, pluginFolder, pluginFiles, config) => {
+	if (!config.keep) pluginContent = pluginContent.replace('module.exports = ', '');
 
 	const content = parser(pluginContent, pluginFolder, pluginFiles);
 	let result = buildMeta(config);
