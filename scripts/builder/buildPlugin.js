@@ -24,8 +24,9 @@ module.exports = (pluginContent, pluginFolder, pluginFiles, config) => {
 	let result = buildMeta(config);
 	if (config["no-zpl"]) {
 		result += `const config = {{ PLUGIN__CONFIG }};module.exports = ({{ PLUGIN__BODY }})();`;
-		
 		delete config["no-zpl"]; // Temporary
+	} else if (config.keep) {
+		result += `const config = {{ PLUGIN__CONFIG }};{{ PLUGIN__BODY }};`;
 	} else
 		result += template;
 

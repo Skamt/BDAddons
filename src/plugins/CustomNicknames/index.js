@@ -2,6 +2,7 @@ module.exports = (Plugin, Api) => {
 	const {
 		UI,
 		Data,
+		DOM,
 		React,
 		React: { useState, useEffect },
 		Patcher,
@@ -37,45 +38,36 @@ module.exports = (Plugin, Api) => {
 		}
 	}, { searchExports: true });
 
+	const css = require("styles.css");
 	const AddUserNickname = require("components/AddUserNickname.jsx");
+
 	return class CustomNicknames extends Plugin {
 
 		constructor() {
 			super();
 		}
 
-
-		setUserNickName(user) {
-			openModal(props => React.createElement(AddUserNickname, { props, user }));
-		}
-
-		patch() {
-			this.patches = [Patcher.before(MessageHeader, "Z", (_, [{ author, message }]) => {
-					const authorId = message.author.id;
-					const nick = Data.load(authorId);
-					if (nick && !author.nick.includes(`| ${nick}`))
-						author.nick = `${author.nick} | ${nick}`
+		onStart() {
+			DOM.addStyle(css);
+			this.patches = [
+				Patcher.before(MessageHeader, "Z", (_, [{ message, decorations }]) => {
+					const nick = Data.load(message.author.id);
+					if (nick)
+						decorations[0] = React.createElement('span', { className: "nick" }, `${nick}`);
 				}),
 				ContextMenu.patch("user-context", (retVal, { user }) => {
 					if (user.id !== UserStore.getCurrentUser().id)
 						retVal.props.children.unshift(ContextMenu.buildItem({
 							type: "button",
 							label: "Add user nickname",
-							action: () => this.setUserNickName(user)
+							action: () => openModal(props => React.createElement(AddUserNickname, { props, user }))
 						}));
 				})
 			]
 		}
 
-		onStart() {
-			try {
-				this.patch();
-			} catch (e) {
-				console.error(e);
-			}
-		}
-
 		onStop() {
+			DOM.removeStyle();
 			this.patches.forEach(p => p())
 		}
 

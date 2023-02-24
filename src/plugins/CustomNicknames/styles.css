@@ -1,0 +1,11 @@
+.nick {
+    line-height: 1.375rem;
+    color: #fff;
+    vertical-align: baseline;
+    display: inline-block;
+    cursor: default;
+    pointer-events: none;
+    font-weight: 500;
+    margin-left: .5rem;
+    margin-right: -.25rem;
+}
