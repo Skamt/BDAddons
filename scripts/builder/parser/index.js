@@ -6,7 +6,6 @@ const other = require("./otherParser.js");
 const DiscordModules = require("./../../../DiscordModules.js");
 
 module.exports = (content, pluginFolder, pluginFiles) => {
-	
 	for (const fileName of pluginFiles)
 		content = content.replace(new RegExp(`require\\(('|"|\`)${fileName}('|"|\`)\\)`, "g"), () => {
 			const filePath = path.join(pluginFolder, fileName);
