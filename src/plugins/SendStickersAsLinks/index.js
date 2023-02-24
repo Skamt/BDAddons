@@ -229,4 +229,4 @@ module.exports = () => {
 			return panel.getElement();
 		}
 	};
-};
+}

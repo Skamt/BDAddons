@@ -243,8 +243,10 @@ module.exports = (Plugin, Api) => {
 		onStop() {
 			DOM.removeStyle();
 			Patcher.unpatchAll();
-			this.unpatchContextMenu.forEach(p => p());
-			this.handlers.forEach(h => h());
+			this.unpatchContextMenu?.forEach?.(p => p());
+			this.handlers?.forEach?.(h => h());
+			this.unpatchContextMenu = null;
+			this.handlers = null;
 			EVENTS.forEach(event => Dispatcher.subscribe(event, ChannelActions.actions[event]));
 		}
 

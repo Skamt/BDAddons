@@ -68,7 +68,8 @@ module.exports = (Plugin, Api) => {
 
 		onStop() {
 			DOM.removeStyle();
-			this.patches.forEach(p => p())
+			this.patches?.forEach?.(p => p());
+			this.patches = null;
 		}
 
 		getSettingsPanel() {

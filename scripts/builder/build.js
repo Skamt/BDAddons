@@ -10,7 +10,7 @@ const releasePath = path.join(projectPath, releaseFolder);
 
 const bdFolder = `${process.env.APPDATA}/BetterDiscord/`;
 const arg = process.argv.slice(2)[0];
-const list = arg === "a" 
+const list = arg === "all" 
 	? fs.readdirSync(pluginsPath)
 		.filter(f => fs.lstatSync(path.join(pluginsPath, f)).isDirectory())
 		.map(f => path.join(pluginsPath, f)) 
