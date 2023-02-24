@@ -62,6 +62,7 @@ function initPlugin([Plugin, Api]) {
 				getModule
 			}
 		} = new BdApi(config.info.name);
+
 		// Helper functions
 		const Utils = {
 			isTagged: (str) => Object.values(TAGS).some(tag => str.includes(tag)),
@@ -77,6 +78,7 @@ function initPlugin([Plugin, Api]) {
 				return [module.exports, Object.keys(module.exports).find(k => module.exports[k] === target)];
 			}
 		};
+
 		// Modules
 		const [StickerModule, StickerModulePatchTarget] = Utils.getModuleAndKey(Filters.byStrings('sticker', 'withLoadingIndicator'));
 		const PendingReplyStore = getModule(m => m.getPendingReply);
@@ -120,6 +122,7 @@ function initPlugin([Plugin, Api]) {
 				}, 0);
 			}
 		})();
+
 		// Strings & Constants
 		const TAGS = {
 			ANIMATED_STICKER_TAG: "ANIMATED_STICKER_TAG"
@@ -129,6 +132,7 @@ function initPlugin([Plugin, Api]) {
 			missingEmbedPermissionsErrorMessage: "Missing Embed Permissions",
 			disabledAnimatedStickersErrorMessage: "You have disabled animated stickers in settings."
 		};
+
 		// styles
 		const css = `.animatedSticker{
     position:relative;
@@ -149,17 +153,21 @@ function initPlugin([Plugin, Api]) {
 .stickerInspected-mwnU6w .animatedSticker:before{
     border-radius:4px;
 }`;
+
 		return class SendStickersAsLinks extends Plugin {
 			constructor() {
 				super();
 			}
+
 			handleUnsendableSticker({ user, sticker, channel }, direct) {
 				if (Utils.isAnimatedSticker(sticker) && !this.settings.shouldSendAnimatedStickers)
 					return Utils.showToast(STRINGS.disabledAnimatedStickersErrorMessage, "info");
 				if (!Utils.hasEmbedPerms(channel, user) && !this.settings.ignoreEmbedPermissions)
 					return Utils.showToast(STRINGS.missingEmbedPermissionsErrorMessage, "info");
+
 				this.sendStickerAsLink(sticker, channel, direct);
 			}
+
 			sendStickerAsLink(sticker, channel, direct) {
 				if (this.settings.sendDirectly || direct)
 					MessageActions.sendMessage(channel.id, {
@@ -169,6 +177,7 @@ function initPlugin([Plugin, Api]) {
 				else
 					InsertText(Utils.getStickerUrl(sticker.id, this.settings.stickerSize));
 			}
+
 			getReply(channelId) {
 				const reply = PendingReplyStore.getPendingReply(channelId);
 				if (!reply) return {};
@@ -184,6 +193,7 @@ function initPlugin([Plugin, Api]) {
 					}
 				}
 			}
+
 			handleSticker(channelId, stickerId) {
 				const user = UserStore.getCurrentUser();
 				const sticker = StickerStore.getStickerById(stickerId);
@@ -195,6 +205,7 @@ function initPlugin([Plugin, Api]) {
 					isSendable: Utils.isStickerSendable(sticker, channel, user)
 				}
 			}
+
 			patchSendSticker() {
 				/** 
 				 * The existance of this plugin implies the existance of this patch 
@@ -208,6 +219,7 @@ function initPlugin([Plugin, Api]) {
 						this.handleUnsendableSticker(stickerObj);
 				});
 			}
+
 			patchStickerAttachement() {
 				/** 
 				 * Since we enabled stickers to be clickable
@@ -229,11 +241,13 @@ function initPlugin([Plugin, Api]) {
 					}
 				})
 			}
+
 			patchChannelGuildPermissions() {
 				Patcher.after(Permissions, "can", (_, [{ permission }], ret) =>
 					ret || DiscordPermissions.USE_EXTERNAL_EMOJIS === permission
 				);
 			}
+
 			patchStickerClickability() {
 				// if it's a guild sticker return true to make it clickable 
 				// ignoreing discord's stickers because ToS, and they're not regular images
@@ -241,6 +255,7 @@ function initPlugin([Plugin, Api]) {
 					return args[0].type === StickerTypeEnum.GUILD;
 				});
 			}
+
 			patchGetStickerById() {
 				Patcher.after(StickerModule, StickerModulePatchTarget, (_, args, returnValue) => {
 					const { size, sticker } = returnValue.props.children[0].props;
@@ -251,6 +266,7 @@ function initPlugin([Plugin, Api]) {
 					}
 				});
 			}
+
 			patchStickerSuggestion() {
 				// Enable suggestions for custom stickers only 
 				Patcher.after(StickersSendability, getStickerSendabilityKey, (_, args, returnValue) => {
@@ -260,6 +276,7 @@ function initPlugin([Plugin, Api]) {
 					}
 				});
 			}
+
 			onStart() {
 				try {
 					DOM.addStyle(css);
@@ -273,10 +290,12 @@ function initPlugin([Plugin, Api]) {
 					console.error(e);
 				}
 			}
+
 			onStop() {
 				DOM.removeStyle();
 				Patcher.unpatchAll();
 			}
+
 			getSettingsPanel() {
 				const panel = this.buildSettingsPanel();
 				return panel.getElement();
@@ -285,6 +304,7 @@ function initPlugin([Plugin, Api]) {
 	};
 	return plugin(Plugin, Api);
 }
+
 module.exports = !global.ZeresPluginLibrary ?
 	() => ({
 		stop() {},

@@ -53,7 +53,7 @@ const config = {
 };
 
 function initPlugin([Plugin, Api]) {
-	const plugin = module.exports = () => {
+	const plugin = () => {
 		const {
 			UI,
 			DOM,
@@ -66,8 +66,10 @@ function initPlugin([Plugin, Api]) {
 				getModule
 			}
 		} = new BdApi(config.info.name);
+
 		// Modules
 		const { DiscordModules: { Dispatcher, DiscordPermissions, SelectedChannelStore, MessageActions, Permissions, ChannelStore, UserStore } } = Api;
+
 		const PendingReplyStore = getModule(m => m.getPendingReply);
 		const EmojiIntentionEnum = getModule(Filters.byProps('GUILD_ROLE_BENEFIT_EMOJI'), { searchExports: true });
 		const EmojiSendAvailabilityEnum = getModule(Filters.byProps('GUILD_SUBSCRIPTION_UNAVAILABLE'), { searchExports: true });
@@ -81,6 +83,7 @@ function initPlugin([Plugin, Api]) {
 				});
 			}
 		})();
+
 		// Helper functions
 		const Utils = {
 			showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),
@@ -90,11 +93,13 @@ function initPlugin([Plugin, Api]) {
 			getEmojiWebpUrl: (emoji, size) => Utils.getEmojiUrl(emoji, size).replace('gif', 'webp'),
 			getEmojiGifUrl: (emoji, size) => Utils.getEmojiUrl(emoji, size).split('?')[0]
 		}
+
 		// Strings & Constants
 		const STRINGS = {
 			missingEmbedPermissionsErrorMessage: "Missing Embed Permissions",
 			disabledAnimatedEmojiErrorMessage: "You have disabled animated emojis in settings."
 		};
+
 		// styles
 		const css = `.premiumPromo-1eKAIB {
     display:none;
@@ -102,16 +107,19 @@ function initPlugin([Plugin, Api]) {
 .emojiItemDisabled-3VVnwp {
     filter: unset;
 }`;
+
 		return class Emojis extends Plugin {
 			constructor() {
 				super();
 				this.emojiClickHandler = this.emojiClickHandler.bind(this);
 			}
+
 			getEmojiUrl(emoji, size) {
 				if (this.settings.sendEmojiAsWebp)
 					return Utils.getEmojiWebpUrl(emoji, size);
 				if (emoji.animated)
 					return Utils.getEmojiGifUrl(emoji);
+
 				return Utils.getEmojiUrl(emoji, size);
 			}
 			sendEmojiAsLink(emoji, channel) {
@@ -123,6 +131,7 @@ function initPlugin([Plugin, Api]) {
 				else
 					InsertText(Utils.getEmojiUrl(emoji, this.settings.emojiSize));
 			}
+
 			getReply(channelId) {
 				const reply = PendingReplyStore.getPendingReply(channelId);
 				if (!reply) return {};
@@ -139,13 +148,16 @@ function initPlugin([Plugin, Api]) {
 					}
 				}
 			}
+
 			handleUnsendableEmoji(emoji, channel, user) {
 				if (emoji.animated && !this.settings.shouldSendAnimatedEmojis)
 					return Utils.showToast(STRINGS.disabledAnimatedEmojiErrorMessage, "info");
 				if (!Utils.hasEmbedPerms(channel, user) && !this.settings.ignoreEmbedPermissions)
 					return Utils.showToast(STRINGS.missingEmbedPermissionsErrorMessage, "info");
+
 				this.sendEmojiAsLink(emoji, channel);
 			}
+
 			emojiHandler(emoji) {
 				const user = UserStore.getCurrentUser();
 				const intention = EmojiIntentionEnum.CHAT;
@@ -153,18 +165,21 @@ function initPlugin([Plugin, Api]) {
 				if (!Utils.isEmojiSendable({ emoji, channel, intention }))
 					this.handleUnsendableEmoji(emoji, channel, user);
 			}
+
 			emojiClickHandler(e) {
 				if (e.button === 2) return;
 				const props = getInternalInstance(e.target)?.pendingProps;
 				if (props && props["data-type"]?.toLowerCase() === "emoji" && props.children)
 					this.emojiHandler(props.children.props.emoji);
 			}
+
 			patchEmojiPickerUnavailable() {
 				Patcher.after(EmojiFunctions, "isEmojiFiltered", (_, args, ret) => false);
 				Patcher.after(EmojiFunctions, "getEmojiUnavailableReason", (_, args, ret) =>
 					ret === EmojiSendAvailabilityEnum.DISALLOW_EXTERNAL ? EmojiSendAvailabilityEnum.PREMIUM_LOCKED : ret
 				);
 			}
+
 			onStart() {
 				try {
 					DOM.addStyle(css);
@@ -174,11 +189,13 @@ function initPlugin([Plugin, Api]) {
 					console.error(e);
 				}
 			}
+
 			onStop() {
 				document.removeEventListener("mouseup", this.emojiClickHandler);
 				DOM.removeStyle();
 				Patcher.unpatchAll();
 			}
+
 			getSettingsPanel() {
 				return this.buildSettingsPanel().getElement();
 			}
@@ -186,6 +203,7 @@ function initPlugin([Plugin, Api]) {
 	};
 	return plugin(Plugin, Api);
 }
+
 module.exports = !global.ZeresPluginLibrary ?
 	() => ({
 		stop() {},
