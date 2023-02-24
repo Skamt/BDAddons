@@ -33,6 +33,7 @@ function initPlugin([Plugin, Api]) {
 		const {
 			UI,
 			Data,
+			DOM,
 			React,
 			React: { useState, useEffect },
 			Patcher,
@@ -68,6 +69,18 @@ function initPlugin([Plugin, Api]) {
 			}
 		}, { searchExports: true });
 
+		const css = `.nick {
+    line-height: 1.375rem;
+    color: #fff;
+    vertical-align: baseline;
+    display: inline-block;
+    cursor: default;
+    pointer-events: none;
+    font-weight: 500;
+    margin-left: .5rem;
+    margin-right: -.25rem;
+}
+`;
 		const AddUserNickname = ({ props, user }) => {
 			const [value, setValue] = useState(Data.load(user.id) || "");
 
@@ -140,43 +153,34 @@ function initPlugin([Plugin, Api]) {
 						}))));
 
 		};
+
 		return class CustomNicknames extends Plugin {
 
 			constructor() {
 				super();
 			}
 
-			setUserNickName(user) {
-				openModal(props => React.createElement(AddUserNickname, { props, user }));
-			}
-
-			patch() {
-				this.patches = [Patcher.before(MessageHeader, "Z", (_, [{ author, message }]) => {
-						const authorId = message.author.id;
-						const nick = Data.load(authorId);
-						if (nick && !author.nick.includes(`| ${nick}`))
-							author.nick = `${author.nick} | ${nick}`
+			onStart() {
+				DOM.addStyle(css);
+				this.patches = [
+					Patcher.before(MessageHeader, "Z", (_, [{ message, decorations }]) => {
+						const nick = Data.load(message.author.id);
+						if (nick)
+							decorations[0] = React.createElement('span', { className: "nick" }, `${nick}`);
 					}),
 					ContextMenu.patch("user-context", (retVal, { user }) => {
 						if (user.id !== UserStore.getCurrentUser().id)
 							retVal.props.children.unshift(ContextMenu.buildItem({
 								type: "button",
 								label: "Add user nickname",
-								action: () => this.setUserNickName(user)
+								action: () => openModal(props => React.createElement(AddUserNickname, { props, user }))
 							}));
 					})
 				]
 			}
 
-			onStart() {
-				try {
-					this.patch();
-				} catch (e) {
-					console.error(e);
-				}
-			}
-
 			onStop() {
+				DOM.removeStyle();
 				this.patches.forEach(p => p())
 			}
 
