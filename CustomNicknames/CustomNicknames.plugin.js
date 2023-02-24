@@ -1,6 +1,6 @@
 /**
  * @name CustomNicknames
- * @description Empty description
+ * @description Allows you to add custom nicknames to users locally
  * @version 1.0.0
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/CustomNicknames
@@ -10,22 +10,13 @@ const config = {
 	info: {
 		name: "CustomNicknames",
 		version: "1.0.0",
-		description: "Empty description",
+		description: "Allows you to add custom nicknames to users locally",
 		source: "https://raw.githubusercontent.com/Skamt/BDAddons/main/CustomNicknames/CustomNicknames.plugin.js",
 		github: "https://github.com/Skamt/BDAddons/tree/main/CustomNicknames",
 		authors: [{
 			name: "Skamt"
 		}]
-	},
-	defaultConfig: [{
-		type: "slider",
-		id: "id",
-		name: "name",
-		note: "note",
-		value: 160,
-		markers: [20, 40, 80, 160, 320],
-		stickToMarkers: true
-	}]
+	}
 };
 
 function initPlugin([Plugin, Api]) {
