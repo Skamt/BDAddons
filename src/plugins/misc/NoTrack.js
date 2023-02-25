@@ -3,7 +3,7 @@ new class RemoveTrackersfromURLS extends Disposable {
 		super();
 		this.targets = ["spotify"];
 	}
-	
+
 	urlRegex(name) {
 		return new RegExp(`((?:https|http)\\:\\/\\/(?:.*\\.)?${name}\\..*\\/\\S+)`, 'g')
 	}
@@ -31,12 +31,17 @@ new class RemoveTrackersfromURLS extends Disposable {
 	}
 
 	Init() {
+		if (!this.once) {
+			nativeModules.setObservedGamesCallback = _ => {};
+			Analytics.default.track = _ => {};
+			this.once = true;
+		}
 		this.patches = [
 			Patcher.before(MessageActions, "sendMessage", (_, [, message]) => {
 				message.content = this.handleMessage(message.content);
 			}),
-
 			Patcher.before(Dispatcher, "dispatch", (_, [type, message]) => {
+				if (type === "EXPERIMENT_TRIGGER") return {};
 				if (type === "MESSAGE_CREATE")
 					if (message.author.id !== DiscordModules.UserStore.getCurrentUser().id)
 						message.content = this.handleMessage(message.content);

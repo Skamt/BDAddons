@@ -19,15 +19,15 @@ class Disposable {
 const electron = require('electron');
 const MessageActions = DiscordModules.MessageActions;
 const UserStore = DiscordModules.UserStore;
-const DeviceStore = BdApi.Webpack.getModule(m => m?.getActiveSocketAndDevice);
-const nativeModules = getModule((m, e, i) => m.default.setObservedGamesCallback);
+const DeviceStore = getModule(m => m?.getActiveSocketAndDevice);
+const nativeModules = getModule(m => m.getDiscordUtils)
 const Dispatcher = getModule(Filters.byProps("dispatch", "subscribe"));
+const Analytics = getModule(m => m?.AnalyticEventConfigs);
 
 const mods = [
-	require("StopDiscordMonitoringRunningGames.js"),
+	require("NoTrack.js"),
 	require("SpotifyListenAlong.js"),
 	require("ConsoleToggleButton.js"),
-	require("RemoveTrackersfromURLS.js")
 ];
 
 module.exports = () => ({
