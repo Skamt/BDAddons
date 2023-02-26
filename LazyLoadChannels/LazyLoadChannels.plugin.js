@@ -157,26 +157,24 @@ function initPlugin([Plugin, Api]) {
 }
 
 #lazyLoader > .channel {
-	background: #232527;
-	box-sizing: border-box;
-	min-width: 200px;
-	border-radius: 5px;
-	display: flex;
-	align-items: center;
-	font-weight: 500;
-	font-size: 1.3em;
-	margin-bottom: 20px;
-}
-
-#lazyLoader > .channel > li{
-	max-width: 100%;
-	width: 100%;
-	margin: 5px;
+    background: #232527;
+    box-sizing: border-box;
+    min-width: 200px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    font-weight: 500;
+    font-size: 1.3em;
+    margin-bottom: 20px;
+    max-width: 600px;
 }
 
 #lazyLoader > .channel > .channelName {
-	color: #989aa2;
-	padding: 5px 25px 5px 5px;
+    color: #989aa2;
+    padding: 8px 25px 8px 5px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
 }
 
 #lazyLoader > .channel > .channelIcon {

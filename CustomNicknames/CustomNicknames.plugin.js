@@ -68,10 +68,11 @@ function initPlugin([Plugin, Api]) {
     cursor: default;
     pointer-events: none;
     font-weight: 500;
-    margin-left: .5rem;
-    margin-right: -.25rem;
+    margin:0 0rem 0 .5rem;
 }
-`;
+.nick + span {
+    margin-left:.5rem;
+}`;
 		const AddUserNickname = ({ props, user }) => {
 			const [value, setValue] = useState(Data.load(user.id) || "");
 

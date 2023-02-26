@@ -46,8 +46,8 @@ const config = {
 		id: "emojiSize",
 		name: "Emoji Size",
 		note: "The size of the Emoji in pixels.",
-		value: 60,
-		markers: [40, 48, 60, 64, 80],
+		value: 96,
+		markers: [40, 48, 60, 64, 80, 96],
 		stickToMarkers: true
 	}]
 };
@@ -57,6 +57,7 @@ function initPlugin([Plugin, Api]) {
 		const {
 			UI,
 			DOM,
+			Utils,
 			Patcher,
 			ReactUtils: {
 				getInternalInstance
@@ -85,13 +86,13 @@ function initPlugin([Plugin, Api]) {
 		})();
 
 		// Helper functions
-		const Utils = {
+		const SelfUtils = {
 			showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),
 			hasEmbedPerms: (channel, user) => !channel.guild_id || Permissions.can({ permission: DiscordPermissions.EMBED_LINKS, context: channel, user }),
 			isEmojiSendable: (e) => EmojiFunctions.getEmojiUnavailableReason(e) === null,
 			getEmojiUrl: (emoji, size) => `${emoji.url.replace(/(size=)(\d+)[&]/, '')}&size=${size}`,
-			getEmojiWebpUrl: (emoji, size) => Utils.getEmojiUrl(emoji, size).replace('gif', 'webp'),
-			getEmojiGifUrl: (emoji, size) => Utils.getEmojiUrl(emoji, size).split('?')[0]
+			getEmojiWebpUrl: (emoji, size) => SelfUtils.getEmojiUrl(emoji, size).replace('gif', 'webp'),
+			getEmojiGifUrl: (emoji, size) => SelfUtils.getEmojiUrl(emoji, size).replace('webp', 'gif')
 		}
 
 		// Strings & Constants
@@ -101,7 +102,7 @@ function initPlugin([Plugin, Api]) {
 		};
 
 		// styles
-		const css = `.premiumPromo-1eKAIB {
+		const css = `.CHAT .premiumPromo-1eKAIB {
     display:none;
 }
 .emojiItemDisabled-3VVnwp {
@@ -116,12 +117,13 @@ function initPlugin([Plugin, Api]) {
 
 			getEmojiUrl(emoji, size) {
 				if (this.settings.sendEmojiAsWebp)
-					return Utils.getEmojiWebpUrl(emoji, size);
+					return SelfUtils.getEmojiWebpUrl(emoji, size);
 				if (emoji.animated)
-					return Utils.getEmojiGifUrl(emoji);
+					return SelfUtils.getEmojiGifUrl(emoji, 4096);
 
-				return Utils.getEmojiUrl(emoji, size);
+				return SelfUtils.getEmojiUrl(emoji, size);
 			}
+
 			sendEmojiAsLink(emoji, channel) {
 				if (this.settings.sendDirectly)
 					MessageActions.sendMessage(channel.id, {
@@ -129,7 +131,7 @@ function initPlugin([Plugin, Api]) {
 						validNonShortcutEmojis: []
 					}, undefined, this.getReply(channel.id));
 				else
-					InsertText(Utils.getEmojiUrl(emoji, this.settings.emojiSize));
+					InsertText(SelfUtils.getEmojiUrl(emoji, this.settings.emojiSize));
 			}
 
 			getReply(channelId) {
@@ -151,9 +153,9 @@ function initPlugin([Plugin, Api]) {
 
 			handleUnsendableEmoji(emoji, channel, user) {
 				if (emoji.animated && !this.settings.shouldSendAnimatedEmojis)
-					return Utils.showToast(STRINGS.disabledAnimatedEmojiErrorMessage, "info");
-				if (!Utils.hasEmbedPerms(channel, user) && !this.settings.ignoreEmbedPermissions)
-					return Utils.showToast(STRINGS.missingEmbedPermissionsErrorMessage, "info");
+					return SelfUtils.showToast(STRINGS.disabledAnimatedEmojiErrorMessage, "info");
+				if (!SelfUtils.hasEmbedPerms(channel, user) && !this.settings.ignoreEmbedPermissions)
+					return SelfUtils.showToast(STRINGS.missingEmbedPermissionsErrorMessage, "info");
 
 				this.sendEmojiAsLink(emoji, channel);
 			}
@@ -162,38 +164,72 @@ function initPlugin([Plugin, Api]) {
 				const user = UserStore.getCurrentUser();
 				const intention = EmojiIntentionEnum.CHAT;
 				const channel = ChannelStore.getChannel(SelectedChannelStore.getChannelId());
-				if (!Utils.isEmojiSendable({ emoji, channel, intention }))
+				if (!SelfUtils.isEmojiSendable({ emoji, channel, intention }))
 					this.handleUnsendableEmoji(emoji, channel, user);
 			}
 
-			emojiClickHandler(e) {
-				if (e.button === 2) return;
-				const props = getInternalInstance(e.target)?.pendingProps;
-				if (props && props["data-type"]?.toLowerCase() === "emoji" && props.children)
+			getPickerIntention(event) {
+				const picker = event.path.find(i => i.id === 'emoji-picker-tab-panel');
+				if (!picker) return [null];
+				const pickerInstance = getInternalInstance(picker);
+				const { pickerIntention } = BdApi.Utils.findInTree(pickerInstance, m => m && "pickerIntention" in m, { walkable: ["pendingProps", "children", "props"] }) || {};
+				return [pickerIntention, picker];
+			}
+
+			emojiClickHandler(event) {
+				if (event.button === 2) return;
+				const [pickerIntention, picker] = this.getPickerIntention(event);
+				if (pickerIntention !== EmojiIntentionEnum.CHAT) return;
+				picker.classList.add('CHAT');
+				const emojiInstance = getInternalInstance(event.target);
+				const props = emojiInstance?.pendingProps;
+				if (props && props["data-type"]?.toLowerCase() === "emoji" && props.children) {
 					this.emojiHandler(props.children.props.emoji);
+				}
 			}
 
 			patchEmojiPickerUnavailable() {
-				Patcher.after(EmojiFunctions, "isEmojiFiltered", (_, args, ret) => false);
-				Patcher.after(EmojiFunctions, "getEmojiUnavailableReason", (_, args, ret) =>
-					ret === EmojiSendAvailabilityEnum.DISALLOW_EXTERNAL ? EmojiSendAvailabilityEnum.PREMIUM_LOCKED : ret
-				);
+				/**
+				 * This patches allows server icons to show up on the left side of the picker
+				 * if external emojis are disabled, servers get filtered out
+				 * and it's handy to scroll through emojis easily
+				 */
+				Patcher.after(EmojiFunctions, "isEmojiFiltered", (_, [, , intention], ret) => {
+					if (intention !== EmojiIntentionEnum.CHAT) return ret;
+					return false;
+				});
+				/**
+				 * This patch allows emojis to be added to the picker
+				 * if external emojis are disabled, they don't get added to the picker
+				 * PREMIUM_LOCKED is returned becaause that is what's returned normally 
+				 
+				 * 0: "DISALLOW_EXTERNAL"
+				 * 1: "GUILD_SUBSCRIPTION_UNAVAILABLE"
+				 * 2: "PREMIUM_LOCKED"
+				 * 3: "ONLY_GUILD_EMOJIS_ALLOWED"
+				 * 4: "ROLE_SUBSCRIPTION_LOCKED"
+				 * 5: "ROLE_SUBSCRIPTION_UNAVAILABLE"
+				 */
+				Patcher.after(EmojiFunctions, "getEmojiUnavailableReason", (_, [{ intention }], ret) => {
+					if (intention !== EmojiIntentionEnum.CHAT) return ret;
+					return ret === EmojiSendAvailabilityEnum.DISALLOW_EXTERNAL ? EmojiSendAvailabilityEnum.PREMIUM_LOCKED : ret;
+				});
 			}
 
 			onStart() {
 				try {
 					DOM.addStyle(css);
-					document.addEventListener("mouseup", this.emojiClickHandler);
 					this.patchEmojiPickerUnavailable();
+					document.addEventListener("mouseup", this.emojiClickHandler);
 				} catch (e) {
 					console.error(e);
 				}
 			}
 
 			onStop() {
-				document.removeEventListener("mouseup", this.emojiClickHandler);
 				DOM.removeStyle();
 				Patcher.unpatchAll();
+				document.removeEventListener("mouseup", this.emojiClickHandler);
 			}
 
 			getSettingsPanel() {
