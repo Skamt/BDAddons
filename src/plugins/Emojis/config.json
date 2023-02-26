@@ -35,8 +35,8 @@
 		"id": "emojiSize",
 		"name": "Emoji Size",
 		"note": "The size of the Emoji in pixels.",
-		"value": 60,
-		"markers": [40, 48, 60, 64, 80],
+		"value": 96,
+		"markers": [40, 48, 60, 64, 80, 96],
 		"stickToMarkers": true
 	}]
 }
