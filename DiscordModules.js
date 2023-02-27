@@ -29,7 +29,7 @@ module.exports = {
 	"GuildPermissions": "getModule(Filters.byProps('getGuildPermissions'), { searchExports: true })",
 	"Popout": "getModule(Filters.byStrings('renderPopout', 'animationPosition'), { searchExports: true })",
 	"ExpressionPickerInspector": "getModule((m) => m.Z && m.Z.toString().includes('EMOJI_IS_FAVORITE_ARIA_LABEL'))",
-	"Tooltip": "getModule(m => m.defaultProps?.shouldShow)",
+	"Tooltip": "getModule(m => m.defaultProps?.shouldShow,{searchExports:true})",
 	"ModalRoot": "getModule(Filters.byStrings('onAnimationEnd'), { searchExports: true })",
 	"openModal": "getModule(Filters.byStrings('onCloseCallback', 'Layer'), { searchExports: true })",
 	"ModalCarousel": "getModule(m => m.prototype?.navigateTo && m.prototype?.preloadImage)",
