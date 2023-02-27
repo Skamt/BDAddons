@@ -81,9 +81,9 @@ function initPlugin([Plugin, Api]) {
 			},
 			loadChannelMessages(channel) {
 				/**
-				 * This method does not check the cache 
+				 * This method of fetching messages makes API request without checking the cache 
 				 * therefore it is only called when messages.length === 0
-				 * it also returns a promise, it is used to load messages and show toast 
+				 * and because it returns a promise, it is used to load messages and show toast 
 				 */
 				return MessageActions.fetchMessages({ channelId: channel.id });
 			},
@@ -452,19 +452,30 @@ function initPlugin([Plugin, Api]) {
 
 			channelCreateHandler({ channel }) {
 				/**
-				 * No need to lazy load, channel or thread if first created 
+				 * No need to lazy load newly created channels or threads 
 				 */
-				if (!channel.isDM())
+				if (!channel || !channel.guild_id || !channel.id) return;
+				if (!channel.isDM()) {
 					Utils.DataManager.add(channel.guild_id, channel.id);
+					this.loadChannel(channel);
+				}
 			}
 
 			guildCreateHandler({ guild }) {
 				/**
-				 * No need to lazy load created guild, save all channels
-				 * guild.member_count < 5 just to be safe for now
-				 * TODO: Detect guild created properly 
+				 * No need to lazy load channels of newly created guild
+				 * 
+				 * Snowflake conversion:
+				 *	+guild.id: convert guildid to Number
+				 *	4194304: the equivalent of right shifting by 22
+				 *	1420070400000: DISCORD_EPOCH
+				 * https://discord.com/developers/docs/reference#convert-snowflake-to-datetime
 				 */
-				if (guild.member_count < 5)
+				if (!guild || !guild.id || !guild.channels || !Array.isArray(guild.channels)) return;
+				const guildCreateDate = new Date(+guild.id / 4194304 + 1420070400000).toLocaleDateString();
+				const nowDate = new Date(Date.now()).toLocaleDateString();
+
+				if (guildCreateDate === nowDate)
 					guild.channels.forEach(channel => Utils.DataManager.add(channel.guild_id, channel.id))
 			}
 
