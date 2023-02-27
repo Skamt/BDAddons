@@ -1,7 +1,7 @@
 /**
  * @name ViewProfilePicture
  * @description Adds a button to the user popout and profile that allows you to view the Avatar and banner.
- * @version 1.0.3
+ * @version 1.0.4
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js
@@ -9,7 +9,7 @@
 const config = {
 	info: {
 		name: "ViewProfilePicture",
-		version: "1.0.3",
+		version: "1.0.4",
 		description: "Adds a button to the user popout and profile that allows you to view the Avatar and banner.",
 		source: "https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js",
 		github: "https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture",
@@ -29,14 +29,16 @@ module.exports = (() => {
 			getModule
 		}
 	} = new BdApi(config.info.name);
+
 	// https://discord.com/channels/86004744966914048/196782758045941760/1062604534922367107
 	function getModuleAndKey(filter) {
 		let module;
 		const target = BdApi.Webpack.getModule((entry, m) => filter(entry) ? (module = m) : false, { searchExports: true })
 		return [module.exports, Object.keys(module.exports).find(k => module.exports[k] === target)];
 	}
+
 	// Modules
-	const Tooltip = getModule(m => m.defaultProps?.shouldShow);
+	const Tooltip = getModule(m => m.defaultProps?.shouldShow, { searchExports: true });
 	const ModalRoot = getModule(Filters.byStrings('onAnimationEnd'), { searchExports: true });
 	const openModal = getModule(Filters.byStrings('onCloseCallback', 'Layer'), { searchExports: true });
 	const [ImageModalModule, ImageModalKey] = getModuleAndKey(m => {
@@ -53,8 +55,10 @@ module.exports = (() => {
 	const CurrentUserStore = getModule(Filters.byProps('getCurrentUser', 'getUsers'));
 	const SelectedGuildStore = getModule(Filters.byProps('getLastSelectedGuildId'));
 	const renderLinkComponent = getModule(m => m.type?.toString().includes('MASKED_LINK'));
+
 	// Constants
 	const IMG_WIDTH = 4096;
+
 	// Helper functions
 	const Utils = {
 		showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),
@@ -73,7 +77,8 @@ module.exports = (() => {
 			renderLinkComponent: p => React.createElement(renderLinkComponent, p)
 		})
 	};
-	// components
+
+	// Components
 	const ViewProfilePictureButton = (props) => {
 		return (
 			React.createElement(Tooltip, {
@@ -99,6 +104,7 @@ module.exports = (() => {
 							fill: "currentColor",
 							d: "M341.333,0H42.667C19.093,0,0,19.093,0,42.667v298.667C0,364.907,19.093,384,42.667,384h298.667 C364.907,384,384,364.907,384,341.333V42.667C384,19.093,364.907,0,341.333,0z M42.667,320l74.667-96l53.333,64.107L245.333,192l96,128H42.667z"
 						})))));
+
 	};
 	const DisplayCarousel = ({ props, items }) => {
 		return (
@@ -112,6 +118,7 @@ module.exports = (() => {
 					className: "modalCarouselWrapper-YK1MX4",
 					items: items.map((item) => ({ "component": item }))
 				})));
+
 	};
 	const ColorModal = ({ color, bannerColorCopyHandler }) => {
 		return (
@@ -123,7 +130,9 @@ module.exports = (() => {
 					className: "anchorUnderlineOnHover-2qPutX downloadLink-3cavAH",
 					onClick: (_) => Utils.copy(color)
 				}, "Copy Color")));
+
 	};
+
 	// styles
 	const css = `/* Warning circle in popouts of users who left server overlaps VPP button */
 svg.warningCircleIcon-2osUEe {
@@ -214,11 +223,14 @@ svg.warningCircleIcon-2osUEe {
 .VPP-carousel .imageWrapper-oMkQl4 > img {
 	max-height: 80vh;
 }`;
+
 	return class ViewProfilePicture {
 		constructor() {}
+
 		openCarousel(items) {
 			openModal(props => React.createElement(DisplayCarousel, { props, items }));
 		}
+
 		clickHandler(user, bannerObject, isUserPopout) {
 			const { backgroundColor, backgroundImage } = bannerObject;
 			const guildId = isUserPopout ? SelectedGuildStore.getGuildId() : "";
@@ -229,13 +241,16 @@ svg.warningCircleIcon-2osUEe {
 				React.createElement(ColorModal, { color: backgroundColor });
 			this.openCarousel([AvatarImageComponent, BannerImageComponent]);
 		}
+
 		patchUserBannerMask() {
 			Patcher.after(UserBannerMask, "Z", (_, [{ user, isPremium, profileType }], returnValue) => {
 				if (profileType === ProfileTypeEnum.SETTINGS) return;
+
 				const currentUser = CurrentUserStore.getCurrentUser();
 				let className = "VPP-Button";
 				if (profileType === ProfileTypeEnum.MODAL)
 					className += " VPP-profile"
+
 				const bannerObject = Utils.getNestedProp(returnValue, "props.children.1.props.children.props.style");
 				const children = Utils.getNestedProp(returnValue, "props.children.1.props.children.props.children");
 				className += user.id === currentUser.id ?
@@ -243,6 +258,7 @@ svg.warningCircleIcon-2osUEe {
 					bannerObject.backgroundImage ?
 					" VPP-left" :
 					" VPP-right";
+
 				if (Array.isArray(children) && bannerObject)
 					children.push(
 						React.createElement(ViewProfilePictureButton, {
@@ -252,6 +268,7 @@ svg.warningCircleIcon-2osUEe {
 					);
 			});
 		}
+
 		start() {
 			try {
 				DOM.addStyle(css);
@@ -260,6 +277,7 @@ svg.warningCircleIcon-2osUEe {
 				console.error(e);
 			}
 		}
+
 		stop() {
 			DOM.removeStyle();
 			Patcher.unpatchAll();
