@@ -65,7 +65,6 @@ function initPlugin([Plugin, Api]) {
 
 		// Helper functions
 		const Utils = {
-			isTagged: (str) => Object.values(TAGS).some(tag => str.includes(tag)),
 			showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),
 			getStickerUrl: (stickerId, size) => `https://media.discordapp.net/stickers/${stickerId}?size=${size}&passthrough=false`,
 			hasEmbedPerms: (channel, user) => !channel.guild_id || Permissions.can({ permission: DiscordPermissions.EMBED_LINKS, context: channel, user }),

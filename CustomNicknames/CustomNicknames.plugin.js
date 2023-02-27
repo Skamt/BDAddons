@@ -61,17 +61,18 @@ function initPlugin([Plugin, Api]) {
 		}, { searchExports: true });
 
 		const css = `.nick {
-    line-height: 1.375rem;
-    color: #fff;
-    vertical-align: baseline;
-    display: inline-block;
-    cursor: default;
-    pointer-events: none;
-    font-weight: 500;
-    margin:0 0rem 0 .5rem;
+	line-height: 1.375rem;
+	color: #fff;
+	vertical-align: baseline;
+	display: inline-block;
+	cursor: default;
+	pointer-events: none;
+	font-weight: 500;
+	margin: 0 0rem 0 0.5rem;
 }
+
 .nick + span {
-    margin-left:.5rem;
+	margin-left: 0.5rem;
 }`;
 		const AddUserNickname = ({ props, user }) => {
 			const [value, setValue] = useState(Data.load(user.id) || "");
