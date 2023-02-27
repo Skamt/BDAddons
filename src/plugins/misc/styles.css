@@ -1,18 +1,21 @@
 #console {
-  display:inline-block;
-  text-transform: none;
-  position:relative;
-  font-weight:bold;
-  top:-5px;
-  cursor: pointer;
-  font-size: 14px;
-  font-family: 'Noto Sans';
-  pointer-events: auto;
-  -webkit-app-region: no-drag;
+	display: inline-block;
+	text-transform: none;
+	position: relative;
+	font-weight: bold;
+	top: -5px;
+	cursor: pointer;
+	font-size: 14px;
+	font-family: "Noto Sans";
+	pointer-events: auto;
+	-webkit-app-region: no-drag;
 }
 
-
 #console:hover {
-  text-decoration: underline;
-  color: var(--text-normal);
+	text-decoration: underline;
+	color: var(--text-normal);
+}
+
+.active {
+	background: red;
 }

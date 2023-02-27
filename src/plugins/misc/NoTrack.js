@@ -1,7 +1,8 @@
-new class RemoveTrackersfromURLS extends Disposable {
+new class NoTrack extends Disposable {
 	constructor() {
 		super();
 		this.targets = ["spotify"];
+		this.blockedEvents = ["EXPERIMENT_TRIGGER","TRACK"];
 	}
 
 	urlRegex(name) {
@@ -30,18 +31,20 @@ new class RemoveTrackersfromURLS extends Disposable {
 		return msgcontent;
 	}
 
+	once() {
+		nativeModules.setObservedGamesCallback = _ => {};
+		Analytics.default.track = _ => {};
+		this.once = _ => {};
+	}
+
 	Init() {
-		if (!this.once) {
-			nativeModules.setObservedGamesCallback = _ => {};
-			Analytics.default.track = _ => {};
-			this.once = true;
-		}
+		this.once();
 		this.patches = [
 			Patcher.before(MessageActions, "sendMessage", (_, [, message]) => {
 				message.content = this.handleMessage(message.content);
 			}),
 			Patcher.before(Dispatcher, "dispatch", (_, [type, message]) => {
-				if (type === "EXPERIMENT_TRIGGER") return {};
+				if (this.blockedEvents.some(e => e === type)) return {};
 				if (type === "MESSAGE_CREATE")
 					if (message.author.id !== DiscordModules.UserStore.getCurrentUser().id)
 						message.content = this.handleMessage(message.content);

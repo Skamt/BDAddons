@@ -1,5 +1,5 @@
 new class ConsoleToggleButton extends Disposable {
-	constructor(){
+	constructor() {
 		super();
 		this.buildF12Button();
 		this.first = true;
@@ -9,19 +9,21 @@ new class ConsoleToggleButton extends Disposable {
 		return new Promise(resolve => { setTimeout(() => { resolve() }, delay * 1000) });
 	}
 
-	async Init() {
-		if (this.first) {
-			while (true) {
+	async addButtonConsoleButton() {
+		while (true) {
+			this.host = document.querySelector("#app-mount > div > div");
+			if (!this.host) {
 				await this.sleep(2);
-				this.host = document.querySelector("#app-mount > div > div");
-				if (!this.host) continue;
-				this.host.append(this.el);
-				this.first = false;
-				break;
+				continue;
 			}
-		} else {
 			this.host.append(this.el);
+			this.addButtonConsoleButton = () => this.host.append(this.el);
+			break;
 		}
+	}
+
+	Init() {
+		this.addButtonConsoleButton();
 	}
 
 	buildF12Button() {

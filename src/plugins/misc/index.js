@@ -8,11 +8,12 @@ const {
 
 class Disposable {
 	constructor() {
-		this.patches = []
+		this.patches = [];
 	}
 
 	Dispose() {
-		this.patches.forEach(p => p?.());
+		this.patches?.forEach(p => p?.());
+		this.patches = null;
 	}
 }
 
@@ -28,12 +29,13 @@ const mods = [
 	require("NoTrack.js"),
 	require("SpotifyListenAlong.js"),
 	require("ConsoleToggleButton.js"),
+	require("EmojiLetters.js"),
 ];
 
 module.exports = () => ({
 	start() {
 		DOM.addStyle(require("styles.css"));
-		mods.forEach(mod => !mod.once && mod.Init?.());
+		mods.forEach(mod => mod.Init?.());
 	},
 	stop() {
 		DOM.removeStyle();
