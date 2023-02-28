@@ -16,7 +16,7 @@ class Disposable {
 		this.patches = null;
 	}
 }
-
+const nop = () => {};
 const electron = require('electron');
 const MessageActions = DiscordModules.MessageActions;
 const UserStore = DiscordModules.UserStore;
@@ -30,6 +30,7 @@ const mods = [
 	require("SpotifyListenAlong.js"),
 	require("ConsoleToggleButton.js"),
 	require("EmojiLetters.js"),
+	require("FiltersTest.js"),
 ];
 
 module.exports = () => ({

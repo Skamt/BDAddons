@@ -18,9 +18,9 @@ module.exports = ({ target,  defaultState, previewComponent }) => {
 				</div>
 			)}
 			shouldShow={show}
-			position={Popout.Positions.LEFT}
-			align={Popout.Align.BOTTOM}
-			animation={Popout.Animation["SCALE"]}
+			position="left"
+			align="bottom"
+			animation="3"
 			spacing={60}>
 			{() => target}
 		</Popout>

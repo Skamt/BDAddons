@@ -32,9 +32,9 @@ new class NoTrack extends Disposable {
 	}
 
 	once() {
-		nativeModules.setObservedGamesCallback = _ => {};
-		Analytics.default.track = _ => {};
-		this.once = _ => {};
+		nativeModules.setObservedGamesCallback = nop;
+		Analytics.default.track = nop;
+		this.once = nop;
 	}
 
 	Init() {
