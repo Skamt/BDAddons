@@ -1,7 +1,7 @@
 /**
  * @name StickerEmojiPreview
  * @description Adds a zoomed preview to those tiny Stickers and Emojis
- * @version 1.0.3
+ * @version 1.0.4
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/StickerEmojiPreview
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/StickerEmojiPreview/StickerEmojiPreview.plugin.js
@@ -9,7 +9,7 @@
 const config = {
 	info: {
 		name: "StickerEmojiPreview",
-		version: "1.0.3",
+		version: "1.0.4",
 		description: "Adds a zoomed preview to those tiny Stickers and Emojis",
 		source: "https://raw.githubusercontent.com/Skamt/BDAddons/main/StickerEmojiPreview/StickerEmojiPreview.plugin.js",
 		github: "https://github.com/Skamt/BDAddons/tree/main/StickerEmojiPreview",
@@ -58,9 +58,9 @@ module.exports = (() => {
 							previewComponent),
 
 					shouldShow: show,
-					position: Popout.Positions.LEFT,
-					align: Popout.Align.BOTTOM,
-					animation: Popout.Animation["SCALE"],
+					position: "left",
+					align: "bottom",
+					animation: "3",
 					spacing: 60
 				},
 				() => target));
