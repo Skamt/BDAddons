@@ -19,3 +19,11 @@
 .active {
 	background: red;
 }
+[id^="message-reply-context"] .id {
+	display: none;
+}
+.id {
+	display: inline-block;
+	font-weight: 500;
+	margin: 0 0rem 0 0.5rem;
+}

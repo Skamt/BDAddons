@@ -50,10 +50,10 @@ module.exports = (Plugin, Api) => {
 		onStart() {
 			DOM.addStyle(css);
 			this.patches = [
-				Patcher.before(MessageHeader, "Z", (_, [{ message, decorations }]) => {
+				Patcher.after(MessageHeader, "Z", (_, [{ message }], ret) => {
 					const nick = Data.load(message.author.id);
 					if (nick)
-						decorations[0] = React.createElement('span', { className: "nick" }, `${nick}`);
+						ret.props.children.splice(3, 0, React.createElement('span', { className: "nick" }, nick))
 				}),
 				ContextMenu.patch("user-context", (retVal, { user }) => {
 					if (user.id !== UserStore.getCurrentUser().id)

@@ -115,10 +115,6 @@
     animation: de-wobble 1s;
 }
 
-.autoload{
-	border-left:4px solid #2e7d46;
-}
-
 @keyframes de-wobble {
 
   16.666666666666668% {    
@@ -139,4 +135,8 @@
   100% {    
     transform: translateX(0px) rotate(0deg);
   }
+}
+
+.autoload{
+	border-left:4px solid #2e7d46;
 }

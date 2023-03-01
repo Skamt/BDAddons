@@ -20,7 +20,7 @@ module.exports = (Plugin, Api) => {
 	}
 
 	// Modules
-	const { DiscordModules: { Dispatcher, GuildChannelsStore, MessageActions, SwitchRow, ButtonData } } = Api;
+	const { DiscordModules: { Dispatcher, SelectedGuildStore, GuildChannelsStore, MessageActions, SwitchRow, ButtonData } } = Api;
 	const ChannelActions = DiscordModules.ChannelActions;
 	const ChannelContent = DiscordModules.ChannelContent;
 	const DMChannel = DiscordModules.DMChannel;
@@ -195,8 +195,9 @@ module.exports = (Plugin, Api) => {
 
 		channelCreateHandler({ channel }) {
 			/**
-			 * No need to lazy load newly created channels or threads 
+			 * No need to lazy load channels or threads created by current user. 
 			 */
+			if(channel.guild_id !== SelectedGuildStore.getGuildId()) return;
 			if (!channel || !channel.guild_id || !channel.id) return;
 			if (!channel.isDM()) {
 				Utils.DataManager.add(channel.guild_id, channel.id);
