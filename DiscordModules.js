@@ -1,13 +1,28 @@
 module.exports = {
 	"SwitchRow": "getModule(m => m.toString().includes('tooltipNote'), { searchExports: true })",
-	"ImageModal": `m => {
+	"ImageModal": `getModuleAndKey(m => {
 		if (!m?.toString || typeof (m?.toString) !== "function") return;
 		const strs = ["original","maxHeight","maxWidth","noreferrer noopener"];
 		const funcStr = m?.toString();
 		for(const s of strs)
 			if (!funcStr.includes(s)) return false;
 		return true;
-	}`,
+	})`,
+	"ModalComponents": `(() => { 
+		let exp = undefined;
+		getModule((m, e) => m.toString().includes('onAnimationEnd') ? (true && (exp = e.exports)) : false, { searchExports: true });
+		if(!exp) return exp;
+		const funcs = Object.values(exp) || [];
+		const ModalHeader = funcs.find(Filters.byStrings('headerIdIsManaged', 'headerId', 'separator'));
+		const ModalBody = funcs.find(Filters.byStrings('scrollerRef', 'content', 'children'));
+		const ModalFooter = funcs.find(Filters.byStrings('footerSeparator'));
+		return [ModalHeader, ModalBody, ModalFooter];
+	})()`,
+	"Text": "getModule(Filters.byStrings('data-text-variant'), { searchExports: true })",
+	"Label": "getModule(Filters.byStrings('LEGEND', 'LABEL', 'h5'), { searchExports: true })",
+	"Markdown": "getModule((m) => m.Z?.rules && m.Z?.defaultProps?.parser).Z",
+	"UserStore": "getModule((m, e, i) => m.getCurrentUser && m.getUser)",
+	"MessageHeader": "getModule((m) => m.Z?.toString().includes('userOverride') && m.Z?.toString().includes('withMentionPrefix'))",
 	"PendingReplyStore": "getModule(m =>  m.getPendingReply)",
 	"DMChannel": "getModule(Filters.byStrings('isMobileOnline', 'channel'),{searchExports:true})",
 	"ChannelTypeEnum": "getModule(Filters.byProps('GUILD_TEXT','DM') ,{searchExports:true})",

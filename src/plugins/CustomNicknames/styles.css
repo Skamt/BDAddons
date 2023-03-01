@@ -9,6 +9,6 @@
 	margin: 0 0rem 0 0.5rem;
 }
 
-.nick + span {
-/*	margin-left: 0.5rem;*/
+[id^="message-reply-context"] .nick {
+	display: none;
 }

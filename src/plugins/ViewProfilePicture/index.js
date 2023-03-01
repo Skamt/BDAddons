@@ -21,7 +21,7 @@ module.exports = () => {
 	const Tooltip = DiscordModules.Tooltip;
 	const ModalRoot = DiscordModules.ModalRoot;
 	const openModal = DiscordModules.openModal;
-	const [ImageModalModule, ImageModalKey] = getModuleAndKey(DiscordModules.ImageModal);
+	const [ImageModalModule, ImageModalKey] = DiscordModules.ImageModal;
 	const ModalCarousel = DiscordModules.ModalCarousel;
 	const UserBannerMask = DiscordModules.UserBannerMask;
 	const ProfileTypeEnum = DiscordModules.ProfileTypeEnum;

@@ -18,25 +18,18 @@ module.exports = (Plugin, Api) => {
 		showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),
 	};
 
-	const MessageHeader = getModule((m) => m.Z?.toString().includes("userOverride") && m.Z?.toString().includes("withMentionPrefix"));
-	const Markdown = getModule((m) => m.Z?.rules && m.Z?.defaultProps?.parser).Z;
-	const UserStore = getModule((m, e, i) => m.getCurrentUser && m.getUser);
-
+	// Modules
 	const { DiscordModules: { ButtonData, Textbox, TextElement } } = Api;
+
+	const MessageHeader = DiscordModules.MessageHeader;
+	const Markdown = DiscordModules.Markdown;
+	const UserStore = DiscordModules.UserStore;
 	const openModal = DiscordModules.openModal;
 	const ModalRoot = DiscordModules.ModalRoot;
-	const Text = BdApi.Webpack.getModule(BdApi.Webpack.Filters.byStrings('data-text-variant'), { searchExports: true });
-	const Label = getModule(Filters.byStrings('LEGEND', 'LABEL', 'h5'), { searchExports: true });
-	let ModalHeader, ModalBody, ModalFooter;
-	getModule((m, e) => {
-		if (m.toString().includes('onAnimationEnd')) {
-			const funcs = Object.values(e.exports);
-			ModalHeader = funcs.find(Filters.byStrings('headerIdIsManaged', 'headerId', 'separator'));
-			ModalBody = funcs.find(Filters.byStrings('scrollerRef', 'content', 'children'));
-			ModalFooter = funcs.find(Filters.byStrings('footerSeparator'));
-			return true;
-		}
-	}, { searchExports: true });
+	const Text = DiscordModules.Text;
+	const Label = DiscordModules.Label;
+
+	const [ModalHeader, ModalBody, ModalFooter] = DiscordModules.ModalComponents;
 
 	const css = require("styles.css");
 	const AddUserNickname = require("components/AddUserNickname.jsx");
@@ -75,6 +68,5 @@ module.exports = (Plugin, Api) => {
 		getSettingsPanel() {
 			return this.buildSettingsPanel().getElement();
 		}
-
 	};
 }

@@ -17,5 +17,8 @@ module.exports = (content, pluginFolder, pluginFiles) => {
 	Object.keys(DiscordModules).forEach(Module => {
 		content = content.replace(new RegExp(`DiscordModules.${Module}`, "g"), () => DiscordModules[Module]);
 	});
+	content = content.replace("DiscordModules.ALL", () =>
+		`[${Object.entries(DiscordModules).map(([name,filter]) => `["${name}",${filter}]\n`)}]`
+	);
 	return content;
 };

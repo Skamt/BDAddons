@@ -16,7 +16,7 @@ module.exports = () => {
 		return [module.exports, Object.keys(module.exports).find(k => module.exports[k] === target)];
 	}
 	// Modules
-	const [ImageModalModule,ImageModalKey] = getModuleAndKey(DiscordModules.ImageModal);
+	const [ImageModalModule, ImageModalKey] = DiscordModules.ImageModal;
 
 	// Helper functions
 	const Utils = {
