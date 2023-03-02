@@ -13,26 +13,31 @@ module.exports = () => {
 	// https://discord.com/channels/86004744966914048/196782758045941760/1062604534922367107
 	function getModuleAndKey(filter) {
 		let module;
-		const target = BdApi.Webpack.getModule((entry, m) => filter(entry) ? (module = m) : false, { searchExports: true })
-		return [module.exports, Object.keys(module.exports).find(k => module.exports[k] === target)];
+		const target = getModule((entry, m) => filter(entry) ? (module = m) : false, { searchExports: true });
+		module = module?.exports;
+		if (!module) return undefined;
+		const key = Object.keys(module).find(k => module[k] === target);
+		if (!key) return undefined;
+		return { module, key };
 	}
-	
+
 	// Modules
-	const Tooltip = DiscordModules.Tooltip;
-	const ModalRoot = DiscordModules.ModalRoot;
-	const openModal = DiscordModules.openModal;
-	const [ImageModalModule, ImageModalKey] = DiscordModules.ImageModal;
-	const ModalCarousel = DiscordModules.ModalCarousel;
-	const UserBannerMask = DiscordModules.UserBannerMask;
-	const ProfileTypeEnum = DiscordModules.ProfileTypeEnum;
-	const CurrentUserStore = DiscordModules.CurrentUserStore;
-	const SelectedGuildStore = DiscordModules.SelectedGuildStore;
-	const renderLinkComponent = DiscordModules.renderLinkComponent;
+	const Modules = {
+		Tooltip: DiscordModules.Tooltip,
+		ModalRoot: DiscordModules.ModalRoot,
+		openModal: DiscordModules.openModal,
+		ImageModal: DiscordModules.ImageModal,
+		ModalCarousel: DiscordModules.ModalCarousel,
+		UserBannerMask: DiscordModules.UserBannerMask,
+		ProfileTypeEnum: DiscordModules.ProfileTypeEnum,
+		CurrentUserStore: DiscordModules.CurrentUserStore,
+		SelectedGuildStore: DiscordModules.SelectedGuildStore,
+		renderLinkComponent: DiscordModules.renderLinkComponent
+	}
 
-	// Constants
-	const IMG_WIDTH = 4096;
+	failsafe;
 
-	// Helper functions
+	// Utilities
 	const Utils = {
 		showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),
 		copy: (data) => {
@@ -43,32 +48,35 @@ module.exports = () => {
 		getNestedProp: (obj, path) => path.split(".").reduce(function(ob, prop) {
 			return ob && ob[prop];
 		}, obj),
-		getImageModalComponent: (Url, props) => React.createElement(ImageModalModule[ImageModalKey], {
+		getImageModalComponent: (Url, props) => React.createElement(Modules.ImageModal.module[Modules.ImageModal.key], {
 			...props,
 			src: Url,
 			original: Url,
-			renderLinkComponent: p => React.createElement(renderLinkComponent, p)
+			renderLinkComponent: p => React.createElement(Modules.renderLinkComponent, p)
 		})
 	};
+
+	// Constants
+	const IMG_WIDTH = 4096;
 
 	// Components
 	const ViewProfilePictureButton = require("components/ViewProfilePictureButton.jsx");
 	const DisplayCarousel = require("components/DisplayCarousel.jsx");
 	const ColorModal = require("components/ColorModal.jsx");
 
-	// styles
+	// Styles
 	const css = require("styles.css");
 
 	return class ViewProfilePicture {
 		constructor() {}
 
 		openCarousel(items) {
-			openModal(props => React.createElement(DisplayCarousel, { props, items }));
+			Modules.openModal(props => React.createElement(DisplayCarousel, { props, items }));
 		}
 
 		clickHandler(user, bannerObject, isUserPopout) {
 			const { backgroundColor, backgroundImage } = bannerObject;
-			const guildId = isUserPopout ? SelectedGuildStore.getGuildId() : "";
+			const guildId = isUserPopout ? Modules.SelectedGuildStore.getGuildId() : "";
 			const avatarURL = user.getAvatarURL(guildId, IMG_WIDTH, true);
 			const AvatarImageComponent = Utils.getImageModalComponent(avatarURL, { width: IMG_WIDTH, height: IMG_WIDTH });
 			const BannerImageComponent = backgroundImage ?
@@ -78,12 +86,12 @@ module.exports = () => {
 		}
 
 		patchUserBannerMask() {
-			Patcher.after(UserBannerMask, "Z", (_, [{ user, isPremium, profileType }], returnValue) => {
-				if (profileType === ProfileTypeEnum.SETTINGS) return;
+			Patcher.after(Modules.UserBannerMask, "Z", (_, [{ user, isPremium, profileType }], returnValue) => {
+				if (profileType === Modules.ProfileTypeEnum.SETTINGS) return;
 
-				const currentUser = CurrentUserStore.getCurrentUser();
+				const currentUser = Modules.CurrentUserStore.getCurrentUser();
 				let className = "VPP-Button";
-				if (profileType === ProfileTypeEnum.MODAL)
+				if (profileType === Modules.ProfileTypeEnum.MODAL)
 					className += " VPP-profile"
 
 				const bannerObject = Utils.getNestedProp(returnValue, "props.children.1.props.children.props.style");
@@ -98,7 +106,7 @@ module.exports = () => {
 					children.push(
 						React.createElement(ViewProfilePictureButton, {
 							className,
-							onClick: _ => this.clickHandler(user, bannerObject, ProfileTypeEnum.POPOUT === profileType)
+							onClick: _ => this.clickHandler(user, bannerObject, Modules.ProfileTypeEnum.POPOUT === profileType)
 						})
 					);
 			});

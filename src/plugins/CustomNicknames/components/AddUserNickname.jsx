@@ -22,50 +22,50 @@ module.exports = ({ props, user }) => {
 	const Clear = () => setValue("");
 
 	return (
-		<ModalRoot {...props}>
-			<ModalHeader separator={false}>
-				<Text
+		<Modules.ModalRoot {...props}>
+			<Modules.ModalHeader separator={false}>
+				<Modules.Text
 					children="Add User Nickname"
 					variant="heading-lg/semibold"
 				/>
-			</ModalHeader>
-			<ModalBody>
-				<Text
+			</Modules.ModalHeader>
+			<Modules.ModalBody>
+				<Modules.Text
 					children="Find a friend faster with a personal nickname. It will only be visible to you in your direct messages."
 					className="description-2pRfjZ"
 					variant="text-md/normal"
 				/>
-				<Label children="User Nickname" />
-				<Textbox
-					{...Textbox.defaultProps}
+				<Modules.Label children="User Nickname" />
+				<Modules.Textbox
+					{...Modules.Textbox.defaultProps}
 					className="input-2i7ay7"
 					autoFocus={true}
 					placeholder={user.username}
 					onChange={setValue}
 					value={value}
 				/>
-				<ButtonData
+				<Modules.ButtonData
 					children="Reset user nickname"
 					className="reset-Gp82ub"
 					size=""
 					onClick={Clear}
-					color={ButtonData.Colors.LINK}
-					look={ButtonData.Looks.LINK}
+					color={Modules.ButtonData.Colors.LINK}
+					look={Modules.ButtonData.Looks.LINK}
 				/>
-			</ModalBody>
-			<ModalFooter>
-				<ButtonData
+			</Modules.ModalBody>
+			<Modules.ModalFooter>
+				<Modules.ButtonData
 					children="Save"
 					onClick={Save}
 				/>
 
-				<ButtonData
+				<Modules.ButtonData
 					children="Cancel"
 					onClick={props.onClose}
-					color={ButtonData.Colors.PRIMARY}
-					look={ButtonData.Looks.LINK}
+					color={Modules.ButtonData.Colors.PRIMARY}
+					look={Modules.ButtonData.Looks.LINK}
 				/>
-			</ModalFooter>
-		</ModalRoot>
+			</Modules.ModalFooter>
+		</Modules.ModalRoot>
 	);
 };

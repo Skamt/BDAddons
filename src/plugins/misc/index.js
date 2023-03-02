@@ -18,10 +18,15 @@ class Disposable {
 	}
 }
 
+// https://discord.com/channels/86004744966914048/196782758045941760/1062604534922367107
 function getModuleAndKey(filter) {
 	let module;
-	const target = BdApi.Webpack.getModule((entry, m) => filter(entry) ? (module = m) : false, { searchExports: true })
-	return [module.exports, Object.keys(module.exports).find(k => module.exports[k] === target)];
+	const target = getModule((entry, m) => filter(entry) ? (module = m) : false, { searchExports: true });
+	module = module?.exports;
+	if (!module) return undefined;
+	const key = Object.keys(module).find(k => module[k] === target);
+	if (!key) return undefined;
+	return { module, key };
 }
 const nop = () => {};
 

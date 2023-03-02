@@ -9,64 +9,60 @@ module.exports = () => {
 		}
 	} = new BdApi(config.info.name);
 
-	// Helper functions
+	// https://discord.com/channels/86004744966914048/196782758045941760/1062604534922367107
+	function getModuleAndKey(filter) {
+		let module;
+		const target = getModule((entry, m) => filter(entry) ? (module = m) : false, { searchExports: true });
+		module = module?.exports;
+		if (!module) return undefined;
+		const key = Object.keys(module).find(k => module[k] === target);
+		if (!key) return undefined;
+		return { module, key };
+	}
+
+	// Modules
+	const Modules = {
+		StickerModule: DiscordModules.StickerModule,
+		PendingReplyStore: DiscordModules.PendingReplyStore,
+		Permissions: DiscordModules.Permissions,
+		ChannelStore: DiscordModules.ChannelStore,
+		DiscordPermissions: DiscordModules.DiscordPermissions,
+		MessageActions: DiscordModules.MessageActions,
+		UserStore: DiscordModules.UserStore,
+		StickerStore: DiscordModules.StickerStore,
+		StickerTypeEnum: DiscordModules.StickerTypeEnum,
+		StickerFormatEnum: DiscordModules.StickerFormatEnum,
+		InsertText: (() => {
+			let ComponentDispatch;
+			return (content) => {
+				if (!ComponentDispatch) ComponentDispatch = DiscordModules.ComponentDispatch;
+				ComponentDispatch.dispatchToLastSubscribed("INSERT_TEXT", {
+					plainText: content
+				});
+			}
+		})(),
+		...(() => {
+			const StickersSendability = getModule(m => Object.keys(m).some(key => m[key]?.SENDABLE_WITH_BOOSTED_GUILD));
+			if (!StickersSendability) return undefined;
+			const exports = Object.entries(StickersSendability).map(([key, fn]) => (fn.key = key, fn));
+			const StickersSendabilityEnum = exports.splice(exports.findIndex(Filters.byProps('SENDABLE_WITH_BOOSTED_GUILD')), 1)[0];
+			const getStickerSendability = exports.splice(exports.findIndex(Filters.byStrings('canUseStickersEverywhere')), 1)[0];
+			const isStickerSendable = exports[0];
+			return { StickersSendability, StickersSendabilityEnum, getStickerSendability, isStickerSendable }
+		})()
+	}
+	
+	failsafe;
+
+	// Utilities
 	const Utils = {
 		showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),
 		getStickerUrl: (stickerId, size) => `https://media.discordapp.net/stickers/${stickerId}?size=${size}&passthrough=false`,
-		hasEmbedPerms: (channel, user) => !channel.guild_id || Permissions.can({ permission: DiscordPermissions.EMBED_LINKS, context: channel, user }),
-		isLottieSticker: sticker => sticker.type === StickerTypeEnum.STANDARD,
-		isAnimatedSticker: sticker => sticker["format_type"] === StickerFormatEnum.APNG,
-		isStickerSendable: (sticker, channel, user) => getStickerSendability(sticker, user, channel) === StickersSendabilityEnum.SENDABLE,
-		getModuleAndKey(filter) {
-			let module;
-			const target = BdApi.Webpack.getModule((entry, m) => filter(entry) ? (module = m) : false, { searchExports: true })
-			return [module.exports, Object.keys(module.exports).find(k => module.exports[k] === target)];
-		}
+		hasEmbedPerms: (channel, user) => !channel.guild_id || Modules.Permissions.can({ permission: Modules.DiscordPermissions.EMBED_LINKS, context: channel, user }),
+		isLottieSticker: sticker => sticker.type === Modules.StickerTypeEnum.STANDARD,
+		isAnimatedSticker: sticker => sticker["format_type"] === Modules.StickerFormatEnum.APNG,
+		isStickerSendable: (sticker, channel, user) => Modules.getStickerSendability(sticker, user, channel) === Modules.StickersSendabilityEnum.SENDABLE
 	};
-
-	// Modules
-	const [StickerModule, StickerModulePatchTarget] = Utils.getModuleAndKey(Filters.byStrings('sticker', 'withLoadingIndicator'));
-	const PendingReplyStore = DiscordModules.PendingReplyStore;
-	const Permissions = DiscordModules.Permissions;
-	const ChannelStore = DiscordModules.ChannelStore;
-	const DiscordPermissions = DiscordModules.DiscordPermissions;
-	const MessageActions = DiscordModules.MessageActions;
-	const UserStore = DiscordModules.UserStore;
-	const StickerStore = DiscordModules.StickerStore;
-	const ChannelTextArea = DiscordModules.ChannelTextArea;
-	const StickerTypeEnum = DiscordModules.StickerTypeEnum;
-	const StickerFormatEnum = DiscordModules.StickerFormatEnum;
-	let StickersSendabilityEnumKey, getStickerSendabilityKey, isSendableStickerKey;
-	const StickersSendability = getModule(exp => {
-		const keys = Object.keys(exp);
-		if (keys.some(key => exp[key]?.SENDABLE_WITH_BOOSTED_GUILD)) {
-			StickersSendabilityEnumKey = keys.find(key => exp[key].SENDABLE_WITH_BOOSTED_GUILD);
-			getStickerSendabilityKey = keys.find(key => exp[key].toString().includes('SENDABLE_WITH_PREMIUM'));
-			isSendableStickerKey = keys.find(key => !exp[key].toString().includes('SENDABLE_WITH_PREMIUM') && !exp[key].SENDABLE_WITH_BOOSTED_GUILD);
-			return true;
-		}
-	});
-	const StickersSendabilityEnum = StickersSendability[StickersSendabilityEnumKey];
-	const getStickerSendability = StickersSendability[getStickerSendabilityKey];;
-	const InsertText = (() => {
-		let ComponentDispatch;
-		return (content) => {
-			if (!ComponentDispatch) ComponentDispatch = DiscordModules.ComponentDispatch;
-			/**
-			 * Not sure why but when using this method of inserting text 
-			 * from whiting a patch or maybe this patch 'patchSendSticker' 
-			 * it just doesn't work
-			 * i did trace through and got into a deep rabbit hole so i just gave up on it.
-			 * Yet as we all know, when in doubt wait for the stack to empty out
-			 */
-			setTimeout(() => {
-				ComponentDispatch.dispatchToLastSubscribed("INSERT_TEXT", {
-					plainText: content,
-					rawText: content
-				});
-			}, 0);
-		}
-	})();
 
 	// Strings & Constants
 	const TAGS = {
@@ -78,7 +74,7 @@ module.exports = () => {
 		disabledAnimatedStickersErrorMessage: "You have disabled animated stickers in settings."
 	};
 
-	// styles
+	// Styles
 	const css = require("styles.css");
 
 	return class SendStickersAsLinks extends Plugin {
@@ -97,16 +93,16 @@ module.exports = () => {
 
 		sendStickerAsLink(sticker, channel, direct) {
 			if (this.settings.sendDirectly || direct)
-				MessageActions.sendMessage(channel.id, {
+				Modules.MessageActions.sendMessage(channel.id, {
 					content: Utils.getStickerUrl(sticker.id, this.settings.stickerSize),
 					validNonShortcutEmojis: []
 				}, undefined, this.getReply(channel.id));
 			else
-				InsertText(Utils.getStickerUrl(sticker.id, this.settings.stickerSize));
+				Modules.InsertText(Utils.getStickerUrl(sticker.id, this.settings.stickerSize));
 		}
 
 		getReply(channelId) {
-			const reply = PendingReplyStore.getPendingReply(channelId);
+			const reply = Modules.PendingReplyStore.getPendingReply(channelId);
 			if (!reply) return {};
 			return {
 				messageReference: {
@@ -122,9 +118,9 @@ module.exports = () => {
 		}
 
 		handleSticker(channelId, stickerId) {
-			const user = UserStore.getCurrentUser();
-			const sticker = StickerStore.getStickerById(stickerId);
-			const channel = ChannelStore.getChannel(channelId);
+			const user = Modules.UserStore.getCurrentUser();
+			const sticker = Modules.StickerStore.getStickerById(stickerId);
+			const channel = Modules.ChannelStore.getChannel(channelId);
 			return {
 				user,
 				sticker,
@@ -137,7 +133,7 @@ module.exports = () => {
 			/** 
 			 * The existance of this plugin implies the existance of this patch 
 			 */
-			Patcher.instead(MessageActions, 'sendStickers', (_, args, originalFunc) => {
+			Patcher.instead(Modules.MessageActions, 'sendStickers', (_, args, originalFunc) => {
 				const [channelId, [stickerId]] = args;
 				const stickerObj = this.handleSticker(channelId, stickerId);
 				if (stickerObj.isSendable)
@@ -154,7 +150,7 @@ module.exports = () => {
 			 * the sticker will be added as attachment, and therefore triggers an api request
 			 * must intercept, adapt, overcome, what..?
 			 */
-			Patcher.before(MessageActions, 'sendMessage', (_, args) => {
+			Patcher.before(Modules.MessageActions, 'sendMessage', (_, args) => {
 				const [channelId, , , attachments] = args;
 				if (attachments && attachments.stickerIds && attachments.stickerIds.filter) {
 					const [stickerId] = attachments.stickerIds;
@@ -170,22 +166,22 @@ module.exports = () => {
 		}
 
 		patchChannelGuildPermissions() {
-			Patcher.after(Permissions, "can", (_, [{ permission }], ret) =>
-				ret || DiscordPermissions.USE_EXTERNAL_EMOJIS === permission
+			Patcher.after(Modules.Permissions, "can", (_, [{ permission }], ret) =>
+				ret || Modules.DiscordPermissions.USE_EXTERNAL_EMOJIS === permission
 			);
 		}
 
 		patchStickerClickability() {
 			// if it's a guild sticker return true to make it clickable 
 			// ignoreing discord's stickers because ToS, and they're not regular images
-			Patcher.after(StickersSendability, isSendableStickerKey, (_, args, returnValue) => {
-				return args[0].type === StickerTypeEnum.GUILD;
+			Patcher.after(Modules.StickersSendability, Modules.isStickerSendable.key, (_, args, returnValue) => {
+				return args[0].type === Modules.StickerTypeEnum.GUILD;
 			});
 		}
 
 		patchGetStickerById() {
-			Patcher.after(StickerModule, StickerModulePatchTarget, (_, args, returnValue) => {
-				const {size,sticker} = returnValue.props.children[0].props;
+			Patcher.after(Modules.StickerModule, Modules.StickerModule.key, (_, args, returnValue) => {
+				const { size, sticker } = returnValue.props.children[0].props;
 				if (size === 96) {
 					if (this.settings.shouldHighlightAnimated && !Utils.isLottieSticker(sticker) && Utils.isAnimatedSticker(sticker)) {
 						returnValue.props.children[0].props.className += " animatedSticker"
@@ -196,9 +192,9 @@ module.exports = () => {
 
 		patchStickerSuggestion() {
 			// Enable suggestions for custom stickers only 
-			Patcher.after(StickersSendability, getStickerSendabilityKey, (_, args, returnValue) => {
-				if (args[0].type === StickerTypeEnum.GUILD) {
-					const { SENDABLE } = StickersSendabilityEnum;
+			Patcher.after(Modules.StickersSendability, Modules.getStickerSendability.key, (_, args, returnValue) => {
+				if (args[0].type === Modules.StickerTypeEnum.GUILD) {
+					const { SENDABLE } = Modules.StickersSendabilityEnum;
 					return returnValue !== SENDABLE ? SENDABLE : returnValue;
 				}
 			});

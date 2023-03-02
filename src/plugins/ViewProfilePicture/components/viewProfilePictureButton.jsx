@@ -1,6 +1,6 @@
 module.exports = (props) => {
 	return (
-		<Tooltip
+		<Modules.Tooltip
 			text="View profile picture"
 			position="top">
 			{p => (
@@ -20,6 +20,6 @@ module.exports = (props) => {
 					</svg>
 				</div>
 			)}
-		</Tooltip>
+		</Modules.Tooltip>
 	);
 };

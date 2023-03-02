@@ -16,16 +16,26 @@ module.exports = (Plugin, Api) => {
 	function getModuleAndKey(filter) {
 		let module;
 		const target = getModule((entry, m) => filter(entry) ? (module = m) : false, { searchExports: true });
-		return [module.exports, Object.keys(module.exports).find(k => module.exports[k] === target)];
+		module = module?.exports;
+		if (!module) return undefined;
+		const key = Object.keys(module).find(k => module[k] === target);
+		if (!key) return undefined;
+		return { module, key };
 	}
 
 	// Modules
-	const { DiscordModules: { Dispatcher, SelectedGuildStore, GuildChannelsStore, MessageActions, SwitchRow, ButtonData } } = Api;
-	const ChannelActions = DiscordModules.ChannelActions;
-	const ChannelContent = DiscordModules.ChannelContent;
-	const DMChannel = DiscordModules.DMChannel;
-	const ChannelTypeEnum = DiscordModules.ChannelTypeEnum;
-	const [Channel, ChannelKey] = getModuleAndKey(Filters.byStrings("canHaveDot", "isFavoriteSuggestion", "mentionCount"));
+	const Modules = {
+		ChannelActions: DiscordModules.ChannelActions,
+		ChannelContent: DiscordModules.ChannelContent,
+		ChannelTypeEnum: DiscordModules.ChannelTypeEnum,
+		ChannelComponent: DiscordModules.ChannelComponent,
+		...(() => {
+			const { Dispatcher, SelectedGuildStore, GuildChannelsStore, MessageActions, SwitchRow, ButtonData } = Api.DiscordModules;
+			return { Dispatcher, SelectedGuildStore, GuildChannelsStore, MessageActions, SwitchRow, ButtonData };
+		})()
+	}
+
+	failsafe;
 
 	// Constants
 	const EVENTS = [
@@ -35,6 +45,7 @@ module.exports = (Plugin, Api) => {
 		"CHANNEL_PRELOAD",
 		"GUILD_CREATE",
 	];
+
 	const CLASS_NAME = "lazyLoader";
 
 	// Utilities
@@ -56,7 +67,7 @@ module.exports = (Plugin, Api) => {
 			 * therefore it is only called when messages.length === 0
 			 * and because it returns a promise, it is used to load messages and show toast 
 			 */
-			return MessageActions.fetchMessages({ channelId: channel.id });
+			return Modules.MessageActions.fetchMessages({ channelId: channel.id });
 		},
 		filters: {
 			attachments: type => a => a.content_type?.includes("type") || Utils.REGEX[type].test(a.filename),
@@ -100,11 +111,11 @@ module.exports = (Plugin, Api) => {
 		}
 	}
 
-	// styles
-	const css = require("styles.css");
-
 	// Components
 	const LazyLoader = require("components/LazyLoader.jsx");
+
+	// Styles
+	const css = require("styles.css");
 
 	return class LazyLoadChannels extends Plugin {
 		constructor() {
@@ -119,7 +130,7 @@ module.exports = (Plugin, Api) => {
 			 * it handles message jumping, and checks the cache
 			 * that is why it is used as opossed to MessageActions.fetchMessages
 			 */
-			ChannelActions.fetchMessages({
+			Modules.ChannelActions.fetchMessages({
 				channelId: channel.id,
 				guildId: channel.guild_id,
 				messageId
@@ -131,7 +142,7 @@ module.exports = (Plugin, Api) => {
 			/**
 			 * main patch for the plugin.
 			 */
-			Patcher.after(ChannelContent.Z, "type", (_, [{ channel }], { props }) => {
+			Patcher.after(Modules.ChannelContent.Z, "type", (_, [{ channel }], { props }) => {
 				if (this.autoLoad) return;
 				return React.createElement(LazyLoader, {
 					channel,
@@ -146,7 +157,7 @@ module.exports = (Plugin, Api) => {
 			 * adds a class to channels set to be auto loaded
 			 * for highlighting them
 			 */
-			Patcher.after(Channel, ChannelKey, (_, [{ channel }], returnValue) => {
+			Patcher.after(Modules.ChannelComponent.module, Modules.ChannelComponent.key, (_, [{ channel }], returnValue) => {
 				if (!this.settings.autoloadedChannelIndicator) return;
 				if (Utils.DataManager.has(channel.guild_id, channel.id))
 					returnValue.props.children.props.children[1].props.className += " autoload";
@@ -158,7 +169,7 @@ module.exports = (Plugin, Api) => {
 				...[
 					["Lazy load all channels", id => Utils.DataManager.remove(id)],
 					["Auto load all channels", id => {
-						const { SELECTABLE, VOCAL } = GuildChannelsStore.getChannels(id);
+						const { SELECTABLE, VOCAL } = Modules.GuildChannelsStore.getChannels(id);
 						Utils.DataManager.add(id, [...SELECTABLE.map(({ channel }) => channel.id), ...VOCAL.map(({ channel }) => channel.id)]);
 					}]
 				].map(([label, cb]) => ContextMenu.patch("guild-context", (retVal, { guild }) => {
@@ -167,7 +178,7 @@ module.exports = (Plugin, Api) => {
 				})),
 				...["channel-context", "thread-context"].map(context =>
 					ContextMenu.patch(context, (retVal, { channel }) => {
-						if (channel && channel.type !== ChannelTypeEnum.GUILD_CATEGORY)
+						if (channel && channel.type !== Modules.ChannelTypeEnum.GUILD_CATEGORY)
 							retVal.props.children.splice(1, 0, ContextMenu.buildItem({
 								type: "toggle",
 								label: "Auto load",
@@ -198,7 +209,7 @@ module.exports = (Plugin, Api) => {
 			/**
 			 * No need to lazy load channels or threads created by current user. 
 			 */
-			if(channel.guild_id !== SelectedGuildStore.getGuildId()) return;
+			if (channel.guild_id !== Modules.SelectedGuildStore.getGuildId()) return;
 			if (!channel || !channel.guild_id || !channel.id) return;
 			if (!channel.isDM()) {
 				Utils.DataManager.add(channel.guild_id, channel.id);
@@ -232,8 +243,8 @@ module.exports = (Plugin, Api) => {
 				["CHANNEL_SELECT", this.channelSelectHandler]
 			].map(([event, handler]) => {
 				const boundHandler = handler.bind(this);
-				Dispatcher.subscribe(event, boundHandler);
-				return () => Dispatcher.unsubscribe(event, boundHandler);
+				Modules.Dispatcher.subscribe(event, boundHandler);
+				return () => Modules.Dispatcher.unsubscribe(event, boundHandler);
 			});
 		}
 
@@ -242,7 +253,7 @@ module.exports = (Plugin, Api) => {
 				/**
 				 * removing all listeners that fetches channel messages  
 				 */
-				EVENTS.forEach(event => Dispatcher.unsubscribe(event, ChannelActions.actions[event]));
+				EVENTS.forEach(event => Modules.Dispatcher.unsubscribe(event, Modules.ChannelActions.actions[event]));
 				DOM.addStyle(css);
 				this.patchChannel();
 				this.setupHandlers();
@@ -260,7 +271,7 @@ module.exports = (Plugin, Api) => {
 			this.handlers?.forEach?.(h => h());
 			this.unpatchContextMenu = null;
 			this.handlers = null;
-			EVENTS.forEach(event => Dispatcher.subscribe(event, ChannelActions.actions[event]));
+			EVENTS.forEach(event => Modules.Dispatcher.subscribe(event, Modules.ChannelActions.actions[event]));
 		}
 
 		getSettingsPanel() {

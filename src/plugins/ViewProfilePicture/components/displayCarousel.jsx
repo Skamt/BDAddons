@@ -1,13 +1,13 @@
 module.exports = ({ props, items }) => {
 	return (
-		<ModalRoot
+		<Modules.ModalRoot
 			{...props}
 			className="VPP-carousel carouselModal-1eUFoq zoomedCarouselModalRoot-beLNhM">
-			<ModalCarousel
+			<Modules.ModalCarousel
 				startWith={0}
 				className="modalCarouselWrapper-YK1MX4"
 				items={items.map(item => ({ "component": item }))}
 			/>
-		</ModalRoot>
+		</Modules.ModalRoot>
 	);
 };

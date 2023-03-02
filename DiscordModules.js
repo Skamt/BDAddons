@@ -8,16 +8,8 @@ module.exports = {
 			if (!funcStr.includes(s)) return false;
 		return true;
 	})`,
-	"ModalComponents": `(() => { 
-		let exp = undefined;
-		getModule((m, e) => m.toString().includes('onAnimationEnd') ? (true && (exp = e.exports)) : false, { searchExports: true });
-		if(!exp) return exp;
-		const funcs = Object.values(exp) || [];
-		const ModalHeader = funcs.find(Filters.byStrings('headerIdIsManaged', 'headerId', 'separator'));
-		const ModalBody = funcs.find(Filters.byStrings('scrollerRef', 'content', 'children'));
-		const ModalFooter = funcs.find(Filters.byStrings('footerSeparator'));
-		return [ModalHeader, ModalBody, ModalFooter];
-	})()`,
+	"StickerModule": "getModuleAndKey(Filters.byStrings('sticker', 'withLoadingIndicator'))",
+	"ChannelComponent": "getModuleAndKey(Filters.byStrings('canHaveDot', 'isFavoriteSuggestion', 'mentionCount'))",
 	"Text": "getModule(Filters.byStrings('data-text-variant'), { searchExports: true })",
 	"Label": "getModule(Filters.byStrings('LEGEND', 'LABEL', 'h5'), { searchExports: true })",
 	"Markdown": "getModule((m) => m.Z?.rules && m.Z?.defaultProps?.parser).Z",

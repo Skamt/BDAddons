@@ -14,27 +14,33 @@ module.exports = () => {
 	} = new BdApi(config.info.name);
 
 	// Modules
-	const { DiscordModules: { Dispatcher, DiscordPermissions, SelectedChannelStore, MessageActions, Permissions, ChannelStore, UserStore } } = Api;
+	const Modules = {
+		PendingReplyStore: DiscordModules.PendingReplyStore,
+		EmojiIntentionEnum: DiscordModules.EmojiIntentionEnum,
+		EmojiSendAvailabilityEnum: DiscordModules.EmojiSendAvailabilityEnum,
+		EmojiFunctions: DiscordModules.EmojiFunctions,
+		InsertText: (() => {
+			let ComponentDispatch;
+			return (content) => {
+				if (!ComponentDispatch) ComponentDispatch = DiscordModules.ComponentDispatch;
+				ComponentDispatch.dispatchToLastSubscribed("INSERT_TEXT", {
+					plainText: content
+				});
+			}
+		})(),
+		...(() => {
+			const { Dispatcher, DiscordPermissions, SelectedChannelStore, MessageActions, Permissions, ChannelStore, UserStore } = Api.DiscordModules;
+			return { Dispatcher, DiscordPermissions, SelectedChannelStore, MessageActions, Permissions, ChannelStore, UserStore };
+		})()
+	}
 
-	const PendingReplyStore = DiscordModules.PendingReplyStore;
-	const EmojiIntentionEnum = DiscordModules.EmojiIntentionEnum;
-	const EmojiSendAvailabilityEnum = DiscordModules.EmojiSendAvailabilityEnum;
-	const EmojiFunctions = DiscordModules.EmojiFunctions;
-	const InsertText = (() => {
-		let ComponentDispatch;
-		return (content) => {
-			if (!ComponentDispatch) ComponentDispatch = DiscordModules.ComponentDispatch;
-			ComponentDispatch.dispatchToLastSubscribed("INSERT_TEXT", {
-				plainText: content
-			});
-		}
-	})();
+	failsafe;
 
-	// Helper functions
+	// Utilities
 	const SelfUtils = {
 		showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),
-		hasEmbedPerms: (channel, user) => !channel.guild_id || Permissions.can({ permission: DiscordPermissions.EMBED_LINKS, context: channel, user }),
-		isEmojiSendable: (e) => EmojiFunctions.getEmojiUnavailableReason(e) === null,
+		hasEmbedPerms: (channel, user) => !channel.guild_id || Modules.Permissions.can({ permission: Modules.DiscordPermissions.EMBED_LINKS, context: channel, user }),
+		isEmojiSendable: (e) => Modules.EmojiFunctions.getEmojiUnavailableReason(e) === null,
 		getEmojiUrl: (emoji, size) => `${emoji.url.replace(/(size=)(\d+)[&]/, '')}&size=${size}`,
 		getEmojiWebpUrl: (emoji, size) => SelfUtils.getEmojiUrl(emoji, size).replace('gif', 'webp'),
 		getEmojiGifUrl: (emoji, size) => SelfUtils.getEmojiUrl(emoji, size).replace('webp', 'gif')
@@ -46,7 +52,7 @@ module.exports = () => {
 		disabledAnimatedEmojiErrorMessage: "You have disabled animated emojis in settings."
 	};
 
-	// styles
+	// Styles
 	const css = require("styles.css");
 
 	return class Emojis extends Plugin {
@@ -66,18 +72,18 @@ module.exports = () => {
 
 		sendEmojiAsLink(emoji, channel) {
 			if (this.settings.sendDirectly)
-				MessageActions.sendMessage(channel.id, {
+				Modules.MessageActions.sendMessage(channel.id, {
 					content: this.getEmojiUrl(emoji, this.settings.emojiSize),
 					validNonShortcutEmojis: []
 				}, undefined, this.getReply(channel.id));
 			else
-				InsertText(SelfUtils.getEmojiUrl(emoji, this.settings.emojiSize));
+				Modules.InsertText(SelfUtils.getEmojiUrl(emoji, this.settings.emojiSize));
 		}
 
 		getReply(channelId) {
-			const reply = PendingReplyStore.getPendingReply(channelId);
+			const reply = Modules.PendingReplyStore.getPendingReply(channelId);
 			if (!reply) return {};
-			Dispatcher.dispatch({ type: "DELETE_PENDING_REPLY", channelId });
+			Modules.Dispatcher.dispatch({ type: "DELETE_PENDING_REPLY", channelId });
 			return {
 				messageReference: {
 					guild_id: reply.channel.guild_id,
@@ -101,9 +107,9 @@ module.exports = () => {
 		}
 
 		emojiHandler(emoji) {
-			const user = UserStore.getCurrentUser();
-			const intention = EmojiIntentionEnum.CHAT;
-			const channel = ChannelStore.getChannel(SelectedChannelStore.getChannelId());
+			const user = Modules.UserStore.getCurrentUser();
+			const intention = Modules.EmojiIntentionEnum.CHAT;
+			const channel = Modules.ChannelStore.getChannel(Modules.SelectedChannelStore.getChannelId());
 			if (!SelfUtils.isEmojiSendable({ emoji, channel, intention }))
 				this.handleUnsendableEmoji(emoji, channel, user);
 		}
@@ -119,7 +125,7 @@ module.exports = () => {
 		emojiClickHandler(event) {
 			if (event.button === 2) return;
 			const [pickerIntention, picker] = this.getPickerIntention(event);
-			if (pickerIntention !== EmojiIntentionEnum.CHAT) return;
+			if (pickerIntention !== Modules.EmojiIntentionEnum.CHAT) return;
 			picker.classList.add('CHAT');
 			const emojiInstance = getInternalInstance(event.target);
 			const props = emojiInstance?.pendingProps;
@@ -134,8 +140,8 @@ module.exports = () => {
 			 * if external emojis are disabled, servers get filtered out
 			 * and it's handy to scroll through emojis easily
 			 */
-			Patcher.after(EmojiFunctions, "isEmojiFiltered", (_, [, , intention], ret) => {
-				if (intention !== EmojiIntentionEnum.CHAT) return ret;
+			Patcher.after(Modules.EmojiFunctions, "isEmojiFiltered", (_, [, , intention], ret) => {
+				if (intention !== Modules.EmojiIntentionEnum.CHAT) return ret;
 				return false;
 			});
 			/**
@@ -150,9 +156,9 @@ module.exports = () => {
 			 * 4: "ROLE_SUBSCRIPTION_LOCKED"
 			 * 5: "ROLE_SUBSCRIPTION_UNAVAILABLE"
 			 */
-			Patcher.after(EmojiFunctions, "getEmojiUnavailableReason", (_, [{ intention }], ret) => {
-				if (intention !== EmojiIntentionEnum.CHAT) return ret;
-				return ret === EmojiSendAvailabilityEnum.DISALLOW_EXTERNAL ? EmojiSendAvailabilityEnum.PREMIUM_LOCKED : ret;
+			Patcher.after(Modules.EmojiFunctions, "getEmojiUnavailableReason", (_, [{ intention }], ret) => {
+				if (intention !== Modules.EmojiIntentionEnum.CHAT) return ret;
+				return ret === Modules.EmojiSendAvailabilityEnum.DISALLOW_EXTERNAL ? Modules.EmojiSendAvailabilityEnum.PREMIUM_LOCKED : ret;
 			});
 		}
 

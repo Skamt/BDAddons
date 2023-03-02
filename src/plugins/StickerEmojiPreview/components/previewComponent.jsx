@@ -9,7 +9,7 @@ module.exports = ({ target,  defaultState, previewComponent }) => {
 		return () => document.removeEventListener("keyup", keyupHandler);
 	}, [show]);
 	return (
-		<Popout
+		<Modules.Popout
 			renderPopout={() => (
 				<div
 					className="stickersPreview"
@@ -23,6 +23,6 @@ module.exports = ({ target,  defaultState, previewComponent }) => {
 			animation="3"
 			spacing={60}>
 			{() => target}
-		</Popout>
+		</Modules.Popout>
 	);
 };

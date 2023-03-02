@@ -9,11 +9,15 @@ module.exports = () => {
 	} = new BdApi(config.info.name);
 
 	// Modules
-	const Popout = DiscordModules.Popout;
-	const ExpressionPickerInspector = DiscordModules.ExpressionPickerInspector;
-	const SwitchRow = DiscordModules.SwitchRow;
-	const DefaultEmojisManager = DiscordModules.DefaultEmojisManager;
+	const Modules = {
+		Popout: DiscordModules.Popout,
+		ExpressionPickerInspector: DiscordModules.ExpressionPickerInspector,
+		SwitchRow: DiscordModules.SwitchRow,
+		DefaultEmojisManager: DiscordModules.DefaultEmojisManager
+	}
 
+	failsafe;
+	
 	// Constants
 	const PREVIEW_SIZE = 300;
 
@@ -21,7 +25,7 @@ module.exports = () => {
 	const previewComponent = require("components/PreviewComponent.jsx");
 	const settingComponent = (props) => {
 		const [enabled, setEnabled] = useState(props.value);
-		return React.createElement(SwitchRow, {
+		return React.createElement(Modules.SwitchRow, {
 			value: enabled,
 			onChange: e => {
 				props.onChange(e);
@@ -30,7 +34,7 @@ module.exports = () => {
 		}, props.description);
 	}
 
-	// styles
+	// Styles
 	const css = require("styles.css");
 
 	return class StickerEmojiPreview {
@@ -41,7 +45,7 @@ module.exports = () => {
 			if (props.src)
 				return [type, { src: props.src.replace(/([?&]size=)(\d+)/, `$1${PREVIEW_SIZE}`) }]
 			if (titlePrimary)
-				return ['img', { src: DefaultEmojisManager.getByName(titlePrimary.split(":")[1]).url }];
+				return ['img', { src: Modules.DefaultEmojisManager.getByName(titlePrimary.split(":")[1]).url }];
 
 			return ['div', {}];
 		}
@@ -59,7 +63,7 @@ module.exports = () => {
 			try {
 				this.settings = Data.load("settings") || { previewDefaultState: false };
 				DOM.addStyle(css);
-				Patcher.after(ExpressionPickerInspector, "Z", (_, [{ graphicPrimary, titlePrimary }], ret) => {
+				Patcher.after(Modules.ExpressionPickerInspector, "Z", (_, [{ graphicPrimary, titlePrimary }], ret) => {
 					return React.createElement(previewComponent, {
 						target: ret,
 						defaultState: this.settings.previewDefaultState,
