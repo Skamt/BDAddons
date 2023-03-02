@@ -40,25 +40,27 @@ function initPlugin([Plugin, Api]) {
 			showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),
 		};
 
-		const MessageHeader = getModule((m) => m.Z?.toString().includes("userOverride") && m.Z?.toString().includes("withMentionPrefix"));
-		const Markdown = getModule((m) => m.Z?.rules && m.Z?.defaultProps?.parser).Z;
-		const UserStore = getModule((m, e, i) => m.getCurrentUser && m.getUser);
-
+		// Modules
 		const { DiscordModules: { ButtonData, Textbox, TextElement } } = Api;
+
+		const MessageHeader = getModule((m) => m.Z?.toString().includes('userOverride') && m.Z?.toString().includes('withMentionPrefix'));
+		const Markdown = getModule((m) => m.Z?.rules && m.Z?.defaultProps?.parser).Z;
+		const UserStore = getModule(Filters.byProps('getCurrentUser', 'getUser'));
 		const openModal = getModule(Filters.byStrings('onCloseCallback', 'Layer'), { searchExports: true });
 		const ModalRoot = getModule(Filters.byStrings('onAnimationEnd'), { searchExports: true });
-		const Text = BdApi.Webpack.getModule(BdApi.Webpack.Filters.byStrings('data-text-variant'), { searchExports: true });
+		const Text = getModule(Filters.byStrings('data-text-variant'), { searchExports: true });
 		const Label = getModule(Filters.byStrings('LEGEND', 'LABEL', 'h5'), { searchExports: true });
-		let ModalHeader, ModalBody, ModalFooter;
-		getModule((m, e) => {
-			if (m.toString().includes('onAnimationEnd')) {
-				const funcs = Object.values(e.exports);
-				ModalHeader = funcs.find(Filters.byStrings('headerIdIsManaged', 'headerId', 'separator'));
-				ModalBody = funcs.find(Filters.byStrings('scrollerRef', 'content', 'children'));
-				ModalFooter = funcs.find(Filters.byStrings('footerSeparator'));
-				return true;
-			}
-		}, { searchExports: true });
+
+		const [ModalHeader, ModalBody, ModalFooter] = (() => {
+			let exp = undefined;
+			getModule((m, e) => m.toString().includes('onAnimationEnd') ? (true && (exp = e.exports)) : false, { searchExports: true });
+			if (!exp) return exp;
+			const funcs = Object.values(exp) || [];
+			const ModalHeader = funcs.find(Filters.byStrings('headerIdIsManaged', 'headerId', 'separator'));
+			const ModalBody = funcs.find(Filters.byStrings('scrollerRef', 'content', 'children'));
+			const ModalFooter = funcs.find(Filters.byStrings('footerSeparator'));
+			return [ModalHeader, ModalBody, ModalFooter];
+		})();
 
 		const css = `.nick {
 	line-height: 1.375rem;
@@ -71,8 +73,8 @@ function initPlugin([Plugin, Api]) {
 	margin: 0 0rem 0 0.5rem;
 }
 
-.nick + span {
-	margin-left: 0.5rem;
+[id^="message-reply-context"] .nick {
+	display: none;
 }`;
 		const AddUserNickname = ({ props, user }) => {
 			const [value, setValue] = useState(Data.load(user.id) || "");
@@ -156,10 +158,10 @@ function initPlugin([Plugin, Api]) {
 			onStart() {
 				DOM.addStyle(css);
 				this.patches = [
-					Patcher.before(MessageHeader, "Z", (_, [{ message, decorations }]) => {
+					Patcher.after(MessageHeader, "Z", (_, [{ message }], ret) => {
 						const nick = Data.load(message.author.id);
 						if (nick)
-							decorations[0] = React.createElement('span', { className: "nick" }, `${nick}`);
+							ret.props.children.splice(3, 0, React.createElement('span', { className: "nick" }, nick))
 					}),
 					ContextMenu.patch("user-context", (retVal, { user }) => {
 						if (user.id !== UserStore.getCurrentUser().id)
@@ -181,7 +183,6 @@ function initPlugin([Plugin, Api]) {
 			getSettingsPanel() {
 				return this.buildSettingsPanel().getElement();
 			}
-
 		};
 	};
 	return plugin(Plugin, Api);
