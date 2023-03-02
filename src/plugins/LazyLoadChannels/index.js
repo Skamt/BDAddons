@@ -185,9 +185,10 @@ module.exports = (Plugin, Api) => {
 		channelSelectHandler({ channelId, guildId, messageId }) {
 			/** Ignore if 
 			 * messageId !== undefined means it's a jump
+			 * guildId === undefined means it's DM
 			 * OR channel is autoloaded
 			 */
-			if (messageId || Utils.DataManager.has(guildId, channelId))
+			if (messageId || !guildId || Utils.DataManager.has(guildId, channelId))
 				this.loadChannel({ id: channelId, guild_id: guildId }, messageId);
 			else
 				this.autoLoad = false;
