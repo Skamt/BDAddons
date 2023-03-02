@@ -49,7 +49,7 @@ function initPlugin([Plugin, Api]) {
 		}
 
 		// Modules
-		const { DiscordModules: { Dispatcher, GuildChannelsStore, MessageActions, SwitchRow, ButtonData } } = Api;
+		const { DiscordModules: { Dispatcher, SelectedGuildStore, GuildChannelsStore, MessageActions, SwitchRow, ButtonData } } = Api;
 		const ChannelActions = getModule(Filters.byProps('actions', 'fetchMessages'), { searchExports: true });
 		const ChannelContent = getModule(m => m && m.Z && m.Z.type && m.Z.type.toString().includes('showingSpamBanner'));
 		const DMChannel = getModule(Filters.byStrings('isMobileOnline', 'channel'), { searchExports: true });
@@ -247,10 +247,6 @@ function initPlugin([Plugin, Api]) {
     animation: de-wobble 1s;
 }
 
-.autoload{
-	border-left:4px solid #2e7d46;
-}
-
 @keyframes de-wobble {
 
   16.666666666666668% {    
@@ -271,6 +267,10 @@ function initPlugin([Plugin, Api]) {
   100% {    
     transform: translateX(0px) rotate(0deg);
   }
+}
+
+.autoload{
+	border-left:4px solid #2e7d46;
 }`;
 
 		// Components
@@ -442,9 +442,10 @@ function initPlugin([Plugin, Api]) {
 			channelSelectHandler({ channelId, guildId, messageId }) {
 				/** Ignore if 
 				 * messageId !== undefined means it's a jump
+				 * guildId === undefined means it's DM
 				 * OR channel is autoloaded
 				 */
-				if (messageId || Utils.DataManager.has(guildId, channelId))
+				if (messageId || !guildId || Utils.DataManager.has(guildId, channelId))
 					this.loadChannel({ id: channelId, guild_id: guildId }, messageId);
 				else
 					this.autoLoad = false;
@@ -452,8 +453,9 @@ function initPlugin([Plugin, Api]) {
 
 			channelCreateHandler({ channel }) {
 				/**
-				 * No need to lazy load newly created channels or threads 
+				 * No need to lazy load channels or threads created by current user. 
 				 */
+				if (channel.guild_id !== SelectedGuildStore.getGuildId()) return;
 				if (!channel || !channel.guild_id || !channel.id) return;
 				if (!channel.isDM()) {
 					Utils.DataManager.add(channel.guild_id, channel.id);
