@@ -38,7 +38,8 @@ const nativeModules = getModule(m => m.getDiscordUtils)
 const Dispatcher = getModule(Filters.byProps("dispatch", "subscribe"));
 const Analytics = getModule(m => m?.AnalyticEventConfigs);
 const MessageHeader = getModule((m) => m.Z?.toString().includes("userOverride") && m.Z?.toString().includes("withMentionPrefix"));
-
+const Anchor = getModule(m => m && m.type && Filters.byStrings("trusted", "title", "href","MASKED_LINK")(m.type));
+	
 // Helper functions
 const Utils = {
 	showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),

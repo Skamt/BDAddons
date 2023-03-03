@@ -2,7 +2,7 @@ const path = require("path");
 const fs = require("fs");
 const projectPath = path.resolve('.');
 const buildPlugin = require("./buildPlugin.js");
-const { mergeDeep, getAllFiles } = require("../helpers.js");
+const { getAllFiles, mergeDeep } = require('../common');
 const { pluginsFolder, releaseFolder, baseConfig } = require(path.join(projectPath, "package.json")).buildConfig;
 
 const pluginsPath = path.join(projectPath, pluginsFolder);
@@ -10,11 +10,10 @@ const releasePath = path.join(projectPath, releaseFolder);
 
 const bdFolder = `${process.env.APPDATA}/BetterDiscord/`;
 const arg = process.argv.slice(2)[0];
-const list = arg === "all" 
-	? fs.readdirSync(pluginsPath)
-		.filter(f => fs.lstatSync(path.join(pluginsPath, f)).isDirectory())
-		.map(f => path.join(pluginsPath, f)) 
-	: [process.env.PWD || process.env.INIT_CWD]
+const list = arg === "all" ?
+	fs.readdirSync(pluginsPath)
+	.filter(f => fs.lstatSync(path.join(pluginsPath, f)).isDirectory())
+	.map(f => path.join(pluginsPath, f)) : [process.env.PWD || process.env.INIT_CWD]
 
 console.log("");
 console.log(`Building ${list.length} plugin${list.length > 1 ? "s" : ""}`);

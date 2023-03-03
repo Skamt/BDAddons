@@ -2,7 +2,7 @@ new class NoTrack extends Disposable {
 	constructor() {
 		super();
 		this.targets = ["spotify"];
-		this.blockedEvents = ["EXPERIMENT_TRIGGER","TRACK"];
+		this.blockedEvents = ["EXPERIMENT_TRIGGER", "TRACK"];
 	}
 
 	urlRegex(name) {
@@ -40,6 +40,9 @@ new class NoTrack extends Disposable {
 	Init() {
 		this.once();
 		this.patches = [
+			Patcher.before(Anchor, "type", (_, args, ret) => {
+				args[0].href = this.handleMessage(args[0].href);
+			}),
 			Patcher.before(MessageActions, "sendMessage", (_, [, message]) => {
 				message.content = this.handleMessage(message.content);
 			}),

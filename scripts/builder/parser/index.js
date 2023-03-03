@@ -6,6 +6,9 @@ const other = require("./otherParser.js");
 const DiscordModules = require("./../../../DiscordModules.js");
 
 module.exports = (content, pluginFolder, pluginFiles) => {
+	
+	content = content.replace(/require\(("|'|\`)ErrorBoundary.jsx("|'|\`)\)/g, () => jsx(path.resolve(__dirname,'./../../common/ErrorBoundary.jsx')));
+	
 	for (const fileName of pluginFiles)
 		content = content.replace(new RegExp(`require\\(('|"|\`)${fileName}('|"|\`)\\)`, "g"), () => {
 			const filePath = path.join(pluginFolder, fileName);
@@ -14,13 +17,16 @@ module.exports = (content, pluginFolder, pluginFiles) => {
 			// if (fileName.endsWith(".css")) return css(filePath);
 			else return other(filePath);
 		});
+	
 	Object.keys(DiscordModules).forEach(Module => {
 		content = content.replace(new RegExp(`DiscordModules.${Module}`, "g"), () => DiscordModules[Module]);
 	});
+	
 	content = content.replace("DiscordModules.ALL", () =>
 		`[${Object.entries(DiscordModules).map(([name,filter]) => `["${name}",${filter}]\n`)}]`
 	);
-	content = content.replace('failsafe;',`
+	
+	content = content.replace('failsafe;', `
 	const brokenModules = Object.entries(Modules).filter(([, module]) => !module).map(([moduleName]) => moduleName);
 	if (brokenModules.length > 0) {
 		return () => ({
@@ -34,6 +40,7 @@ module.exports = (content, pluginFolder, pluginFiles) => {
 			},
 			stop() {}
 		});
-	}`)
+	}`);
+
 	return content;
 };

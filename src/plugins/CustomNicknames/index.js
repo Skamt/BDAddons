@@ -45,8 +45,12 @@ module.exports = (Plugin, Api) => {
 	};
 
 	// Components
-	const AddUserNickname = require("components/AddUserNickname.jsx");
-
+	const ErrorBoundary = require("ErrorBoundary.jsx");
+	const _AddUserNickname = require("components/AddUserNickname.jsx");
+	const AddUserNickname = (props) => {
+		return React.createElement(ErrorBoundary, { id: "AddUserNickname" },
+			React.createElement(_AddUserNickname, props))
+	}
 	// Styles
 	const css = require("styles.css");
 

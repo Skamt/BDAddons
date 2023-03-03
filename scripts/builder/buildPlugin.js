@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const parser = require('./parser');
-const { beautify } = require('../helpers.js');
+const { beautify } = require('../common');
 const template = fs.readFileSync(path.join(__dirname, "template.js")).toString();
 
 function buildMeta(config) {

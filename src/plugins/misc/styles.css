@@ -19,9 +19,11 @@
 .active {
 	background: red;
 }
-[id^="message-reply-context"] .id {
+
+[class^="repliedMessage"] .id {
 	display: none;
 }
+
 .id {
 	display: inline-block;
 	font-weight: 500;

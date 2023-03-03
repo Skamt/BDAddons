@@ -4,7 +4,8 @@ const pluginName = process.argv.pop();
 const projectPath = path.resolve('.');
 const { buildConfig: { pluginsFolder } } = require(path.join(projectPath, "package.json"));
 const pluginsFolderPath = path.join(projectPath, pluginsFolder, pluginName);
-const { getAllFiles, writeFile, beautify } = require("../helpers.js");
+const { getAllFiles, writeFile, beautify } = require('../common');
+
 const templates = [
 	[require("./index.js"), index, "index.js"],
 	[require("./config.json"), config, "config.json"]
