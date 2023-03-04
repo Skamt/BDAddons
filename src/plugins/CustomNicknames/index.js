@@ -7,10 +7,7 @@ module.exports = (Plugin, Api) => {
 		React: { useState, useEffect },
 		Patcher,
 		ContextMenu,
-		Webpack: {
-			Filters,
-			getModule
-		}
+		Webpack: { Filters, getModule }
 	} = new BdApi(config.info.name);
 
 	// Modules
@@ -23,39 +20,35 @@ module.exports = (Plugin, Api) => {
 		Label: DiscordModules.Label,
 		...(() => {
 			let exp = undefined;
-			getModule((m, e) => m.toString().includes('onAnimationEnd') ? (true && (exp = e.exports)) : undefined, { searchExports: true });
+			getModule((m, e) => (m.toString().includes("onAnimationEnd") ? true && (exp = e.exports) : undefined), { searchExports: true });
 			if (!exp) return { Modals: undefined };
 			const funcs = Object.values(exp) || [];
-			const ModalHeader = funcs.find(Filters.byStrings('headerIdIsManaged', 'headerId', 'separator'));
-			const ModalBody = funcs.find(Filters.byStrings('scrollerRef', 'content', 'children'));
-			const ModalFooter = funcs.find(Filters.byStrings('footerSeparator'));
+			const ModalHeader = funcs.find(Filters.byStrings("headerIdIsManaged", "headerId", "separator"));
+			const ModalBody = funcs.find(Filters.byStrings("scrollerRef", "content", "children"));
+			const ModalFooter = funcs.find(Filters.byStrings("footerSeparator"));
 			return { ModalHeader, ModalBody, ModalFooter };
 		})(),
 		...(() => {
 			const { ButtonData, Textbox, TextElement } = Api.DiscordModules;
 			return { ButtonData, Textbox, TextElement };
 		})()
-	}
+	};
 
 	failsafe;
 
 	// Utilities
 	const Utils = {
-		showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),
+		showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type })
 	};
 
 	// Components
 	const ErrorBoundary = require("ErrorBoundary.jsx");
-	const _AddUserNickname = require("components/AddUserNickname.jsx");
-	const AddUserNickname = (props) => {
-		return React.createElement(ErrorBoundary, { id: "AddUserNickname" },
-			React.createElement(_AddUserNickname, props))
-	}
+	const AddUserNicknameComponent = require("components/AddUserNicknameComponent.jsx");
+
 	// Styles
 	const css = require("styles.css");
 
 	return class CustomNicknames extends Plugin {
-
 		constructor() {
 			super();
 		}
@@ -65,18 +58,23 @@ module.exports = (Plugin, Api) => {
 			this.patches = [
 				Patcher.after(Modules.MessageHeader, "Z", (_, [{ message }], ret) => {
 					const nick = Data.load(message.author.id);
-					if (nick)
-						ret.props.children.splice(3, 0, React.createElement('span', { className: "nick" }, nick))
+					if (nick) ret.props.children.splice(3, 0, React.createElement("span", { className: "nick" }, nick));
 				}),
 				ContextMenu.patch("user-context", (retVal, { user }) => {
 					if (user.id !== Modules.UserStore.getCurrentUser().id)
-						retVal.props.children.unshift(ContextMenu.buildItem({
-							type: "button",
-							label: "Add user nickname",
-							action: () => Modules.openModal(props => React.createElement(AddUserNickname, { props, user }))
-						}));
+						retVal.props.children.unshift(
+							ContextMenu.buildItem({
+								type: "button",
+								label: "Add user nickname",
+								action: () => Modules.openModal(props => React.createElement(ErrorBoundary, { 
+									id: "AddUserNicknameComponent", 
+									plugin: config.info.name,
+									closeModal:props.onClose
+									}, React.createElement(AddUserNicknameComponent, { props, user })))
+							})
+						);
 				})
-			]
+			];
 		}
 
 		onStop() {
@@ -89,4 +87,4 @@ module.exports = (Plugin, Api) => {
 			return this.buildSettingsPanel().getElement();
 		}
 	};
-}
+};

@@ -1,6 +1,6 @@
 module.exports = ({ props, user }) => {
 	const [value, setValue] = useState(Data.load(user.id) || "");
-
+	
 	useEffect(() => {
 		const keyupHandler = e => e.key === "Enter" && Save();
 		document.addEventListener("keyup", keyupHandler);

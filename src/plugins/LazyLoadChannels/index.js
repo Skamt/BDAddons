@@ -112,7 +112,8 @@ module.exports = (Plugin, Api) => {
 	}
 
 	// Components
-	const LazyLoader = require("components/LazyLoader.jsx");
+	const ErrorBoundary = require("ErrorBoundary.jsx");
+	const LazyLoaderComponent = require("components/LazyLoaderComponent.jsx");
 
 	// Styles
 	const css = require("styles.css");
@@ -142,13 +143,18 @@ module.exports = (Plugin, Api) => {
 			/**
 			 * main patch for the plugin.
 			 */
-			Patcher.after(Modules.ChannelContent.Z, "type", (_, [{ channel }], { props }) => {
+			Patcher.after(Modules.ChannelContent.Z, "type", (_, [{ channel }], ret) => {
 				if (this.autoLoad) return;
-				return React.createElement(LazyLoader, {
-					channel,
-					loadChannel: this.loadChannel,
-					messages: props.children.props.messages
-				});
+				return React.createElement(ErrorBoundary, {
+						id: "LazyLoaderComponent",
+						plugin: config.info.name,
+						fallback: ret
+					},
+					React.createElement(LazyLoaderComponent, {
+						channel,
+						loadChannel: this.loadChannel,
+						messages: ret.props.children.props.messages
+					}));
 			});
 		}
 

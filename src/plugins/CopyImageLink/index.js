@@ -42,11 +42,8 @@ module.exports = () => {
 
 	// Components
 	const ErrorBoundary = require("ErrorBoundary.jsx");
-	const _CopyButton = require("components/CopyButton.jsx");
-	const CopyButton = (props) => {
-		return React.createElement(ErrorBoundary, { id: "CopyLinkButton", mini: true },
-			React.createElement(_CopyButton, props))
-	}
+	const CopyButtonComponent = require("components/CopyButtonComponent.jsx");
+
 
 	// Styles
 	const css = require("styles.css");
@@ -58,7 +55,13 @@ module.exports = () => {
 				Patcher.after(Modules.ImageModal.module, Modules.ImageModal.key, (_, __, returnValue) => {
 					const children = Utils.getNestedProp(returnValue, "props.children");
 					const { href } = Utils.getNestedProp(returnValue, "props.children.2.props");
-					children.push(React.createElement(CopyButton, { href }));
+					children.push(
+						React.createElement(ErrorBoundary, {
+								id: "CopyLinkButton",
+								plugin: config.info.name
+							},
+							React.createElement(CopyButtonComponent, { href }))
+					);
 				});
 			} catch (e) {
 				console.error(e);

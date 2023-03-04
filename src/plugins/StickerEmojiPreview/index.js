@@ -17,12 +17,13 @@ module.exports = () => {
 	}
 
 	failsafe;
-	
+
 	// Constants
 	const PREVIEW_SIZE = 300;
 
 	// Components
-	const previewComponent = require("components/PreviewComponent.jsx");
+	const ErrorBoundary = require("ErrorBoundary.jsx");
+	const PreviewComponent = require("components/PreviewComponent.jsx");
 	const settingComponent = (props) => {
 		const [enabled, setEnabled] = useState(props.value);
 		return React.createElement(Modules.SwitchRow, {
@@ -59,16 +60,21 @@ module.exports = () => {
 				size: PREVIEW_SIZE
 			});
 		}
+
 		start() {
 			try {
 				this.settings = Data.load("settings") || { previewDefaultState: false };
 				DOM.addStyle(css);
 				Patcher.after(Modules.ExpressionPickerInspector, "Z", (_, [{ graphicPrimary, titlePrimary }], ret) => {
-					return React.createElement(previewComponent, {
-						target: ret,
-						defaultState: this.settings.previewDefaultState,
-						previewComponent: this.getPreviewComponent(graphicPrimary, titlePrimary)
-					})
+					return React.createElement(ErrorBoundary, {
+							id: "PreviewComponent",
+							plugin: config.info.name
+						},
+						React.createElement(PreviewComponent, {
+							target: ret,
+							defaultState: this.settings.previewDefaultState,
+							previewComponent: this.getPreviewComponent(graphicPrimary, titlePrimary)
+						}));
 				});
 			} catch (e) {
 				console.error(e);

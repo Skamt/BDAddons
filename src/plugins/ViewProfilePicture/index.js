@@ -60,9 +60,10 @@ module.exports = () => {
 	const IMG_WIDTH = 4096;
 
 	// Components
-	const ViewProfilePictureButton = require("components/ViewProfilePictureButton.jsx");
-	const DisplayCarousel = require("components/DisplayCarousel.jsx");
-	const ColorModal = require("components/ColorModal.jsx");
+	const ErrorBoundary = require("ErrorBoundary.jsx");
+	const ViewProfilePictureButtonComponent = require("components/ViewProfilePictureButtonComponent.jsx");
+	const DisplayCarouselComponent = require("components/DisplayCarouselComponent.jsx");
+	const ColorModalComponent = require("components/ColorModalComponent.jsx");
 
 	// Styles
 	const css = require("styles.css");
@@ -71,7 +72,14 @@ module.exports = () => {
 		constructor() {}
 
 		openCarousel(items) {
-			Modules.openModal(props => React.createElement(DisplayCarousel, { props, items }));
+			Modules.openModal(props =>
+				React.createElement(ErrorBoundary, {
+						id: "DisplayCarouselComponent",
+						plugin: config.info.name,
+						closeModal: props.onClose
+					},
+					React.createElement(DisplayCarouselComponent, { props, items }))
+			);
 		}
 
 		clickHandler(user, bannerObject, isUserPopout) {
@@ -81,7 +89,7 @@ module.exports = () => {
 			const AvatarImageComponent = Utils.getImageModalComponent(avatarURL, { width: IMG_WIDTH, height: IMG_WIDTH });
 			const BannerImageComponent = backgroundImage ?
 				Utils.getImageModalComponent(`${backgroundImage.match(/(?<=\().*(?=\?)/)?.[0]}?size=${IMG_WIDTH}`, { width: IMG_WIDTH }) :
-				React.createElement(ColorModal, { color: backgroundColor });
+				React.createElement(ColorModalComponent, { color: backgroundColor });
 			this.openCarousel([AvatarImageComponent, BannerImageComponent]);
 		}
 
@@ -104,10 +112,14 @@ module.exports = () => {
 
 				if (Array.isArray(children) && bannerObject)
 					children.push(
-						React.createElement(ViewProfilePictureButton, {
-							className,
-							onClick: _ => this.clickHandler(user, bannerObject, Modules.ProfileTypeEnum.POPOUT === profileType)
-						})
+						React.createElement(ErrorBoundary, {
+								id: "ViewProfilePictureButtonComponent",
+								plugin: config.info.name
+							},
+							React.createElement(ViewProfilePictureButtonComponent, {
+								className,
+								onClick: _ => this.clickHandler(user, bannerObject, Modules.ProfileTypeEnum.POPOUT === profileType)
+							}))
 					);
 			});
 		}
