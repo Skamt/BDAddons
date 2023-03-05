@@ -45,7 +45,7 @@ const Utils = {
 	showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),
 	copy: (data) => {
 		DiscordNative.clipboard.copy(data);
-		Utils.showToast("Copied!", "success");
+		Utils.showToast(`${data} Copied!`, "success");
 	},
 };
 

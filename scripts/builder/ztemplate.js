@@ -1,11 +1,12 @@
 const config = {{ PLUGIN__CONFIG }};
 
 function getPlugin() {
-	const { Modules, Plugin } = ({{ PLUGIN__BODY }})();
-	return [Plugin, Modules]
+	const [ParentPlugin, Api] = global.ZeresPluginLibrary.buildPlugin(config);
+	const { Modules, Plugin } = ({{ PLUGIN__BODY }})(Api);
+	return [ParentPlugin, Plugin, Modules]
 }
 
-function pluginErrorAlert(content) {
+function pluginErrorAlert(content){
 	BdApi.alert(config.info.name, content);
 }
 
@@ -31,7 +32,7 @@ function checkModules(Modules) {
 }
 
 function initPlugin() {
-	const [Plugin, Modules] = getPlugin();
+	const [ParentPlugin, Plugin, Modules] = getPlugin();
 
 	const [pluginBreakingError, SafeModules, BrokenModules] = checkModules(Modules);
 	if (pluginBreakingError)
@@ -43,11 +44,17 @@ function initPlugin() {
 	else {
 		if (BrokenModules.length > 0)
 			pluginErrorAlert([
-				"Detected some Missing modules, certain aspects of the plugin may not work properly.", 
-				`\`\`\`md\n[Missing modules]\n\n${BrokenModules.map((moduleName,i) => `${++i}. ${moduleName}`).join('\n')}\`\`\``
+				"Detected some Missing modules, certain aspects of the plugin may not work properly."
+				,`\`\`\`md\n[Missing modules]\n\n${BrokenModules.map((moduleName,i) => `${++i}. ${moduleName}`).join('\n')}\`\`\``
 			]);
-		return Plugin(SafeModules);
+		return Plugin(ParentPlugin, SafeModules);
 	}
 }
 
-module.exports = initPlugin();
+module.exports = !global.ZeresPluginLibrary ?
+	getErrorPlugin(["**Library plugin is needed**", 
+		`**ZeresPluginLibrary** is needed to run **${this.config.info.name}**.`,
+		"Please download it from the officiel website",
+		"https://betterdiscord.app/plugin/ZeresPluginLibrary"
+	]) :
+	initPlugin();

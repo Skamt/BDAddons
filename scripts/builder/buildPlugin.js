@@ -3,6 +3,7 @@ const path = require("path");
 const parser = require('./parser');
 const { beautify } = require('../common');
 const template = fs.readFileSync(path.join(__dirname, "template.js")).toString();
+const ztemplate = fs.readFileSync(path.join(__dirname, "ztemplate.js")).toString();
 
 function buildMeta(config) {
 	const metaString = ["/**"];
@@ -27,10 +28,10 @@ module.exports = (pluginContent, pluginFolder, pluginFiles, config) => {
 		result += `const config = {{ PLUGIN__CONFIG }};{{ PLUGIN__BODY }}`;
 		delete config.keep; // Temporary
 	} else if (config["no-zpl"]) {
-		result += `const config = {{ PLUGIN__CONFIG }};module.exports = ({{ PLUGIN__BODY }})();`;
+		result += template;
 		delete config["no-zpl"]; // Temporary
 	} else
-		result += template;
+		result += ztemplate;
 
 
 	result = result.replace(`{{ PLUGIN__CONFIG }}`, `${beautify(JSON.stringify(config),{"brace_style": "collapse"}).replace(/"((?:[A-Za-z]|[0-9]|_)+)"\s?:/g, "$1:")}`)
