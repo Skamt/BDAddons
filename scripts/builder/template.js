@@ -36,9 +36,8 @@ function initPlugin() {
 	const [pluginBreakingError, SafeModules, BrokenModules] = checkModules(Modules);
 	if (pluginBreakingError)
 		return getErrorPlugin([
-			"**Plugin is broken**",
-			"Take a screenshot of this popup and show it to the dev.",
-			`\`\`\`md\n[Missing modules]\n\n${BrokenModules.map((moduleName,i) => `${++i}. ${moduleName}`).join('\n')}\`\`\``
+			"**Plugin is broken:** Take a screenshot of this popup and show it to the dev.",
+			`\`\`\`md\nMissing modules:\n\n${BrokenModules.map((moduleName,i) => `${++i}. ${moduleName}`).join('\n')}\`\`\``
 		]);
 	else {
 		if (BrokenModules.length > 0)
