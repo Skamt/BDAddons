@@ -54,7 +54,7 @@ module.exports = () => {
 							const { href } = Utils.getNestedProp(returnValue, "props.children.2.props");
 							children.push(
 								React.createElement(ErrorBoundary, {
-										id: "CopyLinkButton",
+										id: "CopyButtonComponent",
 										plugin: config.info.name
 									},
 									React.createElement(CopyButtonComponent, { href }))
