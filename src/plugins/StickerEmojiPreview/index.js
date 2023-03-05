@@ -27,7 +27,7 @@ module.exports = () => {
 				const [enabled, setEnabled] = useState(props.value);
 				return React.createElement(Modules.SwitchRow, {
 					value: enabled,
-					hideBorder:true,
+					hideBorder: true,
 					onChange: e => {
 						props.onChange(e);
 						setEnabled(e);
@@ -39,13 +39,17 @@ module.exports = () => {
 			const css = require("styles.css");
 
 			return class StickerEmojiPreview {
+				constructor() {
+					this.settings = Data.load("settings") || { previewDefaultState: false };
+					this.previewState = this.settings.previewDefaultState;
+				}
 
 				getMediaInfo({ props, type }, titlePrimary) {
 					if (props.sticker)
 						return [type, props];
 					if (props.src)
 						return [type, { src: props.src.replace(/([?&]size=)(\d+)/, `$1${PREVIEW_SIZE}`) }]
-					if (titlePrimary)
+					if (titlePrimary && titlePrimary.includes(':'))
 						return ['img', { src: Modules.DefaultEmojisManager.getByName(titlePrimary.split(":")[1]).url }];
 
 					return ['div', {}];
@@ -63,7 +67,6 @@ module.exports = () => {
 
 				start() {
 					try {
-						this.settings = Data.load("settings") || { previewDefaultState: false };
 						DOM.addStyle(css);
 						Patcher.after(Modules.ExpressionPickerInspector, "Z", (_, [{ graphicPrimary, titlePrimary }], ret) => {
 							return React.createElement(ErrorBoundary, {
@@ -72,7 +75,8 @@ module.exports = () => {
 								},
 								React.createElement(PreviewComponent, {
 									target: ret,
-									defaultState: this.settings.previewDefaultState,
+									defaultState: this.previewState,
+									setPreviewState: (e) => this.previewState = e,
 									previewComponent: this.getPreviewComponent(graphicPrimary, titlePrimary)
 								}));
 						});

@@ -1,9 +1,11 @@
-module.exports = ({ target,  defaultState, previewComponent }) => {
+module.exports = ({ target,  defaultState, setPreviewState, previewComponent }) => {
 	const [show, setShow] = useState(defaultState);
 	useEffect(() => {
 		function keyupHandler(e) {
-			if(e.key === "Control")
+			if(e.key === "Control"){
+				setPreviewState(!show);
 				setShow(!show);
+			}
 		}
 		document.addEventListener("keyup", keyupHandler);
 		return () => document.removeEventListener("keyup", keyupHandler);
