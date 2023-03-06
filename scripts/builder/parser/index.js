@@ -6,9 +6,7 @@ const other = require("./otherParser.js");
 const DiscordModules = require("./../../../DiscordModules.js");
 
 module.exports = (content, pluginFolder, pluginFiles) => {
-	
-	content = content.replace(/require\(("|'|\`)ErrorBoundary.jsx("|'|\`)\)/g, () => jsx(path.resolve(__dirname,'./../../common/components/ErrorBoundary.jsx')));
-	
+
 	for (const fileName of pluginFiles)
 		content = content.replace(new RegExp(`require\\(('|"|\`)${fileName}('|"|\`)\\)`, "g"), () => {
 			const filePath = path.join(pluginFolder, fileName);

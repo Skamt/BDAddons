@@ -1,6 +1,18 @@
 .copyBtn {
 	left: 115px;
 	white-space: nowrap;
+    position: absolute;
+    top: 100%;
+    font-size: 14px;
+    font-weight: 500;
+    color: #fff;
+    line-height: 30px;
+    transition: opacity .15s ease;
+    opacity: .5;
+}
+.copyBtn:hover{
+	opacity: 1;
+    text-decoration: underline;
 }
 
 .copyBtnSpan {

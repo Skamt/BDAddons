@@ -12,3 +12,17 @@
 [class^="repliedMessage"] .nick {
 	display: none;
 }
+
+.EB-CustomNicknames-AddUserNicknameComponent {
+	color:white; 
+	background:#2e2e2e; 
+	padding:15px; 
+	border-radius:8px; 
+	pointer-events:all; 
+	cursor:pointer; 
+	position:fixed; 
+	top:50%; 
+	left:50%; 
+	transform:translate(-50%,-50%); 
+	z-index:9999; 
+}

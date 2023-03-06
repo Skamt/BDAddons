@@ -93,7 +93,7 @@ module.exports = (Api) => {
 				getSettingsPanel() {
 					return this.buildSettingsPanel().getElement();
 				}
-			};
+			}
 		}
 	}
 }

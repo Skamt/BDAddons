@@ -69,15 +69,15 @@ module.exports = ({ channel, loadChannel, messages }) => {
 				<div className="buttons-container">
 					<Modules.ButtonData
 						onClick={loadChannelHandler}
-						color={Modules.ButtonData.Colors.GREEN}
-						size={Modules.ButtonData.Sizes.LARGE}>
+						color={Modules.ButtonData?.Colors?.GREEN}
+						size={Modules.ButtonData?.Sizes?.LARGE}>
 						Load Channel
 					</Modules.ButtonData>
 					<Modules.ButtonData
 						onClick={loadMessagesHandler}
-						color={Modules.ButtonData.Colors.PRIMARY}
-						look={Modules.ButtonData.Looks.OUTLINED}
-						size={Modules.ButtonData.Sizes.LARGE}>
+						color={Modules.ButtonData?.Colors?.PRIMARY}
+						look={Modules.ButtonData?.Looks?.OUTLINED}
+						size={Modules.ButtonData?.Sizes?.LARGE}>
 						Load Messages
 					</Modules.ButtonData>
 				</div>

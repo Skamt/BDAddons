@@ -1,12 +1,12 @@
 module.exports = (Api) => {
-	const { Webpack: { Filters, getModule } } = BdApi;
+	const { React, Webpack: { Filters, getModule } } = BdApi;
 
 	// https://discord.com/channels/86004744966914048/196782758045941760/1062604534922367107
 	function getModuleAndKey(filter) {
 		let module;
 		const target = getModule((entry, m) => filter(entry) ? (module = m) : false, { searchExports: true });
 		module = module?.exports;
-		if (!module) return { module:undefined };
+		if (!module) return { module: undefined };
 		const key = Object.keys(module).find(k => module[k] === target);
 		if (!key) return undefined;
 		return { module, key };
@@ -25,8 +25,22 @@ module.exports = (Api) => {
 					SelectedGuildStore: { module: SelectedGuildStore },
 					GuildChannelsStore: { module: GuildChannelsStore },
 					MessageActions: { module: MessageActions, isBreakable: true },
-					SwitchRow: { module: SwitchRow },
-					ButtonData: { module: ButtonData }
+					SwitchRow: {
+						module: SwitchRow,
+						fallback: function fallbackSwitchRow(props) {
+							return React.createElement('input', {
+								value: props.value,
+								onChange: (e) => props.onChange(e.target.checked),
+								type: "checkbox"
+							})
+						}
+					},
+					ButtonData: {
+						module: ButtonData,
+						fallback: function fallbackButtonData(props) {
+							return React.createElement('button', props)
+						}
+					}
 				};
 			})()
 		},
@@ -116,7 +130,7 @@ module.exports = (Api) => {
 			}
 
 			// Components
-			const ErrorBoundary = require("ErrorBoundary.jsx");
+			const ErrorBoundary = require("components/ErrorBoundary.jsx");
 			const LazyLoaderComponent = require("components/LazyLoaderComponent.jsx");
 
 			// Styles

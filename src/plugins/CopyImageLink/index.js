@@ -1,12 +1,12 @@
 module.exports = () => {
 	const { Webpack: { Filters, getModule } } = BdApi;
-	
+
 	// https://discord.com/channels/86004744966914048/196782758045941760/1062604534922367107
 	function getModuleAndKey(filter) {
 		let module;
 		const target = getModule((entry, m) => filter(entry) ? (module = m) : false, { searchExports: true });
 		module = module?.exports;
-		if (!module) return { module:undefined };
+		if (!module) return { module: undefined };
 		const key = Object.keys(module).find(k => module[k] === target);
 		if (!key) return undefined;
 		return { module, key };
@@ -38,9 +38,7 @@ module.exports = () => {
 			};
 
 			// Components
-			const ErrorBoundary = require("ErrorBoundary.jsx");
 			const CopyButtonComponent = require("components/CopyButtonComponent.jsx");
-
 
 			// Styles
 			const css = require("styles.css");
@@ -52,13 +50,7 @@ module.exports = () => {
 						Patcher.after(Modules.ImageModal.module, Modules.ImageModal.key, (_, __, returnValue) => {
 							const children = Utils.getNestedProp(returnValue, "props.children");
 							const { href } = Utils.getNestedProp(returnValue, "props.children.2.props");
-							children.push(
-								React.createElement(ErrorBoundary, {
-										id: "CopyButtonComponent",
-										plugin: config.info.name
-									},
-									React.createElement(CopyButtonComponent, { href }))
-							);
+							children.push(React.createElement(CopyButtonComponent, { href }));
 						});
 					} catch (e) {
 						console.error(e);
@@ -69,7 +61,7 @@ module.exports = () => {
 					DOM.removeStyle();
 					Patcher.unpatchAll();
 				}
-			};
+			}
 		}
 	}
 }
