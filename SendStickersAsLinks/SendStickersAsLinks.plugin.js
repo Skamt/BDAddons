@@ -51,89 +51,99 @@ const config = {
 	}]
 };
 
-function initPlugin([Plugin, Api]) {
-	const plugin = () => {
-		const {
-			UI,
-			DOM,
-			Patcher,
-			Webpack: {
-				Filters,
-				getModule
-			}
-		} = new BdApi(config.info.name);
+function getPlugin() {
+	const [ParentPlugin, Api] = global.ZeresPluginLibrary.buildPlugin(config);
+	const { Modules, Plugin } = ((Api) => {
+		const { Webpack: { Filters, getModule } } = BdApi;
 
-		// Helper functions
-		const Utils = {
-			showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),
-			getStickerUrl: (stickerId, size) => `https://media.discordapp.net/stickers/${stickerId}?size=${size}&passthrough=false`,
-			hasEmbedPerms: (channel, user) => !channel.guild_id || Permissions.can({ permission: DiscordPermissions.EMBED_LINKS, context: channel, user }),
-			isLottieSticker: sticker => sticker.type === StickerTypeEnum.STANDARD,
-			isAnimatedSticker: sticker => sticker["format_type"] === StickerFormatEnum.APNG,
-			isStickerSendable: (sticker, channel, user) => getStickerSendability(sticker, user, channel) === StickersSendabilityEnum.SENDABLE,
-			getModuleAndKey(filter) {
-				let module;
-				const target = BdApi.Webpack.getModule((entry, m) => filter(entry) ? (module = m) : false, { searchExports: true })
-				return [module.exports, Object.keys(module.exports).find(k => module.exports[k] === target)];
-			}
-		};
+		// https://discord.com/channels/86004744966914048/196782758045941760/1062604534922367107
+		function getModuleAndKey(filter) {
+			let module;
+			const target = getModule((entry, m) => filter(entry) ? (module = m) : false, { searchExports: true });
+			module = module?.exports;
+			if (!module) return { module: undefined };
+			const key = Object.keys(module).find(k => module[k] === target);
+			if (!key) return undefined;
+			return { module, key };
+		}
 
-		// Modules
-		const [StickerModule, StickerModulePatchTarget] = Utils.getModuleAndKey(Filters.byStrings('sticker', 'withLoadingIndicator'));
-		const PendingReplyStore = getModule(m => m.getPendingReply);
-		const Permissions = getModule(Filters.byProps('computePermissions'));
-		const ChannelStore = getModule(Filters.byProps('getChannel', 'getDMFromUserId'));
-		const DiscordPermissions = getModule(Filters.byProps('ADD_REACTIONS'), { searchExports: true });
-		const MessageActions = getModule(Filters.byProps('jumpToMessage', '_sendMessage'));
-		const UserStore = getModule(Filters.byProps('getCurrentUser', 'getUser'));
-		const StickerStore = getModule(Filters.byProps('getStickerById'));
-		const ChannelTextArea = getModule((exp) => exp?.type?.render?.toString().includes('CHANNEL_TEXT_AREA'));
-		const StickerTypeEnum = getModule(Filters.byProps('GUILD', 'STANDARD'), { searchExports: true });
-		const StickerFormatEnum = getModule(Filters.byProps('APNG', 'LOTTIE'), { searchExports: true });
-		let StickersSendabilityEnumKey, getStickerSendabilityKey, isSendableStickerKey;
-		const StickersSendability = getModule(exp => {
-			const keys = Object.keys(exp);
-			if (keys.some(key => exp[key]?.SENDABLE_WITH_BOOSTED_GUILD)) {
-				StickersSendabilityEnumKey = keys.find(key => exp[key].SENDABLE_WITH_BOOSTED_GUILD);
-				getStickerSendabilityKey = keys.find(key => exp[key].toString().includes('SENDABLE_WITH_PREMIUM'));
-				isSendableStickerKey = keys.find(key => !exp[key].toString().includes('SENDABLE_WITH_PREMIUM') && !exp[key].SENDABLE_WITH_BOOSTED_GUILD);
-				return true;
-			}
-		});
-		const StickersSendabilityEnum = StickersSendability[StickersSendabilityEnumKey];
-		const getStickerSendability = StickersSendability[getStickerSendabilityKey];;
-		const InsertText = (() => {
-			let ComponentDispatch;
-			return (content) => {
-				if (!ComponentDispatch) ComponentDispatch = getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners('INSERT_TEXT').length, { searchExports: true });
-				/**
-				 * Not sure why but when using this method of inserting text 
-				 * from whiting a patch or maybe this patch 'patchSendSticker' 
-				 * it just doesn't work
-				 * i did trace through and got into a deep rabbit hole so i just gave up on it.
-				 * Yet as we all know, when in doubt wait for the stack to empty out
-				 */
-				setTimeout(() => {
-					ComponentDispatch.dispatchToLastSubscribed("INSERT_TEXT", {
-						plainText: content,
-						rawText: content
-					});
-				}, 0);
-			}
-		})();
+		return {
+			Modules: {
+				StickerModule: { module: getModuleAndKey(Filters.byStrings('sticker', 'withLoadingIndicator')), withKey: true },
+				PendingReplyStore: { module: getModule(m => m.getPendingReply) },
+				Permissions: { module: getModule(Filters.byProps('computePermissions')) },
+				ChannelStore: { module: getModule(Filters.byProps('getChannel', 'getDMFromUserId')), isBreakable: true },
+				DiscordPermissions: { module: getModule(Filters.byProps('ADD_REACTIONS'), { searchExports: true }) },
+				MessageActions: { module: getModule(Filters.byProps('jumpToMessage', '_sendMessage')), isBreakable: true },
+				UserStore: { module: getModule(Filters.byProps('getCurrentUser', 'getUser')), isBreakable: true },
+				StickerStore: { module: getModule(Filters.byProps('getStickerById')), isBreakable: true },
+				StickerTypeEnum: { module: getModule(Filters.byProps('GUILD', 'STANDARD'), { searchExports: true }), fallback: { STANDARD: 1, GUILD: 2 } },
+				StickerFormatEnum: { module: getModule(Filters.byProps('APNG', 'LOTTIE'), { searchExports: true }), fallback: { PNG: 1, APNG: 2, LOTTIE: 3, GIF: 4 } },
+				InsertText: {
+					module: (() => {
+						let ComponentDispatch;
+						return (content) => {
+							if (!ComponentDispatch) ComponentDispatch = getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners('INSERT_TEXT').length, { searchExports: true });
+							ComponentDispatch.dispatchToLastSubscribed("INSERT_TEXT", {
+								plainText: content
+							});
+						}
+					})(),
+					isBreakable: false
+				},
+				...(() => {
+					const result = {
+						StickersSendability: { module: undefined, isBreakable: true },
+						StickersSendabilityEnum: {
+							module: undefined,
+							fallback: {
+								NONSENDABLE: 2,
+								SENDABLE: 0,
+								SENDABLE_WITH_BOOSTED_GUILD: 3,
+								SENDABLE_WITH_PREMIUM: 1
+							}
+						},
+						getStickerSendability: { module: undefined, isBreakable: true },
+						isStickerSendable: { module: undefined, isBreakable: true }
+					};
+					result.StickersSendability.module = getModule(m => Object.keys(m).some(key => m[key]?.SENDABLE_WITH_BOOSTED_GUILD));
+					if (!result.StickersSendability) return result;
+					const exports = Object.entries(result.StickersSendability.module).map(([key, fn]) => (fn.key = key, fn));
+					result.StickersSendabilityEnum.module = exports.splice(exports.findIndex(Filters.byProps('SENDABLE_WITH_BOOSTED_GUILD')), 1)[0];
+					result.getStickerSendability.module = exports.splice(exports.findIndex(Filters.byStrings('canUseStickersEverywhere')), 1)[0];
+					result.isStickerSendable.module = exports[0];
+					return result;
+				})()
+			},
+			Plugin(ParentPlugin, Modules) {
+				const {
+					UI,
+					DOM,
+					Patcher
+				} = new BdApi(config.info.name);
 
-		// Strings & Constants
-		const TAGS = {
-			ANIMATED_STICKER_TAG: "ANIMATED_STICKER_TAG"
-		};
-		const STRINGS = {
-			sendLottieStickerErrorMessage: "Official Discord Stickers are not supported.",
-			missingEmbedPermissionsErrorMessage: "Missing Embed Permissions",
-			disabledAnimatedStickersErrorMessage: "You have disabled animated stickers in settings."
-		};
+				// Utilities
+				const Utils = {
+					showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),
+					getStickerUrl: (stickerId, size) => `https://media.discordapp.net/stickers/${stickerId}?size=${size}&passthrough=false`,
+					hasEmbedPerms: (channel, user) => !channel.guild_id || Modules.Permissions.can({ permission: Modules.DiscordPermissions.EMBED_LINKS, context: channel, user }),
+					isLottieSticker: sticker => sticker.type === Modules.StickerTypeEnum.STANDARD,
+					isAnimatedSticker: sticker => sticker["format_type"] === Modules.StickerFormatEnum.APNG,
+					isStickerSendable: (sticker, channel, user) => Modules.getStickerSendability(sticker, user, channel) === Modules.StickersSendabilityEnum.SENDABLE
+				};
 
-		// styles
-		const css = `.animatedSticker{
+				// Strings & Constants
+				const TAGS = {
+					ANIMATED_STICKER_TAG: "ANIMATED_STICKER_TAG"
+				};
+				const STRINGS = {
+					sendLottieStickerErrorMessage: "Official Discord Stickers are not supported.",
+					missingEmbedPermissionsErrorMessage: "Missing Embed Permissions",
+					disabledAnimatedStickersErrorMessage: "You have disabled animated stickers in settings."
+				};
+
+				// Styles
+				const css = `.animatedSticker{
     position:relative;
 }
 
@@ -153,164 +163,212 @@ function initPlugin([Plugin, Api]) {
     border-radius:4px;
 }`;
 
-		return class SendStickersAsLinks extends Plugin {
-			constructor() {
-				super();
-			}
-
-			handleUnsendableSticker({ user, sticker, channel }, direct) {
-				if (Utils.isAnimatedSticker(sticker) && !this.settings.shouldSendAnimatedStickers)
-					return Utils.showToast(STRINGS.disabledAnimatedStickersErrorMessage, "info");
-				if (!Utils.hasEmbedPerms(channel, user) && !this.settings.ignoreEmbedPermissions)
-					return Utils.showToast(STRINGS.missingEmbedPermissionsErrorMessage, "info");
-
-				this.sendStickerAsLink(sticker, channel, direct);
-			}
-
-			sendStickerAsLink(sticker, channel, direct) {
-				if (this.settings.sendDirectly || direct)
-					MessageActions.sendMessage(channel.id, {
-						content: Utils.getStickerUrl(sticker.id, this.settings.stickerSize),
-						validNonShortcutEmojis: []
-					}, undefined, this.getReply(channel.id));
-				else
-					InsertText(Utils.getStickerUrl(sticker.id, this.settings.stickerSize));
-			}
-
-			getReply(channelId) {
-				const reply = PendingReplyStore.getPendingReply(channelId);
-				if (!reply) return {};
-				return {
-					messageReference: {
-						guild_id: reply.channel.guild_id,
-						channel_id: reply.channel.id,
-						message_id: reply.message.id
-					},
-					allowedMentions: reply.shouldMention ? undefined : {
-						parse: ["users", "roles", "everyone"],
-						replied_user: false
+				return class SendStickersAsLinks extends ParentPlugin {
+					constructor() {
+						super();
 					}
-				}
-			}
 
-			handleSticker(channelId, stickerId) {
-				const user = UserStore.getCurrentUser();
-				const sticker = StickerStore.getStickerById(stickerId);
-				const channel = ChannelStore.getChannel(channelId);
-				return {
-					user,
-					sticker,
-					channel,
-					isSendable: Utils.isStickerSendable(sticker, channel, user)
-				}
-			}
+					handleUnsendableSticker({ user, sticker, channel }, direct) {
+						if (Utils.isAnimatedSticker(sticker) && !this.settings.shouldSendAnimatedStickers)
+							return Utils.showToast(STRINGS.disabledAnimatedStickersErrorMessage, "info");
+						if (!Utils.hasEmbedPerms(channel, user) && !this.settings.ignoreEmbedPermissions)
+							return Utils.showToast(STRINGS.missingEmbedPermissionsErrorMessage, "info");
 
-			patchSendSticker() {
-				/** 
-				 * The existance of this plugin implies the existance of this patch 
-				 */
-				Patcher.instead(MessageActions, 'sendStickers', (_, args, originalFunc) => {
-					const [channelId, [stickerId]] = args;
-					const stickerObj = this.handleSticker(channelId, stickerId);
-					if (stickerObj.isSendable)
-						originalFunc.apply(_, args)
-					else
-						this.handleUnsendableSticker(stickerObj);
-				});
-			}
+						this.sendStickerAsLink(sticker, channel, direct);
+					}
 
-			patchStickerAttachement() {
-				/** 
-				 * Since we enabled stickers to be clickable
-				 * If you click on a sticker while the textarea has some text
-				 * the sticker will be added as attachment, and therefore triggers an api request
-				 * must intercept, adapt, overcome, what..?
-				 */
-				Patcher.before(MessageActions, 'sendMessage', (_, args) => {
-					const [channelId, , , attachments] = args;
-					if (attachments && attachments.stickerIds && attachments.stickerIds.filter) {
-						const [stickerId] = attachments.stickerIds;
-						const stickerObj = this.handleSticker(channelId, stickerId);
-						if (!stickerObj.isSendable) {
-							delete args[3].stickerIds;
-							setTimeout(() => {
-								this.handleUnsendableSticker(stickerObj, true);
-							}, 0)
+					sendStickerAsLink(sticker, channel, direct) {
+						if (this.settings.sendDirectly || direct)
+							Modules.MessageActions.sendMessage(channel.id, {
+								content: Utils.getStickerUrl(sticker.id, this.settings.stickerSize),
+								validNonShortcutEmojis: []
+							}, undefined, this.getReply(channel.id));
+						else
+							Modules.InsertText(Utils.getStickerUrl(sticker.id, this.settings.stickerSize));
+					}
+
+					getReply(channelId) {
+						const reply = Modules.PendingReplyStore.getPendingReply(channelId);
+						if (!reply) return {};
+						return {
+							messageReference: {
+								guild_id: reply.channel.guild_id,
+								channel_id: reply.channel.id,
+								message_id: reply.message.id
+							},
+							allowedMentions: reply.shouldMention ? undefined : {
+								parse: ["users", "roles", "everyone"],
+								replied_user: false
+							}
 						}
 					}
-				})
-			}
 
-			patchChannelGuildPermissions() {
-				Patcher.after(Permissions, "can", (_, [{ permission }], ret) =>
-					ret || DiscordPermissions.USE_EXTERNAL_EMOJIS === permission
-				);
-			}
-
-			patchStickerClickability() {
-				// if it's a guild sticker return true to make it clickable 
-				// ignoreing discord's stickers because ToS, and they're not regular images
-				Patcher.after(StickersSendability, isSendableStickerKey, (_, args, returnValue) => {
-					return args[0].type === StickerTypeEnum.GUILD;
-				});
-			}
-
-			patchGetStickerById() {
-				Patcher.after(StickerModule, StickerModulePatchTarget, (_, args, returnValue) => {
-					const { size, sticker } = returnValue.props.children[0].props;
-					if (size === 96) {
-						if (this.settings.shouldHighlightAnimated && !Utils.isLottieSticker(sticker) && Utils.isAnimatedSticker(sticker)) {
-							returnValue.props.children[0].props.className += " animatedSticker"
+					handleSticker(channelId, stickerId) {
+						const user = Modules.UserStore.getCurrentUser();
+						const sticker = Modules.StickerStore.getStickerById(stickerId);
+						const channel = Modules.ChannelStore.getChannel(channelId);
+						return {
+							user,
+							sticker,
+							channel,
+							isSendable: Utils.isStickerSendable(sticker, channel, user)
 						}
 					}
-				});
-			}
 
-			patchStickerSuggestion() {
-				// Enable suggestions for custom stickers only 
-				Patcher.after(StickersSendability, getStickerSendabilityKey, (_, args, returnValue) => {
-					if (args[0].type === StickerTypeEnum.GUILD) {
-						const { SENDABLE } = StickersSendabilityEnum;
-						return returnValue !== SENDABLE ? SENDABLE : returnValue;
+					patchSendSticker() {
+						/** 
+						 * The existance of this plugin implies the existance of this patch 
+						 */
+						Patcher.instead(Modules.MessageActions, 'sendStickers', (_, args, originalFunc) => {
+							const [channelId, [stickerId]] = args;
+							const stickerObj = this.handleSticker(channelId, stickerId);
+							if (stickerObj.isSendable)
+								originalFunc.apply(_, args)
+							else
+								this.handleUnsendableSticker(stickerObj);
+						});
 					}
-				});
-			}
 
-			onStart() {
-				try {
-					DOM.addStyle(css);
-					this.patchStickerClickability();
-					this.patchSendSticker();
-					this.patchGetStickerById();
-					this.patchStickerAttachement();
-					this.patchStickerSuggestion();
-					this.patchChannelGuildPermissions();
-				} catch (e) {
-					console.error(e);
-				}
-			}
+					patchStickerAttachement() {
+						/** 
+						 * Since we enabled stickers to be clickable
+						 * If you click on a sticker while the textarea has some text
+						 * the sticker will be added as attachment, and therefore triggers an api request
+						 * must intercept, adapt, overcome, what..?
+						 */
+						Patcher.before(Modules.MessageActions, 'sendMessage', (_, args) => {
+							const [channelId, , , attachments] = args;
+							if (attachments && attachments.stickerIds && attachments.stickerIds.filter) {
+								const [stickerId] = attachments.stickerIds;
+								const stickerObj = this.handleSticker(channelId, stickerId);
+								if (!stickerObj.isSendable) {
+									delete args[3].stickerIds;
+									setTimeout(() => {
+										this.handleUnsendableSticker(stickerObj, true);
+									}, 0)
+								}
+							}
+						})
+					}
 
-			onStop() {
-				DOM.removeStyle();
-				Patcher.unpatchAll();
-			}
+					patchChannelGuildPermissions() {
+						if (Modules.Permissions)
+							Patcher.after(Modules.Permissions, "can", (_, [{ permission }], ret) =>
+								ret || Modules.DiscordPermissions.USE_EXTERNAL_EMOJIS === permission
+							);
+					}
 
-			getSettingsPanel() {
-				const panel = this.buildSettingsPanel();
-				return panel.getElement();
+					patchStickerClickability() {
+						// if it's a guild sticker return true to make it clickable 
+						// ignoreing discord's stickers because ToS, and they're not regular images
+						Patcher.after(Modules.StickersSendability, Modules.isStickerSendable.key, (_, args, returnValue) => {
+							return args[0].type === Modules.StickerTypeEnum.GUILD;
+						});
+					}
+
+					patchGetStickerById() {
+						if (Modules.StickerModule)
+							Patcher.after(Modules.StickerModule, Modules.StickerModule.key, (_, args, returnValue) => {
+								const { size, sticker } = returnValue.props.children[0].props;
+								if (size === 96) {
+									if (this.settings.shouldHighlightAnimated && !Utils.isLottieSticker(sticker) && Utils.isAnimatedSticker(sticker)) {
+										returnValue.props.children[0].props.className += " animatedSticker"
+									}
+								}
+							});
+					}
+
+					patchStickerSuggestion() {
+						// Enable suggestions for custom stickers only 
+						if (Modules.StickersSendability)
+							Patcher.after(Modules.StickersSendability, Modules.getStickerSendability.key, (_, args, returnValue) => {
+								if (args[0].type === Modules.StickerTypeEnum.GUILD) {
+									const { SENDABLE } = Modules.StickersSendabilityEnum;
+									return returnValue !== SENDABLE ? SENDABLE : returnValue;
+								}
+							});
+					}
+
+					onStart() {
+						try {
+							DOM.addStyle(css);
+							this.patchStickerClickability();
+							this.patchSendSticker();
+							this.patchGetStickerById();
+							this.patchStickerAttachement();
+							this.patchStickerSuggestion();
+							this.patchChannelGuildPermissions();
+						} catch (e) {
+							console.error(e);
+						}
+					}
+
+					onStop() {
+						DOM.removeStyle();
+						Patcher.unpatchAll();
+					}
+
+					getSettingsPanel() {
+						const panel = this.buildSettingsPanel();
+						return panel.getElement();
+					}
+				};
 			}
-		};
-	};
-	return plugin(Plugin, Api);
+		}
+	})(Api);
+	return [ParentPlugin, Plugin, Modules]
+}
+
+function pluginErrorAlert(content) {
+	BdApi.alert(config.info.name, content);
+}
+
+function getErrorPlugin(message) {
+	return () => ({
+		stop() {},
+		start() {
+			pluginErrorAlert(message);
+		}
+	})
+}
+
+function checkModules(Modules) {
+	return Object.entries(Modules).reduce((acc, [moduleName, { module, fallback, isBreakable, withKey }]) => {
+		if ((withKey && !module.module) || !module) {
+			if (isBreakable) acc[0] = true;
+			acc[2].push(moduleName);
+			if (fallback) acc[1][moduleName] = fallback;
+		} else
+			acc[1][moduleName] = module;
+		return acc;
+	}, [false, {},
+		[]
+	]);
+}
+
+function initPlugin() {
+	const [ParentPlugin, Plugin, Modules] = getPlugin();
+
+	const [pluginBreakingError, SafeModules, BrokenModules] = checkModules(Modules);
+	if (pluginBreakingError)
+		return getErrorPlugin([
+			"**Plugin is broken:** Take a screenshot of this popup and show it to the dev.",
+			`\`\`\`md\nMissing modules:\n\n${BrokenModules.map((moduleName,i) => `${++i}. ${moduleName}`).join('\n')}\`\`\``
+		]);
+	else {
+		if (BrokenModules.length > 0)
+			pluginErrorAlert([
+				"Detected some Missing modules, certain aspects of the plugin may not work properly.",
+				`\`\`\`md\n[Missing modules]\n\n${BrokenModules.map((moduleName,i) => `${++i}. ${moduleName}`).join('\n')}\`\`\``
+			]);
+		return Plugin(ParentPlugin, SafeModules);
+	}
 }
 
 module.exports = !global.ZeresPluginLibrary ?
-	() => ({
-		stop() {},
-		start() {
-			BdApi.UI.showConfirmationModal("Library plugin is needed", [`**ZeresPluginLibrary** is needed to run **${this.config.info.name}**.`, `Please download it from the officiel website`, "https://betterdiscord.app/plugin/ZeresPluginLibrary"], {
-				confirmText: "Ok"
-			});
-		}
-	}) :
-	initPlugin(global.ZeresPluginLibrary.buildPlugin(config));
+	getErrorPlugin(["**Library plugin is needed**",
+		`**ZeresPluginLibrary** is needed to run **${this.config.info.name}**.`,
+		"Please download it from the officiel website",
+		"https://betterdiscord.app/plugin/ZeresPluginLibrary"
+	]) :
+	initPlugin();
