@@ -1,10 +1,23 @@
 module.exports = () => {
 	const { Webpack: { Filters, getModule } } = BdApi;
+
+	// https://discord.com/channels/86004744966914048/196782758045941760/1062604534922367107
+	function getModuleAndKey(filter) {
+		let module;
+		const target = getModule((entry, m) => filter(entry) ? (module = m) : false, { searchExports: true });
+		module = module?.exports;
+		if (!module) return { module: undefined };
+		const key = Object.keys(module).find(k => module[k] === target);
+		if (!key) return undefined;
+		return { module, key };
+	}
+
 	return {
 		Modules: {
 			Popout: { module: DiscordModules.Popout, isBreakable: true },
 			ExpressionPickerInspector: { module: DiscordModules.ExpressionPickerInspector, isBreakable: true },
 			SwitchRow: { module: DiscordModules.SwitchRow },
+			closeExpressionPicker: { module: getModuleAndKey(m => m?.toString?.().includes('activeView:null,activeViewType:null')), withKey: true },
 			DefaultEmojisManager: { module: DiscordModules.DefaultEmojisManager, isBreakable: true }
 		},
 		Plugin(Modules) {
@@ -65,21 +78,40 @@ module.exports = () => {
 					});
 				}
 
+				patchPickerInspector() {
+					/**
+					 * Main patch for the plugin
+					 */
+					Patcher.after(Modules.ExpressionPickerInspector, "Z", (_, [{ graphicPrimary, titlePrimary }], ret) => {
+						return React.createElement(ErrorBoundary, {
+								id: "PreviewComponent",
+								plugin: config.info.name,
+								fallback: ret
+							},
+							React.createElement(PreviewComponent, {
+								target: ret,
+								defaultState: this.previewState,
+								setPreviewState: (e) => this.previewState = e,
+								previewComponent: this.getPreviewComponent(graphicPrimary, titlePrimary)
+							}));
+					});
+				}
+
+				patchCloseExpressionPicker() {
+					/**
+					 * a listener for when experession picker is closed
+					 */
+					if (Modules.closeExpressionPicker.module)
+						Patcher.after(Modules.closeExpressionPicker.module, Modules.closeExpressionPicker.key, (_, args, ret) => {
+							this.previewState = false;
+						});
+				}
+
 				start() {
 					try {
 						DOM.addStyle(css);
-						Patcher.after(Modules.ExpressionPickerInspector, "Z", (_, [{ graphicPrimary, titlePrimary }], ret) => {
-							return React.createElement(ErrorBoundary, {
-									id: "PreviewComponent",
-									plugin: config.info.name
-								},
-								React.createElement(PreviewComponent, {
-									target: ret,
-									defaultState: this.previewState,
-									setPreviewState: (e) => this.previewState = e,
-									previewComponent: this.getPreviewComponent(graphicPrimary, titlePrimary)
-								}));
-						});
+						this.patchPickerInspector();
+						this.patchCloseExpressionPicker();
 					} catch (e) {
 						console.error(e);
 					}

@@ -20,7 +20,7 @@ module.exports = () => {
 			ImageModal: { module: DiscordModules.ImageModal, isBreakable: true, withKey: true },
 			ModalCarousel: { module: DiscordModules.ModalCarousel, isBreakable: true },
 			UserBannerMask: { module: DiscordModules.UserBannerMask, isBreakable: true },
-			ProfileTypeEnum: {module: DiscordModules.ProfileTypeEnum, fallback: {POPOUT: 0, MODAL: 1, SETTINGS: 2, PANEL: 3, CARD: 4 } },
+			ProfileTypeEnum: { module: DiscordModules.ProfileTypeEnum, fallback: { POPOUT: 0, MODAL: 1, SETTINGS: 2, PANEL: 3, CARD: 4 } },
 			CurrentUserStore: { module: DiscordModules.CurrentUserStore, isBreakable: true },
 			SelectedGuildStore: { module: DiscordModules.SelectedGuildStore },
 			renderLinkComponent: { module: DiscordModules.renderLinkComponent, isBreakable: true }
@@ -56,6 +56,7 @@ module.exports = () => {
 
 			// Components
 			const ErrorBoundary = require("ErrorBoundary.jsx");
+			const ErrorComponent = require("components/ErrorComponent.jsx");
 			const ViewProfilePictureButtonComponent = require("components/ViewProfilePictureButtonComponent.jsx");
 			const DisplayCarouselComponent = require("components/DisplayCarouselComponent.jsx");
 			const ColorModalComponent = require("components/ColorModalComponent.jsx");
@@ -64,7 +65,6 @@ module.exports = () => {
 			const css = require("styles.css");
 
 			return class ViewProfilePicture {
-				constructor() {}
 
 				openCarousel(items) {
 					Modules.openModal(props =>
@@ -109,7 +109,8 @@ module.exports = () => {
 							children.push(
 								React.createElement(ErrorBoundary, {
 										id: "ViewProfilePictureButtonComponent",
-										plugin: config.info.name
+										plugin: config.info.name,
+										fallback: React.createElement(ErrorComponent, { className })
 									},
 									React.createElement(ViewProfilePictureButtonComponent, {
 										className,
@@ -132,7 +133,7 @@ module.exports = () => {
 					DOM.removeStyle();
 					Patcher.unpatchAll();
 				}
-			};
+			}
 		}
 	}
 }
