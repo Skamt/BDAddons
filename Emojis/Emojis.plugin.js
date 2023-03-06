@@ -52,201 +52,258 @@ const config = {
 	}]
 };
 
-function initPlugin([Plugin, Api]) {
-	const plugin = () => {
-		const {
-			UI,
-			DOM,
-			Utils,
-			Patcher,
-			ReactUtils: {
-				getInternalInstance
+function getPlugin() {
+	const [ParentPlugin, Api] = global.ZeresPluginLibrary.buildPlugin(config);
+	const { Modules, Plugin } = (() => {
+		const { Webpack: { Filters, getModule } } = BdApi;
+		return {
+			Modules: {
+				PendingReplyStore: { module: getModule(m => m.getPendingReply) },
+				EmojiIntentionEnum: { module: getModule(Filters.byProps('GUILD_ROLE_BENEFIT_EMOJI'), { searchExports: true }), fallback: { CHAT: 3 }, },
+				EmojiSendAvailabilityEnum: { module: getModule(Filters.byProps('GUILD_SUBSCRIPTION_UNAVAILABLE'), { searchExports: true }), fallback: { DISALLOW_EXTERNAL: 0, PREMIUM_LOCKED: 2 } },
+				EmojiFunctions: { module: getModule(Filters.byProps('getEmojiUnavailableReason'), { searchExports: true }), isBreakable: true },
+				InsertText: {
+					module: (() => {
+						let ComponentDispatch;
+						return (content) => {
+							if (!ComponentDispatch) ComponentDispatch = getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners('INSERT_TEXT').length, { searchExports: true });
+							ComponentDispatch.dispatchToLastSubscribed("INSERT_TEXT", {
+								plainText: content
+							});
+						}
+					})()
+				},
+				...(() => {
+					const { Dispatcher, DiscordPermissions, SelectedChannelStore, MessageActions, Permissions, ChannelStore, UserStore } = Api.DiscordModules;
+					return {
+						Dispatcher: { module: Dispatcher },
+						DiscordPermissions: { module: DiscordPermissions, fallback: { EMBED_LINKS: 16384n } },
+						SelectedChannelStore: { module: SelectedChannelStore, isBreakable: true },
+						MessageActions: { module: MessageActions },
+						Permissions: { module: Permissions, isBreakable: true },
+						ChannelStore: { module: ChannelStore, isBreakable: true },
+						UserStore: { module: UserStore, isBreakable: true }
+					};
+				})()
 			},
-			Webpack: {
-				Filters,
-				getModule
-			}
-		} = new BdApi(config.info.name);
+			Plugin(ParentPlugin, Modules) {
+				const {
+					UI,
+					DOM,
+					Utils,
+					Patcher,
+					ReactUtils: {
+						getInternalInstance
+					}
+				} = new BdApi(config.info.name);
 
-		// Modules
-		const { DiscordModules: { Dispatcher, DiscordPermissions, SelectedChannelStore, MessageActions, Permissions, ChannelStore, UserStore } } = Api;
+				// Utilities
+				const SelfUtils = {
+					showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),
+					hasEmbedPerms: (channel, user) => !channel.guild_id || Modules.Permissions.can({ permission: Modules.DiscordPermissions.EMBED_LINKS, context: channel, user }),
+					isEmojiSendable: (e) => Modules.EmojiFunctions.getEmojiUnavailableReason(e) === null,
+					getEmojiUrl: (emoji, size) => `${emoji.url.replace(/(size=)(\d+)[&]/, '')}&size=${size}`,
+					getEmojiWebpUrl: (emoji, size) => SelfUtils.getEmojiUrl(emoji, size).replace('gif', 'webp'),
+					getEmojiGifUrl: (emoji, size) => SelfUtils.getEmojiUrl(emoji, size).replace('webp', 'gif')
+				}
 
-		const PendingReplyStore = getModule(m => m.getPendingReply);
-		const EmojiIntentionEnum = getModule(Filters.byProps('GUILD_ROLE_BENEFIT_EMOJI'), { searchExports: true });
-		const EmojiSendAvailabilityEnum = getModule(Filters.byProps('GUILD_SUBSCRIPTION_UNAVAILABLE'), { searchExports: true });
-		const EmojiFunctions = getModule(Filters.byProps('getEmojiUnavailableReason'), { searchExports: true });
-		const InsertText = (() => {
-			let ComponentDispatch;
-			return (content) => {
-				if (!ComponentDispatch) ComponentDispatch = getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners('INSERT_TEXT').length, { searchExports: true });
-				ComponentDispatch.dispatchToLastSubscribed("INSERT_TEXT", {
-					plainText: content
-				});
-			}
-		})();
+				// Strings & Constants
+				const STRINGS = {
+					missingEmbedPermissionsErrorMessage: "Missing Embed Permissions",
+					disabledAnimatedEmojiErrorMessage: "You have disabled animated emojis in settings."
+				};
 
-		// Helper functions
-		const SelfUtils = {
-			showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),
-			hasEmbedPerms: (channel, user) => !channel.guild_id || Permissions.can({ permission: DiscordPermissions.EMBED_LINKS, context: channel, user }),
-			isEmojiSendable: (e) => EmojiFunctions.getEmojiUnavailableReason(e) === null,
-			getEmojiUrl: (emoji, size) => `${emoji.url.replace(/(size=)(\d+)[&]/, '')}&size=${size}`,
-			getEmojiWebpUrl: (emoji, size) => SelfUtils.getEmojiUrl(emoji, size).replace('gif', 'webp'),
-			getEmojiGifUrl: (emoji, size) => SelfUtils.getEmojiUrl(emoji, size).replace('webp', 'gif')
-		}
-
-		// Strings & Constants
-		const STRINGS = {
-			missingEmbedPermissionsErrorMessage: "Missing Embed Permissions",
-			disabledAnimatedEmojiErrorMessage: "You have disabled animated emojis in settings."
-		};
-
-		// styles
-		const css = `.CHAT .premiumPromo-1eKAIB {
+				// Styles
+				const css = `.CHAT .premiumPromo-1eKAIB {
     display:none;
 }
 .emojiItemDisabled-3VVnwp {
     filter: unset;
 }`;
 
-		return class Emojis extends Plugin {
-			constructor() {
-				super();
-				this.emojiClickHandler = this.emojiClickHandler.bind(this);
-			}
+				return class Emojis extends ParentPlugin {
+					constructor() {
+						super();
+						this.emojiClickHandler = this.emojiClickHandler.bind(this);
+					}
 
-			getEmojiUrl(emoji, size) {
-				if (this.settings.sendEmojiAsWebp)
-					return SelfUtils.getEmojiWebpUrl(emoji, size);
-				if (emoji.animated)
-					return SelfUtils.getEmojiGifUrl(emoji, 4096);
+					getEmojiUrl(emoji, size) {
+						if (this.settings.sendEmojiAsWebp)
+							return SelfUtils.getEmojiWebpUrl(emoji, size);
+						if (emoji.animated)
+							return SelfUtils.getEmojiGifUrl(emoji, 4096);
 
-				return SelfUtils.getEmojiUrl(emoji, size);
-			}
+						return SelfUtils.getEmojiUrl(emoji, size);
+					}
 
-			sendEmojiAsLink(emoji, channel) {
-				if (this.settings.sendDirectly)
-					MessageActions.sendMessage(channel.id, {
-						content: this.getEmojiUrl(emoji, this.settings.emojiSize),
-						validNonShortcutEmojis: []
-					}, undefined, this.getReply(channel.id));
-				else
-					InsertText(SelfUtils.getEmojiUrl(emoji, this.settings.emojiSize));
-			}
+					sendEmojiAsLink(emoji, channel) {
+						if (Modules.MessageActions && this.settings.sendDirectly)
+							Modules.MessageActions.sendMessage(channel.id, {
+								content: this.getEmojiUrl(emoji, this.settings.emojiSize),
+								validNonShortcutEmojis: []
+							}, undefined, this.getReply(channel.id));
+						else
+							Modules.InsertText(SelfUtils.getEmojiUrl(emoji, this.settings.emojiSize));
+					}
 
-			getReply(channelId) {
-				const reply = PendingReplyStore.getPendingReply(channelId);
-				if (!reply) return {};
-				Dispatcher.dispatch({ type: "DELETE_PENDING_REPLY", channelId });
-				return {
-					messageReference: {
-						guild_id: reply.channel.guild_id,
-						channel_id: reply.channel.id,
-						message_id: reply.message.id
-					},
-					allowedMentions: reply.shouldMention ? undefined : {
-						parse: ["users", "roles", "everyone"],
-						replied_user: false
+					getReply(channelId) {
+						const reply = Modules.PendingReplyStore.getPendingReply(channelId);
+						if (!reply) return {};
+						Modules.Dispatcher.dispatch({ type: "DELETE_PENDING_REPLY", channelId });
+						return {
+							messageReference: {
+								guild_id: reply.channel.guild_id,
+								channel_id: reply.channel.id,
+								message_id: reply.message.id
+							},
+							allowedMentions: reply.shouldMention ? undefined : {
+								parse: ["users", "roles", "everyone"],
+								replied_user: false
+							}
+						}
+					}
+
+					handleUnsendableEmoji(emoji, channel, user) {
+						if (emoji.animated && !this.settings.shouldSendAnimatedEmojis)
+							return SelfUtils.showToast(STRINGS.disabledAnimatedEmojiErrorMessage, "info");
+						if (!SelfUtils.hasEmbedPerms(channel, user) && !this.settings.ignoreEmbedPermissions)
+							return SelfUtils.showToast(STRINGS.missingEmbedPermissionsErrorMessage, "info");
+
+						this.sendEmojiAsLink(emoji, channel);
+					}
+
+					emojiHandler(emoji) {
+						const user = Modules.UserStore.getCurrentUser();
+						const intention = Modules.EmojiIntentionEnum.CHAT;
+						const channel = Modules.ChannelStore.getChannel(Modules.SelectedChannelStore.getChannelId());
+						if (!SelfUtils.isEmojiSendable({ emoji, channel, intention }))
+							this.handleUnsendableEmoji(emoji, channel, user);
+					}
+
+					getPickerIntention(event) {
+						const picker = event.path.find(i => i.id === 'emoji-picker-tab-panel');
+						if (!picker) return [null];
+						const pickerInstance = getInternalInstance(picker);
+						const { pickerIntention } = BdApi.Utils.findInTree(pickerInstance, m => m && "pickerIntention" in m, { walkable: ["pendingProps", "children", "props"] }) || {};
+						return [pickerIntention, picker];
+					}
+
+					emojiClickHandler(event) {
+						if (event.button === 2) return;
+						const [pickerIntention, picker] = this.getPickerIntention(event);
+						if (pickerIntention !== Modules.EmojiIntentionEnum.CHAT) return;
+						picker.classList.add('CHAT');
+						const emojiInstance = getInternalInstance(event.target);
+						const props = emojiInstance?.pendingProps;
+						if (props && props["data-type"]?.toLowerCase() === "emoji" && props.children) {
+							this.emojiHandler(props.children.props.emoji);
+						}
+					}
+
+					patchEmojiPickerUnavailable() {
+						/**
+						 * This patches allows server icons to show up on the left side of the picker
+						 * if external emojis are disabled, servers get filtered out
+						 * and it's handy to scroll through emojis easily
+						 */
+						Patcher.after(Modules.EmojiFunctions, "isEmojiFiltered", (_, [, , intention], ret) => {
+							if (intention !== Modules.EmojiIntentionEnum.CHAT) return ret;
+							return false;
+						});
+						/**
+						 * This patch allows emojis to be added to the picker
+						 * if external emojis are disabled, they don't get added to the picker
+						 * PREMIUM_LOCKED is returned becaause that is what's returned normally 
+						 
+						 * 0: "DISALLOW_EXTERNAL"
+						 * 1: "GUILD_SUBSCRIPTION_UNAVAILABLE"
+						 * 2: "PREMIUM_LOCKED"
+						 * 3: "ONLY_GUILD_EMOJIS_ALLOWED"
+						 * 4: "ROLE_SUBSCRIPTION_LOCKED"
+						 * 5: "ROLE_SUBSCRIPTION_UNAVAILABLE"
+						 */
+						Patcher.after(Modules.EmojiFunctions, "getEmojiUnavailableReason", (_, [{ intention }], ret) => {
+							if (intention !== Modules.EmojiIntentionEnum.CHAT) return ret;
+							return ret === Modules.EmojiSendAvailabilityEnum.DISALLOW_EXTERNAL ? Modules.EmojiSendAvailabilityEnum.PREMIUM_LOCKED : ret;
+						});
+					}
+
+					onStart() {
+						try {
+							DOM.addStyle(css);
+							this.patchEmojiPickerUnavailable();
+							document.addEventListener("mouseup", this.emojiClickHandler);
+						} catch (e) {
+							console.error(e);
+						}
+					}
+
+					onStop() {
+						DOM.removeStyle();
+						Patcher.unpatchAll();
+						document.removeEventListener("mouseup", this.emojiClickHandler);
+					}
+
+					getSettingsPanel() {
+						return this.buildSettingsPanel().getElement();
 					}
 				}
 			}
+		}
+	})(Api);
+	return [ParentPlugin, Plugin, Modules]
+}
 
-			handleUnsendableEmoji(emoji, channel, user) {
-				if (emoji.animated && !this.settings.shouldSendAnimatedEmojis)
-					return SelfUtils.showToast(STRINGS.disabledAnimatedEmojiErrorMessage, "info");
-				if (!SelfUtils.hasEmbedPerms(channel, user) && !this.settings.ignoreEmbedPermissions)
-					return SelfUtils.showToast(STRINGS.missingEmbedPermissionsErrorMessage, "info");
+function pluginErrorAlert(content) {
+	BdApi.alert(config.info.name, content);
+}
 
-				this.sendEmojiAsLink(emoji, channel);
-			}
+function getErrorPlugin(message) {
+	return () => ({
+		stop() {},
+		start() {
+			pluginErrorAlert(message);
+		}
+	})
+}
 
-			emojiHandler(emoji) {
-				const user = UserStore.getCurrentUser();
-				const intention = EmojiIntentionEnum.CHAT;
-				const channel = ChannelStore.getChannel(SelectedChannelStore.getChannelId());
-				if (!SelfUtils.isEmojiSendable({ emoji, channel, intention }))
-					this.handleUnsendableEmoji(emoji, channel, user);
-			}
+function checkModules(Modules) {
+	return Object.entries(Modules).reduce((acc, [moduleName, { module, fallback, isBreakable, withKey }]) => {
+		if ((withKey && !module.module) || !module) {
+			if (isBreakable) acc[0] = true;
+			acc[2].push(moduleName);
+			if (fallback) acc[1][moduleName] = fallback;
+		} else
+			acc[1][moduleName] = module;
+		return acc;
+	}, [false, {},
+		[]
+	]);
+}
 
-			getPickerIntention(event) {
-				const picker = event.path.find(i => i.id === 'emoji-picker-tab-panel');
-				if (!picker) return [null];
-				const pickerInstance = getInternalInstance(picker);
-				const { pickerIntention } = BdApi.Utils.findInTree(pickerInstance, m => m && "pickerIntention" in m, { walkable: ["pendingProps", "children", "props"] }) || {};
-				return [pickerIntention, picker];
-			}
+function initPlugin() {
+	const [ParentPlugin, Plugin, Modules] = getPlugin();
 
-			emojiClickHandler(event) {
-				if (event.button === 2) return;
-				const [pickerIntention, picker] = this.getPickerIntention(event);
-				if (pickerIntention !== EmojiIntentionEnum.CHAT) return;
-				picker.classList.add('CHAT');
-				const emojiInstance = getInternalInstance(event.target);
-				const props = emojiInstance?.pendingProps;
-				if (props && props["data-type"]?.toLowerCase() === "emoji" && props.children) {
-					this.emojiHandler(props.children.props.emoji);
-				}
-			}
-
-			patchEmojiPickerUnavailable() {
-				/**
-				 * This patches allows server icons to show up on the left side of the picker
-				 * if external emojis are disabled, servers get filtered out
-				 * and it's handy to scroll through emojis easily
-				 */
-				Patcher.after(EmojiFunctions, "isEmojiFiltered", (_, [, , intention], ret) => {
-					if (intention !== EmojiIntentionEnum.CHAT) return ret;
-					return false;
-				});
-				/**
-				 * This patch allows emojis to be added to the picker
-				 * if external emojis are disabled, they don't get added to the picker
-				 * PREMIUM_LOCKED is returned becaause that is what's returned normally 
-				 
-				 * 0: "DISALLOW_EXTERNAL"
-				 * 1: "GUILD_SUBSCRIPTION_UNAVAILABLE"
-				 * 2: "PREMIUM_LOCKED"
-				 * 3: "ONLY_GUILD_EMOJIS_ALLOWED"
-				 * 4: "ROLE_SUBSCRIPTION_LOCKED"
-				 * 5: "ROLE_SUBSCRIPTION_UNAVAILABLE"
-				 */
-				Patcher.after(EmojiFunctions, "getEmojiUnavailableReason", (_, [{ intention }], ret) => {
-					if (intention !== EmojiIntentionEnum.CHAT) return ret;
-					return ret === EmojiSendAvailabilityEnum.DISALLOW_EXTERNAL ? EmojiSendAvailabilityEnum.PREMIUM_LOCKED : ret;
-				});
-			}
-
-			onStart() {
-				try {
-					DOM.addStyle(css);
-					this.patchEmojiPickerUnavailable();
-					document.addEventListener("mouseup", this.emojiClickHandler);
-				} catch (e) {
-					console.error(e);
-				}
-			}
-
-			onStop() {
-				DOM.removeStyle();
-				Patcher.unpatchAll();
-				document.removeEventListener("mouseup", this.emojiClickHandler);
-			}
-
-			getSettingsPanel() {
-				return this.buildSettingsPanel().getElement();
-			}
-		};
-	};
-	return plugin(Plugin, Api);
+	const [pluginBreakingError, SafeModules, BrokenModules] = checkModules(Modules);
+	if (pluginBreakingError)
+		return getErrorPlugin([
+			"**Plugin is broken:** Take a screenshot of this popup and show it to the dev.",
+			`\`\`\`md\nMissing modules:\n\n${BrokenModules.map((moduleName,i) => `${++i}. ${moduleName}`).join('\n')}\`\`\``
+		]);
+	else {
+		if (BrokenModules.length > 0)
+			pluginErrorAlert([
+				"Detected some Missing modules, certain aspects of the plugin may not work properly.",
+				`\`\`\`md\n[Missing modules]\n\n${BrokenModules.map((moduleName,i) => `${++i}. ${moduleName}`).join('\n')}\`\`\``
+			]);
+		return Plugin(ParentPlugin, SafeModules);
+	}
 }
 
 module.exports = !global.ZeresPluginLibrary ?
-	() => ({
-		stop() {},
-		start() {
-			BdApi.UI.showConfirmationModal("Library plugin is needed", [`**ZeresPluginLibrary** is needed to run **${this.config.info.name}**.`, `Please download it from the officiel website`, "https://betterdiscord.app/plugin/ZeresPluginLibrary"], {
-				confirmText: "Ok"
-			});
-		}
-	}) :
-	initPlugin(global.ZeresPluginLibrary.buildPlugin(config));
+	getErrorPlugin(["**Library plugin is needed**",
+		`**ZeresPluginLibrary** is needed to run **${this.config.info.name}**.`,
+		"Please download it from the officiel website",
+		"https://betterdiscord.app/plugin/ZeresPluginLibrary"
+	]) :
+	initPlugin();

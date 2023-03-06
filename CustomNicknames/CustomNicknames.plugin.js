@@ -19,50 +19,169 @@ const config = {
 	}
 };
 
-function initPlugin([Plugin, Api]) {
-	const plugin = (Plugin, Api) => {
-		const {
-			UI,
-			Data,
-			DOM,
-			React,
-			React: { useState, useEffect },
-			Patcher,
-			ContextMenu,
-			Webpack: {
-				Filters,
-				getModule
-			}
-		} = new BdApi(config.info.name);
+function getPlugin() {
+	const [ParentPlugin, Api] = global.ZeresPluginLibrary.buildPlugin(config);
+	const { Modules, Plugin } = ((Api) => {
+		const { Webpack: { Filters, getModule } } = BdApi;
+		return {
+			Modules: {
+				MessageHeader: { module: getModule((m) => m.Z?.toString().includes('userOverride') && m.Z?.toString().includes('withMentionPrefix')), isBreakable: true },
+				UserStore: { module: getModule(Filters.byProps('getCurrentUser', 'getUser')) },
+				openModal: { module: getModule(Filters.byStrings('onCloseCallback', 'Layer'), { searchExports: true }) },
+				ModalRoot: { module: getModule(Filters.byStrings('onAnimationEnd'), { searchExports: true }) },
+				Text: { module: getModule(Filters.byStrings('data-text-variant'), { searchExports: true }) },
+				Label: { module: getModule(Filters.byStrings('LEGEND', 'LABEL', 'h5'), { searchExports: true }) },
+				...(() => {
+					let exp = undefined;
+					getModule((m, e) => (m.toString().includes("onAnimationEnd") ? true && (exp = e.exports) : undefined), { searchExports: true });
+					if (!exp) return { Modals: { module: undefined } };
+					const funcs = Object.values(exp) || [];
+					const ModalHeader = funcs.find(Filters.byStrings("headerIdIsManaged", "headerId", "separator"));
+					const ModalBody = funcs.find(Filters.byStrings("scrollerRef", "content", "children"));
+					const ModalFooter = funcs.find(Filters.byStrings("footerSeparator"));
+					return {
+						ModalHeader: { module: ModalHeader },
+						ModalBody: { module: ModalBody },
+						ModalFooter: { module: ModalFooter }
+					};
+				})(),
+				...(() => {
+					const { ButtonData, Textbox, TextElement } = Api.DiscordModules;
+					return {
+						ButtonData: { module: ButtonData },
+						Textbox: { module: Textbox },
+						TextElement: { module: TextElement }
+					};
+				})()
+			},
+			Plugin(ParentPlugin, Modules) {
+				const {
+					UI,
+					Data,
+					DOM,
+					React,
+					React: { useState, useEffect },
+					Patcher,
+					ContextMenu
+				} = new BdApi(config.info.name);
 
-		// Helper functions
-		const Utils = {
-			showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),
-		};
+				// Utilities
+				const Utils = {
+					showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type })
+				};
 
-		// Modules
-		const { DiscordModules: { ButtonData, Textbox, TextElement } } = Api;
+				// Components
+				const ErrorBoundary = class ErrorBoundary extends React.Component {
+					state = { hasError: false, error: null, info: null };
+					className = `EB-${this.props.plugin}-${this.props.id}`;
 
-		const MessageHeader = getModule((m) => m.Z?.toString().includes('userOverride') && m.Z?.toString().includes('withMentionPrefix'));
-		const Markdown = getModule((m) => m.Z?.rules && m.Z?.defaultProps?.parser).Z;
-		const UserStore = getModule(Filters.byProps('getCurrentUser', 'getUser'));
-		const openModal = getModule(Filters.byStrings('onCloseCallback', 'Layer'), { searchExports: true });
-		const ModalRoot = getModule(Filters.byStrings('onAnimationEnd'), { searchExports: true });
-		const Text = getModule(Filters.byStrings('data-text-variant'), { searchExports: true });
-		const Label = getModule(Filters.byStrings('LEGEND', 'LABEL', 'h5'), { searchExports: true });
+					componentDidCatch(error, info) {
+						this.setState({ error, info, hasError: true });
+						const errorMessage = `\t${error?.message || ""}${(info?.componentStack || "").split("\n").slice(0, 20).join("\n")}`;
+						console.error(`%c[${this.props.plugin}] %cthrew an exception at %c[${this.props.id}]\n`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
+					}
 
-		const [ModalHeader, ModalBody, ModalFooter] = (() => {
-			let exp = undefined;
-			getModule((m, e) => m.toString().includes('onAnimationEnd') ? (true && (exp = e.exports)) : false, { searchExports: true });
-			if (!exp) return exp;
-			const funcs = Object.values(exp) || [];
-			const ModalHeader = funcs.find(Filters.byStrings('headerIdIsManaged', 'headerId', 'separator'));
-			const ModalBody = funcs.find(Filters.byStrings('scrollerRef', 'content', 'children'));
-			const ModalFooter = funcs.find(Filters.byStrings('footerSeparator'));
-			return [ModalHeader, ModalBody, ModalFooter];
-		})();
+					onClick() {
+						this.props?.closeModal?.();
+						BdApi.alert(
+							this.props.plugin,
+							React.createElement("p", { style: { fontWeight: "bold", color: "#e0e1e5" } }, "An error has occured while rendering ",
+								React.createElement("span", { style: { fontWeight: "bold", color: "orange" } }, this.props.id)));
 
-		const css = `.nick {
+					}
+
+					render() {
+						if (this.state.hasError) {
+							if (this.props.fallback) {
+								this.props.fallback.props.className = this.className;
+								this.props.fallback.props.onClick = () => this.onClick();
+								return this.props.fallback;
+							}
+							return React.createElement("div", {
+								onClick: () => this.onClick(),
+								className: this.className,
+								children: "An error has occured, Click for more info."
+							});
+
+						}
+						return this.props.children;
+					}
+				};
+				const AddUserNicknameComponent = ({ props, user }) => {
+					const [value, setValue] = useState(Data.load(user.id) || "");
+
+					useEffect(() => {
+						const keyupHandler = (e) => e.key === "Enter" && Save();
+						document.addEventListener("keyup", keyupHandler);
+						return () => document.removeEventListener("keyup", keyupHandler);
+					}, []);
+					const Save = () => {
+						try {
+							Data.save(user.id, value);
+							props.onClose();
+							Utils.showToast(`Nickname ${value} for ${user.username} Has been saved.`, "success");
+						} catch (e) {
+							console.error(e);
+							props.onClose();
+							Utils.showToast(`Error occured while saving nickname, Check the console for more info.`, "danger");
+							require('electron').ipcRenderer.send('bd-toggle-devtools');
+						}
+					};
+
+					const Clear = () => setValue("");
+
+					return (
+						React.createElement(Modules.ModalRoot, { ...props },
+							React.createElement(Modules.ModalHeader, { separator: false },
+								React.createElement(Modules.Text, {
+									children: "Add User Nickname",
+									variant: "heading-lg/semibold"
+								})),
+
+							React.createElement(Modules.ModalBody, null,
+								React.createElement(Modules.Text, {
+									children: "Find a friend faster with a personal nickname. It will only be visible to you in your direct messages.",
+									className: "description-2pRfjZ",
+									variant: "text-md/normal"
+								}),
+
+								React.createElement(Modules.Label, { children: "User Nickname" }),
+								React.createElement(Modules.Textbox, {
+									...
+									Modules.Textbox.defaultProps,
+									className: "input-2i7ay7",
+									autoFocus: true,
+									placeholder: user.username,
+									onChange: setValue,
+									value: value
+								}),
+
+								React.createElement(Modules.ButtonData, {
+									children: "Reset user nickname",
+									className: "reset-Gp82ub",
+									size: "",
+									onClick: Clear,
+									color: Modules.ButtonData.Colors.LINK,
+									look: Modules.ButtonData.Looks.LINK
+								})),
+
+							React.createElement(Modules.ModalFooter, null,
+								React.createElement(Modules.ButtonData, {
+									children: "Save",
+									onClick: Save
+								}),
+
+								React.createElement(Modules.ButtonData, {
+									children: "Cancel",
+									onClick: props.onClose,
+									color: Modules.ButtonData.Colors.PRIMARY,
+									look: Modules.ButtonData.Looks.LINK
+								}))));
+
+				};
+
+				// Styles
+				const css = `.nick {
 	line-height: 1.375rem;
 	color: #fff;
 	vertical-align: baseline;
@@ -73,128 +192,120 @@ function initPlugin([Plugin, Api]) {
 	margin: 0 0rem 0 0.5rem;
 }
 
-[id^="message-reply-context"] .nick {
+[class^="repliedMessage"] .nick {
 	display: none;
+}
+
+.EB-CustomNicknames-AddUserNicknameComponent {
+	color:white; 
+	background:#2e2e2e; 
+	padding:15px; 
+	border-radius:8px; 
+	pointer-events:all; 
+	cursor:pointer; 
+	position:fixed; 
+	top:50%; 
+	left:50%; 
+	transform:translate(-50%,-50%); 
+	z-index:9999; 
 }`;
-		const AddUserNickname = ({ props, user }) => {
-			const [value, setValue] = useState(Data.load(user.id) || "");
 
-			useEffect(() => {
-				const keyupHandler = (e) => e.key === "Enter" && Save();
-				document.addEventListener("keyup", keyupHandler);
-				return () => document.removeEventListener("keyup", keyupHandler);
-			}, []);
-			const Save = () => {
-				try {
-					Data.save(user.id, value);
-					props.onClose();
-					Utils.showToast(`Nickname ${value} for ${user.username} Has been saved.`, "success");
-				} catch (e) {
-					console.error(e);
-					props.onClose();
-					Utils.showToast(`Error occured while saving nickname, Check the console for more info.`, "danger");
-					require('electron').ipcRenderer.send('bd-toggle-devtools');
+				return class CustomNicknames extends ParentPlugin {
+
+					constructor() {
+						super();
+					}
+
+					onStart() {
+						DOM.addStyle(css);
+						this.patches = [
+							Patcher.after(Modules.MessageHeader, "Z", (_, [{ message }], ret) => {
+								const nick = Data.load(message.author.id);
+								if (nick) ret.props.children.splice(3, 0, React.createElement("span", { className: "nick" }, nick));
+							}),
+							ContextMenu.patch("user-context", (retVal, { user }) => {
+								if (user.id !== Modules.UserStore.getCurrentUser().id)
+									retVal.props.children.unshift(
+										ContextMenu.buildItem({
+											type: "button",
+											label: "Add user nickname",
+											action: () => Modules.openModal(props => React.createElement(ErrorBoundary, {
+												id: "AddUserNicknameComponent",
+												plugin: config.info.name,
+												closeModal: props.onClose
+											}, React.createElement(AddUserNicknameComponent, { props, user })))
+										})
+									);
+							})
+						];
+					}
+
+					onStop() {
+						DOM.removeStyle();
+						this.patches?.forEach?.(p => p());
+						this.patches = null;
+					}
+
+					getSettingsPanel() {
+						return this.buildSettingsPanel().getElement();
+					}
 				}
-			};
-
-			const Clear = () => setValue("");
-
-			return (
-				React.createElement(ModalRoot, { ...props },
-					React.createElement(ModalHeader, { separator: false },
-						React.createElement(Text, {
-							children: "Add User Nickname",
-							variant: "heading-lg/semibold"
-						})),
-
-					React.createElement(ModalBody, null,
-						React.createElement(Text, {
-							children: "Find a friend faster with a personal nickname. It will only be visible to you in your direct messages.",
-							className: "description-2pRfjZ",
-							variant: "text-md/normal"
-						}),
-
-						React.createElement(Label, { children: "User Nickname" }),
-						React.createElement(Textbox, {
-							...
-							Textbox.defaultProps,
-							className: "input-2i7ay7",
-							autoFocus: true,
-							placeholder: user.username,
-							onChange: setValue,
-							value: value
-						}),
-
-						React.createElement(ButtonData, {
-							children: "Reset user nickname",
-							className: "reset-Gp82ub",
-							size: "",
-							onClick: Clear,
-							color: ButtonData.Colors.LINK,
-							look: ButtonData.Looks.LINK
-						})),
-
-					React.createElement(ModalFooter, null,
-						React.createElement(ButtonData, {
-							children: "Save",
-							onClick: Save
-						}),
-
-						React.createElement(ButtonData, {
-							children: "Cancel",
-							onClick: props.onClose,
-							color: ButtonData.Colors.PRIMARY,
-							look: ButtonData.Looks.LINK
-						}))));
-
-		};
-
-		return class CustomNicknames extends Plugin {
-
-			constructor() {
-				super();
 			}
+		}
+	})(Api);
+	return [ParentPlugin, Plugin, Modules]
+}
 
-			onStart() {
-				DOM.addStyle(css);
-				this.patches = [
-					Patcher.after(MessageHeader, "Z", (_, [{ message }], ret) => {
-						const nick = Data.load(message.author.id);
-						if (nick)
-							ret.props.children.splice(3, 0, React.createElement('span', { className: "nick" }, nick))
-					}),
-					ContextMenu.patch("user-context", (retVal, { user }) => {
-						if (user.id !== UserStore.getCurrentUser().id)
-							retVal.props.children.unshift(ContextMenu.buildItem({
-								type: "button",
-								label: "Add user nickname",
-								action: () => openModal(props => React.createElement(AddUserNickname, { props, user }))
-							}));
-					})
-				]
-			}
+function pluginErrorAlert(content) {
+	BdApi.alert(config.info.name, content);
+}
 
-			onStop() {
-				DOM.removeStyle();
-				this.patches?.forEach?.(p => p());
-				this.patches = null;
-			}
+function getErrorPlugin(message) {
+	return () => ({
+		stop() {},
+		start() {
+			pluginErrorAlert(message);
+		}
+	})
+}
 
-			getSettingsPanel() {
-				return this.buildSettingsPanel().getElement();
-			}
-		};
-	};
-	return plugin(Plugin, Api);
+function checkModules(Modules) {
+	return Object.entries(Modules).reduce((acc, [moduleName, { module, fallback, isBreakable, withKey }]) => {
+		if ((withKey && !module.module) || !module) {
+			if (isBreakable) acc[0] = true;
+			acc[2].push(moduleName);
+			if (fallback) acc[1][moduleName] = fallback;
+		} else
+			acc[1][moduleName] = module;
+		return acc;
+	}, [false, {},
+		[]
+	]);
+}
+
+function initPlugin() {
+	const [ParentPlugin, Plugin, Modules] = getPlugin();
+
+	const [pluginBreakingError, SafeModules, BrokenModules] = checkModules(Modules);
+	if (pluginBreakingError)
+		return getErrorPlugin([
+			"**Plugin is broken:** Take a screenshot of this popup and show it to the dev.",
+			`\`\`\`md\nMissing modules:\n\n${BrokenModules.map((moduleName,i) => `${++i}. ${moduleName}`).join('\n')}\`\`\``
+		]);
+	else {
+		if (BrokenModules.length > 0)
+			pluginErrorAlert([
+				"Detected some Missing modules, certain aspects of the plugin may not work properly.",
+				`\`\`\`md\n[Missing modules]\n\n${BrokenModules.map((moduleName,i) => `${++i}. ${moduleName}`).join('\n')}\`\`\``
+			]);
+		return Plugin(ParentPlugin, SafeModules);
+	}
 }
 
 module.exports = !global.ZeresPluginLibrary ?
-	() => ({
-		stop() {},
-		start() {
-			BdApi.UI.showConfirmationModal("Library plugin is needed", [`**ZeresPluginLibrary** is needed to run **${this.config.info.name}**.`, `Please download it from the officiel website`, "https://betterdiscord.app/plugin/ZeresPluginLibrary"], {
-				confirmText: "Ok"
-			});
-		}
-	}) :
-	initPlugin(global.ZeresPluginLibrary.buildPlugin(config));
+	getErrorPlugin(["**Library plugin is needed**",
+		`**ZeresPluginLibrary** is needed to run **${this.config.info.name}**.`,
+		"Please download it from the officiel website",
+		"https://betterdiscord.app/plugin/ZeresPluginLibrary"
+	]) :
+	initPlugin();
