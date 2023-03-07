@@ -88,16 +88,20 @@ svg.warningCircleIcon-2osUEe {
 	max-height: 80vh;
 }
 
-.EB-ViewProfilePicture-DisplayCarouselComponent {
-	color:white; 
-	background:#2e2e2e; 
-	padding:15px; 
-	border-radius:8px; 
-	pointer-events:all; 
-	cursor:pointer; 
-	position:fixed; 
-	top:50%; 
-	left:50%; 
-	transform:translate(-50%,-50%); 
-	z-index:9999; 
+/* Copy color button */
+.copyColorBtn{
+	white-space: nowrap;
+    position: absolute;
+    top: 100%;
+    font-size: 14px;
+    font-weight: 500;
+    color: #fff;
+    line-height: 30px;
+    transition: opacity .15s ease;
+    opacity: .5;
+}
+
+.copyColorBtn:hover{
+	opacity: 1;
+    text-decoration: underline;
 }

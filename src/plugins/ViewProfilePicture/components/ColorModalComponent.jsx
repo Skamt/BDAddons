@@ -1,10 +1,10 @@
 module.exports = ({ color, bannerColorCopyHandler }) => {
 	return (
 		<div
-			className={"VPP-NoBanner wrapper-2bCXfR"}
+			className="VPP-NoBanner"
 			style={{ backgroundColor: color }}>
 			<a
-				className="anchorUnderlineOnHover-2qPutX downloadLink-3cavAH"
+				className="copyColorBtn"
 				onClick={_ => Utils.copy(color)}>
 				Copy Color
 			</a>

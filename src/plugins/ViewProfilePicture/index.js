@@ -55,7 +55,7 @@ module.exports = () => {
 			const IMG_WIDTH = 4096;
 
 			// Components
-			const ErrorBoundary = require("ErrorBoundary.jsx");
+			const ErrorBoundary = require("components/ErrorBoundary.jsx");
 			const ErrorComponent = require("components/ErrorComponent.jsx");
 			const ViewProfilePictureButtonComponent = require("components/ViewProfilePictureButtonComponent.jsx");
 			const DisplayCarouselComponent = require("components/DisplayCarouselComponent.jsx");
@@ -114,7 +114,7 @@ module.exports = () => {
 									},
 									React.createElement(ViewProfilePictureButtonComponent, {
 										className,
-										onClick: _ => this.clickHandler(user, bannerObject, Modules.ProfileTypeEnum.POPOUT === profileType)
+							onClick: _ => this.clickHandler(user, bannerObject, Modules.ProfileTypeEnum.POPOUT === profileType)
 									}))
 							);
 					});

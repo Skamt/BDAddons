@@ -34,7 +34,7 @@ module.exports = () => {
 			const PREVIEW_SIZE = 300;
 
 			// Components
-			const ErrorBoundary = require("ErrorBoundary.jsx");
+			const ErrorBoundary = require("components/ErrorBoundary.jsx");
 			const PreviewComponent = require("components/PreviewComponent.jsx");
 			const settingComponent = (props) => {
 				const [enabled, setEnabled] = useState(props.value);
