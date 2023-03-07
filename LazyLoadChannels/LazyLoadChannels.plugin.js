@@ -1,7 +1,7 @@
 /**
  * @name LazyLoadChannels
  * @description Lets you choose whether to load a channel
- * @version 1.0.0
+ * @version 1.1.0
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js
@@ -9,7 +9,7 @@
 const config = {
 	info: {
 		name: "LazyLoadChannels",
-		version: "1.0.0",
+		version: "1.1.0",
 		description: "Lets you choose whether to load a channel",
 		source: "https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js",
 		github: "https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels",
@@ -164,7 +164,7 @@ function getPlugin() {
 					state = { hasError: false, error: null, info: null };
 					componentDidCatch(error, info) {
 						this.setState({ error, info, hasError: true });
-						const errorMessage = `\t${error?.message || ""}${(info?.componentStack || "").split("\n").slice(0, 20).join("\n")}`;
+						const errorMessage = `\n\t${error?.message || ""}${(info?.componentStack || "").split("\n").slice(0, 20).join("\n")}`;
 						console.error(`%c[${this.props.plugin}] %cthrew an exception at %c[${this.props.id}]\n`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
 					}
 

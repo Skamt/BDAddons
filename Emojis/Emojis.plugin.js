@@ -1,7 +1,7 @@
 /**
  * @name Emojis
  * @description Send emoji as link if it can't be sent it normally.
- * @version 1.0.1
+ * @version 1.0.0
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/Emojis
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/Emojis/Emojis.plugin.js
@@ -9,7 +9,7 @@
 const config = {
 	info: {
 		name: "Emojis",
-		version: "1.0.1",
+		version: "1.0.0",
 		description: "Send emoji as link if it can't be sent it normally.",
 		source: "https://raw.githubusercontent.com/Skamt/BDAddons/main/Emojis/Emojis.plugin.js",
 		github: "https://github.com/Skamt/BDAddons/tree/main/Emojis",
