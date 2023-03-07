@@ -48,7 +48,7 @@ module.exports = (Api) => {
 			};
 
 			// Components
-			const ErrorBoundary = require("ErrorBoundary.jsx");
+			const ErrorBoundary = require("components/ErrorBoundary.jsx");
 			const AddUserNicknameComponent = require("components/AddUserNicknameComponent.jsx");
 
 			// Styles
