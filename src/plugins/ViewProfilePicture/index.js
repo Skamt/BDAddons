@@ -15,15 +15,27 @@ module.exports = () => {
 	return {
 		Modules: {
 			Tooltip: { module: DiscordModules.Tooltip, isBreakable: true },
-			ModalRoot: { module: DiscordModules.ModalRoot, isBreakable: true },
+			ModalRoot: {
+				module: DiscordModules.ModalRoot,
+				fallback: function fallbackModalRoot(props) {
+					return React.createElement('div', { ...props, style: { pointerEvents: "all" } })
+				},
+				errorNote: "Sloppy fallback is used"
+			},
 			openModal: { module: DiscordModules.openModal, isBreakable: true },
-			ImageModal: { module: DiscordModules.ImageModal, isBreakable: true, withKey: true },
+			ImageModal: { module: getModule(DiscordModules.ImageModal, { searchExports: true }), isBreakable: true },
 			ModalCarousel: { module: DiscordModules.ModalCarousel, isBreakable: true },
 			UserBannerMask: { module: DiscordModules.UserBannerMask, isBreakable: true },
-			ProfileTypeEnum: { module: DiscordModules.ProfileTypeEnum, fallback: { POPOUT: 0, MODAL: 1, SETTINGS: 2, PANEL: 3, CARD: 4 } },
-			CurrentUserStore: { module: DiscordModules.CurrentUserStore, isBreakable: true },
-			SelectedGuildStore: { module: DiscordModules.SelectedGuildStore },
-			renderLinkComponent: { module: DiscordModules.renderLinkComponent, isBreakable: true }
+			ProfileTypeEnum: { module: DiscordModules.ProfileTypeEnum, fallback: { POPOUT: 0, MODAL: 1, SETTINGS: 2, PANEL: 3, CARD: 4 }, errorNote: "fallback is used, there maybe side effects" },
+			CurrentUserStore: { module: DiscordModules.CurrentUserStore },
+			SelectedGuildStore: { module: DiscordModules.SelectedGuildStore, errorNote: "Something with servers" },
+			renderLinkComponent: {
+				module: DiscordModules.renderLinkComponent,
+				fallback: function fallbackRenderLinkComponent(props) {
+					return React.createElement('a', props)
+				},
+				errorNote: "Sloppy falback is used"
+			}
 		},
 		Plugin(Modules) {
 			const {
@@ -32,6 +44,7 @@ module.exports = () => {
 				React,
 				Patcher
 			} = new BdApi(config.info.name);
+			
 			// Utilities
 			const Utils = {
 				showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),
@@ -43,7 +56,7 @@ module.exports = () => {
 				getNestedProp: (obj, path) => path.split(".").reduce(function(ob, prop) {
 					return ob && ob[prop];
 				}, obj),
-				getImageModalComponent: (Url, props) => React.createElement(Modules.ImageModal.module[Modules.ImageModal.key], {
+				getImageModalComponent: (Url, props) => React.createElement(Modules.ImageModal, {
 					...props,
 					src: Url,
 					original: Url,
@@ -92,7 +105,7 @@ module.exports = () => {
 					Patcher.after(Modules.UserBannerMask, "Z", (_, [{ user, isPremium, profileType }], returnValue) => {
 						if (profileType === Modules.ProfileTypeEnum.SETTINGS) return;
 
-						const currentUser = Modules.CurrentUserStore.getCurrentUser();
+						const currentUser = Modules.CurrentUserStore?.getCurrentUser() || {};
 						let className = "VPP-Button";
 						if (profileType === Modules.ProfileTypeEnum.MODAL)
 							className += " VPP-profile"
@@ -114,7 +127,7 @@ module.exports = () => {
 									},
 									React.createElement(ViewProfilePictureButtonComponent, {
 										className,
-							onClick: _ => this.clickHandler(user, bannerObject, Modules.ProfileTypeEnum.POPOUT === profileType)
+										onClick: _ => this.clickHandler(user, bannerObject, Modules.ProfileTypeEnum.POPOUT === profileType)
 									}))
 							);
 					});

@@ -6,7 +6,7 @@ module.exports = (Api) => {
 		let module;
 		const target = getModule((entry, m) => filter(entry) ? (module = m) : false, { searchExports: true });
 		module = module?.exports;
-		if (!module) return { module:undefined };
+		if (!module) return { module: undefined };
 		const key = Object.keys(module).find(k => module[k] === target);
 		if (!key) return undefined;
 		return { module, key };
@@ -14,16 +14,50 @@ module.exports = (Api) => {
 
 	return {
 		Modules: {
-			StickerModule: { module: DiscordModules.StickerModule, withKey: true },
-			PendingReplyStore: { module: DiscordModules.PendingReplyStore },
-			Permissions: { module: DiscordModules.Permissions },
-			ChannelStore: { module: DiscordModules.ChannelStore, isBreakable: true },
-			DiscordPermissions: { module: DiscordModules.DiscordPermissions },
-			MessageActions: { module: DiscordModules.MessageActions, isBreakable: true },
-			UserStore: { module: DiscordModules.UserStore, isBreakable: true },
-			StickerStore: { module: DiscordModules.StickerStore, isBreakable: true },
-			StickerTypeEnum: { module: DiscordModules.StickerTypeEnum, fallback: { STANDARD: 1, GUILD: 2 } },
-			StickerFormatEnum: { module: DiscordModules.StickerFormatEnum, fallback: { PNG: 1, APNG: 2, LOTTIE: 3, GIF: 4 } },
+			StickerModule: {
+				module: getModuleAndKey(DiscordModules.StickerModule),
+				withKey: true,
+				errorNote: "Animated Stickers will not be highlighted."
+			},
+			PendingReplyStore: {
+				module: DiscordModules.PendingReplyStore,
+				errorNote: "Replies will be ignored"
+			},
+			Permissions: {
+				module: DiscordModules.Permissions,
+				errorNote: "Checking permissions is disabled"
+			},
+			ChannelStore: {
+				module: DiscordModules.ChannelStore,
+				isBreakable: true
+			},
+			DiscordPermissions: {
+				module: DiscordModules.DiscordPermissions,
+				fallback: { EMBED_LINKS: 16384n, USE_EXTERNAL_EMOJIS: 262144n },
+				errorNote: "fallback is used, there maybe side effects"
+			},
+			MessageActions: {
+				module: DiscordModules.MessageActions,
+				isBreakable: true
+			},
+			UserStore: {
+				module: DiscordModules.UserStore,
+				errorNote: "Embed permission checks is disabled."
+			},
+			StickerStore: {
+				module: DiscordModules.StickerStore,
+				isBreakable: true
+			},
+			StickerTypeEnum: {
+				module: DiscordModules.StickerTypeEnum,
+				fallback: { STANDARD: 1, GUILD: 2 },
+				errorNote: "fallback is used, there maybe side effects"
+			},
+			StickerFormatEnum: {
+				module: DiscordModules.StickerFormatEnum,
+				fallback: { PNG: 1, APNG: 2, LOTTIE: 3, GIF: 4 },
+				errorNote: "fallback is used, there maybe side effects"
+			},
 			InsertText: {
 				module: (() => {
 					let ComponentDispatch;
@@ -33,8 +67,7 @@ module.exports = (Api) => {
 							plainText: content
 						});
 					}
-				})(),
-				isBreakable: false
+				})()
 			},
 			...(() => {
 				const result = {
@@ -46,7 +79,8 @@ module.exports = (Api) => {
 							SENDABLE: 0,
 							SENDABLE_WITH_BOOSTED_GUILD: 3,
 							SENDABLE_WITH_PREMIUM: 1
-						}
+						},
+						errorNote: "fallback is used, there maybe side effects"
 					},
 					getStickerSendability: { module: undefined, isBreakable: true },
 					isStickerSendable: { module: undefined, isBreakable: true }
@@ -71,7 +105,7 @@ module.exports = (Api) => {
 			const Utils = {
 				showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),
 				getStickerUrl: (stickerId, size) => `https://media.discordapp.net/stickers/${stickerId}?size=${size}&passthrough=false`,
-				hasEmbedPerms: (channel, user) => !channel.guild_id || Modules.Permissions.can({ permission: Modules.DiscordPermissions.EMBED_LINKS, context: channel, user }),
+				hasEmbedPerms: (channel, user) => !channel.guild_id || Modules.Permissions?.can({ permission: Modules.DiscordPermissions.EMBED_LINKS, context: channel, user }),
 				isLottieSticker: sticker => sticker.type === Modules.StickerTypeEnum.STANDARD,
 				isAnimatedSticker: sticker => sticker["format_type"] === Modules.StickerFormatEnum.APNG,
 				isStickerSendable: (sticker, channel, user) => Modules.getStickerSendability(sticker, user, channel) === Modules.StickersSendabilityEnum.SENDABLE
@@ -115,7 +149,7 @@ module.exports = (Api) => {
 				}
 
 				getReply(channelId) {
-					const reply = Modules.PendingReplyStore.getPendingReply(channelId);
+					const reply = Modules.PendingReplyStore?.getPendingReply(channelId);
 					if (!reply) return {};
 					return {
 						messageReference: {

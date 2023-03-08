@@ -1,42 +1,39 @@
-module.exports = (Plugin, Api) => {
-	const {
-		UI,
-		DOM,
-		Patcher,
-		Webpack: {
-			Filters,
-			getModule
-		}
-	} = new BdApi(config.info.name);
+module.exports = () => {
+	const { Webpack: { Filters, getModule } } = BdApi;
+	return {
+		Modules: {},
+		Plugins(Modules) {
+			const {
+				UI,
+				DOM,
+				Patcher,
+			} = new BdApi(config.info.name);
 
-	return class pluginTEMPLATE extends Plugin {
+			return class pluginTEMPLATE {
 
-		constructor() {
-			super();
-		}
+				constructor() {
+					super();
+				}
 
-		patch() {
-			Patcher.after(MODULE, "FUNCNAME", (_, args, returnValue) => {
-				console.log(args, returnValue);
-			});
-		}
+				patch() {
+					Patcher.after(MODULE, "FUNCNAME", (_, args, returnValue) => {
+						console.log(args, returnValue);
+					});
+				}
 
-		onStart() {
-			try {
-				this.patch();
-			} catch (e) {
-				console.error(e);
+				start() {
+					try {
+						this.patch();
+					} catch (e) {
+						console.error(e);
+					}
+				}
+
+				stop() {
+					DOM.removeStyle();
+					Patcher.unpatchAll();
+				}
 			}
 		}
-
-		onStop() {
-			DOM.removeStyle();
-			Patcher.unpatchAll();
-		}
-
-		getSettingsPanel() {
-			return this.buildSettingsPanel().getElement();
-		}
-		
-	};
-};
+	}
+}

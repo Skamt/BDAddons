@@ -14,7 +14,7 @@ module.exports = () => {
 
 	return {
 		Modules: {
-			ImageModal: { module: DiscordModules.ImageModal, isBreakable: true, withKey: true }
+			ImageModal: { module: getModuleAndKey(DiscordModules.ImageModal), isBreakable: true, withKey: true }
 		},
 		Plugin(Modules) {
 			const {

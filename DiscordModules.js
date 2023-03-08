@@ -1,15 +1,15 @@
 module.exports = {
 	"SwitchRow": "getModule(m => m.toString().includes('tooltipNote'), { searchExports: true })",
-	"ImageModal": `getModuleAndKey(m => {
+	"ImageModal": `m => {
 		if (!m?.toString || typeof (m?.toString) !== "function") return;
 		const strs = ["original","maxHeight","maxWidth","noreferrer noopener"];
 		const funcStr = m?.toString();
 		for(const s of strs)
 			if (!funcStr.includes(s)) return false;
 		return true;
-	})`,
-	"StickerModule": "getModuleAndKey(Filters.byStrings('sticker', 'withLoadingIndicator'))",
-	"ChannelComponent": "getModuleAndKey(Filters.byStrings('canHaveDot', 'isFavoriteSuggestion', 'mentionCount'))",
+	}`,
+	"StickerModule": "Filters.byStrings('sticker', 'withLoadingIndicator')",
+	"ChannelComponent": "Filters.byStrings('canHaveDot', 'isFavoriteSuggestion', 'mentionCount')",
 	"Text": "getModule(Filters.byStrings('data-text-variant'), { searchExports: true })",
 	"Label": "getModule(Filters.byStrings('LEGEND', 'LABEL', 'h5'), { searchExports: true })",
 	"Markdown": "getModule((m) => m.Z?.rules && m.Z?.defaultProps?.parser).Z",

@@ -49,8 +49,8 @@ module.exports = ({ props, user }) => {
 					className="reset-Gp82ub"
 					size=""
 					onClick={Clear}
-					color={Modules.ButtonData.Colors.LINK}
-					look={Modules.ButtonData.Looks.LINK}
+					color={Modules.ButtonData?.Colors?.LINK}
+					look={Modules.ButtonData?.Looks?.LINK}
 				/>
 			</Modules.ModalBody>
 			<Modules.ModalFooter>
@@ -62,8 +62,8 @@ module.exports = ({ props, user }) => {
 				<Modules.ButtonData
 					children="Cancel"
 					onClick={props.onClose}
-					color={Modules.ButtonData.Colors.PRIMARY}
-					look={Modules.ButtonData.Looks.LINK}
+					color={Modules.ButtonData?.Colors?.PRIMARY}
+					look={Modules.ButtonData?.Looks?.LINK}
 				/>
 			</Modules.ModalFooter>
 		</Modules.ModalRoot>

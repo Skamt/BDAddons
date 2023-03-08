@@ -1,13 +1,31 @@
 module.exports = (Api) => {
-	const { Webpack: { Filters, getModule } } = BdApi;
+	const { React, Webpack: { Filters, getModule } } = BdApi;
 	return {
 		Modules: {
 			MessageHeader: { module: DiscordModules.MessageHeader, isBreakable: true },
-			UserStore: { module: DiscordModules.UserStore },
-			openModal: { module: DiscordModules.openModal },
-			ModalRoot: { module: DiscordModules.ModalRoot },
-			Text: { module: DiscordModules.Text },
-			Label: { module: DiscordModules.Label },
+			UserStore: { module: DiscordModules.UserStore, errorNote: "Current user will not be excluded from context menu" },
+			openModal: { module: DiscordModules.openModal, errorNote: "Won't be able to add/change nicknames" },
+			ModalRoot: {
+				module: DiscordModules.ModalRoot,
+				fallback: function fallbackModalRoot(props) {
+					return React.createElement('div', { ...props, style: { pointerEvents: "all" } })
+				},
+				errorNote: "Sloppy fallback is used"
+			},
+			Text: {
+				module: DiscordModules.Text,
+				fallback: function fallbackText(props) {
+					return React.createElement('h2', props)
+				},
+				errorNote: "Sloppy fallback is used"
+			},
+			Label: {
+				module: DiscordModules.Label,
+				fallback: function fallbackLabel(props) {
+					return React.createElement('p', props)
+				},
+				errorNote: "Sloppy fallback is used"
+			},
 			...(() => {
 				let exp = undefined;
 				getModule((m, e) => (m.toString().includes("onAnimationEnd") ? true && (exp = e.exports) : undefined), { searchExports: true });
@@ -17,17 +35,50 @@ module.exports = (Api) => {
 				const ModalBody = funcs.find(Filters.byStrings("scrollerRef", "content", "children"));
 				const ModalFooter = funcs.find(Filters.byStrings("footerSeparator"));
 				return {
-					ModalHeader: { module: ModalHeader },
-					ModalBody: { module: ModalBody },
-					ModalFooter: { module: ModalFooter }
+					ModalHeader: {
+						module: ModalHeader,
+						fallback: function fallbackModalHeader(props) {
+							return React.createElement('div', props)
+						},
+						errorNote: "Sloppy fallback is used"
+					},
+					ModalBody: {
+						module: ModalBody,
+						fallback: function fallbackModalBody(props) {
+							return React.createElement('div', props)
+						},
+						errorNote: "Sloppy fallback is used"
+					},
+					ModalFooter: {
+						module: ModalFooter,
+						fallback: function fallbackModalFooter(props) {
+							return React.createElement('div', props)
+						},
+						errorNote: "Sloppy fallback is used"
+					}
 				};
 			})(),
 			...(() => {
 				const { ButtonData, Textbox, TextElement } = Api.DiscordModules;
 				return {
-					ButtonData: { module: ButtonData },
-					Textbox: { module: Textbox },
-					TextElement: { module: TextElement }
+					ButtonData: {
+						module: ButtonData,
+						fallback: function fallbackButtonData(props) {
+							return React.createElement('button', props)
+						},
+						errorNote: "Sloppy fallback is used"
+					},
+					Textbox: {
+						module: Textbox,
+						fallback: function fallbackTextbox(props) {
+							return React.createElement('input', {
+								...props,
+								onChange: (e) => props.onChange(e.target.value),
+								type: "text"
+							})
+						},
+						errorNote: "Sloppy fallback is used"
+					}
 				};
 			})()
 		},

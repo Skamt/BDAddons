@@ -16,30 +16,35 @@ module.exports = (Api) => {
 		Modules: {
 			ChannelActions: { module: DiscordModules.ChannelActions, isBreakable: true },
 			ChannelContent: { module: DiscordModules.ChannelContent, isBreakable: true },
-			ChannelTypeEnum: { module: DiscordModules.ChannelTypeEnum, fallback: { GUILD_CATEGORY: 4 } },
-			ChannelComponent: { module: DiscordModules.ChannelComponent, withKey: true },
+			ChannelTypeEnum: { module: DiscordModules.ChannelTypeEnum, fallback: { GUILD_CATEGORY: 4 }, errorNote: "fallback is used, there maybe side effects" },
+			ChannelComponent: { module: getModuleAndKey(DiscordModules.ChannelComponent), withKey: true, errorNote: "Channel indicators are disabled" },
 			...(() => {
 				const { Dispatcher, SelectedGuildStore, GuildChannelsStore, MessageActions, SwitchRow, ButtonData } = Api.DiscordModules;
 				return {
 					Dispatcher: { module: Dispatcher, isBreakable: true },
-					SelectedGuildStore: { module: SelectedGuildStore },
-					GuildChannelsStore: { module: GuildChannelsStore },
+					SelectedGuildStore: { module: SelectedGuildStore, errorNote: "New channels will not be autoloaded" },
+					GuildChannelsStore: { module: GuildChannelsStore, errorNote: "Can't auto load all server channels" },
 					MessageActions: { module: MessageActions, isBreakable: true },
 					SwitchRow: {
 						module: SwitchRow,
 						fallback: function fallbackSwitchRow(props) {
-							return React.createElement('input', {
-								value: props.value,
-								onChange: (e) => props.onChange(e.target.checked),
-								type: "checkbox"
-							})
-						}
+							return React.createElement('div', { style: { color: "#fff" } }, [
+								props.children,
+								React.createElement('input', {
+									checked: props.value,
+									onChange: (e) => props.onChange(e.target.checked),
+									type: "checkbox"
+								})
+							])
+						},
+						errorNote: "Sloppy fallback is used"
 					},
 					ButtonData: {
 						module: ButtonData,
 						fallback: function fallbackButtonData(props) {
 							return React.createElement('button', props)
-						}
+						},
+						errorNote: "Sloppy fallback is used"
 					}
 				};
 			})()
@@ -180,7 +185,7 @@ module.exports = (Api) => {
 					 * adds a class to channels set to be auto loaded
 					 * for highlighting them
 					 */
-					if (Modules.ChannelComponent.module)
+					if (Modules.ChannelComponent)
 						Patcher.after(Modules.ChannelComponent.module, Modules.ChannelComponent.key, (_, [{ channel }], returnValue) => {
 							if (!this.settings.autoloadedChannelIndicator) return;
 							if (Utils.DataManager.has(channel.guild_id, channel.id))
