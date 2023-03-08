@@ -27,7 +27,9 @@ function checkModules(modules) {
 		} else
 			acc[1][moduleName] = module;
 		return acc;
-	}, [false, {}, []]);
+	}, [false, {},
+		[]
+	]);
 }
 
 function ensuredata() {
@@ -60,7 +62,7 @@ function handleBrokenModules(brokenModules) {
 	if (isUpdated || !isPopupLimitReached || newBrokenModules) {
 		pluginErrorAlert([
 			"Detected some Missing modules, certain aspects of the plugin may not work properly.",
-			`\`\`\`md\nMissing modules:\n\n${brokenModules.map(([moduleName, errorNote]) => `[${moduleName}]: ${errorNote || ""}`).join('\n')}\`\`\``
+			`\`\`\`md\nMissing modules:\n\n${brokenModules.map(([moduleName, errorNote]) => `[${moduleName}]: ${errorNote ? `\n\t${errorNote}` :""}`).join('\n')}\`\`\``
 		]);
 
 		BdApi.Data.save(config.info.name, 'brokenModulesData', {

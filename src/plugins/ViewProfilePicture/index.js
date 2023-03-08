@@ -15,6 +15,7 @@ module.exports = () => {
 	return {
 		Modules: {
 			Tooltip: { module: DiscordModules.Tooltip, isBreakable: true },
+			Dispatcher: { module: DiscordModules.Dispatcher },
 			ModalRoot: {
 				module: DiscordModules.ModalRoot,
 				fallback: function fallbackModalRoot(props) {
@@ -27,7 +28,7 @@ module.exports = () => {
 			ModalCarousel: { module: DiscordModules.ModalCarousel, isBreakable: true },
 			UserBannerMask: { module: DiscordModules.UserBannerMask, isBreakable: true },
 			ProfileTypeEnum: { module: DiscordModules.ProfileTypeEnum, fallback: { POPOUT: 0, MODAL: 1, SETTINGS: 2, PANEL: 3, CARD: 4 }, errorNote: "fallback is used, there maybe side effects" },
-			CurrentUserStore: { module: DiscordModules.CurrentUserStore },
+			UserStore: { module: DiscordModules.UserStore },
 			SelectedGuildStore: { module: DiscordModules.SelectedGuildStore, errorNote: "Something with servers" },
 			renderLinkComponent: {
 				module: DiscordModules.renderLinkComponent,
@@ -44,7 +45,7 @@ module.exports = () => {
 				React,
 				Patcher
 			} = new BdApi(config.info.name);
-			
+
 			// Utilities
 			const Utils = {
 				showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),
@@ -105,7 +106,7 @@ module.exports = () => {
 					Patcher.after(Modules.UserBannerMask, "Z", (_, [{ user, isPremium, profileType }], returnValue) => {
 						if (profileType === Modules.ProfileTypeEnum.SETTINGS) return;
 
-						const currentUser = Modules.CurrentUserStore?.getCurrentUser() || {};
+						const currentUser = this.getCurrentUser();
 						let className = "VPP-Button";
 						if (profileType === Modules.ProfileTypeEnum.MODAL)
 							className += " VPP-profile"
@@ -133,9 +134,40 @@ module.exports = () => {
 					});
 				}
 
+				setUpCurrentUser() {
+					const [getCurrentUser, cleanUp] = (() => {
+						let currentUser = null;
+						if (!Modules.Dispatcher) return [() => Modules.CurrentUserStore?.getCurrentUser() || {}];
+
+						const resetCurrentUser = () => currentUser = null;
+						Modules.Dispatcher.subscribe('LOGOUT', resetCurrentUser);
+						return [
+							() => {
+								if (currentUser) return currentUser;
+								const user = Modules.CurrentUserStore?.getCurrentUser();
+								if (user) {
+									currentUser = user;
+								} else {
+									try {
+										const target = document.querySelector('.panels-3wFtMD .container-YkUktl');
+										const instance = BdApi.ReactUtils.getInternalInstance(target);
+										const props = BdApi.Utils.findInTree(instance, a => a?.currentUser, { walkable: ["return", "pendingProps"] });
+										currentUser = props.currentUser;
+									} catch {}
+								}
+								return currentUser || {};
+							},
+							() => Modules.Dispatcher.unsubscribe('LOGOUT', resetCurrentUser)
+						]
+					})();
+					this.getCurrentUser = getCurrentUser;
+					this.cleanUp = cleanUp;
+				}
+
 				start() {
 					try {
 						DOM.addStyle(css);
+						this.setUpCurrentUser();
 						this.patchUserBannerMask();
 					} catch (e) {
 						console.error(e);
@@ -143,6 +175,7 @@ module.exports = () => {
 				}
 
 				stop() {
+					this.cleanUp?.();
 					DOM.removeStyle();
 					Patcher.unpatchAll();
 				}

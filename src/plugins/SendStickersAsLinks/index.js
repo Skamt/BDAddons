@@ -19,6 +19,7 @@ module.exports = (Api) => {
 				withKey: true,
 				errorNote: "Animated Stickers will not be highlighted."
 			},
+			Dispatcher: { module: DiscordModules.Dispatcher },
 			PendingReplyStore: {
 				module: DiscordModules.PendingReplyStore,
 				errorNote: "Replies will be ignored"
@@ -165,7 +166,7 @@ module.exports = (Api) => {
 				}
 
 				handleSticker(channelId, stickerId) {
-					const user = Modules.UserStore.getCurrentUser();
+					const user = this.getCurrentUser();
 					const sticker = Modules.StickerStore.getStickerById(stickerId);
 					const channel = Modules.ChannelStore.getChannel(channelId);
 					return {
@@ -250,9 +251,40 @@ module.exports = (Api) => {
 						});
 				}
 
+				setUpCurrentUser() {
+					const [getCurrentUser, cleanUp] = (() => {
+						let currentUser = null;
+						if (!Modules.Dispatcher) return [() => Modules.CurrentUserStore?.getCurrentUser() || {}];
+
+						const resetCurrentUser = () => currentUser = null;
+						Modules.Dispatcher.subscribe('LOGOUT', resetCurrentUser);
+						return [
+							() => {
+								if (currentUser) return currentUser;
+								const user = Modules.CurrentUserStore?.getCurrentUser();
+								if (user) {
+									currentUser = user;
+								} else {
+									try {
+										const target = document.querySelector('.panels-3wFtMD .container-YkUktl');
+										const instance = BdApi.ReactUtils.getInternalInstance(target);
+										const props = BdApi.Utils.findInTree(instance, a => a?.currentUser, { walkable: ["return", "pendingProps"] });
+										currentUser = props.currentUser;
+									} catch {}
+								}
+								return currentUser || {};
+							},
+							() => Modules.Dispatcher.unsubscribe('LOGOUT', resetCurrentUser)
+						]
+					})();
+					this.getCurrentUser = getCurrentUser;
+					this.cleanUp = cleanUp;
+				}
+
 				onStart() {
 					try {
 						DOM.addStyle(css);
+						this.setUpCurrentUser();
 						this.patchStickerClickability();
 						this.patchSendSticker();
 						this.patchGetStickerById();
@@ -265,6 +297,7 @@ module.exports = (Api) => {
 				}
 
 				onStop() {
+					this.cleanUp?.();
 					DOM.removeStyle();
 					Patcher.unpatchAll();
 				}

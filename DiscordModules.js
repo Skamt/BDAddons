@@ -8,12 +8,12 @@ module.exports = {
 			if (!funcStr.includes(s)) return false;
 		return true;
 	}`,
+	"Dispatcher": "getModule(Filters.byProps('dispatch', 'subscribe'))",
 	"StickerModule": "Filters.byStrings('sticker', 'withLoadingIndicator')",
 	"ChannelComponent": "Filters.byStrings('canHaveDot', 'isFavoriteSuggestion', 'mentionCount')",
 	"Text": "getModule(Filters.byStrings('data-text-variant'), { searchExports: true })",
 	"Label": "getModule(Filters.byStrings('LEGEND', 'LABEL', 'h5'), { searchExports: true })",
 	"Markdown": "getModule((m) => m.Z?.rules && m.Z?.defaultProps?.parser).Z",
-	"UserStore": "getModule((m, e, i) => m.getCurrentUser && m.getUser)",
 	"MessageHeader": "getModule((m) => m.Z?.toString().includes('userOverride') && m.Z?.toString().includes('withMentionPrefix'))",
 	"PendingReplyStore": "getModule(m =>  m.getPendingReply)",
 	"DMChannel": "getModule(Filters.byStrings('isMobileOnline', 'channel'),{searchExports:true})",
@@ -42,7 +42,6 @@ module.exports = {
 	"ModalCarousel": "getModule(m => m.prototype?.navigateTo && m.prototype?.preloadImage)",
 	"UserBannerMask": "getModule((m) => m.Z && m.Z.toString().includes('overrideAvatarDecorationURL'))",
 	"ProfileTypeEnum": "getModule(Filters.byProps('POPOUT','SETTINGS'), { searchExports: true})",
-	"CurrentUserStore": "getModule(Filters.byProps('getCurrentUser', 'getUsers'))",
 	"DefaultEmojisManager": "getModule(m => m.getByName && m.EMOJI_NAME_RE)",
 	"SelectedGuildStore": "getModule(Filters.byProps('getLastSelectedGuildId'))",
 	"ComponentDispatch": "getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners('INSERT_TEXT').length, { searchExports: true })",
