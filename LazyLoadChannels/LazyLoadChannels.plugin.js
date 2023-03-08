@@ -46,30 +46,35 @@ function getPlugin() {
 			Modules: {
 				ChannelActions: { module: getModule(Filters.byProps('actions', 'fetchMessages'), { searchExports: true }), isBreakable: true },
 				ChannelContent: { module: getModule(m => m && m.Z && m.Z.type && m.Z.type.toString().includes('showingSpamBanner')), isBreakable: true },
-				ChannelTypeEnum: { module: getModule(Filters.byProps('GUILD_TEXT', 'DM'), { searchExports: true }), fallback: { GUILD_CATEGORY: 4 } },
-				ChannelComponent: { module: getModuleAndKey(Filters.byStrings('canHaveDot', 'isFavoriteSuggestion', 'mentionCount')), withKey: true },
+				ChannelTypeEnum: { module: getModule(Filters.byProps('GUILD_TEXT', 'DM'), { searchExports: true }), fallback: { GUILD_CATEGORY: 4 }, errorNote: "fallback is used, there maybe side effects" },
+				ChannelComponent: { module: getModuleAndKey(Filters.byStrings('canHaveDot', 'isFavoriteSuggestion', 'mentionCount')), withKey: true, errorNote: "Channel indicators are disabled" },
 				...(() => {
 					const { Dispatcher, SelectedGuildStore, GuildChannelsStore, MessageActions, SwitchRow, ButtonData } = Api.DiscordModules;
 					return {
 						Dispatcher: { module: Dispatcher, isBreakable: true },
-						SelectedGuildStore: { module: SelectedGuildStore },
-						GuildChannelsStore: { module: GuildChannelsStore },
+						SelectedGuildStore: { module: SelectedGuildStore, errorNote: "New channels will not be autoloaded" },
+						GuildChannelsStore: { module: GuildChannelsStore, errorNote: "Can't auto load all server channels" },
 						MessageActions: { module: MessageActions, isBreakable: true },
 						SwitchRow: {
 							module: SwitchRow,
 							fallback: function fallbackSwitchRow(props) {
-								return React.createElement('input', {
-									value: props.value,
-									onChange: (e) => props.onChange(e.target.checked),
-									type: "checkbox"
-								})
-							}
+								return React.createElement('div', { style: { color: "#fff" } }, [
+									props.children,
+									React.createElement('input', {
+										checked: props.value,
+										onChange: (e) => props.onChange(e.target.checked),
+										type: "checkbox"
+									})
+								])
+							},
+							errorNote: "Sloppy fallback is used"
 						},
 						ButtonData: {
 							module: ButtonData,
 							fallback: function fallbackButtonData(props) {
 								return React.createElement('button', props)
-							}
+							},
+							errorNote: "Sloppy fallback is used"
 						}
 					};
 				})()
@@ -460,7 +465,7 @@ function getPlugin() {
 						 * adds a class to channels set to be auto loaded
 						 * for highlighting them
 						 */
-						if (Modules.ChannelComponent.module)
+						if (Modules.ChannelComponent)
 							Patcher.after(Modules.ChannelComponent.module, Modules.ChannelComponent.key, (_, [{ channel }], returnValue) => {
 								if (!this.settings.autoloadedChannelIndicator) return;
 								if (Utils.DataManager.has(channel.guild_id, channel.id))
@@ -598,11 +603,11 @@ function getErrorPlugin(message) {
 	})
 }
 
-function checkModules(Modules) {
-	return Object.entries(Modules).reduce((acc, [moduleName, { module, fallback, isBreakable, withKey }]) => {
+function checkModules(modules) {
+	return Object.entries(modules).reduce((acc, [moduleName, { module, fallback, errorNote, isBreakable, withKey }]) => {
 		if ((withKey && !module.module) || !module) {
 			if (isBreakable) acc[0] = true;
-			acc[2].push(moduleName);
+			acc[2].push([moduleName, errorNote]);
 			if (fallback) acc[1][moduleName] = fallback;
 		} else
 			acc[1][moduleName] = module;
@@ -612,21 +617,59 @@ function checkModules(Modules) {
 	]);
 }
 
+function ensuredata() {
+	return BdApi.Data.load(config.info.name, 'brokenModulesData') || {
+		version: config.info.version,
+		first: true,
+		errorPopupCount: 0,
+		savedBrokenModules: []
+	};
+}
+
+function setPluginMetaData() {
+	const { version, first } = ensuredata();
+	if (version != config.info.version || first)
+		BdApi.Data.save(config.info.name, 'brokenModulesData', {
+			version: config.info.version,
+			errorPopupCount: 0,
+			savedBrokenModules: []
+		});
+}
+
+function handleBrokenModules(brokenModules) {
+	const { version, errorPopupCount, savedBrokenModules } = ensuredata();
+
+	const newBrokenModules = brokenModules.some(([newItem]) => !savedBrokenModules.includes(newItem));
+	const isUpdated = version != config.info.version;
+	const isPopupLimitReached = errorPopupCount === 3;
+
+	if (isUpdated || !isPopupLimitReached || newBrokenModules) {
+		pluginErrorAlert([
+			"Detected some Missing modules, certain aspects of the plugin may not work properly.",
+			`\`\`\`md\nMissing modules:\n\n${brokenModules.map(([moduleName, errorNote]) => `[${moduleName}]: ${errorNote ? `\n\t${errorNote}` :""}`).join('\n')}\`\`\``
+		]);
+
+		BdApi.Data.save(config.info.name, 'brokenModulesData', {
+			version,
+			errorPopupCount: (errorPopupCount + 1) % 4,
+			savedBrokenModules: brokenModules.map(([moduleName]) => moduleName)
+		});
+	}
+}
+
 function initPlugin() {
+	setPluginMetaData();
 	const [ParentPlugin, Plugin, Modules] = getPlugin();
 
 	const [pluginBreakingError, SafeModules, BrokenModules] = checkModules(Modules);
 	if (pluginBreakingError)
 		return getErrorPlugin([
 			"**Plugin is broken:** Take a screenshot of this popup and show it to the dev.",
-			`\`\`\`md\nMissing modules:\n\n${BrokenModules.map((moduleName,i) => `${++i}. ${moduleName}`).join('\n')}\`\`\``
+			`\`\`\`md\nMissing modules:\n\n${BrokenModules.map(([moduleName],i) => `${++i}. ${moduleName}`).join('\n')}\`\`\``
 		]);
 	else {
 		if (BrokenModules.length > 0)
-			pluginErrorAlert([
-				"Detected some Missing modules, certain aspects of the plugin may not work properly.",
-				`\`\`\`md\n[Missing modules]\n\n${BrokenModules.map((moduleName,i) => `${++i}. ${moduleName}`).join('\n')}\`\`\``
-			]);
+			handleBrokenModules(BrokenModules);
 		return Plugin(ParentPlugin, SafeModules);
 	}
 }

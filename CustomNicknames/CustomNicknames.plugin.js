@@ -22,15 +22,33 @@ const config = {
 function getPlugin() {
 	const [ParentPlugin, Api] = global.ZeresPluginLibrary.buildPlugin(config);
 	const { Modules, Plugin } = ((Api) => {
-		const { Webpack: { Filters, getModule } } = BdApi;
+		const { React, Webpack: { Filters, getModule } } = BdApi;
 		return {
 			Modules: {
 				MessageHeader: { module: getModule((m) => m.Z?.toString().includes('userOverride') && m.Z?.toString().includes('withMentionPrefix')), isBreakable: true },
-				UserStore: { module: getModule(Filters.byProps('getCurrentUser', 'getUser')) },
-				openModal: { module: getModule(Filters.byStrings('onCloseCallback', 'Layer'), { searchExports: true }) },
-				ModalRoot: { module: getModule(Filters.byStrings('onAnimationEnd'), { searchExports: true }) },
-				Text: { module: getModule(Filters.byStrings('data-text-variant'), { searchExports: true }) },
-				Label: { module: getModule(Filters.byStrings('LEGEND', 'LABEL', 'h5'), { searchExports: true }) },
+				UserStore: { module: getModule(Filters.byProps('getCurrentUser', 'getUser')), errorNote: "Current user will not be excluded from context menu" },
+				openModal: { module: getModule(Filters.byStrings('onCloseCallback', 'Layer'), { searchExports: true }), errorNote: "Won't be able to add/change nicknames" },
+				ModalRoot: {
+					module: getModule(Filters.byStrings('onAnimationEnd'), { searchExports: true }),
+					fallback: function fallbackModalRoot(props) {
+						return React.createElement('div', { ...props, style: { pointerEvents: "all" } })
+					},
+					errorNote: "Sloppy fallback is used"
+				},
+				Text: {
+					module: getModule(Filters.byStrings('data-text-variant'), { searchExports: true }),
+					fallback: function fallbackText(props) {
+						return React.createElement('h2', props)
+					},
+					errorNote: "Sloppy fallback is used"
+				},
+				Label: {
+					module: getModule(Filters.byStrings('LEGEND', 'LABEL', 'h5'), { searchExports: true }),
+					fallback: function fallbackLabel(props) {
+						return React.createElement('p', props)
+					},
+					errorNote: "Sloppy fallback is used"
+				},
 				...(() => {
 					let exp = undefined;
 					getModule((m, e) => (m.toString().includes("onAnimationEnd") ? true && (exp = e.exports) : undefined), { searchExports: true });
@@ -40,17 +58,50 @@ function getPlugin() {
 					const ModalBody = funcs.find(Filters.byStrings("scrollerRef", "content", "children"));
 					const ModalFooter = funcs.find(Filters.byStrings("footerSeparator"));
 					return {
-						ModalHeader: { module: ModalHeader },
-						ModalBody: { module: ModalBody },
-						ModalFooter: { module: ModalFooter }
+						ModalHeader: {
+							module: ModalHeader,
+							fallback: function fallbackModalHeader(props) {
+								return React.createElement('div', props)
+							},
+							errorNote: "Sloppy fallback is used"
+						},
+						ModalBody: {
+							module: ModalBody,
+							fallback: function fallbackModalBody(props) {
+								return React.createElement('div', props)
+							},
+							errorNote: "Sloppy fallback is used"
+						},
+						ModalFooter: {
+							module: ModalFooter,
+							fallback: function fallbackModalFooter(props) {
+								return React.createElement('div', props)
+							},
+							errorNote: "Sloppy fallback is used"
+						}
 					};
 				})(),
 				...(() => {
 					const { ButtonData, Textbox, TextElement } = Api.DiscordModules;
 					return {
-						ButtonData: { module: ButtonData },
-						Textbox: { module: Textbox },
-						TextElement: { module: TextElement }
+						ButtonData: {
+							module: ButtonData,
+							fallback: function fallbackButtonData(props) {
+								return React.createElement('button', props)
+							},
+							errorNote: "Sloppy fallback is used"
+						},
+						Textbox: {
+							module: Textbox,
+							fallback: function fallbackTextbox(props) {
+								return React.createElement('input', {
+									...props,
+									onChange: (e) => props.onChange(e.target.value),
+									type: "text"
+								})
+							},
+							errorNote: "Sloppy fallback is used"
+						}
 					};
 				})()
 			},
@@ -144,8 +195,8 @@ function getPlugin() {
 									className: "reset-Gp82ub",
 									size: "",
 									onClick: Clear,
-									color: Modules.ButtonData.Colors.LINK,
-									look: Modules.ButtonData.Looks.LINK
+									color: Modules.ButtonData?.Colors?.LINK,
+									look: Modules.ButtonData?.Looks?.LINK
 								})),
 
 							React.createElement(Modules.ModalFooter, null,
@@ -157,8 +208,8 @@ function getPlugin() {
 								React.createElement(Modules.ButtonData, {
 									children: "Cancel",
 									onClick: props.onClose,
-									color: Modules.ButtonData.Colors.PRIMARY,
-									look: Modules.ButtonData.Looks.LINK
+									color: Modules.ButtonData?.Colors?.PRIMARY,
+									look: Modules.ButtonData?.Looks?.LINK
 								}))));
 
 				};
@@ -252,11 +303,11 @@ function getErrorPlugin(message) {
 	})
 }
 
-function checkModules(Modules) {
-	return Object.entries(Modules).reduce((acc, [moduleName, { module, fallback, isBreakable, withKey }]) => {
+function checkModules(modules) {
+	return Object.entries(modules).reduce((acc, [moduleName, { module, fallback, errorNote, isBreakable, withKey }]) => {
 		if ((withKey && !module.module) || !module) {
 			if (isBreakable) acc[0] = true;
-			acc[2].push(moduleName);
+			acc[2].push([moduleName, errorNote]);
 			if (fallback) acc[1][moduleName] = fallback;
 		} else
 			acc[1][moduleName] = module;
@@ -266,21 +317,59 @@ function checkModules(Modules) {
 	]);
 }
 
+function ensuredata() {
+	return BdApi.Data.load(config.info.name, 'brokenModulesData') || {
+		version: config.info.version,
+		first: true,
+		errorPopupCount: 0,
+		savedBrokenModules: []
+	};
+}
+
+function setPluginMetaData() {
+	const { version, first } = ensuredata();
+	if (version != config.info.version || first)
+		BdApi.Data.save(config.info.name, 'brokenModulesData', {
+			version: config.info.version,
+			errorPopupCount: 0,
+			savedBrokenModules: []
+		});
+}
+
+function handleBrokenModules(brokenModules) {
+	const { version, errorPopupCount, savedBrokenModules } = ensuredata();
+
+	const newBrokenModules = brokenModules.some(([newItem]) => !savedBrokenModules.includes(newItem));
+	const isUpdated = version != config.info.version;
+	const isPopupLimitReached = errorPopupCount === 3;
+
+	if (isUpdated || !isPopupLimitReached || newBrokenModules) {
+		pluginErrorAlert([
+			"Detected some Missing modules, certain aspects of the plugin may not work properly.",
+			`\`\`\`md\nMissing modules:\n\n${brokenModules.map(([moduleName, errorNote]) => `[${moduleName}]: ${errorNote ? `\n\t${errorNote}` :""}`).join('\n')}\`\`\``
+		]);
+
+		BdApi.Data.save(config.info.name, 'brokenModulesData', {
+			version,
+			errorPopupCount: (errorPopupCount + 1) % 4,
+			savedBrokenModules: brokenModules.map(([moduleName]) => moduleName)
+		});
+	}
+}
+
 function initPlugin() {
+	setPluginMetaData();
 	const [ParentPlugin, Plugin, Modules] = getPlugin();
 
 	const [pluginBreakingError, SafeModules, BrokenModules] = checkModules(Modules);
 	if (pluginBreakingError)
 		return getErrorPlugin([
 			"**Plugin is broken:** Take a screenshot of this popup and show it to the dev.",
-			`\`\`\`md\nMissing modules:\n\n${BrokenModules.map((moduleName,i) => `${++i}. ${moduleName}`).join('\n')}\`\`\``
+			`\`\`\`md\nMissing modules:\n\n${BrokenModules.map(([moduleName],i) => `${++i}. ${moduleName}`).join('\n')}\`\`\``
 		]);
 	else {
 		if (BrokenModules.length > 0)
-			pluginErrorAlert([
-				"Detected some Missing modules, certain aspects of the plugin may not work properly.",
-				`\`\`\`md\n[Missing modules]\n\n${BrokenModules.map((moduleName,i) => `${++i}. ${moduleName}`).join('\n')}\`\`\``
-			]);
+			handleBrokenModules(BrokenModules);
 		return Plugin(ParentPlugin, SafeModules);
 	}
 }

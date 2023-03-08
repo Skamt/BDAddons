@@ -69,16 +69,51 @@ function getPlugin() {
 
 		return {
 			Modules: {
-				StickerModule: { module: getModuleAndKey(Filters.byStrings('sticker', 'withLoadingIndicator')), withKey: true },
-				PendingReplyStore: { module: getModule(m => m.getPendingReply) },
-				Permissions: { module: getModule(Filters.byProps('computePermissions')) },
-				ChannelStore: { module: getModule(Filters.byProps('getChannel', 'getDMFromUserId')), isBreakable: true },
-				DiscordPermissions: { module: getModule(Filters.byProps('ADD_REACTIONS'), { searchExports: true }) },
-				MessageActions: { module: getModule(Filters.byProps('jumpToMessage', '_sendMessage')), isBreakable: true },
-				UserStore: { module: getModule(Filters.byProps('getCurrentUser', 'getUser')), isBreakable: true },
-				StickerStore: { module: getModule(Filters.byProps('getStickerById')), isBreakable: true },
-				StickerTypeEnum: { module: getModule(Filters.byProps('GUILD', 'STANDARD'), { searchExports: true }), fallback: { STANDARD: 1, GUILD: 2 } },
-				StickerFormatEnum: { module: getModule(Filters.byProps('APNG', 'LOTTIE'), { searchExports: true }), fallback: { PNG: 1, APNG: 2, LOTTIE: 3, GIF: 4 } },
+				StickerModule: {
+					module: getModuleAndKey(Filters.byStrings('sticker', 'withLoadingIndicator')),
+					withKey: true,
+					errorNote: "Animated Stickers will not be highlighted."
+				},
+				Dispatcher: { module: getModule(Filters.byProps('dispatch', 'subscribe')) },
+				PendingReplyStore: {
+					module: getModule(m => m.getPendingReply),
+					errorNote: "Replies will be ignored"
+				},
+				Permissions: {
+					module: getModule(Filters.byProps('computePermissions')),
+					errorNote: "Checking permissions is disabled"
+				},
+				ChannelStore: {
+					module: getModule(Filters.byProps('getChannel', 'getDMFromUserId')),
+					isBreakable: true
+				},
+				DiscordPermissions: {
+					module: getModule(Filters.byProps('ADD_REACTIONS'), { searchExports: true }),
+					fallback: { EMBED_LINKS: 16384n, USE_EXTERNAL_EMOJIS: 262144n },
+					errorNote: "fallback is used, there maybe side effects"
+				},
+				MessageActions: {
+					module: getModule(Filters.byProps('jumpToMessage', '_sendMessage')),
+					isBreakable: true
+				},
+				UserStore: {
+					module: getModule(Filters.byProps('getCurrentUser', 'getUser')),
+					errorNote: "Embed permission checks is disabled."
+				},
+				StickerStore: {
+					module: getModule(Filters.byProps('getStickerById')),
+					isBreakable: true
+				},
+				StickerTypeEnum: {
+					module: getModule(Filters.byProps('GUILD', 'STANDARD'), { searchExports: true }),
+					fallback: { STANDARD: 1, GUILD: 2 },
+					errorNote: "fallback is used, there maybe side effects"
+				},
+				StickerFormatEnum: {
+					module: getModule(Filters.byProps('APNG', 'LOTTIE'), { searchExports: true }),
+					fallback: { PNG: 1, APNG: 2, LOTTIE: 3, GIF: 4 },
+					errorNote: "fallback is used, there maybe side effects"
+				},
 				InsertText: {
 					module: (() => {
 						let ComponentDispatch;
@@ -88,8 +123,7 @@ function getPlugin() {
 								plainText: content
 							});
 						}
-					})(),
-					isBreakable: false
+					})()
 				},
 				...(() => {
 					const result = {
@@ -101,7 +135,8 @@ function getPlugin() {
 								SENDABLE: 0,
 								SENDABLE_WITH_BOOSTED_GUILD: 3,
 								SENDABLE_WITH_PREMIUM: 1
-							}
+							},
+							errorNote: "fallback is used, there maybe side effects"
 						},
 						getStickerSendability: { module: undefined, isBreakable: true },
 						isStickerSendable: { module: undefined, isBreakable: true }
@@ -126,7 +161,7 @@ function getPlugin() {
 				const Utils = {
 					showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),
 					getStickerUrl: (stickerId, size) => `https://media.discordapp.net/stickers/${stickerId}?size=${size}&passthrough=false`,
-					hasEmbedPerms: (channel, user) => !channel.guild_id || Modules.Permissions.can({ permission: Modules.DiscordPermissions.EMBED_LINKS, context: channel, user }),
+					hasEmbedPerms: (channel, user) => !channel.guild_id || Modules.Permissions?.can({ permission: Modules.DiscordPermissions.EMBED_LINKS, context: channel, user }),
 					isLottieSticker: sticker => sticker.type === Modules.StickerTypeEnum.STANDARD,
 					isAnimatedSticker: sticker => sticker["format_type"] === Modules.StickerFormatEnum.APNG,
 					isStickerSendable: (sticker, channel, user) => Modules.getStickerSendability(sticker, user, channel) === Modules.StickersSendabilityEnum.SENDABLE
@@ -188,7 +223,7 @@ function getPlugin() {
 					}
 
 					getReply(channelId) {
-						const reply = Modules.PendingReplyStore.getPendingReply(channelId);
+						const reply = Modules.PendingReplyStore?.getPendingReply(channelId);
 						if (!reply) return {};
 						return {
 							messageReference: {
@@ -204,7 +239,7 @@ function getPlugin() {
 					}
 
 					handleSticker(channelId, stickerId) {
-						const user = Modules.UserStore.getCurrentUser();
+						const user = this.getCurrentUser();
 						const sticker = Modules.StickerStore.getStickerById(stickerId);
 						const channel = Modules.ChannelStore.getChannel(channelId);
 						return {
@@ -289,9 +324,40 @@ function getPlugin() {
 							});
 					}
 
+					setUpCurrentUser() {
+						const [getCurrentUser, cleanUp] = (() => {
+							let currentUser = null;
+							if (!Modules.Dispatcher) return [() => Modules.CurrentUserStore?.getCurrentUser() || {}];
+
+							const resetCurrentUser = () => currentUser = null;
+							Modules.Dispatcher.subscribe('LOGOUT', resetCurrentUser);
+							return [
+								() => {
+									if (currentUser) return currentUser;
+									const user = Modules.CurrentUserStore?.getCurrentUser();
+									if (user) {
+										currentUser = user;
+									} else {
+										try {
+											const target = document.querySelector('.panels-3wFtMD .container-YkUktl');
+											const instance = BdApi.ReactUtils.getInternalInstance(target);
+											const props = BdApi.Utils.findInTree(instance, a => a?.currentUser, { walkable: ["return", "pendingProps"] });
+											currentUser = props.currentUser;
+										} catch {}
+									}
+									return currentUser || {};
+								},
+								() => Modules.Dispatcher.unsubscribe('LOGOUT', resetCurrentUser)
+							]
+						})();
+						this.getCurrentUser = getCurrentUser;
+						this.cleanUp = cleanUp;
+					}
+
 					onStart() {
 						try {
 							DOM.addStyle(css);
+							this.setUpCurrentUser();
 							this.patchStickerClickability();
 							this.patchSendSticker();
 							this.patchGetStickerById();
@@ -304,6 +370,7 @@ function getPlugin() {
 					}
 
 					onStop() {
+						this.cleanUp?.();
 						DOM.removeStyle();
 						Patcher.unpatchAll();
 					}
@@ -332,11 +399,11 @@ function getErrorPlugin(message) {
 	})
 }
 
-function checkModules(Modules) {
-	return Object.entries(Modules).reduce((acc, [moduleName, { module, fallback, isBreakable, withKey }]) => {
+function checkModules(modules) {
+	return Object.entries(modules).reduce((acc, [moduleName, { module, fallback, errorNote, isBreakable, withKey }]) => {
 		if ((withKey && !module.module) || !module) {
 			if (isBreakable) acc[0] = true;
-			acc[2].push(moduleName);
+			acc[2].push([moduleName, errorNote]);
 			if (fallback) acc[1][moduleName] = fallback;
 		} else
 			acc[1][moduleName] = module;
@@ -346,21 +413,59 @@ function checkModules(Modules) {
 	]);
 }
 
+function ensuredata() {
+	return BdApi.Data.load(config.info.name, 'brokenModulesData') || {
+		version: config.info.version,
+		first: true,
+		errorPopupCount: 0,
+		savedBrokenModules: []
+	};
+}
+
+function setPluginMetaData() {
+	const { version, first } = ensuredata();
+	if (version != config.info.version || first)
+		BdApi.Data.save(config.info.name, 'brokenModulesData', {
+			version: config.info.version,
+			errorPopupCount: 0,
+			savedBrokenModules: []
+		});
+}
+
+function handleBrokenModules(brokenModules) {
+	const { version, errorPopupCount, savedBrokenModules } = ensuredata();
+
+	const newBrokenModules = brokenModules.some(([newItem]) => !savedBrokenModules.includes(newItem));
+	const isUpdated = version != config.info.version;
+	const isPopupLimitReached = errorPopupCount === 3;
+
+	if (isUpdated || !isPopupLimitReached || newBrokenModules) {
+		pluginErrorAlert([
+			"Detected some Missing modules, certain aspects of the plugin may not work properly.",
+			`\`\`\`md\nMissing modules:\n\n${brokenModules.map(([moduleName, errorNote]) => `[${moduleName}]: ${errorNote ? `\n\t${errorNote}` :""}`).join('\n')}\`\`\``
+		]);
+
+		BdApi.Data.save(config.info.name, 'brokenModulesData', {
+			version,
+			errorPopupCount: (errorPopupCount + 1) % 4,
+			savedBrokenModules: brokenModules.map(([moduleName]) => moduleName)
+		});
+	}
+}
+
 function initPlugin() {
+	setPluginMetaData();
 	const [ParentPlugin, Plugin, Modules] = getPlugin();
 
 	const [pluginBreakingError, SafeModules, BrokenModules] = checkModules(Modules);
 	if (pluginBreakingError)
 		return getErrorPlugin([
 			"**Plugin is broken:** Take a screenshot of this popup and show it to the dev.",
-			`\`\`\`md\nMissing modules:\n\n${BrokenModules.map((moduleName,i) => `${++i}. ${moduleName}`).join('\n')}\`\`\``
+			`\`\`\`md\nMissing modules:\n\n${BrokenModules.map(([moduleName],i) => `${++i}. ${moduleName}`).join('\n')}\`\`\``
 		]);
 	else {
 		if (BrokenModules.length > 0)
-			pluginErrorAlert([
-				"Detected some Missing modules, certain aspects of the plugin may not work properly.",
-				`\`\`\`md\n[Missing modules]\n\n${BrokenModules.map((moduleName,i) => `${++i}. ${moduleName}`).join('\n')}\`\`\``
-			]);
+			handleBrokenModules(BrokenModules);
 		return Plugin(ParentPlugin, SafeModules);
 	}
 }
