@@ -203,21 +203,25 @@ function getPlugin() {
 						super();
 					}
 
-					handleUnsendableSticker({ user, sticker, channel }, direct) {
+					sendMessage({ sticker, channel }) {
+						Modules.MessageActions.sendMessage(channel.id, {
+							content: Utils.getStickerUrl(sticker.id, this.settings.stickerSize),
+							validNonShortcutEmojis: []
+						}, undefined, this.getReply(channel.id));
+					}
+
+					handleUnsendableSticker({ user, sticker, channel }) {
 						if (Utils.isAnimatedSticker(sticker) && !this.settings.shouldSendAnimatedStickers)
 							return Utils.showToast(STRINGS.disabledAnimatedStickersErrorMessage, "info");
 						if (!Utils.hasEmbedPerms(channel, user) && !this.settings.ignoreEmbedPermissions)
 							return Utils.showToast(STRINGS.missingEmbedPermissionsErrorMessage, "info");
 
-						this.sendStickerAsLink(sticker, channel, direct);
+						this.sendStickerAsLink(sticker, channel);
 					}
 
-					sendStickerAsLink(sticker, channel, direct) {
-						if (this.settings.sendDirectly || direct)
-							Modules.MessageActions.sendMessage(channel.id, {
-								content: Utils.getStickerUrl(sticker.id, this.settings.stickerSize),
-								validNonShortcutEmojis: []
-							}, undefined, this.getReply(channel.id));
+					sendStickerAsLink(sticker, channel) {
+						if (this.settings.sendDirectly)
+							this.sendMessage(sticker, channel)
 						else
 							Modules.InsertText(Utils.getStickerUrl(sticker.id, this.settings.stickerSize));
 					}
@@ -279,7 +283,7 @@ function getPlugin() {
 								if (!stickerObj.isSendable) {
 									delete args[3].stickerIds;
 									setTimeout(() => {
-										this.handleUnsendableSticker(stickerObj, true);
+										this.sendMessage(stickerObj);
 									}, 0)
 								}
 							}
@@ -327,14 +331,14 @@ function getPlugin() {
 					setUpCurrentUser() {
 						const [getCurrentUser, cleanUp] = (() => {
 							let currentUser = null;
-							if (!Modules.Dispatcher) return [() => Modules.CurrentUserStore?.getCurrentUser() || {}];
+							if (!Modules.Dispatcher) return [() => Modules.UserStore?.getCurrentUser() || {}];
 
 							const resetCurrentUser = () => currentUser = null;
 							Modules.Dispatcher.subscribe('LOGOUT', resetCurrentUser);
 							return [
 								() => {
 									if (currentUser) return currentUser;
-									const user = Modules.CurrentUserStore?.getCurrentUser();
+									const user = Modules.UserStore?.getCurrentUser();
 									if (user) {
 										currentUser = user;
 									} else {
