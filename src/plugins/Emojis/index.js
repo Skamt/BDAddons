@@ -2,15 +2,31 @@ module.exports = () => {
 	const { Webpack: { Filters, getModule } } = BdApi;
 	return {
 		Modules: {
-			PendingReplyStore: { module: DiscordModules.PendingReplyStore },
-			EmojiIntentionEnum: { module: DiscordModules.EmojiIntentionEnum, fallback: { CHAT: 3 }, },
-			EmojiSendAvailabilityEnum: { module: DiscordModules.EmojiSendAvailabilityEnum, fallback: { DISALLOW_EXTERNAL: 0, PREMIUM_LOCKED: 2 } },
-			EmojiFunctions: { module: DiscordModules.EmojiFunctions, isBreakable: true },
+			PendingReplyStore: {
+				module: DiscordModules.PendingReplyStore,
+				errorNote: "Replies will be ignored"
+			},
+			EmojiIntentionEnum: {
+				module: DiscordModules.EmojiIntentionEnum,
+				fallback: { CHAT: 3 },
+				errorNote: "fallback is used, there maybe side effects"
+			},
+			EmojiSendAvailabilityEnum: {
+				module: DiscordModules.EmojiSendAvailabilityEnum,
+				fallback: { DISALLOW_EXTERNAL: 0, PREMIUM_LOCKED: 2 },
+				errorNote: "fallback is used, there maybe side effects"
+			},
+			EmojiFunctions: {
+				module: DiscordModules.EmojiFunctions,
+				isBreakable: true
+			},
 			InsertText: {
 				module: (() => {
 					let ComponentDispatch;
 					return (content) => {
-						if (!ComponentDispatch) ComponentDispatch = DiscordModules.ComponentDispatch;
+						if (!ComponentDispatch) 
+							ComponentDispatch = DiscordModules.ComponentDispatch;
+
 						ComponentDispatch.dispatchToLastSubscribed("INSERT_TEXT", {
 							plainText: content
 						});
@@ -20,13 +36,35 @@ module.exports = () => {
 			...(() => {
 				const { Dispatcher, DiscordPermissions, SelectedChannelStore, MessageActions, Permissions, ChannelStore, UserStore } = Api.DiscordModules;
 				return {
-					Dispatcher: { module: Dispatcher },
-					DiscordPermissions: { module: DiscordPermissions, fallback: { EMBED_LINKS: 16384n } },
-					SelectedChannelStore: { module: SelectedChannelStore, isBreakable: true },
-					MessageActions: { module: MessageActions },
-					Permissions: { module: Permissions, isBreakable: true },
-					ChannelStore: { module: ChannelStore, isBreakable: true },
-					UserStore: { module: UserStore, isBreakable: true }
+					Dispatcher: {
+						module: Dispatcher,
+						errorNote: "replies may missbehave"
+					},
+					DiscordPermissions: {
+						module: DiscordPermissions,
+						fallback: { EMBED_LINKS: 16384n },
+						errorNote: "fallback is used, there maybe side effects"
+					},
+					SelectedChannelStore: {
+						module: SelectedChannelStore,
+						isBreakable: true
+					},
+					MessageActions: {
+						module: MessageActions,
+						errorNote: "Send directly is disabled"
+					},
+					Permissions: {
+						module: Permissions,
+						errorNote: "Checking permissions is disabled"
+					},
+					ChannelStore: {
+						module: ChannelStore,
+						isBreakable: true
+					},
+					UserStore: {
+						module: UserStore,
+						errorNote: "Perm checks are disabled"
+					}
 				};
 			})()
 		},
@@ -44,7 +82,7 @@ module.exports = () => {
 			// Utilities
 			const SelfUtils = {
 				showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),
-				hasEmbedPerms: (channel, user) => !channel.guild_id || Modules.Permissions.can({ permission: Modules.DiscordPermissions.EMBED_LINKS, context: channel, user }),
+				hasEmbedPerms: (channel, user) => !channel.guild_id || Modules.Permissions?.can({ permission: Modules.DiscordPermissions.EMBED_LINKS, context: channel, user }),
 				isEmojiSendable: (e) => Modules.EmojiFunctions.getEmojiUnavailableReason(e) === null,
 				getEmojiUrl: (emoji, size) => `${emoji.url.replace(/(size=)(\d+)[&]/, '')}&size=${size}`,
 				getEmojiWebpUrl: (emoji, size) => SelfUtils.getEmojiUrl(emoji, size).replace('gif', 'webp'),
@@ -86,9 +124,9 @@ module.exports = () => {
 				}
 
 				getReply(channelId) {
-					const reply = Modules.PendingReplyStore.getPendingReply(channelId);
+					const reply = Modules.PendingReplyStore?.getPendingReply(channelId);
 					if (!reply) return {};
-					Modules.Dispatcher.dispatch({ type: "DELETE_PENDING_REPLY", channelId });
+					Modules.Dispatcher?.dispatch({ type: "DELETE_PENDING_REPLY", channelId });
 					return {
 						messageReference: {
 							guild_id: reply.channel.guild_id,
@@ -112,7 +150,7 @@ module.exports = () => {
 				}
 
 				emojiHandler(emoji) {
-					const user = Modules.UserStore.getCurrentUser();
+					const user = this.getCurrentUser();
 					const intention = Modules.EmojiIntentionEnum.CHAT;
 					const channel = Modules.ChannelStore.getChannel(Modules.SelectedChannelStore.getChannelId());
 					if (!SelfUtils.isEmojiSendable({ emoji, channel, intention }))
@@ -167,9 +205,40 @@ module.exports = () => {
 					});
 				}
 
+				setUpCurrentUser() {
+					const [getCurrentUser, cleanUp] = (() => {
+						let currentUser = null;
+						if (!Modules.Dispatcher) return [() => Modules.UserStore?.getCurrentUser() || {}];
+
+						const resetCurrentUser = () => currentUser = null;
+						Modules.Dispatcher.subscribe('LOGOUT', resetCurrentUser);
+						return [
+							() => {
+								if (currentUser) return currentUser;
+								const user = Modules.UserStore?.getCurrentUser();
+								if (user) {
+									currentUser = user;
+								} else {
+									try {
+										const target = document.querySelector('.panels-3wFtMD .container-YkUktl');
+										const instance = BdApi.ReactUtils.getInternalInstance(target);
+										const props = BdApi.Utils.findInTree(instance, a => a?.currentUser, { walkable: ["return", "pendingProps"] });
+										currentUser = props.currentUser;
+									} catch {}
+								}
+								return currentUser || {};
+							},
+							() => Modules.Dispatcher.unsubscribe('LOGOUT', resetCurrentUser)
+						]
+					})();
+					this.getCurrentUser = getCurrentUser;
+					this.cleanUp = cleanUp;
+				}
+
 				onStart() {
 					try {
 						DOM.addStyle(css);
+						this.setUpCurrentUser();
 						this.patchEmojiPickerUnavailable();
 						document.addEventListener("mouseup", this.emojiClickHandler);
 					} catch (e) {
@@ -178,6 +247,7 @@ module.exports = () => {
 				}
 
 				onStop() {
+					this.cleanUp?.();
 					DOM.removeStyle();
 					Patcher.unpatchAll();
 					document.removeEventListener("mouseup", this.emojiClickHandler);
