@@ -1,6 +1,7 @@
 const {
 	UI,
 	DOM,
+	Data,
 	Patcher,
 	React,
 	ContextMenu,
@@ -38,15 +39,27 @@ const nativeModules = getModule(m => m.getDiscordUtils)
 const Dispatcher = getModule(Filters.byProps("dispatch", "subscribe"));
 const Analytics = getModule(m => m?.AnalyticEventConfigs);
 const MessageHeader = getModule((m) => m.Z?.toString().includes("userOverride") && m.Z?.toString().includes("withMentionPrefix"));
-const Anchor = getModule(m => m && m.type && Filters.byStrings("trusted", "title", "href","MASKED_LINK")(m.type));
-	
+const Anchor = getModule(m => m && m.type && Filters.byStrings("trusted", "title", "href", "MASKED_LINK")(m.type));
+const Image = getModuleAndKey(Filters.byStrings("renderAdjacentContent", "MEDIA_MOSAIC_ALT_TEXT_POPOUT_TITLE"));
+const ButtonData = getModule(m => m.BorderColors, { searchExports: true }) || ((props) => React.createElement('button', props));
+const SelectedChannelStore = getModule(Filters.byProps("getLastSelectedChannelId"));
+const Permissions = DiscordModules.Permissions;
+const DiscordPermissions = DiscordModules.DiscordPermissions;
+const ChannelStore = DiscordModules.ChannelStore;
+
 // Helper functions
 const Utils = {
-	showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),
+	showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type: type || "success" }),
 	copy: (data) => {
 		DiscordNative.clipboard.copy(data);
 		Utils.showToast(`${data} Copied!`, "success");
 	},
+	sleep: delay => new Promise(done => setTimeout(() => done(), delay * 1000)),
+	canSendMessage: (channel) => Permissions?.can({
+		permission: DiscordPermissions.SEND_MESSAGES,
+		context: channel,
+		user: UserStore.getCurrentUser()
+	})
 };
 
 const mods = [
@@ -56,6 +69,7 @@ const mods = [
 	require("EmojiLetters.js"),
 	require("FiltersTest.js"),
 	require("ShowUserId.js"),
+	require("Share.js"),
 ];
 
 module.exports = () => ({

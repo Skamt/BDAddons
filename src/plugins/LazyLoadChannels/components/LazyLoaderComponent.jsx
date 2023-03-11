@@ -1,4 +1,4 @@
-module.exports = ({ channel, loadChannel, messages }) => {
+({ channel, loadChannel, messages }) => {
 	const [blink, setBlink] = useState("");
 	const [checked, setChecked] = useState(false);
 	const [channelStats, setChannelStats] = useState({ messages: 0, reactions: 0, embeds: 0, links: 0, images: 0, videos: 0 });

@@ -1,9 +1,7 @@
+
 const config = {{ PLUGIN__CONFIG }};
 
-function getPlugin() {
-	const { Modules, Plugin } = ({{ PLUGIN__BODY }})();
-	return [Plugin, Modules]
-}
+{{ PLUGIN__BODY }}
 
 function pluginErrorAlert(content) {
 	BdApi.alert(config.info.name, content);
@@ -62,7 +60,7 @@ function handleBrokenModules(brokenModules) {
 	if (isUpdated || !isPopupLimitReached || newBrokenModules) {
 		pluginErrorAlert([
 			"Detected some Missing modules, certain aspects of the plugin may not work properly.",
-			`\`\`\`md\nMissing modules:\n\n${brokenModules.map(([moduleName, errorNote]) => `[${moduleName}]: ${errorNote ? `\n\t${errorNote}` :""}`).join('\n')}\`\`\``
+			`\`\`\`md\nMissing modules:\n\n${brokenModules.map(([moduleName, errorNote]) => `[${moduleName}]: ${errorNote || ""}`).join('\n')}\`\`\``
 		]);
 
 		BdApi.Data.save(config.info.name, 'brokenModulesData', {
@@ -75,9 +73,10 @@ function handleBrokenModules(brokenModules) {
 
 function initPlugin() {
 	setPluginMetaData();
-	const [Plugin, Modules] = getPlugin();
+	const { Modules, Plugin } = main();
 
 	const [pluginBreakingError, SafeModules, BrokenModules] = checkModules(Modules);
+
 	if (pluginBreakingError)
 		return getErrorPlugin([
 			"**Plugin is broken:** Take a screenshot of this popup and show it to the dev.",

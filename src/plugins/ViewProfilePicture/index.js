@@ -1,4 +1,4 @@
-module.exports = () => {
+function main() {
 	const { Webpack: { Filters, getModule } } = BdApi
 
 	// https://discord.com/channels/86004744966914048/196782758045941760/1062604534922367107

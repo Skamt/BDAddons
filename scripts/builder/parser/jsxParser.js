@@ -4,8 +4,7 @@ const babel = require("@babel/core");
 module.exports = filePath => {
 	const code = fs
 		.readFileSync(filePath)
-		.toString()
-		.replace(/module\.exports\s*=\s*/, "");
+		.toString();
 	const formatterCode = babel.transformSync(code, {
 		retainLines: true,
 		plugins: [

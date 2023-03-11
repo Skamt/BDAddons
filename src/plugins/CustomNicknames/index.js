@@ -1,10 +1,19 @@
-module.exports = (Api) => {
+function main(Api) {
 	const { React, Webpack: { Filters, getModule } } = BdApi;
 	return {
 		Modules: {
-			MessageHeader: { module: DiscordModules.MessageHeader, isBreakable: true },
-			UserStore: { module: DiscordModules.UserStore, errorNote: "Current user will not be excluded from context menu" },
-			openModal: { module: DiscordModules.openModal, errorNote: "Won't be able to add/change nicknames" },
+			MessageHeader: {
+				module: DiscordModules.MessageHeader,
+				isBreakable: true
+			},
+			UserStore: {
+				module: DiscordModules.UserStore,
+				errorNote: "Current user will not be excluded from context menu"
+			},
+			openModal: {
+				module: DiscordModules.openModal,
+				errorNote: "Won't be able to add/change nicknames"
+			},
 			ModalRoot: {
 				module: DiscordModules.ModalRoot,
 				fallback: function fallbackModalRoot(props) {

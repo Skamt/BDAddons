@@ -1,4 +1,4 @@
-module.exports = ({ target, defaultState, setPreviewState, previewComponent }) => {
+({ target, defaultState, setPreviewState, previewComponent }) => {
 	const [show, setShow] = useState(defaultState);
 	useEffect(() => {
 		function keyupHandler(e) {

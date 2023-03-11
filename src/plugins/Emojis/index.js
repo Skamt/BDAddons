@@ -1,4 +1,4 @@
-module.exports = () => {
+function main(Api) {
 	const { Webpack: { Filters, getModule } } = BdApi;
 	return {
 		Modules: {

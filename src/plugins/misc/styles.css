@@ -1,3 +1,4 @@
+
 #console {
 	display: inline-block;
 	text-transform: none;
@@ -28,4 +29,22 @@
 	display: inline-block;
 	font-weight: 500;
 	margin: 0 0rem 0 0.5rem;
+}
+
+.shareButton:hover,
+[class^=imageWrapper]:hover ~ .shareButton {
+    opacity: 1;
+}
+
+.shareButton {
+    padding: 6px;
+    border: 0;
+    opacity: 0;
+    z-index: 29;
+    position: absolute;
+    border-radius: 5px;
+    bottom: 4px;
+    left: 4px;
+    color:#b8b9bf;
+    background-color: #303338;
 }

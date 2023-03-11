@@ -1,10 +1,7 @@
+
 const config = {{ PLUGIN__CONFIG }};
 
-function getPlugin() {
-	const [ParentPlugin, Api] = global.ZeresPluginLibrary.buildPlugin(config);
-	const { Modules, Plugin } = ({{ PLUGIN__BODY }})(Api);
-	return [ParentPlugin, Plugin, Modules]
-}
+{{ PLUGIN__BODY }}
 
 function pluginErrorAlert(content) {
 	BdApi.alert(config.info.name, content);
@@ -62,7 +59,7 @@ function handleBrokenModules(brokenModules) {
 	if (isUpdated || !isPopupLimitReached || newBrokenModules) {
 		pluginErrorAlert([
 			"Detected some Missing modules, certain aspects of the plugin may not work properly.",
-			`\`\`\`md\nMissing modules:\n\n${brokenModules.map(([moduleName, errorNote]) => `[${moduleName}]: ${errorNote ? `\n\t${errorNote}` :""}`).join('\n')}\`\`\``
+			`\`\`\`md\nMissing modules:\n\n${brokenModules.map(([moduleName, errorNote]) => `[${moduleName}]: ${errorNote || ""}`).join('\n')}\`\`\``
 		]);
 
 		BdApi.Data.save(config.info.name, 'brokenModulesData', {
@@ -75,7 +72,8 @@ function handleBrokenModules(brokenModules) {
 
 function initPlugin() {
 	setPluginMetaData();
-	const [ParentPlugin, Plugin, Modules] = getPlugin();
+	const [ParentPlugin, Api] = global.ZeresPluginLibrary.buildPlugin(config);
+	const { Modules, Plugin } = main(Api);
 
 	const [pluginBreakingError, SafeModules, BrokenModules] = checkModules(Modules);
 	if (pluginBreakingError)

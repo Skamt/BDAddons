@@ -1,4 +1,4 @@
-module.exports = class ErrorBoundary extends React.Component {
+class ErrorBoundary extends React.Component {
 	state = { hasError: false, error: null, info: null };
 	componentDidCatch(error, info) {
 		this.setState({ error, info, hasError: true });

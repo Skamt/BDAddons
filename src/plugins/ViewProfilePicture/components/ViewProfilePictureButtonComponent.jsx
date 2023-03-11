@@ -1,4 +1,4 @@
-module.exports = (props) => {
+props => {
 	return (
 		<Modules.Tooltip
 			text="View profile picture"

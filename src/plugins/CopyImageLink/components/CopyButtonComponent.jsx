@@ -1,4 +1,4 @@
-module.exports = ({ href }) => {
+({ href }) => {
 	return <>
 		<span className="copyBtnSpan">|</span>
 		<a

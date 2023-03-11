@@ -1,4 +1,4 @@
-module.exports = ({ props, user }) => {
+({ props, user }) => {
 	const [value, setValue] = useState(Data.load(user.id) || "");
 	
 	useEffect(() => {

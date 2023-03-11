@@ -1,4 +1,4 @@
-module.exports = ({ props, items }) => {
+({ props, items }) => {
 	return (
 		<Modules.ModalRoot
 			{...props}

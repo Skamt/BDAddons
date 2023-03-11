@@ -1,4 +1,4 @@
-module.exports = ({ color, bannerColorCopyHandler }) => {
+({ color, bannerColorCopyHandler }) => {
 	return (
 		<div
 			className="VPP-NoBanner"
