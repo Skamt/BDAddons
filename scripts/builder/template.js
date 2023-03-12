@@ -33,29 +33,30 @@ function checkModules(modules) {
 function ensuredata() {
 	return BdApi.Data.load(config.info.name, 'brokenModulesData') || {
 		version: config.info.version,
-		first: true,
 		errorPopupCount: 0,
 		savedBrokenModules: []
 	};
 }
 
 function setPluginMetaData() {
-	const { version, first } = ensuredata();
-	if (version != config.info.version || first)
+	const { version, changelog = false } = ensuredata();
+	if (version != config.info.version || !changelog) {
+		// TODO showChangelog();
 		BdApi.Data.save(config.info.name, 'brokenModulesData', {
 			version: config.info.version,
+			changelog: true,
 			errorPopupCount: 0,
-			first: false,
 			savedBrokenModules: []
 		});
+	}
 }
 
 function handleBrokenModules(brokenModules) {
-	const { version, errorPopupCount, savedBrokenModules } = ensuredata();
+	const current = ensuredata();
 
-	const newBrokenModules = brokenModules.some(([newItem]) => !savedBrokenModules.includes(newItem));
-	const isUpdated = version != config.info.version;
-	const isPopupLimitReached = errorPopupCount === 3;
+	const newBrokenModules = brokenModules.some(([newItem]) => !current.savedBrokenModules.includes(newItem));
+	const isUpdated = current.version != config.info.version;
+	const isPopupLimitReached = current.errorPopupCount === 3;
 
 	if (isUpdated || !isPopupLimitReached || newBrokenModules) {
 		pluginErrorAlert([
@@ -64,8 +65,9 @@ function handleBrokenModules(brokenModules) {
 		]);
 
 		BdApi.Data.save(config.info.name, 'brokenModulesData', {
-			version,
-			errorPopupCount: (errorPopupCount + 1) % 4,
+			...current,
+			version : current.version,
+			errorPopupCount: (current.errorPopupCount + 1) % 4,
 			savedBrokenModules: brokenModules.map(([moduleName]) => moduleName)
 		});
 	}

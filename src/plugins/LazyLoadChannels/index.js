@@ -264,12 +264,17 @@ function main(Api) {
 						guild.channels.forEach(channel => Utils.DataManager.add(channel.guild_id, channel.id))
 				}
 
+				guildDeleteHandler({ guild }){
+					Utils.DataManager.remove(guild.id);
+				}
+
 				setupHandlers() {
 					this.handlers = [
 						["CHANNEL_CREATE", this.channelCreateHandler],
 						["THREAD_CREATE", this.channelCreateHandler],
 						["GUILD_CREATE", this.guildCreateHandler],
-						["CHANNEL_SELECT", this.channelSelectHandler]
+						["CHANNEL_SELECT", this.channelSelectHandler],
+						["GUILD_DELETE", this.guildDeleteHandler]
 					].map(([event, handler]) => {
 						const boundHandler = handler.bind(this);
 						Modules.Dispatcher.subscribe(event, boundHandler);

@@ -63,11 +63,11 @@ const Utils = {
 };
 
 const mods = [
+	require("FiltersTest.js"),
 	require("NoTrack.js"),
 	require("SpotifyListenAlong.js"),
 	require("ConsoleToggleButton.js"),
 	require("EmojiLetters.js"),
-	require("FiltersTest.js"),
 	require("ShowUserId.js"),
 	require("Share.js"),
 ];
@@ -75,10 +75,10 @@ const mods = [
 module.exports = () => ({
 	start() {
 		DOM.addStyle(require("styles.css"));
-		mods.forEach(mod => mod.Init?.());
+		mods.forEach(mod => { try { mod.Init?.() } catch { console.log(mod, 'Init failed') } });
 	},
 	stop() {
 		DOM.removeStyle();
-		mods.forEach(mod => mod.Dispose?.());
+		mods.forEach(mod => { try { mod.Dispose?.() } catch { console.log(mod, 'Dispose failed') } });
 	}
 });
