@@ -14,12 +14,32 @@ function main(Api) {
 
 	return {
 		Modules: {
-			ChannelActions: { module: DiscordModules.ChannelActions, isBreakable: true },
-			ChannelContent: { module: DiscordModules.ChannelContent, isBreakable: true },
-			ChannelTypeEnum: { module: DiscordModules.ChannelTypeEnum, fallback: { GUILD_CATEGORY: 4 }, errorNote: "fallback is used, there maybe side effects" },
-			ChannelComponent: { module: getModuleAndKey(DiscordModules.ChannelComponent), withKey: true, errorNote: "Channel indicators are disabled" },
-			Dispatcher: { module: DiscordModules.Dispatcher, isBreakable: true },
-			MessageActions: { module: DiscordModules.MessageActions, isBreakable: true },
+			ChannelActions: {
+				module: DiscordModules.ChannelActions,
+				isBreakable: true
+			},
+			ChannelContent: {
+				module: DiscordModules.ChannelContent,
+				isBreakable: true
+			},
+			ChannelTypeEnum: {
+				module: DiscordModules.ChannelTypeEnum,
+				fallback: { GUILD_CATEGORY: 4 },
+				errorNote: "fallback is used, there maybe side effects"
+			},
+			ChannelComponent: {
+				module: getModuleAndKey(DiscordModules.ChannelComponent),
+				withKey: true,
+				errorNote: "Channel indicators are disabled"
+			},
+			Dispatcher: {
+				module: DiscordModules.Dispatcher,
+				isBreakable: true
+			},
+			MessageActions: {
+				module: DiscordModules.MessageActions,
+				isBreakable: true
+			},
 			SwitchRow: {
 				module: DiscordModules.SwitchRow,
 				fallback: function fallbackSwitchRow(props) {
@@ -40,6 +60,10 @@ function main(Api) {
 					return React.createElement('button', props)
 				},
 				errorNote: "Sloppy fallback is used"
+			},
+			createChannel: {
+				module: getModule(m => m.Z.createChannel),
+				errorNote: "Newly created channels won't be auto loaded"
 			}
 		},
 		Plugin(Modules) {
@@ -55,6 +79,7 @@ function main(Api) {
 
 			// Constants
 			const EVENTS = [
+				"THREAD_CREATE_LOCAL",
 				"THREAD_LIST_SYNC",
 				"THREAD_CREATE",
 				"CHANNEL_SELECT",
@@ -243,6 +268,16 @@ function main(Api) {
 					]
 				}
 
+				patchCreateChannel() {
+					if (Modules.createChannel)
+						Patcher.after(Modules.createChannel.Z, "createChannel", (_, [{ guildId }], ret) => {
+							if (!Utils.channelsStateManager.has('guilds', guildId))
+								ret.then(({ body }) => {
+									Utils.channelsStateManager.add('channels', body.id);
+								});
+						})
+				}
+
 				channelSelectHandler({ channelId, guildId, messageId }) {
 					/** Ignore if 
 					 * messageId !== undefined means it's a jump
@@ -255,9 +290,8 @@ function main(Api) {
 						this.autoLoad = false;
 				}
 
-				channelCreateHandler({ channel }) {
-					if (!Utils.channelsStateManager.has('guilds', channel.guild_id))
-						Utils.channelsStateManager.add('channels', channel.id);
+				channelCreateHandler({ channelId }) {
+					Utils.channelsStateManager.add('channels', channelId);
 				}
 
 				guildCreateHandler({ guild }) {
@@ -284,8 +318,7 @@ function main(Api) {
 
 				setupHandlers() {
 					this.handlers = [
-						["CHANNEL_CREATE", this.channelCreateHandler],
-						["THREAD_CREATE", this.channelCreateHandler],
+						["THREAD_CREATE_LOCAL", this.channelCreateHandler],
 						["GUILD_CREATE", this.guildCreateHandler],
 						["CHANNEL_SELECT", this.channelSelectHandler],
 						["GUILD_DELETE", this.guildDeleteHandler]
@@ -296,11 +329,11 @@ function main(Api) {
 					});
 				}
 
-
 				start() {
 					try {
 						DOM.addStyle(css);
 						this.patchChannel();
+						this.patchCreateChannel();
 						this.setupHandlers();
 						this.patchChannelContent();
 						this.patchContextMenu();
