@@ -18,38 +18,31 @@ function main(Api) {
 			ChannelContent: { module: DiscordModules.ChannelContent, isBreakable: true },
 			ChannelTypeEnum: { module: DiscordModules.ChannelTypeEnum, fallback: { GUILD_CATEGORY: 4 }, errorNote: "fallback is used, there maybe side effects" },
 			ChannelComponent: { module: getModuleAndKey(DiscordModules.ChannelComponent), withKey: true, errorNote: "Channel indicators are disabled" },
-			...(() => {
-				const { Dispatcher, SelectedGuildStore, GuildChannelsStore, MessageActions, SwitchRow, ButtonData } = Api.DiscordModules;
-				return {
-					Dispatcher: { module: Dispatcher, isBreakable: true },
-					SelectedGuildStore: { module: SelectedGuildStore, errorNote: "New channels will not be autoloaded" },
-					GuildChannelsStore: { module: GuildChannelsStore, errorNote: "Can't auto load all server channels" },
-					MessageActions: { module: MessageActions, isBreakable: true },
-					SwitchRow: {
-						module: SwitchRow,
-						fallback: function fallbackSwitchRow(props) {
-							return React.createElement('div', { style: { color: "#fff" } }, [
-								props.children,
-								React.createElement('input', {
-									checked: props.value,
-									onChange: (e) => props.onChange(e.target.checked),
-									type: "checkbox"
-								})
-							])
-						},
-						errorNote: "Sloppy fallback is used"
-					},
-					ButtonData: {
-						module: ButtonData,
-						fallback: function fallbackButtonData(props) {
-							return React.createElement('button', props)
-						},
-						errorNote: "Sloppy fallback is used"
-					}
-				};
-			})()
+			Dispatcher: { module: DiscordModules.Dispatcher, isBreakable: true },
+			MessageActions: { module: DiscordModules.MessageActions, isBreakable: true },
+			SwitchRow: {
+				module: DiscordModules.SwitchRow,
+				fallback: function fallbackSwitchRow(props) {
+					return React.createElement('div', { style: { color: "#fff" } }, [
+						props.children,
+						React.createElement('input', {
+							checked: props.value,
+							onChange: (e) => props.onChange(e.target.checked),
+							type: "checkbox"
+						})
+					])
+				},
+				errorNote: "Sloppy fallback is used"
+			},
+			ButtonData: {
+				module: DiscordModules.ButtonData,
+				fallback: function fallbackButtonData(props) {
+					return React.createElement('button', props)
+				},
+				errorNote: "Sloppy fallback is used"
+			}
 		},
-		Plugin(ParentPlugin, Modules) {
+		Plugin(Modules) {
 			const {
 				UI,
 				DOM,
@@ -88,7 +81,8 @@ function main(Api) {
 					/**
 					 * This method of fetching messages makes API request without checking the cache 
 					 * therefore it is only called when messages.length === 0
-					 * and because it returns a promise, it is used to load messages and show toast 
+					 * and because it returns a promise, it is used to load messages and show toast
+					 * Debating removing this whole loadmessages feature.
 					 */
 					return Modules.MessageActions.fetchMessages({ channelId: channel.id });
 				},
@@ -100,29 +94,45 @@ function main(Api) {
 					image: /(jpg|jpeg|png|bmp|tiff|psd|raw|cr2|nef|orf|sr2)/i,
 					video: /(mp4|avi|wmv|mov|flv|mkv|webm|vob|ogv|m4v|3gp|3g2|mpeg|mpg|m2v|m4v|svi|3gpp|3gpp2|mxf|roq|nsv|flv|f4v|f4p|f4a|f4b)/i
 				},
-				DataManager: {
+				channelsStateManager: {
+					Init() {
+						this.channels = new Set(Data.load('channels') || []);
+						this.guilds = new Set(Data.load('guilds') || []);
+						this.exceptions = new Set(Data.load('exceptions') || []);
+					},
 					add(key, target) {
-						let data = Data.load(key) || [];
-						Data.save(key, [...data, ...(Array.isArray(target) ? target : [target])])
+						this[key].add(target);
+						Data.save(key, this[key]);
 					},
 					remove(key, target) {
-						if (!target) return Data.save(key, []);
-						const data = Data.load(key);
-						if (!data) return;
-						const index = data.indexOf(target);
-						if (index === -1) return;
-						data.splice(index, 1);
-						Data.save(key, data);
+						this[key].delete(target);
+						Data.save(key, this[key]);
 					},
 					has(key, target) {
-						const data = Data.load(key);
-						if (!data) return false;
-						return data.some(id => id === target);
+						return this[key].has(target);
 					},
-					toggelChannel(channel) {
-						if (Utils.DataManager.has(channel.guild_id, channel.id))
-							Utils.DataManager.remove(channel.guild_id, channel.id);
-						else Utils.DataManager.add(channel.guild_id, channel.id);
+					getChannelstate(guildId, channelId) {
+						if ((this.guilds.has(guildId) && !this.exceptions.has(channelId)) || this.channels.has(channelId))
+							return true;
+						return false;
+					},
+					toggelGuild(guildId) {
+						if (this.guilds.has(guildId))
+							this.remove('guilds', guildId);
+						else
+							this.add('guilds', guildId);
+					},
+					toggelChannel(guildId, channelId) {
+						if (this.guilds.has(guildId)) {
+							if (!this.exceptions.has(channelId))
+								this.add('exceptions', channelId);
+							else {
+								this.remove('exceptions', channelId);
+							}
+						} else if (this.channels.has(channelId))
+							this.remove('channels', channelId);
+						else
+							this.add('channels', channelId);
 					}
 				},
 				reRender: () => {
@@ -137,15 +147,28 @@ function main(Api) {
 			// Components
 			const ErrorBoundary = require("components/ErrorBoundary.jsx");
 			const LazyLoaderComponent = require("components/LazyLoaderComponent.jsx");
+			const settingComponent = (props) => {
+				const [enabled, setEnabled] = useState(props.value);
+				return React.createElement(Modules.SwitchRow, {
+					value: enabled,
+					note: props.note,
+					hideBorder: true,
+					onChange: e => {
+						props.onChange(e);
+						setEnabled(e);
+					}
+				}, props.description);
+			}
 
 			// Styles
 			const css = require("styles.css");
 
-			return class LazyLoadChannels extends ParentPlugin {
+			return class LazyLoadChannels {
 				constructor() {
-					super();
-					this.loadChannel = this.loadChannel.bind(this);
+					this.settings = Data.load("settings") || { autoloadedChannelIndicator: false };
+					Utils.channelsStateManager.Init();
 					this.autoLoad = false;
+					this.loadChannel = this.loadChannel.bind(this);
 				}
 
 				loadChannel(channel, messageId) {
@@ -188,31 +211,29 @@ function main(Api) {
 					if (Modules.ChannelComponent)
 						Patcher.after(Modules.ChannelComponent.module, Modules.ChannelComponent.key, (_, [{ channel }], returnValue) => {
 							if (!this.settings.autoloadedChannelIndicator) return;
-							if (Utils.DataManager.has(channel.guild_id, channel.id))
-								returnValue.props.children.props.children[1].props.className += " autoload";
+							if (Utils.channelsStateManager.getChannelstate(channel.guild_id, channel.id)) returnValue.props.children.props.children[1].props.className += " autoload";
 						});
 				}
 
 				patchContextMenu() {
 					this.unpatchContextMenu = [
-						...[
-							["Lazy load all channels", id => Utils.DataManager.remove(id)],
-							["Auto load all channels", id => {
-								const { SELECTABLE, VOCAL } = Modules.GuildChannelsStore.getChannels(id);
-								Utils.DataManager.add(id, [...SELECTABLE.map(({ channel }) => channel.id), ...VOCAL.map(({ channel }) => channel.id)]);
-							}]
-						].map(([label, cb]) => ContextMenu.patch("guild-context", (retVal, { guild }) => {
+						ContextMenu.patch("guild-context", (retVal, { guild }) => {
 							if (guild)
-								retVal.props.children.splice(1, 0, ContextMenu.buildItem({ type: "button", label, action: () => cb(guild.id) }));
-						})),
+								retVal.props.children.splice(1, 0, ContextMenu.buildItem({
+									type: "toggle",
+									label: "Auto load",
+									active: Utils.channelsStateManager.has('guilds', guild.id),
+									action: _ => Utils.channelsStateManager.toggelGuild(guild.id)
+								}));
+						}),
 						...["channel-context", "thread-context"].map(context =>
 							ContextMenu.patch(context, (retVal, { channel }) => {
 								if (channel && channel.type !== Modules.ChannelTypeEnum.GUILD_CATEGORY)
 									retVal.props.children.splice(1, 0, ContextMenu.buildItem({
 										type: "toggle",
 										label: "Auto load",
-										active: Utils.DataManager.has(channel.guild_id, channel.id),
-										action: _ => Utils.DataManager.toggelChannel(channel)
+										active: Utils.channelsStateManager.getChannelstate(channel.guild_id, channel.id),
+										action: _ => Utils.channelsStateManager.toggelChannel(channel.guild_id, channel.id)
 									}));
 							})
 						),
@@ -228,22 +249,15 @@ function main(Api) {
 					 * guildId === undefined means it's DM
 					 * OR channel is autoloaded
 					 */
-					if (messageId || !guildId || Utils.DataManager.has(guildId, channelId))
+					if (messageId || !guildId || Utils.channelsStateManager.getChannelstate(guildId, channelId))
 						this.loadChannel({ id: channelId, guild_id: guildId }, messageId);
 					else
 						this.autoLoad = false;
 				}
 
 				channelCreateHandler({ channel }) {
-					/**
-					 * No need to lazy load channels or threads created by current user. 
-					 */
-					if (channel.guild_id !== Modules.SelectedGuildStore.getGuildId()) return;
-					if (!channel || !channel.guild_id || !channel.id) return;
-					if (!channel.isDM()) {
-						Utils.DataManager.add(channel.guild_id, channel.id);
-						this.loadChannel(channel);
-					}
+					if (!Utils.channelsStateManager.has('guilds', channel.guild_id))
+						Utils.channelsStateManager.add('channels', channel.id);
 				}
 
 				guildCreateHandler({ guild }) {
@@ -261,11 +275,11 @@ function main(Api) {
 					const nowDate = new Date(Date.now()).toLocaleDateString();
 
 					if (guildCreateDate === nowDate)
-						guild.channels.forEach(channel => Utils.DataManager.add(channel.guild_id, channel.id))
+						Utils.channelsStateManager.add('guilds', guild.id);
 				}
 
-				guildDeleteHandler({ guild }){
-					Utils.DataManager.remove(guild.id);
+				guildDeleteHandler({ guild }) {
+					Utils.channelsStateManager.remove('guilds', guild.id);
 				}
 
 				setupHandlers() {
@@ -282,7 +296,8 @@ function main(Api) {
 					});
 				}
 
-				onStart() {
+
+				start() {
 					try {
 						DOM.addStyle(css);
 						this.patchChannel();
@@ -295,7 +310,7 @@ function main(Api) {
 					}
 				}
 
-				onStop() {
+				stop() {
 					DOM.removeStyle();
 					Patcher.unpatchAll();
 					this.unpatchContextMenu?.forEach?.(p => p());
@@ -306,7 +321,15 @@ function main(Api) {
 				}
 
 				getSettingsPanel() {
-					return this.buildSettingsPanel().getElement();
+					return React.createElement(settingComponent, {
+						description: "Auto load indicator.",
+						note: "Whether or not to show an indicator for channels set to auto load",
+						value: this.settings.autoloadedChannelIndicator,
+						onChange: e => {
+							this.settings.autoloadedChannelIndicator = e;
+							Data.save("settings", this.settings);
+						}
+					});
 				}
 			}
 		}

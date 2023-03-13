@@ -20,7 +20,7 @@
 	};
 
 	const loadChannelHandler = () => {
-		if (checked) Utils.DataManager.add(channel.guild_id, channel.id);
+		if (checked) Utils.channelsStateManager.add('channels', channel.id);
 		loadChannel(channel);
 		/**
 		 * rerending like this because i needed this component to be removed from the vDom

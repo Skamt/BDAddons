@@ -8,6 +8,7 @@ module.exports = {
 			if (!funcStr.includes(s)) return false;
 		return true;
 	}`,
+	"ButtonData":"getModule(m => m.BorderColors, {searchExports: true})",
 	"Dispatcher": "getModule(Filters.byProps('dispatch', 'subscribe'))",
 	"StickerModule": "Filters.byStrings('sticker', 'withLoadingIndicator')",
 	"ChannelComponent": "Filters.byStrings('canHaveDot', 'isFavoriteSuggestion', 'mentionCount')",

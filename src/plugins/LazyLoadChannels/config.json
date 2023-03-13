@@ -6,11 +6,5 @@
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels"
 	},
-	"defaultConfig": [{
-		"type": "switch",
-		"id": "autoloadedChannelIndicator",
-		"name": "Auto load indicator",
-		"note": "Whether or not to show an indicator for channels set to auto load",
-		"value": false
-	}]
+	"no-zpl":true
 }
