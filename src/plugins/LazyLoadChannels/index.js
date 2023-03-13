@@ -1,5 +1,5 @@
 function main(Api) {
-	const { React, Webpack: { Filters, getModule } } = BdApi;
+	const { React, Webpack: { Filters, getModule, waitForModule } } = BdApi;
 
 	// https://discord.com/channels/86004744966914048/196782758045941760/1062604534922367107
 	function getModuleAndKey(filter) {
@@ -62,8 +62,7 @@ function main(Api) {
 				errorNote: "Sloppy fallback is used"
 			},
 			createChannel: {
-				module: getModule(m => m.Z.createChannel),
-				errorNote: "Newly created channels won't be auto loaded"
+				module: (() => waitForModule(m => m.Z.createChannel))()
 			}
 		},
 		Plugin(Modules) {
@@ -269,13 +268,14 @@ function main(Api) {
 				}
 
 				patchCreateChannel() {
-					if (Modules.createChannel)
-						Patcher.after(Modules.createChannel.Z, "createChannel", (_, [{ guildId }], ret) => {
+					Modules.createChannel.then((module) => {
+						Patcher.after(module.Z, "createChannel", (_, [{ guildId }], ret) => {
 							if (!Utils.channelsStateManager.has('guilds', guildId))
 								ret.then(({ body }) => {
 									Utils.channelsStateManager.add('channels', body.id);
 								});
 						})
+					})
 				}
 
 				channelSelectHandler({ channelId, guildId, messageId }) {
@@ -316,6 +316,7 @@ function main(Api) {
 					Utils.channelsStateManager.remove('guilds', guild.id);
 				}
 
+
 				setupHandlers() {
 					this.handlers = [
 						["THREAD_CREATE_LOCAL", this.channelCreateHandler],
@@ -333,8 +334,8 @@ function main(Api) {
 					try {
 						DOM.addStyle(css);
 						this.patchChannel();
-						this.patchCreateChannel();
 						this.setupHandlers();
+						this.patchCreateChannel();
 						this.patchChannelContent();
 						this.patchContextMenu();
 						EVENTS.forEach(event => Modules.Dispatcher.unsubscribe(event, Modules.ChannelActions.actions[event]));
