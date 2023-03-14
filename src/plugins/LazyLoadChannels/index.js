@@ -62,7 +62,7 @@ function main(Api) {
 				errorNote: "Sloppy fallback is used"
 			},
 			createChannel: {
-				module: (() => waitForModule(m => m.Z.createChannel))()
+				module: waitForModule(m => m.Z.createChannel)
 			}
 		},
 		Plugin(Modules) {
@@ -231,7 +231,7 @@ function main(Api) {
 					/**
 					 * adds a class to channels set to be auto loaded
 					 * for highlighting them
-					 */
+					 **/
 					if (Modules.ChannelComponent)
 						Patcher.after(Modules.ChannelComponent.module, Modules.ChannelComponent.key, (_, [{ channel }], returnValue) => {
 							if (!this.settings.autoloadedChannelIndicator) return;
@@ -268,7 +268,10 @@ function main(Api) {
 				}
 
 				patchCreateChannel() {
-					Modules.createChannel.then((module) => {
+					/**
+					 * Listening for channels created by current user
+					 **/
+					Modules.createChannel.then(module => {
 						Patcher.after(module.Z, "createChannel", (_, [{ guildId }], ret) => {
 							if (!Utils.channelsStateManager.has('guilds', guildId))
 								ret.then(({ body }) => {
@@ -283,14 +286,17 @@ function main(Api) {
 					 * messageId !== undefined means it's a jump
 					 * guildId === undefined means it's DM
 					 * OR channel is autoloaded
-					 */
+					 **/
 					if (messageId || !guildId || Utils.channelsStateManager.getChannelstate(guildId, channelId))
 						this.loadChannel({ id: channelId, guild_id: guildId }, messageId);
 					else
 						this.autoLoad = false;
 				}
 
-				channelCreateHandler({ channelId }) {
+				threadCreateHandler({ channelId }) {
+					/**
+					 * Listening for threads created by current user
+					 **/
 					Utils.channelsStateManager.add('channels', channelId);
 				}
 
@@ -319,7 +325,7 @@ function main(Api) {
 
 				setupHandlers() {
 					this.handlers = [
-						["THREAD_CREATE_LOCAL", this.channelCreateHandler],
+						["THREAD_CREATE_LOCAL", this.threadCreateHandler],
 						["GUILD_CREATE", this.guildCreateHandler],
 						["CHANNEL_SELECT", this.channelSelectHandler],
 						["GUILD_DELETE", this.guildDeleteHandler]
