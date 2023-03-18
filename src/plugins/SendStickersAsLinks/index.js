@@ -123,7 +123,9 @@ function main(Api) {
 			};
 
 			// Styles
-			const css = require("styles.css");
+			function addStyles(){
+				DOM.addStyle(require("styles.css"));
+			}
 
 			return class SendStickersAsLinks extends ParentPlugin {
 				constructor() {
@@ -287,7 +289,7 @@ function main(Api) {
 
 				onStart() {
 					try {
-						DOM.addStyle(css);
+						addStyles();
 						this.setUpCurrentUser();
 						this.patchStickerClickability();
 						this.patchSendSticker();

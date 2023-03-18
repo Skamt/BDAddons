@@ -96,7 +96,9 @@ function main(Api) {
 			};
 
 			// Styles
-			const css = require("styles.css");
+			function addStyles(){
+				DOM.addStyle(require("styles.css"));
+			}
 
 			return class Emojis extends ParentPlugin {
 				constructor() {
@@ -237,7 +239,7 @@ function main(Api) {
 
 				onStart() {
 					try {
-						DOM.addStyle(css);
+						addStyles();
 						this.setUpCurrentUser();
 						this.patchEmojiPickerUnavailable();
 						document.addEventListener("mouseup", this.emojiClickHandler);

@@ -78,7 +78,9 @@ function main() {
 			}
 
 			// Styles
-			const css = require("styles.css");
+			function addStyles(){
+				DOM.addStyle(require("styles.css"));
+			}
 
 			return class StickerEmojiPreview {
 				constructor() {
@@ -153,7 +155,7 @@ function main() {
 
 				start() {
 					try {
-						DOM.addStyle(css);
+						addStyles();
 						this.patchPickerInspector();
 						this.patchCloseExpressionPicker();
 					} catch (e) {

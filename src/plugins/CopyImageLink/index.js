@@ -45,12 +45,14 @@ function main() {
 			const CopyButtonComponent = require("components/CopyButtonComponent.jsx");
 
 			// Styles
-			const css = require("styles.css");
+			function addStyles(){
+				DOM.addStyle(require("styles.css"));
+			}
 
 			return class CopyImageLink {
 				start() {
 					try {
-						DOM.addStyle(css);
+						addStyles();
 						Patcher.after(Modules.ImageModal.module, Modules.ImageModal.key, (_, __, returnValue) => {
 							const children = Utils.getNestedProp(returnValue, "props.children");
 							const { href } = Utils.getNestedProp(returnValue, "props.children.2.props");

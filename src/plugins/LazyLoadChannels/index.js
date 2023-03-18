@@ -185,7 +185,9 @@ function main(Api) {
 			}
 
 			// Styles
-			const css = require("styles.css");
+			function addStyles(){
+				DOM.addStyle(require("styles.css"));
+			}
 
 			return class LazyLoadChannels {
 				constructor() {
@@ -322,7 +324,6 @@ function main(Api) {
 					Utils.channelsStateManager.remove('guilds', guild.id);
 				}
 
-
 				setupHandlers() {
 					this.handlers = [
 						["THREAD_CREATE_LOCAL", this.threadCreateHandler],
@@ -338,7 +339,7 @@ function main(Api) {
 
 				start() {
 					try {
-						DOM.addStyle(css);
+						addStyles();
 						this.patchChannel();
 						this.setupHandlers();
 						this.patchCreateChannel();

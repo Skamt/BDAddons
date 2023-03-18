@@ -76,7 +76,9 @@ function main() {
 			const ColorModalComponent = require("components/ColorModalComponent.jsx");
 
 			// Styles
-			const css = require("styles.css");
+			function addStyles(){
+				DOM.addStyle(require("styles.css"));
+			}
 
 			return class ViewProfilePicture {
 
@@ -166,7 +168,7 @@ function main() {
 
 				start() {
 					try {
-						DOM.addStyle(css);
+						addStyles();
 						this.setUpCurrentUser();
 						this.patchUserBannerMask();
 					} catch (e) {
