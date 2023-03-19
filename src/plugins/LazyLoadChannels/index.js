@@ -1,4 +1,4 @@
-function main(Api) {
+function main() {
 	const { React, Webpack: { Filters, getModule, waitForModule } } = BdApi;
 
 	// https://discord.com/channels/86004744966914048/196782758045941760/1062604534922367107

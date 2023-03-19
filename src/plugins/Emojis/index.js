@@ -20,11 +20,40 @@ function main(Api) {
 				module: DiscordModules.EmojiFunctions,
 				isBreakable: true
 			},
+			Dispatcher: {
+				module: DiscordModules.Dispatcher,
+				errorNote: "replies may missbehave"
+			},
+			DiscordPermissions: {
+				module: DiscordModules.DiscordPermissions,
+				fallback: { EMBED_LINKS: 16384n },
+				errorNote: "fallback is used, there maybe side effects"
+			},
+			SelectedChannelStore: {
+				module: DiscordModules.SelectedChannelStore,
+				isBreakable: true
+			},
+			MessageActions: {
+				module: DiscordModules.MessageActions,
+				errorNote: "Send directly is disabled"
+			},
+			Permissions: {
+				module: DiscordModules.Permissions,
+				errorNote: "Checking permissions is disabled"
+			},
+			ChannelStore: {
+				module: DiscordModules.ChannelStore,
+				isBreakable: true
+			},
+			UserStore: {
+				module: DiscordModules.UserStore,
+				errorNote: "Perm checks are disabled"
+			},
 			InsertText: {
 				module: (() => {
 					let ComponentDispatch;
 					return (content) => {
-						if (!ComponentDispatch) 
+						if (!ComponentDispatch)
 							ComponentDispatch = DiscordModules.ComponentDispatch;
 
 						ComponentDispatch.dispatchToLastSubscribed("INSERT_TEXT", {
@@ -32,43 +61,9 @@ function main(Api) {
 						});
 					}
 				})()
-			},
-			...(() => {
-				const { Dispatcher, DiscordPermissions, SelectedChannelStore, MessageActions, Permissions, ChannelStore, UserStore } = Api.DiscordModules;
-				return {
-					Dispatcher: {
-						module: Dispatcher,
-						errorNote: "replies may missbehave"
-					},
-					DiscordPermissions: {
-						module: DiscordPermissions,
-						fallback: { EMBED_LINKS: 16384n },
-						errorNote: "fallback is used, there maybe side effects"
-					},
-					SelectedChannelStore: {
-						module: SelectedChannelStore,
-						isBreakable: true
-					},
-					MessageActions: {
-						module: MessageActions,
-						errorNote: "Send directly is disabled"
-					},
-					Permissions: {
-						module: Permissions,
-						errorNote: "Checking permissions is disabled"
-					},
-					ChannelStore: {
-						module: ChannelStore,
-						isBreakable: true
-					},
-					UserStore: {
-						module: UserStore,
-						errorNote: "Perm checks are disabled"
-					}
-				};
-			})()
+			}
 		},
-		Plugin(ParentPlugin, Modules) {
+		Plugin(Modules, ParentPlugin) {
 			const {
 				UI,
 				DOM,
@@ -96,7 +91,7 @@ function main(Api) {
 			};
 
 			// Styles
-			function addStyles(){
+			function addStyles() {
 				DOM.addStyle(require("styles.css"));
 			}
 

@@ -1,4 +1,4 @@
-function main(Api) {
+function main() {
 	const { Webpack: { Filters, getModule } } = BdApi;
 
 	// https://discord.com/channels/86004744966914048/196782758045941760/1062604534922367107
@@ -19,7 +19,9 @@ function main(Api) {
 				withKey: true,
 				errorNote: "Animated Stickers will not be highlighted."
 			},
-			Dispatcher: { module: DiscordModules.Dispatcher },
+			Dispatcher: {
+				module: DiscordModules.Dispatcher
+			},
 			PendingReplyStore: {
 				module: DiscordModules.PendingReplyStore,
 				errorNote: "Replies will be ignored"
@@ -95,7 +97,7 @@ function main(Api) {
 				return result;
 			})()
 		},
-		Plugin(ParentPlugin, Modules) {
+		Plugin(Modules, ParentPlugin) {
 			const {
 				UI,
 				DOM,
@@ -123,7 +125,7 @@ function main(Api) {
 			};
 
 			// Styles
-			function addStyles(){
+			function addStyles() {
 				DOM.addStyle(require("styles.css"));
 			}
 
@@ -132,7 +134,7 @@ function main(Api) {
 					super();
 				}
 
-				sendMessage({sticker, channel}) {
+				sendMessage({ sticker, channel }) {
 					Modules.MessageActions.sendMessage(channel.id, {
 						content: Utils.getStickerUrl(sticker.id, this.settings.stickerSize),
 						validNonShortcutEmojis: []

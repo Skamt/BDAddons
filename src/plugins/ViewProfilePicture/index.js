@@ -1,5 +1,5 @@
 function main() {
-	const { Webpack: { Filters, getModule } } = BdApi
+	const { Webpack: { Filters, getModule } } = BdApi;
 
 	// https://discord.com/channels/86004744966914048/196782758045941760/1062604534922367107
 	function getModuleAndKey(filter) {
@@ -14,23 +14,51 @@ function main() {
 
 	return {
 		Modules: {
-			Tooltip: { module: DiscordModules.Tooltip, isBreakable: true },
-			Dispatcher: { module: DiscordModules.Dispatcher },
+			Tooltip: {
+				module: DiscordModules.Tooltip,
+				isBreakable: true
+			},
+			Dispatcher: {
+				module: DiscordModules.Dispatcher
+			},
 			ModalRoot: {
+
 				module: DiscordModules.ModalRoot,
 				fallback: function fallbackModalRoot(props) {
 					return React.createElement('div', { ...props, style: { pointerEvents: "all" } })
 				},
 				errorNote: "Sloppy fallback is used"
 			},
-			openModal: { module: DiscordModules.openModal, isBreakable: true },
-			ImageModal: { module: getModule(DiscordModules.ImageModal, { searchExports: true }), isBreakable: true },
-			ModalCarousel: { module: DiscordModules.ModalCarousel, isBreakable: true },
-			UserBannerMask: { module: DiscordModules.UserBannerMask, isBreakable: true },
-			ProfileTypeEnum: { module: DiscordModules.ProfileTypeEnum, fallback: { POPOUT: 0, MODAL: 1, SETTINGS: 2, PANEL: 3, CARD: 4 }, errorNote: "fallback is used, there maybe side effects" },
-			UserStore: { module: DiscordModules.UserStore },
-			SelectedGuildStore: { module: DiscordModules.SelectedGuildStore, errorNote: "Something with servers" },
+			openModal: {
+				module: DiscordModules.openModal,
+				isBreakable: true
+			},
+			ImageModal: {
+				module: getModule(DiscordModules.ImageModal, { searchExports: true }),
+				isBreakable: true
+			},
+			ModalCarousel: {
+				module: DiscordModules.ModalCarousel,
+				isBreakable: true
+			},
+			UserBannerMask: {
+				module: DiscordModules.UserBannerMask,
+				isBreakable: true
+			},
+			ProfileTypeEnum: {
+				module: DiscordModules.ProfileTypeEnum,
+				fallback: { POPOUT: 0, MODAL: 1, SETTINGS: 2, PANEL: 3, CARD: 4 },
+				errorNote: "fallback is used, there maybe side effects"
+			},
+			UserStore: {
+				module: DiscordModules.UserStore
+			},
+			SelectedGuildStore: {
+				module: DiscordModules.SelectedGuildStore,
+				errorNote: "Something with servers"
+			},
 			renderLinkComponent: {
+
 				module: DiscordModules.renderLinkComponent,
 				fallback: function fallbackRenderLinkComponent(props) {
 					return React.createElement('a', props)
@@ -76,7 +104,7 @@ function main() {
 			const ColorModalComponent = require("components/ColorModalComponent.jsx");
 
 			// Styles
-			function addStyles(){
+			function addStyles() {
 				DOM.addStyle(require("styles.css"));
 			}
 
