@@ -1,5 +1,5 @@
-function main() {
-	const { Webpack: { Filters, getModule } } = BdApi;
+function main(API) {
+	const { Webpack: { Filters, getModule } } = API;
 
 	// https://discord.com/channels/86004744966914048/196782758045941760/1062604534922367107
 	function getModuleAndKey(filter) {
@@ -26,7 +26,7 @@ function main() {
 				DOM,
 				React,
 				Patcher
-			} = new BdApi(config.info.name);
+			} = API;
 
 			// Utilities
 			const Utils = {

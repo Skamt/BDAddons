@@ -1,5 +1,5 @@
-function main() {
-	const { React, Webpack: { Filters, getModule, waitForModule } } = BdApi;
+function main(API) {
+	const { React, Webpack: { Filters, getModule, waitForModule } } = API;
 
 	// https://discord.com/channels/86004744966914048/196782758045941760/1062604534922367107
 	function getModuleAndKey(filter) {
@@ -74,7 +74,7 @@ function main() {
 				Patcher,
 				ContextMenu,
 				React: { useState, useEffect }
-			} = new BdApi(config.info.name);
+			} = API;
 
 			// Constants
 			const EVENTS = [
@@ -162,7 +162,7 @@ function main() {
 				reRender: () => {
 					const target = document.querySelector(`#${CLASS_NAME}`)?.parentElement;
 					if (!target) return;
-					const instance = BdApi.ReactUtils.getOwnerInstance(target);
+					const instance = API.ReactUtils.getOwnerInstance(target);
 					const unpatch = Patcher.instead(instance, 'render', () => unpatch());
 					instance.forceUpdate(() => instance.forceUpdate());
 				}

@@ -1,4 +1,4 @@
-module.exports = () => {
+function main(API) {
 	const { Webpack: { Filters, getModule } } = BdApi;
 	return {
 		Modules: {},
@@ -7,7 +7,7 @@ module.exports = () => {
 				UI,
 				DOM,
 				Patcher,
-			} = new BdApi(config.info.name);
+			} = API;
 
 			return class pluginTEMPLATE {
 

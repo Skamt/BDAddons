@@ -6,7 +6,6 @@
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SendStickersAsLinks/SendStickersAsLinks.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SendStickersAsLinks"
 	},
-	"zpl":true,
 	"defaultConfig": [{
 		"type": "switch",
 		"id": "sendDirectly",
@@ -38,5 +37,6 @@
 		"value": 160,
 		"markers": [80, 100, 128, 160],
 		"stickToMarkers": true
-	}]
+	}],
+	"zpl": true
 }

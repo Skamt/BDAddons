@@ -6,7 +6,6 @@
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/Emojis/Emojis.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/Emojis"
 	},
-	"zpl":true,
 	"defaultConfig": [{
 		"type": "switch",
 		"id": "sendDirectly",
@@ -39,5 +38,6 @@
 		"value": 96,
 		"markers": [40, 48, 60, 64, 80, 96],
 		"stickToMarkers": true
-	}]
+	}],
+	"zpl": true
 }

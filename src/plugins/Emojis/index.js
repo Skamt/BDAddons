@@ -1,5 +1,5 @@
-function main(Api) {
-	const { Webpack: { Filters, getModule } } = BdApi;
+function main(API) {
+	const { Webpack: { Filters, getModule } } = API;
 	return {
 		Modules: {
 			PendingReplyStore: {
@@ -69,10 +69,8 @@ function main(Api) {
 				DOM,
 				Utils,
 				Patcher,
-				ReactUtils: {
-					getInternalInstance
-				}
-			} = new BdApi(config.info.name);
+				ReactUtils: { getInternalInstance }
+			} = API;
 
 			// Utilities
 			const SelfUtils = {
@@ -158,7 +156,7 @@ function main(Api) {
 					const picker = event.path.find(i => i.id === 'emoji-picker-tab-panel');
 					if (!picker) return [null];
 					const pickerInstance = getInternalInstance(picker);
-					const { pickerIntention } = BdApi.Utils.findInTree(pickerInstance, m => m && "pickerIntention" in m, { walkable: ["pendingProps", "children", "props"] }) || {};
+					const { pickerIntention } = API.Utils.findInTree(pickerInstance, m => m && "pickerIntention" in m, { walkable: ["pendingProps", "children", "props"] }) || {};
 					return [pickerIntention, picker];
 				}
 
@@ -218,8 +216,8 @@ function main(Api) {
 								} else {
 									try {
 										const target = document.querySelector('.panels-3wFtMD .container-YkUktl');
-										const instance = BdApi.ReactUtils.getInternalInstance(target);
-										const props = BdApi.Utils.findInTree(instance, a => a?.currentUser, { walkable: ["return", "pendingProps"] });
+										const instance = API.ReactUtils.getInternalInstance(target);
+										const props = API.Utils.findInTree(instance, a => a?.currentUser, { walkable: ["return", "pendingProps"] });
 										currentUser = props.currentUser;
 									} catch {}
 								}

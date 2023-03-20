@@ -1,5 +1,5 @@
-function main() {
-	const { Webpack: { Filters, getModule } } = BdApi;
+function main(API) {
+	const { Webpack: { Filters, getModule } } = API;
 
 	// https://discord.com/channels/86004744966914048/196782758045941760/1062604534922367107
 	function getModuleAndKey(filter) {
@@ -22,7 +22,6 @@ function main() {
 				module: DiscordModules.Dispatcher
 			},
 			ModalRoot: {
-
 				module: DiscordModules.ModalRoot,
 				fallback: function fallbackModalRoot(props) {
 					return React.createElement('div', { ...props, style: { pointerEvents: "all" } })
@@ -58,7 +57,6 @@ function main() {
 				errorNote: "Something with servers"
 			},
 			renderLinkComponent: {
-
 				module: DiscordModules.renderLinkComponent,
 				fallback: function fallbackRenderLinkComponent(props) {
 					return React.createElement('a', props)
@@ -72,7 +70,7 @@ function main() {
 				DOM,
 				React,
 				Patcher
-			} = new BdApi(config.info.name);
+			} = API;
 
 			// Utilities
 			const Utils = {
@@ -180,8 +178,8 @@ function main() {
 								} else {
 									try {
 										const target = document.querySelector('.panels-3wFtMD .container-YkUktl');
-										const instance = BdApi.ReactUtils.getInternalInstance(target);
-										const props = BdApi.Utils.findInTree(instance, a => a?.currentUser, { walkable: ["return", "pendingProps"] });
+										const instance = API.ReactUtils.getInternalInstance(target);
+										const props = API.Utils.findInTree(instance, a => a?.currentUser, { walkable: ["return", "pendingProps"] });
 										currentUser = props.currentUser;
 									} catch {}
 								}

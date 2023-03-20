@@ -14,5 +14,12 @@
 		"value": 160,
 		"markers": [20, 40, 80, 160, 320],
 		"stickToMarkers": true
-	}]
+	}],
+	// "changelog":[
+	// 	{
+	// 		"type":"(improved|added|fixed|notice)",
+	// 		"title":"",
+	// 		"items":[]
+	// 	}
+	// ]
 }
