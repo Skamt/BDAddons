@@ -281,7 +281,6 @@ const AddonManager = (() => {
     color: hsl(210,calc(var(--saturation-factor, 1)*9.3%),78.8%);
 }`);
 		},
-
 		openModal(content) {
 			const template = document.createElement("template");
 			template.innerHTML = `<div id="modal-container">
