@@ -1,3 +1,4 @@
+
 const config = PLUGIN__CONFIG;
 
 PLUGIN__BODY
@@ -5,283 +6,277 @@ PLUGIN__BODY
 const AddonManager = (() => {
 	const API = new BdApi(config.info.name);
 
-	const PluginTemplates = {
-		missingZpl() {
-			return () => () => ({
-				stop() {},
-				start() {
-					BdApi.alert("Missing library", [`**ZeresPluginLibrary** is needed to run **${config.info.name}**.`,
-						"Please download it from the officiel website",
-						"https://betterdiscord.app/plugin/ZeresPluginLibrary"
-					]);
-				}
-			})
-		},
-		brokenPlugin(missingModules) {
-			return () => () => ({
-				stop: () => {},
-				start: () => {
-					Modals.showBrokenAddonModal(missingModules, "Plugin is broken, Take a screenshot of this popup and show it to the dev.");
-				}
-			});
-		}
-	};
-
 	const Modals = {
 		AddStyles() {
 			if (!document.querySelector('head > bd-head > bd-styles > #AddonManagerCSS'))
 				BdApi.DOM.addStyle('AddonManagerCSS', `#modal-container {
-	position: absolute;
-	z-index: 3000;
-	top: 0;
-	left: 0;
-	right: 0;
-	bottom: 0;
-	display: flex;
-	overflow: hidden;
-	user-select: text;
-	font-family: "gg sans", "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
-	
-	--backdrop: #000;
-	--modal: #57616f;
-	--head: #25272a;
-	--body: #313437;
-	--note: #dbdee1;
-	--module: #27292b;
-	--error-message: #b5bac1;
-	--footer: #27292c;
-	--close-btn: #5865f2;
-	--close-btn-hover:#4752c4;
-	--close-btn-active:#3c45a5;
-	--added:#2dc770;
-	--improved:#949cf7;
-	--fixed:#f23f42;
-	--notice:#f0b132;
+    position: absolute;
+    z-index: 3000;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    overflow: hidden;
+    user-select: text;
+    font-family: "gg sans", "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --backdrop: #000;
+    --modal: #57616f;
+    --modal: #313437;
+    --head: #25272a;
+    --note: #dbdee1;
+    --module: #27292b;
+    --error-message: #b5bac1;
+    --footer: #27292c;
+    --close-btn: #5865f2;
+    --close-btn-hover: #4752c4;
+    --close-btn-active: #3c45a5;
+    --added: #2dc770;
+    --improved: #949cf7;
+    --fixed: #f23f42;
+    --notice: #f0b132;
 }
 
 #modal-container .backdrop {
-	background: var(--backdrop);
-	position: absolute;
-	z-index: -1;
-	top: 0;
-	left: 0;
-	right: 0;
-	bottom: 0;
-	opacity: .85;
+    background: var(--backdrop);
+    position: absolute;
+    z-index: -1;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    opacity: .85;
 }
 
 #modal-container .modal {
-	display: inline-flex;
-	flex-direction: column;
-	color: white;
-	overflow: hidden;
-	border-radius: 8px;
-	margin: auto;
-	max-width: 600px;
-	max-height: 70vh;
+    background: var(--modal);
+    display: inline-flex;
+    flex-direction: column;
+    color: white;
+    overflow: hidden;
+    border-radius: 8px;
+    margin: auto;
+    max-width: 600px;
+    max-height: 70vh;
 }
 
 #modal-container .head {
-	background: var(--head);
-	padding: 20px;
+    background: var(--head);
+    padding: 12px;
 }
 
-#modal-container .head > h2 {
-	font-size: 1.3rem;
-	font-weight: bold;
+#modal-container .head > .title {
+    font-size: 1.3rem;
+    font-weight: bold;
+}
+
+#modal-container .head > .version {
+    margin: 2px 0 0 0;
+    font-size: 12px;
 }
 
 #modal-container .body {
-	background: var(--body);
-	padding: 10px;
-	display: flex;
-	flex-direction: column;
-	min-height: 0;
+    background: var(--body);
+    padding: 10px;
+    overflow: hidden auto;
+    margin-right:1px;
+}
+
+#modal-container .body::-webkit-scrollbar {
+    width: 5px;
+}
+
+#modal-container .body::-webkit-scrollbar-thumb {
+    background-color: #171819;
+    border-radius:25px;
 }
 
 #modal-container .note {
-	color: var(--note);
-	font-size: 1rem;
-	line-height: 20px;
+    color: var(--note);
+    font-size: 1rem;
+    margin: 8px 0;
 }
 
 #modal-container .bm {
-	margin: 10px 0;
-	font-weight: bold;
+    margin: 10px 0;
+    font-weight: bold;
 }
 
 #modal-container .modules {
-	margin: 10px 0;
-	padding: 10px;
-	display: flex;
-	flex-wrap: wrap;
-	gap: 10px;
-	overflow: hidden auto;
+    margin: 10px 0;
+    padding: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
 }
 
-#modal-container .modules::-webkit-scrollbar {
-	width: 2px;
-}
 
-#modal-container .modules::-webkit-scrollbar-thumb {
-	background-color: orange;
-}
 
 #modal-container .module {
-	padding: 5px 8px;
-	background: var(--module);
-	border-radius: 3px;
-	flex: 1 0 0;
-	white-space: nowrap;
-	text-transform: capitalize;
-	text-align: center;
+    padding: 5px 8px;
+    background: var(--module);
+    border-radius: 3px;
+    flex: 1 0 0;
+    white-space: nowrap;
+    text-transform: capitalize;
+    text-align: center;
 }
 
 #modal-container .name {
-	display: block;
-	line-height: 24px;
-	font-size: 16px;
-	font-weight: 500;
+    display: block;
+    line-height: 24px;
+    font-size: 16px;
+    font-weight: 500;
 }
 
 #modal-container .errormessage {
-	margin: 2px 0;
-	font-size: 13px;
-	color: var(--error-message);
+    margin: 2px 0;
+    font-size: 13px;
+    color: var(--error-message);
 }
 
 #modal-container .footer {
-	background: var(--footer);
-	padding: 10px;
-	display: flex;
+    background: var(--footer);
+    padding: 10px;
+    display: flex;
 }
 
 #modal-container button {
-	margin-left: auto;
-	border-radius: 3px;
-	border: none;
-	min-width: 96px;
-	min-height: 38px;
-	width: auto;
-	color: #fff;
-	background-color: var(--close-btn);
+    margin-left: auto;
+    border-radius: 3px;
+    border: none;
+    min-width: 96px;
+    min-height: 38px;
+    width: auto;
+    color: #fff;
+    background-color: var(--close-btn);
 }
 
 #modal-container button:hover {
-	background-color: var(--close-btn-hover);
+    background-color: var(--close-btn-hover);
 }
 
 #modal-container button:active {
-	background-color: var(--close-btn-active);
+    background-color: var(--close-btn-active);
 }
 
 #modal-container.hide {
-	display: none;
+    display: none;
 }
 
 /* animations */
-#modal-container.closing .backdrop {
-	animation: hide-backdrop 400ms ease-in;
+#modal-container .backdrop {
+    animation: show-backdrop 300ms ease-out;
 }
 
-#modal-container .backdrop {
-	animation: show-backdrop 300ms ease-out;
+#modal-container.closing .backdrop {
+    animation: hide-backdrop 100ms ease-in;
 }
 
 @keyframes show-backdrop {
-	from {
-		opacity: 0;
-	}
+    from {
+        opacity: 0;
+    }
 
-	to {
-		opacity: .85;
-	}
+    to {
+        opacity: .85;
+    }
 }
 
 @keyframes hide-backdrop {
-	from {
-		opacity: .85;
-	}
+    from {
+        opacity: .85;
+    }
 
-	to {
-		opacity: 0;
-	}
+    to {
+        opacity: 0;
+    }
 }
 
 #modal-container .modal {
-	animation: show-modal 300ms ease-out;
+    animation: show-modal 300ms ease-out;
 }
 
 #modal-container.closing .modal {
-	animation: hide-modal 400ms ease-in;
+    animation: hide-modal 100ms ease-in;
 }
 
 @keyframes show-modal {
-	from {
-		transform: scale(0);
-		opacity: 0;
-	}
+    from {
+        transform: scale(0);
+        opacity: 0;
+    }
 
-	to {
-		opacity: .85;
-		transform: scale(1);
-	}
+    to {
+        opacity: .85;
+        transform: scale(1);
+    }
 }
 
 @keyframes hide-modal {
-	from {
-		opacity: .85;
-		transform: scale(1);
-	}
+    from {
+        opacity: .85;
+        transform: scale(1);
+    }
 
-	to {
-		transform: scale(0);
-		opacity: 0;
-	}
+    to {
+        transform: scale(0);
+        opacity: 0;
+    }
 }
 
 /* changelog */
-#modal-container .changelog{
-	padding:10px;
-    overflow:auto;
+#modal-container .changelog {
+    padding: 10px;
+    max-width: 450px;
 }
 
-#modal-container .changelog::-webkit-scrollbar {width: 2px;}
-
-#modal-container .changelog::-webkit-scrollbar-thumb {
-	background-color: orange;
-}
-
-#modal-container .changelog .title{
+#modal-container .changelog .title {
     text-transform: uppercase;
     display: flex;
     align-items: center;
     font-weight: 700;
     margin-top: 20px;
-    color:var(--c);
+    color: var(--c);
 }
 
 #modal-container .changelog .title:after {
     content: "";
     height: 1px;
     flex: 1 1 auto;
-    margin-left: 4px;
+    margin-left: 8px;
     opacity: .6;
-    background:currentColor;
+    background: currentColor;
 }
 
-#modal-container .changelog ul{
-	list-style: none;
-	margin: 20px 0 8px 20px;
+#modal-container .changelog ul {
+    list-style: none;
+    margin: 20px 0 8px 20px;
 }
 
-#modal-container .changelog ul > li{
-    line-height: 20px;   
+#modal-container .changelog ul > li {
+    position:relative;
+    line-height: 20px;
     margin-bottom: 8px;
-    color: hsl(210,calc(var(--saturation-factor, 1)*9.3%),78.8%);
+    color: #c4c9ce;
+}
+
+#modal-container .changelog ul > li:before {
+    content: "";
+    position: absolute;
+    background:currentColor;
+    top: 10px;
+    left: -15px;
+    width: 6px;
+    height: 6px;
+    margin-top: -4px;
+    margin-left: -3px;
+    border-radius: 50%;
+    opacity: .5;
 }`);
 		},
 		openModal(content) {
+			this.AddStyles();
 			const template = document.createElement("template");
 			template.innerHTML = `<div id="modal-container">
 									<div class="backdrop"></div>
@@ -291,7 +286,7 @@ const AddonManager = (() => {
 			modal.onclick = (e) => {
 				if (e.target.classList.contains('close-btn') || e.target.classList.contains('backdrop')) {
 					modal.classList.add("closing");
-					setTimeout(() => { modal.remove(); }, 300);
+					setTimeout(() => { modal.remove(); }, 100);
 				}
 			};
 			document.querySelector('bd-body').append(modal);
@@ -299,16 +294,16 @@ const AddonManager = (() => {
 		alert(content) {
 			this.openModal(`<div class="modal">
 				<div class="head">
-					<h2>${config.info.name}</h2>
+					<h2 class="title">${config.info.name}</h2>
 					<p class="version">version ${config.info.version}</p>
 				</div>
 				<div class="body">${content}</div>
 				<div class="footer"><button class="close-btn">Close</button></div>
 			</div>`);
 		},
-		showMissingModulesModal(missingModules, note) {
+		showMissingModulesModal(missingModules) {
 			this.alert(
-				`<p class="note">${note}</p>
+				`<p class="note">Detected some Missing modules, certain aspects of the plugin may not work properly.</p>
 				<h3 class="bm">Missing Modules:</h3>
 				<div class="modules">
 					${missingModules.map(([moduleName, errorNote]) => `<div class="module">
@@ -317,9 +312,9 @@ const AddonManager = (() => {
 					</div>`).join('')}
 				</div>`);
 		},
-		showBrokenAddonModal(missingModules, note) {
+		showBrokenAddonModal(missingModules) {
 			this.alert(
-				`<p class="note">${note}</p>
+				`<p class="note">Plugin is broken, Take a screenshot of this popup and show it to the dev.</p>
 				<h3 class="bm">Missing Modules:</h3>
 				<div class="modules">
 					${missingModules.map(([moduleName]) => `<div class="module">
@@ -328,17 +323,14 @@ const AddonManager = (() => {
 				</div>`);
 		},
 		showChangelogModal() {
-			if(!config.changelog || !Array.isArray(config.changelog)) return;
-			
+			if (!config.changelog || !Array.isArray(config.changelog)) return;
+
 			const changelog = config.changelog?.map(({ title, type, items }) =>
-				`<h3 style="--c:var(--${type});" class=" title">${title}</h3>
+				`<h3 style="--c:var(--${type});" class="title">${title}</h3>
 				<ul class="list">
 					${items.map(item => `<li>${item}</li>`).join('')}
 				</ul>`).join('')
 			this.alert(`<div class="changelog">${changelog}</div>`);
-		},
-		Init() {
-			this.AddStyles();
 		}
 	};
 
@@ -355,89 +347,80 @@ const AddonManager = (() => {
 			if (!this.data) {
 				this.save({
 					version: config.info.version,
-					errorPopupCount: 0,
-					brokenModules: []
+					changelog: false,
 				});
 			}
 		}
 	};
 
 	const Addon = {
-		handleBrokenAddon(missingModules) {
-			this.getPlugin = PluginTemplates.brokenPlugin(missingModules);
-		},
-		handleMissingModules(missingModules) {
-			const current = Data.get();
-
-			const newBrokenModules = missingModules.some(([newItem]) => !current.brokenModules.includes(newItem));
-			const isUpdated = current.version != config.info.version;
-			const isPopupLimitReached = current.errorPopupCount === 3;
-			if (isUpdated || !isPopupLimitReached || newBrokenModules) {
-				Modals.showMissingModulesModal(missingModules, "Detected some Missing modules, certain aspects of the plugin may not work properly.");
-
-				Data.save({
-					...current,
-					version: current.version,
-					errorPopupCount: (current.errorPopupCount + 1) % 4,
-					brokenModules: missingModules.map(([moduleName]) => moduleName)
-				});
-			}
-		},
-		checkModules(modules) {
-			return Object.entries(modules).reduce((acc, [moduleName, { module, fallback, errorNote, isBreakable, withKey }]) => {
-				if ((withKey && !module.module) || !module) {
-					if (isBreakable) acc[0] = true;
-					acc[2].push([moduleName, errorNote]);
-					if (fallback) acc[1][moduleName] = fallback;
-				} else
-					acc[1][moduleName] = module;
-				return acc;
-			}, [false, {},
-				[]
-			]);
-		},
 		showChangelog() {
 			const { version, changelog = false } = Data.get();
 			if (version != config.info.version || !changelog) {
 				Modals.showChangelogModal();
 				Data.save({
 					version: config.info.version,
-					changelog: true,
-					errorPopupCount: 0,
-					brokenModules: []
+					changelog: true
 				});
 			}
 		},
-		Init() {
-			const start = (ParentPlugin) => {
-				const { Modules, Plugin } = main(API);
-				const [isAddonBroken, safeModules, missingModules] = this.checkModules(Modules);
-				if (isAddonBroken) {
-					this.handleBrokenAddon(missingModules);
-				} else {
-					if (missingModules.length > 0)
-						this.handleMissingModules(missingModules);
-					this.getPlugin = () => {
-						// show changelog only when plugin is working/half working.
-						this.showChangelog();
-						return Plugin(safeModules, ParentPlugin);
-					};
+		handleBrokenAddon(missingModules) {
+			this.getPlugin = () => class BrokenAddon {
+				stop() {}
+				start() {
+					Modals.showBrokenAddonModal(missingModules);
 				}
-			};
+			};;
+		},
+		handleMissingModules(missingModules) {
+			Modals.showMissingModulesModal(missingModules);
+		},
+		checkModules(modules) {
+			return Object.entries(modules).reduce((acc, [moduleName, { module, fallback, errorNote, isBreakable, withKey }]) => {
+				if ((withKey && !module.module) || !module) {
+					if (isBreakable) acc.isAddonBroken = true;
+					acc.missingModules.push([moduleName, errorNote]);
+					if (fallback) acc.safeModules[moduleName] = fallback;
+				} else
+					acc.safeModules[moduleName] = module;
+				return acc;
+			}, { isAddonBroken: false, safeModules: {}, missingModules: [] });
+		},
+		start(ParentPlugin) {
+			const { Modules, Plugin } = main(API);
+			const { isAddonBroken, safeModules, missingModules } = this.checkModules(Modules);
+			if (isAddonBroken) {
+				this.handleBrokenAddon(missingModules);
+			} else {
+				if (missingModules.length > 0)
+					this.handleMissingModules(missingModules);
+				this.getPlugin = () => {
+					if (!config.zpl) this.showChangelog();
+					return Plugin(safeModules, ParentPlugin);
+				};
+			}
+		},
+		Init() {
+			if (!config.zpl) return this.start();
 
-			if (config.zpl)
-				if (!global.ZeresPluginLibrary)
-					this.getPlugin = PluginTemplates.missingZpl();
-				else
-					start(global.ZeresPluginLibrary.buildPlugin(config)[0]);
-			else
-				start();
+			if (!global.ZeresPluginLibrary) {
+				this.getPlugin = () => class BrokenAddon {
+					stop() {}
+					start() {
+						BdApi.alert("Missing library", [`**ZeresPluginLibrary** is needed to run **${config.info.name}**.`,
+							"Please download it from the officiel website",
+							"https://betterdiscord.app/plugin/ZeresPluginLibrary"
+						]);
+					}
+				};
+			} else
+				this.start(global.ZeresPluginLibrary.buildPlugin(config)[0]);
+
 		}
 	};
 
 	return {
 		Start() {
-			Modals.Init();
 			Data.Init();
 			Addon.Init();
 
