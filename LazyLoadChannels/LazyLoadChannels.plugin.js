@@ -20,8 +20,8 @@ const config = {
 	}
 };
 
-function main(Api) {
-	const { React, Webpack: { Filters, getModule, waitForModule } } = BdApi;
+function main(API) {
+	const { React, Webpack: { Filters, getModule, waitForModule } } = API;
 
 	// https://discord.com/channels/86004744966914048/196782758045941760/1062604534922367107
 	function getModuleAndKey(filter) {
@@ -96,7 +96,7 @@ function main(Api) {
 				Patcher,
 				ContextMenu,
 				React: { useState, useEffect }
-			} = new BdApi(config.info.name);
+			} = API;
 
 			// Constants
 			const EVENTS = [
@@ -184,7 +184,7 @@ function main(Api) {
 				reRender: () => {
 					const target = document.querySelector(`#${CLASS_NAME}`)?.parentElement;
 					if (!target) return;
-					const instance = BdApi.ReactUtils.getOwnerInstance(target);
+					const instance = API.ReactUtils.getOwnerInstance(target);
 					const unpatch = Patcher.instead(instance, 'render', () => unpatch());
 					instance.forceUpdate(() => instance.forceUpdate());
 				}
@@ -316,7 +316,8 @@ function main(Api) {
 			}
 
 			// Styles
-			const css = `#lazyLoader {
+			function addStyles() {
+				DOM.addStyle(`#lazyLoader {
 	width: 100%;
 	height: 100%;
 	margin: auto;
@@ -457,7 +458,8 @@ function main(Api) {
 
 .autoload{
 	border-left:4px solid #2e7d46;
-}`;
+}`);
+			}
 
 			return class LazyLoadChannels {
 				constructor() {
@@ -609,7 +611,7 @@ function main(Api) {
 
 				start() {
 					try {
-						DOM.addStyle(css);
+						addStyles();
 						this.patchChannel();
 						this.setupHandlers();
 						this.patchCreateChannel();
@@ -647,92 +649,430 @@ function main(Api) {
 	}
 }
 
-function pluginErrorAlert(content) {
-	BdApi.alert(config.info.name, content);
+const AddonManager = (() => {
+	const API = new BdApi(config.info.name);
+
+	const Modals = {
+		AddStyles() {
+			if (!document.querySelector('head > bd-head > bd-styles > #AddonManagerCSS'))
+				BdApi.DOM.addStyle('AddonManagerCSS', `#modal-container {
+    position: absolute;
+    z-index: 3000;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    overflow: hidden;
+    user-select: text;
+    font-family: "gg sans", "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --backdrop: #000;
+    --modal: #57616f;
+    --modal: #313437;
+    --head: #25272a;
+    --note: #dbdee1;
+    --module: #27292b;
+    --error-message: #b5bac1;
+    --footer: #27292c;
+    --close-btn: #5865f2;
+    --close-btn-hover: #4752c4;
+    --close-btn-active: #3c45a5;
+    --added: #2dc770;
+    --improved: #949cf7;
+    --fixed: #f23f42;
+    --notice: #f0b132;
 }
 
-function getErrorPlugin(message) {
-	return () => ({
-		stop() {},
-		start() {
-			pluginErrorAlert(message);
+#modal-container .backdrop {
+    background: var(--backdrop);
+    position: absolute;
+    z-index: -1;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    opacity: .85;
+}
+
+#modal-container .modal {
+    background: var(--modal);
+    display: inline-flex;
+    flex-direction: column;
+    color: white;
+    overflow: hidden;
+    border-radius: 8px;
+    margin: auto;
+    max-width: 600px;
+    max-height: 70vh;
+}
+
+#modal-container .head {
+    background: var(--head);
+    padding: 12px;
+}
+
+#modal-container .head > .title {
+    font-size: 1.3rem;
+    font-weight: bold;
+}
+
+#modal-container .head > .version {
+    margin: 2px 0 0 0;
+    font-size: 12px;
+}
+
+#modal-container .body {
+    background: var(--body);
+    padding: 10px;
+    overflow: hidden auto;
+    margin-right:1px;
+}
+
+#modal-container .body::-webkit-scrollbar {
+    width: 5px;
+}
+
+#modal-container .body::-webkit-scrollbar-thumb {
+    background-color: #171819;
+    border-radius:25px;
+}
+
+#modal-container .note {
+    color: var(--note);
+    font-size: 1rem;
+    margin: 8px 0;
+}
+
+#modal-container .bm {
+    margin: 10px 0;
+    font-weight: bold;
+}
+
+#modal-container .modules {
+    margin: 10px 0;
+    padding: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+
+
+#modal-container .module {
+    padding: 5px 8px;
+    background: var(--module);
+    border-radius: 3px;
+    flex: 1 0 0;
+    white-space: nowrap;
+    text-transform: capitalize;
+    text-align: center;
+}
+
+#modal-container .name {
+    display: block;
+    line-height: 24px;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+#modal-container .errormessage {
+    margin: 2px 0;
+    font-size: 13px;
+    color: var(--error-message);
+}
+
+#modal-container .footer {
+    background: var(--footer);
+    padding: 10px;
+    display: flex;
+}
+
+#modal-container button {
+    margin-left: auto;
+    border-radius: 3px;
+    border: none;
+    min-width: 96px;
+    min-height: 38px;
+    width: auto;
+    color: #fff;
+    background-color: var(--close-btn);
+}
+
+#modal-container button:hover {
+    background-color: var(--close-btn-hover);
+}
+
+#modal-container button:active {
+    background-color: var(--close-btn-active);
+}
+
+#modal-container.hide {
+    display: none;
+}
+
+/* animations */
+#modal-container .backdrop {
+    animation: show-backdrop 300ms ease-out;
+}
+
+#modal-container.closing .backdrop {
+    animation: hide-backdrop 100ms ease-in;
+}
+
+@keyframes show-backdrop {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: .85;
+    }
+}
+
+@keyframes hide-backdrop {
+    from {
+        opacity: .85;
+    }
+
+    to {
+        opacity: 0;
+    }
+}
+
+#modal-container .modal {
+    animation: show-modal 300ms ease-out;
+}
+
+#modal-container.closing .modal {
+    animation: hide-modal 100ms ease-in;
+}
+
+@keyframes show-modal {
+    from {
+        transform: scale(0);
+        opacity: 0;
+    }
+
+    to {
+        opacity: .85;
+        transform: scale(1);
+    }
+}
+
+@keyframes hide-modal {
+    from {
+        opacity: .85;
+        transform: scale(1);
+    }
+
+    to {
+        transform: scale(0);
+        opacity: 0;
+    }
+}
+
+/* changelog */
+#modal-container .changelog {
+    padding: 10px;
+    max-width: 450px;
+}
+
+#modal-container .changelog .title {
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    font-weight: 700;
+    margin-top: 20px;
+    color: var(--c);
+}
+
+#modal-container .changelog .title:after {
+    content: "";
+    height: 1px;
+    flex: 1 1 auto;
+    margin-left: 8px;
+    opacity: .6;
+    background: currentColor;
+}
+
+#modal-container .changelog ul {
+    list-style: none;
+    margin: 20px 0 8px 20px;
+}
+
+#modal-container .changelog ul > li {
+    position:relative;
+    line-height: 20px;
+    margin-bottom: 8px;
+    color: #c4c9ce;
+}
+
+#modal-container .changelog ul > li:before {
+    content: "";
+    position: absolute;
+    background:currentColor;
+    top: 10px;
+    left: -15px;
+    width: 6px;
+    height: 6px;
+    margin-top: -4px;
+    margin-left: -3px;
+    border-radius: 50%;
+    opacity: .5;
+}`);
+		},
+		openModal(content) {
+			this.AddStyles();
+			const template = document.createElement("template");
+			template.innerHTML = `<div id="modal-container">
+									<div class="backdrop"></div>
+									${content}
+								</div>`;
+			const modal = template.content.firstElementChild.cloneNode(true);
+			modal.onclick = (e) => {
+				if (e.target.classList.contains('close-btn') || e.target.classList.contains('backdrop')) {
+					modal.classList.add("closing");
+					setTimeout(() => { modal.remove(); }, 100);
+				}
+			};
+			document.querySelector('bd-body').append(modal);
+		},
+		alert(content) {
+			this.openModal(`<div class="modal">
+				<div class="head">
+					<h2 class="title">${config.info.name}</h2>
+					<p class="version">version ${config.info.version}</p>
+				</div>
+				<div class="body">${content}</div>
+				<div class="footer"><button class="close-btn">Close</button></div>
+			</div>`);
+		},
+		showMissingModulesModal(missingModules) {
+			this.alert(
+				`<p class="note">Detected some Missing modules, certain aspects of the plugin may not work properly.</p>
+				<h3 class="bm">Missing Modules:</h3>
+				<div class="modules">
+					${missingModules.map(([moduleName, errorNote]) => `<div class="module">
+					<h3 class="name">${moduleName}</h3>
+					<p class="errormessage">${errorNote || "No description provided"}</p>
+					</div>`).join('')}
+				</div>`);
+		},
+		showBrokenAddonModal(missingModules) {
+			this.alert(
+				`<p class="note">Plugin is broken, Take a screenshot of this popup and show it to the dev.</p>
+				<h3 class="bm">Missing Modules:</h3>
+				<div class="modules">
+					${missingModules.map(([moduleName]) => `<div class="module">
+						<h3 class="name">${moduleName}</h3>
+					</div>`).join('')}
+				</div>`);
+		},
+		showChangelogModal() {
+			if (!config.changelog || !Array.isArray(config.changelog)) return;
+
+			const changelog = config.changelog?.map(({ title, type, items }) =>
+				`<h3 style="--c:var(--${type});" class="title">${title}</h3>
+				<ul class="list">
+					${items.map(item => `<li>${item}</li>`).join('')}
+				</ul>`).join('')
+			this.alert(`<div class="changelog">${changelog}</div>`);
 		}
-	})
-}
-
-function checkModules(modules) {
-	return Object.entries(modules).reduce((acc, [moduleName, { module, fallback, errorNote, isBreakable, withKey }]) => {
-		if ((withKey && !module.module) || !module) {
-			if (isBreakable) acc[0] = true;
-			acc[2].push([moduleName, errorNote]);
-			if (fallback) acc[1][moduleName] = fallback;
-		} else
-			acc[1][moduleName] = module;
-		return acc;
-	}, [false, {},
-		[]
-	]);
-}
-
-function ensuredata() {
-	return BdApi.Data.load(config.info.name, 'brokenModulesData') || {
-		version: config.info.version,
-		errorPopupCount: 0,
-		savedBrokenModules: []
 	};
-}
 
-function setPluginMetaData() {
-	const { version, changelog = false } = ensuredata();
-	if (version != config.info.version || !changelog) {
-		// TODO showChangelog();
-		BdApi.Data.save(config.info.name, 'brokenModulesData', {
-			version: config.info.version,
-			changelog: true,
-			errorPopupCount: 0,
-			savedBrokenModules: []
-		});
+	const Data = {
+		get() {
+			return this.data;
+		},
+		save(data) {
+			this.data = data;
+			API.Data.save('metadata', data);
+		},
+		Init() {
+			this.data = API.Data.load('metadata');
+			if (!this.data) {
+				this.save({
+					version: config.info.version,
+					changelog: false,
+				});
+			}
+		}
+	};
+
+	const Addon = {
+		showChangelog() {
+			const { version, changelog = false } = Data.get();
+			if (version != config.info.version || !changelog) {
+				Modals.showChangelogModal();
+				Data.save({
+					version: config.info.version,
+					changelog: true
+				});
+			}
+		},
+		handleBrokenAddon(missingModules) {
+			this.getPlugin = () => class BrokenAddon {
+				stop() {}
+				start() {
+					Modals.showBrokenAddonModal(missingModules);
+				}
+			};;
+		},
+		handleMissingModules(missingModules) {
+			Modals.showMissingModulesModal(missingModules);
+		},
+		checkModules(modules) {
+			return Object.entries(modules).reduce((acc, [moduleName, { module, fallback, errorNote, isBreakable, withKey }]) => {
+				if ((withKey && !module.module) || !module) {
+					if (isBreakable) acc.isAddonBroken = true;
+					acc.missingModules.push([moduleName, errorNote]);
+					if (fallback) acc.safeModules[moduleName] = fallback;
+				} else
+					acc.safeModules[moduleName] = module;
+				return acc;
+			}, { isAddonBroken: false, safeModules: {}, missingModules: [] });
+		},
+		start(ParentPlugin) {
+			const { Modules, Plugin } = main(API);
+			const { isAddonBroken, safeModules, missingModules } = this.checkModules(Modules);
+			if (isAddonBroken) {
+				this.handleBrokenAddon(missingModules);
+			} else {
+				if (missingModules.length > 0)
+					this.handleMissingModules(missingModules);
+				this.getPlugin = () => {
+					if (!config.zpl) this.showChangelog();
+					return Plugin(safeModules, ParentPlugin);
+				};
+			}
+		},
+		Init() {
+			if (!config.zpl) return this.start();
+
+			if (!global.ZeresPluginLibrary) {
+				this.getPlugin = () => class BrokenAddon {
+					stop() {}
+					start() {
+						BdApi.alert("Missing library", [`**ZeresPluginLibrary** is needed to run **${config.info.name}**.`,
+							"Please download it from the officiel website",
+							"https://betterdiscord.app/plugin/ZeresPluginLibrary"
+						]);
+					}
+				};
+			} else
+				this.start(global.ZeresPluginLibrary.buildPlugin(config)[0]);
+
+		}
+	};
+
+	return {
+		Start() {
+			Data.Init();
+			Addon.Init();
+
+			return Addon.getPlugin();
+		}
 	}
-}
+})();
 
-function handleBrokenModules(brokenModules) {
-	const current = ensuredata();
-
-	const newBrokenModules = brokenModules.some(([newItem]) => !current.savedBrokenModules.includes(newItem));
-	const isUpdated = current.version != config.info.version;
-	const isPopupLimitReached = current.errorPopupCount === 3;
-
-	if (isUpdated || !isPopupLimitReached || newBrokenModules) {
-		pluginErrorAlert([
-			"Detected some Missing modules, certain aspects of the plugin may not work properly.",
-			`\`\`\`md\nMissing modules:\n\n${brokenModules.map(([moduleName, errorNote]) => `[${moduleName}]: ${errorNote || ""}`).join('\n')}\`\`\``
-		]);
-
-		BdApi.Data.save(config.info.name, 'brokenModulesData', {
-			...current,
-			version: current.version,
-			errorPopupCount: (current.errorPopupCount + 1) % 4,
-			savedBrokenModules: brokenModules.map(([moduleName]) => moduleName)
-		});
-	}
-}
-
-function initPlugin() {
-	setPluginMetaData();
-	const { Modules, Plugin } = main();
-
-	const [pluginBreakingError, SafeModules, BrokenModules] = checkModules(Modules);
-
-	if (pluginBreakingError)
-		return getErrorPlugin([
-			"**Plugin is broken:** Take a screenshot of this popup and show it to the dev.",
-			`\`\`\`md\nMissing modules:\n\n${BrokenModules.map(([moduleName],i) => `${++i}. ${moduleName}`).join('\n')}\`\`\``
-		]);
-	else {
-		if (BrokenModules.length > 0)
-			handleBrokenModules(BrokenModules);
-		return Plugin(SafeModules);
-	}
-}
-
-module.exports = initPlugin();
+module.exports = AddonManager.Start();

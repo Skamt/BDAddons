@@ -6,6 +6,7 @@
  * @website https://github.com/Skamt/BDAddons/tree/main/Emojis
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/Emojis/Emojis.plugin.js
  */
+
 const config = {
 	info: {
 		name: "Emojis",
@@ -49,369 +50,697 @@ const config = {
 		value: 96,
 		markers: [40, 48, 60, 64, 80, 96],
 		stickToMarkers: true
-	}]
+	}],
+	zpl: true
 };
 
-function getPlugin() {
-	const [ParentPlugin, Api] = global.ZeresPluginLibrary.buildPlugin(config);
-	const { Modules, Plugin } = (() => {
-		const { Webpack: { Filters, getModule } } = BdApi;
-		return {
-			Modules: {
-				PendingReplyStore: {
-					module: getModule(m => m.getPendingReply),
-					errorNote: "Replies will be ignored"
-				},
-				EmojiIntentionEnum: {
-					module: getModule(Filters.byProps('GUILD_ROLE_BENEFIT_EMOJI'), { searchExports: true }),
-					fallback: { CHAT: 3 },
-					errorNote: "fallback is used, there maybe side effects"
-				},
-				EmojiSendAvailabilityEnum: {
-					module: getModule(Filters.byProps('GUILD_SUBSCRIPTION_UNAVAILABLE'), { searchExports: true }),
-					fallback: { DISALLOW_EXTERNAL: 0, PREMIUM_LOCKED: 2 },
-					errorNote: "fallback is used, there maybe side effects"
-				},
-				EmojiFunctions: {
-					module: getModule(Filters.byProps('getEmojiUnavailableReason'), { searchExports: true }),
-					isBreakable: true
-				},
-				InsertText: {
-					module: (() => {
-						let ComponentDispatch;
-						return (content) => {
-							if (!ComponentDispatch)
-								ComponentDispatch = getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners('INSERT_TEXT').length, { searchExports: true });
-
-							ComponentDispatch.dispatchToLastSubscribed("INSERT_TEXT", {
-								plainText: content
-							});
-						}
-					})()
-				},
-				...(() => {
-					const { Dispatcher, DiscordPermissions, SelectedChannelStore, MessageActions, Permissions, ChannelStore, UserStore } = Api.DiscordModules;
-					return {
-						Dispatcher: {
-							module: Dispatcher,
-							errorNote: "replies may missbehave"
-						},
-						DiscordPermissions: {
-							module: DiscordPermissions,
-							fallback: { EMBED_LINKS: 16384n },
-							errorNote: "fallback is used, there maybe side effects"
-						},
-						SelectedChannelStore: {
-							module: SelectedChannelStore,
-							isBreakable: true
-						},
-						MessageActions: {
-							module: MessageActions,
-							errorNote: "Send directly is disabled"
-						},
-						Permissions: {
-							module: Permissions,
-							errorNote: "Checking permissions is disabled"
-						},
-						ChannelStore: {
-							module: ChannelStore,
-							isBreakable: true
-						},
-						UserStore: {
-							module: UserStore,
-							errorNote: "Perm checks are disabled"
-						}
-					};
-				})()
+function main(API) {
+	const { Webpack: { Filters, getModule } } = API;
+	return {
+		Modules: {
+			PendingReplyStore: {
+				module: getModule(m => m.getPendingReply),
+				errorNote: "Replies will be ignored"
 			},
-			Plugin(ParentPlugin, Modules) {
-				const {
-					UI,
-					DOM,
-					Utils,
-					Patcher,
-					ReactUtils: {
-						getInternalInstance
+			EmojiIntentionEnum: {
+				module: getModule(Filters.byProps('GUILD_ROLE_BENEFIT_EMOJI'), { searchExports: true }),
+				fallback: { CHAT: 3 },
+				errorNote: "fallback is used, there maybe side effects"
+			},
+			EmojiSendAvailabilityEnum: {
+				module: getModule(Filters.byProps('GUILD_SUBSCRIPTION_UNAVAILABLE'), { searchExports: true }),
+				fallback: { DISALLOW_EXTERNAL: 0, PREMIUM_LOCKED: 2 },
+				errorNote: "fallback is used, there maybe side effects"
+			},
+			EmojiFunctions: {
+				module: getModule(Filters.byProps('getEmojiUnavailableReason'), { searchExports: true }),
+				isBreakable: true
+			},
+			Dispatcher: {
+				module: getModule(Filters.byProps('dispatch', 'subscribe')),
+				errorNote: "replies may missbehave"
+			},
+			DiscordPermissions: {
+				module: getModule(Filters.byProps('ADD_REACTIONS'), { searchExports: true }),
+				fallback: { EMBED_LINKS: 16384n },
+				errorNote: "fallback is used, there maybe side effects"
+			},
+			SelectedChannelStore: {
+				module: getModule(Filters.byProps('getLastSelectedChannelId')),
+				isBreakable: true
+			},
+			MessageActions: {
+				module: getModule(Filters.byProps('jumpToMessage', '_sendMessage')),
+				errorNote: "Send directly is disabled"
+			},
+			Permissions: {
+				module: getModule(Filters.byProps('computePermissions')),
+				errorNote: "Checking permissions is disabled"
+			},
+			ChannelStore: {
+				module: getModule(Filters.byProps('getChannel', 'getDMFromUserId')),
+				isBreakable: true
+			},
+			UserStore: {
+				module: getModule(Filters.byProps('getCurrentUser', 'getUser')),
+				errorNote: "Perm checks are disabled"
+			},
+			InsertText: {
+				module: (() => {
+					let ComponentDispatch;
+					return (content) => {
+						if (!ComponentDispatch)
+							ComponentDispatch = getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners('INSERT_TEXT').length, { searchExports: true });
+
+						ComponentDispatch.dispatchToLastSubscribed("INSERT_TEXT", {
+							plainText: content
+						});
 					}
-				} = new BdApi(config.info.name);
+				})()
+			}
+		},
+		Plugin(Modules, ParentPlugin) {
+			const {
+				UI,
+				DOM,
+				Utils,
+				Patcher,
+				ReactUtils: { getInternalInstance }
+			} = API;
 
-				// Utilities
-				const SelfUtils = {
-					showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),
-					hasEmbedPerms: (channel, user) => !channel.guild_id || Modules.Permissions?.can({ permission: Modules.DiscordPermissions.EMBED_LINKS, context: channel, user }),
-					isEmojiSendable: (e) => Modules.EmojiFunctions.getEmojiUnavailableReason(e) === null,
-					getEmojiUrl: (emoji, size) => `${emoji.url.replace(/(size=)(\d+)[&]/, '')}&size=${size}`,
-					getEmojiWebpUrl: (emoji, size) => SelfUtils.getEmojiUrl(emoji, size).replace('gif', 'webp'),
-					getEmojiGifUrl: (emoji, size) => SelfUtils.getEmojiUrl(emoji, size).replace('webp', 'gif')
-				}
+			// Utilities
+			const SelfUtils = {
+				showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),
+				hasEmbedPerms: (channel, user) => !channel.guild_id || Modules.Permissions?.can({ permission: Modules.DiscordPermissions.EMBED_LINKS, context: channel, user }),
+				isEmojiSendable: (e) => Modules.EmojiFunctions.getEmojiUnavailableReason(e) === null,
+				getEmojiUrl: (emoji, size) => `${emoji.url.replace(/(size=)(\d+)[&]/, '')}&size=${size}`,
+				getEmojiWebpUrl: (emoji, size) => SelfUtils.getEmojiUrl(emoji, size).replace('gif', 'webp'),
+				getEmojiGifUrl: (emoji, size) => SelfUtils.getEmojiUrl(emoji, size).replace('webp', 'gif')
+			}
 
-				// Strings & Constants
-				const STRINGS = {
-					missingEmbedPermissionsErrorMessage: "Missing Embed Permissions",
-					disabledAnimatedEmojiErrorMessage: "You have disabled animated emojis in settings."
-				};
+			// Strings & Constants
+			const STRINGS = {
+				missingEmbedPermissionsErrorMessage: "Missing Embed Permissions",
+				disabledAnimatedEmojiErrorMessage: "You have disabled animated emojis in settings."
+			};
 
-				// Styles
-				const css = `.CHAT .premiumPromo-1eKAIB {
+			// Styles
+			function addStyles() {
+				DOM.addStyle(`.CHAT .premiumPromo-1eKAIB {
     display:none;
 }
 .emojiItemDisabled-3VVnwp {
     filter: unset;
-}`;
+}`);
+			}
 
-				return class Emojis extends ParentPlugin {
-					constructor() {
-						super();
-						this.emojiClickHandler = this.emojiClickHandler.bind(this);
+			return class Emojis extends ParentPlugin {
+				constructor() {
+					super();
+					this.emojiClickHandler = this.emojiClickHandler.bind(this);
+				}
+
+				getEmojiUrl(emoji, size) {
+					if (this.settings.sendEmojiAsWebp)
+						return SelfUtils.getEmojiWebpUrl(emoji, size);
+					if (emoji.animated)
+						return SelfUtils.getEmojiGifUrl(emoji, 4096);
+
+					return SelfUtils.getEmojiUrl(emoji, size);
+				}
+
+				sendEmojiAsLink(emoji, channel) {
+					if (Modules.MessageActions && this.settings.sendDirectly)
+						Modules.MessageActions.sendMessage(channel.id, {
+							content: this.getEmojiUrl(emoji, this.settings.emojiSize),
+							validNonShortcutEmojis: []
+						}, undefined, this.getReply(channel.id));
+					else
+						Modules.InsertText(SelfUtils.getEmojiUrl(emoji, this.settings.emojiSize));
+				}
+
+				getReply(channelId) {
+					const reply = Modules.PendingReplyStore?.getPendingReply(channelId);
+					if (!reply) return {};
+					Modules.Dispatcher?.dispatch({ type: "DELETE_PENDING_REPLY", channelId });
+					return {
+						messageReference: {
+							guild_id: reply.channel.guild_id,
+							channel_id: reply.channel.id,
+							message_id: reply.message.id
+						},
+						allowedMentions: reply.shouldMention ? undefined : {
+							parse: ["users", "roles", "everyone"],
+							replied_user: false
+						}
 					}
+				}
 
-					getEmojiUrl(emoji, size) {
-						if (this.settings.sendEmojiAsWebp)
-							return SelfUtils.getEmojiWebpUrl(emoji, size);
-						if (emoji.animated)
-							return SelfUtils.getEmojiGifUrl(emoji, 4096);
+				handleUnsendableEmoji(emoji, channel, user) {
+					if (emoji.animated && !this.settings.shouldSendAnimatedEmojis)
+						return SelfUtils.showToast(STRINGS.disabledAnimatedEmojiErrorMessage, "info");
+					if (!SelfUtils.hasEmbedPerms(channel, user) && !this.settings.ignoreEmbedPermissions)
+						return SelfUtils.showToast(STRINGS.missingEmbedPermissionsErrorMessage, "info");
 
-						return SelfUtils.getEmojiUrl(emoji, size);
+					this.sendEmojiAsLink(emoji, channel);
+				}
+
+				emojiHandler(emoji) {
+					const user = this.getCurrentUser();
+					const intention = Modules.EmojiIntentionEnum.CHAT;
+					const channel = Modules.ChannelStore.getChannel(Modules.SelectedChannelStore.getChannelId());
+					if (!SelfUtils.isEmojiSendable({ emoji, channel, intention }))
+						this.handleUnsendableEmoji(emoji, channel, user);
+				}
+
+				getPickerIntention(event) {
+					const picker = event.path.find(i => i.id === 'emoji-picker-tab-panel');
+					if (!picker) return [null];
+					const pickerInstance = getInternalInstance(picker);
+					const { pickerIntention } = API.Utils.findInTree(pickerInstance, m => m && "pickerIntention" in m, { walkable: ["pendingProps", "children", "props"] }) || {};
+					return [pickerIntention, picker];
+				}
+
+				emojiClickHandler(event) {
+					if (event.button === 2) return;
+					const [pickerIntention, picker] = this.getPickerIntention(event);
+					if (pickerIntention !== Modules.EmojiIntentionEnum.CHAT) return;
+					picker.classList.add('CHAT');
+					const emojiInstance = getInternalInstance(event.target);
+					const props = emojiInstance?.pendingProps;
+					if (props && props["data-type"]?.toLowerCase() === "emoji" && props.children) {
+						this.emojiHandler(props.children.props.emoji);
 					}
+				}
 
-					sendEmojiAsLink(emoji, channel) {
-						if (Modules.MessageActions && this.settings.sendDirectly)
-							Modules.MessageActions.sendMessage(channel.id, {
-								content: this.getEmojiUrl(emoji, this.settings.emojiSize),
-								validNonShortcutEmojis: []
-							}, undefined, this.getReply(channel.id));
-						else
-							Modules.InsertText(SelfUtils.getEmojiUrl(emoji, this.settings.emojiSize));
-					}
+				patchEmojiPickerUnavailable() {
+					/**
+					 * This patches allows server icons to show up on the left side of the picker
+					 * if external emojis are disabled, servers get filtered out
+					 * and it's handy to scroll through emojis easily
+					 */
+					Patcher.after(Modules.EmojiFunctions, "isEmojiFiltered", (_, [, , intention], ret) => {
+						if (intention !== Modules.EmojiIntentionEnum.CHAT) return ret;
+						return false;
+					});
+					/**
+					 * This patch allows emojis to be added to the picker
+					 * if external emojis are disabled, they don't get added to the picker
+					 * PREMIUM_LOCKED is returned becaause that is what's returned normally 
+					 
+					 * 0: "DISALLOW_EXTERNAL"
+					 * 1: "GUILD_SUBSCRIPTION_UNAVAILABLE"
+					 * 2: "PREMIUM_LOCKED"
+					 * 3: "ONLY_GUILD_EMOJIS_ALLOWED"
+					 * 4: "ROLE_SUBSCRIPTION_LOCKED"
+					 * 5: "ROLE_SUBSCRIPTION_UNAVAILABLE"
+					 */
+					Patcher.after(Modules.EmojiFunctions, "getEmojiUnavailableReason", (_, [{ intention }], ret) => {
+						if (intention !== Modules.EmojiIntentionEnum.CHAT) return ret;
+						return ret === Modules.EmojiSendAvailabilityEnum.DISALLOW_EXTERNAL ? Modules.EmojiSendAvailabilityEnum.PREMIUM_LOCKED : ret;
+					});
+				}
 
-					getReply(channelId) {
-						const reply = Modules.PendingReplyStore?.getPendingReply(channelId);
-						if (!reply) return {};
-						Modules.Dispatcher?.dispatch({ type: "DELETE_PENDING_REPLY", channelId });
-						return {
-							messageReference: {
-								guild_id: reply.channel.guild_id,
-								channel_id: reply.channel.id,
-								message_id: reply.message.id
+				setUpCurrentUser() {
+					const [getCurrentUser, cleanUp] = (() => {
+						let currentUser = null;
+						if (!Modules.Dispatcher) return [() => Modules.UserStore?.getCurrentUser() || {}];
+
+						const resetCurrentUser = () => currentUser = null;
+						Modules.Dispatcher.subscribe('LOGOUT', resetCurrentUser);
+						return [
+							() => {
+								if (currentUser) return currentUser;
+								const user = Modules.UserStore?.getCurrentUser();
+								if (user) {
+									currentUser = user;
+								} else {
+									try {
+										const target = document.querySelector('.panels-3wFtMD .container-YkUktl');
+										const instance = API.ReactUtils.getInternalInstance(target);
+										const props = API.Utils.findInTree(instance, a => a?.currentUser, { walkable: ["return", "pendingProps"] });
+										currentUser = props.currentUser;
+									} catch {}
+								}
+								return currentUser || {};
 							},
-							allowedMentions: reply.shouldMention ? undefined : {
-								parse: ["users", "roles", "everyone"],
-								replied_user: false
-							}
-						}
+							() => Modules.Dispatcher.unsubscribe('LOGOUT', resetCurrentUser)
+						]
+					})();
+					this.getCurrentUser = getCurrentUser;
+					this.cleanUp = cleanUp;
+				}
+
+				onStart() {
+					try {
+						addStyles();
+						this.setUpCurrentUser();
+						this.patchEmojiPickerUnavailable();
+						document.addEventListener("mouseup", this.emojiClickHandler);
+					} catch (e) {
+						console.error(e);
 					}
+				}
 
-					handleUnsendableEmoji(emoji, channel, user) {
-						if (emoji.animated && !this.settings.shouldSendAnimatedEmojis)
-							return SelfUtils.showToast(STRINGS.disabledAnimatedEmojiErrorMessage, "info");
-						if (!SelfUtils.hasEmbedPerms(channel, user) && !this.settings.ignoreEmbedPermissions)
-							return SelfUtils.showToast(STRINGS.missingEmbedPermissionsErrorMessage, "info");
+				onStop() {
+					this.cleanUp?.();
+					DOM.removeStyle();
+					Patcher.unpatchAll();
+					document.removeEventListener("mouseup", this.emojiClickHandler);
+				}
 
-						this.sendEmojiAsLink(emoji, channel);
-					}
-
-					emojiHandler(emoji) {
-						const user = this.getCurrentUser();
-						const intention = Modules.EmojiIntentionEnum.CHAT;
-						const channel = Modules.ChannelStore.getChannel(Modules.SelectedChannelStore.getChannelId());
-						if (!SelfUtils.isEmojiSendable({ emoji, channel, intention }))
-							this.handleUnsendableEmoji(emoji, channel, user);
-					}
-
-					getPickerIntention(event) {
-						const picker = event.path.find(i => i.id === 'emoji-picker-tab-panel');
-						if (!picker) return [null];
-						const pickerInstance = getInternalInstance(picker);
-						const { pickerIntention } = BdApi.Utils.findInTree(pickerInstance, m => m && "pickerIntention" in m, { walkable: ["pendingProps", "children", "props"] }) || {};
-						return [pickerIntention, picker];
-					}
-
-					emojiClickHandler(event) {
-						if (event.button === 2) return;
-						const [pickerIntention, picker] = this.getPickerIntention(event);
-						if (pickerIntention !== Modules.EmojiIntentionEnum.CHAT) return;
-						picker.classList.add('CHAT');
-						const emojiInstance = getInternalInstance(event.target);
-						const props = emojiInstance?.pendingProps;
-						if (props && props["data-type"]?.toLowerCase() === "emoji" && props.children) {
-							this.emojiHandler(props.children.props.emoji);
-						}
-					}
-
-					patchEmojiPickerUnavailable() {
-						/**
-						 * This patches allows server icons to show up on the left side of the picker
-						 * if external emojis are disabled, servers get filtered out
-						 * and it's handy to scroll through emojis easily
-						 */
-						Patcher.after(Modules.EmojiFunctions, "isEmojiFiltered", (_, [, , intention], ret) => {
-							if (intention !== Modules.EmojiIntentionEnum.CHAT) return ret;
-							return false;
-						});
-						/**
-						 * This patch allows emojis to be added to the picker
-						 * if external emojis are disabled, they don't get added to the picker
-						 * PREMIUM_LOCKED is returned becaause that is what's returned normally 
-						 
-						 * 0: "DISALLOW_EXTERNAL"
-						 * 1: "GUILD_SUBSCRIPTION_UNAVAILABLE"
-						 * 2: "PREMIUM_LOCKED"
-						 * 3: "ONLY_GUILD_EMOJIS_ALLOWED"
-						 * 4: "ROLE_SUBSCRIPTION_LOCKED"
-						 * 5: "ROLE_SUBSCRIPTION_UNAVAILABLE"
-						 */
-						Patcher.after(Modules.EmojiFunctions, "getEmojiUnavailableReason", (_, [{ intention }], ret) => {
-							if (intention !== Modules.EmojiIntentionEnum.CHAT) return ret;
-							return ret === Modules.EmojiSendAvailabilityEnum.DISALLOW_EXTERNAL ? Modules.EmojiSendAvailabilityEnum.PREMIUM_LOCKED : ret;
-						});
-					}
-
-					setUpCurrentUser() {
-						const [getCurrentUser, cleanUp] = (() => {
-							let currentUser = null;
-							if (!Modules.Dispatcher) return [() => Modules.UserStore?.getCurrentUser() || {}];
-
-							const resetCurrentUser = () => currentUser = null;
-							Modules.Dispatcher.subscribe('LOGOUT', resetCurrentUser);
-							return [
-								() => {
-									if (currentUser) return currentUser;
-									const user = Modules.UserStore?.getCurrentUser();
-									if (user) {
-										currentUser = user;
-									} else {
-										try {
-											const target = document.querySelector('.panels-3wFtMD .container-YkUktl');
-											const instance = BdApi.ReactUtils.getInternalInstance(target);
-											const props = BdApi.Utils.findInTree(instance, a => a?.currentUser, { walkable: ["return", "pendingProps"] });
-											currentUser = props.currentUser;
-										} catch {}
-									}
-									return currentUser || {};
-								},
-								() => Modules.Dispatcher.unsubscribe('LOGOUT', resetCurrentUser)
-							]
-						})();
-						this.getCurrentUser = getCurrentUser;
-						this.cleanUp = cleanUp;
-					}
-
-					onStart() {
-						try {
-							DOM.addStyle(css);
-							this.setUpCurrentUser();
-							this.patchEmojiPickerUnavailable();
-							document.addEventListener("mouseup", this.emojiClickHandler);
-						} catch (e) {
-							console.error(e);
-						}
-					}
-
-					onStop() {
-						this.cleanUp?.();
-						DOM.removeStyle();
-						Patcher.unpatchAll();
-						document.removeEventListener("mouseup", this.emojiClickHandler);
-					}
-
-					getSettingsPanel() {
-						return this.buildSettingsPanel().getElement();
-					}
+				getSettingsPanel() {
+					return this.buildSettingsPanel().getElement();
 				}
 			}
 		}
-	})(Api);
-	return [ParentPlugin, Plugin, Modules]
+	}
 }
 
-function pluginErrorAlert(content) {
-	BdApi.alert(config.info.name, content);
+const AddonManager = (() => {
+	const API = new BdApi(config.info.name);
+
+	const Modals = {
+		AddStyles() {
+			if (!document.querySelector('head > bd-head > bd-styles > #AddonManagerCSS'))
+				BdApi.DOM.addStyle('AddonManagerCSS', `#modal-container {
+    position: absolute;
+    z-index: 3000;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    overflow: hidden;
+    user-select: text;
+    font-family: "gg sans", "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --backdrop: #000;
+    --modal: #57616f;
+    --modal: #313437;
+    --head: #25272a;
+    --note: #dbdee1;
+    --module: #27292b;
+    --error-message: #b5bac1;
+    --footer: #27292c;
+    --close-btn: #5865f2;
+    --close-btn-hover: #4752c4;
+    --close-btn-active: #3c45a5;
+    --added: #2dc770;
+    --improved: #949cf7;
+    --fixed: #f23f42;
+    --notice: #f0b132;
 }
 
-function getErrorPlugin(message) {
-	return () => ({
-		stop() {},
-		start() {
-			pluginErrorAlert(message);
+#modal-container .backdrop {
+    background: var(--backdrop);
+    position: absolute;
+    z-index: -1;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    opacity: .85;
+}
+
+#modal-container .modal {
+    background: var(--modal);
+    display: inline-flex;
+    flex-direction: column;
+    color: white;
+    overflow: hidden;
+    border-radius: 8px;
+    margin: auto;
+    max-width: 600px;
+    max-height: 70vh;
+}
+
+#modal-container .head {
+    background: var(--head);
+    padding: 12px;
+}
+
+#modal-container .head > .title {
+    font-size: 1.3rem;
+    font-weight: bold;
+}
+
+#modal-container .head > .version {
+    margin: 2px 0 0 0;
+    font-size: 12px;
+}
+
+#modal-container .body {
+    background: var(--body);
+    padding: 10px;
+    overflow: hidden auto;
+    margin-right:1px;
+}
+
+#modal-container .body::-webkit-scrollbar {
+    width: 5px;
+}
+
+#modal-container .body::-webkit-scrollbar-thumb {
+    background-color: #171819;
+    border-radius:25px;
+}
+
+#modal-container .note {
+    color: var(--note);
+    font-size: 1rem;
+    margin: 8px 0;
+}
+
+#modal-container .bm {
+    margin: 10px 0;
+    font-weight: bold;
+}
+
+#modal-container .modules {
+    margin: 10px 0;
+    padding: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+
+
+#modal-container .module {
+    padding: 5px 8px;
+    background: var(--module);
+    border-radius: 3px;
+    flex: 1 0 0;
+    white-space: nowrap;
+    text-transform: capitalize;
+    text-align: center;
+}
+
+#modal-container .name {
+    display: block;
+    line-height: 24px;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+#modal-container .errormessage {
+    margin: 2px 0;
+    font-size: 13px;
+    color: var(--error-message);
+}
+
+#modal-container .footer {
+    background: var(--footer);
+    padding: 10px;
+    display: flex;
+}
+
+#modal-container button {
+    margin-left: auto;
+    border-radius: 3px;
+    border: none;
+    min-width: 96px;
+    min-height: 38px;
+    width: auto;
+    color: #fff;
+    background-color: var(--close-btn);
+}
+
+#modal-container button:hover {
+    background-color: var(--close-btn-hover);
+}
+
+#modal-container button:active {
+    background-color: var(--close-btn-active);
+}
+
+#modal-container.hide {
+    display: none;
+}
+
+/* animations */
+#modal-container .backdrop {
+    animation: show-backdrop 300ms ease-out;
+}
+
+#modal-container.closing .backdrop {
+    animation: hide-backdrop 100ms ease-in;
+}
+
+@keyframes show-backdrop {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: .85;
+    }
+}
+
+@keyframes hide-backdrop {
+    from {
+        opacity: .85;
+    }
+
+    to {
+        opacity: 0;
+    }
+}
+
+#modal-container .modal {
+    animation: show-modal 300ms ease-out;
+}
+
+#modal-container.closing .modal {
+    animation: hide-modal 100ms ease-in;
+}
+
+@keyframes show-modal {
+    from {
+        transform: scale(0);
+        opacity: 0;
+    }
+
+    to {
+        opacity: .85;
+        transform: scale(1);
+    }
+}
+
+@keyframes hide-modal {
+    from {
+        opacity: .85;
+        transform: scale(1);
+    }
+
+    to {
+        transform: scale(0);
+        opacity: 0;
+    }
+}
+
+/* changelog */
+#modal-container .changelog {
+    padding: 10px;
+    max-width: 450px;
+}
+
+#modal-container .changelog .title {
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    font-weight: 700;
+    margin-top: 20px;
+    color: var(--c);
+}
+
+#modal-container .changelog .title:after {
+    content: "";
+    height: 1px;
+    flex: 1 1 auto;
+    margin-left: 8px;
+    opacity: .6;
+    background: currentColor;
+}
+
+#modal-container .changelog ul {
+    list-style: none;
+    margin: 20px 0 8px 20px;
+}
+
+#modal-container .changelog ul > li {
+    position:relative;
+    line-height: 20px;
+    margin-bottom: 8px;
+    color: #c4c9ce;
+}
+
+#modal-container .changelog ul > li:before {
+    content: "";
+    position: absolute;
+    background:currentColor;
+    top: 10px;
+    left: -15px;
+    width: 6px;
+    height: 6px;
+    margin-top: -4px;
+    margin-left: -3px;
+    border-radius: 50%;
+    opacity: .5;
+}`);
+		},
+		openModal(content) {
+			this.AddStyles();
+			const template = document.createElement("template");
+			template.innerHTML = `<div id="modal-container">
+									<div class="backdrop"></div>
+									${content}
+								</div>`;
+			const modal = template.content.firstElementChild.cloneNode(true);
+			modal.onclick = (e) => {
+				if (e.target.classList.contains('close-btn') || e.target.classList.contains('backdrop')) {
+					modal.classList.add("closing");
+					setTimeout(() => { modal.remove(); }, 100);
+				}
+			};
+			document.querySelector('bd-body').append(modal);
+		},
+		alert(content) {
+			this.openModal(`<div class="modal">
+				<div class="head">
+					<h2 class="title">${config.info.name}</h2>
+					<p class="version">version ${config.info.version}</p>
+				</div>
+				<div class="body">${content}</div>
+				<div class="footer"><button class="close-btn">Close</button></div>
+			</div>`);
+		},
+		showMissingModulesModal(missingModules) {
+			this.alert(
+				`<p class="note">Detected some Missing modules, certain aspects of the plugin may not work properly.</p>
+				<h3 class="bm">Missing Modules:</h3>
+				<div class="modules">
+					${missingModules.map(([moduleName, errorNote]) => `<div class="module">
+					<h3 class="name">${moduleName}</h3>
+					<p class="errormessage">${errorNote || "No description provided"}</p>
+					</div>`).join('')}
+				</div>`);
+		},
+		showBrokenAddonModal(missingModules) {
+			this.alert(
+				`<p class="note">Plugin is broken, Take a screenshot of this popup and show it to the dev.</p>
+				<h3 class="bm">Missing Modules:</h3>
+				<div class="modules">
+					${missingModules.map(([moduleName]) => `<div class="module">
+						<h3 class="name">${moduleName}</h3>
+					</div>`).join('')}
+				</div>`);
+		},
+		showChangelogModal() {
+			if (!config.changelog || !Array.isArray(config.changelog)) return;
+
+			const changelog = config.changelog?.map(({ title, type, items }) =>
+				`<h3 style="--c:var(--${type});" class="title">${title}</h3>
+				<ul class="list">
+					${items.map(item => `<li>${item}</li>`).join('')}
+				</ul>`).join('')
+			this.alert(`<div class="changelog">${changelog}</div>`);
 		}
-	})
-}
-
-function checkModules(modules) {
-	return Object.entries(modules).reduce((acc, [moduleName, { module, fallback, errorNote, isBreakable, withKey }]) => {
-		if ((withKey && !module.module) || !module) {
-			if (isBreakable) acc[0] = true;
-			acc[2].push([moduleName, errorNote]);
-			if (fallback) acc[1][moduleName] = fallback;
-		} else
-			acc[1][moduleName] = module;
-		return acc;
-	}, [false, {},
-		[]
-	]);
-}
-
-function ensuredata() {
-	return BdApi.Data.load(config.info.name, 'brokenModulesData') || {
-		version: config.info.version,
-		first: true,
-		errorPopupCount: 0,
-		savedBrokenModules: []
 	};
-}
 
-function setPluginMetaData() {
-	const { version, first } = ensuredata();
-	if (version != config.info.version || first)
-		BdApi.Data.save(config.info.name, 'brokenModulesData', {
-			version: config.info.version,
-			errorPopupCount: 0,
-			savedBrokenModules: []
-		});
-}
+	const Data = {
+		get() {
+			return this.data;
+		},
+		save(data) {
+			this.data = data;
+			API.Data.save('metadata', data);
+		},
+		Init() {
+			this.data = API.Data.load('metadata');
+			if (!this.data) {
+				this.save({
+					version: config.info.version,
+					changelog: false,
+				});
+			}
+		}
+	};
 
-function handleBrokenModules(brokenModules) {
-	const { version, errorPopupCount, savedBrokenModules } = ensuredata();
+	const Addon = {
+		showChangelog() {
+			const { version, changelog = false } = Data.get();
+			if (version != config.info.version || !changelog) {
+				Modals.showChangelogModal();
+				Data.save({
+					version: config.info.version,
+					changelog: true
+				});
+			}
+		},
+		handleBrokenAddon(missingModules) {
+			this.getPlugin = () => class BrokenAddon {
+				stop() {}
+				start() {
+					Modals.showBrokenAddonModal(missingModules);
+				}
+			};;
+		},
+		handleMissingModules(missingModules) {
+			Modals.showMissingModulesModal(missingModules);
+		},
+		checkModules(modules) {
+			return Object.entries(modules).reduce((acc, [moduleName, { module, fallback, errorNote, isBreakable, withKey }]) => {
+				if ((withKey && !module.module) || !module) {
+					if (isBreakable) acc.isAddonBroken = true;
+					acc.missingModules.push([moduleName, errorNote]);
+					if (fallback) acc.safeModules[moduleName] = fallback;
+				} else
+					acc.safeModules[moduleName] = module;
+				return acc;
+			}, { isAddonBroken: false, safeModules: {}, missingModules: [] });
+		},
+		start(ParentPlugin) {
+			const { Modules, Plugin } = main(API);
+			const { isAddonBroken, safeModules, missingModules } = this.checkModules(Modules);
+			if (isAddonBroken) {
+				this.handleBrokenAddon(missingModules);
+			} else {
+				if (missingModules.length > 0)
+					this.handleMissingModules(missingModules);
+				this.getPlugin = () => {
+					if (!config.zpl) this.showChangelog();
+					return Plugin(safeModules, ParentPlugin);
+				};
+			}
+		},
+		Init() {
+			if (!config.zpl) return this.start();
 
-	const newBrokenModules = brokenModules.some(([newItem]) => !savedBrokenModules.includes(newItem));
-	const isUpdated = version != config.info.version;
-	const isPopupLimitReached = errorPopupCount === 3;
+			if (!global.ZeresPluginLibrary) {
+				this.getPlugin = () => class BrokenAddon {
+					stop() {}
+					start() {
+						BdApi.alert("Missing library", [`**ZeresPluginLibrary** is needed to run **${config.info.name}**.`,
+							"Please download it from the officiel website",
+							"https://betterdiscord.app/plugin/ZeresPluginLibrary"
+						]);
+					}
+				};
+			} else
+				this.start(global.ZeresPluginLibrary.buildPlugin(config)[0]);
 
-	if (isUpdated || !isPopupLimitReached || newBrokenModules) {
-		pluginErrorAlert([
-			"Detected some Missing modules, certain aspects of the plugin may not work properly.",
-			`\`\`\`md\nMissing modules:\n\n${brokenModules.map(([moduleName, errorNote]) => `[${moduleName}]: ${errorNote ? `\n\t${errorNote}` :""}`).join('\n')}\`\`\``
-		]);
+		}
+	};
 
-		BdApi.Data.save(config.info.name, 'brokenModulesData', {
-			version,
-			errorPopupCount: (errorPopupCount + 1) % 4,
-			savedBrokenModules: brokenModules.map(([moduleName]) => moduleName)
-		});
+	return {
+		Start() {
+			Data.Init();
+			Addon.Init();
+
+			return Addon.getPlugin();
+		}
 	}
-}
+})();
 
-function initPlugin() {
-	setPluginMetaData();
-	const [ParentPlugin, Plugin, Modules] = getPlugin();
-
-	const [pluginBreakingError, SafeModules, BrokenModules] = checkModules(Modules);
-	if (pluginBreakingError)
-		return getErrorPlugin([
-			"**Plugin is broken:** Take a screenshot of this popup and show it to the dev.",
-			`\`\`\`md\nMissing modules:\n\n${BrokenModules.map(([moduleName],i) => `${++i}. ${moduleName}`).join('\n')}\`\`\``
-		]);
-	else {
-		if (BrokenModules.length > 0)
-			handleBrokenModules(BrokenModules);
-		return Plugin(ParentPlugin, SafeModules);
-	}
-}
-
-module.exports = !global.ZeresPluginLibrary ?
-	getErrorPlugin(["**Library plugin is needed**",
-		`**ZeresPluginLibrary** is needed to run **${this.config.info.name}**.`,
-		"Please download it from the officiel website",
-		"https://betterdiscord.app/plugin/ZeresPluginLibrary"
-	]) :
-	initPlugin();
+module.exports = AddonManager.Start();
