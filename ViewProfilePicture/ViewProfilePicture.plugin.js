@@ -85,6 +85,10 @@ function main(API) {
 				module: getModule(Filters.byProps('getLastSelectedGuildId')),
 				errorNote: "Something with servers"
 			},
+			Color: {
+				module: getModule(Filters.byProps('cmyk', 'hex', 'hsl')),
+				errorNote: "Colors will be copied in default format"
+			},
 			renderLinkComponent: {
 				module: getModule(m => m.type?.toString().includes('MASKED_LINK')),
 				fallback: function fallbackRenderLinkComponent(props) {
@@ -106,7 +110,7 @@ function main(API) {
 				showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),
 				copy: (data) => {
 					DiscordNative.clipboard.copy(data);
-					Utils.showToast("Color Copied!", "success");
+					Utils.showToast("Copied!", "success");
 				},
 				/* Stolen from Zlib until it gets added to BdApi */
 				getNestedProp: (obj, path) => path.split(".").reduce(function(ob, prop) {
@@ -202,18 +206,15 @@ function main(API) {
 						})));
 
 			};
-			const ColorModalComponent = ({ color, bannerColorCopyHandler }) => {
-				return (
-					React.createElement("div", {
-							className: "VPP-NoBanner",
-							style: { backgroundColor: color }
-						},
-						React.createElement("a", {
-							className: "copyColorBtn",
-							onClick: (_) => Utils.copy(color)
-						}, "Copy Color")));
-
-			};
+			const ColorModalComponent = ({ color }) =>
+				React.createElement("div", {
+						className: "VPP-NoBanner",
+						style: { backgroundColor: color }
+					},
+					React.createElement("a", {
+						className: "copyColorBtn",
+						onClick: (_) => Utils.copy(color)
+					}, "Copy Color"));
 
 			// Styles
 			function addStyles() {
@@ -346,7 +347,7 @@ svg.warningCircleIcon-2osUEe {
 					const AvatarImageComponent = Utils.getImageModalComponent(avatarURL, { width: IMG_WIDTH, height: IMG_WIDTH });
 					const BannerImageComponent = backgroundImage ?
 						Utils.getImageModalComponent(`${backgroundImage.match(/(?<=\().*(?=\?)/)?.[0]}?size=${IMG_WIDTH}`, { width: IMG_WIDTH }) :
-						React.createElement(ColorModalComponent, { color: backgroundColor });
+						React.createElement(ColorModalComponent, { color: Modules.Color ? Modules.Color(backgroundColor).hex() : backgroundColor });
 					this.openCarousel([AvatarImageComponent, BannerImageComponent]);
 				}
 
@@ -538,8 +539,6 @@ const AddonManager = (() => {
     flex-wrap: wrap;
     gap: 10px;
 }
-
-
 
 #modal-container .module {
     padding: 5px 8px;
