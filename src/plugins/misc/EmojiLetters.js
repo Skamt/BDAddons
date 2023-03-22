@@ -46,7 +46,7 @@ new class EmojiLetters extends Disposable {
 	}
 
 	keyDownHandler(e) {
-		if (e.code.includes("End")) {
+		if (e?.code?.includes?.("End")) {
 			this.active = !this.active;
 			document.querySelector('.wordmarkWindows-2dq6rw').classList.toggle('active');
 		}

@@ -8,6 +8,8 @@ module.exports = {
 			if (!funcStr.includes(s)) return false;
 		return true;
 	}`,
+	"Color":"getModule(Filters.byProps('cmyk','hex','hsl'))",
+	"GuildMemberStore":"getModule(Filters.byProps('getMember','getMembers'))",
 	"ButtonData":"getModule(m => m.BorderColors, {searchExports: true})",
 	"Dispatcher": "getModule(Filters.byProps('dispatch', 'subscribe'))",
 	"StickerModule": "Filters.byStrings('sticker', 'withLoadingIndicator')",

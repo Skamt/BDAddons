@@ -48,3 +48,19 @@
     color:#b8b9bf;
     background-color: #303338;
 }
+
+.small{
+	pointer-events: none;
+    word-wrap: break-word;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    font-style: inherit;
+    vertical-align: baseline;
+    outline: 0;
+    font-family: var(--font-primary);
+    font-size: 12px;
+    line-height: 16px;
+    font-weight: 500;
+    color: var(--text-muted);
+}

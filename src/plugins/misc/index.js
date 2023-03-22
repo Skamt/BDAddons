@@ -40,12 +40,11 @@ const Dispatcher = getModule(Filters.byProps("dispatch", "subscribe"));
 const Analytics = getModule(m => m?.AnalyticEventConfigs);
 const MessageHeader = getModule((m) => m.Z?.toString().includes("userOverride") && m.Z?.toString().includes("withMentionPrefix"));
 const Anchor = getModule(m => m && m.type && Filters.byStrings("trusted", "title", "href", "MASKED_LINK")(m.type));
-const Image = getModuleAndKey(Filters.byStrings("renderAdjacentContent", "MEDIA_MOSAIC_ALT_TEXT_POPOUT_TITLE"));
-const ButtonData = getModule(m => m.BorderColors, { searchExports: true }) || ((props) => React.createElement('button', props));
 const SelectedChannelStore = getModule(Filters.byProps("getLastSelectedChannelId"));
-const Permissions = DiscordModules.Permissions;
-const DiscordPermissions = DiscordModules.DiscordPermissions;
-const ChannelStore = DiscordModules.ChannelStore;
+const GuildTooltip = getModuleAndKey(Filters.byStrings('includeActivity','listItemTooltip'));
+
+// const Permissions = DiscordModules.Permissions;
+// const DiscordPermissions = DiscordModules.DiscordPermissions;
 
 // Helper functions
 const Utils = {
@@ -69,7 +68,7 @@ const mods = [
 	require("ConsoleToggleButton.js"),
 	require("EmojiLetters.js"),
 	require("ShowUserId.js"),
-	require("Share.js"),
+	require("GuildInfo.js"),
 ];
 
 module.exports = () => ({

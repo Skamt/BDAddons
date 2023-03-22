@@ -56,6 +56,10 @@ function main(API) {
 				module: DiscordModules.SelectedGuildStore,
 				errorNote: "Something with servers"
 			},
+			Color: {
+				module: DiscordModules.Color,
+				errorNote: "Colors will be copied in default format"
+			},
 			renderLinkComponent: {
 				module: DiscordModules.renderLinkComponent,
 				fallback: function fallbackRenderLinkComponent(props) {
@@ -77,7 +81,7 @@ function main(API) {
 				showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),
 				copy: (data) => {
 					DiscordNative.clipboard.copy(data);
-					Utils.showToast("Color Copied!", "success");
+					Utils.showToast("Copied!", "success");
 				},
 				/* Stolen from Zlib until it gets added to BdApi */
 				getNestedProp: (obj, path) => path.split(".").reduce(function(ob, prop) {
@@ -100,7 +104,7 @@ function main(API) {
 			const ViewProfilePictureButtonComponent = require("components/ViewProfilePictureButtonComponent.jsx");
 			const DisplayCarouselComponent = require("components/DisplayCarouselComponent.jsx");
 			const ColorModalComponent = require("components/ColorModalComponent.jsx");
-
+			
 			// Styles
 			function addStyles() {
 				DOM.addStyle(require("styles.css"));
@@ -126,7 +130,7 @@ function main(API) {
 					const AvatarImageComponent = Utils.getImageModalComponent(avatarURL, { width: IMG_WIDTH, height: IMG_WIDTH });
 					const BannerImageComponent = backgroundImage ?
 						Utils.getImageModalComponent(`${backgroundImage.match(/(?<=\().*(?=\?)/)?.[0]}?size=${IMG_WIDTH}`, { width: IMG_WIDTH }) :
-						React.createElement(ColorModalComponent, { color: backgroundColor });
+						React.createElement(ColorModalComponent, { color: Modules.Color ? Modules.Color(backgroundColor).hex() : backgroundColor });
 					this.openCarousel([AvatarImageComponent, BannerImageComponent]);
 				}
 

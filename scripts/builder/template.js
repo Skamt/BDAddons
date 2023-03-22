@@ -110,8 +110,6 @@ const AddonManager = (() => {
     gap: 10px;
 }
 
-
-
 #modal-container .module {
     padding: 5px 8px;
     background: var(--module);
