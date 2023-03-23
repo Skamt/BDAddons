@@ -10,7 +10,7 @@ Well Not anymore.
 
 The main goal of **LazyLoadChannels** is to prevent channels from loading untill you choose to do so, solving all the issues mentioned above.
 
-You can chose to auto load a specefic channel, or a whole server. *DMs can be included in settings*
+You can chose to auto load a specefic channel, or a whole server.
 
 ## Preview
 
