@@ -34,6 +34,8 @@ const nop = () => {};
 const electron = require('electron');
 const MessageActions = DiscordModules.MessageActions;
 const UserStore = DiscordModules.UserStore;
+const GuildMemberCountStore = DiscordModules.GuildMemberCountStore;
+const GuildChannelStore = DiscordModules.GuildChannelStore;
 const DeviceStore = getModule(m => m?.getActiveSocketAndDevice);
 const nativeModules = getModule(m => m.getDiscordUtils)
 const Dispatcher = getModule(Filters.byProps("dispatch", "subscribe"));

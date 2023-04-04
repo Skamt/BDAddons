@@ -8,6 +8,8 @@ module.exports = {
 			if (!funcStr.includes(s)) return false;
 		return true;
 	}`,
+	"GuildChannelStore":"BdApi.Webpack.getModule(a => a.getName() === 'GuildChannelStore')",
+	"GuildMemberCountStore":"BdApi.Webpack.getModule(a => a.getName() === 'GuildMemberCountStore')",
 	"Color":"getModule(Filters.byProps('cmyk','hex','hsl'))",
 	"GuildMemberStore":"getModule(Filters.byProps('getMember','getMembers'))",
 	"ButtonData":"getModule(m => m.BorderColors, {searchExports: true})",
