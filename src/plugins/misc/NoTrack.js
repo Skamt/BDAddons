@@ -46,10 +46,10 @@ new class NoTrack extends Disposable {
 			Patcher.before(MessageActions, "sendMessage", (_, [, message]) => {
 				message.content = this.handleMessage(message.content);
 			}),
-			Patcher.before(Dispatcher, "dispatch", (_, [type, message]) => {
+			Patcher.before(Dispatcher, "dispatch", (_, [{type, message}]) => {
 				if (this.blockedEvents.some(e => e === type)) return {};
 				if (type === "MESSAGE_CREATE")
-					if (message.author.id !== DiscordModules.UserStore.getCurrentUser().id)
+					if (message.author.id !== UserStore.getCurrentUser().id)
 						message.content = this.handleMessage(message.content);
 			})
 		];

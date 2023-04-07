@@ -152,7 +152,7 @@ function main(API) {
 
 				sendStickerAsLink(sticker, channel) {
 					if (this.settings.sendDirectly)
-						this.sendMessage(sticker, channel)
+						this.sendMessage({sticker, channel})
 					else
 						Modules.InsertText(Utils.getStickerUrl(sticker.id, this.settings.stickerSize));
 				}
