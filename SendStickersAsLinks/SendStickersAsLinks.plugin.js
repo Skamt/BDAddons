@@ -225,7 +225,7 @@ function main(API) {
 
 				sendStickerAsLink(sticker, channel) {
 					if (this.settings.sendDirectly)
-						this.sendMessage(sticker, channel)
+						this.sendMessage({ sticker, channel })
 					else
 						Modules.InsertText(Utils.getStickerUrl(sticker.id, this.settings.stickerSize));
 				}
@@ -498,8 +498,6 @@ const AddonManager = (() => {
     flex-wrap: wrap;
     gap: 10px;
 }
-
-
 
 #modal-container .module {
     padding: 5px 8px;
