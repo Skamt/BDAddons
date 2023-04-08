@@ -78,7 +78,7 @@ function main(API) {
 			}
 
 			// Styles
-			function addStyles(){
+			function addStyles() {
 				DOM.addStyle(require("styles.css"));
 			}
 
@@ -88,19 +88,17 @@ function main(API) {
 					this.previewState = this.settings.previewDefaultState;
 				}
 
-				getMediaInfo({ props, type }, titlePrimary) {
+				getMediaInfo({ props, type }) {
 					if (props.sticker)
 						return [type, props];
 					if (props.src)
-						return [type, { src: props.src.replace(/([?&]size=)(\d+)/, `$1${PREVIEW_SIZE}`) || PREVIEW_UNAVAILABLE }]
-					if (titlePrimary && titlePrimary.includes(':'))
-						return ['img', { src: Modules.DefaultEmojisManager?.getByName(titlePrimary.split(":")[1]).url || PREVIEW_UNAVAILABLE }];
-
-					return ['div', {}];
+						return [type, { src: props.src.replace(/([?&]size=)(\d+)/, `$1${PREVIEW_SIZE}`) || PREVIEW_UNAVAILABLE }];
+					
+					return ['i',null];
 				}
 
-				getPreviewComponent(graphicPrimary, titlePrimary) {
-					const [type, props] = this.getMediaInfo(graphicPrimary, titlePrimary);
+				getPreviewComponent(graphicPrimary) {
+					const [type, props] = this.getMediaInfo(graphicPrimary);
 
 					return React.createElement(type, {
 						...props,
@@ -113,34 +111,22 @@ function main(API) {
 					/**
 					 * Main patch for the plugin
 					 */
-					if (Modules.closeExpressionPicker)
-						Patcher.after(Modules.ExpressionPickerInspector, "Z", (_, [{ graphicPrimary, titlePrimary }], ret) => {
-							return React.createElement(ErrorBoundary, {
-									id: "PreviewComponent",
-									plugin: config.info.name,
-									fallback: ret
-								},
-								React.createElement(PreviewComponent, {
-									target: ret,
-									defaultState: this.previewState,
-									setPreviewState: (e) => this.previewState = e,
-									previewComponent: this.getPreviewComponent(graphicPrimary, titlePrimary)
-								}));
-						});
-					else
-						Patcher.after(Modules.ExpressionPickerInspector, "Z", (_, [{ graphicPrimary, titlePrimary }], ret) => {
-							return React.createElement(ErrorBoundary, {
-									id: "PreviewComponent",
-									plugin: config.info.name,
-									fallback: ret
-								},
-								React.createElement(PreviewComponent, {
-									target: ret,
-									defaultState: false,
-									setPreviewState: nop,
-									previewComponent: this.getPreviewComponent(graphicPrimary, titlePrimary)
-								}));
-						});
+
+					Patcher.after(Modules.ExpressionPickerInspector, "Z", (_, [{ graphicPrimary, titlePrimary }], ret) => {
+						if(titlePrimary?.toLowerCase().includes("upload")) return;
+						return React.createElement(ErrorBoundary, {
+								id: "PreviewComponent",
+								plugin: config.info.name,
+								fallback: ret
+							},
+							React.createElement(PreviewComponent, {
+								target: ret,
+								defaultState: Modules.closeExpressionPicker ? this.previewState : false,
+								setPreviewState: Modules.closeExpressionPicker ? (e) => this.previewState = e : nop,
+								previewComponent: this.getPreviewComponent(graphicPrimary)
+							}));
+					});
+
 				}
 
 				patchCloseExpressionPicker() {
@@ -149,7 +135,7 @@ function main(API) {
 					 */
 					if (Modules.closeExpressionPicker)
 						Patcher.after(Modules.closeExpressionPicker.module, Modules.closeExpressionPicker.key, (_, args, ret) => {
-							this.previewState = false;
+							this.previewState = this.settings.previewDefaultState;
 						});
 				}
 
@@ -174,6 +160,7 @@ function main(API) {
 						value: this.settings.previewDefaultState,
 						onChange: e => {
 							this.settings.previewDefaultState = e;
+							this.previewState = e;
 							Data.save("settings", this.settings);
 						}
 					});
