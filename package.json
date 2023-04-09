@@ -12,6 +12,8 @@
 	"devDependencies": {
 		"@babel/core": "^7.19.1",
 		"@babel/plugin-transform-react-jsx": "^7.19.0",
+		"eslint": "^8.38.0",
+		"eslint-plugin-react": "^7.32.2",
 		"js-beautify": "^1.14.6",
 		"nodemon": "^2.0.20"
 	},

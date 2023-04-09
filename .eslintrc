@@ -1,0 +1,26 @@
+{
+    "env": {
+        "browser": true,
+        "es2021": true
+    },
+    "extends": [
+        "eslint:recommended",
+        "plugin:react/recommended"
+    ],
+    "rules": {
+        "no-multiple-empty-lines":["error"]
+    },
+    "parserOptions": {
+        "ecmaVersion": "latest"
+    },
+    "plugins": [
+        "react"
+    ],
+    "globals": {
+        "require": "readonly",
+        "BdApi": "readonly",
+        "global": "readonly",
+        "module": "readonly",
+        "DiscordNative": "readonly"
+    }
+}

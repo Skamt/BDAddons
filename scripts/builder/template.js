@@ -9,7 +9,7 @@ const AddonManager = (() => {
 	const Modals = {
 		AddStyles() {
 			if (!document.querySelector('head > bd-head > bd-styles > #AddonManagerCSS'))
-				BdApi.DOM.addStyle('AddonManagerCSS', `#modal-container {
+            API.DOM.addStyle('AddonManagerCSS', `#modal-container {
     position: absolute;
     z-index: 3000;
     top: 0;
@@ -368,7 +368,7 @@ const AddonManager = (() => {
 				start() {
 					Modals.showBrokenAddonModal(missingModules);
 				}
-			};;
+			};
 		},
 		handleMissingModules(missingModules) {
 			Modals.showMissingModulesModal(missingModules);
@@ -405,7 +405,7 @@ const AddonManager = (() => {
 				this.getPlugin = () => class BrokenAddon {
 					stop() {}
 					start() {
-						BdApi.alert("Missing library", [`**ZeresPluginLibrary** is needed to run **${config.info.name}**.`,
+						API.alert("Missing library", [`**ZeresPluginLibrary** is needed to run **${config.info.name}**.`,
 							"Please download it from the officiel website",
 							"https://betterdiscord.app/plugin/ZeresPluginLibrary"
 						]);

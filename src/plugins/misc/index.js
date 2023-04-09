@@ -4,7 +4,6 @@ const {
 	Data,
 	Patcher,
 	React,
-	ContextMenu,
 	Webpack: { Filters, getModule }
 } = new BdApi(config.info.name);
 
@@ -42,11 +41,12 @@ const Dispatcher = getModule(Filters.byProps("dispatch", "subscribe"));
 const Analytics = getModule(m => m?.AnalyticEventConfigs);
 const MessageHeader = getModule((m) => m.Z?.toString().includes("userOverride") && m.Z?.toString().includes("withMentionPrefix"));
 const Anchor = getModule(m => m && m.type && Filters.byStrings("trusted", "title", "href", "MASKED_LINK")(m.type));
-const SelectedChannelStore = getModule(Filters.byProps("getLastSelectedChannelId"));
+// const SelectedChannelStore = getModule(Filters.byProps("getLastSelectedChannelId"));
 const GuildTooltip = getModuleAndKey(Filters.byStrings('includeActivity','listItemTooltip'));
 
-// const Permissions = DiscordModules.Permissions;
-// const DiscordPermissions = DiscordModules.DiscordPermissions;
+// eslint-disable-next-line no-redeclare
+const Permissions = DiscordModules.Permissions;
+const DiscordPermissions = DiscordModules.DiscordPermissions;
 
 // Helper functions
 const Utils = {

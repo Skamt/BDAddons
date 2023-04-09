@@ -3,7 +3,7 @@
 		<span className="copyBtnSpan">|</span>
 		<a
 			className="copyBtn"
-			onClick={_ => Utils.copy(href)}>
+			onClick={() => Utils.copy(href)}>
 			Copy link
 		</a>
 	</>;

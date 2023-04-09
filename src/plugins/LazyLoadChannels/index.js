@@ -1,6 +1,15 @@
 function main(API) {
-	const { React, Webpack: { Filters, getModule, waitForModule } } = API;
-
+	const {
+		UI,
+		DOM,
+		Data,
+		React,
+		Patcher,
+		ContextMenu,
+		React: { useState, useEffect }, 
+		Webpack: { Filters, getModule, waitForModule }
+	} = API;
+	
 	// https://discord.com/channels/86004744966914048/196782758045941760/1062604534922367107
 	function getModuleAndKey(filter) {
 		let module;
@@ -66,16 +75,7 @@ function main(API) {
 			}
 		},
 		Plugin(Modules) {
-			const {
-				UI,
-				DOM,
-				Data,
-				React,
-				Patcher,
-				ContextMenu,
-				React: { useState, useEffect }
-			} = API;
-
+			
 			// Constants
 			const EVENTS = [
 				"THREAD_CREATE_LOCAL",
@@ -249,7 +249,7 @@ function main(API) {
 									type: "toggle",
 									label: "Auto load",
 									active: Utils.channelsStateManager.has('guilds', guild.id),
-									action: _ => Utils.channelsStateManager.toggelGuild(guild.id)
+									action: () => Utils.channelsStateManager.toggelGuild(guild.id)
 								}));
 						}),
 						...["channel-context", "thread-context"].map(context =>
@@ -259,7 +259,7 @@ function main(API) {
 										type: "toggle",
 										label: "Auto load",
 										active: Utils.channelsStateManager.getChannelstate(channel.guild_id, channel.id),
-										action: _ => Utils.channelsStateManager.toggelChannel(channel.guild_id, channel.id)
+										action: () => Utils.channelsStateManager.toggelChannel(channel.guild_id, channel.id)
 									}));
 							})
 						),

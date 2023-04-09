@@ -40,7 +40,7 @@ new class NoTrack extends Disposable {
 	Init() {
 		this.once();
 		this.patches = [
-			Patcher.before(Anchor, "type", (_, args, ret) => {
+			Patcher.before(Anchor, "type", (_, args) => {
 				args[0].href = this.handleMessage(args[0].href);
 			}),
 			Patcher.before(MessageActions, "sendMessage", (_, [, message]) => {

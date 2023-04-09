@@ -55,11 +55,11 @@ new class EmojiLetters extends Disposable {
 	Init() {
 		document.addEventListener('keydown', this.keyDownHandler);
 		this.patches = [
-			Patcher.before(MessageActions, "sendMessage", (_, [, messageObject], ret) => {
+			Patcher.before(MessageActions, "sendMessage", (_, [, messageObject]) => {
 				try {
 					if (this.active)
 						messageObject.content = messageObject.content.split('').map(a => this.mappings[a] || a).join('');
-				} catch (e) {} finally {
+				} catch { /* empty */ } finally {
 					this.active = false;
 					document.querySelector('.wordmarkWindows-2dq6rw').classList.remove('active');
 				}

@@ -1,5 +1,12 @@
 function main(API) {
-	const { Webpack: { Filters, getModule } } = API;
+	const {
+		UI,
+		DOM,
+		Patcher,
+		ReactUtils: { getInternalInstance },
+		Webpack: { Filters, getModule }
+	} = API;
+
 	return {
 		Modules: {
 			PendingReplyStore: {
@@ -64,14 +71,7 @@ function main(API) {
 			}
 		},
 		Plugin(Modules, ParentPlugin) {
-			const {
-				UI,
-				DOM,
-				Utils,
-				Patcher,
-				ReactUtils: { getInternalInstance }
-			} = API;
-
+			
 			// Utilities
 			const SelfUtils = {
 				showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type }),
@@ -219,7 +219,7 @@ function main(API) {
 										const instance = API.ReactUtils.getInternalInstance(target);
 										const props = API.Utils.findInTree(instance, a => a?.currentUser, { walkable: ["return", "pendingProps"] });
 										currentUser = props.currentUser;
-									} catch {}
+									} catch { /* empty */ }
 								}
 								return currentUser || {};
 							},

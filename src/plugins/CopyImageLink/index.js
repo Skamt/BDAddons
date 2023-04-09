@@ -1,5 +1,11 @@
 function main(API) {
-	const { Webpack: { Filters, getModule } } = API;
+	const {
+		UI,
+		DOM,
+		React,
+		Patcher,
+		Webpack: { getModule }
+	} = API;
 
 	// https://discord.com/channels/86004744966914048/196782758045941760/1062604534922367107
 	function getModuleAndKey(filter) {
@@ -21,12 +27,6 @@ function main(API) {
 			}
 		},
 		Plugin(Modules) {
-			const {
-				UI,
-				DOM,
-				React,
-				Patcher
-			} = API;
 
 			// Utilities
 			const Utils = {
@@ -36,7 +36,7 @@ function main(API) {
 					Utils.showToast("Link Copied!", "success");
 				},
 				/* Stolen from Zlib until it gets added to BdApi */
-				getNestedProp: (obj, path) => path.split(".").reduce(function(ob, prop) {
+				getNestedProp: (obj, path) => path.split(".").reduce(function (ob, prop) {
 					return ob && ob[prop];
 				}, obj)
 			};
@@ -45,7 +45,7 @@ function main(API) {
 			const CopyButtonComponent = require("components/CopyButtonComponent.jsx");
 
 			// Styles
-			function addStyles(){
+			function addStyles() {
 				DOM.addStyle(require("styles.css"));
 			}
 

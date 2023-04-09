@@ -4,7 +4,7 @@
 		style={{ backgroundColor: color }}>
 		<a
 			className="copyColorBtn"
-			onClick={_ => Utils.copy(color)}>
+			onClick={() => Utils.copy(color)}>
 			Copy Color
 		</a>
 	</div>

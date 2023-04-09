@@ -1,5 +1,12 @@
 function main(API) {
-	const { React, Webpack: { Filters, getModule } } = API;
+	const {
+		DOM,
+		React,
+		Data,
+		Patcher,
+		React: { useEffect, useState },
+		Webpack: { Filters, getModule }
+	} = API;
 
 	// https://discord.com/channels/86004744966914048/196782758045941760/1062604534922367107
 	function getModuleAndKey(filter) {
@@ -47,15 +54,6 @@ function main(API) {
 			}
 		},
 		Plugin(Modules) {
-			const {
-				DOM,
-				React,
-				Data,
-				Patcher,
-				React: { useEffect, useState },
-				Webpack: { Filters, getModule }
-			} = API;
-
 			const nop = () => {};
 
 			// Constants
@@ -134,7 +132,7 @@ function main(API) {
 					 * a listener for when experession picker is closed
 					 */
 					if (Modules.closeExpressionPicker)
-						Patcher.after(Modules.closeExpressionPicker.module, Modules.closeExpressionPicker.key, (_, args, ret) => {
+						Patcher.after(Modules.closeExpressionPicker.module, Modules.closeExpressionPicker.key, () => {
 							this.previewState = this.settings.previewDefaultState;
 						});
 				}

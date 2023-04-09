@@ -6,10 +6,11 @@ new class ConsoleToggleButton extends Disposable {
 	}
 
 	sleep(delay) {
-		return new Promise(resolve => { setTimeout(() => { resolve() }, delay * 1000) });
+		return new Promise(resolve => { setTimeout(() => { resolve(); }, delay * 1000); });
 	}
 
 	async addButtonConsoleButton() {
+		// eslint-disable-next-line no-constant-condition
 		while (true) {
 			this.host = document.querySelector("#app-mount > div > div");
 			if (!this.host) {
@@ -25,12 +26,11 @@ new class ConsoleToggleButton extends Disposable {
 	Init() {
 		this.addButtonConsoleButton();
 	}
-
 	buildF12Button() {
-		this.el = document.createElement('span');
-		this.el.id = 'console';
-		this.el.textContent = 'F12';
-		this.el.onclick = () => electron.ipcRenderer.send('bd-toggle-devtools');
+		this.el = document.createElement("span");
+		this.el.id = "console";
+		this.el.textContent = "F12";
+		this.el.onclick = () => electron.ipcRenderer.send("bd-toggle-devtools");
 	}
 
 	Dispose() {
