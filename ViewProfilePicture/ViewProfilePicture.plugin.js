@@ -21,18 +21,13 @@ const config = {
 };
 
 function main(API) {
-	const { Webpack: { Filters, getModule } } = API;
-
-	// https://discord.com/channels/86004744966914048/196782758045941760/1062604534922367107
-	function getModuleAndKey(filter) {
-		let module;
-		const target = getModule((entry, m) => filter(entry) ? (module = m) : false, { searchExports: true });
-		module = module?.exports;
-		if (!module) return { module: undefined };
-		const key = Object.keys(module).find(k => module[k] === target);
-		if (!key) return undefined;
-		return { module, key };
-	}
+	const {
+		UI,
+		DOM,
+		React,
+		Patcher,
+		Webpack: { Filters, getModule }
+	} = API;
 
 	return {
 		Modules: {
@@ -98,12 +93,6 @@ function main(API) {
 			}
 		},
 		Plugin(Modules) {
-			const {
-				UI,
-				DOM,
-				React,
-				Patcher
-			} = API;
 
 			// Utilities
 			const Utils = {
@@ -213,7 +202,7 @@ function main(API) {
 					},
 					React.createElement("a", {
 						className: "copyColorBtn",
-						onClick: (_) => Utils.copy(color)
+						onClick: () => Utils.copy(color)
 					}, "Copy Color"));
 
 			// Styles
@@ -253,7 +242,7 @@ svg.warningCircleIcon-2osUEe {
 	top: 14px;
 }
 
-.VPP-profile..VPP-right{
+.VPP-profile.VPP-right{
     right:16px;
 }
 
@@ -352,7 +341,7 @@ svg.warningCircleIcon-2osUEe {
 				}
 
 				patchUserBannerMask() {
-					Patcher.after(Modules.UserBannerMask, "Z", (_, [{ user, isPremium, profileType }], returnValue) => {
+					Patcher.after(Modules.UserBannerMask, "Z", (_, [{ user, profileType }], returnValue) => {
 						if (profileType === Modules.ProfileTypeEnum.SETTINGS) return;
 
 						const currentUser = this.getCurrentUser();
@@ -377,7 +366,7 @@ svg.warningCircleIcon-2osUEe {
 									},
 									React.createElement(ViewProfilePictureButtonComponent, {
 										className,
-										onClick: _ => this.clickHandler(user, bannerObject, Modules.ProfileTypeEnum.POPOUT === profileType)
+										onClick: () => this.clickHandler(user, bannerObject, Modules.ProfileTypeEnum.POPOUT === profileType)
 									}))
 							);
 					});
@@ -402,7 +391,7 @@ svg.warningCircleIcon-2osUEe {
 										const instance = API.ReactUtils.getInternalInstance(target);
 										const props = API.Utils.findInTree(instance, a => a?.currentUser, { walkable: ["return", "pendingProps"] });
 										currentUser = props.currentUser;
-									} catch {}
+									} catch { /* empty */ }
 								}
 								return currentUser || {};
 							},
@@ -439,7 +428,7 @@ const AddonManager = (() => {
 	const Modals = {
 		AddStyles() {
 			if (!document.querySelector('head > bd-head > bd-styles > #AddonManagerCSS'))
-				BdApi.DOM.addStyle('AddonManagerCSS', `#modal-container {
+				API.DOM.addStyle('AddonManagerCSS', `#modal-container {
     position: absolute;
     z-index: 3000;
     top: 0;
@@ -798,7 +787,7 @@ const AddonManager = (() => {
 				start() {
 					Modals.showBrokenAddonModal(missingModules);
 				}
-			};;
+			};
 		},
 		handleMissingModules(missingModules) {
 			Modals.showMissingModulesModal(missingModules);
@@ -835,7 +824,7 @@ const AddonManager = (() => {
 				this.getPlugin = () => class BrokenAddon {
 					stop() {}
 					start() {
-						BdApi.alert("Missing library", [`**ZeresPluginLibrary** is needed to run **${config.info.name}**.`,
+						API.alert("Missing library", [`**ZeresPluginLibrary** is needed to run **${config.info.name}**.`,
 							"Please download it from the officiel website",
 							"https://betterdiscord.app/plugin/ZeresPluginLibrary"
 						]);

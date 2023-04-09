@@ -55,7 +55,14 @@ const config = {
 };
 
 function main(API) {
-	const { Webpack: { Filters, getModule } } = API;
+	const {
+		UI,
+		DOM,
+		Patcher,
+		ReactUtils: { getInternalInstance },
+		Webpack: { Filters, getModule }
+	} = API;
+
 	return {
 		Modules: {
 			PendingReplyStore: {
@@ -120,13 +127,6 @@ function main(API) {
 			}
 		},
 		Plugin(Modules, ParentPlugin) {
-			const {
-				UI,
-				DOM,
-				Utils,
-				Patcher,
-				ReactUtils: { getInternalInstance }
-			} = API;
 
 			// Utilities
 			const SelfUtils = {
@@ -280,7 +280,7 @@ function main(API) {
 										const instance = API.ReactUtils.getInternalInstance(target);
 										const props = API.Utils.findInTree(instance, a => a?.currentUser, { walkable: ["return", "pendingProps"] });
 										currentUser = props.currentUser;
-									} catch {}
+									} catch { /* empty */ }
 								}
 								return currentUser || {};
 							},
@@ -323,7 +323,7 @@ const AddonManager = (() => {
 	const Modals = {
 		AddStyles() {
 			if (!document.querySelector('head > bd-head > bd-styles > #AddonManagerCSS'))
-				BdApi.DOM.addStyle('AddonManagerCSS', `#modal-container {
+				API.DOM.addStyle('AddonManagerCSS', `#modal-container {
     position: absolute;
     z-index: 3000;
     top: 0;
@@ -423,8 +423,6 @@ const AddonManager = (() => {
     flex-wrap: wrap;
     gap: 10px;
 }
-
-
 
 #modal-container .module {
     padding: 5px 8px;
@@ -684,7 +682,7 @@ const AddonManager = (() => {
 				start() {
 					Modals.showBrokenAddonModal(missingModules);
 				}
-			};;
+			};
 		},
 		handleMissingModules(missingModules) {
 			Modals.showMissingModulesModal(missingModules);
@@ -721,7 +719,7 @@ const AddonManager = (() => {
 				this.getPlugin = () => class BrokenAddon {
 					stop() {}
 					start() {
-						BdApi.alert("Missing library", [`**ZeresPluginLibrary** is needed to run **${config.info.name}**.`,
+						API.alert("Missing library", [`**ZeresPluginLibrary** is needed to run **${config.info.name}**.`,
 							"Please download it from the officiel website",
 							"https://betterdiscord.app/plugin/ZeresPluginLibrary"
 						]);

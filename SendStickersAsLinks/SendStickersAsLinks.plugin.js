@@ -54,7 +54,12 @@ const config = {
 };
 
 function main(API) {
-	const { Webpack: { Filters, getModule } } = API;
+	const {
+		UI,
+		DOM,
+		Patcher,
+		Webpack: { Filters, getModule }
+	} = API;
 
 	// https://discord.com/channels/86004744966914048/196782758045941760/1062604534922367107
 	function getModuleAndKey(filter) {
@@ -153,11 +158,6 @@ function main(API) {
 			})()
 		},
 		Plugin(Modules, ParentPlugin) {
-			const {
-				UI,
-				DOM,
-				Patcher
-			} = API;
 
 			// Utilities
 			const Utils = {
@@ -170,9 +170,6 @@ function main(API) {
 			};
 
 			// Strings & Constants
-			const TAGS = {
-				ANIMATED_STICKER_TAG: "ANIMATED_STICKER_TAG"
-			};
 			const STRINGS = {
 				sendLottieStickerErrorMessage: "Official Discord Stickers are not supported.",
 				missingEmbedPermissionsErrorMessage: "Missing Embed Permissions",
@@ -304,7 +301,7 @@ function main(API) {
 				patchStickerClickability() {
 					// if it's a guild sticker return true to make it clickable 
 					// ignoreing discord's stickers because ToS, and they're not regular images
-					Patcher.after(Modules.StickersSendability, Modules.isStickerSendable.key, (_, args, returnValue) => {
+					Patcher.after(Modules.StickersSendability, Modules.isStickerSendable.key, (_, args) => {
 						return args[0].type === Modules.StickerTypeEnum.GUILD;
 					});
 				}
@@ -351,7 +348,7 @@ function main(API) {
 										const instance = API.ReactUtils.getInternalInstance(target);
 										const props = API.Utils.findInTree(instance, a => a?.currentUser, { walkable: ["return", "pendingProps"] });
 										currentUser = props.currentUser;
-									} catch {}
+									} catch { /* empty */ }
 								}
 								return currentUser || {};
 							},
@@ -398,7 +395,7 @@ const AddonManager = (() => {
 	const Modals = {
 		AddStyles() {
 			if (!document.querySelector('head > bd-head > bd-styles > #AddonManagerCSS'))
-				BdApi.DOM.addStyle('AddonManagerCSS', `#modal-container {
+				API.DOM.addStyle('AddonManagerCSS', `#modal-container {
     position: absolute;
     z-index: 3000;
     top: 0;
@@ -757,7 +754,7 @@ const AddonManager = (() => {
 				start() {
 					Modals.showBrokenAddonModal(missingModules);
 				}
-			};;
+			};
 		},
 		handleMissingModules(missingModules) {
 			Modals.showMissingModulesModal(missingModules);
@@ -794,7 +791,7 @@ const AddonManager = (() => {
 				this.getPlugin = () => class BrokenAddon {
 					stop() {}
 					start() {
-						BdApi.alert("Missing library", [`**ZeresPluginLibrary** is needed to run **${config.info.name}**.`,
+						API.alert("Missing library", [`**ZeresPluginLibrary** is needed to run **${config.info.name}**.`,
 							"Please download it from the officiel website",
 							"https://betterdiscord.app/plugin/ZeresPluginLibrary"
 						]);

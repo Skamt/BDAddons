@@ -21,7 +21,16 @@ const config = {
 };
 
 function main(API) {
-	const { React, Webpack: { Filters, getModule, waitForModule } } = API;
+	const {
+		UI,
+		DOM,
+		Data,
+		React,
+		Patcher,
+		ContextMenu,
+		React: { useState, useEffect },
+		Webpack: { Filters, getModule, waitForModule }
+	} = API;
 
 	// https://discord.com/channels/86004744966914048/196782758045941760/1062604534922367107
 	function getModuleAndKey(filter) {
@@ -88,15 +97,6 @@ function main(API) {
 			}
 		},
 		Plugin(Modules) {
-			const {
-				UI,
-				DOM,
-				Data,
-				React,
-				Patcher,
-				ContextMenu,
-				React: { useState, useEffect }
-			} = API;
 
 			// Constants
 			const EVENTS = [
@@ -521,7 +521,7 @@ function main(API) {
 									type: "toggle",
 									label: "Auto load",
 									active: Utils.channelsStateManager.has('guilds', guild.id),
-									action: _ => Utils.channelsStateManager.toggelGuild(guild.id)
+									action: () => Utils.channelsStateManager.toggelGuild(guild.id)
 								}));
 						}),
 						...["channel-context", "thread-context"].map(context =>
@@ -531,7 +531,7 @@ function main(API) {
 										type: "toggle",
 										label: "Auto load",
 										active: Utils.channelsStateManager.getChannelstate(channel.guild_id, channel.id),
-										action: _ => Utils.channelsStateManager.toggelChannel(channel.guild_id, channel.id)
+										action: () => Utils.channelsStateManager.toggelChannel(channel.guild_id, channel.id)
 									}));
 							})
 						),
@@ -655,7 +655,7 @@ const AddonManager = (() => {
 	const Modals = {
 		AddStyles() {
 			if (!document.querySelector('head > bd-head > bd-styles > #AddonManagerCSS'))
-				BdApi.DOM.addStyle('AddonManagerCSS', `#modal-container {
+				API.DOM.addStyle('AddonManagerCSS', `#modal-container {
     position: absolute;
     z-index: 3000;
     top: 0;
@@ -755,8 +755,6 @@ const AddonManager = (() => {
     flex-wrap: wrap;
     gap: 10px;
 }
-
-
 
 #modal-container .module {
     padding: 5px 8px;
@@ -1016,7 +1014,7 @@ const AddonManager = (() => {
 				start() {
 					Modals.showBrokenAddonModal(missingModules);
 				}
-			};;
+			};
 		},
 		handleMissingModules(missingModules) {
 			Modals.showMissingModulesModal(missingModules);
@@ -1053,7 +1051,7 @@ const AddonManager = (() => {
 				this.getPlugin = () => class BrokenAddon {
 					stop() {}
 					start() {
-						BdApi.alert("Missing library", [`**ZeresPluginLibrary** is needed to run **${config.info.name}**.`,
+						API.alert("Missing library", [`**ZeresPluginLibrary** is needed to run **${config.info.name}**.`,
 							"Please download it from the officiel website",
 							"https://betterdiscord.app/plugin/ZeresPluginLibrary"
 						]);

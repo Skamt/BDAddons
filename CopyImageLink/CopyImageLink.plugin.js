@@ -21,7 +21,13 @@ const config = {
 };
 
 function main(API) {
-	const { Webpack: { Filters, getModule } } = API;
+	const {
+		UI,
+		DOM,
+		React,
+		Patcher,
+		Webpack: { getModule }
+	} = API;
 
 	// https://discord.com/channels/86004744966914048/196782758045941760/1062604534922367107
 	function getModuleAndKey(filter) {
@@ -50,12 +56,6 @@ function main(API) {
 			}
 		},
 		Plugin(Modules) {
-			const {
-				UI,
-				DOM,
-				React,
-				Patcher
-			} = API;
 
 			// Utilities
 			const Utils = {
@@ -76,7 +76,7 @@ function main(API) {
 					React.createElement("span", { className: "copyBtnSpan" }, "|"),
 					React.createElement("a", {
 						className: "copyBtn",
-						onClick: (_) => Utils.copy(href)
+						onClick: () => Utils.copy(href)
 					}, "Copy link"));
 
 			};
@@ -140,7 +140,7 @@ const AddonManager = (() => {
 	const Modals = {
 		AddStyles() {
 			if (!document.querySelector('head > bd-head > bd-styles > #AddonManagerCSS'))
-				BdApi.DOM.addStyle('AddonManagerCSS', `#modal-container {
+				API.DOM.addStyle('AddonManagerCSS', `#modal-container {
     position: absolute;
     z-index: 3000;
     top: 0;
@@ -240,8 +240,6 @@ const AddonManager = (() => {
     flex-wrap: wrap;
     gap: 10px;
 }
-
-
 
 #modal-container .module {
     padding: 5px 8px;
@@ -501,7 +499,7 @@ const AddonManager = (() => {
 				start() {
 					Modals.showBrokenAddonModal(missingModules);
 				}
-			};;
+			};
 		},
 		handleMissingModules(missingModules) {
 			Modals.showMissingModulesModal(missingModules);
@@ -538,7 +536,7 @@ const AddonManager = (() => {
 				this.getPlugin = () => class BrokenAddon {
 					stop() {}
 					start() {
-						BdApi.alert("Missing library", [`**ZeresPluginLibrary** is needed to run **${config.info.name}**.`,
+						API.alert("Missing library", [`**ZeresPluginLibrary** is needed to run **${config.info.name}**.`,
 							"Please download it from the officiel website",
 							"https://betterdiscord.app/plugin/ZeresPluginLibrary"
 						]);
