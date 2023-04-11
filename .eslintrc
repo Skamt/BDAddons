@@ -5,10 +5,13 @@
     },
     "extends": [
         "eslint:recommended",
-        "plugin:react/recommended"
+        "plugin:react/recommended",
+        "plugin:react/jsx-runtime"
     ],
     "rules": {
-        "no-multiple-empty-lines":["error"]
+        "no-multiple-empty-lines": [
+            "error"
+        ]
     },
     "parserOptions": {
         "ecmaVersion": "latest"
@@ -17,6 +20,10 @@
         "react"
     ],
     "globals": {
+        "useEffect": "readonly",
+        "useState": "readonly",
+        "Utils": "readonly",
+        "Modules": "readonly",
         "require": "readonly",
         "BdApi": "readonly",
         "global": "readonly",
