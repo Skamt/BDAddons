@@ -1,6 +1,6 @@
 # BetterDiscordPlugins
 
-npm run build a : to build all plugins
+npm run build all : to build all plugins
 
 npm run build : while in directory of a plugin to build only that plugin
 
