@@ -88,7 +88,7 @@ function main(API) {
 			const IMG_WIDTH = 4096;
 
 			// Components
-			const ErrorBoundary = require("components/ErrorBoundary.jsx");
+			require("components/ErrorBoundary.jsx");
 			const ErrorComponent = require("components/ErrorComponent.jsx");
 			const ViewProfilePictureButtonComponent = require("components/ViewProfilePictureButtonComponent.jsx");
 			const DisplayCarouselComponent = require("components/DisplayCarouselComponent.jsx");

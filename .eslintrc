@@ -20,9 +20,7 @@
         "react"
     ],
     "globals": {
-        "useEffect": "readonly",
-        "useState": "readonly",
-        "Utils": "readonly",
+        "config": "readonly",
         "Modules": "readonly",
         "require": "readonly",
         "BdApi": "readonly",

@@ -169,7 +169,7 @@ function main(API) {
 			}
 
 			// Components
-			const ErrorBoundary = require("components/ErrorBoundary.jsx");
+			require("components/ErrorBoundary.jsx");
 			const LazyLoaderComponent = require("components/LazyLoaderComponent.jsx");
 			const settingComponent = (props) => {
 				const [enabled, setEnabled] = useState(props.value);
