@@ -62,7 +62,7 @@ function main(API) {
 
 			// Components
 			require("components/ErrorBoundary.jsx");
-			const PreviewComponent = require("components/PreviewComponent.jsx");
+			const PreviewComponent = require("components/previewComponent.jsx");
 			const settingComponent = (props) => {
 				const [enabled, setEnabled] = useState(props.value);
 				return React.createElement(Modules.SwitchRow, {

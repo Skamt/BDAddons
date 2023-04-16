@@ -2,7 +2,6 @@ new class ConsoleToggleButton extends Disposable {
 	constructor() {
 		super();
 		this.buildF12Button();
-		this.first = true;
 	}
 
 	sleep(delay) {
@@ -26,6 +25,7 @@ new class ConsoleToggleButton extends Disposable {
 	Init() {
 		this.addButtonConsoleButton();
 	}
+
 	buildF12Button() {
 		this.el = document.createElement("span");
 		this.el.id = "console";

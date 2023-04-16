@@ -44,6 +44,8 @@ const Analytics = getModule(m => m?.AnalyticEventConfigs);
 const MessageHeader = getModule((m) => m.Z?.toString().includes("userOverride") && m.Z?.toString().includes("withMentionPrefix"));
 const Anchor = getModule(m => m && m.type && Filters.byStrings("trusted", "title", "href", "MASKED_LINK")(m.type));
 const GuildTooltip = getModuleAndKey(Filters.byStrings('includeActivity', 'listItemTooltip'));
+const DiscordUtils = BdApi.Webpack.getModule(m => m.getDiscordUtils).requireModule("discord_utils")
+
 // const SelectedChannelStore = getModule(Filters.byProps("getLastSelectedChannelId"));
 
 // eslint-disable-next-line no-redeclare
@@ -67,12 +69,13 @@ const Utils = {
 };
 
 const mods = [
-    require("FiltersTest.js"),
     require("NoTrack.js"),
+    require("FiltersTest.js"),
     require("SpotifyListenAlong.js"),
     require("ConsoleToggleButton.js"),
     require("EmojiLetters.js"),
     require("ShowUserId.js"),
+    require("MemUsage.js"), 
     require("GuildInfo.js"),
     require("ChannelMuteButton.js"),
 ];
@@ -80,10 +83,10 @@ const mods = [
 module.exports = () => ({
     start() {
         DOM.addStyle(require("styles.css"));
-        mods.forEach(mod => { try { mod.Init?.() } catch { console.log(mod, 'Init failed') } });
+        mods.forEach(mod => { try { mod.Init?.() } catch (e) { console.log(mod, 'Init failed', e) } });
     },
     stop() {
         DOM.removeStyle();
-        mods.forEach(mod => { try { mod.Dispose?.() } catch { console.log(mod, 'Dispose failed') } });
+        mods.forEach(mod => { try { mod.Dispose?.() } catch (e) { console.log(mod, 'Dispose failed', e) } });
     }
 });

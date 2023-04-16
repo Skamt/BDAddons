@@ -4,4 +4,4 @@ temp.txt
 *.TODO
 test.js
 misc
-src/plugins/PermissionsOverride/
+**/PermissionsOverride/**

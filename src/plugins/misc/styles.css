@@ -1,10 +1,11 @@
-
+#memUsage,
 #console {
 	display: inline-block;
 	text-transform: none;
 	position: relative;
 	font-weight: bold;
 	top: -5px;
+	margin-left: 5px;
 	cursor: pointer;
 	font-size: 14px;
 	font-family: "Noto Sans";
