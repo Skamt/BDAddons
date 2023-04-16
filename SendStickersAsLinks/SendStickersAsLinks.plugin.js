@@ -308,7 +308,7 @@ function main(API) {
 
 				patchGetStickerById() {
 					if (Modules.StickerModule)
-						Patcher.after(Modules.StickerModule, Modules.StickerModule.key, (_, args, returnValue) => {
+						Patcher.after(Modules.StickerModule.module, Modules.StickerModule.key, (_, args, returnValue) => {
 							const { size, sticker } = returnValue.props.children[0].props;
 							if (size === 96) {
 								if (this.settings.shouldHighlightAnimated && !Utils.isLottieSticker(sticker) && Utils.isAnimatedSticker(sticker)) {
