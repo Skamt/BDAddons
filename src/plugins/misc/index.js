@@ -1,35 +1,69 @@
 const {
-    UI,
-    DOM,
-    Data,
-    Patcher,
-    React,
-    Webpack: { Filters, getModule }
+	UI,
+	DOM,
+	Data,
+	Patcher,
+	React,
+	Webpack: { Filters, getModule }
 } = new BdApi(config.info.name);
 
-const nop = () => { };
+const nop = () => {};
 
 class Disposable {
-    constructor() {
-        this.patches = [];
-    }
+	constructor() {
+		this.patches = [];
+	}
 
-    Dispose() {
-        this.patches?.forEach(p => p?.());
-        this.patches = null;
-    }
+	Dispose() {
+		this.patches?.forEach(p => p?.());
+		this.patches = null;
+	}
 }
 
-// https://discord.com/channels/86004744966914048/196782758045941760/1062604534922367107
 function getModuleAndKey(filter) {
-    let module;
-    const target = getModule((entry, m) => filter(entry) ? (module = m) : false, { searchExports: true });
-    module = module?.exports;
-    if (!module) return undefined;
-    const key = Object.keys(module).find(k => module[k] === target);
-    if (!key) return undefined;
-    return { module, key };
+	let module;
+	const target = getModule((entry, m) => filter(entry) ? (module = m) : false, { searchExports: true });
+	module = module?.exports;
+	if (!module) return undefined;
+	const key = Object.keys(module).find(k => module[k] === target);
+	if (!key) return undefined;
+	return { module, key };
 }
+
+const Utils = {
+	showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type: type || "success" }),
+	copy: (data) => {
+		DiscordNative.clipboard.copy(data);
+		Utils.showToast(`${data} Copied!`, "success");
+	},
+	sleep: delay => new Promise(done => setTimeout(() => done(), delay * 1000)),
+	canSendMessage: (channel) => Permissions?.can({
+		permission: DiscordPermissions.SEND_MESSAGES,
+		context: channel,
+		user: UserStore.getCurrentUser()
+	}),
+	prettyfiyBytes: (bytes, si = false, dp = 1) => {
+		const thresh = si ? 1000 : 1024;
+
+		if (Math.abs(bytes) < thresh) {
+			return bytes + ' B';
+		}
+
+		const units = si ? ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'] : ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
+		let u = -1;
+		const r = 10 ** dp;
+
+		do {
+			bytes /= thresh;
+			++u;
+		} while (Math.round(Math.abs(bytes) * r) / r >= thresh && u < units.length - 1);
+
+
+		return bytes.toFixed(dp) + ' ' + units[u];
+	}
+};
+
+require('Devtools.js');
 
 const electron = require('electron');
 const ChannelComponent = getModuleAndKey(DiscordModules.ChannelComponent);
@@ -44,49 +78,31 @@ const Analytics = getModule(m => m?.AnalyticEventConfigs);
 const MessageHeader = getModule((m) => m.Z?.toString().includes("userOverride") && m.Z?.toString().includes("withMentionPrefix"));
 const Anchor = getModule(m => m && m.type && Filters.byStrings("trusted", "title", "href", "MASKED_LINK")(m.type));
 const GuildTooltip = getModuleAndKey(Filters.byStrings('includeActivity', 'listItemTooltip'));
-const DiscordUtils = BdApi.Webpack.getModule(m => m.getDiscordUtils).requireModule("discord_utils")
-
+const DiscordUtils = BdApi.Webpack.getModule(m => m.getDiscordUtils)
 // const SelectedChannelStore = getModule(Filters.byProps("getLastSelectedChannelId"));
-
-// eslint-disable-next-line no-redeclare
 const Permissions = DiscordModules.Permissions;
 const DiscordPermissions = DiscordModules.DiscordPermissions;
-
 const ChannelSettings = BdApi.Webpack.getModule(m => m.Z.updateChannelOverrideSettings).Z;
-// Helper functions
-const Utils = {
-    showToast: (content, type) => UI.showToast(`[${config.info.name}] ${content}`, { type: type || "success" }),
-    copy: (data) => {
-        DiscordNative.clipboard.copy(data);
-        Utils.showToast(`${data} Copied!`, "success");
-    },
-    sleep: delay => new Promise(done => setTimeout(() => done(), delay * 1000)),
-    canSendMessage: (channel) => Permissions?.can({
-        permission: DiscordPermissions.SEND_MESSAGES,
-        context: channel,
-        user: UserStore.getCurrentUser()
-    })
-};
 
 const mods = [
-    require("NoTrack.js"),
-    require("FiltersTest.js"),
-    require("SpotifyListenAlong.js"),
-    require("ConsoleToggleButton.js"),
-    require("EmojiLetters.js"),
-    require("ShowUserId.js"),
-    require("MemUsage.js"), 
-    require("GuildInfo.js"),
-    require("ChannelMuteButton.js"),
+	require("NoTrack.js"),
+	require("FiltersTest.js"),
+	require("SpotifyListenAlong.js"),
+	require("ConsoleToggleButton.js"),
+	require("EmojiLetters.js"),
+	require("ShowUserId.js"),
+	require("MemUsage.js"),
+	require("GuildInfo.js"),
+	require("ChannelMuteButton.js"),
 ];
 
 module.exports = () => ({
-    start() {
-        DOM.addStyle(require("styles.css"));
-        mods.forEach(mod => { try { mod.Init?.() } catch (e) { console.log(mod, 'Init failed', e) } });
-    },
-    stop() {
-        DOM.removeStyle();
-        mods.forEach(mod => { try { mod.Dispose?.() } catch (e) { console.log(mod, 'Dispose failed', e) } });
-    }
+	start() {
+		DOM.addStyle(require("styles.css"));
+		mods.forEach(mod => { try { mod.Init?.() } catch (e) { console.log(mod, 'Init failed', e) } });
+	},
+	stop() {
+		DOM.removeStyle();
+		mods.forEach(mod => { try { mod.Dispose?.() } catch (e) { console.log(mod, 'Dispose failed', e) } });
+	}
 });
