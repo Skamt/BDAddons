@@ -12,8 +12,7 @@ import STRINGS from "../Constants"
 import {
 	getStickerUrl,
 	isAnimatedSticker,
-	handleSticker,
-	isStickerSendable
+	handleSticker
 } from "../Utils";
 
 

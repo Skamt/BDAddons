@@ -2,7 +2,7 @@ import css from "./styles";
 import Settings from "@Utils/Settings";
 import Logger from "@Utils/Logger";
 import { DOM, Patcher } from "@Api";
-import { getNestedProp, MissingZlibAddon } from "@Utils";
+import { MissingZlibAddon } from "@Utils";
 
 import patchStickerClickability from "./patches/patchStickerClickability";
 import patchSendSticker from "./patches/patchSendSticker";

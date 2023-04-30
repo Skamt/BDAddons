@@ -1,5 +1,5 @@
 import css from "./styles";
-import { DOM, Patcher, findInTree, getInternalInstance } from "@Api";
+import { DOM, Patcher,  getInternalInstance } from "@Api";
 
 import { MissingZlibAddon } from "@Utils";
 import { hasEmbedPerms } from "@Utils/Permissions"
@@ -8,9 +8,7 @@ import Toast from "@Utils/Toast"
 import UserStore from "@Stores/UserStore";
 import ChannelStore from "@Stores/ChannelStore";
 import SelectedChannelStore from "@Stores/SelectedChannelStore";
-import PendingReplyStore from "@Stores/PendingReplyStore";
 
-import Dispatcher from "@Modules/Dispatcher";
 import { sendMessageDirectly, insertText } from "@Utils/Messages";
 
 import EmojiIntentionEnum from "@Enums/EmojiIntentionEnum";

@@ -69,14 +69,14 @@ async function build(list) {
 
 		console.log(`\n${config.info.name}`);
 
-		try {
+		// try {
 			const bundle = await rollup(rollupConfig.input);
 			await bundle.write(rollupConfig.output);
 			console.log(`${config.info.name} built successfully`);
-		} catch (e) {
-			console.log(e.toString());
-			console.log(`${config.info.name} Error During build`);
-		}
+		// } catch (e) {
+		// 	console.log(e.toString());
+		// 	console.log(`${config.info.name} Error During build`);
+		// }
 
 
 		console.log("===========================================================");

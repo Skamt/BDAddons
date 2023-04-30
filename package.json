@@ -7,13 +7,14 @@
 		"build": "node builder/index.js build",
 		"dev": "node builder/index.js dev",
 		"all": "node builder/index.js all",
-		"inspect": "node --inspect-brk=5858 builder/index.js"
+		"inspect": "node --inspect-brk=5858 builder/index.js build"
 	},
 	"devDependencies": {
 		"@babel/plugin-transform-react-jsx": "^7.21.0",
 		"@babel/plugin-transform-runtime": "^7.21.4",
 		"@rollup/plugin-alias": "^5.0.0",
 		"@rollup/plugin-babel": "^6.0.3",
+		"@rollup/plugin-eslint": "^9.0.3",
 		"@rollup/plugin-node-resolve": "^15.0.2",
 		"@rollup/plugin-sucrase": "^5.0.1",
 		"eslint-plugin-react": "^7.32.2",

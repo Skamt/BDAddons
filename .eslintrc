@@ -15,7 +15,9 @@
 		"no-multiple-empty-lines": ["error"]
 	},
 	"parserOptions": {
-		"ecmaVersion": "latest"
+		"ecmaVersion": "latest",
+		"sourceType": "module",
+		"allowImportExportEverywhere": true
 	},
 	"settings": {
 		"react": {

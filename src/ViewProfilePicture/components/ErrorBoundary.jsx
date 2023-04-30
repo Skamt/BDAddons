@@ -23,4 +23,4 @@ export default class ErrorBoundary extends React.Component {
 			}
 		} else return this.props.children;
 	}
-};
+}

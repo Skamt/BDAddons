@@ -12,4 +12,4 @@ export default class ErrorBoundary extends React.Component {
 	render() {	
 		return this.state.hasError ? (this.props.fallback || <b style={{color:"red"}}>Error occured while rendering</b>) : this.props.children;
 	}
-};
+}

@@ -58,8 +58,6 @@ export function reRender(selector) {
 
 export const nop = () => {};
 
-
-
 export function isSelf(user) {
 	const currentUser = UserStore.getCurrentUser();
 	return user?.id === currentUser?.id;

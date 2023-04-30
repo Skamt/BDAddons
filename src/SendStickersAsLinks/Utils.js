@@ -1,6 +1,5 @@
 import StickerTypeEnum from "@Enums/StickerTypeEnum";
 import StickerFormatEnum from "@Enums/StickerFormatEnum";
-import DiscordPermissionsEnum from "@Enums/DiscordPermissionsEnum";
 import StickersSendabilityEnum from "@Enums/StickersSendabilityEnum";
 
 import UserStore from "@Stores/UserStore";
