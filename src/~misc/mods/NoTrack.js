@@ -44,6 +44,7 @@ export default class NoTrack extends Disposable {
 	}
 
 	once() {
+		DiscordUtils.setObservedGamesCallback([], nop);
 		DiscordUtils.setObservedGamesCallback = nop;
 		Analytics.default.track = nop;
 		this.once = nop;

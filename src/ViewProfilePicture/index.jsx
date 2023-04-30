@@ -1,4 +1,5 @@
 import css from "./styles";
+import shouldChangelog from "@Utils/Changelog";
 
 import { Data, DOM, React, Patcher } from "@Api";
 import { getNestedProp, isSelf } from "@Utils";
@@ -106,6 +107,7 @@ export default class ViewProfilePicture {
 	start() {
 		try {
 			DOM.addStyle(css);
+			shouldChangelog()?.();
 			this.patchUserBannerMask();
 		} catch (e) {
 			Logger.error(e);
