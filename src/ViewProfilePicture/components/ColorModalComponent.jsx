@@ -1,5 +1,6 @@
 import { React } from "@Api";
-import { copy, showToast } from "@Utils";
+import { copy,  } from "@Utils";
+import Toast from "@Utils/Toast";
 
 export default ({ color }) => (
 	<div
@@ -9,7 +10,7 @@ export default ({ color }) => (
 			className="copyColorBtn"
 			onClick={() => {
 				copy(color);
-				showToast(`${color} Copied!`, "success");
+				Toast.success(`${color} Copied!`);
 			}}>
 			Copy Color
 		</a>

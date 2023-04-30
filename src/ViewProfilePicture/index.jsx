@@ -1,6 +1,6 @@
 import css from "./styles";
 
-import { UI, Data, DOM, React, Patcher } from "@Api";
+import { Data, DOM, React, Patcher } from "@Api";
 import { getNestedProp, isSelf } from "@Utils";
 import Logger from "@Utils/Logger";
 

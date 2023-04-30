@@ -1,12 +1,12 @@
 import { Patcher } from "@Api";
 import Logger from "@Utils/Settings";
-import Permissions from "@Modules/Permissions";
-import DiscordPermissions from "@Enums/DiscordPermissions";
+import DiscordPermissions from "@Modules/DiscordPermissions";
+import DiscordPermissionsEnum from "@Enums/DiscordPermissionsEnum";
 
 export default () => {
-	if (Permissions)
-		Patcher.after(Permissions, "can", (_, [{ permission }], ret) =>
-			ret || DiscordPermissions.USE_EXTERNAL_EMOJIS === permission
+	if (DiscordPermissions)
+		Patcher.after(DiscordPermissions, "can", (_, [{ permission }], ret) =>
+			ret || DiscordPermissionsEnum.USE_EXTERNAL_EMOJIS === permission
 		);
 	else Logger.patch("patchChannelGuildPermissions");
 }

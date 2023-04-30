@@ -21,4 +21,4 @@ export const useState = Api.React.useState;
 export const useEffect = Api.React.useEffect;
 
 // Utils
-export const findInTree = Api.React.findInTree;
+export const findInTree = Api.Utils.findInTree;

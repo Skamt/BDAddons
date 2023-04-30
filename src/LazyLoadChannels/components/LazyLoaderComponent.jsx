@@ -1,5 +1,6 @@
 import { React } from "@Api";
-import { showToast, reRender } from "@Utils";
+import { reRender } from "@Utils";
+import Toast from "@Utils/Toast";
 import MessageActions from "@Modules/MessageActions";
 import ChannelsStateManager from "../ChannelsStateManager";
 import Switch from "@Components/Switch";
@@ -50,10 +51,10 @@ export default ({ channel, loadChannel, messages }) => {
 	}, [messages.length]);
 
 	const loadMessagesHandler = () => {
-		if (channelStats.messages) showToast("Messages are alreayd Loaded!!", "warning");
+		if (channelStats.messages) Toast.warning("Messages are alreayd Loaded!!");
 		else
 			loadChannelMessages(channel).then(() => {
-				showToast("Messages are Loaded!!", "success");
+				Toast.success("Messages are Loaded!!");
 				startBlinking();
 			});
 	};

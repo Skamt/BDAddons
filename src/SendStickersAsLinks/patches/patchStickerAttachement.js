@@ -1,7 +1,8 @@
 import { Patcher } from "@Api";
 import Logger from "@Utils/Logger";
-import { handleSticker, sendMessage } from "../Utils";
+import { handleSticker } from "../Utils";
 import MessageActions from "@Modules/MessageActions";
+import { sendMessageDirectly } from "@Utils/Messages";
 
 export default () => {
 	/**
@@ -19,7 +20,7 @@ export default () => {
 				if (!stickerObj.isSendable) {
 					delete args[3].stickerIds;
 					setTimeout(() => {
-						sendMessage(stickerObj);
+						sendMessageDirectly(stickerObj);
 					}, 0);
 				}
 			}

@@ -17,11 +17,14 @@ const arg = process.argv.slice(2)[0];
 
 switch (arg) {
 	case "dev":
-		return dev();
+		dev();
+		break;
 	case "build":
-		return buildTarget();
+		buildTarget();
+		break;
 	case "all":
-		return buildAll();
+		buildAll();
+		break;
 	default:
 		process.exit(0);
 }
@@ -66,10 +69,16 @@ async function build(list) {
 
 		console.log(`\n${config.info.name}`);
 
-		const bundle = await rollup(rollupConfig.input);
-		await bundle.write(rollupConfig.output);
+		try {
+			const bundle = await rollup(rollupConfig.input);
+			await bundle.write(rollupConfig.output);
+			console.log(`${config.info.name} built successfully`);
+		} catch (e) {
+			console.log(e.toString());
+			console.log(`${config.info.name} Error During build`);
+		}
 
-		console.log(`${config.info.name} built successfully`);
+
 		console.log("===========================================================");
 	}
 	console.timeEnd("Build took");
@@ -97,7 +106,7 @@ function dev() {
 		...rollupConfig.input,
 		output: rollupConfig.output,
 		watch: {
-			include: `${pluginFolder}/**`
+			include: [`${pluginFolder}/**`, `${projectPath}/common/**`]
 		}
 		// plugins: [...rollupConfig.output.plugins, ...rollupConfig.input.plugins]
 	});

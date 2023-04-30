@@ -1,5 +1,6 @@
 import { React } from "@Api";
-import { copy, showToast } from "@Utils";
+import { copy } from "@Utils";
+import Toast from "@Utils/Toast";
 
 export default ({ href }) => {
 	return (
@@ -9,7 +10,7 @@ export default ({ href }) => {
 				className="copyBtn"
 				onClick={() => {
 					copy(href);
-					showToast("Link Copied!", "success");
+					Toast.success("Link Copied!");
 				}}>
 				Copy link
 			</a>

@@ -1,5 +1,9 @@
 {
 	"Modules": {
+		"EmojiFunctions": {
+			"filter": "Filters.byProps(\"getEmojiUnavailableReason\")",
+			"options": "{ searchExports: true }"
+		},
 		"MessageHeader": {
 			"filter": "Filters.byStrings(\"userOverride\", \"withMentionPrefix\")",
 			"options": "{ searchExports: false }"
@@ -28,7 +32,7 @@
 			"filter": "Filters.byStrings(\"sticker\", \"withLoadingIndicator\")",
 			"options": "{ searchExports: false }"
 		},
-		"Permissions": {
+		"DiscordPermissions": {
 			"filter": "Filters.byProps(\"computePermissions\")",
 			"options": "{ searchExports: false }"
 		},
@@ -102,12 +106,38 @@
 		}
 	},
 	"Enums": {
-		"DiscordPermissions": {
+		"EmojiSendAvailabilityEnum": {
+			"filter": "Filters.byProps(\"GUILD_SUBSCRIPTION_UNAVAILABLE\")",
+			"options": "{ searchExports: true }",
+			"fallback": {
+				"DISALLOW_EXTERNAL": 0,
+				"GUILD_SUBSCRIPTION_UNAVAILABLE": 1,
+				"PREMIUM_LOCKED": 2,
+				"ONLY_GUILD_EMOJIS_ALLOWED": 3,
+				"ROLE_SUBSCRIPTION_LOCKED": 4,
+				"ROLE_SUBSCRIPTION_UNAVAILABLE": 5
+			}
+		},
+		"EmojiIntentionEnum": {
+			"filter": "Filters.byProps(\"GUILD_ROLE_BENEFIT_EMOJI\")",
+			"options": "{ searchExports: true }",
+			"fallback": {
+				"REACTION": 0,
+				"STATUS": 1,
+				"COMMUNITY_CONTENT": 2,
+				"CHAT": 3,
+				"GUILD_STICKER_RELATED_EMOJI": 4,
+				"GUILD_ROLE_BENEFIT_EMOJI": 5,
+				"COMMUNITY_CONTENT_ONLY": 6,
+				"SOUNDBOARD": 7
+			}
+		},
+		"DiscordPermissionsEnum": {
 			"filter": "Filters.byProps(\"ADD_REACTIONS\")",
 			"options": "{ searchExports: true }",
-			"fallback": { 
-				"EMBED_LINKS": "16384n", 
-				"USE_EXTERNAL_EMOJIS": "262144n" 
+			"fallback": {
+				"EMBED_LINKS": "16384n",
+				"USE_EXTERNAL_EMOJIS": "262144n"
 			}
 		},
 		"StickerTypeEnum": {

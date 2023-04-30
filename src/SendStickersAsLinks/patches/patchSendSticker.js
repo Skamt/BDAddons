@@ -1,8 +1,11 @@
 import { Patcher } from "@Api";
+
 import Settings from "@Utils/Settings";
 import Logger from "@Utils/Logger";
-import { showToast, insertText } from "@Utils";
+import Toast from "@Utils/Toast";
+import { sendMessageDirectly, insertText } from "@Utils/Messages";
 
+import { hasEmbedPerms } from "@Utils/Permissions"
 import MessageActions from "@Modules/MessageActions";
 import STRINGS from "../Constants"
 
@@ -10,29 +13,26 @@ import {
 	getStickerUrl,
 	isAnimatedSticker,
 	handleSticker,
-	hasEmbedPerms,
-	sendMessage,
 	isStickerSendable
 } from "../Utils";
 
 
-
 function sendStickerAsLink(sticker, channel) {
-	if (Settings.get("sendDirectly"))
-		sendMessage({ sticker, channel });
-	else
-		insertText(getStickerUrl(sticker.id, Settings.get("stickerSize")));
+	const content = getStickerUrl(sticker.id, Settings.get("stickerSize"));
+	if (Settings.get("sendDirectly")) {
+		try { return sendMessageDirectly(channel, content); } catch { Toast.error("Could not send directly."); }
+	}
+	insertText(content);
 }
 
 function handleUnsendableSticker({ user, sticker, channel }) {
 	if (isAnimatedSticker(sticker) && !Settings.get("shouldSendAnimatedStickers"))
-		return showToast(STRINGS.disabledAnimatedStickersErrorMessage, "info");
+		return Toast.info(STRINGS.disabledAnimatedStickersErrorMessage);
 	if (!hasEmbedPerms(channel, user) && !Settings.get("ignoreEmbedPermissions"))
-		return showToast(STRINGS.missingEmbedPermissionsErrorMessage, "info");
+		return Toast.info(STRINGS.missingEmbedPermissionsErrorMessage);
 
 	sendStickerAsLink(sticker, channel);
 }
-
 
 
 export default () => {
