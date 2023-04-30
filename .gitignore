@@ -3,5 +3,5 @@ release
 temp.txt
 *.TODO
 test.js
-misc
+~misc
 **/PermissionsOverride/**
