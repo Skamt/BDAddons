@@ -4,7 +4,7 @@
 	"description": "Mitt BD Stuff",
 	"main": "index.js",
 	"scripts": {
-		"build": "node builder/index.js",
+		"build": "node builder/index.js build",
 		"dev": "node builder/index.js dev",
 		"all": "node builder/index.js all",
 		"inspect": "node --inspect-brk=5858 builder/index.js"

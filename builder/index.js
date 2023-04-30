@@ -60,7 +60,7 @@ async function build(list) {
 		}
 
 		const config = mergeDeep(require(pluginConfig), baseConfig);
-		const buildFile = path.join(releaseFolder, name, `${config.info.name}.plugin.js`);
+		const buildFile = path.join(releaseFolder, config.info.name, `${config.info.name}.plugin.js`);
 
 		const rollupConfig = getConfig(path.resolve(pluginFolder, 'index'), buildFile, config);
 
