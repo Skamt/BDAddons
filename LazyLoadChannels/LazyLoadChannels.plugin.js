@@ -352,10 +352,6 @@ class ErrorBoundary extends React.Component {
 	}
 }
 
-function showToast(content, type) {
-	UI.showToast(`[${config.info.name}] ${content}`, { type });
-}
-
 function reRender(selector) {
 	const target = document.querySelector(selector)?.parentElement;
 	if (!target) return;
@@ -363,6 +359,17 @@ function reRender(selector) {
 	const unpatch = Patcher.instead(instance, 'render', () => unpatch());
 	instance.forceUpdate(() => instance.forceUpdate());
 }
+
+function showToast(content, type) {
+	UI.showToast(`[${config.info.name}] ${content}`, { type });
+}
+
+const Toast = {
+	success(content) { showToast(content, "success"); },
+	info(content) { showToast(content, "info"); },
+	warning(content) { showToast(content, "warning"); },
+	error(content) { showToast(content, "error"); }
+};
 
 const MessageActions = getModule(Filters.byProps('jumpToMessage', '_sendMessage'), { searchExports: false });
 
@@ -414,10 +421,10 @@ const LazyLoaderComponent = ({ channel, loadChannel, messages }) => {
 	}, [messages.length]);
 
 	const loadMessagesHandler = () => {
-		if (channelStats.messages) showToast("Messages are alreayd Loaded!!", "warning");
+		if (channelStats.messages) Toast.warning("Messages are alreayd Loaded!!");
 		else
 			loadChannelMessages(channel).then(() => {
-				showToast("Messages are Loaded!!", "success");
+				Toast.success("Messages are Loaded!!");
 				startBlinking();
 			});
 	};

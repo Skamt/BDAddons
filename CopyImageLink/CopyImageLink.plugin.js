@@ -83,10 +83,6 @@ function getModuleAndKey(filter, options) {
 	return { module, key };
 }
 
-function showToast(content, type) {
-	UI.showToast(`[${config.info.name}] ${content}`, { type });
-}
-
 function copy(data) {
 	DiscordNative.clipboard.copy(data);
 }
@@ -97,13 +93,24 @@ function getNestedProp(obj, path) {
 	}, obj);
 }
 
+function showToast(content, type) {
+	UI.showToast(`[${config.info.name}] ${content}`, { type });
+}
+
+const Toast = {
+	success(content) { showToast(content, "success"); },
+	info(content) { showToast(content, "info"); },
+	warning(content) { showToast(content, "warning"); },
+	error(content) { showToast(content, "error"); }
+};
+
 const CopyButtonComponent = ({ href }) => {
 	return (
 		React.createElement(React.Fragment, null, React.createElement('span', { className: "copyBtnSpan", }, "|"), React.createElement('a', {
 				className: "copyBtn",
 				onClick: () => {
 					copy(href);
-					showToast("Link Copied!", "success");
+					Toast.success("Link Copied!");
 				},
 			}, "Copy link"
 

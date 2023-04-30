@@ -133,10 +133,27 @@ function getModuleAndKey(filter, options) {
 	return { module, key };
 }
 
+const Dispatcher = getModule(Filters.byProps("dispatch", "subscribe"), { searchExports: false });
+
 const UserStore = getModule(m => m._dispatchToken && m.getName() === "UserStore");
 
-function showToast(content, type) {
-	UI.showToast(`[${config.info.name}] ${content}`, { type });
+const PendingReplyStore = getModule(m => m._dispatchToken && m.getName() === "PendingReplyStore");
+
+function getReply(channelId) {
+	const reply = PendingReplyStore?.getPendingReply(channelId);
+	if (!reply) return {};
+	Dispatcher?.dispatch({ type: "DELETE_PENDING_REPLY", channelId });
+	return {
+		messageReference: {
+			guild_id: reply.channel.guild_id,
+			channel_id: reply.channel.id,
+			message_id: reply.message.id
+		},
+		allowedMentions: reply.shouldMention ? undefined : {
+			parse: ["users", "roles", "everyone"],
+			replied_user: false
+		}
+	}
 }
 
 class MissingZlibAddon {
@@ -148,18 +165,6 @@ class MissingZlibAddon {
 		]);
 	}
 }
-
-const insertText = (() => {
-	let ComponentDispatch;
-	return (content) => {
-		if (!ComponentDispatch) ComponentDispatch = getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners('INSERT_TEXT').length, { searchExports: true });
-		setTimeout(() => {
-			ComponentDispatch.dispatchToLastSubscribed("INSERT_TEXT", {
-				plainText: content
-			});
-		});
-	}
-})();
 
 const isStickerSendable$1 = getModuleAndKey(Filters.byStrings("=r.SENDABLE"), { searchExports: true });
 
@@ -181,7 +186,55 @@ const patchStickerClickability = () => {
 	else Logger.patch("patchStickerClickability");
 };
 
+function showToast(content, type) {
+	UI.showToast(`[${config.info.name}] ${content}`, { type });
+}
+
+const Toast = {
+	success(content) { showToast(content, "success"); },
+	info(content) { showToast(content, "info"); },
+	warning(content) { showToast(content, "warning"); },
+	error(content) { showToast(content, "error"); }
+};
+
 const MessageActions = getModule(Filters.byProps('jumpToMessage', '_sendMessage'), { searchExports: false });
+
+function sendMessageDirectly(channel, content) {
+	if (MessageActions)
+		MessageActions.sendMessage(channel.id, {
+			validNonShortcutEmojis: [],
+			content
+		}, undefined, getReply(channel.id));
+	else
+		throw new Error("Can't send message directly.");
+}
+
+const insertText = (() => {
+	let ComponentDispatch;
+	return (content) => {
+		if (!ComponentDispatch) ComponentDispatch = getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners('INSERT_TEXT').length, { searchExports: true });
+		setTimeout(() => {
+			ComponentDispatch.dispatchToLastSubscribed("INSERT_TEXT", {
+				plainText: content
+			});
+		});
+	}
+})();
+
+const DiscordPermissions = getModule(Filters.byProps("computePermissions"), { searchExports: false });
+
+const DiscordPermissionsEnum = getModule(Filters.byProps("ADD_REACTIONS"), { searchExports: true }) || {
+	"EMBED_LINKS": "16384n",
+	"USE_EXTERNAL_EMOJIS": "262144n"
+};
+
+function hasEmbedPerms(channel, user) {
+	return !channel.guild_id || DiscordPermissions?.can({
+		permission: DiscordPermissionsEnum.EMBED_LINKS,
+		context: channel,
+		user
+	});
+}
 
 const STRINGS = {
 	sendLottieStickerErrorMessage: "Official Discord Stickers are not supported.",
@@ -196,11 +249,6 @@ const StickerFormatEnum = getModule(Filters.byProps("APNG", "LOTTIE"), { searchE
 	"GIF": 4
 };
 
-const DiscordPermissions = getModule(Filters.byProps("ADD_REACTIONS"), { searchExports: true }) || {
-	"EMBED_LINKS": "16384n",
-	"USE_EXTERNAL_EMOJIS": "262144n"
-};
-
 const StickersSendabilityEnum = getModule(Filters.byProps("SENDABLE_WITH_BOOSTED_GUILD"), { searchExports: true }) || {
 	"SENDABLE": 0,
 	"SENDABLE_WITH_PREMIUM": 1,
@@ -212,47 +260,12 @@ const StickersStore = getModule(m => m._dispatchToken && m.getName() === "Sticke
 
 const ChannelStore = getModule(m => m._dispatchToken && m.getName() === "ChannelStore");
 
-const PendingReplyStore = getModule(m => m._dispatchToken && m.getName() === "PendingReplyStore");
-
-const Permissions = getModule(Filters.byProps("computePermissions"), { searchExports: false });
-
 const getStickerSendability$1 = getModuleAndKey(Filters.byStrings("canUseStickersEverywhere"), { searchExports: true });
 
 const getStickerSendability = getStickerSendability$1.module[getStickerSendability$1.key];
 
-function getReply(channelId) {
-	const reply = PendingReplyStore?.getPendingReply(channelId);
-	if (!reply) return {};
-	return {
-		messageReference: {
-			guild_id: reply.channel.guild_id,
-			channel_id: reply.channel.id,
-			message_id: reply.message.id
-		},
-		allowedMentions: reply.shouldMention ? undefined : {
-			parse: ["users", "roles", "everyone"],
-			replied_user: false
-		}
-	}
-}
-
-function sendMessage({ sticker, channel }) {
-	MessageActions.sendMessage(channel.id, {
-		content: getStickerUrl(sticker.id, Settings.get("stickerSize")),
-		validNonShortcutEmojis: []
-	}, undefined, getReply(channel.id));
-}
-
 function getStickerUrl(stickerId, size) {
 	return `https://media.discordapp.net/stickers/${stickerId}?size=${size}&passthrough=false`;
-}
-
-function hasEmbedPerms(channel, user) {
-	return !channel.guild_id || Permissions?.can({
-		permission: DiscordPermissions.EMBED_LINKS,
-		context: channel,
-		user
-	});
 }
 
 function isAnimatedSticker(sticker) {
@@ -280,17 +293,18 @@ function handleSticker(channelId, stickerId) {
 }
 
 function sendStickerAsLink(sticker, channel) {
-	if (Settings.get("sendDirectly"))
-		sendMessage({ sticker, channel });
-	else
-		insertText(getStickerUrl(sticker.id, Settings.get("stickerSize")));
+	const content = getStickerUrl(sticker.id, Settings.get("stickerSize"));
+	if (Settings.get("sendDirectly")) {
+		try { return sendMessageDirectly(channel, content); } catch { Toast.error("Could not send directly."); }
+	}
+	insertText(content);
 }
 
 function handleUnsendableSticker({ user, sticker, channel }) {
 	if (isAnimatedSticker(sticker) && !Settings.get("shouldSendAnimatedStickers"))
-		return showToast(STRINGS.disabledAnimatedStickersErrorMessage, "info");
+		return Toast.info(STRINGS.disabledAnimatedStickersErrorMessage);
 	if (!hasEmbedPerms(channel, user) && !Settings.get("ignoreEmbedPermissions"))
-		return showToast(STRINGS.missingEmbedPermissionsErrorMessage, "info");
+		return Toast.info(STRINGS.missingEmbedPermissionsErrorMessage);
 
 	sendStickerAsLink(sticker, channel);
 }
@@ -343,7 +357,7 @@ const patchStickerAttachement = () => {
 				if (!stickerObj.isSendable) {
 					delete args[3].stickerIds;
 					setTimeout(() => {
-						sendMessage(stickerObj);
+						sendMessageDirectly(stickerObj);
 					}, 0);
 				}
 			}
@@ -367,9 +381,9 @@ const patchStickerSuggestion = () => {
 };
 
 const patchChannelGuildPermissions = () => {
-	if (Permissions)
-		Patcher.after(Permissions, "can", (_, [{ permission }], ret) =>
-			ret || DiscordPermissions.USE_EXTERNAL_EMOJIS === permission
+	if (DiscordPermissions)
+		Patcher.after(DiscordPermissions, "can", (_, [{ permission }], ret) =>
+			ret || DiscordPermissionsEnum.USE_EXTERNAL_EMOJIS === permission
 		);
 	else Settings.patch("patchChannelGuildPermissions");
 };

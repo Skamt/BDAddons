@@ -160,10 +160,6 @@ function getModuleAndKey(filter, options) {
 
 const UserStore = getModule(m => m._dispatchToken && m.getName() === "UserStore");
 
-function showToast(content, type) {
-	UI.showToast(`[${config.info.name}] ${content}`, { type });
-}
-
 function copy(data) {
 	DiscordNative.clipboard.copy(data);
 }
@@ -214,6 +210,17 @@ const Color = getModule(Filters.byProps("cmyk", "hex", "hsl"), { searchExports: 
 
 const TheBigBoyBundle = getModule(Filters.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
 
+function showToast(content, type) {
+	UI.showToast(`[${config.info.name}] ${content}`, { type });
+}
+
+const Toast = {
+	success(content) { showToast(content, "success"); },
+	info(content) { showToast(content, "info"); },
+	warning(content) { showToast(content, "warning"); },
+	error(content) { showToast(content, "error"); }
+};
+
 const ColorModalComponent = ({ color }) => (
 	React.createElement('div', {
 		className: "VPP-NoBanner",
@@ -222,7 +229,7 @@ const ColorModalComponent = ({ color }) => (
 			className: "copyColorBtn",
 			onClick: () => {
 				copy(color);
-				showToast(`${color} Copied!`, "success");
+				Toast.success(`${color} Copied!`);
 			},
 		}, "Copy Color"
 
