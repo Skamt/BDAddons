@@ -1,0 +1,173 @@
+{
+	"Modules": {
+		"MessageHeader": {
+			"filter": "Filters.byStrings(\"userOverride\", \"withMentionPrefix\")",
+			"options": "{ searchExports: false }"
+		},
+		"Anchor": {
+			"filter": "m => m && m.type && Filters.byStrings(\"trusted\", \"title\", \"href\", \"MASKED_LINK\")(m.type)",
+			"options": "{ searchExports: false }"
+		},
+		"Analytics": {
+			"filter": "Filters.byProps(\"AnalyticEventConfigs\")",
+			"options": "{ searchExports: false }"
+		},
+		"DiscordUtils": {
+			"filter": "Filters.byProps(\"getDiscordUtils\")",
+			"options": "{ searchExports: false }"
+		},
+		"GuildTooltip": {
+			"filter": "Filters.byStrings(\"includeActivity\", \"listItemTooltip\")",
+			"options": "{ searchExports: false }"
+		},
+		"ChannelSettings": {
+			"filter": "Filters.byProps(\"updateChannelOverrideSettings\")",
+			"options": "{ searchExports: false }"
+		},
+		"StickerModule": {
+			"filter": "Filters.byStrings(\"sticker\", \"withLoadingIndicator\")",
+			"options": "{ searchExports: false }"
+		},
+		"Permissions": {
+			"filter": "Filters.byProps(\"computePermissions\")",
+			"options": "{ searchExports: false }"
+		},
+		"isStickerSendable": {
+			"filter": "Filters.byStrings(\"=r.SENDABLE\")",
+			"options": "{ searchExports: true }"
+		},
+		"getStickerSendability": {
+			"filter": "Filters.byStrings(\"canUseStickersEverywhere\")",
+			"options": "{ searchExports: true }"
+		},
+		"CloseExpressionPicker": {
+			"filter": "Filters.byStrings(\"activeView:null,activeViewType:null\")",
+			"options": "{ searchExports: true }"
+		},
+		"ExpressionPickerInspector": {
+			"filter": "Filters.byStrings(\"EMOJI_IS_FAVORITE_ARIA_LABEL\")",
+			"options": "{ searchExports: false }"
+		},
+		"MessageActions": {
+			"filter": "Filters.byProps('jumpToMessage', '_sendMessage')",
+			"options": "{ searchExports: false }"
+		},
+		"CreateChannel": {
+			"filter": "m => m.createChannel",
+			"options": "{ searchExports: false }"
+		},
+		"ChannelContent": {
+			"filter": "m => m.type && m.type.toString?.().includes(\"showingSpamBanner\")",
+			"options": "{ searchExports: false }"
+		},
+		"ChannelComponent": {
+			"filter": "Filters.byStrings(\"canHaveDot\", \"isFavoriteSuggestion\", \"mentionCount\")",
+			"options": "{ searchExports: true }"
+		},
+		"ChannelActions": {
+			"filter": "Filters.byProps(\"actions\", \"fetchMessages\")",
+			"options": "{ searchExports: true }"
+		},
+		"Color": {
+			"filter": "Filters.byProps(\"cmyk\", \"hex\", \"hsl\")",
+			"options": "{ searchExports: false }"
+		},
+		"Dispatcher": {
+			"filter": "Filters.byProps(\"dispatch\", \"subscribe\")",
+			"options": "{ searchExports: false }"
+		},
+		"ImageModal": {
+			"filter": "Filters.byStrings(\"original\", \"maxHeight\", \"maxWidth\", \"noreferrer noopener\")",
+			"options": "{ searchExports: true }"
+		},
+		"ModalCarousel": {
+			"filter": "Filters.byPrototypeFields(\"navigateTo\", \"preloadImage\")",
+			"options": "{ searchExports: false }"
+		},
+		"ModalRoot": {
+			"filter": "Filters.byStrings(\"onAnimationEnd\")",
+			"options": "{ searchExports: true }"
+		},
+		"RenderLinkComponent": {
+			"filter": "m => m.type?.toString?.().includes(\"MASKED_LINK\")",
+			"options": "{ searchExports: false }"
+		},
+		"TheBigBoyBundle": {
+			"filter": "Filters.byProps(\"openModal\", \"FormSwitch\", \"Anchor\")",
+			"options": "{ searchExports: false }"
+		},
+		"UserBannerMask": {
+			"filter": "Filters.byStrings(\"overrideAvatarDecorationURL\")",
+			"options": "{ searchExports: true }"
+		}
+	},
+	"Enums": {
+		"DiscordPermissions": {
+			"filter": "Filters.byProps(\"ADD_REACTIONS\")",
+			"options": "{ searchExports: true }",
+			"fallback": { 
+				"EMBED_LINKS": "16384n", 
+				"USE_EXTERNAL_EMOJIS": "262144n" 
+			}
+		},
+		"StickerTypeEnum": {
+			"filter": "Filters.byProps(\"GUILD\", \"STANDARD\")",
+			"options": "{ searchExports: true }",
+			"fallback": {
+				"STANDARD": 1,
+				"GUILD": 2
+			}
+		},
+		"StickerFormatEnum": {
+			"filter": "Filters.byProps(\"APNG\", \"LOTTIE\")",
+			"options": "{ searchExports: true }",
+			"fallback": {
+				"PNG": 1,
+				"APNG": 2,
+				"LOTTIE": 3,
+				"GIF": 4
+			}
+		},
+		"StickersSendabilityEnum": {
+			"filter": "Filters.byProps(\"SENDABLE_WITH_BOOSTED_GUILD\")",
+			"options": "{ searchExports: true }",
+			"fallback": {
+				"SENDABLE": 0,
+				"SENDABLE_WITH_PREMIUM": 1,
+				"NONSENDABLE": 2,
+				"SENDABLE_WITH_BOOSTED_GUILD": 3
+			}
+		},
+		"ProfileTypeEnum": {
+			"filter": "Filters.byProps(\"POPOUT\", \"SETTINGS\")",
+			"options": "{ searchExports: true }",
+			"fallback": {
+				"POPOUT": 0,
+				"MODAL": 1,
+				"SETTINGS": 2,
+				"PANEL": 3,
+				"CARD": 4
+			}
+		},
+		"ChannelTypeEnum": {
+			"filter": "Filters.byProps(\"GUILD_TEXT\", \"DM\")",
+			"options": "{ searchExports: true }",
+			"fallback": {
+				"GUILD_TEXT": 0,
+				"DM": 1,
+				"GUILD_VOICE": 2,
+				"GROUP_DM": 3,
+				"GUILD_CATEGORY": 4,
+				"GUILD_ANNOUNCEMENT": 5,
+				"GUILD_STORE": 6,
+				"PUBLIC_THREAD": 11,
+				"PRIVATE_THREAD": 12,
+				"ANNOUNCEMENT_THREAD": 10,
+				"GUILD_STAGE_VOICE": 13,
+				"GUILD_DIRECTORY": 14,
+				"GUILD_FORUM": 15,
+				"UNKNOWN": 10000
+			}
+		}
+	}
+}
