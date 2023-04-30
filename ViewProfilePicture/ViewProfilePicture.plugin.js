@@ -17,10 +17,17 @@ const config = {
 		"authors": [{
 			"name": "Skamt"
 		}]
-	}
+	},
+	"changelog": [{
+		"title": "What's New?",
+		"type": "added",
+		"items": [
+			"VPP button can now bet set to show on hover."
+		]
+	}]
 }
 
-const css = `
+const css$1 = `
 /* Warning circle in popouts of users who left server overlaps VPP button */
 svg:has(path[d="M10 0C4.486 0 0 4.486 0 10C0 15.515 4.486 20 10 20C15.514 20 20 15.515 20 10C20 4.486 15.514 0 10 0ZM9 4H11V11H9V4ZM10 15.25C9.31 15.25 8.75 14.691 8.75 14C8.75 13.31 9.31 12.75 10 12.75C10.69 12.75 11.25 13.31 11.25 14C11.25 14.691 10.69 15.25 10 15.25Z"]){
 	top: 75px;
@@ -147,6 +154,103 @@ const Patcher = Api.Patcher;
 
 const getModule = Api.Webpack.getModule;
 const Filters = Api.Webpack.Filters;
+
+const css = `
+#changelog-container {
+	font-family: "gg sans", "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+	--added: #2dc770;
+	--improved: #949cf7;
+	--fixed: #f23f42;
+	--notice: #f0b132;
+	color:white;
+
+    padding: 10px;
+    max-width: 450px;
+}
+#changelog-container .title {
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    font-weight: 700;
+    margin-top: 20px;
+	color: var(--c);
+}
+#changelog-container .title:after {
+    content: "";
+    height: 1px;
+    flex: 1 1 auto;
+    margin-left: 8px;
+    opacity: .6;
+    background: currentColor;
+}
+#changelog-container ul {
+    list-style: none;
+    margin: 20px 0 8px 20px;
+}
+#changelog-container ul > li {
+    position:relative;
+    line-height: 20px;
+    margin-bottom: 8px;
+    color: #c4c9ce;
+}
+#changelog-container ul > li:before {
+    content: "";
+    position: absolute;
+    background:currentColor;
+    top: 10px;
+    left: -15px;
+    width: 6px;
+    height: 6px;
+    margin-top: -4px;
+    margin-left: -3px;
+    border-radius: 50%;
+    opacity: .5;
+}`;
+
+class ChangelogComponent extends React.Component {
+	constructor() {
+		super();
+	}
+
+	componentWillUnmount() {
+		BdApi.DOM.removeStyle("Changelog");
+	}
+
+	render() {
+		BdApi.DOM.addStyle("Changelog", css);
+		const { id, changelog } = this.props;
+		return React.createElement('div', { id: id, }, changelog);
+	}
+}
+
+function showChangelog() {
+	if (!config.changelog || !Array.isArray(config.changelog)) return;
+	const changelog = config.changelog?.map(({ title, type, items }) => [
+		React.createElement('h3', {
+			style: { "--c": `var(--${type})` },
+			className: "title",
+		}, title),
+		React.createElement('ul', null, items.map(item => (
+			React.createElement('li', null, item)
+		)))
+	]);
+
+	UI.showConfirmationModal(
+		config.info.name,
+		React.createElement(ChangelogComponent, {
+			id: "changelog-container",
+			changelog: changelog,
+		})
+	);
+}
+
+function shouldChangelog() {
+	const { version = config.info.version, changelog = false } = Data.load("metadata") || {};
+	if (version != config.info.version || !changelog) {
+		Data.save("metadata", { version: config.info.version, changelog: true });
+		return showChangelog;
+	}
+}
 
 function getModuleAndKey(filter, options) {
 	let module;
@@ -420,7 +524,8 @@ class ViewProfilePicture {
 
 	start() {
 		try {
-			DOM.addStyle(css);
+			DOM.addStyle(css$1);
+			shouldChangelog()?.();
 			this.patchUserBannerMask();
 		} catch (e) {
 			Logger.error(e);
