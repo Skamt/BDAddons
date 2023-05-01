@@ -13,7 +13,7 @@ module.exports = (outputPath, config) => {
 		strict: false,
 		intro: `${buildMeta(config)}`,
 		plugins: [
-			beautify(),
+			beautify()
 		]
 	};
 }

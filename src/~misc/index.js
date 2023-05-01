@@ -16,7 +16,7 @@ const mods = [
 	new ConsoleToggleButton(),
 	new EmojiLetters(),
 	new GuildInfo(),
-	new MemUsage(),
+	// new MemUsage(),
 	new NoTrack(),
 	new ShowUserId(),
 	new SpotifyListenAlong()

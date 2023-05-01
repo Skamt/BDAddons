@@ -37,7 +37,25 @@ const eslintBundleConfig = {
 	formatter: 'stylish'
 };
 
-module.exports = (inputPath) => {
+
+
+const changelog = (config) => {
+	let first = true;
+	return {
+		name: "Changelog",
+		transform(code) {
+			if (first) {
+				first = false;
+				if (config.changelog) {
+					code += `import shouldChangelog from "@Utils/Changelog";shouldChangelog()?.();`;
+					return code;
+				}
+			}
+		}
+	};
+}
+
+module.exports = (inputPath, config) => {
 
 	aliasesObj.entries["@config"] = path.resolve(inputPath, 'config.json');
 
@@ -51,9 +69,10 @@ module.exports = (inputPath) => {
 			componentsAutoLoader(),
 			modulesAutoLoader(),
 			json({
-				namedExports:false,
-				preferConst:true
+				namedExports: false,
+				preferConst: true
 			}),
+			changelog(config),
 			css(),
 			eslint(),
 			sucrase(sucraseConfig),

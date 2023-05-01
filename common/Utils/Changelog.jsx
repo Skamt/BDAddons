@@ -1,7 +1,7 @@
 import config from "@config";
 import { React, Data, UI } from "@Api";
 
-const css = `
+const changelogStyles = `
 #changelog-container {
 	font-family: "gg sans", "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
 	--added: #2dc770;
@@ -63,7 +63,7 @@ class ChangelogComponent extends React.Component {
 	}
 
 	render() {
-		BdApi.DOM.addStyle("Changelog", css);
+		BdApi.DOM.addStyle("Changelog", changelogStyles);
 		const { id, changelog } = this.props;
 		return <div id={id}>{changelog}</div>;
 	}

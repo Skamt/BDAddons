@@ -30,7 +30,7 @@ switch (arg) {
 }
 
 function getConfig(inputPath, outputPath, config) {
-	const input = getInputConfig(inputPath);
+	const input = getInputConfig(inputPath, config);
 	const output = getOutputConfig(outputPath, config);
 
 	return { input, output }
