@@ -4,10 +4,11 @@
 	"description": "Mitt BD Stuff",
 	"main": "index.js",
 	"scripts": {
-		"build": "node builder/index.js build",
-		"dev": "node builder/index.js dev",
-		"all": "node builder/index.js all",
-		"inspect": "node --inspect-brk=5858 builder/index.js build"
+		"build": "node scripts/builder/index.js build",
+		"dev": "node scripts/builder/index.js dev",
+		"all": "node scripts/builder/index.js all",
+		"inspect": "node --inspect-brk=5858 scripts/builder/index.js build",
+		"new": "node scripts/new/index.js"
 	},
 	"devDependencies": {
 		"@babel/plugin-transform-react-jsx": "^7.21.0",
@@ -15,6 +16,7 @@
 		"@rollup/plugin-alias": "^5.0.0",
 		"@rollup/plugin-babel": "^6.0.3",
 		"@rollup/plugin-eslint": "^9.0.3",
+		"@rollup/plugin-json": "^6.0.0",
 		"@rollup/plugin-node-resolve": "^15.0.2",
 		"@rollup/plugin-sucrase": "^5.0.1",
 		"eslint-plugin-react": "^7.32.2",

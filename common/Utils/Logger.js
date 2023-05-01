@@ -1,3 +1,4 @@
+import config from "@config";
 export default {
 	error(...args) {
 		this.p(console.error,...args);

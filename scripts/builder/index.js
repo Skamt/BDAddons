@@ -65,7 +65,7 @@ async function build(list) {
 		const config = mergeDeep(require(pluginConfig), baseConfig);
 		const buildFile = path.join(releaseFolder, config.info.name, `${config.info.name}.plugin.js`);
 
-		const rollupConfig = getConfig(path.resolve(pluginFolder, 'index'), buildFile, config);
+		const rollupConfig = getConfig(pluginFolder, buildFile, config);
 
 		console.log(`\n${config.info.name}`);
 
@@ -99,7 +99,7 @@ function dev() {
 	const config = mergeDeep(require(pluginConfig), baseConfig);
 	const buildFile = path.join(bdFolder, "plugins", `${config.info.name}.plugin.js`);
 
-	const rollupConfig = getConfig(path.resolve(pluginFolder, 'index'), buildFile, config);
+	const rollupConfig = getConfig(pluginFolder, buildFile, config);
 
 	console.log(`Watching ${config.info.name} Plugin`);
 	const watcher = watch({

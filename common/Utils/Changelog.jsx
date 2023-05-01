@@ -1,3 +1,4 @@
+import config from "@config";
 import { React, Data, UI } from "@Api";
 
 const css = `

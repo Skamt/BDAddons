@@ -1,3 +1,4 @@
+import config from "@config";
 import { Patcher, React } from "@Api";
 import Logger from "@Utils/Logger";
 import ChannelContent from "@Modules/ChannelContent";

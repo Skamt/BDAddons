@@ -1,3 +1,5 @@
+import config from "@config";
+
 const Api = new BdApi(config.info.name);
 
 export const UI = Api.UI;

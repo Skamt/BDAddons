@@ -5,6 +5,7 @@ const cleanup = require("rollup-plugin-cleanup");
 const nodeResolve = require("@rollup/plugin-node-resolve");
 const { eslintBundle } = require("rollup-plugin-eslint-bundle");
 const sucrase = require("@rollup/plugin-sucrase");
+const json = require("@rollup/plugin-json");
 
 const eslint = require("./rollup-plugins/eslint.js");
 const css = require("./rollup-plugins/css.js");
@@ -37,15 +38,22 @@ const eslintBundleConfig = {
 };
 
 module.exports = (inputPath) => {
+
+	aliasesObj.entries["@config"] = path.resolve(inputPath, 'config.json');
+
 	return {
-		input: inputPath,
-		external:"electron",
+		input: path.resolve(inputPath, 'index'),
+		external: "electron",
 		treeshake: "smallest",
 		plugins: [
-			nodeResolve({ extensions: [".js", ".jsx", ".css"] }),
+			nodeResolve({ extensions: [".json", ".js", ".jsx", ".css"] }),
 			alias(aliasesObj),
 			componentsAutoLoader(),
 			modulesAutoLoader(),
+			json({
+				namedExports:false,
+				preferConst:true
+			}),
 			css(),
 			eslint(),
 			sucrase(sucraseConfig),

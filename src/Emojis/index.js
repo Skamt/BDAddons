@@ -1,5 +1,7 @@
+// eslint-disable-next-line no-unused-vars
+import config from "@config";
 import css from "./styles";
-import { DOM, Patcher,  getInternalInstance } from "@Api";
+import { DOM, Patcher, getInternalInstance } from "@Api";
 
 import { MissingZlibAddon } from "@Utils";
 import { hasEmbedPerms } from "@Utils/Permissions"
@@ -21,80 +23,80 @@ import { getPickerIntention, getEmojiWebpUrl, getEmojiGifUrl, isEmojiSendable, p
 import STRINGS from "./Constants";
 
 export default !global.ZeresPluginLibrary ? MissingZlibAddon : (() => {
-	const [Plugin] = global.ZeresPluginLibrary.buildPlugin(config);
+    const [Plugin] = global.ZeresPluginLibrary.buildPlugin(config);
 
-	return class Emojis extends Plugin {
-		constructor() {
-			super();
-			this.emojiClickHandler = this.emojiClickHandler.bind(this);
-		}
+    return class Emojis extends Plugin {
+        constructor() {
+            super();
+            this.emojiClickHandler = this.emojiClickHandler.bind(this);
+        }
 
-		getEmojiUrl(emoji, size) {
-			if (this.settings.sendEmojiAsWebp)
-				return getEmojiWebpUrl(emoji, size);
-			if (emoji.animated)
-				return getEmojiGifUrl(emoji, 4096);
+        getEmojiUrl(emoji, size) {
+            if (this.settings.sendEmojiAsWebp)
+                return getEmojiWebpUrl(emoji, size);
+            if (emoji.animated)
+                return getEmojiGifUrl(emoji, 4096);
 
-			return parseEmojiUrl(emoji, size);
-		}
+            return parseEmojiUrl(emoji, size);
+        }
 
-		sendEmojiAsLink(emoji, channel) {
-			const content = this.getEmojiUrl(emoji, this.settings.emojiSize);
-			if (this.settings.sendDirectly) {
-				try { return sendMessageDirectly(channel, content); } 
-				catch { Toast.error("Could not send directly."); }
-			}
-			insertText(content);
-		}
+        sendEmojiAsLink(emoji, channel) {
+            const content = this.getEmojiUrl(emoji, this.settings.emojiSize);
+            if (this.settings.sendDirectly) {
+                try { return sendMessageDirectly(channel, content); }
+                catch { Toast.error("Could not send directly."); }
+            }
+            insertText(content);
+        }
 
-		handleUnsendableEmoji(emoji, channel, user) {
-			if (emoji.animated && !this.settings.shouldSendAnimatedEmojis)
-				return Toast.info(STRINGS.disabledAnimatedEmojiErrorMessage);
-			if (!hasEmbedPerms(channel, user) && !this.settings.ignoreEmbedPermissions)
-				return Toast.info(STRINGS.missingEmbedPermissionsErrorMessage);
+        handleUnsendableEmoji(emoji, channel, user) {
+            if (emoji.animated && !this.settings.shouldSendAnimatedEmojis)
+                return Toast.info(STRINGS.disabledAnimatedEmojiErrorMessage);
+            if (!hasEmbedPerms(channel, user) && !this.settings.ignoreEmbedPermissions)
+                return Toast.info(STRINGS.missingEmbedPermissionsErrorMessage);
 
-			this.sendEmojiAsLink(emoji, channel);
-		}
+            this.sendEmojiAsLink(emoji, channel);
+        }
 
-		emojiHandler(emoji) {
-			const user = UserStore.getCurrentUser();
-			const intention = EmojiIntentionEnum.CHAT;
-			const channel = ChannelStore.getChannel(SelectedChannelStore.getChannelId());
-			if (!isEmojiSendable({ emoji, channel, intention }))
-				this.handleUnsendableEmoji(emoji, channel, user);
-		}
+        emojiHandler(emoji) {
+            const user = UserStore.getCurrentUser();
+            const intention = EmojiIntentionEnum.CHAT;
+            const channel = ChannelStore.getChannel(SelectedChannelStore.getChannelId());
+            if (!isEmojiSendable({ emoji, channel, intention }))
+                this.handleUnsendableEmoji(emoji, channel, user);
+        }
 
-		emojiClickHandler(event) {
-			if (event.button === 2) return;
-			const [pickerIntention, picker] = getPickerIntention(event);
-			if (pickerIntention !== EmojiIntentionEnum.CHAT) return;
-			picker.classList.add('CHAT');
-			const emojiInstance = getInternalInstance(event.target);
-			const props = emojiInstance?.pendingProps;
-			if (props && props["data-type"]?.toLowerCase() === "emoji" && props.children) {
-				this.emojiHandler(props.children.props.emoji);
-			}
-		}
+        emojiClickHandler(event) {
+            if (event.button === 2) return;
+            const [pickerIntention, picker] = getPickerIntention(event);
+            if (pickerIntention !== EmojiIntentionEnum.CHAT) return;
+            picker.classList.add('CHAT');
+            const emojiInstance = getInternalInstance(event.target);
+            const props = emojiInstance?.pendingProps;
+            if (props && props["data-type"]?.toLowerCase() === "emoji" && props.children) {
+                this.emojiHandler(props.children.props.emoji);
+            }
+        }
 
-		onStart() {
-			try {
-				DOM.addStyle(css);
-				patchIsEmojiFiltered();
-				patchGetEmojiUnavailableReason();
-				document.addEventListener("mouseup", this.emojiClickHandler);
-			} catch (e) {
-				console.error(e);
-			}
-		}
+        onStart() {
+            try {
+                DOM.addStyle(css);
+                patchIsEmojiFiltered();
+                patchGetEmojiUnavailableReason();
+                document.addEventListener("mouseup", this.emojiClickHandler);
+            } catch (e) {
+                console.error(e);
+            }
+        }
 
-		onStop() {
-			DOM.removeStyle();
-			Patcher.unpatchAll();
-			document.removeEventListener("mouseup", this.emojiClickHandler);
-		}
+        onStop() {
+            DOM.removeStyle();
+            Patcher.unpatchAll();
+            document.removeEventListener("mouseup", this.emojiClickHandler);
+        }
 
-		getSettingsPanel() {
-			return this.buildSettingsPanel().getElement();
-		}
-	}
+        getSettingsPanel() {
+            return this.buildSettingsPanel().getElement();
+        }
+    }
 })()

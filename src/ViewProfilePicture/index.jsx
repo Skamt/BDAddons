@@ -1,3 +1,5 @@
+import config from "@config";
+
 import css from "./styles";
 import shouldChangelog from "@Utils/Changelog";
 

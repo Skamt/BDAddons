@@ -11,7 +11,7 @@ module.exports = (outputPath, config) => {
 			objectShorthand: true
 		},
 		strict: false,
-		intro: `${buildMeta(config)}\nconst config = ${JSON.stringify(config,null,4)}`,
+		intro: `${buildMeta(config)}`,
 		plugins: [
 			beautify(),
 		]
