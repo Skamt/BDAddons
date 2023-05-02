@@ -4,8 +4,8 @@
 	"description": "Mitt BD Stuff",
 	"main": "index.js",
 	"scripts": {
-		"build": "node scripts/builder/index.js build",
 		"dev": "node scripts/builder/index.js dev",
+		"build": "node scripts/builder/index.js",
 		"all": "node scripts/builder/index.js all",
 		"inspect": "node --inspect-brk=5858 scripts/builder/index.js build",
 		"new": "node scripts/new/index.js"

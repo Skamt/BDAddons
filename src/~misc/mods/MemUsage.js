@@ -22,8 +22,7 @@ export default class MemUsage {
 			}
 			this.host.append(this.el);
 			this.interval = setInterval(() => {
-				const mem = Object.values(DiscordUtils.getDiscordMemoryUsage()).reduce((a, b) => a + b, 0);
-				this.el.textContent = `${prettyfiyBytes(mem, true, 3)} | CPU: ${process.getCPUUsage().percentCPUUsage.toFixed(2)}%`;
+				this.el.textContent = `${prettyfiyBytes(process.memoryUsage().rss, true, 3)} | CPU: ${process.getCPUUsage().percentCPUUsage.toFixed(2)}%`;
 			}, 500);
 			break;
 		}

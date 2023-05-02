@@ -3,45 +3,22 @@ const path = require("path");
 const { rollup, watch } = require("rollup");
 const mergeDeep = require('./helpers/mergeDeep.js');
 
-const getInputConfig = require('./rollup.config.input.js');
-const getOutputConfig = require('./rollup.config.output.js');
+const getConfig = require('./rollup.config.js');
 
-const projectPath = path.resolve('.');
+const pkg = require(path.resolve("package.json"));
+
 const {
 	pluginsFolder,
 	releaseFolder,
 	baseConfig
-} = require(path.join(projectPath, "package.json")).buildConfig;
+} = pkg.buildConfig;
+
+const pluginsDir = path.resolve(pluginsFolder);
 
 const arg = process.argv.slice(2)[0];
 
-switch (arg) {
-	case "dev":
-		dev();
-		break;
-	case "build":
-		buildTarget();
-		break;
-	case "all":
-		buildAll();
-		break;
-	default:
-		process.exit(0);
-}
-
-function getConfig(inputPath, outputPath, config) {
-	const input = getInputConfig(inputPath, config);
-	const output = getOutputConfig(outputPath, config);
-
-	return { input, output }
-}
-
-function buildTarget() {
-	build([process.env.PWD || process.env.INIT_CWD]);
-}
-
 function buildAll() {
-	const pluginsDir = path.join(projectPath, pluginsFolder);
+
 	const list =
 		fs.readdirSync(pluginsDir)
 		.filter(f => fs.lstatSync(path.join(pluginsDir, f)).isDirectory())
@@ -65,13 +42,13 @@ async function build(list) {
 		const config = mergeDeep(require(pluginConfig), baseConfig);
 		const buildFile = path.join(releaseFolder, config.info.name, `${config.info.name}.plugin.js`);
 
-		const rollupConfig = getConfig(pluginFolder, buildFile, config);
+		const { input, output } = getConfig(pluginFolder, buildFile, config);
 
 		console.log(`\n${config.info.name}`);
 
 		try {
-			const bundle = await rollup(rollupConfig.input);
-			await bundle.write(rollupConfig.output);
+			const bundle = await rollup(input);
+			await bundle.write(output);
 			console.log(`${config.info.name} built successfully`);
 		} catch (e) {
 			console.log(e.toString());
@@ -99,12 +76,13 @@ function dev() {
 	const config = mergeDeep(require(pluginConfig), baseConfig);
 	const buildFile = path.join(bdFolder, "plugins", `${config.info.name}.plugin.js`);
 
-	const rollupConfig = getConfig(pluginFolder, buildFile, config);
+	const { input, output } = getConfig(pluginFolder, buildFile, config);
 
-	console.log(`Watching ${config.info.name} Plugin`);
+	console.log(`\nWatching ${config.info.name} Plugin\n`);
+
 	const watcher = watch({
-		...rollupConfig.input,
-		output: rollupConfig.output,
+		...input,
+		output: output,
 	});
 
 	watcher.on("event", (event) => {
@@ -118,8 +96,30 @@ function dev() {
 		}
 	});
 
-	watcher.on("change", (file, e) => {
-		console.log(`Changed ${file}`);
+	watcher.on("change", function(file) {
+		console.log("=============================================================");
+		console.log(`- Changed: ${file.replace(pluginsDir,'')}`);
+		console.log("=============================================================");
 	});
 
+	// watcher.on('event', ({ result }) => {
+	// 	if (result) {
+	// 		build(pluginFolder)
+	// 	}
+	// });
+
+}
+
+
+
+switch (arg) {
+	case "dev":
+		dev();
+		break;
+	case "all":
+		buildAll();
+		break;
+	default:
+		build([process.env.PWD || process.env.INIT_CWD]);
+		break;
 }

@@ -62,7 +62,7 @@ export default () => {
 
 	const getRawModule = (filter, options) => {
 		let module;
-		const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
+		getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
 		return module;
 	};
 
@@ -70,7 +70,6 @@ export default () => {
 		const module = getRawModule(filter, options);
 		if(!module) return {}
 		const moduleId = module.id;
-		const exp = module.exports;
 		return {
 			target: {
 				id: moduleId,
