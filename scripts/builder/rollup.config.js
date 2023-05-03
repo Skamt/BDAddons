@@ -1,8 +1,9 @@
 const path = require("path");
-const alias = require("@rollup/plugin-alias");
-const cleanup = require("rollup-plugin-cleanup");
+const buildMeta = require('./helpers/buildMeta.js');
 
 const json = require("@rollup/plugin-json");
+const alias = require("@rollup/plugin-alias");
+const cleanup = require("rollup-plugin-cleanup");
 const sucrase = require("@rollup/plugin-sucrase");
 const nodeResolve = require("@rollup/plugin-node-resolve");
 const { eslintBundle } = require("rollup-plugin-eslint-bundle");
@@ -12,8 +13,6 @@ const eslint = require("./rollup-plugins/eslint.js");
 const beautify = require("./rollup-plugins/beautify.js");
 const modulesAutoLoader = require("./rollup-plugins/modules-auto-loader.js");
 const componentsAutoLoader = require("./rollup-plugins/components-auto-loader.js");
-
-const buildMeta = require('./helpers/buildMeta.js');
 
 const sucraseConfig = {
 	transforms: ['jsx'],
@@ -58,8 +57,6 @@ const aliasesObj = {
 
 module.exports = function getConfig(inputPath, outputPath, pluginConfig) {
 
-	aliasesObj.entries["@config"] = path.resolve(inputPath, 'config.json');
-
 	return {
 		input: {
 			input: path.resolve(inputPath, 'index'),
@@ -90,7 +87,7 @@ module.exports = function getConfig(inputPath, outputPath, pluginConfig) {
 				objectShorthand: true
 			},
 			strict: false,
-			intro: `${buildMeta(pluginConfig)}`,
+			intro: `${buildMeta(pluginConfig)}\nconst config = ${JSON.stringify(pluginConfig, null, 4)}`,
 			plugins: [
 				beautify()
 			]

@@ -37,10 +37,8 @@ module.exports = (options = {}) => {
 				await eslintInstance.loadFormatter(formatter) : { format: formatter };
 			const output = await eslintFormatter.format(results);
 			if (output) {
-				console.log("======================ESLint======================\n");
-				console.log(`[===] ${file}`);	
+				console.log(`[==ESLint==] ${file}`);	
 				console.log(output);
-				console.log("======================ESLint======================\n");
 			}
 			const errorMessages = [];
 			if (result.warningCount > 0 && throwOnWarning) {

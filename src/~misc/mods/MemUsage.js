@@ -1,7 +1,5 @@
 import { sleep, prettyfiyBytes } from "@Utils";
 
-import DiscordUtils from "@Modules/DiscordUtils";
-
 export default class MemUsage {
 	constructor() {
 		this.buildF12Button();

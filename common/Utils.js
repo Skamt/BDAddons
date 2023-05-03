@@ -1,4 +1,3 @@
-import config from "@config";
 import { Patcher, getOwnerInstance } from "@Api";
 
 import Dispatcher from "@Modules/Dispatcher";

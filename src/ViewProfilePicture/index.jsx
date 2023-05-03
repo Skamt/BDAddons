@@ -1,4 +1,3 @@
-import config from "@config";
 import css from "./styles";
 import { Data, DOM, React, Patcher } from "@Api";
 import { getNestedProp, isSelf } from "@Utils";

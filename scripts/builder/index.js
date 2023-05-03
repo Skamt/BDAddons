@@ -40,7 +40,7 @@ async function build(list) {
 
 		const { input, output } = getConfig(pluginFolder, buildFile, config);
 
-		console.log(`\n${config.info.name}`);
+		console.log(`\n===== ${config.info.name} =====\n`);
 
 		try {
 			const bundle = await rollup(input);
@@ -53,7 +53,7 @@ async function build(list) {
 			console.log(`☺ Error building: ${config.info.name}`);
 		}
 		
-		console.log("===========================================================");
+		console.log("\n==========================================");
 	}
 	console.timeEnd("Build took");
 }

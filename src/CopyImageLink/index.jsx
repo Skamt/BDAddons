@@ -1,5 +1,5 @@
 // eslint-disable-next-line no-unused-vars
-import config from "@config";
+
 import css from "./styles";
 import Logger from "@Utils/Logger";
 // eslint-disable-next-line no-unused-vars

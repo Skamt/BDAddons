@@ -28,6 +28,7 @@
 		"react"
 	],
 	"globals": {
+		"config": "readonly",
 		"process": "readonly",
 		"module": "readonly",
 		"require": "readonly",

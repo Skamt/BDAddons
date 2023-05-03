@@ -1,5 +1,3 @@
-import config from "@config";
-
 import { nop } from "@Utils";
 import Settings from "@Utils/Settings";
 import Logger from "@Utils/Logger";
