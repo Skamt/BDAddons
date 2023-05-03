@@ -52,8 +52,7 @@ async function build(list) {
 			console.log(`☺ Error: ${e.toString()}`);
 			console.log(`☺ Error building: ${config.info.name}`);
 		}
-
-
+		
 		console.log("===========================================================");
 	}
 	console.timeEnd("Build took");
