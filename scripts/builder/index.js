@@ -2,10 +2,8 @@ const fs = require("fs");
 const path = require("path");
 const { rollup, watch } = require("rollup");
 const mergeDeep = require('./helpers/mergeDeep.js');
-
-const getConfig = require('./rollup.config.js');
-
 const pkg = require(path.resolve("package.json"));
+const getConfig = require('./rollup.config.js');
 
 const {
 	pluginsFolder,
@@ -14,11 +12,9 @@ const {
 } = pkg.buildConfig;
 
 const pluginsDir = path.resolve(pluginsFolder);
-
-const arg = process.argv.slice(2)[0];
+const bdFolder = `${process.env.APPDATA}/BetterDiscord/`;
 
 function buildAll() {
-
 	const list =
 		fs.readdirSync(pluginsDir)
 		.filter(f => fs.lstatSync(path.join(pluginsDir, f)).isDirectory())
@@ -49,10 +45,12 @@ async function build(list) {
 		try {
 			const bundle = await rollup(input);
 			await bundle.write(output);
+			output.file = path.join(bdFolder, "plugins", `${config.info.name}.plugin.js`);
+			await bundle.write(output);
 			console.log(`${config.info.name} built successfully`);
 		} catch (e) {
-			console.log(e.toString());
-			console.log(`${config.info.name} Error During build`);
+			console.log(`☺ Error: ${e.toString()}`);
+			console.log(`☺ Error building: ${config.info.name}`);
 		}
 
 
@@ -62,8 +60,7 @@ async function build(list) {
 }
 
 function dev() {
-
-	const bdFolder = `${process.env.APPDATA}/BetterDiscord/`;
+	
 	const pluginFolder = process.env.PWD || process.env.INIT_CWD;
 
 	const pluginConfig = path.join(pluginFolder, "config.json");
@@ -97,14 +94,26 @@ function dev() {
 	});
 
 	watcher.on("change", function(file) {
-		console.log("=============================================================");
-		console.log(`- Changed: ${file.replace(pluginsDir,'')}`);
-		console.log("=============================================================");
+		console.log(`[===] Changed: ${file.replace(pluginsDir,'')}`);
+	});
+
+	const readline = require('readline');
+
+	readline.emitKeypressEvents(process.stdin);
+
+	if (process.stdin.isTTY)
+		process.stdin.setRawMode(true);
+
+	process.stdin.on('keypress', (chunk, { ctrl, name }) => {
+		if (ctrl && name == 'c')
+			build([pluginFolder])
+			.then(a => process.exit(0));
+
 	});
 }
 
 
-
+const arg = process.argv.slice(2)[0];
 switch (arg) {
 	case "dev":
 		dev();

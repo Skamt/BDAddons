@@ -34,12 +34,11 @@ module.exports = (options = {}) => {
 				return null;
 			}
 			const eslintFormatter = typeof formatter === 'string' ?
-				await eslintInstance.loadFormatter(formatter) :
-				{ format: formatter };
+				await eslintInstance.loadFormatter(formatter) : { format: formatter };
 			const output = await eslintFormatter.format(results);
 			if (output) {
-				console.log("\n======================ESLint======================\n");
-				console.log(file);
+				console.log("======================ESLint======================\n");
+				console.log(`[===] ${file}`);	
 				console.log(output);
 				console.log("======================ESLint======================\n");
 			}
