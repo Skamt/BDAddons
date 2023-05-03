@@ -101,13 +101,6 @@ function dev() {
 		console.log(`- Changed: ${file.replace(pluginsDir,'')}`);
 		console.log("=============================================================");
 	});
-
-	// watcher.on('event', ({ result }) => {
-	// 	if (result) {
-	// 		build(pluginFolder)
-	// 	}
-	// });
-
 }
 
 
