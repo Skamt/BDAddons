@@ -1,8 +1,5 @@
-// eslint-disable-next-line no-unused-vars
-
 import css from "./styles";
 import Logger from "@Utils/Logger";
-// eslint-disable-next-line no-unused-vars
 import { DOM, React, Patcher } from "@Api";
 import { getNestedProp } from "@Utils";
 import CopyButtonComponent from "./components/CopyButtonComponent";

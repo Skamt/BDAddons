@@ -1,9 +1,5 @@
 const DiscordModules = require("../DiscordModules.json");
 
-const startsWithFiltersTemplate = `import { Filters } from "@Webpack";
-
-export default {{target}}`;
-
 const regex = /@(Patch|Modules|Enums|Stores)\/(.+)/;
 const filter = id => id.match(regex);
 
