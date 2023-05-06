@@ -49,7 +49,7 @@ async function build(list) {
 			await bundle.write(output);
 			console.log(`${config.info.name} built successfully`);
 		} catch (e) {
-			console.log(`☺ Error: ${e.toString()}`);
+			console.log(`☺ Error: ${e}`);
 			console.log(`☺ Error building: ${config.info.name}`);
 		}
 		

@@ -45,7 +45,7 @@ export default () => {
 				else matches.push(module);
 			}
 		}
-		return matches;
+		return matches.length ? matches : undefined;
 	};
 	const getSourceByExport = (filter, first = true) => {
 		const result = getModuleByExport(filter, first);
@@ -66,21 +66,32 @@ export default () => {
 		return module;
 	};
 
-	const getAll = (filter, options) => {
+	const getAllByFilter = (filter, options) => {
 		const module = getRawModule(filter, options);
-		if(!module) return {}
+		if (!module) return {}
 		const moduleId = module.id;
+		return getAllById(moduleId);
+	};
+
+	const getAllById = (moduleId) => {
 		return {
 			target: {
 				id: moduleId,
 				source: sourceById(moduleId),
-				module
+				module: moduleById(moduleId)
 			},
 			modulesImportedInTarget: modulesImportedInModule(moduleId).map(id => ({ id, source: sourceById(id), module: moduleById(id) })),
 			modulesImportingTarget: modulesImportingModule(moduleId).map(id => ({ id, source: sourceById(id), module: moduleById(id) }))
 		};
-	};
+	}
 
+
+
+	const byPropValue = (val, first = true) => {
+		return getModuleByExport(m => {
+			try { return Object.values(m.exports).some(v => v === val) } catch { return false; }
+		}, first);
+	}
 	window.S = {
 		r: webpackRequire,
 		modules,
@@ -91,7 +102,9 @@ export default () => {
 		modulesImportedInModule,
 		modulesImportingModule,
 		getModuleByExport,
-		getAll,
+		getAllByFilter,
+		getAllById,
+		byPropValue,
 		getStore,
 		getSourceByExport,
 		getAllAssets

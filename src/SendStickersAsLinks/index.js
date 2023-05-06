@@ -6,7 +6,7 @@ import { MissingZlibAddon } from "@Utils";
 
 import patchStickerClickability from "./patches/patchStickerClickability";
 import patchSendSticker from "./patches/patchSendSticker";
-import patchGetStickerById from "./patches/patchGetStickerById";
+import patchStickerComponent from "./patches/patchStickerComponent";
 import patchStickerAttachement from "./patches/patchStickerAttachement";
 import patchStickerSuggestion from "./patches/patchStickerSuggestion";
 import patchChannelGuildPermissions from "./patches/patchChannelGuildPermissions";
@@ -24,7 +24,7 @@ export default !global.ZeresPluginLibrary ? MissingZlibAddon : (() => {
 				DOM.addStyle(css);
 				patchStickerClickability();
 				patchSendSticker();
-				patchGetStickerById();
+				patchStickerComponent();
 				patchStickerAttachement();
 				patchStickerSuggestion();
 				patchChannelGuildPermissions();
