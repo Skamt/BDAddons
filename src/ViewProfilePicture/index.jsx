@@ -1,6 +1,7 @@
 import css from "./styles";
 import { Data, DOM, React, Patcher } from "@Api";
-import { getNestedProp, isSelf } from "@Utils";
+import { getNestedProp } from "@Utils";
+import { isSelf } from "@Utils/User";
 import Logger from "@Utils/Logger";
 
 import ProfileTypeEnum from "@Enums/ProfileTypeEnum";

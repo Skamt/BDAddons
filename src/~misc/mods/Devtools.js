@@ -34,6 +34,7 @@ export default () => {
 	// Returns an array of module IDs importing target module
 	const modulesImportingModule = id => Object.keys(sources).filter(sourceId => modulesImportedInModule(sourceId).includes("" + id));
 
+	// returns module based on filter, filters recieves whole module {id, loaded, exports}
 	const getModuleByExport = (filter, first = true) => {
 		const indices = Object.keys(modules);
 		let matches = [];
@@ -47,6 +48,8 @@ export default () => {
 		}
 		return matches.length ? matches : undefined;
 	};
+
+	// returns source based on filter, filters recieves whole module {id, loaded, exports}
 	const getSourceByExport = (filter, first = true) => {
 		const result = getModuleByExport(filter, first);
 
@@ -54,20 +57,24 @@ export default () => {
 		else return result.map(a => sources[a.id]);
 	};
 
+	// returns all directly exported strings
 	const getAllAssets = () => Object.values(modules).filter(a => typeof a.exports === "string" && a.exports.match(/\/assets\/.+/));
 
+	// get store by store name
 	const getStore = storeName => {
 		const ds = ["Z", "ZP", "default"];
 		return getModuleByExport(m =>
 			ds.some(a => m?.exports[a]?._dispatchToken && m?.exports[a]?.getName() === storeName), true);
 	};
 
+	// returns module using BD getModule
 	const getRawModule = (filter, options) => {
 		let module;
 		getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
 		return module;
 	};
 
+	// returns all information abut module By filter
 	const getAllByFilter = (filter, options) => {
 		const module = getRawModule(filter, options);
 		if (!module) return {}
@@ -75,6 +82,7 @@ export default () => {
 		return getAllById(moduleId);
 	};
 
+	// returns all information abut module By module Id
 	const getAllById = (moduleId) => {
 		return {
 			target: {
@@ -87,13 +95,13 @@ export default () => {
 		};
 	}
 
-
-
+	// checks props on the exports, helpfull for getting class names
 	const byPropValue = (val, first = true) => {
 		return getModuleByExport(m => {
 			try { return Object.values(m.exports).some(v => v === val) } catch { return false; }
 		}, first);
 	}
+	
 	window.S = {
 		r: webpackRequire,
 		getModuleAndKey,

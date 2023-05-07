@@ -7,12 +7,12 @@ export default props => {
 		<Tooltip
 			text="View profile picture"
 			position="top">
-			{p => (
+			{tooltipProps => (
 				<div
-					{...p}
+					{...tooltipProps}
 					{...props}>
 					<svg
-						aria-label={p["aria-label"]}
+						aria-label={tooltipProps["aria-label"]}
 						aria-hidden="false"
 						role="img"
 						width="18"

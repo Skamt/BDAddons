@@ -1,6 +1,24 @@
-import { getReply } from "@Utils";
 import { getModule } from "@Webpack";
 import MessageActions from "@Modules/MessageActions";
+import Dispatcher from "@Modules/Dispatcher";
+import PendingReplyStore from "@Stores/PendingReplyStore";
+
+export function getReply(channelId) {
+	const reply = PendingReplyStore?.getPendingReply(channelId);
+	if (!reply) return {};
+	Dispatcher?.dispatch({ type: "DELETE_PENDING_REPLY", channelId });
+	return {
+		messageReference: {
+			guild_id: reply.channel.guild_id,
+			channel_id: reply.channel.id,
+			message_id: reply.message.id
+		},
+		allowedMentions: reply.shouldMention ? undefined : {
+			parse: ["users", "roles", "everyone"],
+			replied_user: false
+		}
+	}
+}
 
 export function sendMessageDirectly(channel, content) {
 	if (MessageActions)

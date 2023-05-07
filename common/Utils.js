@@ -1,26 +1,5 @@
 import { Patcher, getOwnerInstance } from "@Api";
 
-import Dispatcher from "@Modules/Dispatcher";
-import UserStore from "@Stores/UserStore";
-import PendingReplyStore from "@Stores/PendingReplyStore";
-
-export function getReply(channelId) {
-	const reply = PendingReplyStore?.getPendingReply(channelId);
-	if (!reply) return {};
-	Dispatcher?.dispatch({ type: "DELETE_PENDING_REPLY", channelId });
-	return {
-		messageReference: {
-			guild_id: reply.channel.guild_id,
-			channel_id: reply.channel.id,
-			message_id: reply.message.id
-		},
-		allowedMentions: reply.shouldMention ? undefined : {
-			parse: ["users", "roles", "everyone"],
-			replied_user: false
-		}
-	}
-}
-
 export function copy(data) {
 	DiscordNative.clipboard.copy(data);
 }
@@ -48,21 +27,6 @@ export class MissingZlibAddon {
 	}
 }
 
-export function reRender(selector) {
-	const target = document.querySelector(selector)?.parentElement;
-	if (!target) return;
-	const instance = getOwnerInstance(target);
-	const unpatch = Patcher.instead(instance, 'render', () => unpatch());
-	instance.forceUpdate(() => instance.forceUpdate());
-}
-
-export const nop = () => {};
-
-export function isSelf(user) {
-	const currentUser = UserStore.getCurrentUser();
-	return user?.id === currentUser?.id;
-}
-
 export class Disposable {
 	constructor() {
 		this.patches = [];
@@ -73,6 +37,16 @@ export class Disposable {
 		this.patches = [];
 	}
 }
+
+export function reRender(selector) {
+	const target = document.querySelector(selector)?.parentElement;
+	if (!target) return;
+	const instance = getOwnerInstance(target);
+	const unpatch = Patcher.instead(instance, 'render', () => unpatch());
+	instance.forceUpdate(() => instance.forceUpdate());
+}
+
+export const nop = () => {};
 
 export function sleep(delay) {
 	return new Promise(done => setTimeout(() => done(), delay * 1000));
@@ -98,6 +72,6 @@ export function prettyfiyBytes(bytes, si = false, dp = 1) {
 	return bytes.toFixed(dp) + ' ' + units[u];
 }
 
-export function parseSnowflake(snowflake){
+export function parseSnowflake(snowflake) {
 	return snowflake / 4194304 + 1420070400000;
 }

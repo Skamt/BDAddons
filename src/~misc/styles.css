@@ -81,3 +81,8 @@
 .channelMuteButton:active{
 	color:orange;
 }
+
+.loadUnknownUser{
+	background: #000;
+	color:orange;
+}
