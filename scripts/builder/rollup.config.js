@@ -73,7 +73,7 @@ module.exports = function getConfig(inputPath, outputPath, pluginConfig) {
 				}),
 				changelog(pluginConfig),
 				css(),
-				eslint(),
+				// eslint(),
 				sucrase(sucraseConfig),
 				cleanup(cleanupConfig),
 				eslintBundle(eslintBundleConfig)

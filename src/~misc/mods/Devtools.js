@@ -1,4 +1,4 @@
-import { getModule } from "@Webpack";
+import { getModule, getModuleAndKey } from "@Webpack";
 
 export default () => {
 	const chunkName = Object.keys(window).find(key => key.startsWith("webpackChunk"));
@@ -57,7 +57,9 @@ export default () => {
 	const getAllAssets = () => Object.values(modules).filter(a => typeof a.exports === "string" && a.exports.match(/\/assets\/.+/));
 
 	const getStore = storeName => {
-		return getModuleByExport(m => m?.exports?.Z?._dispatchToken && m?.exports?.Z?.getName() === storeName, true);
+		const ds = ["Z", "ZP", "default"];
+		return getModuleByExport(m =>
+			ds.some(a => m?.exports[a]?._dispatchToken && m?.exports[a]?.getName() === storeName), true);
 	};
 
 	const getRawModule = (filter, options) => {
@@ -94,6 +96,7 @@ export default () => {
 	}
 	window.S = {
 		r: webpackRequire,
+		getModuleAndKey,
 		modules,
 		sources,
 		moduleById,

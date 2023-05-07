@@ -70,7 +70,7 @@ export class Disposable {
 
 	Dispose() {
 		this.patches?.forEach(p => p?.());
-		this.patches = null;
+		this.patches = [];
 	}
 }
 

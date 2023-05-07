@@ -9,6 +9,7 @@ import NoTrack from "./mods/NoTrack";
 import ShowUserId from "./mods/ShowUserId";
 import SpotifyListenAlong from "./mods/SpotifyListenAlong";
 import Devtools from "./mods/Devtools";
+import Whois from "./mods/Whois";
 
 
 const mods = [
@@ -17,6 +18,7 @@ const mods = [
 	new EmojiLetters(),
 	new GuildInfo(),
 	new MemUsage(),
+	new Whois(),
 	new NoTrack(),
 	new ShowUserId(),
 	new SpotifyListenAlong()

@@ -1,5 +1,13 @@
 {
 	"Modules": {
+		"FetchUser": {
+			"filter": "Filters.byStrings(\"USER_UPDATE\",\"default.getUser\",\"oldFormErrors\")",
+			"options": "{ searchExports: true }"
+		},
+		"MentionComponent": {
+			"filter": "Filters.byStrings(\"backgroundColor\",\"color\",\"interactive\", \"wrapper\")",
+			"options": "{ searchExports: false }"
+		},
 		"EmojiFunctions": {
 			"filter": "Filters.byProps(\"getEmojiUnavailableReason\")",
 			"options": "{ searchExports: true }"
