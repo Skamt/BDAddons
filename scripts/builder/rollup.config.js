@@ -9,7 +9,6 @@ const nodeResolve = require("@rollup/plugin-node-resolve");
 const { eslintBundle } = require("rollup-plugin-eslint-bundle");
 
 const css = require("./rollup-plugins/css.js");
-const eslint = require("./rollup-plugins/eslint.js");
 const beautify = require("./rollup-plugins/beautify.js");
 const modulesAutoLoader = require("./rollup-plugins/modules-auto-loader.js");
 const componentsAutoLoader = require("./rollup-plugins/components-auto-loader.js");
@@ -73,7 +72,6 @@ module.exports = function getConfig(inputPath, outputPath, pluginConfig) {
 				}),
 				changelog(pluginConfig),
 				css(),
-				// eslint(),
 				sucrase(sucraseConfig),
 				cleanup(cleanupConfig),
 				eslintBundle(eslintBundleConfig)

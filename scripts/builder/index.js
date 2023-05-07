@@ -106,7 +106,7 @@ function dev() {
 	process.stdin.on('keypress', (chunk, { ctrl, name }) => {
 		if (ctrl && name == 'c')
 			build([pluginFolder])
-			.then(a => process.exit(0));
+			.then(() => process.exit(0));
 
 	});
 }

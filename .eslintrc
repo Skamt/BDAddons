@@ -27,6 +27,7 @@
 	"plugins": [
 		"react"
 	],
+	"ignorePatterns":["**.css","**.json"],
 	"globals": {
 		"config": "readonly",
 		"process": "readonly",
