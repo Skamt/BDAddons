@@ -40,7 +40,7 @@ export default () => {
 		let matches = [];
 		for (let i = 0; i < indices.length; i++) {
 			const module = modules[indices[i]];
-			if (!module || module.exports === DOMTokenList.prototype || module === window) continue;
+			if (!module || !module.exports || module.exports === DOMTokenList.prototype || module === window) continue;
 			if (filter(module)) {
 				if (first) return module;
 				else matches.push(module);
@@ -61,10 +61,10 @@ export default () => {
 	const getAllAssets = () => Object.values(modules).filter(a => typeof a.exports === "string" && a.exports.match(/\/assets\/.+/));
 
 	// get store by store name
-	const getStore = storeName => {
+	const getStore = (storeName, first = true) => {
 		const ds = ["Z", "ZP", "default"];
 		return getModuleByExport(m =>
-			ds.some(a => m?.exports[a]?._dispatchToken && m?.exports[a]?.getName() === storeName), true);
+			ds.some(a => m?.exports[a]?._dispatchToken && m?.exports[a]?.getName().toLowerCase().includes(storeName.toLowerCase())), first);
 	};
 
 	// returns module using BD getModule
