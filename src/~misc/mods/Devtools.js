@@ -9,6 +9,8 @@ export default () => {
 	]);
 	chunk.pop();
 
+	let graph = [];
+
 	const modules = webpackRequire.c;
 	const sources = webpackRequire.m;
 
@@ -40,7 +42,7 @@ export default () => {
 		let matches = [];
 		for (let i = 0; i < indices.length; i++) {
 			const module = modules[indices[i]];
-			if (!module || !module.exports || module.exports === DOMTokenList.prototype || module === window) continue;
+			if (!module || module.exports === DOMTokenList.prototype || module === window) continue;
 			if (filter(module)) {
 				if (first) return module;
 				else matches.push(module);
@@ -74,6 +76,20 @@ export default () => {
 		return module;
 	};
 
+	const getModuleAndSourceByFilter = (filter, options) => {
+		const module = getRawModule(filter, options);
+		if (!module) return {}
+		const moduleId = module.id;
+		return getModuleAndSourceById(moduleId);
+	}
+
+	const getModuleAndSourceById = (moduleId) => {
+		return {
+			source: sourceById(moduleId),
+			module: moduleById(moduleId)
+		}
+	}
+
 	// returns all information abut module By filter
 	const getAllByFilter = (filter, options) => {
 		const module = getRawModule(filter, options);
@@ -101,12 +117,26 @@ export default () => {
 			try { return Object.values(m.exports).some(v => v === val) } catch { return false; }
 		}, first);
 	}
-	
+
+	const generateGraph = () => {
+		graph = Object.keys(webpackRequire.c).map(a => ({ id: a, modules: modulesImportedInModule(a) }));
+	}
+
+	const getGraph = () => graph;
+
+	// const modulesImportingModule = (id) => {
+	// 	return graph.filter(({id,modules}) =>  modules.includes(id));
+	// }
+
 	window.S = {
 		r: webpackRequire,
+		getGraph,
+		generateGraph,
 		getModuleAndKey,
 		modules,
 		sources,
+		getModuleAndSourceById,
+		getModuleAndSourceByFilter,
 		moduleById,
 		sourceById,
 		getRawModule,

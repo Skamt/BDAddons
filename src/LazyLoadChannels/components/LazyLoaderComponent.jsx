@@ -39,16 +39,7 @@ function getChannelStats(messages) {
 export default ({ channel, loadChannel, messages }) => {
 	const [blink, setBlink] = React.useState("");
 	const [checked, setChecked] = React.useState(false);
-	const [channelStats, setChannelStats] = React.useState({ messages: 0, reactions: 0, embeds: 0, links: 0, images: 0, videos: 0 });
-
-	const startBlinking = () => {
-		setBlink("blink");
-		setTimeout(() => setBlink(""), 1200);
-	};
-
-	React.useEffect(() => {
-		setChannelStats(getChannelStats(messages));
-	}, [messages.length]);
+	const channelStats = getChannelStats(messages);
 
 	const loadMessagesHandler = () => {
 		if (channelStats.messages) Toast.warning("Messages are alreayd Loaded!!");
@@ -57,6 +48,11 @@ export default ({ channel, loadChannel, messages }) => {
 				Toast.success("Messages are Loaded!!");
 				startBlinking();
 			});
+	};
+
+	const startBlinking = () => {
+		setBlink("blink");
+		setTimeout(() => setBlink(""), 1200);
 	};
 
 	const loadChannelHandler = () => {
