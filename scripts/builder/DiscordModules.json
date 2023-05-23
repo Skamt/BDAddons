@@ -49,7 +49,7 @@
 			"options": "{ searchExports: true }"
 		},
 		"getStickerSendability": {
-			"filter": "Filters.byStrings(\"canUseStickersEverywhere\")",
+			"filter": "Filters.byStrings(\"canUseStickersEverywhere\", \"USE_EXTERNAL_STICKERS\")",
 			"options": "{ searchExports: true }"
 		},
 		"CloseExpressionPicker": {

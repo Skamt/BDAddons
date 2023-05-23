@@ -10,7 +10,7 @@ export default () => {
 	 * If you click on a sticker while the textarea has some text
 	 * the sticker will be added as attachment, and therefore triggers an api request
 	 * So we intercept
-	 */
+	 * */
 	if (MessageActions)
 		Patcher.before(MessageActions, "sendMessage", (_, args) => {
 			const [channelId, , , attachments] = args;

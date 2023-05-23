@@ -1,5 +1,5 @@
 const path = require("path");
-const buildMeta = require('./helpers/buildMeta.js');
+const buildMeta = require("./helpers/buildMeta.js");
 
 const json = require("@rollup/plugin-json");
 const alias = require("@rollup/plugin-alias");
@@ -14,51 +14,52 @@ const modulesAutoLoader = require("./rollup-plugins/modules-auto-loader.js");
 const componentsAutoLoader = require("./rollup-plugins/components-auto-loader.js");
 
 const sucraseConfig = {
-	transforms: ['jsx'],
+	transforms: ["jsx"],
 	production: true,
-	disableESTransforms: true,
+	disableESTransforms: true
 };
 
 const cleanupConfig = {
-	comments: ['some', /\*/],
+	comments: ["some", /\*/],
 	maxEmptyLines: 1,
 	extensions: [".js", ".jsx", ".css"],
 	sourcemap: false
 };
 
 const eslintBundleConfig = {
-	formatter: 'stylish'
+	formatter: "stylish"
 };
 
-const changelog = (pluginConfig) => {
+const changelog = pluginConfig => {
 	let first = true;
-	return !pluginConfig.changelog ? {} : {
-		name: "Changelog",
-		transform(code) {
-			if (first) {
-				first = false;
-				if (pluginConfig.changelog) {
-					code += `import shouldChangelog from "@Utils/Changelog";shouldChangelog()?.();`;
-					return code;
+	return !pluginConfig.changelog
+		? {}
+		: {
+				name: "Changelog",
+				transform(code) {
+					if (first) {
+						first = false;
+						if (pluginConfig.changelog) {
+							code += `import shouldChangelog from "@Utils/Changelog";shouldChangelog()?.();`;
+							return code;
+						}
+					}
 				}
-			}
-		}
-	};
-}
+		  };
+};
 
 const aliasesObj = {
 	entries: {
-		"@Api": path.resolve('common', 'Api'),
-		"@Utils": path.resolve('common', 'Utils'),
-		"@Webpack": path.resolve('common', 'Webpack'),
+		"@Api": path.resolve("common", "Api"),
+		"@Utils": path.resolve("common", "Utils"),
+		"@Webpack": path.resolve("common", "Webpack")
 	}
 };
 
 module.exports = function getConfig(inputPath, outputPath, pluginConfig) {
-
 	return {
 		input: {
-			input: path.resolve(inputPath, 'index'),
+			input: path.resolve(inputPath, "index"),
 			external: "electron",
 			treeshake: "smallest",
 			plugins: [
@@ -79,16 +80,14 @@ module.exports = function getConfig(inputPath, outputPath, pluginConfig) {
 		},
 		output: {
 			file: outputPath,
-			format: 'cjs',
+			format: "cjs",
 			generatedCode: {
 				constBindings: true,
 				objectShorthand: true
 			},
 			strict: false,
-			intro: `${buildMeta(pluginConfig)}\nconst config = ${JSON.stringify(pluginConfig, null, 4)}`,
-			plugins: [
-				beautify()
-			]
+			intro: `${buildMeta(pluginConfig)}\nconst config = ${beautify.b(JSON.stringify(pluginConfig))}`,
+			plugins: [beautify()]
 		}
-	}
-}
+	};
+};

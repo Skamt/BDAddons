@@ -1,4 +1,4 @@
-const beautify = require('js-beautify').js;
+const beautify = require("js-beautify").js;
 
 const config = {
 	"indent_size": "1",
@@ -20,11 +20,15 @@ const config = {
 	"indent_empty_lines": false
 };
 
-module.exports = function() {
+module.exports = function () {
 	return {
 		name: "beautify",
 		renderChunk(source) {
-			return beautify(source, config)
+			return beautify(source, config);
 		}
 	};
+};
+
+module.exports.b = function (code) {
+	return beautify(beautify(code, config), { ...config, "indent_scripts": "preserve-inline", "brace_style": "expand" });
 };

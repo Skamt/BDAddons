@@ -18,16 +18,13 @@ export default class NoTrack extends Disposable {
 	}
 
 	urlRegex(name) {
-		return new RegExp(`((?:https|http)\\:\\/\\/(?:.*\\.)?${name}\\..*\\/\\S+)`, 'g')
+		return new RegExp(`((?:https|http)\\:\\/\\/(?:.*\\.)?${name}\\..*\\/\\S+)`, "g");
 	}
 
 	sanitizeUrls(content, filters) {
-		filters.forEach((regex) => {
-			content.match(regex)
-				.forEach(url =>
-					content = content.replace(url, url.split('?')[0])
-				);
-		})
+		filters.forEach(regex => {
+			content.match(regex).forEach(url => (content = content.replace(url, url.split("?")[0])));
+		});
 		return content;
 	}
 
@@ -35,11 +32,9 @@ export default class NoTrack extends Disposable {
 		const filters = [];
 		for (const target of this.targets) {
 			const regex = this.urlRegex(target);
-			if (msgcontent.match(regex))
-				filters.push(regex);
+			if (msgcontent.match(regex)) filters.push(regex);
 		}
-		if (filters.length > 0)
-			return this.sanitizeUrls(msgcontent, filters);
+		if (filters.length > 0) return this.sanitizeUrls(msgcontent, filters);
 		return msgcontent;
 	}
 
@@ -52,26 +47,23 @@ export default class NoTrack extends Disposable {
 
 	Init() {
 		this.once();
-		if (Anchor)
-			this.patches.push(Patcher.before(Anchor, "type", (_, args) => {
-				args[0].href = this.handleMessage(args[0].href);
-			}));
-		else
-			Logger.patch("NoTrack-Anchor");
-		if (MessageActions)
-			this.patches.push(Patcher.before(MessageActions, "sendMessage", (_, [, message]) => {
-				message.content = this.handleMessage(message.content);
-			}));
-		else
-			Logger.patch("NoTrack-MessageActions");
-		if (Dispatcher)
-			this.patches.push(Patcher.before(Dispatcher, "dispatch", (_, [{ type, message }]) => {
-				if (this.blockedEvents.some(e => e === type)) return {};
-				if (type === "MESSAGE_CREATE")
-					if (message.author.id !== UserStore.getCurrentUser().id)
+		this.patches = [
+			Anchor
+				? Patcher.before(Anchor, "type", (_, args) => {
+						args[0].href = this.handleMessage(args[0].href);
+				  })
+				: Logger.patch("NoTrack-Anchor"),
+			MessageActions
+				? Patcher.before(MessageActions, "sendMessage", (_, [, message]) => {
 						message.content = this.handleMessage(message.content);
-			}));
-		else
-			Logger.patch("NoTrack-Dispatcher");
+				  })
+				: Logger.patch("NoTrack-MessageActions"),
+			Dispatcher
+				? Patcher.before(Dispatcher, "dispatch", (_, [{ type, message }]) => {
+						if (this.blockedEvents.some(e => e === type)) return {};
+						if (type === "MESSAGE_CREATE") if (message.author.id !== UserStore.getCurrentUser().id) message.content = this.handleMessage(message.content);
+				  })
+				: Logger.patch("NoTrack-Dispatcher")
+		].filter(Boolean);
 	}
 }

@@ -7,7 +7,7 @@ import StickersSendabilityEnum from "@Enums/StickersSendabilityEnum";
 
 export default () => {
 	/**
-	 * Enable suggestions for custom stickers only 
+	 * Enables suggestions
 	 * */
 	const { module, key } = getStickerSendability;
 	if (module && key)
