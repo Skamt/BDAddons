@@ -1,7 +1,7 @@
 /**
  * @name SendStickersAsLinks
- * @description Enables you to send custom Stickers as links, (custom stickers as in the ones that are added by servers, not official discord stickers).
- * @version 2.2.0
+ * @description Enables you to send custom Stickers as links
+ * @version 2.2.1
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/SendStickersAsLinks
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/SendStickersAsLinks/SendStickersAsLinks.plugin.js
@@ -10,8 +10,8 @@
 const config = {
 	"info": {
 		"name": "SendStickersAsLinks",
-		"version": "2.2.0",
-		"description": "Enables you to send custom Stickers as links, (custom stickers as in the ones that are added by servers, not official discord stickers).",
+		"version": "2.2.1",
+		"description": "Enables you to send custom Stickers as links",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SendStickersAsLinks/SendStickersAsLinks.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SendStickersAsLinks",
 		"authors": [{
@@ -51,12 +51,7 @@ const config = {
 			"name": "Sticker Size",
 			"note": "The size of the sticker in pixels. 160 is recommended.",
 			"value": 160,
-			"markers": [
-				80,
-				100,
-				128,
-				160
-			],
+			"markers": [80, 100, 128, 160],
 			"stickToMarkers": true
 		}
 	]
@@ -123,6 +118,16 @@ const Patcher = Api.Patcher;
 const getModule = Api.Webpack.getModule;
 const Filters = Api.Webpack.Filters;
 
+class MissingZlibAddon {
+	stop() {}
+	start() {
+		BdApi.alert("Missing library", [`**ZeresPluginLibrary** is needed to run **${config.info.name}**.`,
+			"Please download it from the officiel website",
+			"https://betterdiscord.app/plugin/ZeresPluginLibrary"
+		]);
+	}
+}
+
 function getModuleAndKey(filter, options) {
 	let module;
 	const target = getModule((entry, m) => filter(entry) ? (module = m) : false, options);
@@ -133,9 +138,31 @@ function getModuleAndKey(filter, options) {
 	return { module, key };
 }
 
-const Dispatcher = getModule(Filters.byProps("dispatch", "subscribe"), { searchExports: false });
+const isStickerSendable$1 = getModuleAndKey(Filters.byStrings("=r.SENDABLE"), { searchExports: true });
 
-const UserStore = getModule(m => m._dispatchToken && m.getName() === "UserStore");
+const patchStickerClickability = () => {
+	/**
+	 * Make stickers clickable.
+	 **/
+	const { module, key } = isStickerSendable$1;
+	if (module && key) Patcher.after(module, key, () => true);
+	else Logger.patch("patchStickerClickability");
+};
+
+function showToast(content, type) {
+	UI.showToast(`[${config.info.name}] ${content}`, { type });
+}
+
+const Toast = {
+	success(content) { showToast(content, "success"); },
+	info(content) { showToast(content, "info"); },
+	warning(content) { showToast(content, "warning"); },
+	error(content) { showToast(content, "error"); }
+};
+
+const MessageActions = getModule(Filters.byProps('jumpToMessage', '_sendMessage'), { searchExports: false });
+
+const Dispatcher = getModule(Filters.byProps("dispatch", "subscribe"), { searchExports: false });
 
 const PendingReplyStore = getModule(m => m._dispatchToken && m.getName() === "PendingReplyStore");
 
@@ -155,49 +182,6 @@ function getReply(channelId) {
 		}
 	}
 }
-
-class MissingZlibAddon {
-	stop() {}
-	start() {
-		BdApi.alert("Missing library", [`**ZeresPluginLibrary** is needed to run **${config.info.name}**.`,
-			"Please download it from the officiel website",
-			"https://betterdiscord.app/plugin/ZeresPluginLibrary"
-		]);
-	}
-}
-
-const isStickerSendable$1 = getModuleAndKey(Filters.byStrings("=r.SENDABLE"), { searchExports: true });
-
-const StickerTypeEnum = getModule(Filters.byProps("GUILD", "STANDARD"), { searchExports: true }) || {
-	"STANDARD": 1,
-	"GUILD": 2
-};
-
-const patchStickerClickability = () => {
-	/**
-	 * if guild sticker return true to make it clickable
-	 * ignoreing discord's stickers because they're not regular images, and ToS
-	 * */
-	const { module, key } = isStickerSendable$1;
-	if (module && key)
-		Patcher.after(module, key, (_, args) => {
-			return args[0].type === StickerTypeEnum.GUILD;
-		});
-	else Logger.patch("patchStickerClickability");
-};
-
-function showToast(content, type) {
-	UI.showToast(`[${config.info.name}] ${content}`, { type });
-}
-
-const Toast = {
-	success(content) { showToast(content, "success"); },
-	info(content) { showToast(content, "info"); },
-	warning(content) { showToast(content, "warning"); },
-	error(content) { showToast(content, "error"); }
-};
-
-const MessageActions = getModule(Filters.byProps('jumpToMessage', '_sendMessage'), { searchExports: false });
 
 function sendMessageDirectly(channel, content) {
 	if (MessageActions)
@@ -242,6 +226,11 @@ const STRINGS = {
 	disabledAnimatedStickersErrorMessage: "You have disabled animated stickers in settings."
 };
 
+const StickerTypeEnum = getModule(Filters.byProps("GUILD", "STANDARD"), { searchExports: true }) || {
+	"STANDARD": 1,
+	"GUILD": 2
+};
+
 const StickerFormatEnum = getModule(Filters.byProps("APNG", "LOTTIE"), { searchExports: true }) || {
 	"PNG": 1,
 	"APNG": 2,
@@ -256,11 +245,13 @@ const StickersSendabilityEnum = getModule(Filters.byProps("SENDABLE_WITH_BOOSTED
 	"SENDABLE_WITH_BOOSTED_GUILD": 3
 };
 
+const UserStore = getModule(m => m._dispatchToken && m.getName() === "UserStore");
+
 const StickersStore = getModule(m => m._dispatchToken && m.getName() === "StickersStore");
 
 const ChannelStore = getModule(m => m._dispatchToken && m.getName() === "ChannelStore");
 
-const getStickerSendability$1 = getModuleAndKey(Filters.byStrings("canUseStickersEverywhere"), { searchExports: true });
+const getStickerSendability$1 = getModuleAndKey(Filters.byStrings("canUseStickersEverywhere", "USE_EXTERNAL_STICKERS"), { searchExports: true });
 
 const getStickerSendability = getStickerSendability$1.module[getStickerSendability$1.key];
 
@@ -327,7 +318,7 @@ const patchSendSticker = () => {
 
 const StickerModule = getModuleAndKey(Filters.byStrings("sticker", "withLoadingIndicator"), { searchExports: false });
 
-const patchGetStickerById = () => {
+const patchStickerComponent = () => {
 	const { module, key } = StickerModule;
 	if (module && key)
 		Patcher.after(module, key, (_, args, returnValue) => {
@@ -347,7 +338,7 @@ const patchStickerAttachement = () => {
 	 * If you click on a sticker while the textarea has some text
 	 * the sticker will be added as attachment, and therefore triggers an api request
 	 * So we intercept
-	 */
+	 * */
 	if (MessageActions)
 		Patcher.before(MessageActions, "sendMessage", (_, args) => {
 			const [channelId, , , attachments] = args;
@@ -367,7 +358,7 @@ const patchStickerAttachement = () => {
 
 const patchStickerSuggestion = () => {
 	/**
-	 * Enable suggestions for custom stickers only
+	 * Enables suggestions
 	 * */
 	const { module, key } = getStickerSendability$1;
 	if (module && key)
@@ -401,7 +392,7 @@ const index = !global.ZeresPluginLibrary ? MissingZlibAddon : (() => {
 				DOM.addStyle(css);
 				patchStickerClickability();
 				patchSendSticker();
-				patchGetStickerById();
+				patchStickerComponent();
 				patchStickerAttachement();
 				patchStickerSuggestion();
 				patchChannelGuildPermissions();
