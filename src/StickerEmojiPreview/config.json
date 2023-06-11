@@ -5,5 +5,9 @@
 		"description": "Adds a zoomed preview to those tiny Stickers and Emojis",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/StickerEmojiPreview/StickerEmojiPreview.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/StickerEmojiPreview"
+	},
+	"settings": {
+		"previewState": false,
+		"previewDefaultState": false
 	}
 }

@@ -1,8 +1,10 @@
 import { React } from "@Api";
+import { useSettings } from "@Utils/Hooks";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 const { Tooltip } = TheBigBoyBundle;
 
 export default props => {
+	const showOnHover = useSettings("showOnHover");
 	return (
 		<Tooltip
 			text="View profile picture"
@@ -10,7 +12,9 @@ export default props => {
 			{tooltipProps => (
 				<div
 					{...tooltipProps}
-					{...props}>
+					{...props}
+					className={`${props.className} ${showOnHover && "VPP-hover"}`}
+					>
 					<svg
 						aria-label={tooltipProps["aria-label"]}
 						aria-hidden="false"

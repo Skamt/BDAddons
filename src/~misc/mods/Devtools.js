@@ -1,4 +1,5 @@
 import { getModule, getModuleAndKey } from "@Webpack";
+import Dispatcher from "@Modules/Dispatcher";
 
 export default () => {
 	const chunkName = Object.keys(window).find(key => key.startsWith("webpackChunk"));
@@ -36,24 +37,9 @@ export default () => {
 	// Returns an array of module IDs importing target module
 	const modulesImportingModule = id => Object.keys(sources).filter(sourceId => modulesImportedInModule(sourceId).includes("" + id));
 
-	// returns module based on filter, filters recieves whole module {id, loaded, exports}
-	const getModuleByExport = (filter, first = true) => {
-		const indices = Object.keys(modules);
-		let matches = [];
-		for (let i = 0; i < indices.length; i++) {
-			const module = modules[indices[i]];
-			if (!module || module.exports === DOMTokenList.prototype || module === window) continue;
-			if (filter(module)) {
-				if (first) return module;
-				else matches.push(module);
-			}
-		}
-		return matches.length ? matches : undefined;
-	};
-
-	// returns source based on filter, filters recieves whole module {id, loaded, exports}
+	// returns source based on filter,
 	const getSourceByExport = (filter, first = true) => {
-		const result = getModuleByExport(filter, first);
+		const result = getRawModuleByExportFilter(filter, { first });
 
 		if (first) return modules.m[result.id];
 		else return result.map(a => sources[a.id]);
@@ -64,20 +50,18 @@ export default () => {
 
 	// get store by store name
 	const getStore = (storeName, first = true) => {
-		const ds = ["Z", "ZP", "default"];
-		return getModuleByExport(m =>
-			ds.some(a => m?.exports[a]?._dispatchToken && m?.exports[a]?.getName().toLowerCase().includes(storeName.toLowerCase())), first);
+		return getModule(m => m && m._dispatchToken && m.getName().toLowerCase().includes(storeName.toLowerCase()), { first });
 	};
 
 	// returns module using BD getModule
-	const getRawModule = (filter, options) => {
+	const getRawModuleByExportFilter = (filter, options) => {
 		let module;
 		getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
 		return module;
 	};
 
 	const getModuleAndSourceByFilter = (filter, options) => {
-		const module = getRawModule(filter, options);
+		const module = getModule(filter, options);
 		if (!module) return {}
 		const moduleId = module.id;
 		return getModuleAndSourceById(moduleId);
@@ -92,14 +76,14 @@ export default () => {
 
 	// returns all information abut module By filter
 	const getAllByFilter = (filter, options) => {
-		const module = getRawModule(filter, options);
+		const module = getModule(filter, options);
 		if (!module) return {}
 		const moduleId = module.id;
 		return getAllById(moduleId);
 	};
 
 	// returns all information abut module By module Id
-	const getAllById = (moduleId) => {
+	const getAllById = moduleId => {
 		return {
 			target: {
 				id: moduleId,
@@ -113,9 +97,9 @@ export default () => {
 
 	// checks props on the exports, helpfull for getting class names
 	const byPropValue = (val, first = true) => {
-		return getModuleByExport(m => {
-			try { return Object.values(m.exports).some(v => v === val) } catch { return false; }
-		}, first);
+		return getModule(m => {
+			try { return Object.values(m).some(v => v === val) } catch { return false; }
+		}, { first });
 	}
 
 	const generateGraph = () => {
@@ -124,12 +108,25 @@ export default () => {
 
 	const getGraph = () => graph;
 
-	// const modulesImportingModule = (id) => {
-	// 	return graph.filter(({id,modules}) =>  modules.includes(id));
-	// }
+	const getEventListeners = (eventName) => {
+		const nodes = Dispatcher._actionHandlers._dependencyGraph.nodes;
+		const subs = Dispatcher._subscriptions;
+		return {
+			stores: Object.values(nodes).map((a) => a.actionHandler[eventName] && a).filter(Boolean),
+			subs: subs[eventName]
+		};
+	}
+
+	const getStoreListeners = StoreName => {
+		const nodes = Dispatcher._actionHandlers._dependencyGraph.nodes;
+		const StoreHandlers = Object.values(nodes).filter(({name})=> name === StoreName);
+		return StoreHandlers;
+	}
 
 	window.S = {
 		r: webpackRequire,
+		getStoreListeners,
+		getEventListeners,
 		getGraph,
 		generateGraph,
 		getModuleAndKey,
@@ -139,10 +136,10 @@ export default () => {
 		getModuleAndSourceByFilter,
 		moduleById,
 		sourceById,
-		getRawModule,
+		getRawModuleByExportFilter,
 		modulesImportedInModule,
 		modulesImportingModule,
-		getModuleByExport,
+		getModule,
 		getAllByFilter,
 		getAllById,
 		byPropValue,

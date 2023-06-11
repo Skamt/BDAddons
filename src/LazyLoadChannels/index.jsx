@@ -1,7 +1,7 @@
 import css from "./styles";
 import Settings from "@Utils/Settings";
 import Logger from "@Utils/Logger";
-import { DOM, Data, React, Patcher } from "@Api";
+import { DOM, React, Patcher } from "@Api";
 import ChannelsStateManager from "./ChannelsStateManager";
 
 import Dispatcher from "@Modules/Dispatcher";
@@ -18,8 +18,7 @@ import { EVENTS } from "./Constants";
 
 export default class LazyLoadChannels {
 	constructor() {
-		this.settings = Data.load("settings") || { autoloadedChannelIndicator: false };
-		Settings.init(this.settings);
+		Settings.init(config.settings);
 		ChannelsStateManager.Init();
 		this.autoLoad = false;
 		this.loadChannel = this.loadChannel.bind(this);
@@ -119,12 +118,8 @@ export default class LazyLoadChannels {
 			<SettingComponent
 				description="Auto load indicator."
 				note="Whether or not to show an indicator for channels set to auto load"
-				value={this.settings.autoloadedChannelIndicator}
-				onChange={e => {
-					this.settings.autoloadedChannelIndicator = e;
-					Settings.update(this.settings);
-					Data.save("settings", this.settings);
-				}}
+				value={Settings.get("autoloadedChannelIndicator")}
+				onChange={e => Settings.set("autoloadedChannelIndicator", e)}
 			/>
 		);
 	}

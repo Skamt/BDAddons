@@ -6,12 +6,11 @@ import { Data, DOM, React, Patcher } from "@Api";
 import patchPickerInspector from "./patches/patchPickerInspector";
 import patchCloseExpressionPicker from "./patches/patchCloseExpressionPicker";
 
-import SettingComponent from "./components/SettingComponent"
+import SettingComponent from "./components/SettingComponent";
 
 export default class StickerEmojiPreview {
 	constructor() {
-		this.settings = Data.load("settings") || { previewState: false, previewDefaultState: false };
-		Settings.init(this.settings);
+		Settings.init(config.settings);
 	}
 
 	start() {
@@ -33,13 +32,13 @@ export default class StickerEmojiPreview {
 		return (
 			<SettingComponent
 				description="Preview open by default."
-				value={this.settings.previewDefaultState}
-				onChange={e => {
-					this.settings.previewDefaultState = e;
-					this.settings.previewState = e;
-					Settings.update(this.settings);
-					Data.save("settings", this.settings);
-				}}
+				value={Settings.get("previewDefaultState")}
+				onChange={e =>
+					Settings.setMultiple({
+						previewDefaultState: e,
+						previewState: e
+					})
+				}
 			/>
 		);
 	}

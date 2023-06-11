@@ -1,5 +1,5 @@
 import { React } from "@Api";
-import { copy,  } from "@Utils";
+import { copy } from "@Utils";
 import Toast from "@Utils/Toast";
 
 export default ({ color }) => (

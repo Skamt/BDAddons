@@ -1,5 +1,6 @@
 import css from "./styles";
 import { Data, DOM, React, Patcher } from "@Api";
+import Settings from "@Utils/Settings";
 import { getNestedProp } from "@Utils";
 import { isSelf } from "@Utils/User";
 import Logger from "@Utils/Logger";
@@ -47,7 +48,7 @@ function openCarousel(items) {
 	));
 }
 
-function getButtonClasses(user, profileType, banner, showOnHover) {
+function getButtonClasses(user, profileType, banner) {
 	let res = "VPP-Button";
 	if (profileType === ProfileTypeEnum.MODAL) res += " VPP-profile";
 	if (isSelf(user)) res += " VPP-self";
@@ -55,13 +56,12 @@ function getButtonClasses(user, profileType, banner, showOnHover) {
 		if (banner) res += " VPP-left";
 		else res += " VPP-right";
 	}
-	if(showOnHover) res += " VPP-hover";
 	return res;
 }
 
 export default class ViewProfilePicture {
 	constructor() {
-		this.settings = Data.load("settings") || { showOnHover: false };
+		Settings.init(config.settings);
 	}
 
 	clickHandler(user, bannerObject, isUserPopout) {
@@ -78,13 +78,13 @@ export default class ViewProfilePicture {
 		if (module && key)
 			Patcher.after(module, key, (_, [{ user, profileType }], returnValue) => {
 				if (profileType === ProfileTypeEnum.SETTINGS) return;
-				
+
 				returnValue.props.className += " VPP-container";
 
 				const bannerObject = getNestedProp(returnValue, "props.children.1.props.children.props.style");
 				const children = getNestedProp(returnValue, "props.children.1.props.children.props.children");
 
-				const buttonClasses = getButtonClasses(user, profileType, bannerObject?.backgroundImage, this.settings.showOnHover);
+				const buttonClasses = getButtonClasses(user, profileType, bannerObject?.backgroundImage);
 
 				if (Array.isArray(children) && bannerObject) {
 					children.push(
@@ -122,11 +122,8 @@ export default class ViewProfilePicture {
 			<SettingComponent
 				description="Show on hover"
 				note="By default hide ViewProfilePicture button and show on hover."
-				value={this.settings.showOnHover}
-				onChange={e => {
-					this.settings.showOnHover = e;
-					Data.save("settings", this.settings);
-				}}
+				value={Settings.get("showOnHover")}
+				onChange={e => Settings.set("showOnHover", e)}
 			/>
 		);
 	}

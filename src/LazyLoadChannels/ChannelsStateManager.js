@@ -1,7 +1,7 @@
 import { Data } from "@Api";
 
 export default {
-	Init() {
+	init() {
 		this.channels = new Set(Data.load("channels") || []);
 		this.guilds = new Set(Data.load("guilds") || []);
 		this.exceptions = new Set(Data.load("exceptions") || []);

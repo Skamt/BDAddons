@@ -1,15 +1,36 @@
-export default {
-	settings: {},
-	get(key){
-		return this.settings[key];
+import { Data } from "@Api";
+
+const Settings = {
+	_listeners: [],
+	_settings: {},
+	_commit() {
+		Data.save("settings", this._settings);
+		this._notify();
 	},
-	set(key, val){
-		return this.settings[key] = val;
+	_notify() {
+		this._listeners.forEach(listener => listener?.());
 	},
-	update(settings){
-		this.init(settings);
+	get(key) {
+		return this._settings[key];
 	},
-	init(settings){
-		this.settings = settings;
+	set(key, val) {
+		this._settings[key] = val;
+		this._commit();
+	},
+	setMultiple(settings) {
+		this._settings = {
+			...this._settings,
+			...settings
+		};
+		this._commit();
+	},
+	init(defaultSettings) {
+		this._settings = Data.load("settings") || defaultSettings;
+	},
+	addUpdateListener(listener) {
+		this._listeners.push(listener);
+		return () => this._listeners.splice(this._listeners.length - 1, 1);
 	}
-}
+};
+
+export default Settings;
