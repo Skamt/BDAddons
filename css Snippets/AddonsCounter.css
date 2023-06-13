@@ -1,0 +1,79 @@
+.bd-addon-list:not(#a),
+.bd-addon-controls:not(#a) {
+	display: contents;
+}
+
+#themes-tab,
+#plugins-tab {
+	display: grid;
+	grid-template-areas:
+		"title title title title title title"
+		"search search counter controls controls controls";
+	grid-template-columns: repeat(6, minmax(0, 1fr));
+	column-gap: 10px;
+	min-height: unset;
+}
+
+.bd-search-wrapper {
+	width: 224px;
+	margin-bottom: 10px;
+}
+
+.bd-settings-title {
+	grid-area: title;
+}
+
+.bd-search-wrapper {
+	grid-area: search;
+}
+
+.bd-controls-advanced {
+	white-space: nowrap;
+	grid-area: controls;
+	justify-self: flex-end;
+	margin-bottom: 10px;
+}
+
+.bd-addon-card {
+	grid-column: 1/-1;
+}
+
+.bd-addon-list.bd-grid-view .bd-addon-card {
+	margin-bottom: 10px;
+}
+
+.bd-grid-view .bd-addon-card {
+	grid-column: span 3;
+}
+
+.bd-addon-list:after {
+	grid-area: counter;
+	white-space: nowrap;
+	justify-self: flex-start;
+	box-sizing: border-box;
+	color: var(--text-normal);
+	background-color: var(--background-tertiary);
+	font-weight: 500;
+	font-family: var(--font-primary);
+	height: 27px;
+	padding: 6px 3px;
+	margin-left: 5px;
+	border-radius: 3px;
+}
+
+/* Counter Styles */
+:root {
+	counter-reset: activeAddonCount addonCount;
+}
+
+.bd-addon-card {
+	counter-increment: addonCount;
+}
+
+.bd-switch-checked {
+	counter-increment: activeAddonCount;
+}
+
+.bd-addon-list:after {
+	content: counter(activeAddonCount) " / " counter(addonCount);
+}
