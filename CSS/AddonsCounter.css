@@ -71,7 +71,7 @@
 	counter-increment: addonCount;
 }
 
-.bd-addon-card:has(input[checked]) {
+.bd-switch-checked {
 	counter-increment: addonCount activeAddonCount;
 }
 
