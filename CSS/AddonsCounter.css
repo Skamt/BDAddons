@@ -36,6 +36,11 @@
 	grid-area: addons;
 }
 
+.bd-empty-image-container,
+.bd-empty-results {
+	grid-column: 1/-1;
+}
+
 /* Cosmetics*/
 
 #themes-tab:after,
@@ -66,8 +71,8 @@
 	counter-increment: addonCount;
 }
 
-.bd-switch-checked {
-	counter-increment: activeAddonCount;
+.bd-addon-card:has(input[checked]) {
+	counter-increment: addonCount activeAddonCount;
 }
 
 #themes-tab:after,
