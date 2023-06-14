@@ -1,22 +1,22 @@
-.bd-addon-list:not(#a),
-.bd-addon-controls:not(#a) {
-	display: contents;
-}
+
+ /* Placement */
 
 #themes-tab,
 #plugins-tab {
 	display: grid;
 	grid-template-areas:
-		"title title title title title title"
-		"search search counter controls controls controls";
-	grid-template-columns: repeat(6, minmax(0, 1fr));
-	column-gap: 10px;
+		"title title title"
+		"search counter controls"
+		"addons addons addons";
 	min-height: unset;
 }
 
-.bd-search-wrapper {
-	width: 224px;
-	margin-bottom: 10px;
+#themes-tab:after, #plugins-tab:after {
+	grid-area: counter;
+}
+
+.bd-addon-controls:not(#a) {
+	display: contents;
 }
 
 .bd-settings-title {
@@ -28,26 +28,17 @@
 }
 
 .bd-controls-advanced {
-	white-space: nowrap;
 	grid-area: controls;
 	justify-self: flex-end;
-	margin-bottom: 10px;
 }
 
-.bd-addon-card {
-	grid-column: 1/-1;
+.bd-addon-list {
+	grid-area: addons;
 }
 
-.bd-addon-list.bd-grid-view .bd-addon-card {
-	margin-bottom: 10px;
-}
+/* Cosmetics*/
 
-.bd-grid-view .bd-addon-card {
-	grid-column: span 3;
-}
-
-.bd-addon-list:after {
-	grid-area: counter;
+#themes-tab:after, #plugins-tab:after {
 	white-space: nowrap;
 	align-self: flex-start;
 	justify-self:flex-start;
@@ -62,13 +53,7 @@
 	padding: 6px;
 	margin-left: 0px;
 	border-left:1px solid var(--text-muted);
-
 	border-radius: 0 3px 3px 0;
-}
-
-.bd-empty-image-container,
-.bd-empty-results{
-	grid-column:1/-1;
 }
 
 /* Counter Styles */
@@ -84,6 +69,14 @@
 	counter-increment: activeAddonCount;
 }
 
-.bd-addon-list:after {
+#themes-tab:after,
+#plugins-tab:after {
 	content: counter(activeAddonCount) " / " counter(addonCount);
+	animation:f 100ms linear infinite forwards;
+}
+
+@keyframes f{
+	to{
+		content: counter(activeAddonCount) " / " counter(addonCount);
+	}
 }
