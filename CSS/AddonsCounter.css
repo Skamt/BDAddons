@@ -72,7 +72,7 @@
 }
 
 .bd-switch-checked {
-	counter-increment: addonCount activeAddonCount;
+	counter-increment: activeAddonCount;
 }
 
 #themes-tab:after,
