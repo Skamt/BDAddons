@@ -1,5 +1,4 @@
 /* Placement */
-
 #themes-tab,
 #plugins-tab {
 	display: grid;
@@ -42,7 +41,6 @@
 }
 
 /* Cosmetics*/
-
 #themes-tab:after,
 #plugins-tab:after {
 	white-space: nowrap;
