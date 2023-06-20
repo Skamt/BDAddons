@@ -48,22 +48,20 @@ export default class NoTrack extends Disposable {
 	Init() {
 		this.once();
 		this.patches = [
-			Anchor
-				? Patcher.before(Anchor, "type", (_, args) => {
-						args[0].href = this.handleMessage(args[0].href);
-				  })
-				: Logger.patch("NoTrack-Anchor"),
-			MessageActions
-				? Patcher.before(MessageActions, "sendMessage", (_, [, message]) => {
-						message.content = this.handleMessage(message.content);
-				  })
-				: Logger.patch("NoTrack-MessageActions"),
-			Dispatcher
-				? Patcher.before(Dispatcher, "dispatch", (_, [{ type, message }]) => {
-						if (this.blockedEvents.some(e => e === type)) return {};
-						if (type === "MESSAGE_CREATE") if (message.author.id !== UserStore.getCurrentUser().id) message.content = this.handleMessage(message.content);
-				  })
-				: Logger.patch("NoTrack-Dispatcher")
+			Anchor ? Patcher.before(Anchor, "type", (_, args) => {
+				args[0].href = this.handleMessage(args[0].href);
+			}) :
+			Logger.patch("NoTrack-Anchor"),
+			MessageActions ? Patcher.before(MessageActions, "sendMessage", (_, [, message]) => {
+				message.content = this.handleMessage(message.content);
+			}) :
+			Logger.patch("NoTrack-MessageActions"),
+			Dispatcher ? Patcher.before(Dispatcher, "dispatch", (_, [{ type, message }]) => {
+				if (this.blockedEvents.some(e => e === type)) return {};
+				if (type === "MESSAGE_CREATE")
+					if (message.author.id !== UserStore.getCurrentUser().id) message.content = this.handleMessage(message.content);
+			}) :
+			Logger.patch("NoTrack-Dispatcher")
 		].filter(Boolean);
 	}
 }

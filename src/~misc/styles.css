@@ -67,7 +67,8 @@
 	cursor:pointer;
 	position:relative;
 	margin-left:2px;
-    color: var(--interactive-normal);
+	padding: 6px 0;
+	color: var(--interactive-normal);
 }
 
 :where(.selected-2TbFuo, .containerDefault-YUSmu3:hover) .channelMuteButton{
