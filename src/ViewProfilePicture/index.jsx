@@ -69,7 +69,7 @@ export default class ViewProfilePicture {
 		const guildId = isUserPopout ? SelectedGuildStore.getGuildId() : "";
 		const avatarURL = user.getAvatarURL(guildId, IMG_WIDTH, true);
 		const AvatarImageComponent = getImageModalComponent(avatarURL, { width: IMG_WIDTH, height: IMG_WIDTH });
-		const BannerImageComponent = backgroundImage ? getImageModalComponent(`${backgroundImage.match(/(?<=\().*(?=\?)/)?.[0]}?size=${IMG_WIDTH}`, { width: IMG_WIDTH }) : <ColorModalComponent color={Color ? Color(backgroundColor).hex() : backgroundColor} />;
+		const BannerImageComponent = backgroundImage ? getImageModalComponent(`${backgroundImage.match(/(?<=url\()(.+?)(?=\?|\))/)?.[0]}?size=${IMG_WIDTH}`, { width: IMG_WIDTH }) : <ColorModalComponent color={Color ? Color(backgroundColor).hex() : backgroundColor} />;
 		openCarousel([AvatarImageComponent, BannerImageComponent]);
 	}
 

@@ -81,7 +81,7 @@
 			"options": "{ searchExports: true }"
 		},
 		"Color": {
-			"filter": "Filters.byProps(\"cmyk\", \"hex\", \"hsl\")",
+			"filter": "Filters.byProps(\"Color\", \"hex\", \"hsl\")",
 			"options": "{ searchExports: false }"
 		},
 		"Dispatcher": {
