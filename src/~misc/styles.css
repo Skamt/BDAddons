@@ -67,7 +67,6 @@
 	cursor:pointer;
 	position:relative;
 	margin-left:2px;
-	padding: 6px 0;
 	color: var(--interactive-normal);
 }
 
