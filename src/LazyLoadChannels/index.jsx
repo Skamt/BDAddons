@@ -19,7 +19,7 @@ import { EVENTS } from "./Constants";
 export default class LazyLoadChannels {
 	constructor() {
 		Settings.init(config.settings);
-		ChannelsStateManager.Init();
+		ChannelsStateManager.init();
 		this.autoLoad = false;
 		this.loadChannel = this.loadChannel.bind(this);
 	}

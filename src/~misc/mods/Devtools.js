@@ -7,6 +7,23 @@ const chunk = window[chunkName];
 const webpackRequire = chunk.push([[Symbol()], {}, r => r]);
 chunk.pop();
 
+
+const Helper = {
+	getStoreInfo(store){
+		const storeName = store.getName();
+		return {
+			store,
+			name: storeName,
+			get localVars(){
+				return store.__getLocalVars?.();
+			},
+			get events(){
+				return Misc.getStoreListeners(storeName)?.actionHandler;
+			}
+		}
+	}
+}
+
 const Sources = {
 	_sources: webpackRequire.m,
 	sourceById(id) {
@@ -169,16 +186,19 @@ const Misc = {
 					.sort((a, b) => a[0].localeCompare(b[0]))
 					.forEach(a => {
 						try {
-							Object.defineProperty(stores, `${a[0]}~${a[1]}`, {
+							Object.defineProperty(stores, `${a[0]}`, {
 								get() {
-									return [a[2],a[2].__getLocalVars?.()];
-								},
-								set(n) {
-									throw "Nope";
-								},
-								enumerable: true
+									return Helper.getStoreInfo(a[2]);
+								}
 							});
-						} catch(e) {console.log(e,`${a[0]}~${a[1]}`)}
+						} catch(e) {
+							console.log(`${a[0]}~${a[1]}`)
+							Object.defineProperty(stores, `__${a[0]}~${a[1]}`, {
+								get() {
+									return Helper.getStoreInfo(a[2]);
+								}
+							});
+						}
 					});
 			}
 			return stores;

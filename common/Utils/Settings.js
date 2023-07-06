@@ -17,10 +17,10 @@ const Settings = {
 		this._settings[key] = val;
 		this._commit();
 	},
-	setMultiple(settings) {
+	setMultiple(newSettings) {
 		this._settings = {
 			...this._settings,
-			...settings
+			...newSettings
 		};
 		this._commit();
 	},
