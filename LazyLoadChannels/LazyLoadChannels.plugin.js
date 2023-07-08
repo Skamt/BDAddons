@@ -1,7 +1,7 @@
 /**
  * @name LazyLoadChannels
  * @description Lets you choose whether to load a channel
- * @version 1.2.0
+ * @version 1.2.1
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js
@@ -10,13 +10,16 @@
 const config = {
 	"info": {
 		"name": "LazyLoadChannels",
-		"version": "1.2.0",
+		"version": "1.2.1",
 		"description": "Lets you choose whether to load a channel",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels",
 		"authors": [{
 			"name": "Skamt"
 		}]
+	},
+	"settings": {
+		"autoloadedChannelIndicator": false
 	}
 }
 
@@ -160,25 +163,58 @@ const css = `
   }
 }
 
-.autoload{
+.autoload a{
 	border-left:4px solid #2e7d46;
 }`;
 
+const Api = new BdApi(config.info.name);
+
+const UI = Api.UI;
+const DOM = Api.DOM;
+const Data = Api.Data;
+const React = Api.React;
+const Patcher = Api.Patcher;
+const ContextMenu = Api.ContextMenu;
+
+const getModule = Api.Webpack.getModule;
+const Filters = Api.Webpack.Filters;
+
+const getOwnerInstance = Api.ReactUtils.getOwnerInstance;
+
 const Settings = {
-	settings: {},
+	_listeners: [],
+	_settings: {},
+	_commit() {
+		Data.save("settings", this._settings);
+		this._notify();
+	},
+	_notify() {
+		this._listeners.forEach(listener => listener?.());
+	},
 	get(key) {
-		return this.settings[key];
+		return this._settings[key];
 	},
 	set(key, val) {
-		return this.settings[key] = val;
+		this._settings[key] = val;
+		this._commit();
 	},
-	update(settings) {
-		this.init(settings);
+	setMultiple(newSettings) {
+		this._settings = {
+			...this._settings,
+			...newSettings
+		};
+		this._commit();
 	},
-	init(settings) {
-		this.settings = settings;
+	init(defaultSettings) {
+		this._settings = Data.load("settings") || defaultSettings;
+	},
+	addUpdateListener(listener) {
+		this._listeners.push(listener);
+		return () => this._listeners.splice(this._listeners.length - 1, 1);
 	}
 };
+
+const Settings$1 = Settings;
 
 const Logger = {
 	error(...args) {
@@ -195,22 +231,8 @@ const Logger = {
 	}
 };
 
-const Api = new BdApi(config.info.name);
-
-const UI = Api.UI;
-const DOM = Api.DOM;
-const Data = Api.Data;
-const React = Api.React;
-const Patcher = Api.Patcher;
-const ContextMenu = Api.ContextMenu;
-
-const getModule = Api.Webpack.getModule;
-const Filters = Api.Webpack.Filters;
-
-const getOwnerInstance = Api.ReactUtils.getOwnerInstance;
-
 const ChannelsStateManager = {
-	Init() {
+	init() {
 		this.channels = new Set(Data.load("channels") || []);
 		this.guilds = new Set(Data.load("guilds") || []);
 		this.exceptions = new Set(Data.load("exceptions") || []);
@@ -247,7 +269,7 @@ const ChannelsStateManager = {
 
 function getModuleAndKey(filter, options) {
 	let module;
-	const target = getModule((entry, m) => filter(entry) ? (module = m) : false, options);
+	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
 	module = module?.exports;
 	if (!module) return undefined;
 	const key = Object.keys(module).find(k => module[k] === target);
@@ -293,7 +315,7 @@ const patchChannel = () => {
 	const { module, key } = ChannelComponent;
 	if (module && key)
 		Patcher.after(module, key, (_, [{ channel }], returnValue) => {
-			if (!Settings.get("autoloadedChannelIndicator")) return;
+			if (!Settings$1.get("autoloadedChannelIndicator")) return;
 			if (ChannelsStateManager.getChannelstate(channel.guild_id, channel.id))
 				returnValue.props.children.props.children[1].props.className += " autoload";
 		});
@@ -550,9 +572,8 @@ const patchContextMenu = () => {
 
 class LazyLoadChannels {
 	constructor() {
-		this.settings = Data.load("settings") || { autoloadedChannelIndicator: false };
-		Settings.init(this.settings);
-		ChannelsStateManager.Init();
+		Settings$1.init(config.settings);
+		ChannelsStateManager.init();
 		this.autoLoad = false;
 		this.loadChannel = this.loadChannel.bind(this);
 	}
@@ -651,12 +672,8 @@ class LazyLoadChannels {
 			React.createElement(SettingComponent, {
 				description: "Auto load indicator.",
 				note: "Whether or not to show an indicator for channels set to auto load",
-				value: this.settings.autoloadedChannelIndicator,
-				onChange: e => {
-					this.settings.autoloadedChannelIndicator = e;
-					Settings.update(this.settings);
-					Data.save("settings", this.settings);
-				},
+				value: Settings$1.get("autoloadedChannelIndicator"),
+				onChange: e => Settings$1.set("autoloadedChannelIndicator", e),
 			})
 		);
 	}
