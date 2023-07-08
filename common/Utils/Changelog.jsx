@@ -84,7 +84,7 @@ function showChangelog() {
 	]);
 
 	UI.showConfirmationModal(
-		config.info.name,
+		`${config.info.name} v${config.info.version}`,
 		<ChangelogComponent
 			id="changelog-container"
 			changelog={changelog}
