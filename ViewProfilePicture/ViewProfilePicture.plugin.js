@@ -1,7 +1,7 @@
 /**
  * @name ViewProfilePicture
  * @description Adds a button to the user popout and profile that allows you to view the Avatar and banner.
- * @version 1.2.0
+ * @version 1.2.1
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "ViewProfilePicture",
-		"version": "1.2.0",
+		"version": "1.2.1",
 		"description": "Adds a button to the user popout and profile that allows you to view the Avatar and banner.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture",
@@ -22,9 +22,9 @@ const config = {
 		"showOnHover": false
 	},
 	"changelog": [{
-		"title": "What's New?",
-		"type": "added",
-		"items": ["VPP button can now bet set to show on hover."]
+		"title": "Bug fix",
+		"type": "fixed",
+		"items": ["fixed issue with Clyde profile/banner not working properly"]
 	}]
 }
 
@@ -164,7 +164,7 @@ const Settings = {
 		this._notify();
 	},
 	_notify() {
-		this._listeners.forEach(listener => listener?.(this._settings));
+		this._listeners.forEach(listener => listener?.());
 	},
 	get(key) {
 		return this._settings[key];
@@ -173,10 +173,10 @@ const Settings = {
 		this._settings[key] = val;
 		this._commit();
 	},
-	setMultiple(settings) {
+	setMultiple(newSettings) {
 		this._settings = {
 			...this._settings,
-			...settings
+			...newSettings
 		};
 		this._commit();
 	},
@@ -203,7 +203,7 @@ function getNestedProp(obj, path) {
 
 function getModuleAndKey(filter, options) {
 	let module;
-	const target = getModule((entry, m) => filter(entry) ? (module = m) : false, options);
+	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
 	module = module?.exports;
 	if (!module) return undefined;
 	const key = Object.keys(module).find(k => module[k] === target);
@@ -249,7 +249,7 @@ const ImageModal = getModule(Filters.byStrings("original", "maxHeight", "maxWidt
 
 const RenderLinkComponent = getModule(m => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false });
 
-const Color = getModule(Filters.byProps("cmyk", "hex", "hsl"), { searchExports: false });
+const Color = getModule(Filters.byProps("Color", "hex", "hsl"), { searchExports: false });
 
 const TheBigBoyBundle = getModule(Filters.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
 
@@ -334,7 +334,7 @@ function useSettings(key) {
 	const target = Settings$1.get(key);
 	const [state, setState] = React.useState(target);
 	React.useEffect(() => {
-		function settingsChangeHandler(settings) {
+		function settingsChangeHandler() {
 			const newVal = Settings$1.get(key);
 			setState(newVal);
 		}
@@ -347,7 +347,6 @@ function useSettings(key) {
 const { Tooltip } = TheBigBoyBundle;
 
 const ViewProfilePictureButtonComponent = props => {
-
 	const showOnHover = useSettings("showOnHover");
 	return (
 		React.createElement(Tooltip, {
@@ -483,7 +482,7 @@ function showChangelog() {
 	]);
 
 	UI.showConfirmationModal(
-		config.info.name,
+		`${config.info.name} v${config.info.version}`,
 		React.createElement(ChangelogComponent, {
 			id: "changelog-container",
 			changelog: changelog,
@@ -544,7 +543,7 @@ class ViewProfilePicture {
 		const guildId = isUserPopout ? SelectedGuildStore.getGuildId() : "";
 		const avatarURL = user.getAvatarURL(guildId, IMG_WIDTH, true);
 		const AvatarImageComponent = getImageModalComponent(avatarURL, { width: IMG_WIDTH, height: IMG_WIDTH });
-		const BannerImageComponent = backgroundImage ? getImageModalComponent(`${backgroundImage.match(/(?<=\().*(?=\?)/)?.[0]}?size=${IMG_WIDTH}`, { width: IMG_WIDTH }) : React.createElement(ColorModalComponent, { color: Color ? Color(backgroundColor).hex() : backgroundColor, });
+		const BannerImageComponent = backgroundImage ? getImageModalComponent(`${backgroundImage.match(/(?<=url\()(.+?)(?=\?|\))/)?.[0]}?size=${IMG_WIDTH}`, { width: IMG_WIDTH }) : React.createElement(ColorModalComponent, { color: Color ? Color(backgroundColor).hex() : backgroundColor, });
 		openCarousel([AvatarImageComponent, BannerImageComponent]);
 	}
 
