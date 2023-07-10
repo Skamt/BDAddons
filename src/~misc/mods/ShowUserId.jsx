@@ -14,6 +14,15 @@ export default class ShowUserId extends Disposable {
 					ret.props.children.push(
 						<span
 							onClick={() => {
+								copy(message.author.username);
+								Toast.success("Username Copied!");
+							}}
+							className="id">
+							@{message.author.username}
+						</span>
+						,
+						<span
+							onClick={() => {
 								copy(message.author.id);
 								Toast.success("ID Copied!");
 							}}
