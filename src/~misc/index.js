@@ -6,7 +6,7 @@ import EmojiLetters from "./mods/EmojiLetters";
 import GuildInfo from "./mods/GuildInfo";
 import MemUsage from "./mods/MemUsage";
 import NoTrack from "./mods/NoTrack";
-import ShowUserId from "./mods/ShowUserId";
+import ShowUserInfo from "./mods/ShowUserInfo";
 import SpotifyListenAlong from "./mods/SpotifyListenAlong";
 import Devtools from "./mods/Devtools";
 import Whois from "./mods/Whois";
@@ -20,12 +20,11 @@ const mods = [
 	// new MemUsage(),
 	// new Whois(),
 	new NoTrack(),
-	new ShowUserId(),
+	new ShowUserInfo(),
 	new SpotifyListenAlong()
 ];
 
 Devtools();
-
 
 export default () => ({
 	start() {

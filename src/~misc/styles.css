@@ -22,11 +22,11 @@
 	background: red;
 }
 
-[class^="repliedMessage"] .id {
+[class^="repliedMessage"] .messageHeaderItem {
 	display: none;
 }
 
-.id {
+.messageHeaderItem {
 	display: inline-block;
 	font-weight: 500;
 	margin: 0 0rem 0 0.5rem;

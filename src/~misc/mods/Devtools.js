@@ -4,20 +4,23 @@ import Dispatcher from "@Modules/Dispatcher";
 
 const chunkName = Object.keys(window).find(key => key.startsWith("webpackChunk"));
 const chunk = window[chunkName];
-const webpackRequire = chunk.push([[Symbol()], {}, r => r]);
+const webpackRequire = chunk.push([
+	[Symbol()], {},
+	r => r
+]);
 chunk.pop();
 
 
 const Helper = {
-	getStoreInfo(store){
+	getStoreInfo(store) {
 		const storeName = store.getName();
 		return {
 			store,
 			name: storeName,
-			get localVars(){
+			get localVars() {
 				return store.__getLocalVars?.();
 			},
-			get events(){
+			get events() {
 				return Misc.getStoreListeners(storeName)?.actionHandler;
 			}
 		}
@@ -76,9 +79,9 @@ const Modules = {
 		Modules.unsafe_getModule((entry, m) => (filter(entry) ? modules.push(m) : false), options);
 		return (options.first === undefined ? true : options.first) ? modules[0].id : modules.map(a => a.id);
 	},
-	rawModuleByExport(target){
+	rawModuleByExport(target) {
 		let module = null;
-		Modules.unsafe_getModule((a,m) => a === target ? (module = m) : false);
+		Modules.unsafe_getModule((a, m) => a === target ? (module = m) : false);
 		return module;
 	},
 	unsafe_getModule(filter, options = {}) {
@@ -172,11 +175,18 @@ const Misc = {
 	getStore(storeName) {
 		return Modules.unsafe_getModule(m => m && m._dispatchToken && m.getName() === storeName);
 	},
+	getStoreInfo(store) {
+		return {
+			localVars:store.__getLocalVars(),
+			name: store.getName(),
+			store,
+		}
+	},
 	getStoreFuzzy(str = "") {
 		str = str.toLowerCase();
 		return Modules.unsafe_getModule(m => m && m._dispatchToken && m.getName().toLowerCase().includes(str), { first: false });
 	},
-	getSortedStores: (function () {
+	getSortedStores: (function() {
 		let stores = null;
 		return function getSortedStores(force) {
 			if (!stores || force) {
@@ -191,7 +201,7 @@ const Misc = {
 									return Helper.getStoreInfo(a[2]);
 								}
 							});
-						} catch(e) {
+						} catch (e) {
 							console.log(`${a[0]}~${a[1]}`)
 							Object.defineProperty(stores, `__${a[0]}~${a[1]}`, {
 								get() {
@@ -212,8 +222,7 @@ const Misc = {
 				} catch {
 					return false;
 				}
-			},
-			{ first }
+			}, { first }
 		);
 	},
 	getEventListeners(eventName) {
@@ -260,7 +269,7 @@ export default () => {
 		...Common,
 		...Sources,
 		...Modules,
-		DiscordModules:{
+		DiscordModules: {
 			Dispatcher
 		}
 	};
