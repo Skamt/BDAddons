@@ -7,6 +7,7 @@
 		"github": "https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels"
 	},
 	"settings": {
-		"autoloadedChannelIndicator": false
+		"autoloadedChannelIndicator": false,
+		"lazyLoadDMs": false
 	}
 }

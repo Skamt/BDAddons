@@ -10,6 +10,19 @@ const webpackRequire = chunk.push([
 ]);
 chunk.pop();
 
+function assignProto(target, proto){
+	if(typeof target !== 'object' || Array.isArray(target)) return target;
+	return Object.assign(Object.create(proto), target);
+}
+
+const protos = {
+	modulesProto:{
+		importing(){},
+		importedin(){},
+		source(){}
+	},
+	sourcesProto:{},
+}
 
 const Helper = {
 	getStoreInfo(store) {
@@ -57,7 +70,9 @@ const Modules = {
 		return Modules._modules;
 	},
 	moduleById(id) {
-		return Modules._modules[id];
+		const module = Modules._modules[id];
+		if(!module) return undefined;
+		return assignProto(module, protos.modulesProto);		
 	},
 	modulesImportedInModuleById(id) {
 		const rawSource = Sources.sourceById(id).toString();
@@ -118,8 +133,8 @@ const Modules = {
 					if (!wrappedExport) continue;
 					if (wrappedFilter(wrappedExport, module, index)) foundModule = wrappedExport;
 					if (!foundModule) continue;
-					if (first) return foundModule;
-					rm.push(foundModule);
+					if (first) return assignProto(foundModule, protos.modulesProto);
+					rm.push(assignProto(foundModule, protos.modulesProto));
 				}
 			} else {
 				let foundModule = null;
@@ -128,8 +143,8 @@ const Modules = {
 				if (exports.__esModule && exports.default && wrappedFilter(exports.default, module, index)) foundModule = defaultExport ? exports.default : exports;
 				if (wrappedFilter(exports, module, index)) foundModule = exports;
 				if (!foundModule) continue;
-				if (first) return foundModule;
-				rm.push(foundModule);
+				if (first) return assignProto(foundModule, protos.modulesProto);
+				rm.push(assignProto(foundModule, protos.modulesProto));
 			}
 		}
 

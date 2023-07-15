@@ -68,7 +68,8 @@ export default class LazyLoadChannels {
 		 * guildId === undefined means it's DM
 		 * OR channel is autoloaded
 		 **/
-		if (messageId || !guildId || ChannelsStateManager.getChannelstate(guildId, channelId)) this.loadChannel({ id: channelId, guild_id: guildId }, messageId);
+		if (messageId || (!guildId && !Settings.get("lazyLoadDMs")) || ChannelsStateManager.getChannelstate(guildId, channelId)) 
+			this.loadChannel({ id: channelId, guild_id: guildId }, messageId);
 		else this.autoLoad = false;
 	}
 
@@ -114,13 +115,20 @@ export default class LazyLoadChannels {
 	}
 
 	getSettingsPanel() {
+		return <SettingComponent />;
 		return (
-			<SettingComponent
+			[<SettingComponent
 				description="Auto load indicator."
 				note="Whether or not to show an indicator for channels set to auto load"
 				value={Settings.get("autoloadedChannelIndicator")}
 				onChange={e => Settings.set("autoloadedChannelIndicator", e)}
-			/>
+			/>,
+			<SettingComponent
+				description="Lazy load DMs."
+				note="Whether or not to consider DMs for lazy loading"
+				value={Settings.get("lazyLoadDMs")}
+				onChange={e => Settings.set("lazyLoadDMs", e)}
+			/>]
 		);
 	}
 }

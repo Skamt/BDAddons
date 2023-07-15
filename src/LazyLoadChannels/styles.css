@@ -24,6 +24,7 @@
 	background-size: 100% 100%;
 }
 
+#lazyLoader > .DM,
 #lazyLoader > .channel {
     background: #232527;
     box-sizing: border-box;
@@ -37,12 +38,19 @@
     max-width: 600px;
 }
 
+#lazyLoader > .DM > .DMName,
 #lazyLoader > .channel > .channelName {
     color: #989aa2;
     padding: 8px 25px 8px 5px;
     text-overflow: ellipsis;
     overflow: hidden;
     white-space: nowrap;
+}
+#lazyLoader > .DM{
+	min-width: auto;
+}
+#lazyLoader > .DM > .DMName{
+	padding: 8px;
 }
 
 #lazyLoader > .channel > .channelIcon {
