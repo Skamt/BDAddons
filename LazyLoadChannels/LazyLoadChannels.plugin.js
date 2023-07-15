@@ -1,7 +1,7 @@
 /**
  * @name LazyLoadChannels
  * @description Lets you choose whether to load a channel
- * @version 1.2.1
+ * @version 1.2.2
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "LazyLoadChannels",
-		"version": "1.2.1",
+		"version": "1.2.2",
 		"description": "Lets you choose whether to load a channel",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels",
@@ -19,8 +19,14 @@ const config = {
 		}]
 	},
 	"settings": {
-		"autoloadedChannelIndicator": false
-	}
+		"autoloadedChannelIndicator": false,
+		"lazyLoadDMs": false
+	},
+	"changelog": [{
+		"type": "added",
+		"title": "DMs lazy loading",
+		"items": ["DMs can be included in lazy loading, with a setting to enable/disable it."]
+	}]
 }
 
 const css = `
@@ -50,6 +56,7 @@ const css = `
 	background-size: 100% 100%;
 }
 
+#lazyLoader > .DM,
 #lazyLoader > .channel {
     background: #232527;
     box-sizing: border-box;
@@ -63,12 +70,19 @@ const css = `
     max-width: 600px;
 }
 
+#lazyLoader > .DM > .DMName,
 #lazyLoader > .channel > .channelName {
     color: #989aa2;
     padding: 8px 25px 8px 5px;
     text-overflow: ellipsis;
     overflow: hidden;
     white-space: nowrap;
+}
+#lazyLoader > .DM{
+	min-width: auto;
+}
+#lazyLoader > .DM > .DMName{
+	padding: 8px;
 }
 
 #lazyLoader > .channel > .channelIcon {
@@ -294,20 +308,38 @@ const Switch = TheBigBoyBundle.FormSwitch ||
 		);
 	};
 
-const SettingComponent = props => {
+const SettingComponent = () => {
+	return [{
+			hideBorder: false,
+			description: "Auto load indicator.",
+			note: "Whether or not to show an indicator for channels set to auto load",
+			value: Settings$1.get("autoloadedChannelIndicator"),
+			onChange: e => Settings$1.set("autoloadedChannelIndicator", e)
+		},
+		{
+			hideBorder: true,
+			description: "Lazy load DMs.",
+			note: "Whether or not to consider DMs for lazy loading",
+			value: Settings$1.get("lazyLoadDMs"),
+			onChange: e => Settings$1.set("lazyLoadDMs", e)
+		}
+	].map(Toggle);
+};
+
+function Toggle(props) {
 	const [enabled, setEnabled] = React.useState(props.value);
 	return (
 		React.createElement(Switch, {
 			value: enabled,
 			note: props.note,
-			hideBorder: true,
+			hideBorder: props.hideBorder,
 			onChange: e => {
 				props.onChange(e);
 				setEnabled(e);
 			},
 		}, props.description)
 	);
-};
+}
 
 const ChannelComponent = getModuleAndKey(Filters.byStrings("canHaveDot", "isFavoriteSuggestion", "mentionCount"), { searchExports: true });
 
@@ -434,7 +466,7 @@ const LazyLoaderComponent = ({ channel, loadChannel, messages }) => {
 	const channelStats = getChannelStats(messages);
 
 	const loadMessagesHandler = () => {
-		if (channelStats.messages) Toast.warning("Messages are alreayd Loaded!!");
+		if (channelStats.messages) Toast.warning("Messages are already Loaded!!");
 		else
 			loadChannelMessages(channel).then(() => {
 				Toast.success("Messages are Loaded!!");
@@ -467,20 +499,7 @@ const LazyLoaderComponent = ({ channel, loadChannel, messages }) => {
 		React.createElement('div', {
 			id: COMPONENT_ID,
 			style: { "visibility": "hidden", "height": "100%" },
-		}, React.createElement('div', { className: "logo", }), React.createElement('div', { className: "channel", }, React.createElement('div', { className: "channelIcon", }, React.createElement('svg', {
-			width: "24",
-			height: "24",
-			viewBox: "0 0 24 24",
-		}, React.createElement('path', {
-			fill: "currentColor",
-			fillRule: "evenodd",
-			clipRule: "evenodd",
-			d: "M5.88657 21C5.57547 21 5.3399 20.7189 5.39427 20.4126L6.00001 17H2.59511C2.28449 17 2.04905 16.7198 2.10259 16.4138L2.27759 15.4138C2.31946 15.1746 2.52722 15 2.77011 15H6.35001L7.41001 9H4.00511C3.69449 9 3.45905 8.71977 3.51259 8.41381L3.68759 7.41381C3.72946 7.17456 3.93722 7 4.18011 7H7.76001L8.39677 3.41262C8.43914 3.17391 8.64664 3 8.88907 3H9.87344C10.1845 3 10.4201 3.28107 10.3657 3.58738L9.76001 7H15.76L16.3968 3.41262C16.4391 3.17391 16.6466 3 16.8891 3H17.8734C18.1845 3 18.4201 3.28107 18.3657 3.58738L17.76 7H21.1649C21.4755 7 21.711 7.28023 21.6574 7.58619L21.4824 8.58619C21.4406 8.82544 21.2328 9 20.9899 9H17.41L16.35 15H19.7549C20.0655 15 20.301 15.2802 20.2474 15.5862L20.0724 16.5862C20.0306 16.8254 19.8228 17 19.5799 17H16L15.3632 20.5874C15.3209 20.8261 15.1134 21 14.8709 21H13.8866C13.5755 21 13.3399 20.7189 13.3943 20.4126L14 17H8.00001L7.36325 20.5874C7.32088 20.8261 7.11337 21 6.87094 21H5.88657ZM9.41045 9L8.35045 15H14.3504L15.4104 9H9.41045Z",
-		}))), React.createElement('div', { className: "channelName", }, channel.name)), !channelStats.messages || (
-			React.createElement('div', { className: `stats ${blink}`, }, Object.entries(channelStats).map(([label, stat], index) => (
-				React.createElement('div', { key: `${label}-${index}`, }, label, ": ", stat)
-			)))
-		), React.createElement('div', { className: "title", }, "Lazy loading is Enabled!"), React.createElement('div', { className: "description", }, "This channel is lazy loaded, If you want to auto load this channel in the future, make sure you enable ", React.createElement('b', null, "Auto load"), " down below before you load it."), React.createElement('div', { className: "controls", }, React.createElement('div', { className: "buttons-container", }, React.createElement(Button, {
+		}, React.createElement('div', { className: "logo", }), React.createElement(Channel, { channel: channel, }), React.createElement('div', { className: "title", }, "Lazy loading is Enabled!"), React.createElement('div', { className: "description", }, "This channel is lazy loaded, If you want to auto load this channel in the future, make sure you enable ", React.createElement('b', null, "Auto load"), " down below before you load it."), React.createElement('div', { className: "controls", }, React.createElement('div', { className: "buttons-container", }, React.createElement(Button, {
 				onClick: loadChannelHandler,
 				color: Button?.Colors?.GREEN,
 				size: Button?.Sizes?.LARGE,
@@ -500,9 +519,31 @@ const LazyLoaderComponent = ({ channel, loadChannel, messages }) => {
 				onChange: setChecked,
 			}, "Auto load"
 
-		)))
+		)), !channelStats.messages || (
+			React.createElement('div', { className: `stats ${blink}`, }, Object.entries(channelStats).map(([label, stat], index) => (
+				React.createElement('div', { key: `${label}-${index}`, }, label, ": ", stat)
+			)))
+		))
 	);
 };
+
+function Channel({ channel }) {
+	const isDm = channel.guild_id === null;
+	return isDm ? (
+		React.createElement('div', { className: "DM", }, React.createElement('div', { className: "DMName", }, channel.rawRecipients.map(a => `@${a.username}`).join(", ")))
+	) : (
+		React.createElement('div', { className: "channel", }, React.createElement('div', { className: "channelIcon", }, React.createElement('svg', {
+			width: "24",
+			height: "24",
+			viewBox: "0 0 24 24",
+		}, React.createElement('path', {
+			fill: "currentColor",
+			fillRule: "evenodd",
+			clipRule: "evenodd",
+			d: "M5.88657 21C5.57547 21 5.3399 20.7189 5.39427 20.4126L6.00001 17H2.59511C2.28449 17 2.04905 16.7198 2.10259 16.4138L2.27759 15.4138C2.31946 15.1746 2.52722 15 2.77011 15H6.35001L7.41001 9H4.00511C3.69449 9 3.45905 8.71977 3.51259 8.41381L3.68759 7.41381C3.72946 7.17456 3.93722 7 4.18011 7H7.76001L8.39677 3.41262C8.43914 3.17391 8.64664 3 8.88907 3H9.87344C10.1845 3 10.4201 3.28107 10.3657 3.58738L9.76001 7H15.76L16.3968 3.41262C16.4391 3.17391 16.6466 3 16.8891 3H17.8734C18.1845 3 18.4201 3.28107 18.3657 3.58738L17.76 7H21.1649C21.4755 7 21.711 7.28023 21.6574 7.58619L21.4824 8.58619C21.4406 8.82544 21.2328 9 20.9899 9H17.41L16.35 15H19.7549C20.0655 15 20.301 15.2802 20.2474 15.5862L20.0724 16.5862C20.0306 16.8254 19.8228 17 19.5799 17H16L15.3632 20.5874C15.3209 20.8261 15.1134 21 14.8709 21H13.8866C13.5755 21 13.3399 20.7189 13.3943 20.4126L14 17H8.00001L7.36325 20.5874C7.32088 20.8261 7.11337 21 6.87094 21H5.88657ZM9.41045 9L8.35045 15H14.3504L15.4104 9H9.41045Z",
+		}))), React.createElement('div', { className: "channelName", }, channel.name))
+	);
+}
 
 const patchChannelContent = context => {
 	/**
@@ -570,6 +611,103 @@ const patchContextMenu = () => {
 	]
 };
 
+const changelogStyles = `
+#changelog-container {
+	font-family: "gg sans", "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+	--added: #2dc770;
+	--improved: #949cf7;
+	--fixed: #f23f42;
+	--notice: #f0b132;
+	color:white;
+
+    padding: 10px;
+    max-width: 450px;
+}
+#changelog-container .title {
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    font-weight: 700;
+    margin-top: 20px;
+	color: var(--c);
+}
+#changelog-container .title:after {
+    content: "";
+    height: 1px;
+    flex: 1 1 auto;
+    margin-left: 8px;
+    opacity: .6;
+    background: currentColor;
+}
+#changelog-container ul {
+    list-style: none;
+    margin: 20px 0 8px 20px;
+}
+#changelog-container ul > li {
+    position:relative;
+    line-height: 20px;
+    margin-bottom: 8px;
+    color: #c4c9ce;
+}
+#changelog-container ul > li:before {
+    content: "";
+    position: absolute;
+    background:currentColor;
+    top: 10px;
+    left: -15px;
+    width: 6px;
+    height: 6px;
+    margin-top: -4px;
+    margin-left: -3px;
+    border-radius: 50%;
+    opacity: .5;
+}`;
+
+class ChangelogComponent extends React.Component {
+	constructor() {
+		super();
+	}
+
+	componentWillUnmount() {
+		BdApi.DOM.removeStyle("Changelog");
+	}
+
+	render() {
+		BdApi.DOM.addStyle("Changelog", changelogStyles);
+		const { id, changelog } = this.props;
+		return React.createElement('div', { id: id, }, changelog);
+	}
+}
+
+function showChangelog() {
+	if (!config.changelog || !Array.isArray(config.changelog)) return;
+	const changelog = config.changelog?.map(({ title, type, items }) => [
+		React.createElement('h3', {
+			style: { "--c": `var(--${type})` },
+			className: "title",
+		}, title),
+		React.createElement('ul', null, items.map(item => (
+			React.createElement('li', null, item)
+		)))
+	]);
+
+	UI.showConfirmationModal(
+		`${config.info.name} v${config.info.version}`,
+		React.createElement(ChangelogComponent, {
+			id: "changelog-container",
+			changelog: changelog,
+		})
+	);
+}
+
+function shouldChangelog() {
+	const { version = config.info.version, changelog = false } = Data.load("metadata") || {};
+	if (version != config.info.version || !changelog) {
+		Data.save("metadata", { version: config.info.version, changelog: true });
+		return showChangelog;
+	}
+}
+
 class LazyLoadChannels {
 	constructor() {
 		Settings$1.init(config.settings);
@@ -622,7 +760,8 @@ class LazyLoadChannels {
 		 * guildId === undefined means it's DM
 		 * OR channel is autoloaded
 		 **/
-		if (messageId || !guildId || ChannelsStateManager.getChannelstate(guildId, channelId)) this.loadChannel({ id: channelId, guild_id: guildId }, messageId);
+		if (messageId || (!guildId && !Settings$1.get("lazyLoadDMs")) || ChannelsStateManager.getChannelstate(guildId, channelId))
+			this.loadChannel({ id: channelId, guild_id: guildId }, messageId);
 		else this.autoLoad = false;
 	}
 
@@ -668,15 +807,9 @@ class LazyLoadChannels {
 	}
 
 	getSettingsPanel() {
-		return (
-			React.createElement(SettingComponent, {
-				description: "Auto load indicator.",
-				note: "Whether or not to show an indicator for channels set to auto load",
-				value: Settings$1.get("autoloadedChannelIndicator"),
-				onChange: e => Settings$1.set("autoloadedChannelIndicator", e),
-			})
-		);
+		return React.createElement(SettingComponent, null);
 	}
 }
+shouldChangelog()?.();
 
 module.exports = LazyLoadChannels;
