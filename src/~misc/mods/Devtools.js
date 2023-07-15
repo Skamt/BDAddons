@@ -10,42 +10,74 @@ const webpackRequire = chunk.push([
 ]);
 chunk.pop();
 
+class Module {
+	constructor(module) {
+		this.module = module;
+		this.id = module.id;
+		this.exports = module.exports;
+	}
 
-const Helper = {
-	getStoreInfo(store) {
-		const storeName = store.getName();
-		return {
-			store,
-			name: storeName,
-			get localVars() {
-				return store.__getLocalVars?.();
-			},
-			get events() {
-				return Misc.getStoreListeners(storeName)?.actionHandler;
-			}
-		}
+	get source() {
+		return Sources.sourceById(this.id);
+	}
+
+	get modulesImported(){
+		return Modules.modulesImportedInModuleById(this.id)
+	}
+
+	get modulesImportedIn(){
+		return Modules.modulesImportingModuleById(this.id)
+	}
+}
+
+class Source {
+	constructor({ source, id }) {
+		this.id = id;
+		this.source = source;
+	}
+
+	get module() {
+		return Modules.moduleById(this.id);
+	}
+}
+
+class Store{
+	constructor(store){
+		this.store = store;
+		this.name = store.getName();
+	}
+
+	get localVars(){
+		return this.store.__getLocalVars();
+	}
+
+	get events(){
+		return Stores.getStoreListeners(this.name)
 	}
 }
 
 const Sources = {
 	_sources: webpackRequire.m,
-	sourceById(id) {
-		return Sources._sources[id];
-	},
 	getSources() {
 		return Sources._sources;
 	},
+	sourceById(id) {
+		return new Source({ id, source: Sources._sources[id] });
+	},
 	getSourceByExportFilter(filter, options = {}) {
-		const result = Modules.getModuleIdByExportFilter(filter, options);
+		const result = Modules.unsafe_getModule(filter, options)?.id;
 		if (!result) return undefined;
 		return Array.isArray(result) ? result.map(Sources.sourceById) : Sources.sourceById(result);
 	},
-	getSourceBySourceFilter(filter, first = true) {
+	getSourceBySourceFilter(strArr, first = true) {
 		const sum = [];
 		for (const [id, source] of Object.entries(Sources._sources)) {
-			const result = filter(source);
-			if (result && first) return { id, source };
-			else if (result) sum.push({ id, source });
+			const sourceCode = source.toString();
+			const result = strArr.every(str => sourceCode.includes(str))
+			if (result) {
+				if (first) return { id, source };
+				else sum.push({ id, source });
+			}
 		}
 		return sum;
 	}
@@ -57,7 +89,7 @@ const Modules = {
 		return Modules._modules;
 	},
 	moduleById(id) {
-		return Modules._modules[id];
+		return new Module(Modules._modules[id]);
 	},
 	modulesImportedInModuleById(id) {
 		const rawSource = Sources.sourceById(id).toString();
@@ -74,18 +106,8 @@ const Modules = {
 	modulesImportingModuleById(id) {
 		return Object.keys(Sources.getSources()).filter(sourceId => Modules.modulesImportedInModuleById(sourceId).includes("" + id));
 	},
-	getModuleIdByExportFilter(filter, options = {}) {
-		const modules = [];
-		Modules.unsafe_getModule((entry, m) => (filter(entry) ? modules.push(m) : false), options);
-		return (options.first === undefined ? true : options.first) ? modules[0].id : modules.map(a => a.id);
-	},
-	rawModuleByExport(target) {
-		let module = null;
-		Modules.unsafe_getModule((a, m) => a === target ? (module = m) : false);
-		return module;
-	},
 	unsafe_getModule(filter, options = {}) {
-		const { first = true, defaultExport = true, searchExports = false } = options;
+		const { first = true, defaultExport = true, searchExports = false, rawModule = false } = options;
 		const wrappedFilter = filter;
 
 		const modules = Modules.getModules();
@@ -118,8 +140,9 @@ const Modules = {
 					if (!wrappedExport) continue;
 					if (wrappedFilter(wrappedExport, module, index)) foundModule = wrappedExport;
 					if (!foundModule) continue;
+					if (rawModule && first) return module;
 					if (first) return foundModule;
-					rm.push(foundModule);
+					rm.push(rawModule ? module : foundModule);
 				}
 			} else {
 				let foundModule = null;
@@ -128,8 +151,9 @@ const Modules = {
 				if (exports.__esModule && exports.default && wrappedFilter(exports.default, module, index)) foundModule = defaultExport ? exports.default : exports;
 				if (wrappedFilter(exports, module, index)) foundModule = exports;
 				if (!foundModule) continue;
+				if (rawModule && first) return module;
 				if (first) return foundModule;
-				rm.push(foundModule);
+				rm.push(rawModule ? module : foundModule);
 			}
 		}
 
@@ -147,24 +171,59 @@ const Common = {
 	},
 	getAllById(moduleId) {
 		return {
-			target: Common.getModuleAndSourceById(moduleId),
-			modulesImportedInTarget: Modules.modulesImportedInModuleById(moduleId).map(Common.getModuleAndSourceById),
-			modulesImportingTarget: Modules.modulesImportingModuleById(moduleId).map(Common.getModuleAndSourceById)
+			get target() {
+				return Common.getModuleAndSourceById(moduleId)
+			},
+			get modulesImportedInTarget() {
+				return Modules.modulesImportedInModuleById(moduleId).map(Common.getModuleAndSourceById)
+			},
+			get modulesImportingTarget() {
+				return Modules.modulesImportingModuleById(moduleId).map(Common.getModuleAndSourceById)
+			}
 		};
 	},
-	getModuleAndSourceByExportsFilter(filter, options = {}) {
-		const result = Modules.getModuleIdByExportFilter(filter, options);
-		if (!result) return undefined;
-		if (Array.isArray(result)) return result.map(Common.getModuleAndSourceById);
-		return Common.getModuleAndSourceById(result);
-	},
 	getAllByFilter(filter, options = {}) {
-		const result = Modules.getModuleIdByExportFilter(filter, options);
+		const result = Modules.unsafe_getModule(filter, options)?.id;
 		if (!result) return undefined;
 		if (Array.isArray(result)) return result.map(Common.getAllById);
 		return Common.getAllById(result);
-	}
+	},
+	getModuleAndSourceByExportsFilter(filter, options = {}) {
+		const result = Modules.unsafe_getModule(filter, options)?.id;
+		if (!result) return undefined;
+		if (Array.isArray(result)) return result.map(Common.getModuleAndSourceById);
+		return Common.getModuleAndSourceById(result);
+	}	
 };
+
+const Stores = {
+	getStore(storeName) {
+		const store =  Modules.unsafe_getModule(m => m && m._dispatchToken && m.getName() === storeName);
+		if(!store) return undefined;
+		return new Store(store);
+	},
+	getStoreFuzzy(str = "") {
+		str = str.toLowerCase();
+		return Modules.unsafe_getModule(m => m && m._dispatchToken && m.getName().toLowerCase().includes(str), { first: false })
+		.map(store => new Store(store));
+	},
+	getStoreListeners(storeName) {
+		const nodes = Dispatcher._actionHandlers._dependencyGraph.nodes;
+		const storeHandlers = Object.values(nodes).filter(({ name }) => name === storeName);
+		return storeHandlers[0];
+	},
+	getSortedStores: (function() {
+		let stores = null;
+		return function getSortedStores(force) {
+			if (!stores || force) {
+				stores = Stores.getStoreFuzzy()
+					.map(store => [store.getName(), new Store(store)])
+					.sort((a, b) => a[0].localeCompare(b[0]));
+			}
+			return stores;
+		};
+	})(),
+}
 
 const Misc = {
 	getAllAssets() {
@@ -172,48 +231,6 @@ const Misc = {
 			.filter(a => typeof a.exports === "string" && a.exports.match(/\/assets\/.+/))
 			.map(a => a.exports);
 	},
-	getStore(storeName) {
-		return Modules.unsafe_getModule(m => m && m._dispatchToken && m.getName() === storeName);
-	},
-	getStoreInfo(store) {
-		return {
-			localVars:store.__getLocalVars(),
-			name: store.getName(),
-			store,
-		}
-	},
-	getStoreFuzzy(str = "") {
-		str = str.toLowerCase();
-		return Modules.unsafe_getModule(m => m && m._dispatchToken && m.getName().toLowerCase().includes(str), { first: false });
-	},
-	getSortedStores: (function() {
-		let stores = null;
-		return function getSortedStores(force) {
-			if (!stores || force) {
-				stores = {};
-				Misc.getStoreFuzzy()
-					.map(store => [store.getName(), store._dispatchToken, store])
-					.sort((a, b) => a[0].localeCompare(b[0]))
-					.forEach(a => {
-						try {
-							Object.defineProperty(stores, `${a[0]}`, {
-								get() {
-									return Helper.getStoreInfo(a[2]);
-								}
-							});
-						} catch (e) {
-							console.log(`${a[0]}~${a[1]}`)
-							Object.defineProperty(stores, `__${a[0]}~${a[1]}`, {
-								get() {
-									return Helper.getStoreInfo(a[2]);
-								}
-							});
-						}
-					});
-			}
-			return stores;
-		};
-	})(),
 	byPropValue(val, first = true) {
 		return Modules.unsafe_getModule(
 			m => {
@@ -246,11 +263,6 @@ const Misc = {
 				.map(a => a)
 		};
 	},
-	getStoreListeners(storeName) {
-		const nodes = Dispatcher._actionHandlers._dependencyGraph.nodes;
-		const storeHandlers = Object.values(nodes).filter(({ name }) => name === storeName);
-		return storeHandlers[0];
-	},
 	getGraph: (() => {
 		let graph = null;
 		return function getGraph(refresh = false) {
@@ -267,6 +279,7 @@ export default () => {
 		r: webpackRequire,
 		...Misc,
 		...Common,
+		...Stores,
 		...Sources,
 		...Modules,
 		DiscordModules: {
