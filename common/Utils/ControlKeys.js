@@ -1,4 +1,4 @@
-const ControlKeys = {
+export default {
 	init() {
 		this.subs = [
 			["keydown", this.keydownHandler],
@@ -27,4 +27,3 @@ const ControlKeys = {
 	}
 };
 
-export default ControlKeys;

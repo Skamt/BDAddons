@@ -1,6 +1,6 @@
 import { Data } from "@Api";
 
-const Settings = {
+export default {
 	_listeners: [],
 	_settings: {},
 	_commit() {
@@ -32,5 +32,3 @@ const Settings = {
 		return () => this._listeners.splice(this._listeners.length - 1, 1);
 	}
 };
-
-export default Settings;
