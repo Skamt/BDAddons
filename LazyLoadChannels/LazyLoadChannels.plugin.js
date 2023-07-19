@@ -24,8 +24,8 @@ const config = {
 	},
 	"changelog": [{
 		"type": "added",
-		"title": "DMs lazy loading",
-		"items": ["DMs can be included in lazy loading, with a setting to enable/disable it."]
+		"title": "added",
+		"items": ["DMs can be included in lazy loading, Enable/Disable in setting.", "Can now hold Ctrl + Click to autoload a channel."]
 	}]
 }
 
@@ -228,7 +228,34 @@ const Settings = {
 	}
 };
 
-const Settings$1 = Settings;
+const ControlKeys = {
+	init() {
+		this.subs = [
+			["keydown", this.keydownHandler],
+			["keyup", this.keyupHandler]
+		].map(([event, handler]) => {
+			const boundHandler = handler.bind(this);
+			document.addEventListener(event, boundHandler);
+			return () => document.removeEventListener(event, boundHandler);
+		});
+		this.ctrlKey = false;
+		this.shiftKey = false;
+		this.metaKey = false;
+	},
+	clean() {
+		this.subs.forEach(unsub => unsub && typeof unsub === "function" && unsub());
+	},
+	keydownHandler(e) {
+		this.ctrlKey = e.ctrlKey;
+		this.shiftKey = e.shiftKey;
+		this.metaKey = e.metaKey;
+	},
+	keyupHandler(e) {
+		this.ctrlKey = e.ctrlKey;
+		this.shiftKey = e.shiftKey;
+		this.metaKey = e.metaKey;
+	}
+};
 
 const Logger = {
 	error(...args) {
@@ -313,15 +340,15 @@ const SettingComponent = () => {
 			hideBorder: false,
 			description: "Auto load indicator.",
 			note: "Whether or not to show an indicator for channels set to auto load",
-			value: Settings$1.get("autoloadedChannelIndicator"),
-			onChange: e => Settings$1.set("autoloadedChannelIndicator", e)
+			value: Settings.get("autoloadedChannelIndicator"),
+			onChange: e => Settings.set("autoloadedChannelIndicator", e)
 		},
 		{
 			hideBorder: true,
 			description: "Lazy load DMs.",
 			note: "Whether or not to consider DMs for lazy loading",
-			value: Settings$1.get("lazyLoadDMs"),
-			onChange: e => Settings$1.set("lazyLoadDMs", e)
+			value: Settings.get("lazyLoadDMs"),
+			onChange: e => Settings.set("lazyLoadDMs", e)
 		}
 	].map(Toggle);
 };
@@ -347,7 +374,7 @@ const patchChannel = () => {
 	const { module, key } = ChannelComponent;
 	if (module && key)
 		Patcher.after(module, key, (_, [{ channel }], returnValue) => {
-			if (!Settings$1.get("autoloadedChannelIndicator")) return;
+			if (!Settings.get("autoloadedChannelIndicator")) return;
 			if (ChannelsStateManager.getChannelstate(channel.guild_id, channel.id))
 				returnValue.props.children.props.children[1].props.className += " autoload";
 		});
@@ -710,7 +737,7 @@ function shouldChangelog() {
 
 class LazyLoadChannels {
 	constructor() {
-		Settings$1.init(config.settings);
+		Settings.init(config.settings);
 		ChannelsStateManager.init();
 		this.autoLoad = false;
 		this.loadChannel = this.loadChannel.bind(this);
@@ -757,10 +784,10 @@ class LazyLoadChannels {
 	channelSelectHandler({ channelId, guildId, messageId }) {
 		/** Ignore if
 		 * messageId !== undefined means it's a jump
-		 * guildId === undefined means it's DM
+		 * !guildId means it's DM
 		 * OR channel is autoloaded
 		 **/
-		if (messageId || (!guildId && !Settings$1.get("lazyLoadDMs")) || ChannelsStateManager.getChannelstate(guildId, channelId))
+		if (ControlKeys.ctrlKey || messageId || (!guildId && !Settings.get("lazyLoadDMs")) || ChannelsStateManager.getChannelstate(guildId, channelId))
 			this.loadChannel({ id: channelId, guild_id: guildId }, messageId);
 		else this.autoLoad = false;
 	}
@@ -784,6 +811,7 @@ class LazyLoadChannels {
 
 	start() {
 		try {
+			ControlKeys.init();
 			DOM.addStyle(css);
 			this.setupHandlers();
 			patchChannel();
@@ -797,6 +825,7 @@ class LazyLoadChannels {
 	}
 
 	stop() {
+		ControlKeys.clean();
 		DOM.removeStyle();
 		Patcher.unpatchAll();
 		this.unpatchContextMenu?.forEach?.(p => p());
