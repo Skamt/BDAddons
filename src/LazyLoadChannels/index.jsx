@@ -71,7 +71,7 @@ export default class LazyLoadChannels {
 		 * !guildId means it's DM
 		 * OR channel is autoloaded
 		 **/
-		if ((ControlKeys.ctrlKey || ControlKeys.metaKey) || messageId || (!guildId && !Settings.get("lazyLoadDMs")) || ChannelsStateManager.getChannelstate(guildId, channelId)) 
+		if (ControlKeys.ctrlKey || messageId || (!guildId && !Settings.get("lazyLoadDMs")) || ChannelsStateManager.getChannelstate(guildId, channelId)) 
 			this.loadChannel({ id: channelId, guild_id: guildId }, messageId);
 		else this.autoLoad = false;
 	}

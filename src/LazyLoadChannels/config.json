@@ -15,7 +15,7 @@
 		"title": "added",
 		"items": [
 			"DMs can be included in lazy loading, Enable/Disable in setting.",
-			"Can now hold Ctrl/Metakey + Click to autoload a channel."
+			"Can now hold Ctrl + Click to autoload a channel."
 		]
 	}]
 }
