@@ -75,8 +75,8 @@ const Sources = {
 			const sourceCode = source.toString();
 			const result = strArr.every(str => sourceCode.includes(str))
 			if (result) {
-				if (first) return { id, source };
-				else sum.push({ id, source });
+				if (first) return new Source({ id, source });
+				else sum.push(new Source({ id, source }));
 			}
 		}
 		return sum;
@@ -92,7 +92,7 @@ const Modules = {
 		return new Module(Modules._modules[id]);
 	},
 	modulesImportedInModuleById(id) {
-		const rawSource = Sources.sourceById(id).toString();
+		const rawSource = Sources.sourceById(id).source.toString();
 
 		const args = rawSource.match(/\((.+?)\)/i)?.[1];
 		if (args?.length > 5 || !args) return [];

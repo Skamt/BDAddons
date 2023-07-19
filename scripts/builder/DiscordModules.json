@@ -1,5 +1,9 @@
 {
 	"Modules": {
+		"ChannelLink": {
+			"filter": "m => m && m.render && Filters.byStrings(\"ENTER\", \"SPACE\", \"charCode\")(m.render)",
+			"options": "{ searchExports: false }"
+		},
 		"FetchUser": {
 			"filter": "Filters.byStrings(\"USER_UPDATE\",\"default.getUser\",\"oldFormErrors\")",
 			"options": "{ searchExports: true }"

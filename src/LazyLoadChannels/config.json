@@ -12,9 +12,10 @@
 	},
 	"changelog": [{
 		"type": "added",
-		"title": "DMs lazy loading",
+		"title": "added",
 		"items": [
-			"DMs can be included in lazy loading, with a setting to enable/disable it."
+			"DMs can be included in lazy loading, Enable/Disable in setting.",
+			"Can now hold Ctrl/Metakey + Click to autoload a channel."
 		]
 	}]
 }

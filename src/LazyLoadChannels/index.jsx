@@ -1,5 +1,7 @@
 import css from "./styles";
 import Settings from "@Utils/Settings";
+import ControlKeys from "@Utils/ControlKeys";
+
 import Logger from "@Utils/Logger";
 import { DOM, React, Patcher } from "@Api";
 import ChannelsStateManager from "./ChannelsStateManager";
@@ -14,7 +16,8 @@ import patchCreateChannel from "./patches/patchCreateChannel";
 import patchChannelContent from "./patches/patchChannelContent";
 import patchContextMenu from "./patches/patchContextMenu";
 
-import { EVENTS } from "./Constants";
+import { COMPONENT_ID, EVENTS } from "./Constants";
+
 
 export default class LazyLoadChannels {
 	constructor() {
@@ -65,10 +68,10 @@ export default class LazyLoadChannels {
 	channelSelectHandler({ channelId, guildId, messageId }) {
 		/** Ignore if
 		 * messageId !== undefined means it's a jump
-		 * guildId === undefined means it's DM
+		 * !guildId means it's DM
 		 * OR channel is autoloaded
 		 **/
-		if (messageId || (!guildId && !Settings.get("lazyLoadDMs")) || ChannelsStateManager.getChannelstate(guildId, channelId)) 
+		if ((ControlKeys.ctrlKey || ControlKeys.metaKey) || messageId || (!guildId && !Settings.get("lazyLoadDMs")) || ChannelsStateManager.getChannelstate(guildId, channelId)) 
 			this.loadChannel({ id: channelId, guild_id: guildId }, messageId);
 		else this.autoLoad = false;
 	}
@@ -92,6 +95,7 @@ export default class LazyLoadChannels {
 
 	start() {
 		try {
+			ControlKeys.init();
 			DOM.addStyle(css);
 			this.setupHandlers();
 			patchChannel();
@@ -105,6 +109,7 @@ export default class LazyLoadChannels {
 	}
 
 	stop() {
+		ControlKeys.clean();
 		DOM.removeStyle();
 		Patcher.unpatchAll();
 		this.unpatchContextMenu?.forEach?.(p => p());
