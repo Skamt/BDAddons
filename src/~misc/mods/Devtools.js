@@ -10,51 +10,86 @@ const webpackRequire = chunk.push([
 ]);
 chunk.pop();
 
-class Module {
-	constructor(module) {
-		this.module = module;
-		this.id = module.id;
-		this.exports = module.exports;
-	}
-
-	get source() {
-		return Sources.sourceById(this.id);
-	}
-
-	get modulesImported(){
-		return Modules.modulesImportedInModuleById(this.id)
-	}
-
-	get modulesImportedIn(){
-		return Modules.modulesImportingModuleById(this.id)
-	}
+function defineModuleGetter(obj, id) {
+	return Object.defineProperty(obj, id, {
+		enumerable: true,
+		get() {
+			return Modules.moduleById(id);
+		}
+	});
 }
 
-class Source {
-	constructor({ source, id }) {
-		this.id = id;
-		this.source = source;
-	}
+const Module = (() => {
+	let rawModule = null;
+	return class Module {
+		constructor(module) {
+			rawModule = module;
+		}
+		get rawModule() {
+			return rawModule;
+		}
 
-	get module() {
-		return Modules.moduleById(this.id);
-	}
-}
+		get id() {
+			return rawModule.id;
+		}
 
-class Store{
-	constructor(store){
-		this.store = store;
-		this.name = store.getName();
-	}
+		get exports() {
+			return rawModule.exports;
+		}
 
-	get localVars(){
-		return this.store.__getLocalVars();
-	}
+		get modulesImported() {
+			return Modules.modulesImportedInModuleById(rawModule.id).reduce((acc, id) => defineModuleGetter(acc, id), {});
+		}
 
-	get events(){
-		return Stores.getStoreListeners(this.name)
+		get modulesImportedIn() {
+			return Modules.modulesImportingModuleById(rawModule.id).reduce((acc, id) => defineModuleGetter(acc, id), {});
+		}
 	}
-}
+})()
+
+const Source = (() => {
+	let rawSource = null;
+	return class Source {
+		constructor(source) {
+			rawSource = source;
+		}
+
+		get rawSource() {
+			return source;
+		}
+
+		get source() {
+			return rawSource.source;
+		}
+
+		get id() {
+			return rawSource.id;
+		}
+
+		get module() {
+			return Modules.moduleById(rawSource.id);
+		}
+	}
+})()
+
+const Store = (() => {
+	let rawStore = null;
+	return class Store {
+		constructor(store) {
+			rawStore = store;
+			this.name = store.getName();
+		}
+		get store() {
+			return rawStore;
+		}
+		get localVars() {
+			return rawStore.__getLocalVars();
+		}
+		get events() {
+			return Stores.getStoreListeners(this.name)
+		}
+	}
+})()
 
 const Sources = {
 	_sources: webpackRequire.m,
@@ -193,19 +228,19 @@ const Common = {
 		if (!result) return undefined;
 		if (Array.isArray(result)) return result.map(Common.getModuleAndSourceById);
 		return Common.getModuleAndSourceById(result);
-	}	
+	}
 };
 
 const Stores = {
 	getStore(storeName) {
-		const store =  Modules.unsafe_getModule(m => m && m._dispatchToken && m.getName() === storeName);
-		if(!store) return undefined;
+		const store = Modules.unsafe_getModule(m => m && m._dispatchToken && m.getName() === storeName);
+		if (!store) return undefined;
 		return new Store(store);
 	},
 	getStoreFuzzy(str = "") {
 		str = str.toLowerCase();
 		return Modules.unsafe_getModule(m => m && m._dispatchToken && m.getName().toLowerCase().includes(str), { first: false })
-		.map(store => new Store(store));
+			.map(store => new Store(store));
 	},
 	getStoreListeners(storeName) {
 		const nodes = Dispatcher._actionHandlers._dependencyGraph.nodes;
