@@ -19,77 +19,70 @@ function defineModuleGetter(obj, id) {
 	});
 }
 
-const Module = (() => {
-	let rawModule = null;
-	return class Module {
+class Module {
 		constructor(module) {
-			rawModule = module;
+			this.rawModule = module;
 		}
 		get rawModule() {
-			return rawModule;
+			return this.rawModule;
 		}
 
 		get id() {
-			return rawModule.id;
+			return this.rawModule.id;
 		}
 
 		get exports() {
-			return rawModule.exports;
+			return this.rawModule.exports;
 		}
 
 		get modulesImported() {
-			return Modules.modulesImportedInModuleById(rawModule.id).reduce((acc, id) => defineModuleGetter(acc, id), {});
+			return Modules.modulesImportedInModuleById(this.rawModule.id).reduce((acc, id) => defineModuleGetter(acc, id), {});
 		}
 
 		get modulesImportedIn() {
-			return Modules.modulesImportingModuleById(rawModule.id).reduce((acc, id) => defineModuleGetter(acc, id), {});
+			return Modules.modulesImportingModuleById(this.rawModule.id).reduce((acc, id) => defineModuleGetter(acc, id), {});
 		}
 	}
-})()
 
-const Source = (() => {
-	let rawSource = null;
-	return class Source {
-		constructor(source) {
-			rawSource = source;
-		}
 
-		get rawSource() {
-			return source;
-		}
-
-		get source() {
-			return rawSource.source;
-		}
-
-		get id() {
-			return rawSource.id;
-		}
-
-		get module() {
-			return Modules.moduleById(rawSource.id);
-		}
+class Source {
+	constructor(source) {
+		this.rawSource = source;
 	}
-})()
 
-const Store = (() => {
-	let rawStore = null;
-	return class Store {
-		constructor(store) {
-			rawStore = store;
-			this.name = store.getName();
-		}
-		get store() {
-			return rawStore;
-		}
-		get localVars() {
-			return rawStore.__getLocalVars();
-		}
-		get events() {
-			return Stores.getStoreListeners(this.name)
-		}
+	get rawSource() {
+		return this.rawSource;
 	}
-})()
+
+	get source() {
+		return this.rawSource.source;
+	}
+
+	get id() {
+		return this.rawSource.id;
+	}
+
+	get module() {
+		return Modules.moduleById(this.rawSource.id);
+	}
+}
+
+class Store {
+	constructor(store) {
+		this.rawStore = store;
+		this.name = store.getName();
+	}
+	get store() {
+		return this.rawStore;
+	}
+	get localVars() {
+		return this.rawStore.__getLocalVars();
+	}
+	get events() {
+		return Stores.getStoreListeners(this.name)
+	}
+}
+
 
 const Sources = {
 	_sources: webpackRequire.m,
