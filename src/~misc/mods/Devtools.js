@@ -23,9 +23,6 @@ class Module {
 		constructor(module) {
 			this.rawModule = module;
 		}
-		get rawModule() {
-			return this.rawModule;
-		}
 
 		get id() {
 			return this.rawModule.id;
@@ -50,10 +47,6 @@ class Source {
 		this.rawSource = source;
 	}
 
-	get rawSource() {
-		return this.rawSource;
-	}
-
 	get source() {
 		return this.rawSource.source;
 	}
@@ -69,14 +62,11 @@ class Source {
 
 class Store {
 	constructor(store) {
-		this.rawStore = store;
+		this.store = store;
 		this.name = store.getName();
 	}
-	get store() {
-		return this.rawStore;
-	}
 	get localVars() {
-		return this.rawStore.__getLocalVars();
+		return this.store.__getLocalVars();
 	}
 	get events() {
 		return Stores.getStoreListeners(this.name)
