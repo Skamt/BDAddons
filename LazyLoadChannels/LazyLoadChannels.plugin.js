@@ -43,7 +43,7 @@ const css = `
 	visibility: visible !important;
 }
 
-#lazyLoader + form {
+#lazyLoader ~ * {
 	display: none;
 }
 
