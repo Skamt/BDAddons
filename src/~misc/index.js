@@ -10,6 +10,7 @@ import ShowUserInfo from "./mods/ShowUserInfo";
 import SpotifyListenAlong from "./mods/SpotifyListenAlong";
 import Devtools from "./mods/Devtools";
 import Whois from "./mods/Whois";
+import Spotify from "./mods/Spotify";
 
 
 const mods = [
@@ -19,6 +20,7 @@ const mods = [
 	new GuildInfo(),
 	// new MemUsage(),
 	// new Whois(),
+	new Spotify(),
 	new NoTrack(),
 	new ShowUserInfo(),
 	new SpotifyListenAlong()
@@ -29,10 +31,10 @@ Devtools();
 export default () => ({
 	start() {
 		DOM.addStyle(css);
-		mods.forEach(mod => { try { mod.Init?.() } catch (e) { console.log(mod, 'Init failed', e) } });
+		mods.forEach(mod => { try { mod.Init?.() } catch (e) { console.log(mod, '\nInit failed\n', e) } });
 	},
 	stop() {
 		DOM.removeStyle();
-		mods.forEach(mod => { try { mod.Dispose?.() } catch (e) { console.log(mod, 'Dispose failed', e) } });
+		mods.forEach(mod => { try { mod.Dispose?.() } catch (e) { console.log(mod, '\nDispose failed\n', e) } });
 	}
 });
