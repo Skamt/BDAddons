@@ -12,6 +12,7 @@ import Devtools from "./mods/Devtools";
 import Whois from "./mods/Whois";
 import Spotify from "./mods/Spotify";
 
+Devtools();
 
 const mods = [
 	new ChannelMuteButton(),
@@ -20,13 +21,13 @@ const mods = [
 	new GuildInfo(),
 	// new MemUsage(),
 	// new Whois(),
-	new Spotify(),
+	// new Spotify(),
 	new NoTrack(),
 	new ShowUserInfo(),
 	new SpotifyListenAlong()
 ];
 
-Devtools();
+
 
 export default () => ({
 	start() {

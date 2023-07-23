@@ -22,11 +22,11 @@
 	background: red;
 }
 
-[class^="repliedMessage"] .messageHeaderItem {
+[class^="repliedMessage"] .id {
 	display: none;
 }
 
-.messageHeaderItem {
+.id {
 	display: inline-block;
 	font-weight: 500;
 	margin: 0 0rem 0 0.5rem;
@@ -67,7 +67,7 @@
 	cursor:pointer;
 	position:relative;
 	margin-left:2px;
-	color: var(--interactive-normal);
+    color: var(--interactive-normal);
 }
 
 :where(.selected-2TbFuo, .containerDefault-YUSmu3:hover) .channelMuteButton{
@@ -79,10 +79,5 @@
 }
 
 .channelMuteButton:active{
-	color:orange;
-}
-
-.loadUnknownUser{
-	background: #000;
 	color:orange;
 }

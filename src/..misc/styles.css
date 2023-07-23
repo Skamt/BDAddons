@@ -1,0 +1,172 @@
+#memUsage,
+#console {
+	display: inline-block;
+	text-transform: none;
+	position: relative;
+	font-weight: bold;
+	top: -5px;
+	margin-left: 5px;
+	cursor: pointer;
+	font-size: 14px;
+	font-family: "Noto Sans";
+	pointer-events: auto;
+	-webkit-app-region: no-drag;
+}
+
+#console:hover {
+	text-decoration: underline;
+	color: var(--text-normal);
+}
+
+.active {
+	background: red;
+}
+
+[class^="repliedMessage"] .messageHeaderItem {
+	display: none;
+}
+
+.messageHeaderItem {
+	display: inline-block;
+	font-weight: 500;
+	margin: 0 0rem 0 0.5rem;
+}
+
+.shareButton:hover,
+[class^="imageWrapper"]:hover ~ .shareButton {
+	opacity: 1;
+}
+
+.shareButton {
+	padding: 6px;
+	border: 0;
+	opacity: 0;
+	z-index: 29;
+	position: absolute;
+	border-radius: 5px;
+	bottom: 4px;
+	left: 4px;
+	color: #b8b9bf;
+	background-color: #303338;
+}
+
+.small {
+	line-height: 20px;
+	font-weight: inherit;
+	font-size: 1.01em;
+	white-space: nowrap;
+}
+
+.listItemTooltip-eHcnUw {
+	max-width: unset;
+}
+
+.channelMuteButton {
+	display: none;
+	cursor: pointer;
+	position: relative;
+	margin-left: 2px;
+	color: var(--interactive-normal);
+}
+
+:where(.selected-2TbFuo, .containerDefault-YUSmu3:hover) .channelMuteButton {
+	display: block;
+}
+
+.channelMuteButton:hover {
+	color: darkorange;
+}
+
+.channelMuteButton:active {
+	color: orange;
+}
+
+.loadUnknownUser {
+	background: #000;
+	color: orange;
+}
+
+/* ===  */
+.spotifyEmbed-Container {
+	--text-normal: #fff;
+	--text-sub: #a7a7a7;
+	--gutter: 10px;
+	--font: Helvetica Neue, helvetica, arial, Hiragino Kaku Gothic Pro, Meiryo, MS Gothic;
+}
+.spotifyEmbed-Container {
+	background: #ccc5;
+	border: 1px solid black;
+	display: flex;
+	gap: var(--gutter);
+	padding: var(--gutter);
+	border-radius: 10px;
+	font-family: var(--font);
+}
+
+.spotifyEmbed-thumbnail {
+	background: var(--thumbnail) 100% / cover no-repeat;
+	width: 80px;
+	height: 80px;
+	margin-right: 5px;
+	border-radius: 10px;
+	box-shadow: 0px 0px 6px 3px hsl(0deg 0% 0% / 22%);
+}
+
+.spotifyEmbed-details {
+	display: flex;
+	flex-direction: column;
+}
+.spotifyEmbed-info {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+}
+
+.spotifyEmbed-title {
+	color: var(--text-normal);
+	font-weight: bold;
+	margin-top: 8px;
+}
+
+.spotifyEmbed-description {
+	margin: 0;
+	margin-top: 8px;
+	color: var(--text-sub);
+	font-size: 0.7rem;
+	font-weight: bold;
+}
+
+.spotifyEmbed-controls {
+	margin-top: auto;
+	display: flex;
+	gap: 5px;
+}
+
+.spotifyEmbed-btn {
+	box-sizing: border-box;
+	border-radius: 50%;
+	padding: 3px;
+	cursor: pointer;
+	width: 28px;
+	height: 28px;
+}
+
+.spotifyEmbed-btn-addToQueue .solid {
+	display: none;
+}
+
+.spotifyEmbed-btn-addToQueue:hover .solid {
+	display: block;
+}
+
+.spotifyEmbed-btn-addToQueue:hover .outlined {
+	display: none;
+}
+
+.spotifyEmbed-btn-play path {
+	fill: transparent;
+}
+
+.spotifyEmbed-btn-play:hover path {
+	fill: #000;
+}
