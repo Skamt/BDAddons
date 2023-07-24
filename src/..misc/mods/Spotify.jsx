@@ -1,8 +1,25 @@
 import Logger from "@Utils/Logger";
 import { Disposable } from "@Utils";
 import { Patcher, React } from "@Api";
-import Button from "@Components/Button";
-// import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
+import SpotifyAPI from "@Utils/SpotifyAPI";
+import PlayIcon from "@Components/PlayIcon";
+import PauseIcon from "@Components/PauseIcon";
+import AddToQueueIcon from "@Components/AddToQueueIcon";
+import FavoriteIcon from "@Components/FavoriteIcon";
+import CopyIcon from "@Components/CopyIcon";
+import ListenIcon from "@Components/ListenIcon";
+import SpotifyIcon from "@Components/SpotifyIcon";
+
+import SpotifyStore from "@Stores/SpotifyStore";
+
+const { device, socket } = SpotifyStore.getActiveSocketAndDevice();
+SpotifyAPI.token = socket.accessToken;
+
+function parseSpotifyUrl(url) {
+	if (typeof url !== "string") return undefined;
+	const [, type, id] = url.match(/\/(\w+)\/(\w+)/);
+	return { type, id };
+}
 
 export default class Spotify extends Disposable {
 	Init() {
@@ -13,15 +30,30 @@ export default class Spotify extends Disposable {
 					const { props } = _;
 					console.log(_);
 					if (props.embed?.provider?.name !== "Spotify") return;
-					return [ret, <SpotifyControls embed={props.embed} />];
+					if (props.embed?.type === "article") return;
+					const { type, id } = parseSpotifyUrl(props.embed.url);
+					if (type !== "track") return;
+					return [
+						ret,
+						<ErrorBoundary
+							id="SpotifyEmbed"
+							plugin={config.info.name}>
+							<SpotifyControls
+								embed={props.embed}
+								id={id}
+							/>
+						</ErrorBoundary>
+					];
 				})
 			];
 		else Logger.patch("Spotify");
 	}
 }
 
-function SpotifyControls({ embed }) {
+function SpotifyControls({ embed, id }) {
 	const { thumbnail, rawTitle, rawDescription } = embed;
+	const [playing, setplaying] = React.useState(false);
+
 	return (
 		<div class="spotifyEmbed-Container">
 			<div
@@ -33,31 +65,16 @@ function SpotifyControls({ embed }) {
 					<p className="spotifyEmbed-description">{rawDescription}</p>
 				</div>
 				<div className="spotifyEmbed-controls">
-					<AddToQueue />
-					<AddToQueue />
-					<Play />
-					<AddToQueue />
+					<Favorite />
+					<AddToQueue trackId={id} />
+					<Listen trackId={id} />
+					<Copy />
+					{!playing ? <Play /> : <Pause />}
 				</div>
 			</div>
-		</div>
-	);
-}
-
-function AddToQueue() {
-	return (
-		<div className="spotifyEmbed-btn spotifyEmbed-btn-addToQueue">
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				viewBox="0 -960 960 960">
-				<path
-					className="solid"
-					d="M450-360h60v-130h130v-60H510v-130h-60v130H320v60h130v130ZM330-120v-80H140q-24 0-42-18t-18-42v-520q0-24 18-42t42-18h680q24 0 42 18t18 42v520q0 24-18 42t-42 18H630v80H330Z"
-				/>
-				<path
-					className="outlined"
-					d="M450-360h60v-130h130v-60H510v-130h-60v130H320v60h130v130ZM330-120v-80H140q-24 0-42-18t-18-42v-520q0-24 18-42t42-18h680q24 0 42 18t18 42v520q0 24-18 42t-42 18H630v80H330ZM140-260h680v-520H140v520Zm0 0v-520 520Z"
-				/>
-			</svg>
+			<div className="spotifyEmbed-spotifyIcon">
+				<SpotifyIcon />
+			</div>
 		</div>
 	);
 }
@@ -65,16 +82,83 @@ function AddToQueue() {
 function Play() {
 	return (
 		<div className="spotifyEmbed-btn spotifyEmbed-btn-play">
-			<svg
-				viewBox="0 0 24 24"
-				xmlns="http://www.w3.org/2000/svg">
-				<path
-					d="M16.6582 9.28638C18.098 10.1862 18.8178 10.6361 19.0647 11.2122C19.2803 11.7152 19.2803 12.2847 19.0647 12.7878C18.8178 13.3638 18.098 13.8137 16.6582 14.7136L9.896 18.94C8.29805 19.9387 7.49907 20.4381 6.83973 20.385C6.26501 20.3388 5.73818 20.0469 5.3944 19.584C5 19.053 5 18.1108 5 16.2264V7.77357C5 5.88919 5 4.94701 5.3944 4.41598C5.73818 3.9531 6.26501 3.66111 6.83973 3.6149C7.49907 3.5619 8.29805 4.06126 9.896 5.05998L16.6582 9.28638Z"
-					stroke="currentColor"
-					fill="currentColor"
-					stroke-width="2"
-					stroke-linejoin="round"></path>
-			</svg>
+			<PlayIcon />
 		</div>
 	);
+}
+
+function Pause() {
+	return (
+		<div className="spotifyEmbed-btn spotifyEmbed-btn-pause">
+			<PauseIcon />
+		</div>
+	);
+}
+
+function Favorite() {
+	return (
+		<div className="spotifyEmbed-btn spotifyEmbed-btn-favorite">
+			<FavoriteIcon />
+		</div>
+	);
+}
+
+function AddToQueue({ trackId }) {
+	const addToQueueHandler = () => {
+		SpotifyAPI.addToQueue(`spotify:track:${trackId}`);
+	};
+	return (
+		<div
+			onClick={addToQueueHandler}
+			className="spotifyEmbed-btn spotifyEmbed-btn-addToQueue">
+			<AddToQueueIcon />
+		</div>
+	);
+}
+
+function Listen({ trackId }) {
+	const playHandler = () => {
+		SpotifyAPI.playTrack([`spotify:track:${trackId}`]);
+	};
+
+	return (
+		<div
+			onClick={playHandler}
+			className="spotifyEmbed-btn spotifyEmbed-btn-listen">
+			<ListenIcon />
+		</div>
+	);
+}
+
+function Copy() {
+	return (
+		<div className="spotifyEmbed-btn spotifyEmbed-btn-copy">
+			<CopyIcon />
+		</div>
+	);
+}
+
+class ErrorBoundary extends React.Component {
+	state = { hasError: false, error: null, info: null };
+
+	componentDidCatch(error, info) {
+		this.setState({ error, info, hasError: true });
+		const errorMessage = `\n\t${error?.message || ""}${(info?.componentStack || "").split("\n").slice(0, 20).join("\n")}`;
+		console.error(`%c[${this.props.plugin}] %cthrew an exception at %c[${this.props.id}]\n`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
+	}
+
+	render() {
+		if (this.state.hasError) {
+			if (this.props.fallback) return this.props.fallback;
+			else {
+				return (
+					<div style={{ background: "#292c2c", padding: "20px", borderRadius: "10px" }}>
+						<b style={{ color: "#e0e1e5" }}>
+							An error has occured while rendering <span style={{ color: "orange" }}>{this.props.id}</span>
+						</b>
+					</div>
+				);
+			}
+		} else return this.props.children;
+	}
 }

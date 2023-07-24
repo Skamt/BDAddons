@@ -75,3 +75,20 @@ export function prettyfiyBytes(bytes, si = false, dp = 1) {
 export function parseSnowflake(snowflake) {
 	return snowflake / 4194304 + 1420070400000;
 }
+
+export function genUrlParamsFromArray(params) {
+	if (typeof params !== "object") throw new Error("params argument must be an object or array");
+	if (typeof params === "object" && !Array.isArray(params)) {
+		params = Object.entries(params);
+	}
+	return params.map(([key, val]) => `${key}=${val}`).join("&");
+}
+
+export function buildUrl(endpoint, path, params) {
+	const uri = endpoint + path;
+	if (params) {
+		params = genUrlParamsFromArray(params);
+		return `${uri}?${params}`;
+	}
+	return uri;
+}
