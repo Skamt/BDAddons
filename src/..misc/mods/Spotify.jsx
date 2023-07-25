@@ -12,9 +12,6 @@ import SpotifyIcon from "@Components/SpotifyIcon";
 
 import SpotifyStore from "@Stores/SpotifyStore";
 
-const { device, socket } = SpotifyStore.getActiveSocketAndDevice();
-SpotifyAPI.token = socket.accessToken;
-
 function parseSpotifyUrl(url) {
 	if (typeof url !== "string") return undefined;
 	const [, type, id] = url.match(/\/(\w+)\/(\w+)/);
@@ -33,6 +30,9 @@ export default class Spotify extends Disposable {
 					if (props.embed?.type === "article") return;
 					const { type, id } = parseSpotifyUrl(props.embed.url);
 					if (type !== "track") return;
+					const socketAndDevice = SpotifyStore.getActiveSocketAndDevice();
+					if(!socketAndDevice) return;
+					SpotifyAPI.token = socketAndDevice?.socket.accessToken;
 					return [
 						ret,
 						<ErrorBoundary

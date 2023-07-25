@@ -8,11 +8,8 @@ import MemUsage from "./mods/MemUsage";
 import NoTrack from "./mods/NoTrack";
 import ShowUserInfo from "./mods/ShowUserInfo";
 import SpotifyListenAlong from "./mods/SpotifyListenAlong";
-import Devtools from "./mods/Devtools";
 import Whois from "./mods/Whois";
 import Spotify from "./mods/Spotify";
-
-Devtools();
 
 const mods = [
 	new ChannelMuteButton(),
