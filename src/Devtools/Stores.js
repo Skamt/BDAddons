@@ -1,22 +1,24 @@
 import { Store } from "./Types";
-import Modules from "./Modules";
+import {Modules} from "./Modules";
+import Dispatcher from "@Modules/Dispatcher";
 
-const Stores = {
+export const Stores = {
 	getStore(storeName) {
-		const store = Modules.unsafe_getModule(m => m && m._dispatchToken && m.getName() === storeName);
-		if (!store) return undefined;
-		return new Store(store);
+		const storeFilter = exp => exp && ["Z", "ZP", "default"].some(k => exp[k]?._dispatchToken && exp[k]?.getName() ===  storeName);
+		const module = Modules.getModule(storeFilter);
+		if (!module) return undefined;
+		return new Store(module);
 	},
 	getStoreFuzzy(str = "") {
 		str = str.toLowerCase();
-		return Modules.unsafe_getModule(m => m && m._dispatchToken && m.getName().toLowerCase().includes(str), { first: false }).map(store => new Store(store));
+		return Modules.getModule(m => m && m._dispatchToken && m.getName().toLowerCase().includes(str), { first: false }).map(store => new Store(store));
 	},
 	getStoreListeners(storeName) {
 		const nodes = Dispatcher._actionHandlers._dependencyGraph.nodes;
 		const storeHandlers = Object.values(nodes).filter(({ name }) => name === storeName);
 		return storeHandlers[0];
 	},
-	getSortedStores: (function() {
+	getSortedStores: (function () {
 		let stores = null;
 		return function getSortedStores(force) {
 			if (!stores || force) {
@@ -28,4 +30,4 @@ const Stores = {
 		};
 	})()
 };
-export default Stores;
+

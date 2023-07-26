@@ -1,50 +1,11 @@
 import Logger from "@Utils/Logger";
 import { getModule, getModuleAndKey } from "@Webpack";
 import { Module, Source, Store } from "./Types";
-import Modules from "./Modules";
-import Sources from "./Sources";
-import Stores from "./Stores";
-import webpackRequire from "./webpackRequire"
+import { Modules } from "./Modules";
+import { Sources } from "./Sources";
+import { Stores } from "./Stores";
+import webpackRequire from "./webpackRequire";
 import Dispatcher from "@Modules/Dispatcher";
-
-
-
-
-
-const Common = {
-	getModuleAndSourceById(moduleId) {
-		return {
-			id: moduleId,
-			source: Sources.sourceById(moduleId),
-			module: Modules.moduleById(moduleId)
-		};
-	},
-	getAllById(moduleId) {
-		return {
-			get target() {
-				return Common.getModuleAndSourceById(moduleId);
-			},
-			get modulesImportedInTarget() {
-				return Modules.modulesImportedInModuleById(moduleId).map(Common.getModuleAndSourceById);
-			},
-			get modulesImportingTarget() {
-				return Modules.modulesImportingModuleById(moduleId).map(Common.getModuleAndSourceById);
-			}
-		};
-	},
-	getAllByFilter(filter, options = {}) {
-		const result = Modules.unsafe_getModule(filter, options)?.id;
-		if (!result) return undefined;
-		if (Array.isArray(result)) return result.map(Common.getAllById);
-		return Common.getAllById(result);
-	},
-	getModuleAndSourceByExportsFilter(filter, options = {}) {
-		const result = Modules.unsafe_getModule(filter, options)?.id;
-		if (!result) return undefined;
-		if (Array.isArray(result)) return result.map(Common.getModuleAndSourceById);
-		return Common.getModuleAndSourceById(result);
-	}
-};
 
 const Misc = {
 	getAllAssets() {
@@ -53,14 +14,13 @@ const Misc = {
 			.map(a => a.exports);
 	},
 	byPropValue(val, first = true) {
-		return Modules.unsafe_getModule(
-			m => {
+		return Modules.getModule(
+			exports => {
 				try {
-					return Object.values(m).some(v => v === val);
-				} catch {
-					return false;
-				}
-			}, { first }
+					return Object.values(exports).some(v => v === val);
+				} catch {}
+			},
+			{ first }
 		);
 	},
 	getEventListeners(eventName) {
@@ -87,7 +47,7 @@ const Misc = {
 	getGraph: (() => {
 		let graph = null;
 		return function getGraph(refresh = false) {
-			if (graph === null || refresh) graph = Object.keys(Modules.getModules()).map(a => ({ id: a, modules: Modules.modulesImportedInModule(a) }));
+			if (graph === null || refresh) graph = Object.keys(Modules.getModules()).map(a => ({ id: a, modules: Modules.modulesImportedInModuleById(a) }));
 			return graph;
 		};
 	})()
@@ -99,7 +59,6 @@ function init() {
 	window.s = {
 		r: webpackRequire,
 		...Misc,
-		...Common,
 		...Stores,
 		...Sources,
 		...Modules,
@@ -107,10 +66,6 @@ function init() {
 			Dispatcher
 		}
 	};
-}
-
-function clean() {
-	delete window.s;
 }
 
 export default class Devtools {
@@ -123,6 +78,6 @@ export default class Devtools {
 	}
 
 	stop() {
-		clean()
+		"s" in window && delete window.s;
 	}
 }

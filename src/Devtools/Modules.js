@@ -1,7 +1,15 @@
 import webpackRequire from "./webpackRequire";
+import {Sources} from "./Sources";
 import { Module } from "./Types";
 
-const exportsExceptions = [exports => !exports, exports => exports && typeof exports === "boolean", exports => exports && exports === window, exports => exports && exports.TypedArray, exports => exports && exports === document.documentElement, exports => exports && exports[Symbol.toStringTag] === "DOMTokenList"];
+const exportsExceptions = [
+	exports => !exports,
+	exports => exports && typeof exports === "boolean",
+	exports => exports && exports === window,
+	exports => exports && exports.TypedArray,
+	exports => exports && exports === document.documentElement,
+	exports => exports && exports[Symbol.toStringTag] === "DOMTokenList"
+];
 
 function firstAndExports(filter) {
 	const modules = Object.values(Modules.getModules());
@@ -63,7 +71,7 @@ function allAndNoExports(filter) {
 	return results;
 }
 
-const Modules = {
+export const Modules = {
 	_modules: webpackRequire.c,
 	getModules() {
 		return Modules._modules;
@@ -72,8 +80,8 @@ const Modules = {
 		return new Module(Modules._modules[id]);
 	},
 	modulesImportedInModuleById(id) {
-		const rawSource = Sources.sourceById(id).source.toString();
-
+		const rawSource = Sources.sourceById(id).loader.toString();
+		// debugger;
 		const args = rawSource.match(/\((.+?)\)/i)?.[1];
 		if (args?.length > 5 || !args) return [];
 
@@ -86,7 +94,7 @@ const Modules = {
 	modulesImportingModuleById(id) {
 		return Object.keys(Sources.getSources()).filter(sourceId => Modules.modulesImportedInModuleById(sourceId).includes("" + id));
 	},
-	unsafe_getModule(filter, options = {}) {
+	getModule(filter, options = {}) {
 		const { first = true, searchExports = false } = options;
 		if (first && searchExports) return firstAndExports(filter);
 		if (!first && searchExports) return allAndExports(filter);
@@ -94,5 +102,3 @@ const Modules = {
 		if (!first && !searchExports) return allAndNoExports(filter);
 	}
 };
-
-export default Modules;
