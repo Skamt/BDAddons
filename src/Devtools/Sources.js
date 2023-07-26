@@ -1,4 +1,5 @@
 import webpackRequire from "./webpackRequire";
+import { Source } from "./Types";
 
 const Sources = {
 	_sources: webpackRequire.m,

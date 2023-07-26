@@ -1,4 +1,6 @@
 import Modules from "./Modules";
+import Sources from "./Sources";
+import Stores from "./Stores";
 
 function defineModuleGetter(obj, id) {
 	return Object.defineProperty(obj, id, {
