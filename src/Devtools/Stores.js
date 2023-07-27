@@ -11,7 +11,8 @@ export const Stores = {
 	},
 	getStoreFuzzy(str = "") {
 		str = str.toLowerCase();
-		return Modules.getModule(m => m && m._dispatchToken && m.getName().toLowerCase().includes(str), { first: false }).map(store => new Store(store));
+		const storeFilter = exp => exp && ["Z", "ZP", "default"].some(k => exp[k]?._dispatchToken && exp[k]?.getName().toLowerCase().includes(str));
+		return Modules.getModule(storeFilter, { first: false }).map(module => new Store(module));
 	},
 	getStoreListeners(storeName) {
 		const nodes = Dispatcher._actionHandlers._dependencyGraph.nodes;
@@ -23,7 +24,7 @@ export const Stores = {
 		return function getSortedStores(force) {
 			if (!stores || force) {
 				stores = Stores.getStoreFuzzy()
-					.map(store => [store.getName(), new Store(store)])
+					.map(store => [store.name, store])
 					.sort((a, b) => a[0].localeCompare(b[0]));
 			}
 			return stores;

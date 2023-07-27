@@ -66,16 +66,32 @@ export class Store {
 	constructor(module) {
 		defineGetter(this, "module", module);
 		this.name = this.store.getName();
+
+		const methods = {};
+		const _this = this;
+		Object.getOwnPropertyNames(this.store.__proto__).forEach(key => {
+			if (key === "constructor") return;
+			const func = this.store[key];
+			if (typeof func !== "function") return;
+			if (func.length === 0)
+				return Object.defineProperty(methods, key, {
+					get() { return _this.store[key](); }
+				});
+			else methods[key] = func;
+		});
+
+		defineGetter(this, "methods", methods);
 	}
 
 	get store() {
-		for (const key of ["Z", "ZP", "default"]) if (key in this.module.exports) return this.module.exports[key];
+		for (const key of ["Z", "ZP", "default"])
+			if (key in this.module.exports) return this.module.exports[key];
 	}
 
 	get localVars() {
 		return this.store.__getLocalVars();
 	}
-
+	
 	get events() {
 		return Stores.getStoreListeners(this.name);
 	}

@@ -1,74 +1,37 @@
 import webpackRequire from "./webpackRequire";
-import {Sources} from "./Sources";
+import { Sources } from "./Sources";
 import { Module } from "./Types";
 
-const exportsExceptions = [
-	exports => !exports,
-	exports => exports && typeof exports === "boolean",
-	exports => exports && exports === window,
-	exports => exports && exports.TypedArray,
-	exports => exports && exports === document.documentElement,
-	exports => exports && exports[Symbol.toStringTag] === "DOMTokenList"
-];
+function noExports(filter, module, exports) {
+	if (filter(exports)) return new Module(module);
+}
 
-function firstAndExports(filter) {
-	const modules = Object.values(Modules.getModules());
-	let moduleIndex = modules.length;
-	while (moduleIndex--) {
-		const module = modules[moduleIndex];
-		const { exports } = module;
-		if (exportsExceptions.some(exception => exception(exports))) continue;
-		for (const entryKey in exports) {
-			const target = exports[entryKey];
-			if (exportsExceptions.some(exception => exception(target))) continue;
-			if (filter(target, module, moduleIndex)) {
-				return { target, entryKey, module: new Module(module) };
-			}
+function doExports(filter, module, exports, index) {
+	if (typeof exports !== "object") return;
+	for (const entryKey in exports) {
+		let target = null;
+		try {
+			target = exports[entryKey];
+		} catch {
+			continue;
 		}
+		if (!target) continue;
+		if (filter(target, module, index)) return { target, entryKey, module: new Module(module) };
 	}
 }
 
-function allAndExports(filter) {
-	const modules = Object.values(Modules.getModules());
-	let moduleIndex = modules.length;
-	let results = [];
-	while (moduleIndex--) {
-		const module = modules[moduleIndex];
-		const { exports } = module;
-		if (exportsExceptions.some(exception => exception(exports))) continue;
-		for (const entryKey in exports) {
-			const target = exports[entryKey];
-			if (exportsExceptions.some(exception => exception(target))) continue;
-			if (filter(target, module, moduleIndex)) {
-				results.push({ target, entryKey, module: new Module(module) });
-			}
-		}
+function sanitizeExports(exports) {
+	if (!exports) return;
+	const exportsExceptions = [
+		exports => typeof exports === "boolean",
+		exports => exports === window,
+		exports => exports.TypedArray,
+		exports => exports === document.documentElement,
+		exports => exports[Symbol.toStringTag] === "DOMTokenList"
+	];
+	for (let index = exportsExceptions.length - 1; index >= 0; index--) {
+		if (exportsExceptions[index](exports)) return true;
 	}
-	return results;
-}
-
-function firstAndNoExports(filter) {
-	const modules = Object.values(Modules.getModules());
-	let index = modules.length;
-	while (index--) {
-		const module = modules[index];
-		const { exports } = module;
-		if (exportsExceptions.some(exception => exception(exports))) continue;
-		if (filter(exports)) return new Module(module);
-	}
-}
-
-function allAndNoExports(filter) {
-	const modules = Object.values(Modules.getModules());
-	let index = modules.length;
-	let results = [];
-	while (index--) {
-		const module = modules[index];
-		const { exports } = module;
-		if (exportsExceptions.some(exception => exception(exports))) continue;
-		if (filter(exports)) results.push(new Module(module));
-	}
-	return results;
 }
 
 export const Modules = {
@@ -81,7 +44,6 @@ export const Modules = {
 	},
 	modulesImportedInModuleById(id) {
 		const rawSource = Sources.sourceById(id).loader.toString();
-		// debugger;
 		const args = rawSource.match(/\((.+?)\)/i)?.[1];
 		if (args?.length > 5 || !args) return [];
 
@@ -96,9 +58,21 @@ export const Modules = {
 	},
 	getModule(filter, options = {}) {
 		const { first = true, searchExports = false } = options;
-		if (first && searchExports) return firstAndExports(filter);
-		if (!first && searchExports) return allAndExports(filter);
-		if (first && !searchExports) return firstAndNoExports(filter);
-		if (!first && !searchExports) return allAndNoExports(filter);
+		const f = searchExports ? doExports : noExports;
+
+		const modules = Object.values(Modules.getModules());
+		let results = [];
+		for (let index = modules.length - 1; index >= 0; index--) {
+			const module = modules[index];
+			const { exports } = module;
+			if (sanitizeExports(exports)) continue;
+
+			const match = f(filter, module, exports, index);
+			if (!match) continue;
+			if (first) return match;
+			results.push(match);
+		}
+
+		return first ? undefined : results;
 	}
 };
