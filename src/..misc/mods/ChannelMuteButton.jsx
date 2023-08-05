@@ -12,12 +12,18 @@ export default class ChannelMuteButton extends Disposable {
 				Patcher.after(module, key, (_, [{ muted, channel: { guild_id, id } }], ret) => {
 					const children = ret.props?.children?.props?.children[1].props?.children.props.children[1].props.children;
 					if (!children.some(a => a?.props?.id === "channelMuteButton"))
-						children?.push?.(<b
-							id="channelMuteButton"
-							className="channelMuteButton"
-							onClick={() =>ChannelSettings.updateChannelOverrideSettings(guild_id, id, {muted: !muted})}>
-							{"M"}
-						</b>);
+						children?.push?.(
+							<b
+								id="channelMuteButton"
+								className="channelMuteButton"
+								onClick={e => {
+									e.stopPropagation();
+									e.preventDefault();
+									ChannelSettings.updateChannelOverrideSettings(guild_id, id, { muted: !muted });
+								}}>
+								{"M"}
+							</b>
+						);
 				})
 			];
 		else
