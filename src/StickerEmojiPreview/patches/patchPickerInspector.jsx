@@ -7,7 +7,7 @@ import ExpressionPickerInspector from "@Patch/ExpressionPickerInspector";
 import CloseExpressionPicker from "@Patch/CloseExpressionPicker";
 
 import PreviewComponent from "../components/PreviewComponent";
-import ErrorBoundary from "../components/ErrorBoundary";
+import ErrorBoundary from "@Components/ErrorBoundary";
 
 import { PREVIEW_SIZE, PREVIEW_UNAVAILABLE } from "../Constants";
 

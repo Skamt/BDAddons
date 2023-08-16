@@ -4,22 +4,17 @@ import Settings from "@Utils/Settings";
 import { getNestedProp } from "@Utils";
 import { isSelf } from "@Utils/User";
 import Logger from "@Utils/Logger";
-
+import ErrorBoundary from "@Components/ErrorBoundary";
+import ErrorIcon from "@Components/ErrorIcon";
 import ProfileTypeEnum from "@Enums/ProfileTypeEnum";
-
 import UserBannerMask from "@Patch/UserBannerMask";
-
 import SelectedGuildStore from "@Stores/SelectedGuildStore";
-
 import ImageModal from "@Modules/ImageModal";
 import RenderLinkComponent from "@Modules/RenderLinkComponent";
 import Color from "@Modules/Color";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
-
 import ColorModalComponent from "./components/ColorModalComponent";
 import DisplayCarouselComponent from "./components/DisplayCarouselComponent";
-import ErrorBoundary from "./components/ErrorBoundary";
-import ErrorComponent from "./components/ErrorComponent";
 import ViewProfilePictureButtonComponent from "./components/ViewProfilePictureButtonComponent";
 import SettingComponent from "./components/SettingComponent";
 
@@ -38,8 +33,7 @@ function openCarousel(items) {
 	TheBigBoyBundle.openModal(props => (
 		<ErrorBoundary
 			id="DisplayCarouselComponent"
-			plugin={config.info.name}
-			closeModal={props.onClose}>
+			plugin={config.info.name}>
 			<DisplayCarouselComponent
 				props={props}
 				items={items}
@@ -91,7 +85,7 @@ export default class ViewProfilePicture {
 						<ErrorBoundary
 							id="ViewProfilePictureButtonComponent"
 							plugin={config.info.name}
-							fallback={<ErrorComponent className={buttonClasses} />}>
+							fallback={<ErrorIcon className={buttonClasses} />}>
 							<ViewProfilePictureButtonComponent
 								className={buttonClasses}
 								onClick={() => this.clickHandler(user, bannerObject, ProfileTypeEnum.POPOUT === profileType)}

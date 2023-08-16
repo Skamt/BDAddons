@@ -3,7 +3,7 @@
 		"name": "Devtools",
 		"version": "1.0.0",
 		"description": "Helpful devtools for discord modules",
-		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/CopyImageLink/Devtools.plugin.js",
+		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/Devtools/Devtools.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/Devtools"
 	}
 }

@@ -18,7 +18,7 @@ const mods = [
 	new GuildInfo(),
 	// new MemUsage(),
 	// new Whois(),
-	new Spotify(),
+	// new Spotify(),
 	new NoTrack(),
 	new ShowUserInfo(),
 	new SpotifyListenAlong()

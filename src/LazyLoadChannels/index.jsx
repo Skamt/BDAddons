@@ -1,16 +1,12 @@
 import css from "./styles";
+import { DOM, React, Patcher } from "@Api";
 import Settings from "@Utils/Settings";
 import ControlKeys from "@Utils/ControlKeys";
-
 import Logger from "@Utils/Logger";
-import { DOM, React, Patcher } from "@Api";
 import ChannelsStateManager from "./ChannelsStateManager";
-
 import Dispatcher from "@Modules/Dispatcher";
 import ChannelActions from "@Modules/ChannelActions";
-
 import SettingComponent from "./components/SettingComponent";
-
 import patchChannel from "./patches/patchChannel";
 import patchCreateChannel from "./patches/patchCreateChannel";
 import patchChannelContent from "./patches/patchChannelContent";

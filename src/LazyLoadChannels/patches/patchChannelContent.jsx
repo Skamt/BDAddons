@@ -1,7 +1,8 @@
 import { Patcher, React } from "@Api";
 import Logger from "@Utils/Logger";
 import ChannelContent from "@Modules/ChannelContent";
-import ErrorBoundary from "../components/ErrorBoundary";
+import ErrorBoundary from "@Components/ErrorBoundary";
+import ErrorFallbackComponent from "../components/ErrorFallbackComponent";
 import LazyLoaderComponent from "../components/LazyLoaderComponent";
 
 export default context => {
@@ -14,6 +15,8 @@ export default context => {
 			return (
 				<ErrorBoundary
 					id="LazyLoaderComponent"
+					passMetaProps
+					fallback={ErrorFallbackComponent}
 					plugin={config.info.name}>
 					<LazyLoaderComponent
 						channel={channel}

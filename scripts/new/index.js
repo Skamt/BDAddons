@@ -11,7 +11,7 @@ const config = `{
 		"name": "${pluginName}",
 		"version": "1.0.0",
 		"description": "Empty description",
-		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/CopyImageLink/${pluginName}.plugin.js",
+		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/${pluginName}/${pluginName}.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/${pluginName}"
 	}
 }`;
