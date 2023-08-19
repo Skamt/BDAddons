@@ -15,3 +15,16 @@ export function useSettings(key) {
 
 	return state;
 }
+
+export function useStateFromStore(store, fn) {
+	const [val, setVal] = React.useState(fn() || null);
+	React.useEffect(() => {
+		function listener() {
+			setVal(fn());
+		}
+		store.addReactChangeListener(listener);
+		return () => store.removeReactChangeListener(listener);
+	}, []);
+
+	return val;
+}

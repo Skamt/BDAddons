@@ -1,20 +1,22 @@
 import Logger from "@Utils/Logger";
+import { React, Patcher } from "@Api";
+import ErrorBoundary from "@Components/ErrorBoundary";
+import SpotifyControls from "../components/SpotifyControls";
 
 function parseSpotifyUrl(url) {
 	if (typeof url !== "string") return undefined;
-	const [, type, id] = url.match(/\/(\w+)\/(\w+)/);
-	return { type, id };
+	const [, type, trackId] = url.match(/\/(\w+)\/(\w+)/);
+	return { type, trackId };
 }
 
 export default () => {
 	const EmbedComponent = getModule(a => a.prototype.getSpoilerStyles);
 	if (EmbedComponent)
 		Patcher.after(EmbedComponent.prototype, "render", (_, args, ret) => {
-			console.log(_);
 			const { props } = _;
 			if (props.embed?.provider?.name !== "Spotify") return;
 			if (props.embed?.type === "article") return;
-			const { type, id } = parseSpotifyUrl(props.embed.url);
+			const { type, trackId } = parseSpotifyUrl(props.embed.url);
 			if (type !== "track") return;
 
 			return (
@@ -24,7 +26,7 @@ export default () => {
 					<SpotifyControls
 						og={ret}
 						embed={props.embed}
-						id={id}
+						trackId={trackId}
 					/>
 				</ErrorBoundary>
 			);

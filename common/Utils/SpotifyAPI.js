@@ -1,21 +1,6 @@
 import { genUrlParamsFromArray, buildUrl } from "@Utils";
 const API_ENDPOINT = "https://api.spotify.com/v1";
 
-async function wrappedFetch(url, options) {
-	const response = await fetch(url, options);
-
-	if (response.ok) return await response.json();
-	switch (response.status) {
-		case 401:
-		case 403:
-		case 429:
-			throw await response.json();
-			break;
-		default:
-			throw await response;
-	}
-}
-
 function buildFetchRequestOptions(builderObj) {
 	const options = {
 		method: builderObj.method,
@@ -73,8 +58,24 @@ class FetchRequestBuilder {
 		return this;
 	}
 
-	run() {
-		return wrappedFetch(this.url, this.options);
+	async run() {
+		const response = await fetch(this.url, this.options);
+
+		if (response.ok) {
+			try {
+				return await response.json();
+			} catch {
+				return response;
+			}
+		}
+		switch (response.status) {
+			case 401:
+			case 403:
+			case 429:
+				throw await response.json();
+			default:
+				throw response;
+		}
 	}
 }
 
@@ -91,66 +92,44 @@ class SpotifyClientAPI {
 		return this.credentials["token"] || null;
 	}
 
+	set accountId(value) {
+		this.credentials["accountId"] = value;
+	}
+
+	get accountId() {
+		return this.credentials["accountId"] || null;
+	}
+
 	getRequestBuilder() {
 		return new FetchRequestBuilder(API_ENDPOINT).setToken(this.token);
 	}
 
 	fetchCurrentUserProfile() {
-		return this.getRequestBuilder()
-			.setPath("/me")
-			.setMethod("GET")
-			.build()
-			.run();
+		return this.getRequestBuilder().setPath("/me").setMethod("GET").build().run();
 	}
 
 	next() {
-		return this.getRequestBuilder()
-			.setPath("/me/player/next")
-			.setMethod("POST")
-			.build()
-			.run();
+		return this.getRequestBuilder().setPath("/me/player/next").setMethod("POST").build().run();
 	}
 
 	previous() {
-		return this.getRequestBuilder()
-			.setPath("/me/player/previous")
-			.setMethod("POST")
-			.build()
-			.run();
+		return this.getRequestBuilder().setPath("/me/player/previous").setMethod("POST").build().run();
 	}
 
 	play() {
-		return this.getRequestBuilder()
-			.setPath("/me/player/play")
-			.setMethod("PUT")
-			.build()
-			.run();
+		return this.getRequestBuilder().setPath("/me/player/play").setMethod("PUT").build().run();
 	}
 
 	pause() {
-		return this.getRequestBuilder()
-			.setPath("/me/player/pause")
-			.setMethod("PUT")
-			.build()
-			.run();
+		return this.getRequestBuilder().setPath("/me/player/pause").setMethod("PUT").build().run();
 	}
 
 	playTrack(tracks) {
-		return this.getRequestBuilder()
-			.setPath("/me/player/play")
-			.setMethod("PUT")
-			.setBody({ uris: tracks })
-			.build()
-			.run();
+		return this.getRequestBuilder().setPath("/me/player/play").setMethod("PUT").setBody({ uris: tracks }).build().run();
 	}
 
-	addToQueue(track){
-		return this.getRequestBuilder()
-			.setPath("/me/player/queue")
-			.setMethod("POST")
-			.setParams({ uri: track })
-			.build()
-			.run();
+	addToQueue(track) {
+		return this.getRequestBuilder().setPath("/me/player/queue").setMethod("POST").setParams({ uri: track }).build().run();
 	}
 	//...
 }
