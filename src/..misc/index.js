@@ -24,7 +24,7 @@ const mods = [
 	new SpotifyListenAlong()
 ];
 
-
+console = console.context();
 
 export default () => ({
 	start() {

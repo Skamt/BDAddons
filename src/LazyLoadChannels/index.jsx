@@ -117,19 +117,5 @@ export default class LazyLoadChannels {
 
 	getSettingsPanel() {
 		return <SettingComponent />;
-		return (
-			[<SettingComponent
-				description="Auto load indicator."
-				note="Whether or not to show an indicator for channels set to auto load"
-				value={Settings.get("autoloadedChannelIndicator")}
-				onChange={e => Settings.set("autoloadedChannelIndicator", e)}
-			/>,
-			<SettingComponent
-				description="Lazy load DMs."
-				note="Whether or not to consider DMs for lazy loading"
-				value={Settings.get("lazyLoadDMs")}
-				onChange={e => Settings.set("lazyLoadDMs", e)}
-			/>]
-		);
 	}
 }
