@@ -8,12 +8,13 @@ export default () => {
 };
 
 function SpotifyEmbedOptions() {
+	const [selected, setSelected] = React.useState(Settings.get("spotifyEmbed"));
 	return (
 		<div style={{ display: "flex" }}>
 			<RadioGroup
 				options={[
 					{
-						"name": "keep",
+						"value": "keep",
 						"name": "Keep: Use original Spotify Embed"
 					},{
 						"value": "replace",
@@ -24,8 +25,11 @@ function SpotifyEmbedOptions() {
 					}
 				]}
 				orientation={"horizontal"}
-				value={Settings.get("spotifyEmbed")}
-				onChange={e => Settings.set("spotifyEmbed", e.value)}
+				value={selected}
+				onChange={e => {
+					Settings.set("spotifyEmbed", e.value);
+					setSelected(e.value);
+				}}
 			/>
 		</div>
 	);

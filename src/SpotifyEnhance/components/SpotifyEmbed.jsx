@@ -5,7 +5,7 @@ import CopyIcon from "@Components/CopyIcon";
 import ListenIcon from "@Components/ListenIcon";
 import SpotifyIcon from "@Components/SpotifyIcon";
 
-export default ({ showControls, embed, trackId }) => {
+export default ({ enabled, embed, trackId }) => {
 	const { thumbnail, rawTitle, rawDescription } = embed;
 
 	return (
@@ -16,9 +16,9 @@ export default ({ showControls, embed, trackId }) => {
 			<div className="spotifyEmbed-details">
 				<div className="spotifyEmbed-info">
 					<h2 className="spotifyEmbed-title">{rawTitle}</h2>
-					<p className="spotifyEmbed-description">{rawDescription}</p>
+					<p className="spotifyEmbed-description">{rawDescription.replace("· Song ·","-")}</p>
 				</div>
-				{showControls && (
+				{enabled && (
 					<div className="spotifyEmbed-controls">
 						<AddToQueue trackId={trackId} />
 						<Play trackId={trackId} />
