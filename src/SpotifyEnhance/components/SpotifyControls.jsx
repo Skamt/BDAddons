@@ -1,4 +1,6 @@
 import { React } from "@Api";
+import { copy } from "@Utils";
+import Toast from "@Utils/Toast";
 import Button from "@Components/Button";
 import SpotifyStore from "@Stores/SpotifyStore";
 import { useSettings, useStateFromStore } from "@Utils/Hooks";
@@ -22,25 +24,55 @@ export default ({ og, embed, trackId }) => {
 			/>
 		);
 
-	if (spotifyEmbed === "keep") return [og, <SpotifyControls enabled={canDoStuff} />];
-	if (spotifyEmbed === "hide") return <SpotifyControls enabled={canDoStuff} />;
+	if (spotifyEmbed === "keep")
+		return [
+			og,
+			<SpotifyControls
+				url={embed.url}
+				trackId={trackId}
+				enabled={canDoStuff}
+			/>
+		];
+	if (spotifyEmbed === "hide")
+		return (
+			<SpotifyControls
+				url={embed.url}
+				trackId={trackId}
+				enabled={canDoStuff}
+			/>
+		);
 };
 
-function SpotifyControls({ enabled }) {
+function SpotifyControls({ url, trackId, enabled }) {
 	const addToQueueHandler = () => addTrackToQueue(trackId);
 	const playHandler = () => playTrack(trackId);
+	const copyHandler = () => {
+		copy(url);
+		Toast.success("Link copied!");
+	};
+
 	return (
-		<div class="spotify-controls">
-			<Button
-				enabled={enabled}
-				onClick={addToQueueHandler}>
-				add to queue
-			</Button>
-			<Button
-				enabled={enabled}
-				onClick={playHandler}>
-				play now
-			</Button>
-		</div>
+		enabled && (
+			<div class="spotify-controls">
+				<Button
+					size={Button.Sizes.TINY}
+					color={Button.Colors.GREEN}
+					onClick={addToQueueHandler}>
+					Add to queue
+				</Button>
+				<Button
+					size={Button.Sizes.TINY}
+					color={Button.Colors.GREEN}
+					onClick={playHandler}>
+					Listen
+				</Button>
+				<Button
+					size={Button.Sizes.TINY}
+					color={Button.Colors.GREEN}
+					onClick={copyHandler}>
+					Copy
+				</Button>
+			</div>
+		)
 	);
 }

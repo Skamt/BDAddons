@@ -17,7 +17,7 @@ async function requestHandler({ action, onSucess, onError }) {
 				return onError();
 			}
 			const data = await refreshToken(SpotifyAPI.accountId);
-			if(!data.ok) break;
+			if (!data.ok) break;
 			SpotifyAPI.token = data.body.access_token;
 		} finally {
 			b = true;
@@ -40,3 +40,4 @@ export function playTrack(trackId) {
 		onError: () => Toast.error(`Could not play [${trackId}]`)
 	});
 }
+

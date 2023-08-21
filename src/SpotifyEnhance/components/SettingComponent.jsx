@@ -7,19 +7,23 @@ export default () => {
 	return <SpotifyEmbedOptions />;
 };
 
+const Heading = getModule(Filters.byStrings("LEGEND", "LABEL"), { searchExports: true });
 function SpotifyEmbedOptions() {
 	const [selected, setSelected] = React.useState(Settings.get("spotifyEmbed"));
 	return (
-		<div style={{ display: "flex" }}>
+		<>
+			<Heading tag="h5">spotify embed style</Heading>
 			<RadioGroup
 				options={[
 					{
 						"value": "keep",
 						"name": "Keep: Use original Spotify Embed"
-					},{
+					},
+					{
 						"value": "replace",
 						"name": "Replace: A less laggy Spotify Embed"
-					},{
+					},
+					{
 						"value": "hide",
 						"name": "Hide: Completely remove spotify embed"
 					}
@@ -31,6 +35,6 @@ function SpotifyEmbedOptions() {
 					setSelected(e.value);
 				}}
 			/>
-		</div>
+		</>
 	);
 }

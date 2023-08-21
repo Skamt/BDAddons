@@ -1,6 +1,31 @@
 import { genUrlParamsFromArray, buildUrl } from "@Utils";
 const API_ENDPOINT = "https://api.spotify.com/v1";
 
+async function wrappedFetch(url, options) {
+	const response = await fetch(url, options);
+
+	if (response.ok) {
+		const failsafeResponse = response.clone();
+		try {
+			return await response.json();
+		} catch {
+			return {
+				invalidJson: true,
+				data: await failsafeResponse.text()
+			};
+		}
+	}
+	switch (response.status) {
+		case 401:
+		case 403:
+		case 429:
+			const err = await response.json();
+			throw err.error ? err.error : err;
+		default:
+			throw response;
+	}
+}
+
 function buildFetchRequestOptions(builderObj) {
 	const options = {
 		method: builderObj.method,
@@ -58,24 +83,8 @@ class FetchRequestBuilder {
 		return this;
 	}
 
-	async run() {
-		const response = await fetch(this.url, this.options);
-
-		if (response.ok) {
-			try {
-				return await response.json();
-			} catch {
-				return response;
-			}
-		}
-		switch (response.status) {
-			case 401:
-			case 403:
-			case 429:
-				throw await response.json();
-			default:
-				throw response;
-		}
+	run() {
+		return wrappedFetch(this.url, this.options);
 	}
 }
 

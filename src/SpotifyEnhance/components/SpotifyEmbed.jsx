@@ -1,4 +1,6 @@
 import { React } from "@Api";
+import { copy } from "@Utils";
+import Toast from "@Utils/Toast";
 import { addTrackToQueue, playTrack } from "../SpotifyWrapper";
 import AddToQueueIcon from "@Components/AddToQueueIcon";
 import CopyIcon from "@Components/CopyIcon";
@@ -16,22 +18,31 @@ export default ({ enabled, embed, trackId }) => {
 			<div className="spotifyEmbed-details">
 				<div className="spotifyEmbed-info">
 					<h2 className="spotifyEmbed-title">{rawTitle}</h2>
-					<p className="spotifyEmbed-description">{rawDescription.replace("· Song ·","-")}</p>
+					<p className="spotifyEmbed-description">{rawDescription.replace("· Song ·", "-")}</p>
 				</div>
 				{enabled && (
 					<div className="spotifyEmbed-controls">
 						<AddToQueue trackId={trackId} />
 						<Play trackId={trackId} />
-						<Copy />
+						<Copy url={embed.url} />
 					</div>
 				)}
 			</div>
-			<div className="spotifyEmbed-spotifyIcon">
-				<SpotifyIcon />
-			</div>
+			<SpotifyIconButton url={embed.url} />
 		</div>
 	);
 };
+
+function SpotifyIconButton() {
+	const clickHandler = () => {
+
+	}
+	return (
+		<div className="spotifyEmbed-spotifyIcon">
+			<SpotifyIcon onClick={clickHandler}/>
+		</div>
+	);
+}
 
 function AddToQueue({ trackId }) {
 	const addToQueueHandler = () => addTrackToQueue(trackId);
@@ -57,9 +68,15 @@ function Play({ trackId }) {
 	);
 }
 
-function Copy() {
+function Copy({ url }) {
+	const copyHandler = () => {
+		copy(url);
+		Toast.success("Link copied!");
+	};
 	return (
-		<div className="spotifyEmbed-btn spotifyEmbed-btn-copy">
+		<div
+			onClick={copyHandler}
+			className="spotifyEmbed-btn spotifyEmbed-btn-copy">
 			<CopyIcon />
 		</div>
 	);
