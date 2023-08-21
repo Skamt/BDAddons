@@ -33,13 +33,12 @@ export default ({ enabled, embed, trackId }) => {
 	);
 };
 
-function SpotifyIconButton() {
-	const clickHandler = () => {
+function SpotifyIconButton({ url }) {
+	const clickHandler = () => window.open(url, "_blank");
 
-	}
 	return (
 		<div className="spotifyEmbed-spotifyIcon">
-			<SpotifyIcon onClick={clickHandler}/>
+			<SpotifyIcon onClick={clickHandler} />
 		</div>
 	);
 }

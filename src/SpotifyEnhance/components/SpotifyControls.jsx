@@ -8,7 +8,6 @@ import SpotifyEmbed from "./SpotifyEmbed";
 import { addTrackToQueue, playTrack } from "../SpotifyWrapper";
 
 export default ({ og, embed, trackId }) => {
-	console.log(embed);
 	let view = og;
 	const spotifySocket = useStateFromStore(SpotifyStore, () => SpotifyStore.getActiveSocketAndDevice()?.socket);
 	const spotifyEmbed = useSettings("spotifyEmbed");

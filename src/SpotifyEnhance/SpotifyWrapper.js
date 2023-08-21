@@ -41,3 +41,10 @@ export function playTrack(trackId) {
 	});
 }
 
+export function playPlaylist(playlistId) {
+	requestHandler({
+		action: () => SpotifyAPI.playTrack([`spotify:playlist:${playlistId}`]),
+		onSucess: () => Toast.success(`Playing [${playlistId}]`),
+		onError: () => Toast.error(`Could not play [${playlistId}]`)
+	});
+}

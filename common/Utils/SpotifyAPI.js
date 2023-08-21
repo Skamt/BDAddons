@@ -110,35 +110,75 @@ class SpotifyClientAPI {
 	}
 
 	getRequestBuilder() {
-		return new FetchRequestBuilder(API_ENDPOINT).setToken(this.token);
+		return new FetchRequestBuilder(API_ENDPOINT)
+			.setToken(this.token);
 	}
 
 	fetchCurrentUserProfile() {
-		return this.getRequestBuilder().setPath("/me").setMethod("GET").build().run();
+		return this.getRequestBuilder()
+			.setPath("/me")
+			.setMethod("GET")
+			.build()
+			.run();
 	}
 
 	next() {
-		return this.getRequestBuilder().setPath("/me/player/next").setMethod("POST").build().run();
+		return this.getRequestBuilder()
+			.setPath("/me/player/next")
+			.setMethod("POST")
+			.build()
+			.run();
 	}
 
 	previous() {
-		return this.getRequestBuilder().setPath("/me/player/previous").setMethod("POST").build().run();
+		return this.getRequestBuilder()
+			.setPath("/me/player/previous")
+			.setMethod("POST")
+			.build()
+			.run();
 	}
 
 	play() {
-		return this.getRequestBuilder().setPath("/me/player/play").setMethod("PUT").build().run();
+		return this.getRequestBuilder()
+			.setPath("/me/player/play")
+			.setMethod("PUT")
+			.build()
+			.run();
 	}
 
 	pause() {
-		return this.getRequestBuilder().setPath("/me/player/pause").setMethod("PUT").build().run();
+		return this.getRequestBuilder()
+			.setPath("/me/player/pause")
+			.setMethod("PUT")
+			.build()
+			.run();
 	}
 
 	playTrack(tracks) {
-		return this.getRequestBuilder().setPath("/me/player/play").setMethod("PUT").setBody({ uris: tracks }).build().run();
+		return this.getRequestBuilder()
+			.setPath("/me/player/play")
+			.setMethod("PUT")
+			.setBody({ uris: tracks })
+			.build()
+			.run();
+	}
+
+	playPlaylist(playlist) {
+		return this.getRequestBuilder()
+			.setPath("/me/player/play")
+			.setMethod("PUT")
+			.setBody({ context_uri: playlist })
+			.build()
+			.run();
 	}
 
 	addToQueue(track) {
-		return this.getRequestBuilder().setPath("/me/player/queue").setMethod("POST").setParams({ uri: track }).build().run();
+		return this.getRequestBuilder()
+			.setPath("/me/player/queue")
+			.setMethod("POST")
+			.setParams({ uri: track })
+			.build()
+			.run();
 	}
 	//...
 }

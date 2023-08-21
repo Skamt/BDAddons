@@ -15,6 +15,7 @@ export default () => {
 		Patcher.after(EmbedComponent.prototype, "render", (_, args, ret) => {
 			const { props } = _;
 			if (props.embed?.provider?.name !== "Spotify") return;
+			console.log(props.embed)
 			if (props.embed?.type === "article") return;
 			const { type, trackId } = parseSpotifyUrl(props.embed.url);
 			if (type !== "track") return;
