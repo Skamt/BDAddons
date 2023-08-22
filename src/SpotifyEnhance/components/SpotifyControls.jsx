@@ -1,77 +1,127 @@
 import { React } from "@Api";
-import { copy } from "@Utils";
 import Toast from "@Utils/Toast";
 import Button from "@Components/Button";
 import SpotifyStore from "@Stores/SpotifyStore";
-import { useSettings, useStateFromStore } from "@Utils/Hooks";
-import SpotifyEmbed from "./SpotifyEmbed";
-import { addTrackToQueue, playTrack } from "../SpotifyWrapper";
+import { useStateFromStore } from "@Utils/Hooks";
+import { parseSpotifyUrl } from "../Utils.js";
+import { addTrackToQueue, addEpisodeToQueue, playTrack, playArtist, playPlaylist, playAlbum, playEpisode, copySpotifyLink } from "../SpotifyWrapper";
 
-export default ({ og, embed, trackId }) => {
-	let view = og;
+export default ({ embed }) => {
+	const { type, resourceId } = parseSpotifyUrl(embed.url);
 	const spotifySocket = useStateFromStore(SpotifyStore, () => SpotifyStore.getActiveSocketAndDevice()?.socket);
-	const spotifyEmbed = useSettings("spotifyEmbed");
 
 	const canDoStuff = !!spotifySocket;
-
-	if (spotifyEmbed === "replace")
-		return (
-			<SpotifyEmbed
-				enabled={canDoStuff}
-				embed={embed}
-				trackId={trackId}
-			/>
-		);
-
-	if (spotifyEmbed === "keep")
-		return [
-			og,
-			<SpotifyControls
-				url={embed.url}
-				trackId={trackId}
-				enabled={canDoStuff}
-			/>
-		];
-	if (spotifyEmbed === "hide")
-		return (
-			<SpotifyControls
-				url={embed.url}
-				trackId={trackId}
-				enabled={canDoStuff}
-			/>
-		);
+	const Comp = types[type] || null;
+	return (
+		<div class="spotify-controls">
+			{canDoStuff && (
+				<Comp
+					id={resourceId}
+					url={embed.url}
+				/>
+			)}
+		</div>
+	);
 };
 
-function SpotifyControls({ url, trackId, enabled }) {
-	const addToQueueHandler = () => addTrackToQueue(trackId);
-	const playHandler = () => playTrack(trackId);
-	const copyHandler = () => {
-		copy(url);
-		Toast.success("Link copied!");
-	};
-
+function ControlBtn({ value, onClick }) {
 	return (
-		enabled && (
-			<div class="spotify-controls">
-				<Button
-					size={Button.Sizes.TINY}
-					color={Button.Colors.GREEN}
-					onClick={addToQueueHandler}>
-					Add to queue
-				</Button>
-				<Button
-					size={Button.Sizes.TINY}
-					color={Button.Colors.GREEN}
-					onClick={playHandler}>
-					Listen
-				</Button>
-				<Button
-					size={Button.Sizes.TINY}
-					color={Button.Colors.GREEN}
-					onClick={copyHandler}>
-					Copy
-				</Button>
-			</div>
-		)
+		<Button
+			size={Button.Sizes.TINY}
+			color={Button.Colors.GREEN}
+			onClick={onClick}>
+			{value}
+		</Button>
 	);
 }
+
+function Show({ url }) {
+	return [
+		<ControlBtn
+			value="copy"
+			onClick={() => copySpotifyLink(url)}
+		/>
+	];
+}
+
+function Track({ url, id }) {
+	return [
+		<ControlBtn
+			value="Add to queue"
+			onClick={() => addTrackToQueue(id)}
+		/>,
+		<ControlBtn
+			value="Listen"
+			onClick={() => playTrack(id)}
+		/>,
+		<ControlBtn
+			value="copy"
+			onClick={() => copySpotifyLink(url)}
+		/>
+	];
+}
+
+function Episode({ url, id }) {
+	return [
+		<ControlBtn
+			value="Add to queue"
+			onClick={() => addEpisodeToQueue(id)}
+		/>,
+		<ControlBtn
+			value="Listen"
+			onClick={() => playEpisode(id)}
+		/>,
+		<ControlBtn
+			value="copy"
+			onClick={() => copySpotifyLink(url)}
+		/>
+	];
+}
+
+function Playlist({ url, id }) {
+	return [
+		<ControlBtn
+			value="Listen"
+			onClick={() => playPlaylist(id)}
+		/>,
+		<ControlBtn
+			value="copy"
+			onClick={() => copySpotifyLink(url)}
+		/>
+	];
+}
+
+function Album({ url, id }) {
+	return [
+		<ControlBtn
+			value="Listen"
+			onClick={() => playAlbum(id)}
+		/>,
+		<ControlBtn
+			value="copy"
+			onClick={() => copySpotifyLink(url)}
+		/>
+	];
+}
+
+function Artist({ url, id }) {
+	return [
+		<ControlBtn
+			value="Listen"
+			onClick={() => playArtist(id)}
+		/>,
+		<ControlBtn
+			value="copy"
+			onClick={() => copySpotifyLink(url)}
+		/>
+	];
+}
+
+const types = {
+	episode: Episode,
+	track: Track,
+	playlist: Playlist,
+	album: Album,
+	artist: Artist,
+	show: Show
+};

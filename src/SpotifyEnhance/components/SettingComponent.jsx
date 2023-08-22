@@ -1,7 +1,7 @@
 import { React } from "@Api";
 import Settings from "@Utils/Settings";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
-
+import { EmbedStyleEnum } from "../consts.js";
 const { RadioGroup } = TheBigBoyBundle;
 export default () => {
 	return <SpotifyEmbedOptions />;
@@ -16,23 +16,24 @@ function SpotifyEmbedOptions() {
 			<RadioGroup
 				options={[
 					{
-						"value": "keep",
+						"value": "KEEP",
 						"name": "Keep: Use original Spotify Embed"
 					},
 					{
-						"value": "replace",
+						"value": "REPLACE",
 						"name": "Replace: A less laggy Spotify Embed"
 					},
 					{
-						"value": "hide",
+						"value": "HIDE",
 						"name": "Hide: Completely remove spotify embed"
 					}
 				]}
 				orientation={"horizontal"}
-				value={selected}
+				value={EmbedStyleEnum[selected]}
 				onChange={e => {
-					Settings.set("spotifyEmbed", e.value);
-					setSelected(e.value);
+					const val = EmbedStyleEnum[e.value];
+					Settings.set("spotifyEmbed", val);
+					setSelected(val);
 				}}
 			/>
 		</>

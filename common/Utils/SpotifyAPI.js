@@ -154,32 +154,70 @@ class SpotifyClientAPI {
 			.run();
 	}
 
-	playTrack(tracks) {
+	playTrack(trackUri) {
 		return this.getRequestBuilder()
 			.setPath("/me/player/play")
 			.setMethod("PUT")
-			.setBody({ uris: tracks })
+			.setBody({ uris: [trackUri] })
 			.build()
 			.run();
 	}
 
-	playPlaylist(playlist) {
+	playEpisode(episodeUri) {
 		return this.getRequestBuilder()
 			.setPath("/me/player/play")
 			.setMethod("PUT")
-			.setBody({ context_uri: playlist })
+			.setBody({ uris: [episodeUri] })
 			.build()
 			.run();
 	}
 
-	addToQueue(track) {
+	playPlaylist(playlistUri) {
+		return this.getRequestBuilder()
+			.setPath("/me/player/play")
+			.setMethod("PUT")
+			.setBody({ context_uri: playlistUri })
+			.build()
+			.run();
+	}
+
+	playAlbum(albumUri) {
+		return this.getRequestBuilder()
+			.setPath("/me/player/play")
+			.setMethod("PUT")
+			.setBody({ context_uri: albumUri })
+			.build()
+			.run();
+	}
+
+	playArtist(artistUri) {
+		return this.getRequestBuilder()
+			.setPath("/me/player/play")
+			.setMethod("PUT")
+			.setBody({ context_uri: artistUri })
+			.build()
+			.run();
+	}
+
+
+	addTrackToQueue(trackUri) {
 		return this.getRequestBuilder()
 			.setPath("/me/player/queue")
 			.setMethod("POST")
-			.setParams({ uri: track })
+			.setParams({ uri: trackUri })
 			.build()
 			.run();
 	}
+
+	addEpisodeToQueue(episodeUri) {
+		return this.getRequestBuilder()
+			.setPath("/me/player/queue")
+			.setMethod("POST")
+			.setParams({ uri: episodeUri })
+			.build()
+			.run();
+	}
+
 	//...
 }
 
