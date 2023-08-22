@@ -73,6 +73,7 @@ export function playAlbum(albumId) {
 		onError: () => Toast.error(`Could not play [${albumId}]`)
 	});
 }
+
 export function playEpisode(episodeId) {
 	requestHandler({
 		action: () => SpotifyAPI.playEpisode(`spotify:episode:${episodeId}`),
@@ -80,8 +81,6 @@ export function playEpisode(episodeId) {
 		onError: () => Toast.error(`Could not play [${episodeId}]`)
 	});
 }
-
-
 
 export function copySpotifyLink(link) {
 	copy(link);
