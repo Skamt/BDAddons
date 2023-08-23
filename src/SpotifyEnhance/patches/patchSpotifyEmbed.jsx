@@ -4,14 +4,12 @@ import ErrorBoundary from "@Components/ErrorBoundary";
 import SpotifyEmbedWrapper from "../components/SpotifyEmbedWrapper";
 
 
-
-
 export default () => {
 	const EmbedComponent = getModule(a => a.prototype.getSpoilerStyles);
 	if (EmbedComponent)
 		Patcher.after(EmbedComponent.prototype, "render", (_, args, ret) => {
 			const { props } = _;
-			console.log(props.embed);
+			// console.log(props.embed);
 
 			if (props.embed?.provider?.name !== "Spotify") return;
 			if (props.embed?.type === "article"){

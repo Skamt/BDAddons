@@ -154,66 +154,66 @@ class SpotifyClientAPI {
 			.run();
 	}
 
-	playTrack(trackUri) {
+	playTrack(trackId) {
 		return this.getRequestBuilder()
 			.setPath("/me/player/play")
 			.setMethod("PUT")
-			.setBody({ uris: [trackUri] })
+			.setBody({ uris: [`spotify:track:${trackId}`] })
 			.build()
 			.run();
 	}
 
-	playEpisode(episodeUri) {
+	playEpisode(episodeId) {
 		return this.getRequestBuilder()
 			.setPath("/me/player/play")
 			.setMethod("PUT")
-			.setBody({ uris: [episodeUri] })
+			.setBody({ uris: [`spotify:episode:${episodeId}`] })
 			.build()
 			.run();
 	}
 
-	playPlaylist(playlistUri) {
+	playPlaylist(playlistId) {
 		return this.getRequestBuilder()
 			.setPath("/me/player/play")
 			.setMethod("PUT")
-			.setBody({ context_uri: playlistUri })
+			.setBody({ context_uri: `spotify:playlist:${playlistId}` })
 			.build()
 			.run();
 	}
 
-	playAlbum(albumUri) {
+	playAlbum(albumId) {
 		return this.getRequestBuilder()
 			.setPath("/me/player/play")
 			.setMethod("PUT")
-			.setBody({ context_uri: albumUri })
+			.setBody({ context_uri: `spotify:album:${albumId}` })
 			.build()
 			.run();
 	}
 
-	playArtist(artistUri) {
+	playArtist(artistId) {
 		return this.getRequestBuilder()
 			.setPath("/me/player/play")
 			.setMethod("PUT")
-			.setBody({ context_uri: artistUri })
+			.setBody({ context_uri: `spotify:artist:${artistId}` })
 			.build()
 			.run();
 	}
 
 
-	addTrackToQueue(trackUri) {
+	addTrackToQueue(trackId) {
 		return this.getRequestBuilder()
 			.setPath("/me/player/queue")
 			.setMethod("POST")
-			.setParams({ uri: trackUri })
+			.setParams({ uri: `spotify:track:${trackId}` })
 			.build()
 			.run();
 	}
 
-	addEpisodeToQueue(episodeUri) {
+	addEpisodeToQueue(episodeId) {
 		return this.getRequestBuilder()
 			.setPath("/me/player/queue")
 			.setMethod("POST")
-			.setParams({ uri: episodeUri })
+			.setParams({ uri: `spotify:episode:${episodeId}` })
 			.build()
 			.run();
 	}

@@ -1,7 +1,7 @@
 import SpotifyAPI from "@Utils/SpotifyAPI";
 import Logger from "@Utils/Logger";
 import Toast from "@Utils/Toast";
-import { copy } from "@Utils";
+import { copy, nop } from "@Utils";
 
 const refreshToken = getModule(Filters.byStrings("CONNECTION_ACCESS_TOKEN"), { searchExports: true });
 
@@ -13,72 +13,46 @@ async function requestHandler({ action, onSucess, onError }) {
 			onSucess();
 			break;
 		} catch (err) {
-			if (err?.error?.status !== 401 || b) {
+			if (err?.status !== 401 || b) {
 				Logger.error(JSON.stringify(err));
 				return onError();
 			}
+			b = true;
 			const data = await refreshToken(SpotifyAPI.accountId);
 			if (!data.ok) break;
 			SpotifyAPI.token = data.body.access_token;
-		} finally {
-			b = true;
 		}
 	}
 }
 
-export function addTrackToQueue(trackId) {
+const listenActions = {
+	episode: SpotifyAPI.playEpisode,
+	albume: SpotifyAPI.playAlbum,
+	artist: SpotifyAPI.playArtist,
+	playlist: SpotifyAPI.playPlaylist,
+	track: SpotifyAPI.playTrack
+};
+
+const addToQueueActions = {
+	episode: SpotifyAPI.addTrackToQueue,
+	track: SpotifyAPI.addEpisodeToQueue
+};
+
+export function listen(type, id, data) {
+	const action = listenActions[type] || nop;
 	requestHandler({
-		action: () => SpotifyAPI.addTrackToQueue(`spotify:track:${trackId}`),
-		onSucess: () => Toast.success(`Added [${trackId}] to queue`),
-		onError: () => Toast.error(`Could not add [${trackId}] to queue`)
+		action: () => action(id),
+		onSucess: () => Toast.success(`Playing ${data || id}`),
+		onError: () => Toast.error(`Could not play ${data || trackId}`)
 	});
 }
 
-export function addEpisodeToQueue(episodeId) {
+export function addToQueue(type, id, data) {
+	const action = addToQueueActions[type] || nop;
 	requestHandler({
-		action: () => SpotifyAPI.addTrackToQueue(`spotify:episode:${episodeId}`),
-		onSucess: () => Toast.success(`Added [${episodeId}] to queue`),
-		onError: () => Toast.error(`Could not add [${episodeId}] to queue`)
-	});
-}
-
-export function playTrack(trackId) {
-	requestHandler({
-		action: () => SpotifyAPI.playTrack(`spotify:track:${trackId}`),
-		onSucess: () => Toast.success(`Playing [${trackId}]`),
-		onError: () => Toast.error(`Could not play [${trackId}]`)
-	});
-}
-
-export function playPlaylist(playlistId) {
-	requestHandler({
-		action: () => SpotifyAPI.playPlaylist(`spotify:playlist:${playlistId}`),
-		onSucess: () => Toast.success(`Playing [${playlistId}]`),
-		onError: () => Toast.error(`Could not play [${playlistId}]`)
-	});
-}
-
-export function playArtist(artistId) {
-	requestHandler({
-		action: () => SpotifyAPI.playArtist(`spotify:artist:${artistId}`),
-		onSucess: () => Toast.success(`Playing [${artistId}]`),
-		onError: () => Toast.error(`Could not play [${artistId}]`)
-	});
-}
-
-export function playAlbum(albumId) {
-	requestHandler({
-		action: () => SpotifyAPI.playAlbum(`spotify:album:${albumId}`),
-		onSucess: () => Toast.success(`Playing [${albumId}]`),
-		onError: () => Toast.error(`Could not play [${albumId}]`)
-	});
-}
-
-export function playEpisode(episodeId) {
-	requestHandler({
-		action: () => SpotifyAPI.playEpisode(`spotify:episode:${episodeId}`),
-		onSucess: () => Toast.success(`Playing [${episodeId}]`),
-		onError: () => Toast.error(`Could not play [${episodeId}]`)
+		action: () => action(id),
+		onSucess: () => Toast.success(`Added ${data || trackId} to the queue`),
+		onError: () => Toast.error(`Could not add ${data || trackId} to the queue`)
 	});
 }
 

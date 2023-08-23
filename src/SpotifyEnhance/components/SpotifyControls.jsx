@@ -4,25 +4,50 @@ import Button from "@Components/Button";
 import SpotifyStore from "@Stores/SpotifyStore";
 import { useStateFromStore } from "@Utils/Hooks";
 import { parseSpotifyUrl } from "../Utils.js";
-import { addTrackToQueue, addEpisodeToQueue, playTrack, playArtist, playPlaylist, playAlbum, playEpisode, copySpotifyLink } from "../SpotifyWrapper";
+import { addToQueue, listen, copySpotifyLink } from "../SpotifyWrapper";
 
 export default ({ embed }) => {
 	const { type, resourceId } = parseSpotifyUrl(embed.url);
 	const spotifySocket = useStateFromStore(SpotifyStore, () => SpotifyStore.getActiveSocketAndDevice()?.socket);
 
-	const canDoStuff = !!spotifySocket;
-	const Comp = types[type] || null;
 	return (
-		<div class="spotify-controls">
-			{canDoStuff && (
-				<Comp
-					id={resourceId}
-					url={embed.url}
+		!!spotifySocket && (
+			<div class="spotify-controls">
+				
+				{type !== "show" && (
+					<ControlBtn
+						value="listen"
+						onClick={() => listen(type, resourceId, embed.rawTitle)}
+					/>
+				)}
+				{(type === "track" || type === "episode") && (
+					<ControlBtn
+						value="add to queue"
+						onClick={() => addToQueue(type, resourceId, embed.rawTitle)}
+					/>
+				)}
+				<ControlBtn
+					value="copy"
+					onClick={() => copySpotifyLink(embed.url)}
 				/>
-			)}
-		</div>
+			</div>
+		)
 	);
 };
+
+// const types = {
+// 	episode: [
+// 		{ action: listen, label: "listen" },
+// 		{ action: addToQueue, label: "add episode to queue" }
+// 	],
+// 	track: [
+// 		{ action: listen, label: "listen" },
+// 		{ action: addToQueue, label: "add track to queue" }
+// 	],
+// 	playlist: [{ action: listen, label: "listen" }],
+// 	album: [{ action: listen, label: "listen" }],
+// 	artist: [{ action: listen, label: "listen" }]
+// };
 
 function ControlBtn({ value, onClick }) {
 	return (
@@ -35,93 +60,118 @@ function ControlBtn({ value, onClick }) {
 	);
 }
 
-function Show({ url }) {
-	return [
-		<ControlBtn
-			value="copy"
-			onClick={() => copySpotifyLink(url)}
-		/>
-	];
-}
+// function Switch({ type, id, url, embed }) {
+// 	const target = types[type] || [];
+// 	console.log(embed);
+// 	return [
+// 		...target.map(({ label, action }) => (
+// 			<ControlBtn
+// 				value={label}
+// 				onClick={() => action(id, embed.rawTitle)}
+// 			/>
+// 		)),
+// 		<ControlBtn
+// 			value="copy"
+// 			onClick={() => copySpotifyLink(url)}
+// 		/>
+// 	];
+// }
 
-function Track({ url, id }) {
-	return [
-		<ControlBtn
-			value="Add to queue"
-			onClick={() => addTrackToQueue(id)}
-		/>,
-		<ControlBtn
-			value="Listen"
-			onClick={() => playTrack(id)}
-		/>,
-		<ControlBtn
-			value="copy"
-			onClick={() => copySpotifyLink(url)}
-		/>
-	];
-}
+// const types = {
+// 	episode: Episode,
+// 	track: Track,
+// 	playlist: Playlist,
+// 	album: Album,
+// 	artist: Artist,
+// 	show: Show
+// };
 
-function Episode({ url, id }) {
-	return [
-		<ControlBtn
-			value="Add to queue"
-			onClick={() => addEpisodeToQueue(id)}
-		/>,
-		<ControlBtn
-			value="Listen"
-			onClick={() => playEpisode(id)}
-		/>,
-		<ControlBtn
-			value="copy"
-			onClick={() => copySpotifyLink(url)}
-		/>
-	];
-}
+// function CopyBtn({ content }) {
+// 	return (
+// 		<ControlBtn
+// 			value="copy"
+// 			onClick={() => copySpotifyLink(content)}
+// 		/>
+// 	);
+// }
 
-function Playlist({ url, id }) {
-	return [
-		<ControlBtn
-			value="Listen"
-			onClick={() => playPlaylist(id)}
-		/>,
-		<ControlBtn
-			value="copy"
-			onClick={() => copySpotifyLink(url)}
-		/>
-	];
-}
+// function ListenBtn({ onClick }) {
+// 	return (
+// 		<ControlBtn
+// 			value="Listen"
+// 			onClick={onClick}
+// 		/>
+// 	);
+// }
 
-function Album({ url, id }) {
-	return [
-		<ControlBtn
-			value="Listen"
-			onClick={() => playAlbum(id)}
-		/>,
-		<ControlBtn
-			value="copy"
-			onClick={() => copySpotifyLink(url)}
-		/>
-	];
-}
+// function AddToQueueBtn({ onClick }) {
+// 	return (
+// 		<ControlBtn
+// 			value="Add to queue"
+// 			onClick={onClick}
+// 		/>
+// 	);
+// }
 
-function Artist({ url, id }) {
-	return [
-		<ControlBtn
-			value="Listen"
-			onClick={() => playArtist(id)}
-		/>,
-		<ControlBtn
-			value="copy"
-			onClick={() => copySpotifyLink(url)}
-		/>
-	];
-}
+// function Show({ url }) {
+// 	return <CopyBtn content={url} />;
+// }
 
-const types = {
-	episode: Episode,
-	track: Track,
-	playlist: Playlist,
-	album: Album,
-	artist: Artist,
-	show: Show
-};
+// function Track({ url, id }) {
+// 	return (
+// 		<>
+// 			<ListenBtn onClick={() => playTrack(id)} />
+// 			<AddToQueueBtn onClick={() => addTrackToQueue(id)} />
+// 			<CopyBtn content={url} />
+// 		</>
+// 	);
+// }
+
+// function Episode({ url, id }) {
+// 	return (
+// 		<>
+// 			<ListenBtn onClick={() => playEpisode(id)} />
+// 			<AddToQueueBtn onClick={() => addEpisodeToQueue(id)} />
+// 			<CopyBtn content={url} />
+// 		</>
+// 	);
+// }
+
+// function Playlist({ url, id }) {
+// 	return [
+// 		<ControlBtn
+// 			value="Listen"
+// 			onClick={() => playPlaylist(id)}
+// 		/>,
+// 		<ControlBtn
+// 			value="copy"
+// 			onClick={() => copySpotifyLink(url)}
+// 		/>
+// 	];
+// }
+
+// function Album({ url, id }) {
+// 	return [
+// 		<ControlBtn
+// 			value="Listen"
+// 			onClick={() => playAlbum(id)}
+// 		/>,
+// 		<ControlBtn
+// 			value="copy"
+// 			onClick={() => copySpotifyLink(url)}
+// 		/>
+// 	];
+// }
+
+// function Artist({ url, id }) {
+// 	return [
+// 		<ControlBtn
+// 			value="Listen"
+// 			onClick={() => playArtist(id)}
+// 		/>,
+// 		<ControlBtn
+// 			value="copy"
+// 			onClick={() => copySpotifyLink(url)}
+// 		/>
+// 	];
+// }

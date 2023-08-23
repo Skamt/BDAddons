@@ -16,24 +16,23 @@ function SpotifyEmbedOptions() {
 			<RadioGroup
 				options={[
 					{
-						"value": "KEEP",
+						"value": EmbedStyleEnum.KEEP,
 						"name": "Keep: Use original Spotify Embed"
 					},
 					{
-						"value": "REPLACE",
+						"value": EmbedStyleEnum.REPLACE,
 						"name": "Replace: A less laggy Spotify Embed"
 					},
 					{
-						"value": "HIDE",
+						"value": EmbedStyleEnum.HIDE,
 						"name": "Hide: Completely remove spotify embed"
 					}
 				]}
 				orientation={"horizontal"}
 				value={EmbedStyleEnum[selected]}
 				onChange={e => {
-					const val = EmbedStyleEnum[e.value];
-					Settings.set("spotifyEmbed", val);
-					setSelected(val);
+					Settings.set("spotifyEmbed", EmbedStyleEnum[e.value]);
+					setSelected(EmbedStyleEnum[e.value]);
 				}}
 			/>
 		</>

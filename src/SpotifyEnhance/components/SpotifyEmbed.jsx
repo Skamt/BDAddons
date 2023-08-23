@@ -1,7 +1,7 @@
 import { React } from "@Api";
 import { copy } from "@Utils";
 import Toast from "@Utils/Toast";
-import { addTrackToQueue, playTrack } from "../SpotifyWrapper";
+import { addToQueue, listen, copySpotifyLink } from "../SpotifyWrapper";
 import AddToQueueIcon from "@Components/AddToQueueIcon";
 import CopyIcon from "@Components/CopyIcon";
 import ListenIcon from "@Components/ListenIcon";

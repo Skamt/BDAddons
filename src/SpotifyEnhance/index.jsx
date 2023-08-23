@@ -15,10 +15,11 @@ function updateSpotifyToken() {
 	SpotifyAPI.accountId = socket.accountId;
 }
 
+window.set = Settings;
 export default class SpotifyEnhance {
 	start() {
 		try {
-			Settings.init(config.settings);
+			Settings.init(config.settings);		
 			DOM.addStyle(css);
 			patchSpotifyEmbed();
 			SpotifyStore.addChangeListener(updateSpotifyToken);
