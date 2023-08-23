@@ -14,7 +14,7 @@ async function requestHandler({ action, onSucess, onError }) {
 			break;
 		} catch (err) {
 			if (err?.status !== 401 || b) {
-				Logger.error(JSON.stringify(err));
+				Logger.error(err);
 				return onError();
 			}
 			b = true;
