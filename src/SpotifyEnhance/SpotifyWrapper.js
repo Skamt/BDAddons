@@ -1,7 +1,7 @@
 import SpotifyAPI from "@Utils/SpotifyAPI";
 import Logger from "@Utils/Logger";
 import Toast from "@Utils/Toast";
-import { copy, nop } from "@Utils";
+import { copy } from "@Utils";
 
 const refreshToken = getModule(Filters.byStrings("CONNECTION_ACCESS_TOKEN"), { searchExports: true });
 
@@ -25,21 +25,31 @@ async function requestHandler({ action, onSucess, onError }) {
 	}
 }
 
+export function copySpotifyLink(link) {
+	copy(link);
+	Toast.success("Link copied!");
+}
+
 const listenActions = {
-	episode: SpotifyAPI.playEpisode,
-	albume: SpotifyAPI.playAlbum,
-	artist: SpotifyAPI.playArtist,
-	playlist: SpotifyAPI.playPlaylist,
-	track: SpotifyAPI.playTrack
+	episode: id => SpotifyAPI.playEpisode(id),
+	album: id => SpotifyAPI.playAlbum(id),
+	artist: id => SpotifyAPI.playArtist(id),
+	playlist: id => SpotifyAPI.playPlaylist(id),
+	track: id => SpotifyAPI.playTrack(id)
 };
 
 const addToQueueActions = {
-	episode: SpotifyAPI.addTrackToQueue,
-	track: SpotifyAPI.addEpisodeToQueue
+	track: id => SpotifyAPI.addTrackToQueue(id),
+	episode: id => SpotifyAPI.addEpisodeToQueue(id)
 };
+
+function nop(id) {
+	throw id;
+}
 
 export function listen(type, id, data) {
 	const action = listenActions[type] || nop;
+
 	requestHandler({
 		action: () => action(id),
 		onSucess: () => Toast.success(`Playing ${data || id}`),
@@ -49,14 +59,10 @@ export function listen(type, id, data) {
 
 export function addToQueue(type, id, data) {
 	const action = addToQueueActions[type] || nop;
+
 	requestHandler({
 		action: () => action(id),
 		onSucess: () => Toast.success(`Added ${data || trackId} to the queue`),
 		onError: () => Toast.error(`Could not add ${data || trackId} to the queue`)
 	});
-}
-
-export function copySpotifyLink(link) {
-	copy(link);
-	Toast.success("Link copied!");
 }

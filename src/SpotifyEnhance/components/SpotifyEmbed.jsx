@@ -1,14 +1,19 @@
 import { React } from "@Api";
 import { copy } from "@Utils";
 import Toast from "@Utils/Toast";
+import { parseSpotifyUrl } from "../Utils.js";
 import { addToQueue, listen, copySpotifyLink } from "../SpotifyWrapper";
 import AddToQueueIcon from "@Components/AddToQueueIcon";
 import CopyIcon from "@Components/CopyIcon";
 import ListenIcon from "@Components/ListenIcon";
 import SpotifyIcon from "@Components/SpotifyIcon";
+import { useStateFromStore } from "@Utils/Hooks";
+import SpotifyStore from "@Stores/SpotifyStore";
 
-export default ({ enabled, embed, trackId }) => {
-	const { thumbnail, rawTitle, rawDescription } = embed;
+export default ({ embed }) => {
+	const { thumbnail, rawTitle, rawDescription, url } = embed;
+	const { type, resourceId } = parseSpotifyUrl(url);
+	const spotifySocket = useStateFromStore(SpotifyStore, () => SpotifyStore.getActiveSocketAndDevice()?.socket);
 
 	return (
 		<div class="spotifyEmbed-Container">
@@ -18,65 +23,35 @@ export default ({ enabled, embed, trackId }) => {
 			<div className="spotifyEmbed-details">
 				<div className="spotifyEmbed-info">
 					<h2 className="spotifyEmbed-title">{rawTitle}</h2>
-					<p className="spotifyEmbed-description">{rawDescription.replace("· Song ·", "-")}</p>
+					<p className="spotifyEmbed-description">{rawDescription}</p>
 				</div>
-				{enabled && (
+				{spotifySocket && (
 					<div className="spotifyEmbed-controls">
-						<AddToQueue trackId={trackId} />
-						<Play trackId={trackId} />
-						<Copy url={embed.url} />
+						{type !== "show" && (
+							<div
+								onClick={() => listen(type, resourceId, rawTitle)}
+								className="spotifyEmbed-btn spotifyEmbed-btn-listen">
+								<ListenIcon />
+							</div>
+						)}
+						{(type === "track" || type === "episode") && (
+							<div
+								onClick={() => addToQueue(type, resourceId, rawTitle)}
+								className="spotifyEmbed-btn spotifyEmbed-btn-addToQueue">
+								<AddToQueueIcon />
+							</div>
+						)}
+						<div
+							onClick={() => copySpotifyLink(url)}
+							className="spotifyEmbed-btn spotifyEmbed-btn-copy">
+							<CopyIcon />
+						</div>
 					</div>
 				)}
 			</div>
-			<SpotifyIconButton url={embed.url} />
+			<div className="spotifyEmbed-spotifyIcon">
+				<SpotifyIcon onClick={() => window.open(url, "_blank")} />
+			</div>
 		</div>
 	);
 };
-
-function SpotifyIconButton({ url }) {
-	const clickHandler = () => window.open(url, "_blank");
-
-	return (
-		<div className="spotifyEmbed-spotifyIcon">
-			<SpotifyIcon onClick={clickHandler} />
-		</div>
-	);
-}
-
-function AddToQueue({ trackId }) {
-	const addToQueueHandler = () => addTrackToQueue(trackId);
-
-	return (
-		<div
-			onClick={addToQueueHandler}
-			className="spotifyEmbed-btn spotifyEmbed-btn-addToQueue">
-			<AddToQueueIcon />
-		</div>
-	);
-}
-
-function Play({ trackId }) {
-	const playHandler = () => playTrack(trackId);
-
-	return (
-		<div
-			onClick={playHandler}
-			className="spotifyEmbed-btn spotifyEmbed-btn-listen">
-			<ListenIcon />
-		</div>
-	);
-}
-
-function Copy({ url }) {
-	const copyHandler = () => {
-		copy(url);
-		Toast.success("Link copied!");
-	};
-	return (
-		<div
-			onClick={copyHandler}
-			className="spotifyEmbed-btn spotifyEmbed-btn-copy">
-			<CopyIcon />
-		</div>
-	);
-}
