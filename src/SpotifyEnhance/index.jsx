@@ -7,6 +7,9 @@ import patchSpotifyEmbed from "./patches/patchSpotifyEmbed";
 import SettingComponent from "./components/SettingComponent";
 import SpotifyAPI from "@Utils/SpotifyAPI";
 import SpotifyStore from "@Stores/SpotifyStore";
+import ConnectedAccountsStore from "@Stores/ConnectedAccountsStore";
+
+window.SpotifyAPI = SpotifyAPI;
 
 function updateSpotifyToken() {
 	const { socket } = SpotifyStore.getActiveSocketAndDevice() || {};
@@ -15,11 +18,13 @@ function updateSpotifyToken() {
 	SpotifyAPI.accountId = socket.accountId;
 }
 
-window.set = Settings;
+
+
 export default class SpotifyEnhance {
 	start() {
 		try {
-			Settings.init(config.settings);		
+			
+			Settings.init(config.settings);
 			DOM.addStyle(css);
 			patchSpotifyEmbed();
 			SpotifyStore.addChangeListener(updateSpotifyToken);

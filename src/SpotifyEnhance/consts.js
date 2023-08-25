@@ -6,3 +6,10 @@ export const EmbedStyleEnum = {
 	1: "REPLACE",
 	2: "HIDE"
 };
+
+export const ActionsEnum = {
+	LISTEN:0,
+	QUEUE:1,
+	0:"LISTEN",
+	1:"QUEUE"
+}

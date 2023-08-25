@@ -218,6 +218,13 @@ class SpotifyClientAPI {
 			.run();
 	}
 
+	getTrack(trackId) {
+		return this.getRequestBuilder()
+			.setPath(`/tracks/${trackId}`)
+			.setMethod("GET")
+			.build()
+			.run();
+	}
 	//...
 }
 

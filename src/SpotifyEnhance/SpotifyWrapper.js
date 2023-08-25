@@ -2,25 +2,32 @@ import SpotifyAPI from "@Utils/SpotifyAPI";
 import Logger from "@Utils/Logger";
 import Toast from "@Utils/Toast";
 import { copy } from "@Utils";
+import { ActionsEnum } from "./consts.js";
 
 const refreshToken = getModule(Filters.byStrings("CONNECTION_ACCESS_TOKEN"), { searchExports: true });
 
-async function requestHandler({ action, onSucess, onError }) {
-	let b = false;
+async function requestHandler(action) {
+	let repeatOnce = false;
 	while (true) {
 		try {
-			await action();
-			onSucess();
-			break;
+			return await action();
 		} catch (err) {
-			if (err?.status !== 401 || b) {
+			/**
+			 * 401 = expired token, so we refresh it
+			 * if not we simply break out
+			 * other errors are not our concern
+			 **/
+			if (err?.status !== 401 || repeatOnce) {
 				Logger.error(err);
-				return onError();
+				throw err;
 			}
-			b = true;
-			const data = await refreshToken(SpotifyAPI.accountId);
-			if (!data.ok) break;
-			SpotifyAPI.token = data.body.access_token;
+			repeatOnce = true;
+			const response = await refreshToken(SpotifyAPI.accountId);
+			if (!response.ok) {
+				Logger.error(response);
+				throw response;
+			}
+			SpotifyAPI.token = response.body.access_token;
 		}
 	}
 }
@@ -30,39 +37,25 @@ export function copySpotifyLink(link) {
 	Toast.success("Link copied!");
 }
 
-const listenActions = {
-	episode: id => SpotifyAPI.playEpisode(id),
-	album: id => SpotifyAPI.playAlbum(id),
-	artist: id => SpotifyAPI.playArtist(id),
-	playlist: id => SpotifyAPI.playPlaylist(id),
-	track: id => SpotifyAPI.playTrack(id)
+const actions = {
+	[ActionsEnum.LISTEN]: {
+		episode: SpotifyAPI.playEpisode,
+		album: SpotifyAPI.playAlbum,
+		artist: SpotifyAPI.playArtist,
+		playlist: SpotifyAPI.playPlaylist,
+		track: SpotifyAPI.playTrack
+	},
+	[ActionsEnum.QUEUE]: {
+		track: SpotifyAPI.addTrackToQueue,
+		episode: SpotifyAPI.addEpisodeToQueue
+	},
+	[ActionsEnum.FETCH]: {
+		track: SpotifyAPI.getTrack
+	}
 };
 
-const addToQueueActions = {
-	track: id => SpotifyAPI.addTrackToQueue(id),
-	episode: id => SpotifyAPI.addEpisodeToQueue(id)
-};
-
-function nop(id) {
-	throw id;
-}
-
-export function listen(type, id, data) {
-	const action = listenActions[type] || nop;
-
-	requestHandler({
-		action: () => action(id),
-		onSucess: () => Toast.success(`Playing ${data || id}`),
-		onError: () => Toast.error(`Could not play ${data || trackId}`)
-	});
-}
-
-export function addToQueue(type, id, data) {
-	const action = addToQueueActions[type] || nop;
-
-	requestHandler({
-		action: () => action(id),
-		onSucess: () => Toast.success(`Added ${data || trackId} to the queue`),
-		onError: () => Toast.error(`Could not add ${data || trackId} to the queue`)
-	});
+export function doAction(action, type, ...args) {
+	const operation = actions[action]?.[type];
+	if (!operation) return Promise.reject(0);
+	return requestHandler(() => operation.apply(SpotifyAPI, args));
 }
