@@ -1,29 +1,30 @@
-import { genUrlParamsFromArray, buildUrl } from "@Utils";
+import { genUrlParamsFromArray, promiseHandler, buildUrl } from "@Utils";
 const API_ENDPOINT = "https://api.spotify.com/v1";
+
+async function responseToJson(response) {
+	const failsafeResponse = response.clone();
+	const [error, data] = await promiseHandler(response.json());
+	if (!error) return data;
+	return {
+		invalidJson: true,
+		data: await failsafeResponse.text()
+	};
+}
 
 async function wrappedFetch(url, options) {
 	const response = await fetch(url, options);
 
-	if (response.ok) {
-		const failsafeResponse = response.clone();
-		try {
-			return await response.json();
-		} catch {
-			return {
-				invalidJson: true,
-				data: await failsafeResponse.text()
-			};
+	if (!response.ok)
+		switch (response.status) {
+			case 401:
+			case 403:
+			case 429:
+				throw await responseToJson(response);
+			default:
+				throw response;
 		}
-	}
-	switch (response.status) {
-		case 401:
-		case 403:
-		case 429:
-			const err = await response.json();
-			throw err.error ? err.error : err;
-		default:
-			throw response;
-	}
+
+	return await responseToJson(response);
 }
 
 function buildFetchRequestOptions(builderObj) {
@@ -110,48 +111,27 @@ class SpotifyClientAPI {
 	}
 
 	getRequestBuilder() {
-		return new FetchRequestBuilder(API_ENDPOINT)
-			.setToken(this.token);
+		return new FetchRequestBuilder(API_ENDPOINT).setToken(this.token);
 	}
 
 	fetchCurrentUserProfile() {
-		return this.getRequestBuilder()
-			.setPath("/me")
-			.setMethod("GET")
-			.build()
-			.run();
+		return this.getRequestBuilder().setPath("/me").setMethod("GET").build().run();
 	}
 
 	next() {
-		return this.getRequestBuilder()
-			.setPath("/me/player/next")
-			.setMethod("POST")
-			.build()
-			.run();
+		return this.getRequestBuilder().setPath("/me/player/next").setMethod("POST").build().run();
 	}
 
 	previous() {
-		return this.getRequestBuilder()
-			.setPath("/me/player/previous")
-			.setMethod("POST")
-			.build()
-			.run();
+		return this.getRequestBuilder().setPath("/me/player/previous").setMethod("POST").build().run();
 	}
 
 	play() {
-		return this.getRequestBuilder()
-			.setPath("/me/player/play")
-			.setMethod("PUT")
-			.build()
-			.run();
+		return this.getRequestBuilder().setPath("/me/player/play").setMethod("PUT").build().run();
 	}
 
 	pause() {
-		return this.getRequestBuilder()
-			.setPath("/me/player/pause")
-			.setMethod("PUT")
-			.build()
-			.run();
+		return this.getRequestBuilder().setPath("/me/player/pause").setMethod("PUT").build().run();
 	}
 
 	playTrack(trackId) {
@@ -199,7 +179,6 @@ class SpotifyClientAPI {
 			.run();
 	}
 
-
 	addTrackToQueue(trackId) {
 		return this.getRequestBuilder()
 			.setPath("/me/player/queue")
@@ -219,11 +198,7 @@ class SpotifyClientAPI {
 	}
 
 	getTrack(trackId) {
-		return this.getRequestBuilder()
-			.setPath(`/tracks/${trackId}`)
-			.setMethod("GET")
-			.build()
-			.run();
+		return this.getRequestBuilder().setPath(`/tracks/${trackId}`).setMethod("GET").build().run();
 	}
 	//...
 }

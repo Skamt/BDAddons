@@ -1,10 +1,9 @@
 import SpotifyAPI from "@Utils/SpotifyAPI";
 import Logger from "@Utils/Logger";
 import Toast from "@Utils/Toast";
-import { copy } from "@Utils";
+import { promiseHandler, copy } from "@Utils";
 import { ActionsEnum } from "./consts.js";
-
-const refreshToken = getModule(Filters.byStrings("CONNECTION_ACCESS_TOKEN"), { searchExports: true });
+import RefreshToken from "@Modules/RefreshToken";
 
 async function requestHandler(action) {
 	let repeatOnce = false;
@@ -12,22 +11,22 @@ async function requestHandler(action) {
 		try {
 			return await action();
 		} catch (err) {
-			/**
-			 * 401 = expired token, so we refresh it
-			 * if not we simply break out
-			 * other errors are not our concern
-			 **/
-			if (err?.status !== 401 || repeatOnce) {
-				Logger.error(err);
+			if (repeatOnce) throw err;
+			repeatOnce = true;
+			if (err.status === 401) {
+				const [error, response] = await promiseHandler(RefreshToken(SpotifyAPI.accountId));
+				if (error || !response.ok) {
+					Logger.error("Could not refresh Spotify token", error.body);
+					throw error;
+				}
+				SpotifyAPI.token = response.body.access_token;
+				continue;
+			}
+			if (err.status === 403 || err.status === 429) {
+				Logger.error(err.message);
 				throw err;
 			}
-			repeatOnce = true;
-			const response = await refreshToken(SpotifyAPI.accountId);
-			if (!response.ok) {
-				Logger.error(response);
-				throw response;
-			}
-			SpotifyAPI.token = response.body.access_token;
+			throw err;
 		}
 	}
 }
@@ -48,9 +47,6 @@ const actions = {
 	[ActionsEnum.QUEUE]: {
 		track: SpotifyAPI.addTrackToQueue,
 		episode: SpotifyAPI.addEpisodeToQueue
-	},
-	[ActionsEnum.FETCH]: {
-		track: SpotifyAPI.getTrack
 	}
 };
 

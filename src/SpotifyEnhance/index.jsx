@@ -18,17 +18,13 @@ function updateSpotifyToken() {
 	SpotifyAPI.accountId = socket.accountId;
 }
 
-
-
 export default class SpotifyEnhance {
 	start() {
 		try {
-			
 			Settings.init(config.settings);
 			DOM.addStyle(css);
 			patchSpotifyEmbed();
 			SpotifyStore.addChangeListener(updateSpotifyToken);
-			updateSpotifyToken();
 		} catch (e) {
 			Logger.error(e);
 		}

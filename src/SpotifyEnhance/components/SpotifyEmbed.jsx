@@ -1,5 +1,5 @@
 import { React } from "@Api";
-import { copy } from "@Utils";
+import { getImageModalComponent, openModal, copy } from "@Utils";
 import Toast from "@Utils/Toast";
 import { parseSpotifyUrl } from "../Utils.js";
 import { doAction, copySpotifyLink } from "../SpotifyWrapper";
@@ -11,6 +11,7 @@ import SpotifyIcon from "@Components/SpotifyIcon";
 import { useStateFromStore } from "@Utils/Hooks";
 import SpotifyStore from "@Stores/SpotifyStore";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
+import TimeBar from "@Modules/TimeBar";
 import Tooltip from "@Components/Tooltip";
 
 export default ({ embed }) => {
@@ -18,11 +19,21 @@ export default ({ embed }) => {
 	const [type, id] = parseSpotifyUrl(url);
 	const spotifySocket = useStateFromStore(SpotifyStore, () => SpotifyStore.getActiveSocketAndDevice()?.socket);
 
+	const thumbnailClickHandler = () => {
+		let { url, width, height } = thumbnail;
+		width = width > 650 ? 650 : width;
+		height = height > 650 ? 650 : height;
+		openModal(getImageModalComponent(url, { width: width, height: height }));
+	};
+
 	return (
-		<div class="spotifyEmbed-Container">
+		<div
+			class="spotifyEmbed-Container"
+			style={{ "--thumbnail": `url(${thumbnail.url})` }}>
 			<div
+				onClick={thumbnailClickHandler}
 				className="spotifyEmbed-thumbnail"
-				style={{ "--thumbnail": `url(${thumbnail.url})` }}></div>
+			/>
 			<div className="spotifyEmbed-details">
 				<div className="spotifyEmbed-info">
 					<h2 className="spotifyEmbed-title">{rawTitle}</h2>
@@ -55,7 +66,7 @@ export default ({ embed }) => {
 						</div>
 					</Tooltip>
 
-					<Timebar
+					<TrackTimeBar
 						id={id}
 						embed={embed}
 					/>
@@ -76,7 +87,6 @@ export default ({ embed }) => {
 
 function Listen({ type, id, embed }) {
 	const clickHandler = () => {
-		console.log(embed);
 		doAction(ActionsEnum.LISTEN, type, id)
 			.then(() => {
 				Toast.success(`Playing ${type} ${embed.rawTitle}`);
@@ -121,15 +131,13 @@ function AddToQueue({ type, id, embed }) {
 	);
 }
 
-const Bar = getModule(a => a.prototype.render && a.defaultProps.themed === false);
-
-function Timebar({ id }) {
+function TrackTimeBar({ id }) {
 	const activity = useStateFromStore(SpotifyStore, () => SpotifyStore.getActivity());
 	if (!activity || activity.sync_id !== id) return null;
 	console.log(activity);
 	return (
 		<div className="spotifyEmbed-timeBar">
-			<Bar
+			<TimeBar
 				{...activity.timestamps}
 				className="timeBarUserPopoutV2-32DL06"
 			/>

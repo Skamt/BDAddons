@@ -1,13 +1,14 @@
 import { React } from "@Api";
 import Settings from "@Utils/Settings";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
+import Heading from "@Modules/Heading";
 import { EmbedStyleEnum } from "../consts.js";
-const { RadioGroup } = TheBigBoyBundle;
+
 export default () => {
 	return <SpotifyEmbedOptions />;
 };
 
-const Heading = getModule(Filters.byStrings("LEGEND", "LABEL"), { searchExports: true });
+const { RadioGroup } = TheBigBoyBundle;
 function SpotifyEmbedOptions() {
 	const [selected, setSelected] = React.useState(Settings.get("spotifyEmbed"));
 	return (

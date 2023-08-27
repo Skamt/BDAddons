@@ -1,11 +1,44 @@
+import { React } from "@Api";
 import { Patcher, getOwnerInstance } from "@Api";
+import ImageModal from "@Modules/ImageModal";
+import ModalRoot from "@Modules/ModalRoot";
+import RenderLinkComponent from "@Modules/RenderLinkComponent";
+import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
+import ErrorBoundary from "@Components/ErrorBoundary";
+
+export const openModal = children => {
+	TheBigBoyBundle.openModal(props => {
+		return (
+			<ErrorBoundary
+				id="modal"
+				plugin={config.info.name}>
+				<ModalRoot
+					{...props}
+					style={{ background: "#0000" }}>
+					{children}
+				</ModalRoot>
+			</ErrorBoundary>
+		);
+	});
+};
+
+export const getImageModalComponent = (url, props) => (
+	<ImageModal
+		{...props}
+		src={url}
+		original={url}
+		renderLinkComponent={p => <RenderLinkComponent {...p} />}
+	/>
+);
+
+export const promiseHandler = promise => promise.then(data => [, data]).catch(err => [err]);
 
 export function copy(data) {
 	DiscordNative.clipboard.copy(data);
 }
 
 export function getNestedProp(obj, path) {
-	return path.split(".").reduce(function(ob, prop) {
+	return path.split(".").reduce(function (ob, prop) {
 		return ob && ob[prop];
 	}, obj);
 }
@@ -20,10 +53,7 @@ export class BrokenAddon {
 export class MissingZlibAddon {
 	stop() {}
 	start() {
-		BdApi.alert("Missing library", [`**ZeresPluginLibrary** is needed to run **${config.info.name}**.`,
-			"Please download it from the officiel website",
-			"https://betterdiscord.app/plugin/ZeresPluginLibrary"
-		]);
+		BdApi.alert("Missing library", [`**ZeresPluginLibrary** is needed to run **${config.info.name}**.`, "Please download it from the officiel website", "https://betterdiscord.app/plugin/ZeresPluginLibrary"]);
 	}
 }
 
@@ -42,7 +72,7 @@ export function reRender(selector) {
 	const target = document.querySelector(selector)?.parentElement;
 	if (!target) return;
 	const instance = getOwnerInstance(target);
-	const unpatch = Patcher.instead(instance, 'render', () => unpatch());
+	const unpatch = Patcher.instead(instance, "render", () => unpatch());
 	instance.forceUpdate(() => instance.forceUpdate());
 }
 
@@ -56,10 +86,10 @@ export function prettyfiyBytes(bytes, si = false, dp = 1) {
 	const thresh = si ? 1000 : 1024;
 
 	if (Math.abs(bytes) < thresh) {
-		return bytes + ' B';
+		return bytes + " B";
 	}
 
-	const units = si ? ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'] : ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
+	const units = si ? ["kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"] : ["KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"];
 	let u = -1;
 	const r = 10 ** dp;
 
@@ -68,8 +98,7 @@ export function prettyfiyBytes(bytes, si = false, dp = 1) {
 		++u;
 	} while (Math.round(Math.abs(bytes) * r) / r >= thresh && u < units.length - 1);
 
-
-	return bytes.toFixed(dp) + ' ' + units[u];
+	return bytes.toFixed(dp) + " " + units[u];
 }
 
 export function parseSnowflake(snowflake) {
