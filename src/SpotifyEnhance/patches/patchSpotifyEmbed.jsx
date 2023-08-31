@@ -18,7 +18,8 @@ export default () => {
 				<ErrorBoundary
 					id="SpotifyEmbed"
 					plugin={config.info.name}
-					fallback={ret}>
+					// fallback={ret}
+					>
 					<SpotifyEmbedWrapper
 						embedComponent={ret}
 						embedObject={props.embed}

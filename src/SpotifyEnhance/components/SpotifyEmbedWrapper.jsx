@@ -6,15 +6,14 @@ import SpotifyEmbed from "./SpotifyEmbed";
 
 export default function SpotifyEmbedWrapper({ embedObject, embedComponent }) {
 	const spotifyEmbed = useSettings("spotifyEmbed");
-
-	if (EmbedStyleEnum[spotifyEmbed] === EmbedStyleEnum.KEEP) 
-		return [embedComponent, <SpotifyControls embed={embedObject} />];
-
-	if (EmbedStyleEnum[spotifyEmbed] === EmbedStyleEnum.REPLACE) 
-		return <SpotifyEmbed embed={embedObject} />;
-
-	if (EmbedStyleEnum[spotifyEmbed] === EmbedStyleEnum.HIDE) 
-		return <SpotifyControls embed={embedObject} />;
-
-	return embedComponent;
+	switch (EmbedStyleEnum[spotifyEmbed]) {
+		case EmbedStyleEnum.KEEP:
+			return [embedComponent, <SpotifyControls embed={embedObject} />];
+		case EmbedStyleEnum.REPLACE:
+			return <SpotifyEmbed embed={embedObject} />;
+		case EmbedStyleEnum.HIDE:
+			return <SpotifyControls embed={embedObject} />;
+		default:
+			return embedComponent;
+	}
 }

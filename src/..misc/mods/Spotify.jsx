@@ -70,11 +70,11 @@ function patchActivity() {
 			ret?.props.children?.push?.(
 				<button
 					onClick={() => {
-							const selectedChannel = SelectedChannelStore.getCurrentlySelectedChannelId();
-							if (!selectedChannel) return;
-							const channel = ChannelStore.getChannel("1056626842943107122");
-							const track = SpotifyStore.getTrack();
-							const content = `https://open.spotify.com/track/${track.id}`;
+						const selectedChannel = SelectedChannelStore.getCurrentlySelectedChannelId();
+						if (!selectedChannel) return;
+						const channel = ChannelStore.getChannel("1056626842943107122");
+						const track = SpotifyStore.getTrack();
+						const content = `https://open.spotify.com/track/${track.id}`;
 						try {
 							sendMessageDirectly(channel, content);
 						} catch {

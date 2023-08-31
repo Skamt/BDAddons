@@ -16,14 +16,19 @@ async function wrappedFetch(url, options) {
 
 	if (!response.ok)
 		switch (response.status) {
+			case 400:
 			case 401:
 			case 403:
+			case 404:
 			case 429:
-				throw await responseToJson(response);
+			case 503:
+				const data = await responseToJson(response);
+				throw data.invalidJson ? data.data : data.error;
 			default:
 				throw response;
 		}
 
+	if (response.status === 204) return;
 	return await responseToJson(response);
 }
 
@@ -111,27 +116,48 @@ class SpotifyClientAPI {
 	}
 
 	getRequestBuilder() {
-		return new FetchRequestBuilder(API_ENDPOINT).setToken(this.token);
+		return new FetchRequestBuilder(API_ENDPOINT)
+			.setToken(this.token);
 	}
 
 	fetchCurrentUserProfile() {
-		return this.getRequestBuilder().setPath("/me").setMethod("GET").build().run();
+		return this.getRequestBuilder()
+			.setPath("/me")
+			.setMethod("GET")
+			.build()
+			.run();
 	}
 
 	next() {
-		return this.getRequestBuilder().setPath("/me/player/next").setMethod("POST").build().run();
+		return this.getRequestBuilder()
+			.setPath("/me/player/next")
+			.setMethod("POST")
+			.build()
+			.run();
 	}
 
 	previous() {
-		return this.getRequestBuilder().setPath("/me/player/previous").setMethod("POST").build().run();
+		return this.getRequestBuilder()
+			.setPath("/me/player/previous")
+			.setMethod("POST")
+			.build()
+			.run();
 	}
 
 	play() {
-		return this.getRequestBuilder().setPath("/me/player/play").setMethod("PUT").build().run();
+		return this.getRequestBuilder()
+			.setPath("/me/player/play")
+			.setMethod("PUT")
+			.build()
+			.run();
 	}
 
 	pause() {
-		return this.getRequestBuilder().setPath("/me/player/pause").setMethod("PUT").build().run();
+		return this.getRequestBuilder()
+			.setPath("/me/player/pause")
+			.setMethod("PUT")
+			.build()
+			.run();
 	}
 
 	playTrack(trackId) {
@@ -198,8 +224,13 @@ class SpotifyClientAPI {
 	}
 
 	getTrack(trackId) {
-		return this.getRequestBuilder().setPath(`/tracks/${trackId}`).setMethod("GET").build().run();
+		return this.getRequestBuilder()
+			.setPath(`/tracks/${trackId}`)
+			.setMethod("GET")
+			.build()
+			.run();
 	}
+
 	//...
 }
 

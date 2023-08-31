@@ -4,6 +4,7 @@ import { DOM, React, Patcher } from "@Api";
 import { getNestedProp } from "@Utils";
 import Settings from "@Utils/Settings";
 import patchSpotifyEmbed from "./patches/patchSpotifyEmbed";
+import patchSpotifyActivity from "./patches/patchSpotifyActivity";
 import SettingComponent from "./components/SettingComponent";
 import SpotifyAPI from "@Utils/SpotifyAPI";
 import SpotifyStore from "@Stores/SpotifyStore";
@@ -24,7 +25,9 @@ export default class SpotifyEnhance {
 			Settings.init(config.settings);
 			DOM.addStyle(css);
 			patchSpotifyEmbed();
+			patchSpotifyActivity();
 			SpotifyStore.addChangeListener(updateSpotifyToken);
+			updateSpotifyToken();
 		} catch (e) {
 			Logger.error(e);
 		}
