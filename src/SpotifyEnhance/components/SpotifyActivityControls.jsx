@@ -37,7 +37,7 @@ export default props => {
 	const share = () => {
 		const selectedChannel = SelectedChannelStore.getCurrentlySelectedChannelId();
 		if (!selectedChannel) return;
-		const channel = ChannelStore.getChannel("1056626842943107122");
+		const channel = ChannelStore.getChannel(selectedChannel);
 		const track = SpotifyStore.getTrack();
 		const content = `https://open.spotify.com/track/${track.id}`;
 		try {

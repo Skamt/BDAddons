@@ -14,6 +14,13 @@ import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 import TimeBar from "@Modules/TimeBar";
 import Tooltip from "@Components/Tooltip";
 
+// import TimeBar from "@Components/TimeBar";
+
+// 			<TimeBarNew
+// 				{...activity.timestamps}
+// 				className="timeBarUserPopoutV2-32DL06"
+// 			/>
+			
 export default ({ embed }) => {
 	const { thumbnail, rawTitle, rawDescription, url } = embed;
 	const [type, id] = parseSpotifyUrl(url);
