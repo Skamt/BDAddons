@@ -22,7 +22,6 @@ function parseTime(start, end, currentTime) {
 
 export default ({ start, end, onSeek }) => {
 	const [currentTime, setCurrentTime] = React.useState(Date.now());
-	// const [start, setStart] = React.useState(props.start);
 
 	React.useEffect(() => {
 		const int = setInterval(() => {
@@ -38,9 +37,8 @@ export default ({ start, end, onSeek }) => {
 		<div className="timeBar">
 			<TimerProgress
 				maxTimeInSeconds={maxTimeInSeconds}
-				minTimeInSeconds={minTimeInSeconds}
 				percentage={percentage}
-				onClick={onSeek}
+				onSeek={onSeek}
 			/>
 			<div className="leftTimer">{leftTimer}</div>
 			<div className="rightTimer">{rightTimer}</div>
@@ -48,25 +46,22 @@ export default ({ start, end, onSeek }) => {
 	);
 };
 
-function TimerProgress({ maxTimeInSeconds, minTimeInSeconds, percentage, onClick }) {
+function TimerProgress({ maxTimeInSeconds, percentage, onSeek }) {
 	const timerProgressRef = React.useRef();
 	const [timePreview, setTimePreview] = React.useState(0);
-	const [timePreviewBubblePosition, setTimePreviewBubblePosition] = React.useState(0);
-	const [timePreviewBubbleToggle, setTimePreviewPositionToggle] = React.useState(0);
-
-	const [mediaPreviewWidth, setMediaPreviewWidth] = React.useState(0);
+	const [timePreviewPosition, setTimePreviewPosition] = React.useState(0);
 
 	const loaderStyle = {
 		width: `${Math.max(Math.min(percentage, 1), 0) * 100}%`
 	};
 
 	const mediaPreviewWidthStyle = {
-		width: `${Math.max(Math.min(mediaPreviewWidth, 1), 0) * 100}%`
+		width: `${Math.max(Math.min(timePreviewPosition, 1), 0) * 100}%`
 	};
 
 	const timePreviewBubbleStyle = {
-		left: `${timePreviewBubblePosition * 100}%`,
-		opacity: timePreviewBubbleToggle
+		left: `${timePreviewPosition * 100}%`,
+		opacity: timePreview ? 1 : 0
 	};
 
 	const mouseMoveHandler = e => {
@@ -76,9 +71,7 @@ function TimerProgress({ maxTimeInSeconds, minTimeInSeconds, percentage, onClick
 		const previewTimeInSeconds = previewPercentage * maxTimeInSeconds;
 		const formattedTime = formatSecondToTime(previewTimeInSeconds);
 		setTimePreview(formattedTime);
-		setTimePreviewBubblePosition(previewPercentage);
-		setTimePreviewPositionToggle(1);
-		setMediaPreviewWidth(previewPercentage);
+		setTimePreviewPosition(previewPercentage);
 	};
 
 	const clickHandler = e => {
@@ -86,12 +79,12 @@ function TimerProgress({ maxTimeInSeconds, minTimeInSeconds, percentage, onClick
 		const { left, width } = timerProgressRef.current.getBoundingClientRect();
 		const previewPercentage = (x - left) / width;
 		const newTimeInSeconds = previewPercentage * maxTimeInSeconds;
-		onClick(newTimeInSeconds * 1000);
+		onSeek(newTimeInSeconds * 1000);
 	};
 
 	const mouseLeaveHandler = () => {
-		setMediaPreviewWidth(0);
-		setTimePreviewPositionToggle(0);
+		setTimePreview(0);
+		setTimePreviewPosition(0);
 	};
 
 	return (

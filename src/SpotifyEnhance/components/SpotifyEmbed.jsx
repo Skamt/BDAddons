@@ -14,7 +14,6 @@ import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 import Tooltip from "@Components/Tooltip";
 import TimeBar from "@Components/TimeBar";
 
-
 export default ({ embed }) => {
 	const { thumbnail, rawTitle, rawDescription, url } = embed;
 	const [type, id] = parseSpotifyUrl(url);
@@ -128,6 +127,7 @@ function AddToQueue({ type, id, embed }) {
 function TrackTimeBar({ id }) {
 	const activity = useStateFromStore(SpotifyStore, () => SpotifyStore.getActivity());
 	if (!activity || activity.sync_id !== id) return null;
+
 	return (
 		<div className="spotifyEmbed-timeBar">
 			<TimeBar
@@ -135,7 +135,6 @@ function TrackTimeBar({ id }) {
 				onSeek={seek}
 				className="timeBarUserPopoutV2-32DL06"
 			/>
-
 		</div>
 	);
 }
