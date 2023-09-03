@@ -1,8 +1,6 @@
 import { React, Patcher } from "@Api";
-
 import Logger from "@Utils/Logger";
 import ErrorBoundary from "@Components/ErrorBoundary";
-
 import SpotifyActivityControls from "../components/SpotifyActivityControls";
 const ActivityComponent = getModule(a => a.prototype.isStreamerOnTypeActivityFeed);
 
@@ -19,10 +17,13 @@ export default () => {
 					id="SpotifyEmbed"
 					plugin={config.info.name}>
 					{[
-						renderActions(),
-					 <SpotifyActivityControls {...props} />]}
+						<SpotifyActivityControls
+							{...props}
+							renderActions={renderActions}
+						/>
+					]}
 				</ErrorBoundary>
 			);
 		});
-	else Logger.patch("Spotify-ActivityComponent");
+	else Logger.patch("SpotifyActivityComponent");
 };

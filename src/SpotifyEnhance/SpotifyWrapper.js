@@ -22,7 +22,6 @@ async function requestHandler(action) {
 		const [error, response] = await promiseHandler(RefreshToken(SpotifyAPI.accountId));
 		if (error) throw handleError("Could not refresh Spotify token", error);
 		SpotifyAPI.token = response.body.access_token;
-		continue;
 	}
 }
 
@@ -65,8 +64,11 @@ export function listen(type, id, name) {
 		});
 }
 
-export function seek(ms){
-	requestHandler(() => SpotifyAPI.seek(Math.round(ms)));
+export function seek(ms) {
+	requestHandler(() => SpotifyAPI.seek(Math.round(ms)))
+		.catch(reason => {
+			Toast.error(`Could not seek\n Reason: ${reason}`);
+		});
 }
 
 export function copySpotifyLink(link) {

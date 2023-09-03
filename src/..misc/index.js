@@ -21,7 +21,7 @@ const mods = [
 	// new Spotify(),
 	new NoTrack(),
 	new ShowUserInfo(),
-	new SpotifyListenAlong()
+	// new SpotifyListenAlong()
 ];
 
 console = console.context();

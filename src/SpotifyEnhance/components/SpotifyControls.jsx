@@ -11,7 +11,7 @@ export default ({ embed }) => {
 	const { url } = embed;
 	const [type, id] = parseSpotifyUrl(url);
 	const spotifySocket = useStateFromStore(SpotifyStore, () => SpotifyStore.getActiveSocketAndDevice()?.socket);
-
+	if (!spotifySocket) return null;
 	const listenBtn = type !== "show" && (
 		<ControlBtn
 			value="listen"
@@ -32,15 +32,13 @@ export default ({ embed }) => {
 			onClick={() => copySpotifyLink(url)}
 		/>
 	);
-	
+
 	return (
-		spotifySocket && (
-			<div class="spotify-controls">
-				{listenBtn}
-				{queueBtn}
-				{copyBtn}
-			</div>
-		)
+		<div class="spotify-controls">
+			{listenBtn}
+			{queueBtn}
+			{copyBtn}
+		</div>
 	);
 };
 
