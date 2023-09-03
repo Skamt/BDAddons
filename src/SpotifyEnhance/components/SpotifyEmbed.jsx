@@ -2,7 +2,7 @@ import { React } from "@Api";
 import { getImageModalComponent, openModal, copy } from "@Utils";
 import Toast from "@Utils/Toast";
 import { parseSpotifyUrl } from "../Utils.js";
-import { copySpotifyLink, listen, queue } from "../SpotifyWrapper";
+import { copySpotifyLink, listen, queue, seek } from "../SpotifyWrapper";
 import { ActionsEnum } from "../consts.js";
 import AddToQueueIcon from "@Components/AddToQueueIcon";
 import CopyIcon from "@Components/CopyIcon";
@@ -11,16 +11,10 @@ import SpotifyIcon from "@Components/SpotifyIcon";
 import { useStateFromStore } from "@Utils/Hooks";
 import SpotifyStore from "@Stores/SpotifyStore";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
-import TimeBar from "@Modules/TimeBar";
 import Tooltip from "@Components/Tooltip";
+import TimeBar from "@Components/TimeBar";
 
-// import TimeBar from "@Components/TimeBar";
 
-// 			<TimeBarNew
-// 				{...activity.timestamps}
-// 				className="timeBarUserPopoutV2-32DL06"
-// 			/>
-			
 export default ({ embed }) => {
 	const { thumbnail, rawTitle, rawDescription, url } = embed;
 	const [type, id] = parseSpotifyUrl(url);
@@ -138,8 +132,10 @@ function TrackTimeBar({ id }) {
 		<div className="spotifyEmbed-timeBar">
 			<TimeBar
 				{...activity.timestamps}
+				onSeek={seek}
 				className="timeBarUserPopoutV2-32DL06"
 			/>
+
 		</div>
 	);
 }

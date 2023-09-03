@@ -20,23 +20,19 @@ function parseTime(start, end, currentTime) {
 	};
 }
 
-export default (props) => {
+export default ({ start, end, onSeek }) => {
 	const [currentTime, setCurrentTime] = React.useState(Date.now());
-	const [start, setStart] = React.useState(props.start);
+	// const [start, setStart] = React.useState(props.start);
 
 	React.useEffect(() => {
 		const int = setInterval(() => {
-			const now = Date.now() - start;
+			const now = Date.now();
 			setCurrentTime(now);
 		}, 500);
 		return () => clearInterval(int);
 	}, []);
 
-	const { maxTimeInSeconds, minTimeInSeconds, percentage, leftTimer, rightTimer } = parseTime(props.start, props.end, currentTime);
-
-	const d = (newTimeInSeconds) => {
-		setStart(props.start + (newTimeInSeconds * 1000));
-	};
+	const { maxTimeInSeconds, minTimeInSeconds, percentage, leftTimer, rightTimer } = parseTime(start, end, currentTime);
 
 	return (
 		<div className="timeBar">
@@ -44,7 +40,7 @@ export default (props) => {
 				maxTimeInSeconds={maxTimeInSeconds}
 				minTimeInSeconds={minTimeInSeconds}
 				percentage={percentage}
-				onClick={d}
+				onClick={onSeek}
 			/>
 			<div className="leftTimer">{leftTimer}</div>
 			<div className="rightTimer">{rightTimer}</div>
@@ -90,7 +86,7 @@ function TimerProgress({ maxTimeInSeconds, minTimeInSeconds, percentage, onClick
 		const { left, width } = timerProgressRef.current.getBoundingClientRect();
 		const previewPercentage = (x - left) / width;
 		const newTimeInSeconds = previewPercentage * maxTimeInSeconds;
-		onClick(newTimeInSeconds);
+		onClick(newTimeInSeconds * 1000);
 	};
 
 	const mouseLeaveHandler = () => {

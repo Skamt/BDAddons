@@ -3,75 +3,90 @@ import Toast from "@Utils/Toast";
 import SpotifyStore from "@Stores/SpotifyStore";
 import UserStore from "@Stores/UserStore";
 import SelectedChannelStore from "@Stores/SelectedChannelStore";
-import ChannelStore from "@Stores/ChannelStore";
 import { sendMessageDirectly, insertText } from "@Utils/Messages";
-import SpotifyAPI from "@Utils/SpotifyAPI";
 import { copySpotifyLink, listen, queue } from "../SpotifyWrapper";
 import Button from "@Components/Button";
 import AddToQueueIcon from "@Components/AddToQueueIcon";
 import ListenAlongIcon from "@Components/ListenAlongIcon";
 import ListenIcon from "@Components/ListenIcon";
+import ShareIcon from "@Components/ShareIcon";
+import Tooltip from "@Components/Tooltip";
 
-const test = s.moduleById(742456).exports.Fe;
+const getUserSyncActivityState = getModule(Filters.byStrings("USER_ACTIVITY_SYNC", "spotifyData"), { searchExports: true });
 
-function ControlBtn({ value, onClick, ...p }) {
+function ControlBtn({ value, onClick, ...rest }) {
 	return (
 		<Button
 			size={Button.Sizes.ICON}
 			color={Button.Colors.GREEN}
 			onClick={onClick}
-			{...p}>
+			{...rest}>
 			{value}
 		</Button>
 	);
 }
 
-export default props => {
-	var t = props.activity,
-		n = props.user,
-		s = props.source;
-	const { tooltip, loading, disabled, onClick } = test(t, n, s);
+export default ({ activity, user, source }) => {
+	const userSyncActivityState = getUserSyncActivityState(activity, user, source);
+	const {
+		spotifyData: { isCurrentUser },
+		disabled,
+		onClick,
+		tooltip,
+	} = userSyncActivityState;
 
-	const play = () => listen("track", t.sync_id, t.details);
-	const queue = () => queue("track", t.sync_id, t.details);
+	// console.log(userSyncActivityState);
+
+	const play = () => listen("track", activity.sync_id, activity.details);
+	const queue = () => queue("track", activity.sync_id, activity.details);
+
 	const share = () => {
-		const selectedChannel = SelectedChannelStore.getCurrentlySelectedChannelId();
-		if (!selectedChannel) return;
-		const channel = ChannelStore.getChannel(selectedChannel);
-		const track = SpotifyStore.getTrack();
-		const content = `https://open.spotify.com/track/${track.id}`;
-		try {
-			sendMessageDirectly(channel, content);
-		} catch {
-			Toast.error("Could not send directly.");
-			insertText(content);
-		}
+		const id = SelectedChannelStore.getCurrentlySelectedChannelId();
+		if (!id) return;
+		const content = `https://open.spotify.com/track/${activity.sync_id}`;
+		sendMessageDirectly({ id }, content)
+			.catch(a => {
+				Toast.error(a.message);
+				insertText(content);
+			});
 	};
 
 	return (
 		<div className="activity-controls">
-			<ControlBtn
-				className="activity-controls-listen"
-				value={<ListenIcon />}
-				onClick={play}
-			/>
-			<ControlBtn
-				className="activity-controls-queue"
-				value={<AddToQueueIcon />}
-				onClick={queue}
-			/>
-			<ControlBtn
-				className="activity-controls-share"
-				onClick={share}
-				value="Share"
-			/>
+			{!isCurrentUser && (
+				<Tooltip note="Play on Spotify">
+					<ControlBtn
+						className="activity-controls-listen"
+						value={<ListenIcon />}
+						onClick={play}
+					/>
+				</Tooltip>
+			)}
+			<Tooltip note="Add to queue">
+				<ControlBtn
+					className="activity-controls-queue"
+					value={<AddToQueueIcon />}
+					onClick={queue}
+				/>
+			</Tooltip>
+			<Tooltip note="Share in current channel">
+				<ControlBtn
+					className="activity-controls-share"
+					onClick={share}
+					value={<ShareIcon />}
+				/>
+			</Tooltip>
 
-			<ControlBtn
-				className="activity-controls-listenAlong"
-				disabled={disabled}
-				onClick={e => onClick(e)}
-				value={<ListenAlongIcon />}
-			/>
+			{!isCurrentUser && (
+				<Tooltip note={tooltip}>
+					<ControlBtn
+						className="activity-controls-listenAlong"
+						disabled={disabled}
+						onClick={e => onClick(e)}
+						value={<ListenAlongIcon />}
+					/>
+				</Tooltip>
+			)}
 		</div>
 	);
 };

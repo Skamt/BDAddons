@@ -20,9 +20,9 @@ export function getReply(channelId) {
 	}
 }
 
-export function sendMessageDirectly(channel, content) {
+export async function sendMessageDirectly(channel, content) {
 	if (MessageActions)
-		MessageActions.sendMessage(channel.id, {
+		return MessageActions.sendMessage(channel.id, {
 			validNonShortcutEmojis: [],
 			content
 		}, undefined, getReply(channel.id));

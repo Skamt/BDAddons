@@ -65,6 +65,10 @@ export function listen(type, id, name) {
 		});
 }
 
+export function seek(ms){
+	requestHandler(() => SpotifyAPI.seek(Math.round(ms)));
+}
+
 export function copySpotifyLink(link) {
 	copy(link);
 	Toast.success("Link copied!");

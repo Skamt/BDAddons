@@ -160,6 +160,15 @@ class SpotifyClientAPI {
 			.run();
 	}
 
+	seek(ms) {
+		return this.getRequestBuilder()
+			.setPath("/me/player/seek")
+			.setMethod("PUT")
+			.setParams({ position_ms: ms })
+			.build()
+			.run();
+	}
+
 	playTrack(trackId) {
 		return this.getRequestBuilder()
 			.setPath("/me/player/play")
