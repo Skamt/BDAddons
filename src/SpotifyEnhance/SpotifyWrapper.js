@@ -65,13 +65,71 @@ export function listen(type, id, name) {
 }
 
 export function seek(ms) {
-	requestHandler(() => SpotifyAPI.seek(Math.round(ms)))
-		.catch(reason => {
-			Toast.error(`Could not seek\n Reason: ${reason}`);
-		});
+	requestHandler(() => SpotifyAPI.seek(Math.round(ms))).catch(reason => {
+		Toast.error(`Could not seek\n Reason: ${reason}`);
+	});
 }
 
 export function copySpotifyLink(link) {
 	copy(link);
 	Toast.success("Link copied!");
 }
+
+import EventEmitter from "./EventEmitter";
+import SpotifyActiveAccount from "./SpotifyActiveAccount";
+
+export default new (class SpotifyWrapper extends EventEmitter {
+	constructor() {
+		super();
+		this.onPlayerStateChange = this.onPlayerStateChange.bind(this);
+		this.onDeviceStateChange = this.onDeviceStateChange.bind(this);
+		this.onPlayerAndDeviceStateChange = this.onPlayerAndDeviceStateChange.bind(this);
+	}
+
+	init() {
+		SpotifyActiveAccount.init();
+		SpotifyActiveAccount.on("BOTH", this.onPlayerAndDeviceStateChange);
+		SpotifyActiveAccount.on("PLAYER", this.onPlayerStateChange);
+		SpotifyActiveAccount.on("DEVICE", this.onDeviceStateChange);
+		this.activeAccount = SpotifyActiveAccount.activeAccount;
+	}
+
+	dispose() {
+		SpotifyActiveAccount.dispose();
+		SpotifyActiveAccount.off("BOTH", this.onPlayerAndDeviceStateChange);
+		SpotifyActiveAccount.off("PLAYER", this.onPlayerStateChange);
+		SpotifyActiveAccount.off("DEVICE", this.onDeviceStateChange);
+		delete this.activeAccount;
+	}
+
+	update() {
+		this.activeAccount = SpotifyActiveAccount.activeAccount;
+	}
+
+	onPlayerStateChange() {
+		this.update();
+		this.emit("PLAYER");
+	}
+
+	onDeviceStateChange() {
+		this.update();
+		this.emit("DEVICE");
+	}
+
+	onPlayerAndDeviceStateChange() {
+		this.update();
+		this.emit("DEVICE");
+		this.emit("PLAYER");
+		console.log("deviceState", this.activeAccount?.deviceState, "playerState", this.activeAccount?.playerState);
+	}
+
+	getPlayerState() {
+		if (!this.activeAccount) return undefined;
+		return this.activeAccount.playerState;
+	}
+
+	getDeviceState() {
+		if (!this.activeAccount) return undefined;
+		return this.activeAccount.deviceState;
+	}
+})();

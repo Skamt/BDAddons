@@ -13,36 +13,28 @@ import SpotifyAPI from "@Utils/SpotifyAPI";
 import SpotifyStore from "@Stores/SpotifyStore";
 import ConnectedAccountsStore from "@Stores/ConnectedAccountsStore";
 
-// window.SpotifyAPI = SpotifyAPI;
-
-function updateSpotifyToken() {
-	const { socket } = SpotifyStore.getActiveSocketAndDevice() || {};
-	if (!socket) return;
-	SpotifyAPI.token = socket.accessToken;
-	SpotifyAPI.accountId = socket.accountId;
-}
+import SpotifyWrapper from "./SpotifyWrapper";
+window.SpotifyWrapper = SpotifyWrapper;
 
 export default class SpotifyEnhance {
 	start() {
 		try {
 			Settings.init(config.settings);
 			DOM.addStyle(css);
+			SpotifyWrapper.init();
 			patchSpotifyEmbed();
 			patchSpotifyActivity();
 			patchMessageHeader();
 			patchSpotifyControls();
-			SpotifyStore.addChangeListener(updateSpotifyToken);
-			updateSpotifyToken();
-			reRender(".sidebar-1tnWFu")
 		} catch (e) {
 			Logger.error(e);
 		}
 	}
 
 	stop() {
+		SpotifyWrapper.dispose();
 		DOM.removeStyle();
 		Patcher.unpatchAll();
-		SpotifyStore.removeChangeListener(updateSpotifyToken);
 	}
 
 	getSettingsPanel() {
