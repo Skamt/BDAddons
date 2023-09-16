@@ -1,22 +1,18 @@
 const fs = require("fs");
 const path = require("path");
 const { rollup, watch } = require("rollup");
-const mergeDeep = require('./helpers/mergeDeep.js');
+const mergeDeep = require("./helpers/mergeDeep.js");
 const pkg = require(path.resolve("package.json"));
-const getConfig = require('./rollup.config.js');
+const getConfig = require("./rollup.config.js");
 
-const {
-	pluginsFolder,
-	releaseFolder,
-	baseConfig
-} = pkg.buildConfig;
+const { pluginsFolder, releaseFolder, baseConfig } = pkg.buildConfig;
 
 const pluginsDir = path.resolve(pluginsFolder);
 const bdFolder = `${process.env.APPDATA}/BetterDiscord/`;
 
 function buildAll() {
-	const list =
-		fs.readdirSync(pluginsDir)
+	const list = fs
+		.readdirSync(pluginsDir)
 		.filter(f => fs.lstatSync(path.join(pluginsDir, f)).isDirectory())
 		.map(f => path.join(pluginsDir, f));
 	build(list);
@@ -52,14 +48,13 @@ async function build(list) {
 			console.log(`☺ Error: ${e}`);
 			console.log(`☺ Error building: ${config.info.name}`);
 		}
-		
+
 		console.log("\n==========================================");
 	}
 	console.timeEnd("Build took");
 }
 
 function dev() {
-	
 	const pluginFolder = process.env.PWD || process.env.INIT_CWD;
 
 	const pluginConfig = path.join(pluginFolder, "config.json");
@@ -78,10 +73,10 @@ function dev() {
 
 	const watcher = watch({
 		...input,
-		output: output,
+		output: output
 	});
 
-	watcher.on("event", (event) => {
+	watcher.on("event", event => {
 		switch (event.code) {
 			case "BUNDLE_END":
 				event.result.close();
@@ -92,25 +87,23 @@ function dev() {
 		}
 	});
 
-	watcher.on("change", function(file) {
-		console.log(`[===] Changed: ${file.replace(pluginsDir,'')}`);
+	watcher.on("change", function (file) {
+		console.log(`[===] Changed: ${file.replace(pluginsDir, "")}`);
 	});
 
-	const readline = require('readline');
+	const readline = require("readline");
 
 	readline.emitKeypressEvents(process.stdin);
 
-	if (process.stdin.isTTY)
-		process.stdin.setRawMode(true);
-
-	process.stdin.on('keypress', (chunk, { ctrl, name }) => {
-		if (ctrl && name == 'c')
-			build([pluginFolder])
-			.then(() => process.exit(0));
-
+	if (process.stdin.isTTY) process.stdin.setRawMode(true);
+	let working = false;
+	process.stdin.on("keypress", (chunk, { ctrl, name }) => {
+		if (ctrl && name == "c" && !working) {
+			working = true;
+			build([pluginFolder]).then(() => process.exit(0));
+		}
 	});
 }
-
 
 const arg = process.argv.slice(2)[0];
 switch (arg) {
