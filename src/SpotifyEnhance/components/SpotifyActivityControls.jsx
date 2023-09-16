@@ -5,6 +5,7 @@ import UserStore from "@Stores/UserStore";
 import SelectedChannelStore from "@Stores/SelectedChannelStore";
 import { sendMessageDirectly, insertText } from "@Utils/Messages";
 import { copySpotifyLink, listen, queue } from "../SpotifyWrapper";
+import SpotifyWrapper from "../SpotifyWrapper";
 import Button from "@Components/Button";
 import AddToQueueIcon from "@Components/AddToQueueIcon";
 import ListenAlongIcon from "@Components/ListenAlongIcon";
@@ -40,8 +41,8 @@ export default ({ activity, user, source, renderActions }) => {
 
 	// console.log(userSyncActivityState);
 
-	const play = () => listen("track", activity.sync_id, activity.details);
-	const queue = () => queue("track", activity.sync_id, activity.details);
+	const play = () => SpotifyWrapper.play("track", activity.sync_id, activity.details);
+	const queue = () => SpotifyWrapper.queue("track", activity.sync_id, activity.details);
 
 	const share = () => {
 		const id = SelectedChannelStore.getCurrentlySelectedChannelId();

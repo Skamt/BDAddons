@@ -22,7 +22,8 @@ export default new (class SpotifyActiveAccount extends EventEmitter {
 		}
 
 		if (!this.activeAccount) return;
-		this.updateToken();
+		SpotifyAPI.token = this.activeAccount?.accessToken;
+		SpotifyAPI.accountId = this.activeAccount?.id;
 		this.fetchPlayerState();
 	}
 
@@ -32,21 +33,13 @@ export default new (class SpotifyActiveAccount extends EventEmitter {
 		delete this.activeAccount;
 	}
 
-	updateToken() {
-		SpotifyAPI.token = this.activeAccount?.accessToken;
-		SpotifyAPI.accountId = this.activeAccount?.id;
-	}
-
-	update(newActiveAccount) {
-		this.activeAccount = newActiveAccount;
-		this.updateToken();
-		if(!this.activeAccount) return;
-		if(!this.activeAccount.playerState) this.fetchPlayerState();
-		
+	updateToken(token) {
+		SpotifyAPI.token = token;
 	}
 
 	fetchPlayerState() {
 		console.trace("fetchPlayerState");
+		return Promise.resolve(0);
 		// SpotifyAPI.getPlayerState()
 		// 	.then(playerState => {
 		// 		this.activeAccount.playerState = playerState;
@@ -54,47 +47,49 @@ export default new (class SpotifyActiveAccount extends EventEmitter {
 	}
 
 	onSpotifyAccountStateDBChange() {
-		let newActiveAccount = undefined;
+		const newActiveAccount = SpotifyAccountStateDB.getActiveAccount();
 
-		for (const accountId in SpotifyAccountStateDB.accounts) {
-			const account = SpotifyAccountStateDB.accounts[accountId];
-			if (!account.devices.find(device => device.is_active)) continue;
-			newActiveAccount = account;
-			break;
+		if ((!newActiveAccount && !this.activeAccount) || newActiveAccount?.id !== this.activeAccount?.id) this.changeActiveAccount(newActiveAccount);
+		else this.updateActiveAccount(newActiveAccount);
+	}
+
+	async changeActiveAccount(newActiveAccount) {
+		this.activeAccount = newActiveAccount;
+		SpotifyAPI.token = this.activeAccount?.accessToken;
+		SpotifyAPI.accountId = this.activeAccount?.id;
+		if (this.activeAccount && !this.activeAccount.playerState) {
+			const data = await this.fetchPlayerState();
 		}
 
-		const [account, player, device] = this.compareActiveAccount(newActiveAccount, this.activeAccount);
-		if (!account && !player && !device) return;
-
-		if (account) this.update(newActiveAccount);
-		else this.activeAccount = newActiveAccount;
-
-		if (account || (player && device)) return this.emit("BOTH");
-		if (player) return this.emit("PLAYER");
-		if (device) return this.emit("DEVICE");
+		this.emit("BOTH");
 	}
 
-	comparePlayerState(a, b) {
-		if (a === b) return true;
-		if (!b) return;
-		if (!a) return;
-		if (a?.item?.id !== b?.item?.id) return;
-		if (a?.device?.volume_percent !== b?.device?.volume_percent) return;
-		return !["shuffle_state", "repeat_state", "progress_ms", "is_playing"].some(key => a[key] !== b[key]);
+	updateActiveAccount(newActiveAccount) {
+		const isPlayerDifferent = this.isPlayerDifferent(newActiveAccount);
+		const isDeviceDifferent = this.isDeviceDifferent(newActiveAccount);
+
+		this.activeAccount = newActiveAccount;
+
+		if (isPlayerDifferent && isDeviceDifferent) return this.emit("BOTH");
+		if (isPlayerDifferent) return this.emit("PLAYER");
+		if (isDeviceDifferent) return this.emit("DEVICE");
 	}
 
-	compareDeviceState(a, b) {
-		return !!a.find(device => device.is_active) === !!b.find(device => device.is_active);
+	isPlayerDifferent(newActiveAccount) {
+		const { playerState: newPlayerState } = newActiveAccount;
+		const { playerState } = this.activeAccount;
+
+		if (newPlayerState === playerState) return;
+		if (newPlayerState?.item?.id === playerState?.item?.id) return;
+		if (newPlayerState?.device?.volume_percent === playerState?.device?.volume_percent) return;
+
+		return ["shuffle_state", "repeat_state", "progress_ms", "is_playing"].some(key => newPlayerState[key] !== playerState[key]);
 	}
 
-	compareActiveAccount(a, b) {
-		let player, device;
-		if (!a && !b) return [false, false, false];
-		if ((a && !b) || (!a && b) || a.id !== b.id) return [true];
+	isDeviceDifferent(newActiveAccount) {
+		const { devices: newDevices } = newActiveAccount;
+		const { devices } = this.activeAccount;
 
-		if (this.comparePlayerState(a.playerState, b.playerState)) player = true;
-		if (this.compareDeviceState(a.devices, b.devices)) device = true;
-
-		return [false, player, device];
+		return !!devices.find(device => device.is_active) !== !!newDevices.find(device => device.is_active);
 	}
 })();

@@ -5,6 +5,9 @@ import { promiseHandler, copy } from "@Utils";
 import { ActionsEnum } from "./consts.js";
 import RefreshToken from "@Modules/RefreshToken";
 
+import EventEmitter from "./EventEmitter";
+import SpotifyActiveAccount from "./SpotifyActiveAccount";
+
 function handleError(msg, error) {
 	const e = new Error(msg || "Unknown error", { error });
 	Logger.error(e);
@@ -21,62 +24,53 @@ async function requestHandler(action) {
 		if (!SpotifyAPI.accountId) throw "Unknown account ID";
 		const [error, response] = await promiseHandler(RefreshToken(SpotifyAPI.accountId));
 		if (error) throw handleError("Could not refresh Spotify token", error);
+		SpotifyActiveAccount.updateToken(response.body.access_token);
 		SpotifyAPI.token = response.body.access_token;
 	}
 }
 
-const actions = {
-	queue: {
-		track: SpotifyAPI.addTrackToQueue,
-		episode: SpotifyAPI.addEpisodeToQueue
+// export function queue(type, id, name) {
+// 	doAction("queue", type, id)
+// 		.then(() => {
+// 			Toast.success(`Added ${name} to the queue`);
+// 		})
+// 		.catch(reason => {
+// 			Toast.error(`Could not add ${name} to the queue\n Reason: ${reason}`);
+// 		});
+// }
+
+// export function listen(type, id, name) {
+// 	doAction("listen", type, id);
+// }
+
+// export function seek(ms) {
+// 	requestHandler(() => SpotifyAPI.seek(Math.round(ms))).catch(reason => {
+// 		Toast.error(`Could not seek\n Reason: ${reason}`);
+// 	});
+// }
+
+
+
+const Utils = {
+	copySpotifyLink(link) {
+		copy(link);
+		Toast.success("Link copied!");
 	},
-	listen: {
-		episode: SpotifyAPI.playEpisode,
-		album: SpotifyAPI.playAlbum,
-		artist: SpotifyAPI.playArtist,
-		playlist: SpotifyAPI.playPlaylist,
-		track: SpotifyAPI.playTrack
+	openSpotifyLink(link) {
+		window.open(link, "_blank");
 	}
 };
 
-function doAction(action, type, ...args) {
-	const op = actions[action][type];
-	return op ? requestHandler(() => op.apply(SpotifyAPI, args)) : Promise.reject(0);
+function getter(_, prop) {
+	return (type, id, name) =>
+		requestHandler(() => SpotifyAPI[prop](type, id))
+			.then(() => {
+				Toast.success(`${prop} ${type} ${name}`);
+			})
+			.catch(reason => {
+				Toast.error(`Could not ${prop} ${name || ""}\n ${reason}`);
+			});
 }
-
-export function queue(type, id, name) {
-	doAction("queue", type, id)
-		.then(() => {
-			Toast.success(`Added ${name} to the queue`);
-		})
-		.catch(reason => {
-			Toast.error(`Could not add ${name} to the queue\n Reason: ${reason}`);
-		});
-}
-
-export function listen(type, id, name) {
-	doAction("listen", type, id)
-		.then(() => {
-			Toast.success(`Playing ${name}`);
-		})
-		.catch(reason => {
-			Toast.error(`Could not play ${name}\n Reason: ${reason}`);
-		});
-}
-
-export function seek(ms) {
-	requestHandler(() => SpotifyAPI.seek(Math.round(ms))).catch(reason => {
-		Toast.error(`Could not seek\n Reason: ${reason}`);
-	});
-}
-
-export function copySpotifyLink(link) {
-	copy(link);
-	Toast.success("Link copied!");
-}
-
-import EventEmitter from "./EventEmitter";
-import SpotifyActiveAccount from "./SpotifyActiveAccount";
 
 export default new (class SpotifyWrapper extends EventEmitter {
 	constructor() {
@@ -92,6 +86,8 @@ export default new (class SpotifyWrapper extends EventEmitter {
 		SpotifyActiveAccount.on("PLAYER", this.onPlayerStateChange);
 		SpotifyActiveAccount.on("DEVICE", this.onDeviceStateChange);
 		this.activeAccount = SpotifyActiveAccount.activeAccount;
+		this.Player = new Proxy({}, { get: getter });
+		this.Utils = Utils;
 	}
 
 	dispose() {
@@ -100,6 +96,8 @@ export default new (class SpotifyWrapper extends EventEmitter {
 		SpotifyActiveAccount.off("PLAYER", this.onPlayerStateChange);
 		SpotifyActiveAccount.off("DEVICE", this.onDeviceStateChange);
 		delete this.activeAccount;
+		delete this.Player;
+		delete this.Utils;
 	}
 
 	update() {

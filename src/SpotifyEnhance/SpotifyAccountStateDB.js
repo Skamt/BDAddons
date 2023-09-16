@@ -13,10 +13,9 @@ function getSpotifyAccountsAndDevices() {
 			socket: sockets[accountId],
 			devices: devices[accountId]
 		});
-		
+
 	return result;
 }
-
 
 export default new (class SpotifyAccountStateDB extends EventEmitter {
 	constructor() {
@@ -44,9 +43,24 @@ export default new (class SpotifyAccountStateDB extends EventEmitter {
 		delete this.accounts;
 	}
 
+	getAccounts() {
+		return this.accounts;
+	}
+
+	getAccount(id) {
+		return this.accounts[id];
+	}
+
+	getActiveAccount() {
+		for (const accountId in this.accounts) {
+			const account = this.accounts[accountId];
+			if (!account.isActive) continue;
+			return account;
+		}
+	}
+
 	onSpotifyAccountsChange() {
 		const temp = {};
-
 		getSpotifyAccountsAndDevices().forEach(({ socket, devices = [] }) => {
 			const { accountId } = socket;
 			temp[accountId] = this.accounts[accountId] ? this.accounts[accountId] : new SpotifyAccount({ socket, devices });
@@ -69,25 +83,15 @@ export default new (class SpotifyAccountStateDB extends EventEmitter {
 		this.emit("CHANGE");
 	}
 
-	playerStateChange(socket, { state: newPlayerState }) {
+	playerStateChange(socket, { state }) {
 		const target = this.accounts[socket.accountId];
-
-		target.playerState = newPlayerState;
-
-		for (let i = 0; i < target.devices.length; i++) {
-			const device = target.devices[i];
-			if (device.id === newPlayerState.device.id) {
-				target.devices[i] = newPlayerState.device;
-				return;
-			}
-		}
-
-		target.devices.push(newPlayerState.device);
+		if (!target) return;
+		target.setPlayerState(state);
 	}
 
 	deviceStateChange(socket, { devices }) {
 		const target = this.accounts[socket.accountId];
-		target.devices = devices;
-		if (devices.length === 0) target.playerState = undefined;
+		if (!target) return;
+		target.setDevices(devices);
 	}
 })();

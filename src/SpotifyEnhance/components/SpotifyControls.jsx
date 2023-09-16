@@ -4,7 +4,7 @@ import Button from "@Components/Button";
 import SpotifyStore from "@Stores/SpotifyStore";
 import { useStateFromStore } from "@Utils/Hooks";
 import { parseSpotifyUrl } from "../Utils.js";
-import { copySpotifyLink, listen, queue } from "../SpotifyWrapper";
+import SpotifyWrapper from "../SpotifyWrapper";
 import { ActionsEnum } from "../consts.js";
 
 export default ({ embed }) => {
@@ -15,21 +15,21 @@ export default ({ embed }) => {
 	const listenBtn = type !== "show" && (
 		<ControlBtn
 			value="listen"
-			onClick={() => listen(type, id, embed)}
+			onClick={() => SpotifyWrapper.play(type, id, embed.rawTitle)}
 		/>
 	);
 
 	const queueBtn = (type === "track" || type === "episode") && (
 		<ControlBtn
 			value="add to queue"
-			onClick={() => queue(type, id, embed)}
+			onClick={() => SpotifyWrapper.queue(type, id, embed.rawTitle)}
 		/>
 	);
 
 	const copyBtn = (
 		<ControlBtn
 			value="copy"
-			onClick={() => copySpotifyLink(url)}
+			onClick={() => SpotifyWrapper.Utils.copySpotifyLink(url)}
 		/>
 	);
 

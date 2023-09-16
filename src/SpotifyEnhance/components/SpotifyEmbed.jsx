@@ -82,7 +82,7 @@ function SpotifyLogoBtn({ url }) {
 			note="Play on Spotify"
 			position="top">
 			<div
-				// onClick={() => window.open(url, "_blank")}
+				onClick={() => SpotifyWrapper.Utils.openSpotifyLink(url)}
 				className="spotifyEmbed-spotifyIcon">
 				<SpotifyIcon />
 			</div>
@@ -96,7 +96,7 @@ function Copy({ url }) {
 			note="Copy link"
 			position="top">
 			<div
-				// onClick={() => copySpotifyLink(url)}
+				onClick={() => SpotifyWrapper.Utils.copySpotifyLink(url)}
 				className="spotifyEmbed-btn spotifyEmbed-btn-copy">
 				<CopyIcon />
 			</div>
@@ -109,7 +109,7 @@ function Listen({ type, id, embed }) {
 			note={`Play ${type}`}
 			position="top">
 			<div
-				// onClick={() => listen(type, id, embed.rawTitle)}
+				onClick={() => SpotifyWrapper.play(type, id, embed.rawTitle)}
 				className="spotifyEmbed-btn spotifyEmbed-btn-listen">
 				<ListenIcon />
 			</div>
@@ -123,7 +123,7 @@ function AddToQueue({ type, id, embed }) {
 			note={`Add ${type} to queue`}
 			position="top">
 			<div
-				// onClick={() => queue(type, id, embed.rawTitle)}
+				onClick={() => SpotifyWrapper.queue(type, id, embed.rawTitle)}
 				className="spotifyEmbed-btn spotifyEmbed-btn-addToQueue">
 				<AddToQueueIcon />
 			</div>
