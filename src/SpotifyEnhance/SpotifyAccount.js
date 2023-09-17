@@ -1,13 +1,16 @@
-export default class {
-	constructor({ socket, devices }) {
+export default class SpotifyAccount {
+	constructor({ socket, devices, playerState }) {
 		this.socket = socket;
 		this.devices = devices;
-		this.playerState = undefined;
-		this.isActive = !!devices.find(devices => devices.is_active);
+		this.playerState = playerState;
 	}
 
 	get accessToken() {
 		return this.socket.accessToken;
+	}
+
+	set accessToken(token) {
+		return (this.socket.accessToken = token);
 	}
 
 	get id() {
@@ -34,9 +37,12 @@ export default class {
 		return this.playerState?.["is_playing"];
 	}
 
+	get isActive() {
+		return !!this.devices.find(devices => devices.is_active);
+	}
+
 	setDevices(devices) {
 		this.devices = devices;
-		this.isActive = !!devices.find(devices => devices.is_active);
 		if (!this.isActive) this.playerState = undefined;
 	}
 
@@ -52,5 +58,9 @@ export default class {
 		}
 
 		this.devices.push(this.playerState.device);
+	}
+
+	clone() {
+		return new SpotifyAccount(this);
 	}
 }

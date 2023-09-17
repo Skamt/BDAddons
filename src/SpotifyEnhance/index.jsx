@@ -14,7 +14,9 @@ import SpotifyStore from "@Stores/SpotifyStore";
 import ConnectedAccountsStore from "@Stores/ConnectedAccountsStore";
 
 import SpotifyWrapper from "./SpotifyWrapper";
+
 window.SpotifyWrapper = SpotifyWrapper;
+window.SpotifyAPI = SpotifyAPI;
 
 export default class SpotifyEnhance {
 	start() {

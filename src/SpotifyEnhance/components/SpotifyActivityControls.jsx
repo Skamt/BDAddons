@@ -4,7 +4,6 @@ import SpotifyStore from "@Stores/SpotifyStore";
 import UserStore from "@Stores/UserStore";
 import SelectedChannelStore from "@Stores/SelectedChannelStore";
 import { sendMessageDirectly, insertText } from "@Utils/Messages";
-import { copySpotifyLink, listen, queue } from "../SpotifyWrapper";
 import SpotifyWrapper from "../SpotifyWrapper";
 import Button from "@Components/Button";
 import AddToQueueIcon from "@Components/AddToQueueIcon";

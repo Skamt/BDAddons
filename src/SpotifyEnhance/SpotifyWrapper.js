@@ -25,31 +25,8 @@ async function requestHandler(action) {
 		const [error, response] = await promiseHandler(RefreshToken(SpotifyAPI.accountId));
 		if (error) throw handleError("Could not refresh Spotify token", error);
 		SpotifyActiveAccount.updateToken(response.body.access_token);
-		SpotifyAPI.token = response.body.access_token;
 	}
 }
-
-// export function queue(type, id, name) {
-// 	doAction("queue", type, id)
-// 		.then(() => {
-// 			Toast.success(`Added ${name} to the queue`);
-// 		})
-// 		.catch(reason => {
-// 			Toast.error(`Could not add ${name} to the queue\n Reason: ${reason}`);
-// 		});
-// }
-
-// export function listen(type, id, name) {
-// 	doAction("listen", type, id);
-// }
-
-// export function seek(ms) {
-// 	requestHandler(() => SpotifyAPI.seek(Math.round(ms))).catch(reason => {
-// 		Toast.error(`Could not seek\n Reason: ${reason}`);
-// 	});
-// }
-
-
 
 const Utils = {
 	copySpotifyLink(link) {
@@ -107,11 +84,13 @@ export default new (class SpotifyWrapper extends EventEmitter {
 	onPlayerStateChange() {
 		this.update();
 		this.emit("PLAYER");
+		console.log("playerState", this.activeAccount?.playerState);
 	}
 
 	onDeviceStateChange() {
 		this.update();
 		this.emit("DEVICE");
+		console.log("deviceState", this.activeAccount?.deviceState);
 	}
 
 	onPlayerAndDeviceStateChange() {
@@ -122,12 +101,26 @@ export default new (class SpotifyWrapper extends EventEmitter {
 	}
 
 	getPlayerState() {
-		if (!this.activeAccount) return undefined;
+		if (!this.activeAccount) return;
 		return this.activeAccount.playerState;
 	}
 
 	getDeviceState() {
-		if (!this.activeAccount) return undefined;
-		return this.activeAccount.deviceState;
+		if (!this.activeAccount) return;
+		return this.activeAccount.isActive;
 	}
+
+	getCurrentlyPlaying(){
+		if (!this.activeAccount) return ;
+		if(!this.activeAccount.isPlaying) return;
+		return this.activeAccount.item;
+	}
+
+	getCurrentlyPlayingById(id){
+		const currentlyPlaying = this.getCurrentlyPlaying();
+		if(!currentlyPlaying) return;
+		if(currentlyPlaying.id !== id) return;
+		return currentlyPlaying;		
+	}
+
 })();

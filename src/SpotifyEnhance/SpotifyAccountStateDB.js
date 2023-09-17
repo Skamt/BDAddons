@@ -55,7 +55,7 @@ export default new (class SpotifyAccountStateDB extends EventEmitter {
 		for (const accountId in this.accounts) {
 			const account = this.accounts[accountId];
 			if (!account.isActive) continue;
-			return account;
+			return account.clone();
 		}
 	}
 

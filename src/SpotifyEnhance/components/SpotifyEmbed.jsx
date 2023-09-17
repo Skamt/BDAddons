@@ -14,7 +14,7 @@ import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 import Tooltip from "@Components/Tooltip";
 import TimeBar from "@Components/TimeBar";
 
-function useHook() {
+function useDeviceState() {
 	const [state, setState] = React.useState(SpotifyWrapper.getDeviceState());
 	React.useEffect(() => {
 		return SpotifyWrapper.on("DEVICE", () => setState(SpotifyWrapper.getDeviceState()));
@@ -22,10 +22,29 @@ function useHook() {
 	return state;
 }
 
-export default ({ embed }) => {
+function useCurrentlyPlaying(id) {
+	const [state, setState] = React.useState(SpotifyWrapper.getCurrentlyPlayingById(id));
+
+	React.useEffect(() => {
+		return SpotifyWrapper.on("PLAYER", () => {
+			const currentlyPlaying = SpotifyWrapper.getCurrentlyPlayingById(id);
+			if (!currentlyPlaying && state) setState(undefined);
+			else if (currentlyPlaying && !state) setState(currentlyPlaying);
+		});
+	}, [state]);
+	return state;
+}
+
+export default ({ orig, embed }) => {
 	const { thumbnail, rawTitle, rawDescription, url } = embed;
 	const [type, id] = parseSpotifyUrl(url);
-	const isActive = useHook();
+	const isActive = useDeviceState();
+	const currentlyPlaying = useCurrentlyPlaying(id);
+	console.log("RERENDER", id);
+	if (!type && !id) {
+		console.info(url);
+		return orig;
+	}
 
 	const thumbnailClickHandler = () => {
 		let { url, width, height } = thumbnail;
@@ -53,11 +72,10 @@ export default ({ embed }) => {
 	return (
 		<div
 			class="spotifyEmbed-Container"
-			style={{ "--thumbnail": `url(${thumbnail.url})` }}>
+			style={{ "--thumbnail": `url(${thumbnail.proxyURL})` }}>
 			<div
 				onClick={thumbnailClickHandler}
-				className="spotifyEmbed-thumbnail"
-			></div>
+				className="spotifyEmbed-thumbnail"></div>
 
 			<h2 className="spotifyEmbed-title">{rawTitle}</h2>
 			<p className="spotifyEmbed-description">{rawDescription}</p>
@@ -65,6 +83,7 @@ export default ({ embed }) => {
 			<div className="spotifyEmbed-controls">
 				{isActive && [listenBtn, queueBtn]}
 				<Copy url={url} />
+				{currentlyPlaying && currentlyPlaying.name}
 				{/*<TrackTimeBar
 						id={id}
 						embed={embed}
@@ -109,7 +128,7 @@ function Listen({ type, id, embed }) {
 			note={`Play ${type}`}
 			position="top">
 			<div
-				onClick={() => SpotifyWrapper.play(type, id, embed.rawTitle)}
+				onClick={() => SpotifyWrapper.Player.play(type, id, embed.rawTitle)}
 				className="spotifyEmbed-btn spotifyEmbed-btn-listen">
 				<ListenIcon />
 			</div>
@@ -123,7 +142,7 @@ function AddToQueue({ type, id, embed }) {
 			note={`Add ${type} to queue`}
 			position="top">
 			<div
-				onClick={() => SpotifyWrapper.queue(type, id, embed.rawTitle)}
+				onClick={() => SpotifyWrapper.Player.queue(type, id, embed.rawTitle)}
 				className="spotifyEmbed-btn spotifyEmbed-btn-addToQueue">
 				<AddToQueueIcon />
 			</div>
