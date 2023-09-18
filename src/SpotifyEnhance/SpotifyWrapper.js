@@ -101,4 +101,8 @@ export default new (class SpotifyWrapper extends ChangeEmitter {
 		return currentlyPlaying;		
 	}
 
+	getPlayerState(){
+		return this.activeAccount;
+	}
+
 })();

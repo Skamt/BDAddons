@@ -169,7 +169,7 @@ class SpotifyClientAPI {
 			.run();
 	}
 
-	play(type, id){
+	listen(type, id){
 		return this.getRequestBuilder()
 			.setPath("/me/player/play")
 			.setMethod("PUT")

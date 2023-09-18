@@ -16,12 +16,10 @@ export default () => {
 				<ErrorBoundary
 					id="SpotifyEmbed"
 					plugin={config.info.name}>
-					{[
-						<SpotifyActivityControls
-							{...props}
-							renderActions={renderActions}
-						/>
-					]}
+					<SpotifyActivityControls
+						{...props}
+						renderActions={renderActions}
+					/>
 				</ErrorBoundary>
 			);
 		});

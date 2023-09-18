@@ -125,7 +125,7 @@ function Listen({ type, id, embed }) {
 			note={`Play ${type}`}
 			position="top">
 			<div
-				onClick={() => SpotifyWrapper.Player.play(type, id, embed.rawTitle)}
+				onClick={() => SpotifyWrapper.Player.listen(type, id, embed.rawTitle)}
 				className="spotifyEmbed-btn spotifyEmbed-btn-listen">
 				<ListenIcon />
 			</div>

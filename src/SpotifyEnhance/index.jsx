@@ -7,11 +7,12 @@ import patchSpotifyEmbed from "./patches/patchSpotifyEmbed";
 import patchSpotifyActivity from "./patches/patchSpotifyActivity";
 import patchMessageHeader from "./patches/patchMessageHeader";
 import patchListenAlong from "./patches/patchListenAlong";
-import patchSpotifyControls from "./patches/patchSpotifyControls";
+import patchSpotifyPlayer from "./patches/patchSpotifyPlayer";
 import SettingComponent from "./components/SettingComponent";
 import SpotifyAPI from "@Utils/SpotifyAPI";
 import SpotifyStore from "@Stores/SpotifyStore";
 import ConnectedAccountsStore from "@Stores/ConnectedAccountsStore";
+import { getFluxContainer } from "./Utils";
 
 import SpotifyWrapper from "./SpotifyWrapper";
 
@@ -27,16 +28,23 @@ export default class SpotifyEnhance {
 			patchSpotifyEmbed();
 			patchSpotifyActivity();
 			patchMessageHeader();
-			patchSpotifyControls();
+			patchSpotifyPlayer();
 		} catch (e) {
 			Logger.error(e);
 		}
 	}
 
 	stop() {
-		SpotifyWrapper.dispose();
-		DOM.removeStyle();
-		Patcher.unpatchAll();
+		try {
+			SpotifyWrapper.dispose();
+			DOM.removeStyle();
+			Patcher.unpatchAll();
+
+			const fluxContainer = getFluxContainer();
+			if (fluxContainer) fluxContainer?.stateNode?.forceUpdate();
+		} catch (e) {
+			Logger.error(e);
+		}
 	}
 
 	getSettingsPanel() {

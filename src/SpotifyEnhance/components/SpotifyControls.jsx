@@ -15,14 +15,14 @@ export default ({ embed }) => {
 	const listenBtn = type !== "show" && (
 		<ControlBtn
 			value="listen"
-			onClick={() => SpotifyWrapper.play(type, id, embed.rawTitle)}
+			onClick={() => SpotifyWrapper.Player.listen(type, id, embed.rawTitle)}
 		/>
 	);
 
 	const queueBtn = (type === "track" || type === "episode") && (
 		<ControlBtn
 			value="add to queue"
-			onClick={() => SpotifyWrapper.queue(type, id, embed.rawTitle)}
+			onClick={() => SpotifyWrapper.Player.queue(type, id, embed.rawTitle)}
 		/>
 	);
 
