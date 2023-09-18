@@ -2,10 +2,9 @@ import SpotifyAPI from "@Utils/SpotifyAPI";
 import Logger from "@Utils/Logger";
 import Toast from "@Utils/Toast";
 import { promiseHandler, copy } from "@Utils";
-import { ActionsEnum } from "./consts.js";
 import RefreshToken from "@Modules/RefreshToken";
 
-import EventEmitter from "./EventEmitter";
+import ChangeEmitter from "@Utils/ChangeEmitter";
 import SpotifyActiveAccount from "./SpotifyActiveAccount";
 
 function handleError(msg, error) {
@@ -49,19 +48,16 @@ function getter(_, prop) {
 			});
 }
 
-export default new (class SpotifyWrapper extends EventEmitter {
+export default new (class SpotifyWrapper extends ChangeEmitter {
 	constructor() {
 		super();
-		this.onPlayerStateChange = this.onPlayerStateChange.bind(this);
-		this.onDeviceStateChange = this.onDeviceStateChange.bind(this);
-		this.onPlayerAndDeviceStateChange = this.onPlayerAndDeviceStateChange.bind(this);
+		this.onStateChange = this.onStateChange.bind(this);
+		
 	}
 
 	init() {
 		SpotifyActiveAccount.init();
-		SpotifyActiveAccount.on("BOTH", this.onPlayerAndDeviceStateChange);
-		SpotifyActiveAccount.on("PLAYER", this.onPlayerStateChange);
-		SpotifyActiveAccount.on("DEVICE", this.onDeviceStateChange);
+		SpotifyActiveAccount.on(this.onStateChange);
 		this.activeAccount = SpotifyActiveAccount.activeAccount;
 		this.Player = new Proxy({}, { get: getter });
 		this.Utils = Utils;
@@ -69,36 +65,18 @@ export default new (class SpotifyWrapper extends EventEmitter {
 
 	dispose() {
 		SpotifyActiveAccount.dispose();
-		SpotifyActiveAccount.off("BOTH", this.onPlayerAndDeviceStateChange);
-		SpotifyActiveAccount.off("PLAYER", this.onPlayerStateChange);
-		SpotifyActiveAccount.off("DEVICE", this.onDeviceStateChange);
+		SpotifyActiveAccount.off(this.onStateChange);
 		delete this.activeAccount;
 		delete this.Player;
 		delete this.Utils;
 	}
 
-	update() {
+	onStateChange() {
 		this.activeAccount = SpotifyActiveAccount.activeAccount;
+		console.log("activeAccount", this.activeAccount);
+		this.emit();
 	}
 
-	onPlayerStateChange() {
-		this.update();
-		this.emit("PLAYER");
-		console.log("playerState", this.activeAccount?.playerState);
-	}
-
-	onDeviceStateChange() {
-		this.update();
-		this.emit("DEVICE");
-		console.log("deviceState", this.activeAccount?.deviceState);
-	}
-
-	onPlayerAndDeviceStateChange() {
-		this.update();
-		this.emit("DEVICE");
-		this.emit("PLAYER");
-		console.log("deviceState", this.activeAccount?.deviceState, "playerState", this.activeAccount?.playerState);
-	}
 
 	getPlayerState() {
 		if (!this.activeAccount) return;

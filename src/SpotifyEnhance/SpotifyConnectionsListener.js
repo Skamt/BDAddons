@@ -1,7 +1,7 @@
-import EventEmitter from "./EventEmitter";
+import ChangeEmitter from "@Utils/ChangeEmitter";
 import ConnectedAccountsStore from "@Stores/ConnectedAccountsStore";
 
-export default new (class SpotifyConnectionsListener extends EventEmitter {
+export default new (class SpotifyConnectionsListener extends ChangeEmitter {
 	constructor() {
 		super();
 		this.listener = this.listener.bind(this);
@@ -22,7 +22,7 @@ export default new (class SpotifyConnectionsListener extends EventEmitter {
 		if (spotifyAccounts.length === this.connectedAccounts) return;
 		this.connectedAccounts = spotifyAccounts.length;
 
-		this.emit("CHANGE");
+		this.emit();
 	}
 
 	getAccounts() {

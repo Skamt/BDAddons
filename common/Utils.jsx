@@ -14,7 +14,7 @@ export const openModal = children => {
 				plugin={config.info.name}>
 				<ModalRoot
 					{...props}
-					style={{ background: "#0000" }}>
+					className="modal-3Crloo">
 					{children}
 				</ModalRoot>
 			</ErrorBoundary>

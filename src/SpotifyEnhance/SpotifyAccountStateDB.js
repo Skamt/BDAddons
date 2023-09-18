@@ -1,4 +1,4 @@
-import EventEmitter from "./EventEmitter";
+import EventEmitter from "@Utils/EventEmitter";
 import SpotifyConnectionsListener from "./SpotifyConnectionsListener";
 import SpotifySocketListener from "./SpotifySocketListener";
 import SpotifyStore from "@Stores/SpotifyStore";
@@ -28,16 +28,16 @@ export default new (class SpotifyAccountStateDB extends EventEmitter {
 		this.accounts = {};
 		SpotifyConnectionsListener.init();
 		SpotifySocketListener.init();
-		SpotifyConnectionsListener.on("CHANGE", this.onSpotifyAccountsChange);
-		SpotifySocketListener.on("MESSAGE", this.onSocketEvent);
+		SpotifyConnectionsListener.on(this.onSpotifyAccountsChange);
+		SpotifySocketListener.on(this.onSocketEvent);
 		getSpotifyAccountsAndDevices().forEach(({ socket, devices = [] }) => {
 			this.accounts[socket.accountId] = new SpotifyAccount({ socket, devices });
 		});
 	}
 
 	dispose() {
-		SpotifyConnectionsListener.off("CHANGE", this.onSpotifyAccountsChange);
-		SpotifySocketListener.off("MESSAGE", this.onSocketEvent);
+		SpotifyConnectionsListener.off(this.onSpotifyAccountsChange);
+		SpotifySocketListener.off(this.onSocketEvent);
 		SpotifyConnectionsListener.dispose();
 		SpotifySocketListener.dispose();
 		delete this.accounts;
@@ -80,7 +80,7 @@ export default new (class SpotifyAccountStateDB extends EventEmitter {
 				break;
 		}
 
-		this.emit("CHANGE");
+		this.emit("UPDATE");
 	}
 
 	playerStateChange(socket, { state }) {

@@ -1,4 +1,126 @@
-.spotify-controls{
-	display:flex;
-	gap:5px;
+:root {
+	--spotify-green: #1ed760;
+	--text-normal: #fff;
+	--text-sub: #a7a7a7;
+	--radius: 8px;
+	--icon-size: 18px;
+	--gutter: 10px;
+	--font: Helvetica Neue, helvetica, arial, Hiragino Kaku Gothic Pro, Meiryo, MS Gothic;
+	--embed-font: "gg sans";
+	--accent: #1ed760;
+}
+
+/* Spotify Embed */
+.spotifyEmbed-Container {
+	background:
+		linear-gradient(#00000090 0 0),
+		var(--thumbnail) top center/9999% no-repeat;
+	max-width: 350px;
+	min-width: 350px;
+	padding: var(--gutter);
+	border-radius: var(--radius);
+	font-family: var(--embed-font);
+
+	display: grid;
+	column-gap: var(--gutter);
+	grid-template-columns: auto minmax(0, 1fr) auto;
+	grid-template-rows: auto auto minmax(0, 1fr);
+	grid-template-areas:
+		"thumbnail title icon"
+		"thumbnail description ."
+		"thumbnail controls .";
+}
+
+.spotifyEmbed-thumbnail {
+	grid-area: thumbnail;
+
+	width: 80px;
+	height: 80px;
+	background: var(--thumbnail) center/cover no-repeat;
+	border-radius: var(--radius);
+}
+
+.spotifyEmbed-title {
+	grid-area: title;
+
+	font-weight: bold;
+	color: var(--text-normal);
+	margin: 0;
+	margin-top: 3px;
+	align-self: center;
+
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+.spotifyEmbed-description {
+	grid-area: description;
+
+	font-weight: 500;
+	margin: 0;
+	margin-top: 3px;
+	color: var(--text-sub);
+	font-size: 0.7rem;
+
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+.spotifyEmbed-controls {
+	grid-area: controls;
+	height: 30px;
+	display: flex;
+	align-self: center;
+	gap: var(--gutter);
+}
+
+.spotifyEmbed-btn {
+	background: #0000004d;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+
+	padding: 6px;
+	border-radius: 50%;
+	color: #fff;
+	box-sizing: border-box;
+}
+
+.spotifyEmbed-btn svg {
+	width: var(--icon-size);
+	height: var(--icon-size);
+}
+
+.spotifyEmbed-spotifyIcon {
+	grid-area: icon;
+
+	display: flex;
+	color: var(--spotify-green);
+}
+
+/* spotify activity controls */
+.spotify-activity-controls {
+	display: flex;
+	margin-top: 10px;
+	gap: 8px;
+}
+
+.spotify-activity-controls svg {
+	width: 18px;
+	height: 18px;
+}
+
+.spotify-activity-controls button > div {
+	font-size: 0;
+	line-height: 1;
+}
+
+.spotify-activity-controls button {
+	padding: 3px 6px !important;
+}
+
+.spotify-activity-controls > :first-child {
+	flex: 1;
 }

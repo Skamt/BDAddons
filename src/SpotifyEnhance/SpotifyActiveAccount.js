@@ -1,18 +1,20 @@
-import EventEmitter from "./EventEmitter";
+import ChangeEmitter from "@Utils/ChangeEmitter";
 import SpotifyAccountStateDB from "./SpotifyAccountStateDB";
 import SpotifyAPI from "@Utils/SpotifyAPI";
 import { nop } from "@Utils";
 
-export default new (class SpotifyActiveAccount extends EventEmitter {
+export default new (class SpotifyActiveAccount extends ChangeEmitter {
 	constructor() {
 		super();
 		this.onSpotifyAccountStateDBChange = this.onSpotifyAccountStateDBChange.bind(this);
+		this.onSpotifyAccountStateDBUpdate = this.onSpotifyAccountStateDBUpdate.bind(this);
 	}
 
 	init() {
 		this.activeAccount = undefined;
 		SpotifyAccountStateDB.init();
 		SpotifyAccountStateDB.on("CHANGE", this.onSpotifyAccountStateDBChange);
+		SpotifyAccountStateDB.on("UPDATE", this.onSpotifyAccountStateDBUpdate);
 
 		this.activeAccount = SpotifyAccountStateDB.getActiveAccount();
 
@@ -24,7 +26,9 @@ export default new (class SpotifyActiveAccount extends EventEmitter {
 
 	dispose() {
 		SpotifyAccountStateDB.off("CHANGE", this.onSpotifyAccountStateDBChange);
+		SpotifyAccountStateDB.off("UPDATE", this.onSpotifyAccountStateDBUpdate);
 		SpotifyAccountStateDB.dispose();
+		clearTimeout(this.idleTimeoutId);
 		delete this.activeAccount;
 	}
 
@@ -48,8 +52,7 @@ export default new (class SpotifyActiveAccount extends EventEmitter {
 		if (isPlaying && this.idleTimeoutId) {
 			clearTimeout(this.idleTimeoutId);
 			this.idleTimeoutId = null;
-		}
-		else if (!isPlaying && this.idleTimeoutId) return;
+		} else if (!isPlaying && this.idleTimeoutId) return;
 		else if (!isPlaying)
 			this.idleTimeoutId = setTimeout(
 				() => {
@@ -57,60 +60,53 @@ export default new (class SpotifyActiveAccount extends EventEmitter {
 					this.idleTimeoutId = null;
 					this.activeAccount.setDevices([]);
 					console.log("Idle Timeout HIT");
-					this.emit("BOTH");
+					this.emit();
 				},
 				30 * 60 * 1000
 			);
 	}
 
-	onSpotifyAccountStateDBChange() {
+	async onSpotifyAccountStateDBChange() {
 		const newActiveAccount = SpotifyAccountStateDB.getActiveAccount();
 
-		if (!newActiveAccount && !this.activeAccount) return;
+		SpotifyAPI.token = newActiveAccount?.accessToken;
+		SpotifyAPI.accountId = newActiveAccount?.id;
 
-		if (!newActiveAccount || !this.activeAccount || newActiveAccount.id !== this.activeAccount.id) this.changeActiveAccount(newActiveAccount);
-		else this.updateActiveAccount(newActiveAccount);
+		// if (newActiveAccount) {
+		// 	const data = await this.fetchPlayerState();
+		// }
 
+		this.notifyMaybe(newActiveAccount);
+	}
+
+	notifyMaybe(newActiveAccount){
+		if(!this.isPlayerStateDifferent(newActiveAccount) && !this.isDeviceStateDifferent(newActiveAccount)) return;
+		this.activeAccount = newActiveAccount;
+		this.emit();
+	}
+
+	async onSpotifyAccountStateDBUpdate() {
+		const newActiveAccount = SpotifyAccountStateDB.getActiveAccount();
+		this.notifyMaybe(newActiveAccount);
 		this.checkActivityInterval();
 	}
 
-	async changeActiveAccount(newActiveAccount) {
-		this.activeAccount = newActiveAccount;
-		SpotifyAPI.token = this.activeAccount?.accessToken;
-		SpotifyAPI.accountId = this.activeAccount?.id;
-		if (this.activeAccount && !this.activeAccount.playerState) {
-			const data = await this.fetchPlayerState();
-		}
+	isPlayerStateDifferent(newActiveAccount) {
+		const { playerState: newPlayerState } = newActiveAccount || {};
+		const { playerState } = this.activeAccount || {};
 
-		this.emit("BOTH");
-	}
-
-	updateActiveAccount(newActiveAccount) {
-		const isPlayerDifferent = this.isPlayerDifferent(newActiveAccount);
-		const isDeviceDifferent = this.isDeviceDifferent(newActiveAccount);
-
-		this.activeAccount = newActiveAccount;
-
-		if (isPlayerDifferent && isDeviceDifferent) return this.emit("BOTH");
-		if (isPlayerDifferent) return this.emit("PLAYER");
-		if (isDeviceDifferent) return this.emit("DEVICE");
-	}
-
-	isPlayerDifferent(newActiveAccount) {
-		const { playerState: newPlayerState } = newActiveAccount;
-		const { playerState } = this.activeAccount;
-
-		if (!newPlayerState && playerState || newPlayerState && !playerState) return true;
+		if (!playerState && !newActiveAccount) return false;
+		if (!newPlayerState || !playerState) return true;
 		if (newPlayerState?.item?.id !== playerState?.item?.id) return true;
 		if (newPlayerState?.device?.volume_percent !== playerState?.device?.volume_percent) return true;
 
 		return ["shuffle_state", "repeat_state", "progress_ms", "is_playing"].some(key => newPlayerState[key] !== playerState[key]);
 	}
 
-	isDeviceDifferent(newActiveAccount) {
-		const { devices: newDevices } = newActiveAccount;
-		const { devices } = this.activeAccount;
-
-		return !!devices.find(device => device.is_active) !== !!newDevices.find(device => device.is_active);
+	isDeviceStateDifferent(newActiveAccount) {
+		const { devices: newDevices } = newActiveAccount || {};
+		const { devices } = this.activeAccount || {};
+		
+		return !!newDevices?.find(device => device.is_active) !== !!devices?.find(device => device.is_active);
 	}
 })();

@@ -1,6 +1,6 @@
 import { Patcher } from "@Api";
 import SpotifyStore from "@Stores/SpotifyStore";
-import EventEmitter from "./EventEmitter";
+import ChangeEmitter from "@Utils/ChangeEmitter";
 
 function getSocketConstructor() {
 	const { accounts } = SpotifyStore.__getLocalVars() || { accounts: {} };
@@ -31,7 +31,7 @@ const getSocket = (() => {
 	};
 })();
 
-export default new (class SpotifySocketListener extends EventEmitter {
+export default new (class SpotifySocketListener extends ChangeEmitter {
 	constructor() {
 		super();
 	}
@@ -39,7 +39,7 @@ export default new (class SpotifySocketListener extends EventEmitter {
 	async init() {
 		const socket = await getSocket();
 		this.unpatch = Patcher.after(socket.prototype, "handleEvent", (socket, [event]) => {
-			this.emit("MESSAGE", { socket, event });
+			this.emit({ socket, event });
 		});
 	}
 
