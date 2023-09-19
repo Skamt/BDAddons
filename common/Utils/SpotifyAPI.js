@@ -120,14 +120,6 @@ class SpotifyClientAPI {
 			.setToken(this.token);
 	}
 
-	fetchCurrentUserProfile() {
-		return this.getRequestBuilder()
-			.setPath("/me")
-			.setMethod("GET")
-			.build()
-			.run();
-	}
-
 	next() {
 		return this.getRequestBuilder()
 			.setPath("/me/player/next")
@@ -169,6 +161,33 @@ class SpotifyClientAPI {
 			.run();
 	}
 
+	shuffle(state) {
+		return this.getRequestBuilder()
+			.setPath("/me/player/shuffle")
+			.setMethod("PUT")
+			.setParams({ state })
+			.build()
+			.run();
+	}
+
+	volume(volume_percent) {
+		return this.getRequestBuilder()
+			.setPath("/me/player/volume")
+			.setMethod("PUT")
+			.setParams({ volume_percent })
+			.build()
+			.run();
+	}
+
+	repeat(state) {
+		return this.getRequestBuilder()
+			.setPath("/me/player/repeat")
+			.setMethod("PUT")
+			.setParams({ state })
+			.build()
+			.run();
+	}
+
 	listen(type, id){
 		return this.getRequestBuilder()
 			.setPath("/me/player/play")
@@ -189,7 +208,15 @@ class SpotifyClientAPI {
 
 	getPlayerState() {
 		return this.getRequestBuilder()
-			.setPath(`/me/player`)
+			.setPath("/me/player")
+			.setMethod("GET")
+			.build()
+			.run();
+	}
+
+	getDevices() {
+		return this.getRequestBuilder()
+			.setPath("/me/player/devices")
 			.setMethod("GET")
 			.build()
 			.run();

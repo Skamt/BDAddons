@@ -1,7 +1,7 @@
 import ChangeEmitter from "@Utils/ChangeEmitter";
 import SpotifyAccountStateDB from "./SpotifyAccountStateDB";
-import SpotifyAPI from "@Utils/SpotifyAPI";
-import { nop } from "@Utils";
+import SpotifyAPIWrapper from "./SpotifyAPIWrapper";
+import { promiseHandler, nop } from "@Utils";
 
 export default new (class SpotifyActiveAccount extends ChangeEmitter {
 	constructor() {
@@ -10,18 +10,13 @@ export default new (class SpotifyActiveAccount extends ChangeEmitter {
 		this.onSpotifyAccountStateDBUpdate = this.onSpotifyAccountStateDBUpdate.bind(this);
 	}
 
-	init() {
+	async init() {
 		this.activeAccount = undefined;
 		SpotifyAccountStateDB.init();
 		SpotifyAccountStateDB.on("CHANGE", this.onSpotifyAccountStateDBChange);
 		SpotifyAccountStateDB.on("UPDATE", this.onSpotifyAccountStateDBUpdate);
 
-		this.activeAccount = SpotifyAccountStateDB.getActiveAccount();
-
-		if (!this.activeAccount) return;
-		SpotifyAPI.token = this.activeAccount?.accessToken;
-		SpotifyAPI.accountId = this.activeAccount?.id;
-		this.fetchPlayerState();
+		this.ensureSpotifyState();
 	}
 
 	dispose() {
@@ -32,18 +27,35 @@ export default new (class SpotifyActiveAccount extends ChangeEmitter {
 		delete this.activeAccount;
 	}
 
-	updateToken(token) {
-		SpotifyAPI.token = token;
-		this.activeAccount.accessToken = token;
+	setToken(newActiveAccount) {
+		SpotifyAPIWrapper.updateToken({
+			accessToken: newActiveAccount?.accessToken,
+			accountId: newActiveAccount?.id
+		});
 	}
 
-	fetchPlayerState() {
-		console.trace("fetchPlayerState");
-		return Promise.resolve(0);
-		// SpotifyAPI.getPlayerState()
-		// 	.then(playerState => {
-		// 		this.activeAccount.playerState = playerState;
-		// 	}).catch(nop);
+	async ensureDeviceState(newActiveAccount) {
+		if (!newActiveAccount) return;
+		const [err, data] = await promiseHandler(SpotifyAPIWrapper.getDevices());
+		if (err) return;
+		newActiveAccount.setDevices(data.devices);
+	}
+
+	async fetchPlayerState(newActiveAccount) {
+		if (!newActiveAccount) return;
+		const [err, playerState] = await promiseHandler(SpotifyAPIWrapper.getPlayerState());
+		if (err) return;
+		newActiveAccount.setPlayerState(playerState);
+	}
+
+	async ensureSpotifyState() {
+		const newActiveAccount = SpotifyAccountStateDB.getActiveAccount();
+		if (!newActiveAccount) return;
+		this.setToken(newActiveAccount);
+		await this.ensureDeviceState(newActiveAccount);
+		if (newActiveAccount.isActive) await this.fetchPlayerState(newActiveAccount);
+
+		this.notifyMaybe(newActiveAccount);
 	}
 
 	checkActivityInterval() {
@@ -66,21 +78,12 @@ export default new (class SpotifyActiveAccount extends ChangeEmitter {
 			);
 	}
 
-	async onSpotifyAccountStateDBChange() {
-		const newActiveAccount = SpotifyAccountStateDB.getActiveAccount();
-
-		SpotifyAPI.token = newActiveAccount?.accessToken;
-		SpotifyAPI.accountId = newActiveAccount?.id;
-
-		// if (newActiveAccount) {
-		// 	const data = await this.fetchPlayerState();
-		// }
-
-		this.notifyMaybe(newActiveAccount);
+	onSpotifyAccountStateDBChange() {
+		this.ensureSpotifyState();
 	}
 
-	notifyMaybe(newActiveAccount){
-		if(!this.isPlayerStateDifferent(newActiveAccount) && !this.isDeviceStateDifferent(newActiveAccount)) return;
+	notifyMaybe(newActiveAccount) {
+		if (!this.isPlayerStateDifferent(newActiveAccount) && !this.isDeviceStateDifferent(newActiveAccount)) return;
 		this.activeAccount = newActiveAccount;
 		this.emit();
 	}
@@ -106,7 +109,7 @@ export default new (class SpotifyActiveAccount extends ChangeEmitter {
 	isDeviceStateDifferent(newActiveAccount) {
 		const { devices: newDevices } = newActiveAccount || {};
 		const { devices } = this.activeAccount || {};
-		
+
 		return !!newDevices?.find(device => device.is_active) !== !!devices?.find(device => device.is_active);
 	}
 })();
