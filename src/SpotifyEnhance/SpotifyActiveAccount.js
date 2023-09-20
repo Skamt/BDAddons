@@ -50,7 +50,7 @@ export default new (class SpotifyActiveAccount extends ChangeEmitter {
 
 	async ensureSpotifyState() {
 		const newActiveAccount = SpotifyAccountStateDB.getActiveAccount();
-		if (!newActiveAccount) return;
+		if (!newActiveAccount) return this.notifyMaybe(newActiveAccount);
 		this.setToken(newActiveAccount);
 		await this.ensureDeviceState(newActiveAccount);
 		if (newActiveAccount.isActive) await this.fetchPlayerState(newActiveAccount);
@@ -100,10 +100,8 @@ export default new (class SpotifyActiveAccount extends ChangeEmitter {
 
 		if (!playerState && !newActiveAccount) return false;
 		if (!newPlayerState || !playerState) return true;
-		if (newPlayerState?.item?.id !== playerState?.item?.id) return true;
-		if (newPlayerState?.device?.volume_percent !== playerState?.device?.volume_percent) return true;
 
-		return ["shuffle_state", "repeat_state", "progress_ms", "is_playing"].some(key => newPlayerState[key] !== playerState[key]);
+		return ["trackId", "isPlaying", "progress", "shuffle", "volume", "repeat"].some(key => newPlayerState[key] !== playerState[key]);
 	}
 
 	isDeviceStateDifferent(newActiveAccount) {

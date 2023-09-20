@@ -1,10 +1,10 @@
 import { React } from "@Api";
 import Toast from "@Utils/Toast";
-import UserStore from "@Stores/UserStore";
-import SelectedChannelStore from "@Stores/SelectedChannelStore";
-import { sendMessageDirectly, insertText } from "@Utils/Messages";
 import SpotifyWrapper from "../SpotifyWrapper";
+
 import Button from "@Components/Button";
+import Tooltip from "@Components/Tooltip";
+
 import ShareIcon from "@Components/ShareIcon";
 import PauseIcon from "@Components/PauseIcon";
 import PlayIcon from "@Components/PlayIcon";
@@ -13,9 +13,12 @@ import ShuffleIcon from "@Components/ShuffleIcon";
 import CopyIcon from "@Components/CopyIcon";
 import NextIcon from "@Components/NextIcon";
 import PreviousIcon from "@Components/PreviousIcon";
-import Tooltip from "@Components/Tooltip";
+import RepeatOneIcon from "@Components/RepeatOneIcon";
+import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 
-function ControlBtn({ value, onClick, className, enabled, ...rest }) {
+const { Anchor } = TheBigBoyBundle;
+
+function SpotifyPlayerButton({ value, onClick, className, enabled, ...rest }) {
 	return (
 		<Button
 			className={`spotify-player-controls-btn ${className} ${enabled ? "enabled" : ""}`}
@@ -30,113 +33,173 @@ function ControlBtn({ value, onClick, className, enabled, ...rest }) {
 }
 
 function useSpotifyState() {
-	const [state, setState] = React.useState({
-		deviceState: SpotifyWrapper.getDeviceState(),
-		playerState: SpotifyWrapper.getPlayerState()
-	});
-
+	const [state, setState] = React.useState(SpotifyWrapper.getSpotifyState());
 	React.useEffect(() => {
-		return SpotifyWrapper.on(() => {
-			const deviceState = SpotifyWrapper.getDeviceState();
-			const playerState = SpotifyWrapper.getPlayerState();
-
-			setState({
-				deviceState: deviceState,
-				playerState: playerState
-			});
-		});
+		return SpotifyWrapper.on(() => setState(SpotifyWrapper.getSpotifyState()));
 	}, []);
 
 	return [state.deviceState, state.playerState];
 }
 
-export default React.memo(function SpotifyEmbedWrapper(props) {
+export default React.memo(function SpotifyPlayer(props) {
 	const [deviceState, playerState] = useSpotifyState();
 	if (!deviceState) return;
 
-	return <div className="spotify-player-container">{playerState && <SpotifyPlayerControls playerState={playerState} />}</div>;
+	return (
+		<div className="spotify-player-container">
+			<SpotifyMediaDetails playerState={playerState} />
+			<SpotifyPlayerControls playerState={playerState} />
+		</div>
+	);
 });
 
 function SpotifyPlayerControls({ playerState }) {
-	const share = () => {
-		const id = SelectedChannelStore.getCurrentlySelectedChannelId();
-		if (!id) return;
-		const content = playerState?.item?.external_urls?.spotify;
-		if (!content) return Toast.error("Could not resolve url");
-		sendMessageDirectly({ id }, content).catch(a => {
-			Toast.error(a.message);
-			insertText(content);
-		});
-	};
+	if (!playerState) return;
 
-	const copy = () => {
-		const content = playerState?.item?.external_urls?.spotify;
-		if (!content) return Toast.error("Could not resolve url");
-		SpotifyWrapper.Utils.copySpotifyLink(content);
-	};
+	const shuffle = () => SpotifyWrapper.Player.shuffle();
+	const previous = () => SpotifyWrapper.Player.previous();
+	const next = () => SpotifyWrapper.Player.next();
+	const share = () => SpotifyWrapper.Utils.share(playerState.trackUrl);
+	const copy = () => SpotifyWrapper.Utils.copySpotifyLink(playerState.trackUrl);
 
 	return (
 		<div className="spotify-player-controls">
 			<Tooltip note="Share in current channel">
-				<ControlBtn
+				<SpotifyPlayerButton
 					className="spotify-player-controls-share"
 					onClick={share}
 					value={<ShareIcon />}
 				/>
 			</Tooltip>
 			<Tooltip note="shuffle">
-				<ControlBtn
-					enabled={playerState?.shuffle}
+				<SpotifyPlayerButton
+					enabled={playerState.shuffle}
 					className="spotify-player-controls-shuffle"
-					// onClick={() => SpotifyWrapper.Player.shuffle()}
+					onClick={shuffle}
 					value={<ShuffleIcon />}
 				/>
 			</Tooltip>
 			<Tooltip note="Previous">
-				<ControlBtn
+				<SpotifyPlayerButton
 					className="spotify-player-controls-previous"
-					onClick={() => SpotifyWrapper.Player.previous()}
+					onClick={previous}
 					value={<PreviousIcon />}
 				/>
 			</Tooltip>
-			{playerState.isPlaying ? (
-				<Tooltip note="Pause">
-					<ControlBtn
-						className="spotify-player-controls-pause"
-						onClick={() => SpotifyWrapper.Player.pause()}
-						value={<PauseIcon />}
-					/>
-				</Tooltip>
-			) : (
-				<Tooltip note="Play">
-					<ControlBtn
-						className="spotify-player-controls-play"
-						onClick={() => SpotifyWrapper.Player.play()}
-						value={<PlayIcon />}
-					/>
-				</Tooltip>
-			)}
+			<PlayPauseBtn isPlaying={playerState.isPlaying} />
 			<Tooltip note="Next">
-				<ControlBtn
+				<SpotifyPlayerButton
 					className="spotify-player-controls-next"
-					onClick={() => SpotifyWrapper.Player.next()}
+					onClick={next}
 					value={<NextIcon />}
 				/>
 			</Tooltip>
-			<Tooltip note="Repeat">
-				<ControlBtn
-					className="spotify-player-controls-repeat"
-					// onClick={() => SpotifyWrapper.Player.repeat()}
-					value={<RepeatIcon />}
-				/>
-			</Tooltip>
+			<RepeatBtn repeat={playerState.repeat} />
 			<Tooltip note="Copy">
-				<ControlBtn
+				<SpotifyPlayerButton
 					className="spotify-player-controls-copy"
 					onClick={copy}
 					value={<CopyIcon />}
 				/>
 			</Tooltip>
 		</div>
+	);
+}
+
+function PlayPauseBtn({ isPlaying }) {
+	return isPlaying ? (
+		<Tooltip note="Pause">
+			<SpotifyPlayerButton
+				className="spotify-player-controls-pause"
+				onClick={() => SpotifyWrapper.Player.pause()}
+				value={<PauseIcon />}
+			/>
+		</Tooltip>
+	) : (
+		<Tooltip note="Play">
+			<SpotifyPlayerButton
+				className="spotify-player-controls-play"
+				onClick={() => SpotifyWrapper.Player.play()}
+				value={<PlayIcon />}
+			/>
+		</Tooltip>
+	);
+}
+
+function RepeatBtn({ repeat }) {
+	const { tooltip, arg } =
+		{
+			"off": {
+				tooltip: "Repeat",
+				arg: "context"
+			},
+			"context": {
+				tooltip: "Repeat track",
+				arg: "track"
+			},
+			"track": {
+				tooltip: "Repeat off",
+				arg: "off"
+			}
+		}[repeat] || {};
+
+	return (
+		<Tooltip note={tooltip}>
+			<SpotifyPlayerButton
+				enabled={repeat !== "off"}
+				className="spotify-player-controls-repeat"
+				onClick={() => SpotifyWrapper.Player.repeat(arg)}
+				value={repeat === "track" ? <RepeatOneIcon /> : <RepeatIcon />}
+			/>
+		</Tooltip>
+	);
+}
+
+function SpotifyMediaDetails({ playerState }) {
+	if (!playerState) return;
+	
+	const { trackAlbumName, trackAlbumUrl, trackBannerObj, trackUrl, trackName, trackArtists } = playerState;
+
+	return (
+		<div className="spotify-player-media">
+			<TrackBanner banner={trackBannerObj} />
+			
+			<Anchor
+				href={trackUrl}
+				className="spotify-player-title">
+				{trackName}
+			</Anchor>
+			<Artist artists={trackArtists} />
+			<div className="spotify-player-album">
+				on <Anchor href={trackAlbumUrl}>{trackAlbumName}</Anchor>
+			</div>
+		</div>
+	);
+}
+
+function Artist({ artists }) {
+	if (!artists) return;
+	function transform(artist) {
+		return <Anchor href={artist.external_urls.spotify}>{artist.name}</Anchor>;
+	}
+
+	const artist =
+		artists?.length === 1
+			? transform(artists[0])
+			: artists.map(transform).reduce((acc, el, index, obj) => {
+					acc.push(el);
+					if (index < obj.length - 1) acc.push(",");
+					return acc;
+			  }, []);
+
+	return <div className="spotify-player-artist">by {artist}</div>;
+}
+
+function TrackBanner({ banner }) {
+	const [, , { url }] = banner;
+	return (
+		<div
+			style={{ "--banner": `url(${url})` }}
+			className="spotify-player-banner"></div>
 	);
 }
