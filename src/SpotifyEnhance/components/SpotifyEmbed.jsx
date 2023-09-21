@@ -46,7 +46,7 @@ export default ({ orig, embed }) => {
 		let { proxyURL, url, width, height } = thumbnail;
 		width = width > 650 ? 650 : width;
 		height = height > 650 ? 650 : height;
-		openModal(getImageModalComponent(proxyURL || url, { width: width, height: height }));
+		openModal(getImageModalComponent(proxyURL || url, { width, height }));
 	};
 
 	const listenBtn = type !== "show" && (

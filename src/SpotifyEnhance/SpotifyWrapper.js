@@ -36,7 +36,7 @@ export default new (class SpotifyWrapper extends ChangeEmitter {
 	init() {
 		SpotifyActiveAccount.init();
 		SpotifyActiveAccount.on(this.onStateChange);
-		this.activeAccount = SpotifyActiveAccount.activeAccount;
+		this.activeAccount = SpotifyActiveAccount.getActiveAccount();
 		this.Player = SpotifyAPIWrapper;
 		this.Utils = Utils;
 	}
@@ -50,7 +50,7 @@ export default new (class SpotifyWrapper extends ChangeEmitter {
 	}
 
 	onStateChange() {
-		this.activeAccount = SpotifyActiveAccount.activeAccount;
+		this.activeAccount = SpotifyActiveAccount.getActiveAccount();
 		console.log("activeAccount", this.activeAccount);
 		this.emit();
 	}

@@ -36,7 +36,7 @@ function ressourceActions(prop) {
 		prop === "queue"
 			? {
 					success: (type, name) => `Queued ${type} ${name}`,
-					error: (type, name, reason) => `Could not queue the ${type} ${name}\n${reason}`
+					error: (type, name, reason) => `Could not queue ${type} ${name}\n${reason}`
 			  }
 			: {
 					success: (type, name) => `Playing ${type} ${name}`,

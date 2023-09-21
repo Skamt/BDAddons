@@ -17,12 +17,13 @@ import ColorModalComponent from "./components/ColorModalComponent";
 import DisplayCarouselComponent from "./components/DisplayCarouselComponent";
 import ViewProfilePictureButtonComponent from "./components/ViewProfilePictureButtonComponent";
 import SettingComponent from "./components/SettingComponent";
+import ModalRoot from "@Modules/ModalRoot";
 
-const getImageModalComponent = (Url, props) => (
+const getImageModalComponent = (url, rest) => (
 	<ImageModal
-		{...props}
-		src={Url}
-		original={Url}
+		{...rest}
+		src={url}
+		original={url}
 		renderLinkComponent={p => <RenderLinkComponent {...p} />}
 	/>
 );
@@ -34,10 +35,11 @@ function openCarousel(items) {
 		<ErrorBoundary
 			id="DisplayCarouselComponent"
 			plugin={config.info.name}>
-			<DisplayCarouselComponent
-				props={props}
-				items={items}
-			/>
+			<ModalRoot
+				{...props}
+				className="VPP-carousel carouselModal-1eUFoq zoomedCarouselModalRoot-beLNhM">
+				<DisplayCarouselComponent items={items} />
+			</ModalRoot>
 		</ErrorBoundary>
 	));
 }

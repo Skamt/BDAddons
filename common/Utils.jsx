@@ -22,9 +22,9 @@ export const openModal = children => {
 	});
 };
 
-export const getImageModalComponent = (url, props) => (
+export const getImageModalComponent = (url, rest) => (
 	<ImageModal
-		{...props}
+		{...rest}
 		src={url}
 		original={url}
 		renderLinkComponent={p => <RenderLinkComponent {...p} />}

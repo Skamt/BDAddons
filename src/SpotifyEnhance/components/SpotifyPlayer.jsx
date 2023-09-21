@@ -47,7 +47,8 @@ export default React.memo(function SpotifyPlayer(props) {
 
 	return (
 		<div className="spotify-player-container">
-			<SpotifyMediaDetails playerState={playerState} />
+			<TrackMediaDetails playerState={playerState} />
+			<TrackTimeLine playerState={playerState} />
 			<SpotifyPlayerControls playerState={playerState} />
 		</div>
 	);
@@ -155,15 +156,15 @@ function RepeatBtn({ repeat }) {
 	);
 }
 
-function SpotifyMediaDetails({ playerState }) {
-	if (!playerState) return;
-	
+function TrackMediaDetails({ playerState }) {
+	if (!playerState?.track) return;
+
 	const { trackAlbumName, trackAlbumUrl, trackBannerObj, trackUrl, trackName, trackArtists } = playerState;
 
 	return (
 		<div className="spotify-player-media">
 			<TrackBanner banner={trackBannerObj} />
-			
+
 			<Anchor
 				href={trackUrl}
 				className="spotify-player-title">
@@ -196,10 +197,46 @@ function Artist({ artists }) {
 }
 
 function TrackBanner({ banner }) {
+	if (!banner) return;
 	const [, , { url }] = banner;
 	return (
 		<div
 			style={{ "--banner": `url(${url})` }}
 			className="spotify-player-banner"></div>
+	);
+}
+
+function TrackTimeLine({ playerState }) {
+	const rangeChangeHandler = e => {
+		const val = e.value;
+
+	};
+
+	const { trackDuration, progress } = playerState;
+	const min = Math.floor(trackDuration / 1000 / 60);
+	const sec = Math.floor((trackDuration / 1000) % 60);
+
+	const progressMin = Math.floor(progress / 1000 / 60);
+	const progressSec = Math.floor((progress / 1000) % 60);
+
+	return (
+		<div className="spotify-player-timeline">
+			<div className="spotify-player-timeline-trackbar">
+				<div className="spotify-player-timeline-bubble"></div>
+				<input
+					name="foo"
+					type="range"
+					onChange={rangeChangeHandler}
+					min={1}
+					max={100}
+				/>
+			</div>
+			<div className="spotify-player-timeline-progress">
+				{progressMin}:{progressSec}
+			</div>
+			<div className="spotify-player-timeline-duration">
+				{min}:{sec}
+			</div>
+		</div>
 	);
 }

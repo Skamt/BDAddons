@@ -20,7 +20,7 @@ class PlayerState {
 	}
 
 	get trackDuration() {
-		return this.track?.duration;
+		return this.track?.["duration_ms"];
 	}
 
 	get explicit() {
