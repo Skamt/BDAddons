@@ -1,7 +1,7 @@
 /**
  * @name ViewProfilePicture
  * @description Adds a button to the user popout and profile that allows you to view the Avatar and banner.
- * @version 1.2.1
+ * @version 1.2.2
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "ViewProfilePicture",
-		"version": "1.2.1",
+		"version": "1.2.2",
 		"description": "Adds a button to the user popout and profile that allows you to view the Avatar and banner.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture",
@@ -24,7 +24,7 @@ const config = {
 	"changelog": [{
 		"title": "Bug fix",
 		"type": "fixed",
-		"items": ["fixed issue with Clyde profile/banner not working properly"]
+		"items": ["View Profile Picture button is back."]
 	}]
 }
 
@@ -155,51 +155,71 @@ const Patcher = Api.Patcher;
 
 const getModule = Api.Webpack.getModule;
 const Filters = Api.Webpack.Filters;
+const getInternalInstance = Api.ReactUtils.getInternalInstance;
 
-const Settings = {
-	_listeners: [],
-	_settings: {},
-	_commit() {
-		Data.save("settings", this._settings);
-		this._notify();
-	},
-	_notify() {
-		this._listeners.forEach(listener => listener?.());
-	},
+const findInTree = Api.Utils.findInTree;
+
+class ChangeEmitter {
+	constructor() {
+		this.listeners = new Set();
+	}
+
+	isInValid(handler) {
+		return !handler || typeof handler !== "function";
+	}
+
+	on(handler) {
+		if (this.isInValid(handler)) return;
+		this.listeners.add(handler);
+		return () => this.off(handler);
+	}
+
+	off(handler) {
+		if (this.isInValid(handler)) return;
+		this.listeners.delete(handler);
+	}
+
+	emit(payload) {
+		for (const listener of this.listeners) {
+			try {
+				listener(payload);
+			} catch (err) {
+				console.error(`Could not run listener`, err);
+			}
+		}
+	}
+}
+
+const Settings = new(class Settings extends ChangeEmitter {
+	constructor() {
+		super();
+	}
+
+	init(defaultSettings) {
+		this.settings = Data.load("settings") || defaultSettings;
+	}
+
 	get(key) {
-		return this._settings[key];
-	},
+		return this.settings[key];
+	}
+
 	set(key, val) {
-		this._settings[key] = val;
-		this._commit();
-	},
+		this.settings[key] = val;
+		this.commit();
+	}
 	setMultiple(newSettings) {
-		this._settings = {
-			...this._settings,
+		this.settings = {
+			...this.settings,
 			...newSettings
 		};
-		this._commit();
-	},
-	init(defaultSettings) {
-		this._settings = Data.load("settings") || defaultSettings;
-	},
-	addUpdateListener(listener) {
-		this._listeners.push(listener);
-		return () => this._listeners.splice(this._listeners.length - 1, 1);
+		this.commit();
 	}
-};
 
-const Settings$1 = Settings;
-
-function copy(data) {
-	DiscordNative.clipboard.copy(data);
-}
-
-function getNestedProp(obj, path) {
-	return path.split(".").reduce(function(ob, prop) {
-		return ob && ob[prop];
-	}, obj);
-}
+	commit() {
+		Data.save("settings", this.settings);
+		this.emit();
+	}
+})();
 
 function getModuleAndKey(filter, options) {
 	let module;
@@ -209,6 +229,63 @@ function getModuleAndKey(filter, options) {
 	const key = Object.keys(module).find(k => module[k] === target);
 	if (!key) return undefined;
 	return { module, key };
+}
+
+const ImageModal = getModule(Filters.byStrings("original", "maxHeight", "maxWidth", "noreferrer noopener"), { searchExports: true });
+
+const ModalRoot = getModule(Filters.byStrings("onAnimationEnd"), { searchExports: true });
+
+const RenderLinkComponent = getModule(m => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false });
+
+const TheBigBoyBundle = getModule(Filters.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
+
+class ErrorBoundary extends React.Component {
+	state = { hasError: false, error: null, info: null };
+
+	componentDidCatch(error, info) {
+		this.setState({ error, info, hasError: true });
+		const errorMessage = `\n\t${error?.message || ""}${(info?.componentStack || "").split("\n").slice(0, 20).join("\n")}`;
+		console.error(`%c[${this.props.plugin}] %cthrew an exception at %c[${this.props.id}]\n`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
+	}
+
+	renderErrorBoundary() {
+		return (
+			React.createElement('div', { style: { background: "#292c2c", padding: "20px", borderRadius: "10px" }, }, React.createElement('b', { style: { color: "#e0e1e5" }, }, "An error has occured while rendering ", React.createElement('span', { style: { color: "orange" }, }, this.props.id)))
+		);
+	}
+
+	renderFallback() {
+		if (React.isValidElement(this.props.fallback)) {
+			if (this.props.passMetaProps)
+				this.props.fallback.props = {
+					id: this.props.id,
+					plugin: this.props.plugin,
+					...this.props.fallback.props
+				};
+			return this.props.fallback;
+		}
+		return (
+			React.createElement(this.props.fallback, {
+				id: this.props.id,
+				plugin: this.props.plugin,
+			})
+		);
+	}
+
+	render() {
+		if (!this.state.hasError) return this.props.children;
+		return this.props.fallback ? this.renderFallback() : this.renderErrorBoundary();
+	}
+}
+
+function copy(data) {
+	DiscordNative.clipboard.copy(data);
+}
+
+function getNestedProp(obj, path) {
+	return path.split(".").reduce(function(ob, prop) {
+		return ob && ob[prop];
+	}, obj);
 }
 
 const UserStore = getModule(m => m._dispatchToken && m.getName() === "UserStore");
@@ -226,12 +303,25 @@ const Logger = {
 		console.error(`%c[${config.info.name}] %c Error at %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
 	},
 	log(...args) {
-		this.p(console.error, ...args);
+		this.p(console.log, ...args);
 	},
 	p(target, ...args) {
 		target(`%c[${config.info.name}]`, "color: #3a71c1;font-weight: bold;", ...args);
 	}
 };
+
+const ErrorIcon = props => (
+	React.createElement('div', { ...props, }, React.createElement('svg', {
+		xmlns: "http://www.w3.org/2000/svg",
+		viewBox: "0 0 24 24",
+		fill: "red",
+		width: "18",
+		height: "18",
+	}, React.createElement('path', {
+		d: "M0 0h24v24H0z",
+		fill: "none",
+	}), React.createElement('path', { d: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z", })))
+);
 
 const ProfileTypeEnum = getModule(Filters.byProps("POPOUT", "SETTINGS"), { searchExports: true }) || {
 	"POPOUT": 0,
@@ -241,17 +331,11 @@ const ProfileTypeEnum = getModule(Filters.byProps("POPOUT", "SETTINGS"), { searc
 	"CARD": 4
 };
 
-const UserBannerMask = getModuleAndKey(Filters.byStrings("overrideAvatarDecorationURL"), { searchExports: true });
+const UserBannerMask = getModuleAndKey(Filters.byStrings("overrideAvatarDecoration"), { searchExports: true });
 
 const SelectedGuildStore = getModule(m => m._dispatchToken && m.getName() === "SelectedGuildStore");
 
-const ImageModal = getModule(Filters.byStrings("original", "maxHeight", "maxWidth", "noreferrer noopener"), { searchExports: true });
-
-const RenderLinkComponent = getModule(m => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false });
-
 const Color = getModule(Filters.byProps("Color", "hex", "hsl"), { searchExports: false });
-
-const TheBigBoyBundle = getModule(Filters.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
 
 function showToast(content, type) {
 	UI.showToast(`[${config.info.name}] ${content}`, { type });
@@ -281,64 +365,25 @@ const ColorModalComponent = ({ color }) => (
 
 const ModalCarousel = getModule(Filters.byPrototypeFields("navigateTo", "preloadImage"), { searchExports: false });
 
-const ModalRoot = getModule(Filters.byStrings("onAnimationEnd"), { searchExports: true });
-
-const DisplayCarouselComponent = ({ props, items }) => {
+const DisplayCarouselComponent = ({ items }) => {
 	return (
-		React.createElement(ModalRoot, {
-			...props,
-			className: "VPP-carousel carouselModal-1eUFoq zoomedCarouselModalRoot-beLNhM",
-		}, React.createElement(ModalCarousel, {
+		React.createElement(ModalCarousel, {
 			startWith: 0,
 			className: "modalCarouselWrapper-YK1MX4",
 			items: items.map(item => ({ "component": item })),
-		}))
+		})
 	);
 };
 
-class ErrorBoundary extends React.Component {
-	state = { hasError: false, error: null, info: null };
-
-	componentDidCatch(error, info) {
-		this.setState({ error, info, hasError: true });
-		const errorMessage = `\n\t${error?.message || ""}${(info?.componentStack || "").split("\n").slice(0, 20).join("\n")}`;
-		console.error(`%c[${this.props.plugin}] %cthrew an exception at %c[${this.props.id}]\n`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
-	}
-
-	render() {
-		if (this.state.hasError) {
-			if (this.props.fallback) return this.props.fallback;
-			else {
-				return (
-					React.createElement('div', { style: { background: "#292c2c", padding: "20px", borderRadius: "10px" }, }, React.createElement('b', { style: { color: "#e0e1e5" }, }, "An error has occured while rendering ", React.createElement('span', { style: { color: "orange" }, }, this.props.id)))
-				);
-			}
-		} else return this.props.children;
-	}
-}
-
-const ErrorComponent = props => (
-	React.createElement('div', { ...props, }, React.createElement('svg', {
-		xmlns: "http://www.w3.org/2000/svg",
-		viewBox: "0 0 24 24",
-		fill: "red",
-		width: "18",
-		height: "18",
-	}, React.createElement('path', {
-		d: "M0 0h24v24H0z",
-		fill: "none",
-	}), React.createElement('path', { d: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z", })))
-);
-
 function useSettings(key) {
-	const target = Settings$1.get(key);
+	const target = Settings.get(key);
 	const [state, setState] = React.useState(target);
 	React.useEffect(() => {
 		function settingsChangeHandler() {
-			const newVal = Settings$1.get(key);
+			const newVal = Settings.get(key);
 			setState(newVal);
 		}
-		return Settings$1.addUpdateListener(settingsChangeHandler);
+		return Settings.on(settingsChangeHandler);
 	}, []);
 
 	return state;
@@ -498,11 +543,11 @@ function shouldChangelog() {
 	}
 }
 
-const getImageModalComponent = (Url, props) => (
+const getImageModalComponent = (url, rest) => (
 	React.createElement(ImageModal, {
-		...props,
-		src: Url,
-		original: Url,
+		...rest,
+		src: url,
+		original: url,
 		renderLinkComponent: p => React.createElement(RenderLinkComponent, { ...p, }),
 	})
 );
@@ -514,12 +559,20 @@ function openCarousel(items) {
 		React.createElement(ErrorBoundary, {
 			id: "DisplayCarouselComponent",
 			plugin: config.info.name,
-			closeModal: props.onClose,
-		}, React.createElement(DisplayCarouselComponent, {
-			props: props,
-			items: items,
-		}))
+		}, React.createElement(ModalRoot, {
+			...props,
+			className: "VPP-carousel carouselModal-1eUFoq zoomedCarouselModalRoot-beLNhM",
+		}, React.createElement(DisplayCarouselComponent, { items: items, })))
 	));
+}
+
+function closeModal() {
+	const target = document.querySelector(".VPP-container");
+	if (!target) return;
+	const instance = getInternalInstance(target);
+	if (!instance) return;
+	const closeObj = findInTree(instance, a => a?.onClose, { walkable: ["return", "pendingProps"] });
+	closeObj && closeObj.onClose && typeof closeObj.onClose === "function" && closeObj.onClose();
 }
 
 function getButtonClasses(user, profileType, banner) {
@@ -535,7 +588,7 @@ function getButtonClasses(user, profileType, banner) {
 
 class ViewProfilePicture {
 	constructor() {
-		Settings$1.init(config.settings);
+		Settings.init(config.settings);
 	}
 
 	clickHandler(user, bannerObject, isUserPopout) {
@@ -544,36 +597,38 @@ class ViewProfilePicture {
 		const avatarURL = user.getAvatarURL(guildId, IMG_WIDTH, true);
 		const AvatarImageComponent = getImageModalComponent(avatarURL, { width: IMG_WIDTH, height: IMG_WIDTH });
 		const BannerImageComponent = backgroundImage ? getImageModalComponent(`${backgroundImage.match(/(?<=url\()(.+?)(?=\?|\))/)?.[0]}?size=${IMG_WIDTH}`, { width: IMG_WIDTH }) : React.createElement(ColorModalComponent, { color: Color ? Color(backgroundColor).hex() : backgroundColor, });
+		closeModal();
 		openCarousel([AvatarImageComponent, BannerImageComponent]);
 	}
 
 	patchUserBannerMask() {
+		if (!UserBannerMask) return Logger.patch("patchUserBannerMask");
+
 		const { module, key } = UserBannerMask;
-		if (module && key)
-			Patcher.after(module, key, (_, [{ user, profileType }], returnValue) => {
-				if (profileType === ProfileTypeEnum.SETTINGS) return;
 
-				returnValue.props.className += " VPP-container";
+		Patcher.after(module, key, (_, [{ user, profileType }], returnValue) => {
+			if (profileType === ProfileTypeEnum.SETTINGS) return;
 
-				const bannerObject = getNestedProp(returnValue, "props.children.1.props.children.props.style");
-				const children = getNestedProp(returnValue, "props.children.1.props.children.props.children");
+			returnValue.props.className += " VPP-container";
 
-				const buttonClasses = getButtonClasses(user, profileType, bannerObject?.backgroundImage);
+			const bannerObject = getNestedProp(returnValue, "props.children.1.props.children.props.style");
+			const children = getNestedProp(returnValue, "props.children.1.props.children.props.children");
 
-				if (Array.isArray(children) && bannerObject) {
-					children.push(
-						React.createElement(ErrorBoundary, {
-							id: "ViewProfilePictureButtonComponent",
-							plugin: config.info.name,
-							fallback: React.createElement(ErrorComponent, { className: buttonClasses, }),
-						}, React.createElement(ViewProfilePictureButtonComponent, {
-							className: buttonClasses,
-							onClick: () => this.clickHandler(user, bannerObject, ProfileTypeEnum.POPOUT === profileType),
-						}))
-					);
-				}
-			});
-		else Logger.patch("patchUserBannerMask");
+			const buttonClasses = getButtonClasses(user, profileType, bannerObject?.backgroundImage);
+
+			if (Array.isArray(children) && bannerObject) {
+				children.push(
+					React.createElement(ErrorBoundary, {
+						id: "ViewProfilePictureButtonComponent",
+						plugin: config.info.name,
+						fallback: React.createElement(ErrorIcon, { className: buttonClasses, }),
+					}, React.createElement(ViewProfilePictureButtonComponent, {
+						className: buttonClasses,
+						onClick: () => this.clickHandler(user, bannerObject, ProfileTypeEnum.POPOUT === profileType),
+					}))
+				);
+			}
+		});
 	}
 
 	start() {
@@ -595,8 +650,8 @@ class ViewProfilePicture {
 			React.createElement(SettingComponent, {
 				description: "Show on hover",
 				note: "By default hide ViewProfilePicture button and show on hover.",
-				value: Settings$1.get("showOnHover"),
-				onChange: e => Settings$1.set("showOnHover", e),
+				value: Settings.get("showOnHover"),
+				onChange: e => Settings.set("showOnHover", e),
 			})
 		);
 	}
