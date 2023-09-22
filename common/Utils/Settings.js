@@ -1,34 +1,33 @@
 import { Data } from "@Api";
+import ChangeEmitter from "@Utils/ChangeEmitter";
 
-export default {
-	_listeners: [],
-	_settings: {},
-	_commit() {
-		Data.save("settings", this._settings);
-		this._notify();
-	},
-	_notify() {
-		this._listeners.forEach(listener => listener?.());
-	},
+export default new (class Settings extends ChangeEmitter {
+	constructor() {
+		super();
+	}
+
+	init(defaultSettings) {
+		this.settings = Data.load("settings") || defaultSettings;
+	}
+
 	get(key) {
-		return this._settings[key];
-	},
+		return this.settings[key];
+	}
+
 	set(key, val) {
-		this._settings[key] = val;
-		this._commit();
-	},
+		this.settings[key] = val;
+		this.commit();
+	}
 	setMultiple(newSettings) {
-		this._settings = {
-			...this._settings,
+		this.settings = {
+			...this.settings,
 			...newSettings
 		};
-		this._commit();
-	},
-	init(defaultSettings) {
-		this._settings = Data.load("settings") || defaultSettings;
-	},
-	addUpdateListener(listener) {
-		this._listeners.push(listener);
-		return () => this._listeners.splice(this._listeners.length - 1, 1);
+		this.commit();
 	}
-};
+
+	commit() {
+		Data.save("settings", this.settings);
+		this.emit();
+	}
+})();

@@ -10,7 +10,7 @@ export function useSettings(key) {
 			if (newVal !== state);
 			setState(newVal);
 		}
-		return Settings.addUpdateListener(settingsChangeHandler);
+		return Settings.on(settingsChangeHandler);
 	}, []);
 
 	return state;

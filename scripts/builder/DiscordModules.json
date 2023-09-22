@@ -129,7 +129,7 @@
 			"options": "{ searchExports: false }"
 		},
 		"UserBannerMask": {
-			"filter": "Filters.byStrings(\"overrideAvatarDecorationURL\")",
+			"filter": "Filters.byStrings(\"overrideAvatarDecoration\")",
 			"options": "{ searchExports: true }"
 		}
 	},

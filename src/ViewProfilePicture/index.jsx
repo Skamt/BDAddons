@@ -1,5 +1,5 @@
 import css from "./styles";
-import { Data, DOM, React, Patcher } from "@Api";
+import { getInternalInstance, findInTree, Data, DOM, React, Patcher } from "@Api";
 import Settings from "@Utils/Settings";
 import { getNestedProp } from "@Utils";
 import { isSelf } from "@Utils/User";
@@ -44,6 +44,15 @@ function openCarousel(items) {
 	));
 }
 
+function closeModal() {
+	const target = document.querySelector(".VPP-container");
+	if (!target) return;
+	const instance = getInternalInstance(target);
+	if (!instance) return;
+	const closeObj = findInTree(instance, a => a?.onClose, { walkable: ["return", "pendingProps"] });
+	closeObj && closeObj.onClose && typeof closeObj.onClose === "function" && closeObj.onClose();
+}
+
 function getButtonClasses(user, profileType, banner) {
 	let res = "VPP-Button";
 	if (profileType === ProfileTypeEnum.MODAL) res += " VPP-profile";
@@ -66,37 +75,39 @@ export default class ViewProfilePicture {
 		const avatarURL = user.getAvatarURL(guildId, IMG_WIDTH, true);
 		const AvatarImageComponent = getImageModalComponent(avatarURL, { width: IMG_WIDTH, height: IMG_WIDTH });
 		const BannerImageComponent = backgroundImage ? getImageModalComponent(`${backgroundImage.match(/(?<=url\()(.+?)(?=\?|\))/)?.[0]}?size=${IMG_WIDTH}`, { width: IMG_WIDTH }) : <ColorModalComponent color={Color ? Color(backgroundColor).hex() : backgroundColor} />;
+		closeModal();
 		openCarousel([AvatarImageComponent, BannerImageComponent]);
 	}
 
 	patchUserBannerMask() {
+		if (!UserBannerMask) return Logger.patch("patchUserBannerMask");
+
 		const { module, key } = UserBannerMask;
-		if (module && key)
-			Patcher.after(module, key, (_, [{ user, profileType }], returnValue) => {
-				if (profileType === ProfileTypeEnum.SETTINGS) return;
 
-				returnValue.props.className += " VPP-container";
+		Patcher.after(module, key, (_, [{ user, profileType }], returnValue) => {
+			if (profileType === ProfileTypeEnum.SETTINGS) return;
 
-				const bannerObject = getNestedProp(returnValue, "props.children.1.props.children.props.style");
-				const children = getNestedProp(returnValue, "props.children.1.props.children.props.children");
+			returnValue.props.className += " VPP-container";
 
-				const buttonClasses = getButtonClasses(user, profileType, bannerObject?.backgroundImage);
+			const bannerObject = getNestedProp(returnValue, "props.children.1.props.children.props.style");
+			const children = getNestedProp(returnValue, "props.children.1.props.children.props.children");
 
-				if (Array.isArray(children) && bannerObject) {
-					children.push(
-						<ErrorBoundary
-							id="ViewProfilePictureButtonComponent"
-							plugin={config.info.name}
-							fallback={<ErrorIcon className={buttonClasses} />}>
-							<ViewProfilePictureButtonComponent
-								className={buttonClasses}
-								onClick={() => this.clickHandler(user, bannerObject, ProfileTypeEnum.POPOUT === profileType)}
-							/>
-						</ErrorBoundary>
-					);
-				}
-			});
-		else Logger.patch("patchUserBannerMask");
+			const buttonClasses = getButtonClasses(user, profileType, bannerObject?.backgroundImage);
+
+			if (Array.isArray(children) && bannerObject) {
+				children.push(
+					<ErrorBoundary
+						id="ViewProfilePictureButtonComponent"
+						plugin={config.info.name}
+						fallback={<ErrorIcon className={buttonClasses} />}>
+						<ViewProfilePictureButtonComponent
+							className={buttonClasses}
+							onClick={() => this.clickHandler(user, bannerObject, ProfileTypeEnum.POPOUT === profileType)}
+						/>
+					</ErrorBoundary>
+				);
+			}
+		});
 	}
 
 	start() {
