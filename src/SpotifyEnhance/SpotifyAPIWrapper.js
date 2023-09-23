@@ -65,6 +65,7 @@ export default new Proxy(
 				case "pause":
 				case "shuffle":
 				case "repeat":
+				case "seek":
 				case "next":
 				case "previous":
 				case "volume":

@@ -6,6 +6,7 @@ import RenderLinkComponent from "@Modules/RenderLinkComponent";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 import ErrorBoundary from "@Components/ErrorBoundary";
 
+
 export const openModal = children => {
 	TheBigBoyBundle.openModal(props => {
 		return (

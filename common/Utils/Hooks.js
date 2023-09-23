@@ -28,3 +28,12 @@ export function useStateFromStore(store, fn) {
 
 	return val;
 }
+
+export function useStateBasedProp(prop) {
+	const [state, setState] = React.useState(prop);
+	React.useEffect(() => {
+		setState(prop);
+	}, [prop]);
+
+	return [state, setState];
+}

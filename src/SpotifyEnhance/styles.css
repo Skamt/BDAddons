@@ -124,3 +124,136 @@
 .spotify-activity-controls > :first-child {
 	flex: 1;
 }
+
+
+/* Spotify Player */
+.spotify-player-container{
+	padding:10px 10px;
+	
+	display:flex;
+	flex-direction:column;
+}
+
+.spotify-player-media{
+	color:white;
+	font-size:.9rem;
+	
+	display:grid;
+	column-gap:10px;
+	grid-template-columns:64px 1fr;
+	grid-template-rows:repeat(3, minmax(0,1fr));
+	align-items:center;
+	grid-template-areas:
+	"banner title"
+	"banner artist"
+	"banner album";
+}
+
+.spotify-player-banner{
+	grid-area:banner;
+	
+	width:64px;
+	height:64px;
+	background:var(--banner) center/cover no-repeat;
+	border-radius:5px;
+}
+
+.spotify-player-title{
+	grid-area:title;
+	font-weight:bold;
+	--text-link:#fff;
+	
+	white-space:nowrap;
+	overflow:hidden;
+	text-overflow:ellipsis;
+}
+
+.spotify-player-artist{
+	grid-area:artist;
+	font-size:.8rem;
+	--text-link:var(--text-sub);
+	
+	white-space:nowrap;
+	overflow:hidden;
+	text-overflow:ellipsis;
+}
+
+.spotify-player-album{
+	grid-area:album;
+	--text-link:#fff;
+	
+	white-space:nowrap;
+	overflow:hidden;
+	text-overflow:ellipsis;
+}
+
+.spotify-player-controls{
+	display: flex;
+	justify-content:space-between;
+	width:100%;
+	overflow:hidden;
+}
+
+.spotify-player-controls button > div {
+	font-size: 0;
+	line-height: 1;
+}
+
+.spotify-player-controls svg {
+	width: 16px;
+	height: 16px;
+}
+
+.spotify-player-controls-btn {
+	padding: 3px  !important;
+	color:#ccc;
+	transition:all 100ms linear;
+	border-radius:5px;
+}
+
+.spotify-player-controls-btn:hover {
+	background:#ccc3;
+	color:fff;
+	scale:1.1;
+}
+
+.spotify-player-controls-btn.enabled{
+	color:var(--spotify-green);
+}
+
+.spotify-player-timeline{
+	margin-bottom:10px;
+	color:white;
+	display:flex;
+	flex-wrap:wrap;
+}
+
+.spotify-player-timeline-progress{
+	flex:1;
+}
+
+.spotify-player-timeline-trackbar{
+	margin-top:-8px;
+	margin-bottom:10px;
+}
+
+.spotify-player-timeline:hover .spotify-player-timeline-trackbar-grabber{
+	opacity:1;
+}
+
+.spotify-player-timeline-trackbar-grabber{
+	opacity:0
+}
+
+.spotify-player-timeline-trackbar-bar{
+	background:hsl(0deg 0% 100% / 30%) !important;
+}
+
+.spotify-player-timeline-trackbar-bar > div{
+	background:#fff !important;
+	border-radius: 4px;
+}
+
+.spotify-player-timeline:hover .spotify-player-timeline-trackbar-bar > div{
+	background:var(--spotify-green)!important;
+}

@@ -22,3 +22,4 @@ export const useEffect = Api.React.useEffect;
 
 // Utils
 export const findInTree = Api.Utils.findInTree;
+export const debounce = Api.Utils.debounce;

@@ -1,7 +1,9 @@
 import { React } from "@Api";
 
 function formatSecondToTime(time) {
-	return [Math.floor(time / 3600), String(Math.floor(time / 60) % 60), String(Math.floor(time) % 60).padStart(2, "0")].filter(Boolean).join(":");
+	return 
+
+	[Math.floor(time / 3600), String(Math.floor(time / 60) % 60), String(Math.floor(time) % 60).padStart(2, "0")].filter(Boolean).join(":");
 }
 
 function parseTime(start, end, currentTime) {
@@ -86,6 +88,7 @@ function TimerProgress({ maxTimeInSeconds, percentage, onSeek }) {
 		setTimePreview(0);
 		setTimePreviewPosition(0);
 	};
+	
 
 	return (
 		<div

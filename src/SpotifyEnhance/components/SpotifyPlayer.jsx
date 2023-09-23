@@ -1,5 +1,6 @@
-import { React } from "@Api";
+import { React, debounce } from "@Api";
 import Toast from "@Utils/Toast";
+import {useStateBasedProp} from "@Utils/Hooks";
 import SpotifyWrapper from "../SpotifyWrapper";
 
 import Button from "@Components/Button";
@@ -16,7 +17,12 @@ import PreviousIcon from "@Components/PreviousIcon";
 import RepeatOneIcon from "@Components/RepeatOneIcon";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 
-const { Anchor } = TheBigBoyBundle;
+const { Slider, Anchor } = TheBigBoyBundle;
+
+function formatMsToTime(ms) {
+	const time = new Date(ms);
+	return [time.getUTCHours(), String(time.getUTCMinutes()), String(time.getUTCSeconds()).padStart(2, "0")].filter(Boolean).join(":");
+}
 
 function SpotifyPlayerButton({ value, onClick, className, enabled, ...rest }) {
 	return (
@@ -45,10 +51,16 @@ export default React.memo(function SpotifyPlayer(props) {
 	const [deviceState, playerState] = useSpotifyState();
 	if (!deviceState) return;
 
+	const seek = ms => SpotifyWrapper.Player.seek(ms);
+
 	return (
 		<div className="spotify-player-container">
 			<TrackMediaDetails playerState={playerState} />
-			<TrackTimeLine playerState={playerState} />
+
+			<TrackTimeLine
+				playerState={playerState}
+				onSeek={seek}
+			/>
 			<SpotifyPlayerControls playerState={playerState} />
 		</div>
 	);
@@ -57,7 +69,7 @@ export default React.memo(function SpotifyPlayer(props) {
 function SpotifyPlayerControls({ playerState }) {
 	if (!playerState) return;
 
-	const shuffle = () => SpotifyWrapper.Player.shuffle();
+	const shuffle = () => SpotifyWrapper.Player.shuffle(!playerState.shuffle);
 	const previous = () => SpotifyWrapper.Player.previous();
 	const next = () => SpotifyWrapper.Player.next();
 	const share = () => SpotifyWrapper.Utils.share(playerState.trackUrl);
@@ -206,37 +218,46 @@ function TrackBanner({ banner }) {
 	);
 }
 
-function TrackTimeLine({ playerState }) {
+function TrackTimeLine({ playerState, onSeek }) {
+	const { trackDuration: duration, isPlaying, progress } = playerState || {};
+
+	const [position, setPosition] = useStateBasedProp(progress);
+	const sliderRef = React.useRef();
+
+	React.useEffect(() => {
+		if (!isPlaying) return;
+		const interval = setInterval(() => {
+			if (sliderRef.current?.state?.active) return;
+			setPosition(p => p + 1000);
+		}, 1000);
+
+		return () => clearInterval(interval);
+	}, [isPlaying]);
+
 	const rangeChangeHandler = e => {
-		const val = e.value;
-
-	};
-
-	const { trackDuration, progress } = playerState;
-	const min = Math.floor(trackDuration / 1000 / 60);
-	const sec = Math.floor((trackDuration / 1000) % 60);
-
-	const progressMin = Math.floor(progress / 1000 / 60);
-	const progressSec = Math.floor((progress / 1000) % 60);
+		const pos = Math.floor(e);
+		if (!sliderRef.current?.state?.active) return;
+		setPosition(pos);
+		onSeek(pos);
+		console.log(pos)
+	}
 
 	return (
 		<div className="spotify-player-timeline">
-			<div className="spotify-player-timeline-trackbar">
-				<div className="spotify-player-timeline-bubble"></div>
-				<input
-					name="foo"
-					type="range"
-					onChange={rangeChangeHandler}
-					min={1}
-					max={100}
-				/>
-			</div>
-			<div className="spotify-player-timeline-progress">
-				{progressMin}:{progressSec}
-			</div>
-			<div className="spotify-player-timeline-duration">
-				{min}:{sec}
-			</div>
+			<Slider
+				className="spotify-player-timeline-trackbar"
+				mini={true}
+				minValue={0}
+				maxValue={duration}
+				initialValue={position}
+				onValueChange={rangeChangeHandler}
+				onValueRender={formatMsToTime}
+				ref={sliderRef}
+				grabberClassName="spotify-player-timeline-trackbar-grabber"
+				barClassName="spotify-player-timeline-trackbar-bar"
+			/>
+			<div className="spotify-player-timeline-progress">{formatMsToTime(position)}</div>
+			<div className="spotify-player-timeline-duration">{formatMsToTime(duration)}</div>
 		</div>
 	);
 }
