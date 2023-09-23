@@ -3,13 +3,8 @@ import SpotifyStore from "@Stores/SpotifyStore";
 import ChangeEmitter from "@Utils/ChangeEmitter";
 
 function getSocketConstructor() {
-	const { accounts } = SpotifyStore.__getLocalVars() || { accounts: {} };
-	const accountsArr = Object.values(accounts);
-	if (!accountsArr) return;
-	const socket = accountsArr[0];
-	if (!socket) return;
-
-	return socket.constructor;
+	const playableComputerDevices = SpotifyStore.getPlayableComputerDevices() || [];
+	return playableComputerDevices[0]?.socket?.constructor;
 }
 
 const getSocket = (() => {
