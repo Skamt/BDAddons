@@ -6,20 +6,22 @@ import Settings from "@Utils/Settings";
 
 function copyColor(type, color) {
 	let c = color;
-	switch (type) {
-		case "hex":
-			c = Color(color).hex();
-			break;
-		case "rgba":
-			c = Color(color).css("rgba");
-			break;
-		case "hsla":
-			c = Color(color).css("hsla");
-			break;
+	try {
+		switch (type) {
+			case "hex":
+				c = Color(color).hex();
+				break;
+			case "rgba":
+				c = Color(color).css("rgba");
+				break;
+			case "hsla":
+				c = Color(color).css("hsla");
+				break;
+		}
+	} catch {
+		copy(c);
+		Toast.success(`${c} Copied!`);
 	}
-
-	copy(c);
-	Toast.success(`${c} Copied!`);
 }
 
 export default ({ color }) => (
