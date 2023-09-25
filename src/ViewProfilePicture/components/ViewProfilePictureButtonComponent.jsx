@@ -13,8 +13,7 @@ export default props => {
 				<div
 					{...tooltipProps}
 					{...props}
-					className={`${props.className} ${showOnHover && "VPP-hover"}`}
-					>
+					className={`${props.className} ${showOnHover && "VPP-hover"}`}>
 					<svg
 						aria-label={tooltipProps["aria-label"]}
 						aria-hidden="false"

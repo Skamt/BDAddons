@@ -11,7 +11,6 @@ import UserBannerMask from "@Patch/UserBannerMask";
 import SelectedGuildStore from "@Stores/SelectedGuildStore";
 import ImageModal from "@Modules/ImageModal";
 import RenderLinkComponent from "@Modules/RenderLinkComponent";
-import Color from "@Modules/Color";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 import ColorModalComponent from "./components/ColorModalComponent";
 import DisplayCarouselComponent from "./components/DisplayCarouselComponent";
@@ -74,7 +73,7 @@ export default class ViewProfilePicture {
 		const guildId = isUserPopout ? SelectedGuildStore.getGuildId() : "";
 		const avatarURL = user.getAvatarURL(guildId, IMG_WIDTH, true);
 		const AvatarImageComponent = getImageModalComponent(avatarURL, { width: IMG_WIDTH, height: IMG_WIDTH });
-		const BannerImageComponent = backgroundImage ? getImageModalComponent(`${backgroundImage.match(/(?<=url\()(.+?)(?=\?|\))/)?.[0]}?size=${IMG_WIDTH}`, { width: IMG_WIDTH }) : <ColorModalComponent color={Color ? Color(backgroundColor).hex() : backgroundColor} />;
+		const BannerImageComponent = backgroundImage ? getImageModalComponent(`${backgroundImage.match(/(?<=url\()(.+?)(?=\?|\))/)?.[0]}?size=${IMG_WIDTH}`, { width: IMG_WIDTH }) : <ColorModalComponent color={backgroundColor} />;
 		closeModal();
 		openCarousel([AvatarImageComponent, BannerImageComponent]);
 	}
@@ -125,13 +124,6 @@ export default class ViewProfilePicture {
 	}
 
 	getSettingsPanel() {
-		return (
-			<SettingComponent
-				description="Show on hover"
-				note="By default hide ViewProfilePicture button and show on hover."
-				value={Settings.get("showOnHover")}
-				onChange={e => Settings.set("showOnHover", e)}
-			/>
-		);
+		return <SettingComponent />;
 	}
 }

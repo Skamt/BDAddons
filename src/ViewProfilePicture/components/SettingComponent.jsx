@@ -1,18 +1,23 @@
 import { React } from "@Api";
 import Switch from "@Components/Switch";
+import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
+import Heading from "@Modules/Heading";
+import Settings from "@Utils/Settings";
 
-export default props => {
-	const [enabled, setEnabled] = React.useState(props.value);
+function ShowOnHoverSwitch() {
+	const [enabled, setEnabled] = React.useState(Settings.get("showOnHover"));
 	return (
 		<Switch
 			value={enabled}
-			note={props.note}
+			note="By default hide ViewProfilePicture button and show on hover."
 			hideBorder={true}
 			onChange={e => {
-				props.onChange(e);
+				Settings.set("showOnHover", e);
 				setEnabled(e);
 			}}>
-			{props.description}
+			Show on hover
 		</Switch>
 	);
-};
+}
+
+export default () => <ShowOnHoverSwitch />;

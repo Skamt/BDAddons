@@ -1,7 +1,6 @@
 import { React } from "@Api";
 import ModalCarousel from "@Modules/ModalCarousel";
 
-
 export default ({ items }) => {
 	return (
 		<ModalCarousel
