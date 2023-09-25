@@ -22,33 +22,39 @@ const config = {
 		"showOnHover": false
 	},
 	"changelog": [{
-		"title": "Bug fix",
-		"type": "fixed",
-		"items": ["View Profile Picture button is back."]
-	}]
+			"title": "Bug fix",
+			"type": "fixed",
+			"items": ["View Profile Picture button is back."]
+		},
+		{
+			"title": "Added",
+			"type": "added",
+			"items": ["Banner color can be copied in multiple formats."]
+		}
+	]
 }
 
 const css = `
 /* Warning circle in popouts of users who left server overlaps VPP button */
-svg:has(path[d="M10 0C4.486 0 0 4.486 0 10C0 15.515 4.486 20 10 20C15.514 20 20 15.515 20 10C20 4.486 15.514 0 10 0ZM9 4H11V11H9V4ZM10 15.25C9.31 15.25 8.75 14.691 8.75 14C8.75 13.31 9.31 12.75 10 12.75C10.69 12.75 11.25 13.31 11.25 14C11.25 14.691 10.69 15.25 10 15.25Z"]){
+svg:has(path[d="M10 0C4.486 0 0 4.486 0 10C0 15.515 4.486 20 10 20C15.514 20 20 15.515 20 10C20 4.486 15.514 0 10 0ZM9 4H11V11H9V4ZM10 15.25C9.31 15.25 8.75 14.691 8.75 14C8.75 13.31 9.31 12.75 10 12.75C10.69 12.75 11.25 13.31 11.25 14C11.25 14.691 10.69 15.25 10 15.25Z"]) {
 	top: 75px;
 }
 
 /* View Profile Button */
-.VPP-Button{
-    background-color: hsla(0,calc(var(--saturation-factor, 1)*0%),0%,.3);
-    cursor: pointer;
-    position: absolute;
-    display: flex;
-    padding: 5px;
-    border-radius: 50%;
-    top: 10px;
-    color:#fff;
+.VPP-Button {
+	background-color: hsla(0, calc(var(--saturation-factor, 1) * 0%), 0%, 0.3);
+	cursor: pointer;
+	position: absolute;
+	display: flex;
+	padding: 5px;
+	border-radius: 50%;
+	top: 10px;
+	color: #fff;
 }
 
 /* Popout */
-.VPP-right{
-    right:12px;
+.VPP-right {
+	right: 12px;
 }
 
 .VPP-left {
@@ -64,11 +70,11 @@ svg:has(path[d="M10 0C4.486 0 0 4.486 0 10C0 15.515 4.486 20 10 20C15.514 20 20 
 	top: 14px;
 }
 
-.VPP-profile.VPP-right{
-    right:16px;
+.VPP-profile.VPP-right {
+	right: 16px;
 }
 
-.VPP-profile.VPP-self{
+.VPP-profile.VPP-self {
 	right: 58px;
 }
 
@@ -78,7 +84,7 @@ svg:has(path[d="M10 0C4.486 0 0 4.486 0 10C0 15.515 4.486 20 10 20C15.514 20 20 
 
 /* Bigger icon on profile */
 .VPP-settings svg,
-.VPP-profile svg{
+.VPP-profile svg {
 	height: 24px;
 	width: 24px;
 }
@@ -120,30 +126,57 @@ svg:has(path[d="M10 0C4.486 0 0 4.486 0 10C0 15.515 4.486 20 10 20C15.514 20 20 
 }
 
 /* Copy color button */
-.copyColorBtn{
-	white-space: nowrap;
-    position: absolute;
-    top: 100%;
-    font-size: 14px;
-    font-weight: 500;
-    color: #fff;
-    line-height: 30px;
-    transition: opacity .15s ease;
-    opacity: .5;
+.VPP-copy-color-container {
+	position: absolute;
+	top: 100%;
+	display: flex;
+	cursor: pointer;
+	gap: 5px;
+	
 }
 
-.copyColorBtn:hover{
+.VPP-copy-color-label,
+.VPP-copy-color {
+	font-size: 14px;
+	font-weight: 500;
+	color: #fff;
+	line-height: 30px;
+	transition: opacity 0.15s ease;
+	opacity: 0.5;
+	text-transform: uppercase;
+}
+
+.VPP-copy-color:hover {
 	opacity: 1;
-    text-decoration: underline;
+	text-decoration: underline;
+}
+
+.VPP-separator {
+	line-height: 30px;
+	opacity: 0.5;
+	color: #fff;
+}
+
+.VPP-copy-color-label {
+	text-transform: capitalize;
 }
 
 .VPP-hover {
-    opacity:0;
+	opacity: 0;
 }
 
-.VPP-container:hover .VPP-hover{
-    opacity:1;
-}`;
+.VPP-container:hover .VPP-hover {
+	opacity: 1;
+}
+
+.VPP-colorFormat-options {
+	display: flex;
+}
+
+.VPP-colorFormat-options > div {
+	flex: 1;
+}
+`;
 
 const Api = new BdApi(config.info.name);
 
@@ -335,8 +368,6 @@ const UserBannerMask = getModuleAndKey(Filters.byStrings("overrideAvatarDecorati
 
 const SelectedGuildStore = getModule(m => m._dispatchToken && m.getName() === "SelectedGuildStore");
 
-const Color = getModule(Filters.byProps("Color", "hex", "hsl"), { searchExports: false });
-
 function showToast(content, type) {
 	UI.showToast(`[${config.info.name}] ${content}`, { type });
 }
@@ -348,19 +379,48 @@ const Toast = {
 	error(content) { showToast(content, "error"); }
 };
 
+const Color = getModule(Filters.byProps("Color", "hex", "hsl"), { searchExports: false });
+
+function copyColor(type, color) {
+	let c = color;
+	try {
+		switch (type) {
+			case "hex":
+				c = Color(color).hex();
+				break;
+			case "rgba":
+				c = Color(color).css("rgba");
+				break;
+			case "hsla":
+				c = Color(color).css("hsla");
+				break;
+		}
+	} catch {
+		copy(c);
+		Toast.success(`${c} Copied!`);
+	}
+}
+
 const ColorModalComponent = ({ color }) => (
 	React.createElement('div', {
 		className: "VPP-NoBanner",
 		style: { backgroundColor: color },
-	}, React.createElement('a', {
-			className: "copyColorBtn",
-			onClick: () => {
-				copy(color);
-				Toast.success(`${color} Copied!`);
-			},
-		}, "Copy Color"
+	}, React.createElement('div', { className: "VPP-copy-color-container", }, React.createElement('a', { className: "VPP-copy-color-label", }, "Copy Color:"), React.createElement('a', {
+			className: "VPP-copy-color",
+			onClick: () => copyColor("hex", color),
+		}, "hex"
 
-	))
+	), React.createElement('span', { className: "VPP-separator", }, "|"), React.createElement('a', {
+			className: "VPP-copy-color",
+			onClick: () => copyColor("rgba", color),
+		}, "rgba"
+
+	), React.createElement('span', { className: "VPP-separator", }, "|"), React.createElement('a', {
+			className: "VPP-copy-color",
+			onClick: () => copyColor("hsla", color),
+		}, "hsla"
+
+	)))
 );
 
 const ModalCarousel = getModule(Filters.byPrototypeFields("navigateTo", "preloadImage"), { searchExports: false });
@@ -399,23 +459,20 @@ const ViewProfilePictureButtonComponent = props => {
 			position: "top",
 		}, tooltipProps => (
 			React.createElement('div', {
-					...tooltipProps,
-					...props,
-					className: `${props.className} ${showOnHover && "VPP-hover"}`,
-				}
-
-				, React.createElement('svg', {
-					'aria-label': tooltipProps["aria-label"],
-					'aria-hidden': "false",
-					role: "img",
-					width: "18",
-					height: "18",
-					viewBox: "-50 -50 484 484",
-				}, React.createElement('path', {
-					fill: "currentColor",
-					d: "M341.333,0H42.667C19.093,0,0,19.093,0,42.667v298.667C0,364.907,19.093,384,42.667,384h298.667 C364.907,384,384,364.907,384,341.333V42.667C384,19.093,364.907,0,341.333,0z M42.667,320l74.667-96l53.333,64.107L245.333,192l96,128H42.667z",
-				}))
-			)
+				...tooltipProps,
+				...props,
+				className: `${props.className} ${showOnHover && "VPP-hover"}`,
+			}, React.createElement('svg', {
+				'aria-label': tooltipProps["aria-label"],
+				'aria-hidden': "false",
+				role: "img",
+				width: "18",
+				height: "18",
+				viewBox: "-50 -50 484 484",
+			}, React.createElement('path', {
+				fill: "currentColor",
+				d: "M341.333,0H42.667C19.093,0,0,19.093,0,42.667v298.667C0,364.907,19.093,384,42.667,384h298.667 C364.907,384,384,364.907,384,341.333V42.667C384,19.093,364.907,0,341.333,0z M42.667,320l74.667-96l53.333,64.107L245.333,192l96,128H42.667z",
+			})))
 		))
 	);
 };
@@ -431,20 +488,24 @@ const Switch = TheBigBoyBundle.FormSwitch ||
 		);
 	};
 
-const SettingComponent = props => {
-	const [enabled, setEnabled] = React.useState(props.value);
+function ShowOnHoverSwitch() {
+	const [enabled, setEnabled] = React.useState(Settings.get("showOnHover"));
 	return (
 		React.createElement(Switch, {
-			value: enabled,
-			note: props.note,
-			hideBorder: true,
-			onChange: e => {
-				props.onChange(e);
-				setEnabled(e);
-			},
-		}, props.description)
+				value: enabled,
+				note: "By default hide ViewProfilePicture button and show on hover.",
+				hideBorder: true,
+				onChange: e => {
+					Settings.set("showOnHover", e);
+					setEnabled(e);
+				},
+			}, "Show on hover"
+
+		)
 	);
-};
+}
+
+const SettingComponent = () => React.createElement(ShowOnHoverSwitch, null);
 
 const changelogStyles = `
 #changelog-container {
@@ -596,7 +657,7 @@ class ViewProfilePicture {
 		const guildId = isUserPopout ? SelectedGuildStore.getGuildId() : "";
 		const avatarURL = user.getAvatarURL(guildId, IMG_WIDTH, true);
 		const AvatarImageComponent = getImageModalComponent(avatarURL, { width: IMG_WIDTH, height: IMG_WIDTH });
-		const BannerImageComponent = backgroundImage ? getImageModalComponent(`${backgroundImage.match(/(?<=url\()(.+?)(?=\?|\))/)?.[0]}?size=${IMG_WIDTH}`, { width: IMG_WIDTH }) : React.createElement(ColorModalComponent, { color: Color ? Color(backgroundColor).hex() : backgroundColor, });
+		const BannerImageComponent = backgroundImage ? getImageModalComponent(`${backgroundImage.match(/(?<=url\()(.+?)(?=\?|\))/)?.[0]}?size=${IMG_WIDTH}`, { width: IMG_WIDTH }) : React.createElement(ColorModalComponent, { color: backgroundColor, });
 		closeModal();
 		openCarousel([AvatarImageComponent, BannerImageComponent]);
 	}
@@ -646,14 +707,7 @@ class ViewProfilePicture {
 	}
 
 	getSettingsPanel() {
-		return (
-			React.createElement(SettingComponent, {
-				description: "Show on hover",
-				note: "By default hide ViewProfilePicture button and show on hover.",
-				value: Settings.get("showOnHover"),
-				onChange: e => Settings.set("showOnHover", e),
-			})
-		);
+		return React.createElement(SettingComponent, null);
 	}
 }
 shouldChangelog()?.();
