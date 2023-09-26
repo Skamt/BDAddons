@@ -7,24 +7,20 @@ function getSocketConstructor() {
 	return playableComputerDevices[0]?.socket?.constructor;
 }
 
-const getSocket = (() => {
-	let socketConstructor = null;
-	return function getSocket() {
-		if (socketConstructor) return Promise.resolve(socketConstructor);
-		const socket = getSocketConstructor();
-		if (socket) return Promise.resolve((socketConstructor = socket));
+function getSocket() {
+	const socket = getSocketConstructor();
+	if (socket) return Promise.resolve(socket);
 
-		return new Promise(resolve => {
-			function listener() {
-				const socket = getSocketConstructor();
-				if (!socket) return;
-				SpotifyStore.removeChangeListener(listener);
-				resolve((socketConstructor = socket));
-			}
-			SpotifyStore.addChangeListener(listener);
-		});
-	};
-})();
+	return new Promise(resolve => {
+		function listener() {
+			const socket = getSocketConstructor();
+			if (!socket) return;
+			SpotifyStore.removeChangeListener(listener);
+			resolve(socket);
+		}
+		SpotifyStore.addChangeListener(listener);
+	});
+}
 
 export default new (class SpotifySocketListener extends ChangeEmitter {
 	constructor() {

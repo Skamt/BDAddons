@@ -35,11 +35,11 @@ class PlayerState {
 		return this.track?.album?.images;
 	}
 
-	get trackAlbumName(){
+	get trackAlbumName() {
 		return this.track?.album?.name;
 	}
 
-	get trackAlbumUrl(){
+	get trackAlbumUrl() {
 		return this.track?.album?.external_urls?.spotify;
 	}
 
@@ -65,10 +65,9 @@ class PlayerState {
 }
 
 export default class SpotifyAccount {
-	constructor({ socket, devices, playerState }) {
+	constructor({ socket, device }) {
 		this.socket = socket;
-		this.devices = devices;
-		this.playerState = new PlayerState(playerState);
+		this.device = device;
 	}
 
 	get accessToken() {
@@ -84,32 +83,16 @@ export default class SpotifyAccount {
 	}
 
 	get isActive() {
-		return !!this.devices.find(devices => devices.is_active);
+		return this.devices?.is_active;
 	}
 
 	setDevices(devices) {
-		this.devices = devices;
+		this.devices = devices.find(d => d.is_active) || devices[0];
 		if (!this.isActive) this.playerState = undefined;
 	}
 
 	setPlayerState(playerState) {
 		this.playerState = new PlayerState(playerState);
-
-		for (let i = 0; i < this.devices.length; i++) {
-			const device = this.devices[i];
-			if (device.id === playerState.device.id) 
-				return this.devices[i] = playerState.device;			
-		}
-
-		
-		this.devices.push(playerState.device);
-	}
-
-	clone() {
-		return new SpotifyAccount({
-			socket: this.socket,
-			devices: this.devices,
-			playerState: this.playerState?.playerState
-		});
+		this.device = playerState.device;
 	}
 }
