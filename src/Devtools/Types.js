@@ -60,6 +60,10 @@ export class Source {
 	get module() {
 		return Modules.moduleById(this.source.id);
 	}
+
+	get string(){
+		return this.source.source.toString();
+	}
 }
 
 export class Store {

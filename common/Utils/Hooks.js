@@ -17,16 +17,18 @@ export function useSettings(key) {
 }
 
 export function useStateFromStore(store, fn) {
-	const [val, setVal] = React.useState(fn() || null);
+	const [state, setState] = React.useState(fn() || null);
 	React.useEffect(() => {
 		function listener() {
-			setVal(fn());
+			const newState = fn();
+			if(newState === state) return;
+			setState(newState);
 		}
 		store.addReactChangeListener(listener);
 		return () => store.removeReactChangeListener(listener);
-	}, []);
+	}, [state]);
 
-	return val;
+	return state;
 }
 
 export function useStateBasedProp(prop) {

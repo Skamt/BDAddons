@@ -13,31 +13,38 @@ export function getReply(channelId) {
 			channel_id: reply.channel.id,
 			message_id: reply.message.id
 		},
-		allowedMentions: reply.shouldMention ? undefined : {
-			parse: ["users", "roles", "everyone"],
-			replied_user: false
-		}
-	}
+		allowedMentions: reply.shouldMention
+			? undefined
+			: {
+					parse: ["users", "roles", "everyone"],
+					replied_user: false
+			  }
+	};
 }
 
 export async function sendMessageDirectly(channel, content) {
-	if (MessageActions)
-		return MessageActions.sendMessage(channel.id, {
+	if (!MessageActions || !MessageActions.sendMessage || typeof MessageActions.sendMessage !== "function") 
+		throw new Error("Can't send message directly.");
+
+	return MessageActions.sendMessage(
+		channel.id,
+		{
 			validNonShortcutEmojis: [],
 			content
-		}, undefined, getReply(channel.id));
-	else
-		throw new Error("Can't send message directly.");
+		},
+		undefined,
+		getReply(channel.id)
+	);
 }
 
 export const insertText = (() => {
 	let ComponentDispatch;
-	return (content) => {
-		if (!ComponentDispatch) ComponentDispatch = getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners('INSERT_TEXT').length, { searchExports: true });
+	return content => {
+		if (!ComponentDispatch) ComponentDispatch = getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners("INSERT_TEXT").length, { searchExports: true });
 		setTimeout(() => {
 			ComponentDispatch.dispatchToLastSubscribed("INSERT_TEXT", {
 				plainText: content
 			});
 		});
-	}
-})()
+	};
+})();

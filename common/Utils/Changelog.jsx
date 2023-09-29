@@ -18,7 +18,6 @@ const changelogStyles = `
     align-items: center;
     font-weight: 700;
     margin-top: 20px;
-	color: var(--c);
 }
 #changelog-container .title:after {
     content: "";
@@ -52,27 +51,19 @@ const changelogStyles = `
     opacity: .5;
 }`;
 
-class ChangelogComponent extends React.Component {
-	constructor() {
-		super();
-	}
-
-	componentWillUnmount() {
-		BdApi.DOM.removeStyle("Changelog");
-	}
-
-	render() {
-		BdApi.DOM.addStyle("Changelog", changelogStyles);
-		const { id, changelog } = this.props;
-		return <div id={id}>{changelog}</div>;
-	}
+function ChangelogComponent({ id, changelog }) {
+	React.useEffect(() => {
+		BdApi.DOM.addStyle(id, changelogStyles);
+		return () => BdApi.DOM.removeStyle(id);
+	}, []);
+	return <div id="changelog-container">{changelog}</div>;
 }
 
 function showChangelog() {
 	if (!config.changelog || !Array.isArray(config.changelog)) return;
-	const changelog = config.changelog?.map(({ title, type, items }) => [
+	const changelog = config.changelog.map(({ title, type, items }) => [
 		<h3
-			style={{ "--c": `var(--${type})` }}
+			style={{ "color": `var(--${type})` }}
 			className="title">
 			{title}
 		</h3>,
@@ -86,7 +77,7 @@ function showChangelog() {
 	UI.showConfirmationModal(
 		`${config.info.name} v${config.info.version}`,
 		<ChangelogComponent
-			id="changelog-container"
+			id={`Changelog-${config.info.name}`}
 			changelog={changelog}
 		/>
 	);
@@ -94,8 +85,8 @@ function showChangelog() {
 
 export default function shouldChangelog() {
 	const { version = config.info.version, changelog = false } = Data.load("metadata") || {};
-	if (version != config.info.version || !changelog) {
-		Data.save("metadata", { version: config.info.version, changelog: true });
-		return showChangelog;
-	}
+
+	if (version == config.info.version || changelog) return;
+	Data.save("metadata", { version: config.info.version, changelog: true });
+	return showChangelog;
 }

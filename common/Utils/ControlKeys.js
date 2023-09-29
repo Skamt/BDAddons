@@ -1,29 +1,21 @@
 export default {
 	init() {
-		this.subs = [
-			["keydown", this.keydownHandler],
-			["keyup", this.keyupHandler]
-		].map(([event, handler]) => {
-			const boundHandler = handler.bind(this);
-			document.addEventListener(event, boundHandler);
-			return () => document.removeEventListener(event, boundHandler);
+		this.subs = ["keydown", "keyup"].map(event => {
+			const handler = e => this.e = e;
+			document.addEventListener(event, handler);
+			return () => document.removeEventListener(event, handler);
 		});
-		this.ctrlKey = false;
-		this.shiftKey = false;
-		this.metaKey = false;
 	},
 	clean() {
-		this.subs.forEach(unsub => unsub && typeof unsub === "function" && unsub());
+		this.subs?.forEach(unsub => unsub && typeof unsub === "function" && unsub());
 	},
-	keydownHandler(e) {
-		this.ctrlKey = e.ctrlKey;
-		this.shiftKey = e.shiftKey;
-		this.metaKey = e.metaKey;
+	get ctrlKey() {
+		return this.e?.ctrlKey;
 	},
-	keyupHandler(e) {
-		this.ctrlKey = e.ctrlKey;
-		this.shiftKey = e.shiftKey;
-		this.metaKey = e.metaKey;
+	get shiftKey() {
+		return this.e?.shiftKey;
+	},
+	get metaKey() {
+		return this.e?.metaKey;
 	}
 };
-

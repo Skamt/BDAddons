@@ -18,11 +18,9 @@ export default new (class Settings extends ChangeEmitter {
 		this.settings[key] = val;
 		this.commit();
 	}
+
 	setMultiple(newSettings) {
-		this.settings = {
-			...this.settings,
-			...newSettings
-		};
+		this.settings = Object.assign(this.settings, newSettings);
 		this.commit();
 	}
 
