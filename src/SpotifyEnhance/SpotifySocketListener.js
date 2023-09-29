@@ -29,13 +29,12 @@ export default new (class SpotifySocketListener extends ChangeEmitter {
 
 	async init() {
 		const socket = await getSocket();
-		this.unpatch = Patcher.after(socket.prototype, "handleEvent", (socket, [event]) => {
-			this.emit({ socket, event });
-		});
+		if(this.unpatch) this.unpatch();
+		this.unpatch = Patcher.after(socket.prototype, "handleEvent", (socket, [event]) => this.emit({ socket, event }));
 	}
 
 	dispose() {
-		this.unpatch();
+		this.unpatch?.();
 		delete this.unpatch;
 	}
 })();

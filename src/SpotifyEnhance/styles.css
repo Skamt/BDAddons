@@ -162,7 +162,7 @@
 
 .spotify-player-banner {
 	grid-area: banner;
-
+	cursor: pointer;
 	width: 64px;
 	height: 64px;
 	background: var(--banner) center/cover no-repeat;
@@ -237,6 +237,7 @@
 	color: white;
 	display: flex;
 	flex-wrap: wrap;
+	font-size: .8rem;
 }
 
 .spotify-player-timeline-progress {
@@ -245,19 +246,23 @@
 
 .spotify-player-timeline-trackbar {
 	margin-top: -8px;
-	margin-bottom: 10px;
+	margin-bottom: 8px;
 }
 
 .spotify-player-timeline:hover .spotify-player-timeline-trackbar-grabber {
 	opacity: 1;
 }
 
-.spotify-player-timeline-trackbar-grabber {
+.spotify-player-timeline .spotify-player-timeline-trackbar-grabber {
 	opacity: 0;
+	cursor: grab;
+	width: 10px;
+	height: 10px;
 }
 
-.spotify-player-timeline-trackbar-bar {
+.spotify-player-timeline .spotify-player-timeline-trackbar-bar {
 	background: hsl(0deg 0% 100% / 30%) !important;
+	height: 4px;
 }
 
 .spotify-player-timeline-trackbar-bar > div {

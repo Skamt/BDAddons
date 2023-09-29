@@ -2,6 +2,7 @@ import { React } from "@Api";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 
 const { Tooltip } = TheBigBoyBundle;
+
 export default ({ note, position, children }) => {
 	return (
 		<Tooltip

@@ -2,6 +2,7 @@ import ChangeEmitter from "@Utils/ChangeEmitter";
 import SpotifyAPIWrapper from "./SpotifyAPIWrapper";
 import { promiseHandler, nop } from "@Utils";
 import SpotifySocketListener from "./SpotifySocketListener";
+import SpotifyConnectionsListener from "./SpotifyConnectionsListener";
 import SpotifyStore from "@Stores/SpotifyStore";
 import SpotifyAccount from "./SpotifyAccount";
 
@@ -10,19 +11,22 @@ export default new (class SpotifyActiveAccount extends ChangeEmitter {
 		super();
 		this.onSocketEvent = this.onSocketEvent.bind(this);
 		this.onSpotifyStoreChange = this.onSpotifyStoreChange.bind(this);
+		this.onSpotifyAccountChanged = this.onSpotifyAccountChanged.bind(this);
 	}
 
 	async init() {
 		this.activeAccount = undefined;
 
 		SpotifySocketListener.init();
+		SpotifyConnectionsListener.init();
 		SpotifySocketListener.on(this.onSocketEvent);
+		SpotifyConnectionsListener.on(this.onSpotifyAccountChanged);
 		SpotifyStore.addChangeListener(this.onSpotifyStoreChange);
 
-		const activeSocketAndDevice = SpotifyStore.getActiveSocketAndDevice();
-		if (!activeSocketAndDevice) return;
+		const { socket } = SpotifyStore.getActiveSocketAndDevice() || {};
+		if (!socket) return;
 
-		this.activeAccount = new SpotifyAccount(activeSocketAndDevice);
+		this.activeAccount = new SpotifyAccount(socket);
 		this.setToken();
 		await this.ensureDeviceState();
 		if (this.activeAccount.isActive) await this.fetchPlayerState();
@@ -32,17 +36,28 @@ export default new (class SpotifyActiveAccount extends ChangeEmitter {
 	dispose() {
 		SpotifyStore.removeChangeListener(this.onSpotifyStoreChange);
 		SpotifySocketListener.off(this.onSocketEvent);
+		SpotifyConnectionsListener.off(this.onSpotifyAccountChanged);
 		SpotifySocketListener.dispose();
+		SpotifyConnectionsListener.dispose();
 		clearTimeout(this.idleTimeoutId);
 		delete this.activeAccount;
 	}
 
+	onSpotifyAccountChanged() {
+		if (!this.activeAccount) return;
+		const { socket } = SpotifyStore.getActiveSocketAndDevice() || {};
+		if (socket) return;
+		this.activeAccount = undefined;
+		this.setToken();
+		this.emit();
+	}
+
 	async onSpotifyStoreChange() {
 		if (this.activeAccount) return;
-		const activeSocketAndDevice = SpotifyStore.getActiveSocketAndDevice();
-		if (!activeSocketAndDevice) return;
+		const { socket } = SpotifyStore.getActiveSocketAndDevice() || {};
+		if (!socket) return;
 
-		this.activeAccount = new SpotifyAccount(activeSocketAndDevice);
+		this.activeAccount = new SpotifyAccount(socket);
 		this.setToken();
 		await this.fetchPlayerState();
 		this.emit();
@@ -53,28 +68,18 @@ export default new (class SpotifyActiveAccount extends ChangeEmitter {
 
 		switch (event.type) {
 			case "PLAYER_STATE_CHANGED":
-				this.playerStateChange(socket, event.event);
+				this.activeAccount.setPlayerState(event.event.state);
 				break;
 			case "DEVICE_STATE_CHANGED":
-				this.deviceStateChange(socket, event.event);
+				this.activeAccount.setDevices(event.event.devices);
 				break;
 		}
 
 		this.emit();
 	}
 
-	playerStateChange(socket, { state }) {
-		if (!this.activeAccount) return;
-		this.activeAccount.setPlayerState(state);
-	}
-
-	deviceStateChange(socket, { devices }) {
-		if (!this.activeAccount) return;
-		this.activeAccount.setDevices(devices);
-	}
-
 	setToken() {
-		SpotifyAPIWrapper.updateToken(this.activeAccount.socket || {});
+		SpotifyAPIWrapper.updateToken(this.activeAccount?.socket || {});
 	}
 
 	async ensureDeviceState() {

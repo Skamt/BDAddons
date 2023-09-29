@@ -12,7 +12,8 @@ import ListenAlongIcon from "@Components/ListenAlongIcon";
 import ListenIcon from "@Components/ListenIcon";
 import ShareIcon from "@Components/ShareIcon";
 import Tooltip from "@Components/Tooltip";
-import { useStateFromStore } from "@Utils/Hooks";
+
+import { useStateFromStores } from "@Utils/Hooks";
 
 const getUserSyncActivityState = getModule(Filters.byStrings("USER_ACTIVITY_SYNC", "spotifyData"), { searchExports: true });
 const getUserPlayActivityState = getModule(Filters.byStrings("USER_ACTIVITY_PLAY", "spotifyData"), { searchExports: true });
@@ -30,7 +31,7 @@ function ActivityControlButton({ value, onClick, ...rest }) {
 }
 
 export default ({ activity, user, source, renderActions }) => {
-	const spotifySocket = useStateFromStore(SpotifyStore, () => SpotifyStore.getActiveSocketAndDevice()?.socket);
+	const spotifySocket = useStateFromStores([SpotifyStore], () => SpotifyStore.getActiveSocketAndDevice()?.socket);
 	
 	const userSyncActivityState = getUserSyncActivityState(activity, user, source);
 	const userPlayActivityState = getUserPlayActivityState(activity, user, source);

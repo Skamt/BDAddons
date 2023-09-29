@@ -2,7 +2,7 @@ import { React } from "@Api";
 import Toast from "@Utils/Toast";
 import Button from "@Components/Button";
 import SpotifyStore from "@Stores/SpotifyStore";
-import { useStateFromStore } from "@Utils/Hooks";
+import { useStateFromStores } from "@Utils/Hooks";
 import { parseSpotifyUrl } from "../Utils.js";
 import SpotifyWrapper from "../SpotifyWrapper";
 import { ActionsEnum } from "../consts.js";
@@ -10,7 +10,7 @@ import { ActionsEnum } from "../consts.js";
 export default ({ embed }) => {
 	const { url } = embed;
 	const [type, id] = parseSpotifyUrl(url);
-	const spotifySocket = useStateFromStore(SpotifyStore, () => SpotifyStore.getActiveSocketAndDevice()?.socket);
+	const spotifySocket = useStateFromStores([SpotifyStore], () => SpotifyStore.getActiveSocketAndDevice()?.socket);
 	if (!spotifySocket) return null;
 	const listenBtn = type !== "show" && (
 		<ControlBtn

@@ -6,7 +6,7 @@ import SpotifyEmbed from "./SpotifyEmbed";
 
 export default function SpotifyEmbedWrapper({ embedObject, embedComponent }) {
 	const spotifyEmbed = useSettings("spotifyEmbed");
-	switch (EmbedStyleEnum[spotifyEmbed]) {
+	switch (spotifyEmbed) {
 		case EmbedStyleEnum.KEEP:
 			return [embedComponent, <SpotifyControls embed={embedObject} />];
 		case EmbedStyleEnum.REPLACE:

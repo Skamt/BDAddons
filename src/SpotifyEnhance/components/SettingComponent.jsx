@@ -30,10 +30,10 @@ function SpotifyEmbedOptions() {
 					}
 				]}
 				orientation={"horizontal"}
-				value={EmbedStyleEnum[selected]}
+				value={selected}
 				onChange={e => {
-					Settings.set("spotifyEmbed", EmbedStyleEnum[e.value]);
-					setSelected(EmbedStyleEnum[e.value]);
+					Settings.set("spotifyEmbed", e.value);
+					setSelected(e.value);
 				}}
 			/>
 		</>

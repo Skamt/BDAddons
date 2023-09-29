@@ -10,7 +10,6 @@ import CopyIcon from "@Components/CopyIcon";
 import ListenIcon from "@Components/ListenIcon";
 import SpotifyIcon from "@Components/SpotifyIcon";
 
-import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 import Tooltip from "@Components/Tooltip";
 import TimeBar from "@Components/TimeBar";
 
@@ -148,7 +147,7 @@ function AddToQueue({ type, id, embed }) {
 }
 
 function TrackTimeBar({ id }) {
-	// const activity = useStateFromStore(SpotifyStore, () => SpotifyStore.getActivity());
+	// const activity = useStateFromStores([SpotifyStore], () => SpotifyStore.getActivity());
 	// if (!activity || activity.sync_id !== id) return null;
 
 	return (

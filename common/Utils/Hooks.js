@@ -1,4 +1,5 @@
 import { React } from "@Api";
+import { getModule } from "@Webpack";
 import Settings from "@Utils/Settings";
 
 export function useSettings(key) {
@@ -16,20 +17,7 @@ export function useSettings(key) {
 	return state;
 }
 
-export function useStateFromStore(store, fn) {
-	const [state, setState] = React.useState(fn() || null);
-	React.useEffect(() => {
-		function listener() {
-			const newState = fn();
-			if(newState === state) return;
-			setState(newState);
-		}
-		store.addReactChangeListener(listener);
-		return () => store.removeReactChangeListener(listener);
-	}, [state]);
-
-	return state;
-}
+export const useStateFromStores = getModule(Filters.byStrings("useStateFromStores"), { searchExports: true });
 
 export function useStateBasedProp(prop) {
 	const [state, setState] = React.useState(prop);

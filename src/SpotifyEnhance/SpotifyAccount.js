@@ -18,7 +18,7 @@ class PlayerState {
 	get trackArtists() {
 		return this.track?.artists;
 	}
-
+	
 	get trackDuration() {
 		return this.track?.["duration_ms"];
 	}
@@ -65,9 +65,8 @@ class PlayerState {
 }
 
 export default class SpotifyAccount {
-	constructor({ socket, device }) {
+	constructor(socket) {
 		this.socket = socket;
-		this.device = device;
 	}
 
 	get accessToken() {
@@ -83,11 +82,11 @@ export default class SpotifyAccount {
 	}
 
 	get isActive() {
-		return this.devices?.is_active;
+		return this.device?.is_active;
 	}
 
 	setDevices(devices) {
-		this.devices = devices.find(d => d.is_active) || devices[0];
+		this.device = devices.find(d => d.is_active) || devices[0];
 		if (!this.isActive) this.playerState = undefined;
 	}
 
