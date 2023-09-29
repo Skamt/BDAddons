@@ -14,7 +14,7 @@ export default ({ playerState }) => {
 	};
 	return (
 		<div className="spotify-player-media">
-			<TrackBanner banner={trackBannerObj || [placeholder, , placeholder]} />
+			<TrackBanner banner={trackBannerObj || [bannerPlaceholder, , bannerPlaceholder]} />
 			{trackUrl ? (
 				<Anchor
 					href={trackUrl}
