@@ -1,66 +1,89 @@
-class PlayerState {
-	constructor(playerState) {
-		this.playerState = playerState;
+class Track {
+	constructor(track) {
+		this.track = track;
 	}
 
-	get track() {
-		return this.playerState?.item;
+	get id() {
+		return this.track.id;
 	}
 
-	get trackId() {
-		return this.track?.id;
+	get url() {
+		return this.track.external_urls.spotify;
 	}
 
-	get trackUrl() {
-		return this.track?.external_urls?.spotify;
+	get artists() {
+		return this.track.artists;
 	}
 
-	get trackArtists() {
-		return this.track?.artists;
-	}
-	
-	get trackDuration() {
-		return this.track?.["duration_ms"];
+	get duration() {
+		return this.track["duration_ms"];
 	}
 
 	get explicit() {
-		return this.track?.explicit;
+		return this.track.explicit;
 	}
 
-	get trackName() {
-		return this.track?.name;
+	get name() {
+		return this.track.name;
 	}
 
-	get trackBannerObj() {
-		return this.track?.album?.images;
+	get bannerObj() {
+		return this.track.album.images;
 	}
 
-	get trackAlbumName() {
-		return this.track?.album?.name;
+	get albumName() {
+		return this.track.album.name;
 	}
 
-	get trackAlbumUrl() {
-		return this.track?.album?.external_urls?.spotify;
+	get albumUrl() {
+		return this.track.album.external_urls.spotify;
+	}
+}
+
+class PlayerState {
+	constructor(playerState) {
+		this.playerState = playerState;
+		this.track = new Track(playerState.item);
+	}
+
+	get disallowedActions() {
+		return this.playerState.actions.disallows;
+	}
+
+	get currentlyPlayingType() {
+		return this.playerState.currently_playing_type;
+	}
+
+	get context() {
+		return this.playerState.context;
+	}
+
+	get ressourceId() {
+		return this.track?.id;
+	}
+
+	get duration() {
+		return this.track?.duration;
 	}
 
 	get shuffle() {
-		return this.playerState?.["shuffle_state"];
+		return this.playerState["shuffle_state"];
 	}
 
 	get repeat() {
-		return this.playerState?.["repeat_state"];
+		return this.playerState["repeat_state"];
 	}
 
 	get progress() {
-		return this.playerState?.["progress_ms"];
+		return this.playerState["progress_ms"];
 	}
 
 	get isPlaying() {
-		return this.playerState?.["is_playing"];
+		return this.playerState["is_playing"];
 	}
 
 	get volume() {
-		return this.playerState?.device?.["volume_percent"];
+		return this.playerState.device["volume_percent"];
 	}
 }
 

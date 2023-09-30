@@ -1,26 +1,23 @@
 import { React } from "@Api";
 import SpotifyWrapper from "../SpotifyWrapper";
-import { useStateBasedProp } from "@Utils/Hooks";
+import { useAnimationFrame, useStateBasedProp } from "@Utils/Hooks";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 const { Slider } = TheBigBoyBundle;
+
+function formatMsToTime(ms) {
+	const time = new Date(ms);
+	return [time.getUTCHours(), String(time.getUTCMinutes()), String(time.getUTCSeconds()).padStart(2, "0")].filter(Boolean).join(":");
+}
 
 export default ({ duration, isPlaying, progress }) => {
 	const [position, setPosition] = useStateBasedProp(progress);
 	const sliderRef = React.useRef();
 
-	React.useEffect(() => {
+	useAnimationFrame(e => {
 		if (!isPlaying) return;
-		const interval = setInterval(() => {
-			if (sliderRef.current?.state?.active) return;
-
-			setPosition(p => {
-				if (p >= duration) clearInterval(interval);
-				return p + 1000;
-			});
-		}, 1000);
-
-		return () => clearInterval(interval);
-	}, [isPlaying]);
+		if (sliderRef.current?.state?.active) return;
+		setPosition(p => p + e.delta * 1000);
+	});
 
 	const rangeChangeHandler = e => {
 		const pos = Math.floor(e);
@@ -37,7 +34,7 @@ export default ({ duration, isPlaying, progress }) => {
 				mini={true}
 				minValue={0}
 				maxValue={duration}
-				initialValue={position}
+				initialValue={position < 1000 ? 0 : position}
 				onValueChange={rangeChangeHandler}
 				onValueRender={formatMsToTime}
 				ref={sliderRef}
@@ -49,8 +46,3 @@ export default ({ duration, isPlaying, progress }) => {
 		</div>
 	);
 };
-
-function formatMsToTime(ms) {
-	const time = new Date(ms);
-	return [time.getUTCHours(), String(time.getUTCMinutes()), String(time.getUTCSeconds()).padStart(2, "0")].filter(Boolean).join(":");
-}

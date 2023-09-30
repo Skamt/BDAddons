@@ -5,41 +5,37 @@ import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 
 const { Anchor } = TheBigBoyBundle;
 
-export default ({ playerState }) => {
-	const { trackAlbumName, trackAlbumUrl, trackBannerObj, trackUrl, trackName, trackArtists } = playerState;
-	const bannerPlaceholder = {
-		url: undefined,
-		height: undefined,
-		width: undefined
-	};
+export default ({ track }) => {
+	if (!track) return;
+
+	const { albumName, albumUrl, bannerObj, url, name, artists } = track;
+
 	return (
 		<div className="spotify-player-media">
-			<TrackBanner banner={trackBannerObj || [bannerPlaceholder, , bannerPlaceholder]} />
-			{trackUrl ? (
-				<Anchor
-					href={trackUrl}
-					className="spotify-player-title">
-					{trackName}
-				</Anchor>
-			) : (
-				"Unkown title"
-			)}
-			<Artist artists={trackArtists} />
-			<div className="spotify-player-album">on {trackAlbumUrl ? <Anchor href={trackAlbumUrl}>{trackAlbumName}</Anchor> : "Unkown album"}</div>
+			<TrackBanner banner={bannerObj} />
+			<Anchor
+				href={url}
+				className="spotify-player-title">
+				{name}
+			</Anchor>
+
+			<Artist artists={artists} />
+			<div className="spotify-player-album">
+				on <Anchor href={albumUrl}>{albumName}</Anchor>{" "}
+			</div>
 		</div>
 	);
 };
 
-function Artist({ artists }) {
-	if (!artists) return <div className="spotify-player-artist">by Unkown artist</div>;
+function transformArtist(artist) {
+	return <Anchor href={`https://open.spotify.com/artist/${artist.id}`}>{artist.name}</Anchor>;
+}
 
-	function transform(artist) {
-		return <Anchor href={artist.external_urls.spotify}>{artist.name}</Anchor>;
-	}
+function Artist({ artists }) {
 	const artist =
 		artists?.length === 1
-			? transform(artists[0])
-			: artists.map(transform).reduce((acc, el, index, obj) => {
+			? transformArtist(artists[0])
+			: artists.map(transformArtist).reduce((acc, el, index, obj) => {
 					acc.push(el);
 					if (index < obj.length - 1) acc.push(",");
 					return acc;
@@ -52,7 +48,7 @@ function TrackBanner({ banner }) {
 	const [{ height, width, url }, , { url: playerThumbnail }] = banner;
 
 	const thumbnailClickHandler = () => {
-		if (url) openModal(getImageModalComponent(url, { height, width }));
+		openModal(getImageModalComponent(url, { height, width }));
 	};
 
 	return (

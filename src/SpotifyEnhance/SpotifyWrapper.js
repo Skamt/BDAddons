@@ -51,7 +51,7 @@ export default new (class SpotifyWrapper extends ChangeEmitter {
 
 	onStateChange() {
 		this.activeAccount = SpotifyActiveAccount.getActiveAccount();
-		console.log("activeAccount", this.activeAccount);
+		console.log("activeAccount", this.activeAccount?.playerState);
 		this.emit();
 	}
 
@@ -71,7 +71,7 @@ export default new (class SpotifyWrapper extends ChangeEmitter {
 	getCurrentlyPlayingById(id) {
 		const currentlyPlaying = this.getCurrentlyPlaying();
 		if (!currentlyPlaying) return;
-		if (currentlyPlaying.id !== id) return;
+		if (currentlyPlaying.ressourceId !== id) return;
 		return currentlyPlaying;
 	}
 

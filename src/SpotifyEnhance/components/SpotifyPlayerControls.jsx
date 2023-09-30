@@ -14,114 +14,133 @@ import PreviousIcon from "@Components/PreviousIcon";
 import RepeatOneIcon from "@Components/RepeatOneIcon";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 
-export default ({ playerState }) => {
-	if (!playerState) return;
+// {
+//   "interrupting_playback": false,
+//   "pausing": false,
+//   "resuming": false,
+//   "seeking": false,
+//   "skipping_next": false,
+//   "skipping_prev": false,
+//   "toggling_repeat_context": false,
+//   "toggling_shuffle": false,
+//   "toggling_repeat_track": false,
+//   "transferring_playback": false
+// }
 
-	const shuffle = () => SpotifyWrapper.Player.shuffle(!playerState.shuffle);
-	const previous = () => SpotifyWrapper.Player.previous();
-	const next = () => SpotifyWrapper.Player.next();
-	const share = () => SpotifyWrapper.Utils.share(playerState.trackUrl);
-	const copy = () => SpotifyWrapper.Utils.copySpotifyLink(playerState.trackUrl);
+export default ({ disallowedActions, state, data }) => {
+	if (!disallowedActions || !state || !data) return;
+
+	const { trackUrl } = data;
+	const { shuffle, repeat, isPlaying } = state;
+	const { toggling_shuffle, toggling_repeat_track, pausing, resuming, seeking, skipping_next, skipping_prev } = disallowedActions;
+
+	const { repeatTooltip, repeatActive, repeatIcon, repeatArg } = {
+		"off": {
+			repeatTooltip: "Repeat",
+			repeatArg: "context",
+			repeatIcon: <RepeatIcon />,
+			repeatActive:false
+		},
+		"context": {
+			repeatTooltip: "Repeat track",
+			repeatArg: "track",
+			repeatIcon: <RepeatIcon />,
+			repeatActive:true
+		},
+		"track": {
+			repeatTooltip: "Repeat off",
+			repeatArg: "off",
+			repeatIcon: <RepeatOneIcon />,
+			repeatActive:true
+		}
+	}[repeat];
+
+	const shuffleHandler = () => SpotifyWrapper.Player.shuffle(!shuffle);
+	const previousHandler = () => SpotifyWrapper.Player.previous();
+	const nextHandler = () => SpotifyWrapper.Player.next();
+	const shareHandler = () => SpotifyWrapper.Utils.share(trackUrl);
+	const copyHandler = () => SpotifyWrapper.Utils.copySpotifyLink(trackUrl);
+	const repeatHandler = () => SpotifyWrapper.Player.repeat(repeatArg);
+	const pauseHandler = () => SpotifyWrapper.Player.pause();
+	const playHandler = () => SpotifyWrapper.Player.play();
+
+	const { playPauseTooltip, playPauseHandler, playPauseIcon, playPauseClassName } = {
+		"true": {
+			playPauseTooltip: "Pause",
+			playPauseClassName: "spotify-player-controls-pause",
+			playPauseHandler: pauseHandler,
+			playPauseIcon: <PauseIcon />
+		},
+		"false": {
+			playPauseTooltip: "Play",
+			playPauseClassName: "spotify-player-controls-play",
+			playPauseHandler: playHandler,
+			playPauseIcon: <PlayIcon />
+		}
+	}[isPlaying];
 
 	return (
 		<div className="spotify-player-controls">
-			<Tooltip note="Share in current channel">
-				<SpotifyPlayerButton
-					className="spotify-player-controls-share"
-					onClick={share}
-					value={<ShareIcon />}
-				/>
-			</Tooltip>
-			<Tooltip note="shuffle">
-				<SpotifyPlayerButton
-					enabled={playerState.shuffle}
-					className="spotify-player-controls-shuffle"
-					onClick={shuffle}
-					value={<ShuffleIcon />}
-				/>
-			</Tooltip>
-			<Tooltip note="Previous">
-				<SpotifyPlayerButton
-					className="spotify-player-controls-previous"
-					onClick={previous}
-					value={<PreviousIcon />}
-				/>
-			</Tooltip>
-			{playerState.isPlaying ? (
-				<Tooltip note="Pause">
-					<SpotifyPlayerButton
-						className="spotify-player-controls-pause"
-						onClick={() => SpotifyWrapper.Player.pause()}
-						value={<PauseIcon />}
-					/>
-				</Tooltip>
-			) : (
-				<Tooltip note="Play">
-					<SpotifyPlayerButton
-						className="spotify-player-controls-play"
-						onClick={() => SpotifyWrapper.Player.play()}
-						value={<PlayIcon />}
-					/>
-				</Tooltip>
-			)}
-			<Tooltip note="Next">
-				<SpotifyPlayerButton
-					className="spotify-player-controls-next"
-					onClick={next}
-					value={<NextIcon />}
-				/>
-			</Tooltip>
-			<RepeatBtn repeat={playerState.repeat} />
-			<Tooltip note="Copy">
-				<SpotifyPlayerButton
-					className="spotify-player-controls-copy"
-					onClick={copy}
-					value={<CopyIcon />}
-				/>
-			</Tooltip>
+			<SpotifyPlayerButton
+				note="Share in current channel"
+				className="spotify-player-controls-share"
+				onClick={shareHandler}
+				value={<ShareIcon />}
+			/>
+			<SpotifyPlayerButton
+				note="shuffle"
+				active={shuffle}
+				className="spotify-player-controls-shuffle"
+				onClick={shuffleHandler}
+				value={<ShuffleIcon />}
+			/>
+			<SpotifyPlayerButton
+				note="Previous"
+				className="spotify-player-controls-previous"
+				onClick={previousHandler}
+				value={<PreviousIcon />}
+			/>
+			<SpotifyPlayerButton
+				note={playPauseTooltip}
+				className={playPauseClassName}
+				onClick={playPauseHandler}
+				value={playPauseIcon}
+			/>
+			<SpotifyPlayerButton
+				note="Next"
+				className="spotify-player-controls-next"
+				onClick={nextHandler}
+				value={<NextIcon />}
+			/>
+			<SpotifyPlayerButton
+				note={repeatTooltip}
+				active={repeatActive}
+				className="spotify-player-controls-repeat"
+				onClick={repeatHandler}
+				value={repeatIcon}
+			/>
+			<SpotifyPlayerButton
+				note="Copy"
+				className="spotify-player-controls-copy"
+				onClick={copyHandler}
+				value={<CopyIcon />}
+			/>
 		</div>
 	);
 };
 
-function SpotifyPlayerButton({ value, onClick, className, enabled, ...rest }) {
+function SpotifyPlayerButton({ note, value, onClick, className, active, ...rest }) {
 	return (
-		<Button
-			className={`spotify-player-controls-btn ${className} ${enabled ? "enabled" : ""}`}
-			size={Button.Sizes.NONE}
-			color={Button.Colors.PRIMARY}
-			look={Button.Looks.BLANK}
-			onClick={onClick}
-			{...rest}>
-			{value}
-		</Button>
-	);
-}
-
-function RepeatBtn({ repeat }) {
-	const { tooltip, arg } =
-		{
-			"off": {
-				tooltip: "Repeat",
-				arg: "context"
-			},
-			"context": {
-				tooltip: "Repeat track",
-				arg: "track"
-			},
-			"track": {
-				tooltip: "Repeat off",
-				arg: "off"
-			}
-		}[repeat] || {};
-
-	return (
-		<Tooltip note={tooltip}>
-			<SpotifyPlayerButton
-				enabled={repeat !== "off"}
-				className="spotify-player-controls-repeat"
-				onClick={() => SpotifyWrapper.Player.repeat(arg)}
-				value={repeat === "track" ? <RepeatOneIcon /> : <RepeatIcon />}
-			/>
+		<Tooltip note={note}>
+			<Button
+				className={`spotify-player-controls-btn ${className} ${active ? "enabled" : ""}`}
+				size={Button.Sizes.NONE}
+				color={Button.Colors.PRIMARY}
+				look={Button.Looks.BLANK}
+				onClick={onClick}
+				{...rest}>
+				{value}
+			</Button>
 		</Tooltip>
 	);
 }
