@@ -6,7 +6,7 @@ import { Sources } from "./Sources";
 import { Stores } from "./Stores";
 import webpackRequire from "./webpackRequire";
 import Dispatcher from "@Modules/Dispatcher";
-
+import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 const Misc = {
 	getAllAssets() {
 		return Object.values(Modules.getModules())
@@ -63,7 +63,7 @@ function init() {
 		...Sources,
 		...Modules,
 		DiscordModules: {
-			Dispatcher
+			Dispatcher,TheBigBoyBundle
 		}
 	};
 }
