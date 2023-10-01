@@ -43,7 +43,7 @@ class Track {
 class PlayerState {
 	constructor(playerState) {
 		this.playerState = playerState;
-		this.track = new Track(playerState.item);
+		this.track = playerState.item ? new Track(playerState.item) : null;
 	}
 
 	get disallowedActions() {

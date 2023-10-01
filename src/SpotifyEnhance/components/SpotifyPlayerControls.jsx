@@ -35,7 +35,7 @@ const { MenuItem, Menu, MenuGroup, Slider } = TheBigBoyBundle;
 export default ({ disallowedActions, state, data }) => {
 	if (!disallowedActions || !state || !data) return;
 
-	const { trackUrl, volume } = data;
+	const { url, volume } = data;
 	const { shuffle, repeat, isPlaying } = state;
 	const { toggling_shuffle, toggling_repeat_track, pausing, resuming, seeking, skipping_next, skipping_prev } = disallowedActions;
 
@@ -63,8 +63,8 @@ export default ({ disallowedActions, state, data }) => {
 	const shuffleHandler = () => SpotifyWrapper.Player.shuffle(!shuffle);
 	const previousHandler = () => SpotifyWrapper.Player.previous();
 	const nextHandler = () => SpotifyWrapper.Player.next();
-	const shareHandler = () => SpotifyWrapper.Utils.share(trackUrl);
-	const copyHandler = () => SpotifyWrapper.Utils.copySpotifyLink(trackUrl);
+	const shareHandler = () => SpotifyWrapper.Utils.share(url);
+	const copyHandler = () => SpotifyWrapper.Utils.copySpotifyLink(url);
 	const repeatHandler = () => SpotifyWrapper.Player.repeat(repeatArg);
 	const pauseHandler = () => SpotifyWrapper.Player.pause();
 	const playHandler = () => SpotifyWrapper.Player.play();
@@ -86,13 +86,32 @@ export default ({ disallowedActions, state, data }) => {
 
 	return (
 		<div className="spotify-player-controls">
-			<Tooltip note="Share in current channel">
+			<Popout
+				renderPopout={t => (
+					<Menu onClose={t.closePopout}>
+						<MenuItem
+							id="copy-spotify-link"
+							key="copy-spotify-link"
+							action={copyHandler}
+							label="Copy link"
+						/>
+						<MenuItem
+							id="share-spotify-link"
+							key="share-spotify-link"
+							action={shareHandler}
+							label="Share in current channel"
+						/>
+					</Menu>
+				)}
+				position="top"
+				animation="1"
+				spacing={0}>
 				<SpotifyPlayerButton
 					className="spotify-player-controls-share"
-					onClick={shareHandler}
 					value={<ShareIcon />}
 				/>
-			</Tooltip>
+			</Popout>
+
 			<Tooltip note="shuffle">
 				<SpotifyPlayerButton
 					active={shuffle}
@@ -130,42 +149,31 @@ export default ({ disallowedActions, state, data }) => {
 					value={repeatIcon}
 				/>
 			</Tooltip>
-			<Tooltip note={"Copy"}>
-				<SpotifyPlayerButton
-					className="spotify-player-controls-copy"
-					onClick={copyHandler}
-					value={<CopyIcon />}
-				/>
-			</Tooltip>
-			{/* <Popout
+
+			<Popout
 				renderPopout={() => (
-					<div className="spotify-player-controls-volume-trackbar-wrapper">
+					<div className="spotify-player-controls-volume-slider-wrapper">
 						<Slider
-							className="spotify-player-controls-volume-trackbar"
+							className="spotify-player-controls-volume-slider"
 							mini={true}
-							minValue={1}
+							minValue={0}
 							maxValue={100}
 							initialValue={volume}
-							equidistant={true}
-							keyboardStep={1}
-							stickToMarkers={false}
-							orientation="vertical"
-							markers={[0, 25, 50, 75, 100]}
-							onValueChange={rangeChangeHandler}
-							grabberClassName="spotify-player-controls-volume-trackbar-grabber"
-							barClassName="spotify-player-controls-volume-trackbar-bar"
+							onValueRender={a => "" + Math.round(a)}
+							grabberClassName="spotify-player-controls-volume-slider-grabber"
+							barClassName="spotify-player-controls-volume-slider-bar"
 						/>
-					 </div>
-				 )}
-				 position="top"
-				 animation="1"
-				 spacing={0}>*/}
+					</div>
+				)}
+				position="right"
+				animation="1"
+				spacing={0}>
 				<SpotifyPlayerButton
 					className="spotify-player-controls-volume"
 					// onClick={copyHandler}
 					value={<VolumeIcon />}
 				/>
-			{/*</Popout>*/}
+			</Popout>
 		</div>
 	);
 };
