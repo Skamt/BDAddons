@@ -242,6 +242,10 @@ class Source {
 	get module() {
 		return Modules.moduleById(this.source.id);
 	}
+
+	get string() {
+		return this.source.source.toString();
+	}
 }
 
 class Store {
@@ -278,6 +282,8 @@ class Store {
 		return Stores.getStoreListeners(this.name);
 	}
 }
+
+const TheBigBoyBundle = getModule(Filters.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
 
 const Misc = {
 	getAllAssets() {
@@ -334,7 +340,8 @@ function init() {
 		...Sources,
 		...Modules,
 		DiscordModules: {
-			Dispatcher
+			Dispatcher,
+			TheBigBoyBundle
 		}
 	};
 }

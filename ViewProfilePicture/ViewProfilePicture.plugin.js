@@ -1,7 +1,7 @@
 /**
  * @name ViewProfilePicture
  * @description Adds a button to the user popout and profile that allows you to view the Avatar and banner.
- * @version 1.2.2
+ * @version 1.2.3
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "ViewProfilePicture",
-		"version": "1.2.2",
+		"version": "1.2.3",
 		"description": "Adds a button to the user popout and profile that allows you to view the Avatar and banner.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture",
@@ -20,18 +20,7 @@ const config = {
 	},
 	"settings": {
 		"showOnHover": false
-	},
-	"changelog": [{
-			"title": "Bug fix",
-			"type": "fixed",
-			"items": ["View Profile Picture button is back."]
-		},
-		{
-			"title": "Added",
-			"type": "added",
-			"items": ["Banner color can be copied in multiple formats."]
-		}
-	]
+	}
 }
 
 const css = `
@@ -187,7 +176,7 @@ const React = Api.React;
 const Patcher = Api.Patcher;
 
 const getModule = Api.Webpack.getModule;
-const Filters = Api.Webpack.Filters;
+const Filters$1 = Api.Webpack.Filters;
 const getInternalInstance = Api.ReactUtils.getInternalInstance;
 
 const findInTree = Api.Utils.findInTree;
@@ -240,11 +229,9 @@ const Settings = new(class Settings extends ChangeEmitter {
 		this.settings[key] = val;
 		this.commit();
 	}
+
 	setMultiple(newSettings) {
-		this.settings = {
-			...this.settings,
-			...newSettings
-		};
+		this.settings = Object.assign(this.settings, newSettings);
 		this.commit();
 	}
 
@@ -264,13 +251,13 @@ function getModuleAndKey(filter, options) {
 	return { module, key };
 }
 
-const ImageModal = getModule(Filters.byStrings("original", "maxHeight", "maxWidth", "noreferrer noopener"), { searchExports: true });
+const ImageModal = getModule(Filters$1.byStrings("original", "maxHeight", "maxWidth", "noreferrer noopener"), { searchExports: true });
 
-const ModalRoot = getModule(Filters.byStrings("onAnimationEnd"), { searchExports: true });
+const ModalRoot = getModule(Filters$1.byStrings("onAnimationEnd"), { searchExports: true });
 
 const RenderLinkComponent = getModule(m => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false });
 
-const TheBigBoyBundle = getModule(Filters.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
+const TheBigBoyBundle = getModule(Filters$1.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
 
 class ErrorBoundary extends React.Component {
 	state = { hasError: false, error: null, info: null };
@@ -356,7 +343,7 @@ const ErrorIcon = props => (
 	}), React.createElement('path', { d: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z", })))
 );
 
-const ProfileTypeEnum = getModule(Filters.byProps("POPOUT", "SETTINGS"), { searchExports: true }) || {
+const ProfileTypeEnum = getModule(Filters$1.byProps("POPOUT", "SETTINGS"), { searchExports: true }) || {
 	"POPOUT": 0,
 	"MODAL": 1,
 	"SETTINGS": 2,
@@ -364,7 +351,7 @@ const ProfileTypeEnum = getModule(Filters.byProps("POPOUT", "SETTINGS"), { searc
 	"CARD": 4
 };
 
-const UserBannerMask = getModuleAndKey(Filters.byStrings("overrideAvatarDecoration"), { searchExports: true });
+const UserBannerMask = getModuleAndKey(Filters$1.byStrings("showPremiumBadgeUpsell"), { searchExports: true });
 
 const SelectedGuildStore = getModule(m => m._dispatchToken && m.getName() === "SelectedGuildStore");
 
@@ -379,7 +366,7 @@ const Toast = {
 	error(content) { showToast(content, "error"); }
 };
 
-const Color = getModule(Filters.byProps("Color", "hex", "hsl"), { searchExports: false });
+const Color = getModule(Filters$1.byProps("Color", "hex", "hsl"), { searchExports: false });
 
 function copyColor(type, color) {
 	let c = color;
@@ -395,7 +382,7 @@ function copyColor(type, color) {
 				c = Color(color).css("hsla");
 				break;
 		}
-	} catch {
+	} finally {
 		copy(c);
 		Toast.success(`${c} Copied!`);
 	}
@@ -423,7 +410,7 @@ const ColorModalComponent = ({ color }) => (
 	)))
 );
 
-const ModalCarousel = getModule(Filters.byPrototypeFields("navigateTo", "preloadImage"), { searchExports: false });
+const ModalCarousel = getModule(Filters$1.byPrototypeFields("navigateTo", "preloadImage"), { searchExports: false });
 
 const DisplayCarouselComponent = ({ items }) => {
 	return (
@@ -448,6 +435,8 @@ function useSettings(key) {
 
 	return state;
 }
+
+getModule(Filters.byStrings("useStateFromStores"), { searchExports: true });
 
 const { Tooltip } = TheBigBoyBundle;
 
@@ -506,103 +495,6 @@ function ShowOnHoverSwitch() {
 }
 
 const SettingComponent = () => React.createElement(ShowOnHoverSwitch, null);
-
-const changelogStyles = `
-#changelog-container {
-	font-family: "gg sans", "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
-	--added: #2dc770;
-	--improved: #949cf7;
-	--fixed: #f23f42;
-	--notice: #f0b132;
-	color:white;
-
-    padding: 10px;
-    max-width: 450px;
-}
-#changelog-container .title {
-    text-transform: uppercase;
-    display: flex;
-    align-items: center;
-    font-weight: 700;
-    margin-top: 20px;
-	color: var(--c);
-}
-#changelog-container .title:after {
-    content: "";
-    height: 1px;
-    flex: 1 1 auto;
-    margin-left: 8px;
-    opacity: .6;
-    background: currentColor;
-}
-#changelog-container ul {
-    list-style: none;
-    margin: 20px 0 8px 20px;
-}
-#changelog-container ul > li {
-    position:relative;
-    line-height: 20px;
-    margin-bottom: 8px;
-    color: #c4c9ce;
-}
-#changelog-container ul > li:before {
-    content: "";
-    position: absolute;
-    background:currentColor;
-    top: 10px;
-    left: -15px;
-    width: 6px;
-    height: 6px;
-    margin-top: -4px;
-    margin-left: -3px;
-    border-radius: 50%;
-    opacity: .5;
-}`;
-
-class ChangelogComponent extends React.Component {
-	constructor() {
-		super();
-	}
-
-	componentWillUnmount() {
-		BdApi.DOM.removeStyle("Changelog");
-	}
-
-	render() {
-		BdApi.DOM.addStyle("Changelog", changelogStyles);
-		const { id, changelog } = this.props;
-		return React.createElement('div', { id: id, }, changelog);
-	}
-}
-
-function showChangelog() {
-	if (!config.changelog || !Array.isArray(config.changelog)) return;
-	const changelog = config.changelog?.map(({ title, type, items }) => [
-		React.createElement('h3', {
-			style: { "--c": `var(--${type})` },
-			className: "title",
-		}, title),
-		React.createElement('ul', null, items.map(item => (
-			React.createElement('li', null, item)
-		)))
-	]);
-
-	UI.showConfirmationModal(
-		`${config.info.name} v${config.info.version}`,
-		React.createElement(ChangelogComponent, {
-			id: "changelog-container",
-			changelog: changelog,
-		})
-	);
-}
-
-function shouldChangelog() {
-	const { version = config.info.version, changelog = false } = Data.load("metadata") || {};
-	if (version != config.info.version || !changelog) {
-		Data.save("metadata", { version: config.info.version, changelog: true });
-		return showChangelog;
-	}
-}
 
 const getImageModalComponent = (url, rest) => (
 	React.createElement(ImageModal, {
@@ -672,8 +564,8 @@ class ViewProfilePicture {
 
 			returnValue.props.className += " VPP-container";
 
-			const bannerObject = getNestedProp(returnValue, "props.children.1.props.children.props.style");
-			const children = getNestedProp(returnValue, "props.children.1.props.children.props.children");
+			const bannerObject = getNestedProp(returnValue, "props.children.props.style");
+			const children = getNestedProp(returnValue, "props.children.props.children");
 
 			const buttonClasses = getButtonClasses(user, profileType, bannerObject?.backgroundImage);
 
@@ -710,6 +602,5 @@ class ViewProfilePicture {
 		return React.createElement(SettingComponent, null);
 	}
 }
-shouldChangelog()?.();
 
 module.exports = ViewProfilePicture;
