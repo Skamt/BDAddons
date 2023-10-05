@@ -247,6 +247,7 @@
 .spotify-player-timeline-trackbar {
 	margin-top: -8px;
 	margin-bottom: 8px;
+	cursor:pointer;
 }
 
 .spotify-player-timeline:hover .spotify-player-timeline-trackbar-grabber {
@@ -262,7 +263,7 @@
 
 .spotify-player-timeline .spotify-player-timeline-trackbar-bar {
 	background: hsl(0deg 0% 100% / 30%) !important;
-	height: 4px;
+	height: 6px;
 }
 
 .spotify-player-timeline-trackbar-bar > div {

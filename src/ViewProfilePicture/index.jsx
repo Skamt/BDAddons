@@ -88,8 +88,8 @@ export default class ViewProfilePicture {
 
 			returnValue.props.className += " VPP-container";
 
-			const bannerObject = getNestedProp(returnValue, "props.children.1.props.children.props.style");
-			const children = getNestedProp(returnValue, "props.children.1.props.children.props.children");
+			const bannerObject = getNestedProp(returnValue, "props.children.props.style");
+			const children = getNestedProp(returnValue, "props.children.props.children");
 
 			const buttonClasses = getButtonClasses(user, profileType, bannerObject?.backgroundImage);
 

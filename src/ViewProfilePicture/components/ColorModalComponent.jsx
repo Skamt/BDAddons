@@ -18,7 +18,7 @@ function copyColor(type, color) {
 				c = Color(color).css("hsla");
 				break;
 		}
-	} catch {
+	} finally {
 		copy(c);
 		Toast.success(`${c} Copied!`);
 	}

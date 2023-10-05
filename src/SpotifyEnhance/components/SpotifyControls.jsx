@@ -5,7 +5,7 @@ import SpotifyStore from "@Stores/SpotifyStore";
 import { useStateFromStores } from "@Utils/Hooks";
 import { parseSpotifyUrl } from "../Utils.js";
 import SpotifyWrapper from "../SpotifyWrapper";
-import { ActionsEnum } from "../consts.js";
+
 
 export default ({ embed }) => {
 	const { url } = embed;

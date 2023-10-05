@@ -6,6 +6,7 @@ const alias = require("@rollup/plugin-alias");
 const cleanup = require("rollup-plugin-cleanup");
 const sucrase = require("@rollup/plugin-sucrase");
 const nodeResolve = require("@rollup/plugin-node-resolve");
+
 const { eslintBundle } = require("rollup-plugin-eslint-bundle");
 
 const css = require("./rollup-plugins/css.js");
@@ -32,20 +33,20 @@ const eslintBundleConfig = {
 
 const changelog = pluginConfig => {
 	let first = true;
-	return !pluginConfig.changelog
-		? {}
-		: {
-				name: "Changelog",
-				transform(code) {
-					if (first) {
-						first = false;
-						if (pluginConfig.changelog) {
-							code += `import shouldChangelog from "@Utils/Changelog";shouldChangelog()?.();`;
-							return code;
-						}
+	return !pluginConfig.changelog ?
+		{} :
+		{
+			name: "Changelog",
+			transform(code) {
+				if (first) {
+					first = false;
+					if (pluginConfig.changelog) {
+						code += `import shouldChangelog from "@Utils/Changelog";shouldChangelog()?.();`;
+						return code;
 					}
 				}
-		  };
+			}
+		};
 };
 
 const aliasesObj = {

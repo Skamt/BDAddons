@@ -74,7 +74,7 @@ export default new (class SpotifyActiveAccount extends ChangeEmitter {
 				this.activeAccount.setDevices(event.event.devices);
 				break;
 		}
-
+		if(!this.activeAccount?.isActive) this.activeAccount = undefined;
 		this.emit();
 	}
 

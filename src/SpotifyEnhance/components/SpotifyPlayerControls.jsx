@@ -68,6 +68,7 @@ export default ({ disallowedActions, state, data }) => {
 	const repeatHandler = () => SpotifyWrapper.Player.repeat(repeatArg);
 	const pauseHandler = () => SpotifyWrapper.Player.pause();
 	const playHandler = () => SpotifyWrapper.Player.play();
+	const volumeHandler = (v) => SpotifyWrapper.Player.volume(Math.round(v));
 
 	const { playPauseTooltip, playPauseHandler, playPauseIcon, playPauseClassName } = {
 		"true": {
@@ -160,6 +161,7 @@ export default ({ disallowedActions, state, data }) => {
 							maxValue={100}
 							initialValue={volume}
 							onValueRender={a => "" + Math.round(a)}
+							onValueChange={volumeHandler}
 							grabberClassName="spotify-player-controls-volume-slider-grabber"
 							barClassName="spotify-player-controls-volume-slider-bar"
 						/>

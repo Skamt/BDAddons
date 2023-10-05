@@ -1,6 +1,6 @@
 import { React } from "@Api";
 import SpotifyWrapper from "../SpotifyWrapper";
-import { useAnimationFrame, useStateBasedProp } from "@Utils/Hooks";
+import { usePropBasedState } from "@Utils/Hooks";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 const { Slider } = TheBigBoyBundle;
 
@@ -10,14 +10,22 @@ function formatMsToTime(ms) {
 }
 
 export default ({ duration, isPlaying, progress }) => {
-	const [position, setPosition] = useStateBasedProp(progress);
+	const [position, setPosition] = usePropBasedState(progress);
 	const sliderRef = React.useRef();
 
-	useAnimationFrame(e => {
+	React.useEffect(() => {
 		if (!isPlaying) return;
-		if (sliderRef.current?.state?.active) return;
-		setPosition(p => p + e.delta * 1000);
-	});
+		const interval = setInterval(() => {
+			if (sliderRef.current?.state?.active) return;
+
+			setPosition(p => {
+				if (p >= duration) clearInterval(interval);
+				return p + 1000;
+			});
+		}, 1000);
+
+		return () => clearInterval(interval);
+	}, [isPlaying]);
 
 	const rangeChangeHandler = e => {
 		const pos = Math.floor(e);
