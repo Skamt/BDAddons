@@ -39,6 +39,12 @@ svg:has(path[d="M10 0C4.486 0 0 4.486 0 10C0 15.515 4.486 20 10 20C15.514 20 20 
 	border-radius: 50%;
 	top: 10px;
 	color: #fff;
+	
+}
+
+.VPP-Button svg {
+	height: 18px;
+	width: 18px;
 }
 
 /* Popout */
@@ -176,10 +182,7 @@ const React = Api.React;
 const Patcher = Api.Patcher;
 
 const getModule = Api.Webpack.getModule;
-const Filters$1 = Api.Webpack.Filters;
-const getInternalInstance = Api.ReactUtils.getInternalInstance;
-
-const findInTree = Api.Utils.findInTree;
+const Filters = Api.Webpack.Filters;
 
 class ChangeEmitter {
 	constructor() {
@@ -251,13 +254,13 @@ function getModuleAndKey(filter, options) {
 	return { module, key };
 }
 
-const ImageModal = getModule(Filters$1.byStrings("original", "maxHeight", "maxWidth", "noreferrer noopener"), { searchExports: true });
+const ImageModal = getModule(Filters.byStrings("original", "maxHeight", "maxWidth", "noreferrer noopener"), { searchExports: true });
 
-const ModalRoot = getModule(Filters$1.byStrings("onAnimationEnd"), { searchExports: true });
+const ModalRoot = getModule(Filters.byStrings("onAnimationEnd"), { searchExports: true });
 
 const RenderLinkComponent = getModule(m => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false });
 
-const TheBigBoyBundle = getModule(Filters$1.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
+const TheBigBoyBundle = getModule(Filters.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
 
 class ErrorBoundary extends React.Component {
 	state = { hasError: false, error: null, info: null };
@@ -302,12 +305,6 @@ function copy(data) {
 	DiscordNative.clipboard.copy(data);
 }
 
-function getNestedProp(obj, path) {
-	return path.split(".").reduce(function(ob, prop) {
-		return ob && ob[prop];
-	}, obj);
-}
-
 const UserStore = getModule(m => m._dispatchToken && m.getName() === "UserStore");
 
 function isSelf(user) {
@@ -343,7 +340,7 @@ const ErrorIcon = props => (
 	}), React.createElement('path', { d: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z", })))
 );
 
-const ProfileTypeEnum = getModule(Filters$1.byProps("POPOUT", "SETTINGS"), { searchExports: true }) || {
+const ProfileTypeEnum = getModule(Filters.byProps("POPOUT", "SETTINGS"), { searchExports: true }) || {
 	"POPOUT": 0,
 	"MODAL": 1,
 	"SETTINGS": 2,
@@ -351,9 +348,7 @@ const ProfileTypeEnum = getModule(Filters$1.byProps("POPOUT", "SETTINGS"), { sea
 	"CARD": 4
 };
 
-const UserBannerMask = getModuleAndKey(Filters$1.byStrings("showPremiumBadgeUpsell"), { searchExports: true });
-
-const SelectedGuildStore = getModule(m => m._dispatchToken && m.getName() === "SelectedGuildStore");
+const UserBannerMask = getModuleAndKey(Filters.byStrings("showPremiumBadgeUpsell"), { searchExports: true });
 
 function showToast(content, type) {
 	UI.showToast(`[${config.info.name}] ${content}`, { type });
@@ -366,7 +361,7 @@ const Toast = {
 	error(content) { showToast(content, "error"); }
 };
 
-const Color = getModule(Filters$1.byProps("Color", "hex", "hsl"), { searchExports: false });
+const Color = getModule(Filters.byProps("Color", "hex", "hsl"), { searchExports: false });
 
 function copyColor(type, color) {
 	let c = color;
@@ -391,7 +386,7 @@ function copyColor(type, color) {
 const ColorModalComponent = ({ color }) => (
 	React.createElement('div', {
 		className: "VPP-NoBanner",
-		style: { backgroundColor: color },
+		style: { backgroundColor: Color(color).css() },
 	}, React.createElement('div', { className: "VPP-copy-color-container", }, React.createElement('a', { className: "VPP-copy-color-label", }, "Copy Color:"), React.createElement('a', {
 			className: "VPP-copy-color",
 			onClick: () => copyColor("hex", color),
@@ -410,7 +405,7 @@ const ColorModalComponent = ({ color }) => (
 	)))
 );
 
-const ModalCarousel = getModule(Filters$1.byPrototypeFields("navigateTo", "preloadImage"), { searchExports: false });
+const ModalCarousel = getModule(Filters.byPrototypeFields("navigateTo", "preloadImage"), { searchExports: false });
 
 const DisplayCarouselComponent = ({ items }) => {
 	return (
@@ -436,33 +431,41 @@ function useSettings(key) {
 	return state;
 }
 
-getModule(Filters.byStrings("useStateFromStores"), { searchExports: true });
-
 const { Tooltip } = TheBigBoyBundle;
+
+const Tooltip$1 = ({ note, position, children }) => {
+	return (
+		React.createElement(Tooltip, {
+			text: note,
+			position: position || "top",
+		}, props => {
+			children.props = {
+				...props,
+				...children.props
+			};
+			return children;
+		})
+	);
+};
+
+function ImageIcon() {
+	return (
+		React.createElement('svg', {
+			fill: "currentColor",
+			width: "24",
+			height: "24",
+			viewBox: "-50 -50 484 484",
+		}, React.createElement('path', { d: "M341.333,0H42.667C19.093,0,0,19.093,0,42.667v298.667C0,364.907,19.093,384,42.667,384h298.667 C364.907,384,384,364.907,384,341.333V42.667C384,19.093,364.907,0,341.333,0z M42.667,320l74.667-96l53.333,64.107L245.333,192l96,128H42.667z", }))
+	);
+}
 
 const ViewProfilePictureButtonComponent = props => {
 	const showOnHover = useSettings("showOnHover");
 	return (
-		React.createElement(Tooltip, {
-			text: "View profile picture",
-			position: "top",
-		}, tooltipProps => (
-			React.createElement('div', {
-				...tooltipProps,
-				...props,
-				className: `${props.className} ${showOnHover && "VPP-hover"}`,
-			}, React.createElement('svg', {
-				'aria-label': tooltipProps["aria-label"],
-				'aria-hidden': "false",
-				role: "img",
-				width: "18",
-				height: "18",
-				viewBox: "-50 -50 484 484",
-			}, React.createElement('path', {
-				fill: "currentColor",
-				d: "M341.333,0H42.667C19.093,0,0,19.093,0,42.667v298.667C0,364.907,19.093,384,42.667,384h298.667 C364.907,384,384,364.907,384,341.333V42.667C384,19.093,364.907,0,341.333,0z M42.667,320l74.667-96l53.333,64.107L245.333,192l96,128H42.667z",
-			})))
-		))
+		React.createElement(Tooltip$1, { note: "View profile picture", }, React.createElement('div', {
+			...props,
+			className: `${props.className} ${showOnHover && "VPP-hover"}`,
+		}, React.createElement(ImageIcon, null)))
 	);
 };
 
@@ -496,16 +499,17 @@ function ShowOnHoverSwitch() {
 
 const SettingComponent = () => React.createElement(ShowOnHoverSwitch, null);
 
-const getImageModalComponent = (url, rest) => (
+const IMG_WIDTH = 4096;
+
+const getImageModalComponent = (url) => (
 	React.createElement(ImageModal, {
-		...rest,
+		height: IMG_WIDTH,
+		width: IMG_WIDTH,
 		src: url,
 		original: url,
 		renderLinkComponent: p => React.createElement(RenderLinkComponent, { ...p, }),
 	})
 );
-
-const IMG_WIDTH = 4096;
 
 function openCarousel(items) {
 	TheBigBoyBundle.openModal(props => (
@@ -517,15 +521,6 @@ function openCarousel(items) {
 			className: "VPP-carousel carouselModal-1eUFoq zoomedCarouselModalRoot-beLNhM",
 		}, React.createElement(DisplayCarouselComponent, { items: items, })))
 	));
-}
-
-function closeModal() {
-	const target = document.querySelector(".VPP-container");
-	if (!target) return;
-	const instance = getInternalInstance(target);
-	if (!instance) return;
-	const closeObj = findInTree(instance, a => a?.onClose, { walkable: ["return", "pendingProps"] });
-	closeObj && closeObj.onClose && typeof closeObj.onClose === "function" && closeObj.onClose();
 }
 
 function getButtonClasses(user, profileType, banner) {
@@ -540,17 +535,11 @@ function getButtonClasses(user, profileType, banner) {
 }
 
 class ViewProfilePicture {
-	constructor() {
-		Settings.init(config.settings);
-	}
-
-	clickHandler(user, bannerObject, isUserPopout) {
-		const { backgroundColor, backgroundImage } = bannerObject;
-		const guildId = isUserPopout ? SelectedGuildStore.getGuildId() : "";
-		const avatarURL = user.getAvatarURL(guildId, IMG_WIDTH, true);
-		const AvatarImageComponent = getImageModalComponent(avatarURL, { width: IMG_WIDTH, height: IMG_WIDTH });
-		const BannerImageComponent = backgroundImage ? getImageModalComponent(`${backgroundImage.match(/(?<=url\()(.+?)(?=\?|\))/)?.[0]}?size=${IMG_WIDTH}`, { width: IMG_WIDTH }) : React.createElement(ColorModalComponent, { color: backgroundColor, });
-		closeModal();
+	clickHandler({ user, displayProfile }) {
+		const avatarURL = user.getAvatarURL(displayProfile.guildId, IMG_WIDTH, true);
+		const bannerURL = displayProfile.getBannerURL({});
+		const AvatarImageComponent = getImageModalComponent(avatarURL);
+		const BannerImageComponent = bannerURL ? getImageModalComponent(bannerURL) : React.createElement(ColorModalComponent, { color: displayProfile.accentColor, });
 		openCarousel([AvatarImageComponent, BannerImageComponent]);
 	}
 
@@ -559,13 +548,17 @@ class ViewProfilePicture {
 
 		const { module, key } = UserBannerMask;
 
-		Patcher.after(module, key, (_, [{ user, profileType }], returnValue) => {
+		Patcher.after(module, key, (_, [props], returnValue) => {
+			const { user, isHovering, profileType } = props;
+
 			if (profileType === ProfileTypeEnum.SETTINGS) return;
 
-			returnValue.props.className += " VPP-container";
+			const bannerElement = returnValue.props.children.props;
 
-			const bannerObject = getNestedProp(returnValue, "props.children.props.style");
-			const children = getNestedProp(returnValue, "props.children.props.children");
+			bannerElement.className += " VPP-container";
+
+			const bannerObject = bannerElement.style;
+			const children = bannerElement.children;
 
 			const buttonClasses = getButtonClasses(user, profileType, bannerObject?.backgroundImage);
 
@@ -577,7 +570,8 @@ class ViewProfilePicture {
 						fallback: React.createElement(ErrorIcon, { className: buttonClasses, }),
 					}, React.createElement(ViewProfilePictureButtonComponent, {
 						className: buttonClasses,
-						onClick: () => this.clickHandler(user, bannerObject, ProfileTypeEnum.POPOUT === profileType),
+						isHovering: isHovering,
+						onClick: () => this.clickHandler(props),
 					}))
 				);
 			}
@@ -586,6 +580,7 @@ class ViewProfilePicture {
 
 	start() {
 		try {
+			Settings.init(config.settings);
 			DOM.addStyle(css);
 			this.patchUserBannerMask();
 		} catch (e) {
