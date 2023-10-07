@@ -27,7 +27,7 @@ function copyColor(type, color) {
 export default ({ color }) => (
 	<div
 		className="VPP-NoBanner"
-		style={{ backgroundColor: color }}>
+		style={{ backgroundColor: Color(color).css() }}>
 		<div className="VPP-copy-color-container">
 			<a className="VPP-copy-color-label">Copy Color:</a>
 			<a

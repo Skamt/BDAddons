@@ -1,5 +1,9 @@
 {
 	"Modules": {
+		"useStateFromStores": {
+			"filter": "Filters.byStrings(\"useStateFromStores\")",
+			"options": "{ searchExports: true }"
+		},
 		"TimeBar": {
 			"filter": "a => a.prototype.render && a.defaultProps.themed === false",
 			"options": "{ searchExports: false }"

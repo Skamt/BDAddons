@@ -17,8 +17,6 @@ export function useSettings(key) {
 	return state;
 }
 
-export const useStateFromStores = getModule(Filters.byStrings("useStateFromStores"), { searchExports: true });
-
 export function usePropBasedState(prop) {
 	const [state, setState] = React.useState(prop);
 	React.useEffect(() => {
