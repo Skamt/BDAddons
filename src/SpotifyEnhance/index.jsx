@@ -1,7 +1,6 @@
 import css from "./styles";
 import Logger from "@Utils/Logger";
-import { DOM, React, Patcher } from "@Api";
-import { getNestedProp, reRender } from "@Utils";
+import { DOM, Patcher } from "@Api";
 import Settings from "@Utils/Settings";
 import patchListenAlong from "./patches/patchListenAlong";
 import patchSpotifyEmbed from "./patches/patchSpotifyEmbed";
@@ -10,8 +9,6 @@ import patchMessageHeader from "./patches/patchMessageHeader";
 import patchSpotifyPlayer from "./patches/patchSpotifyPlayer";
 import SettingComponent from "./components/SettingComponent";
 import SpotifyAPI from "@Utils/SpotifyAPI";
-import SpotifyStore from "@Stores/SpotifyStore";
-import ConnectedAccountsStore from "@Stores/ConnectedAccountsStore";
 import { getFluxContainer } from "./Utils";
 
 import SpotifyWrapper from "./SpotifyWrapper";
@@ -49,6 +46,6 @@ export default class SpotifyEnhance {
 	}
 
 	getSettingsPanel() {
-		return <SettingComponent />;
+		return SettingComponent;
 	}
 }

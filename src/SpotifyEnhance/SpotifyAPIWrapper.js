@@ -27,28 +27,25 @@ async function requestHandler(action) {
 function playerActions(prop) {
 	return (...args) =>
 		requestHandler(() => SpotifyAPI[prop].apply(SpotifyAPI, args)).catch(reason => {
-			Toast.error(`Could not execute ${prop} command`);
+			Toast.error(`Could not execute ${prop} command\n${reason}`);
 		});
 }
 
 function ressourceActions(prop) {
-	const { success, error } =
-		prop === "queue"
-			? {
-					success: (type, name) => `Queued ${type} ${name}`,
-					error: (type, name, reason) => `Could not queue ${type} ${name}\n${reason}`
-			  }
-			: {
-					success: (type, name) => `Playing ${type} ${name}`,
-					error: (type, name, reason) => `Could not play ${type} ${name}\n${reason}`
-			  };
+	const { success, error } = prop === "queue" ? {
+		success: (type, name) => `Queued ${type} ${name}`,
+		error: (type, name, reason) => `Could not queue ${type} ${name}\n${reason}`
+	} : {
+		success: (type, name) => `Playing ${type} ${name}`,
+		error: (type, name, reason) => `Could not play ${type} ${name}\n${reason}`
+	};
 
 	return (type, id, description) =>
 		requestHandler(() => SpotifyAPI[prop](type, id))
 			.then(() => {
 				Toast.success(success(type, description));
 			})
-			.catch(reason => {
+			.catch(() => {
 				Toast.error(error(type, description));
 			});
 }
@@ -72,15 +69,14 @@ export default new Proxy(
 					return playerActions(prop);
 				case "getPlayerState":
 				case "getDevices":
-					return ()=>requestHandler(() => SpotifyAPI[prop]());
+					return () => requestHandler(() => SpotifyAPI[prop]());
 				case "updateToken":
 					return socket => {
 						SpotifyAPI.token = socket?.accessToken;
 						SpotifyAPI.accountId = socket?.accountId;
 					};
-				default:
-					return Promise.reject("Unknown API Command", prop);
-					break;
+				default: return Promise.reject("Unknown API Command", prop);
+					
 			}
 		}
 	}

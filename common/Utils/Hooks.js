@@ -1,5 +1,4 @@
 import { React } from "@Api";
-import { getModule } from "@Webpack";
 import Settings from "@Utils/Settings";
 
 export function useSettings(key) {

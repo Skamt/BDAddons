@@ -237,7 +237,8 @@
 	color: white;
 	display: flex;
 	flex-wrap: wrap;
-	font-size: .8rem;
+	font-size: 0.8rem;
+	flex:1;
 }
 
 .spotify-player-timeline-progress {
@@ -247,7 +248,7 @@
 .spotify-player-timeline-trackbar {
 	margin-top: -8px;
 	margin-bottom: 8px;
-	cursor:pointer;
+	cursor: pointer;
 }
 
 .spotify-player-timeline:hover .spotify-player-timeline-trackbar-grabber {
@@ -259,54 +260,55 @@
 	cursor: grab;
 	width: 10px;
 	height: 10px;
+	margin-top: 4px;
 }
 
-.spotify-player-timeline .spotify-player-timeline-trackbar-bar {
-	background: hsl(0deg 0% 100% / 30%) !important;
+ .spotify-player-timeline .spotify-player-timeline-trackbar-bar {
+	background: hsl(0deg 0% 100% / 30%);
 	height: 6px;
 }
 
-.spotify-player-timeline-trackbar-bar > div {
-	background: #fff !important;
+.spotify-player-timeline .spotify-player-timeline-trackbar-bar > div {
+	background: #fff;
 	border-radius: 4px;
 }
 
 .spotify-player-timeline:hover .spotify-player-timeline-trackbar-bar > div {
-	background: var(--spotify-green) !important;
+	background: var(--spotify-green);
 }
 
-
-.spotify-player-container{
-	background:hsl(228 8% 12%);
+.spotify-player-container {
+	background: hsl(228 8% 12%);
 	border-bottom: 1px solid hsl(228deg 6% 33% / 48%);
 }
 
-.spotify-player-controls-volume-slider-wrapper{
+.spotify-player-controls-volume-slider-wrapper {
 	box-sizing: border-box;
-	background:#000;
-	width:100px;
-	height:22px;
-	padding:2px 5px;
-	border-radius:999px;
+	background: #000;
+	width: 100px;
+	height: 22px;
+	padding: 2px 5px;
+	border-radius: 999px;
 }
 
-.spotify-player-controls-volume-slider{
-	width:100%;
+.spotify-player-controls-volume-slider {
+	width: 100%;
 	box-sizing: border-box;
 	position: relative;
 	top: -11px;
 }
 
-.spotify-player-controls-volume-slider-grabber{
-	width:10px!important;
-	height:10px !important;
-	cursor:initial;
+.spotify-player-controls-volume-slider-wrapper .spotify-player-controls-volume-slider-grabber {
+	width: 10px;
+	height: 10px;
+	margin-top: 3px;
+	cursor: initial;
 }
 
-.spotify-player-controls-volume-slider-bar{
-	height:4px !important;
+.spotify-player-controls-volume-slider-wrapper .spotify-player-controls-volume-slider-bar {
+	height: 4px;
 }
 
-.spotify-player-controls-volume-slider-bar > div{
-	background: var(--spotify-green) !important;
+.spotify-player-controls-volume-slider-wrapper .spotify-player-controls-volume-slider-bar > div {
+	background: var(--spotify-green);
 }

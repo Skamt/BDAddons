@@ -8,7 +8,7 @@ import PauseIcon from "@Components/PauseIcon";
 import PlayIcon from "@Components/PlayIcon";
 import RepeatIcon from "@Components/RepeatIcon";
 import ShuffleIcon from "@Components/ShuffleIcon";
-import CopyIcon from "@Components/CopyIcon";
+
 import NextIcon from "@Components/NextIcon";
 import VolumeIcon from "@Components/VolumeIcon";
 import Tooltip from "@Components/Tooltip";
@@ -17,7 +17,7 @@ import RepeatOneIcon from "@Components/RepeatOneIcon";
 
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 
-const { MenuItem, Menu, MenuGroup, Slider } = TheBigBoyBundle;
+const { MenuItem, Menu, Slider } = TheBigBoyBundle;
 
 // {
 //   "interrupting_playback": false,
@@ -37,7 +37,7 @@ export default ({ disallowedActions, state, data }) => {
 
 	const { url, volume } = data;
 	const { shuffle, repeat, isPlaying } = state;
-	const { toggling_shuffle, toggling_repeat_track, pausing, resuming, seeking, skipping_next, skipping_prev } = disallowedActions;
+	const { toggling_shuffle, toggling_repeat_track, /* pausing, resuming, seeking, */ skipping_next, skipping_prev } = disallowedActions;
 
 	const { repeatTooltip, repeatActive, repeatIcon, repeatArg } = {
 		"off": {
@@ -68,7 +68,7 @@ export default ({ disallowedActions, state, data }) => {
 	const repeatHandler = () => SpotifyWrapper.Player.repeat(repeatArg);
 	const pauseHandler = () => SpotifyWrapper.Player.pause();
 	const playHandler = () => SpotifyWrapper.Player.play();
-	const volumeHandler = (v) => SpotifyWrapper.Player.volume(Math.round(v));
+	const volumeHandler = v => SpotifyWrapper.Player.volume(Math.round(v));
 
 	const { playPauseTooltip, playPauseHandler, playPauseIcon, playPauseClassName } = {
 		"true": {
@@ -117,6 +117,7 @@ export default ({ disallowedActions, state, data }) => {
 				<SpotifyPlayerButton
 					active={shuffle}
 					className="spotify-player-controls-shuffle"
+					disabled={toggling_shuffle}
 					onClick={shuffleHandler}
 					value={<ShuffleIcon />}
 				/>
@@ -124,6 +125,7 @@ export default ({ disallowedActions, state, data }) => {
 			<Tooltip note="Previous">
 				<SpotifyPlayerButton
 					className="spotify-player-controls-previous"
+					disabled={skipping_prev}
 					onClick={previousHandler}
 					value={<PreviousIcon />}
 				/>
@@ -138,6 +140,7 @@ export default ({ disallowedActions, state, data }) => {
 			<Tooltip note="Next">
 				<SpotifyPlayerButton
 					className="spotify-player-controls-next"
+					disabled={skipping_next}
 					onClick={nextHandler}
 					value={<NextIcon />}
 				/>
@@ -146,6 +149,7 @@ export default ({ disallowedActions, state, data }) => {
 				<SpotifyPlayerButton
 					active={repeatActive}
 					className="spotify-player-controls-repeat"
+					disabled={toggling_repeat_track}
 					onClick={repeatHandler}
 					value={repeatIcon}
 				/>
@@ -180,7 +184,7 @@ export default ({ disallowedActions, state, data }) => {
 	);
 };
 
-function SpotifyPlayerButton({ note, value, onClick, className, active, ...rest }) {
+function SpotifyPlayerButton({ value, onClick, className, active, ...rest }) {
 	return (
 		<Button
 			className={`spotify-player-controls-btn ${className} ${active ? "enabled" : ""}`}

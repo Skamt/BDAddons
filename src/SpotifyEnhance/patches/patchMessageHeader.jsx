@@ -6,7 +6,7 @@ import PresenceStore from "@Stores/PresenceStore";
 import SpotifyIcon from "@Components/SpotifyIcon";
 import Tooltip from "@Components/Tooltip";
 
-import { useStateFromStores } from "@Utils/Hooks";
+import useStateFromStores from "@Modules/useStateFromStores";
 
 function spotifyActivityFilter(activity) {
 	return activity.name.toLowerCase() === "spotify";
@@ -21,7 +21,13 @@ export default () => {
 	if (module && key)
 		Patcher.after(module, key, (_, [{ message }], ret) => {
 			const userId = message.author.id;
-			ret.props.children.push(<SpotifyActivityIndicator userId={userId} />);
+			ret.props.children.push(
+				<ErrorBoundary
+					id="SpotifyActivityIndicator"
+					plugin={config.info.name}>
+					<SpotifyActivityIndicator userId={userId} />
+				</ErrorBoundary>
+			);
 		});
 	else Logger.patch("MessageHeader");
 };

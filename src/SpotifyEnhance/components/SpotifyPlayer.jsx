@@ -5,7 +5,7 @@ import TrackMediaDetails from "./TrackMediaDetails";
 import SpotifyPlayerControls from "./SpotifyPlayerControls";
 import TrackTimeLine from "./TrackTimeLine";
 
-export default React.memo(function SpotifyPlayer(props) {
+export default React.memo(function SpotifyPlayer() {
 	const [{ deviceState, playerState }, setState] = React.useState(SpotifyWrapper.getSpotifyState());
 	React.useEffect(() => {
 		return SpotifyWrapper.on(() => setState(SpotifyWrapper.getSpotifyState()));

@@ -10,10 +10,9 @@ export default function SpotifyEmbedWrapper({ embedObject, embedComponent }) {
 		case EmbedStyleEnum.KEEP:
 			return [embedComponent, <SpotifyControls embed={embedObject} />];
 		case EmbedStyleEnum.REPLACE:
-			return <SpotifyEmbed orig={embedComponent} embed={embedObject} />;
+			return <SpotifyEmbed embed={embedObject} />;
 		case EmbedStyleEnum.HIDE:
 			return <SpotifyControls embed={embedObject} />;
-		default:
-			return embedComponent;
 	}
+	return embedComponent;
 }

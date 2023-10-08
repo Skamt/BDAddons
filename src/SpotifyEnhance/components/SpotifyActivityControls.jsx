@@ -1,10 +1,7 @@
-import { React, Patcher } from "@Api";
-import { getModule } from "@Webpack";
-import Toast from "@Utils/Toast";
+import { React } from "@Api";
+import { Filters, getModule } from "@Webpack";
+
 import SpotifyStore from "@Stores/SpotifyStore";
-import UserStore from "@Stores/UserStore";
-import SelectedChannelStore from "@Stores/SelectedChannelStore";
-import { sendMessageDirectly, insertText } from "@Utils/Messages";
 import SpotifyWrapper from "../SpotifyWrapper";
 import Button from "@Components/Button";
 import AddToQueueIcon from "@Components/AddToQueueIcon";
@@ -13,7 +10,7 @@ import ListenIcon from "@Components/ListenIcon";
 import ShareIcon from "@Components/ShareIcon";
 import Tooltip from "@Components/Tooltip";
 
-import { useStateFromStores } from "@Utils/Hooks";
+import useStateFromStores from "@Modules/useStateFromStores";
 
 const getUserSyncActivityState = getModule(Filters.byStrings("USER_ACTIVITY_SYNC", "spotifyData"), { searchExports: true });
 const getUserPlayActivityState = getModule(Filters.byStrings("USER_ACTIVITY_PLAY", "spotifyData"), { searchExports: true });

@@ -4,9 +4,7 @@ import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 import Heading from "@Modules/Heading";
 import { EmbedStyleEnum } from "../consts.js";
 
-export default () => {
-	return <SpotifyEmbedOptions />;
-};
+export default <SpotifyEmbedOptions />;
 
 const { RadioGroup } = TheBigBoyBundle;
 function SpotifyEmbedOptions() {

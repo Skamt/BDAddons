@@ -38,7 +38,7 @@ export default ({ spacing, position, animation, renderPopout, children }) => {
 				position={position ?? "top"}
 				animation={animation ?? "1"}
 				spacing={spacing ?? 8}>
-				{props => children}
+				{() => children}
 			</Popout>
 		</div>
 	);

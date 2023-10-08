@@ -1,6 +1,6 @@
 import ChangeEmitter from "@Utils/ChangeEmitter";
 import SpotifyAPIWrapper from "./SpotifyAPIWrapper";
-import { promiseHandler, nop } from "@Utils";
+import { promiseHandler } from "@Utils";
 import SpotifySocketListener from "./SpotifySocketListener";
 import SpotifyConnectionsListener from "./SpotifyConnectionsListener";
 import SpotifyStore from "@Stores/SpotifyStore";
@@ -74,7 +74,7 @@ export default new (class SpotifyActiveAccount extends ChangeEmitter {
 				this.activeAccount.setDevices(event.event.devices);
 				break;
 		}
-		if(!this.activeAccount?.isActive) this.activeAccount = undefined;
+		if (!this.activeAccount?.isActive) this.activeAccount = undefined;
 		this.emit();
 	}
 

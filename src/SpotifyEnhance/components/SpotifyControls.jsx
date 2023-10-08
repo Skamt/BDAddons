@@ -1,8 +1,7 @@
 import { React } from "@Api";
-import Toast from "@Utils/Toast";
 import Button from "@Components/Button";
 import SpotifyStore from "@Stores/SpotifyStore";
-import { useStateFromStores } from "@Utils/Hooks";
+import useStateFromStores from "@Modules/useStateFromStores";
 import { parseSpotifyUrl } from "../Utils.js";
 import SpotifyWrapper from "../SpotifyWrapper";
 
@@ -34,7 +33,7 @@ export default ({ embed }) => {
 	);
 
 	return (
-		<div class="spotify-controls">
+		<div className="spotify-controls">
 			{listenBtn}
 			{queueBtn}
 			{copyBtn}

@@ -1,4 +1,5 @@
 import { React, Patcher } from "@Api";
+import { getModule } from "@Webpack";
 import Logger from "@Utils/Logger";
 import ErrorBoundary from "@Components/ErrorBoundary";
 import SpotifyActivityControls from "../components/SpotifyActivityControls";

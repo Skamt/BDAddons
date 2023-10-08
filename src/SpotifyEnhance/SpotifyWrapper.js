@@ -1,6 +1,6 @@
 import SpotifyAPIWrapper from "./SpotifyAPIWrapper";
 import Toast from "@Utils/Toast";
-import { promiseHandler, copy } from "@Utils";
+import { copy } from "@Utils";
 import ChangeEmitter from "@Utils/ChangeEmitter";
 import SpotifyActiveAccount from "./SpotifyActiveAccount";
 import SelectedChannelStore from "@Stores/SelectedChannelStore";
