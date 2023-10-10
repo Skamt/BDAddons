@@ -48,7 +48,7 @@ export default ({ embed }) => {
 		/>
 	);
 
-	const { duration, isPlaying, progress } = playerState;
+	const { duration, isPlaying, progress } = playerState || {};
 
 	return (
 		<div
