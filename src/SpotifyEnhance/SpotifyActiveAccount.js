@@ -42,10 +42,11 @@ export default new (class SpotifyActiveAccount extends ChangeEmitter {
 	}
 
 	onAccountsChanged() {
+		if (!this.activeAccount) return;
 		const connectedAccounts = ConnectedAccountsStore.getAccounts().filter(account => account.type === "spotify");
 		if (connectedAccounts.some(a => a.id === this.activeAccount.id)) return;
 
-		// if (!this.activeAccount) return;
+		
 		const { socket } = SpotifyStore.getActiveSocketAndDevice() || {};
 		if (socket) return;
 		this.activeAccount = undefined;
