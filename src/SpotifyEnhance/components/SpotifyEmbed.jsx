@@ -64,7 +64,7 @@ export default ({ embed }) => {
 			{type && id && (
 				<div className="spotifyEmbed-controls">
 					{!isThis && isActive && [listenBtn, queueBtn]}
-					{isThis && <TrackTimeLine {...{ duration, isPlaying, progress }} />}
+					{isThis && isPlaying && <TrackTimeLine {...{ duration, isPlaying, progress }} />}
 					<Copy url={url} />
 				</div>
 			)}

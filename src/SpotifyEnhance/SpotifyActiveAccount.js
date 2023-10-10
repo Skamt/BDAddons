@@ -2,8 +2,8 @@ import ChangeEmitter from "@Utils/ChangeEmitter";
 import SpotifyAPIWrapper from "./SpotifyAPIWrapper";
 import { promiseHandler } from "@Utils";
 import SpotifySocketListener from "./SpotifySocketListener";
-import SpotifyConnectionsListener from "./SpotifyConnectionsListener";
 import SpotifyStore from "@Stores/SpotifyStore";
+import ConnectedAccountsStore from "@Stores/ConnectedAccountsStore";
 import SpotifyAccount from "./SpotifyAccount";
 
 export default new (class SpotifyActiveAccount extends ChangeEmitter {
@@ -11,18 +11,17 @@ export default new (class SpotifyActiveAccount extends ChangeEmitter {
 		super();
 		this.onSocketEvent = this.onSocketEvent.bind(this);
 		this.onSpotifyStoreChange = this.onSpotifyStoreChange.bind(this);
-		this.onSpotifyAccountChanged = this.onSpotifyAccountChanged.bind(this);
+		this.onAccountsChanged = this.onAccountsChanged.bind(this);
 	}
 
 	async init() {
 		this.activeAccount = undefined;
 
 		SpotifySocketListener.init();
-		SpotifyConnectionsListener.init();
 		SpotifySocketListener.on(this.onSocketEvent);
-		SpotifyConnectionsListener.on(this.onSpotifyAccountChanged);
-		SpotifyStore.addChangeListener(this.onSpotifyStoreChange);
 
+		SpotifyStore.addChangeListener(this.onSpotifyStoreChange);
+		ConnectedAccountsStore.addChangeListener(this.onAccountsChanged);
 		const { socket } = SpotifyStore.getActiveSocketAndDevice() || {};
 		if (!socket) return;
 
@@ -36,15 +35,17 @@ export default new (class SpotifyActiveAccount extends ChangeEmitter {
 	dispose() {
 		SpotifyStore.removeChangeListener(this.onSpotifyStoreChange);
 		SpotifySocketListener.off(this.onSocketEvent);
-		SpotifyConnectionsListener.off(this.onSpotifyAccountChanged);
+		ConnectedAccountsStore.removeChangeListener(this.onAccountsChanged);
 		SpotifySocketListener.dispose();
-		SpotifyConnectionsListener.dispose();
 		clearTimeout(this.idleTimeoutId);
 		delete this.activeAccount;
 	}
 
-	onSpotifyAccountChanged() {
-		if (!this.activeAccount) return;
+	onAccountsChanged() {
+		const connectedAccounts = ConnectedAccountsStore.getAccounts().filter(account => account.type === "spotify");
+		if (connectedAccounts.some(a => a.id === this.activeAccount.id)) return;
+
+		// if (!this.activeAccount) return;
 		const { socket } = SpotifyStore.getActiveSocketAndDevice() || {};
 		if (socket) return;
 		this.activeAccount = undefined;

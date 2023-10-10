@@ -1,3 +1,35 @@
+export default class SpotifyAccount {
+	constructor(socket) {
+		this.socket = socket;
+	}
+
+	get accessToken() {
+		return this.socket.accessToken;
+	}
+
+	set accessToken(token) {
+		this.socket.accessToken = token;
+	}
+
+	get id() {
+		return this.socket.accountId;
+	}
+
+	get isActive() {
+		return this.device?.is_active;
+	}
+
+	setDevices(devices) {
+		this.device = devices.find(d => d.is_active) || devices[0];
+		if (!this.isActive) this.playerState = undefined;
+	}
+
+	setPlayerState(playerState) {
+		this.playerState = new PlayerState(playerState);
+		this.device = playerState.device;
+	}
+}
+
 class Track {
 	constructor(track) {
 		this.track = track;
@@ -84,37 +116,5 @@ class PlayerState {
 
 	get volume() {
 		return this.playerState.device["volume_percent"];
-	}
-}
-
-export default class SpotifyAccount {
-	constructor(socket) {
-		this.socket = socket;
-	}
-
-	get accessToken() {
-		return this.socket.accessToken;
-	}
-
-	set accessToken(token) {
-		this.socket.accessToken = token;
-	}
-
-	get id() {
-		return this.socket.accountId;
-	}
-
-	get isActive() {
-		return this.device?.is_active;
-	}
-
-	setDevices(devices) {
-		this.device = devices.find(d => d.is_active) || devices[0];
-		if (!this.isActive) this.playerState = undefined;
-	}
-
-	setPlayerState(playerState) {
-		this.playerState = new PlayerState(playerState);
-		this.device = playerState.device;
 	}
 }

@@ -120,46 +120,89 @@ class SpotifyClientAPI {
 	}
 
 	next() {
-		return this.getRequestBuilder().setPath("/me/player/next").setMethod("POST").build().run();
-	}
-
-	previous() {
-		return this.getRequestBuilder().setPath("/me/player/previous").setMethod("POST").build().run();
-	}
-
-	play() {
-		return this.getRequestBuilder().setPath("/me/player/play").setMethod("PUT").build().run();
-	}
-
-	pause() {
-		return this.getRequestBuilder().setPath("/me/player/pause").setMethod("PUT").build().run();
-	}
-
-	seek(ms) {
-		return this.getRequestBuilder().setPath("/me/player/seek").setMethod("PUT").setParams({ position_ms: ms }).build().run();
-	}
-
-	shuffle(state) {
-		return this.getRequestBuilder().setPath("/me/player/shuffle").setMethod("PUT").setParams({ state }).build().run();
-	}
-
-	volume(volume_percent) {
-		return this.getRequestBuilder().setPath("/me/player/volume").setMethod("PUT").setParams({ volume_percent }).build().run();
-	}
-
-	repeat(state) {
-		return this.getRequestBuilder().setPath("/me/player/repeat").setMethod("PUT").setParams({ state }).build().run();
-	}
-
-	listen(type, id) {
 		return this.getRequestBuilder()
-			.setPath("/me/player/play")
-			.setMethod("PUT")
-			.setBody({ [type === "track" || "episode" ? "uris" : "context_uri"]: [`spotify:${type}:${id}`] })
+			.setPath("/me/player/next")
+			.setMethod("POST")
 			.build()
 			.run();
 	}
 
+	previous() {
+		return this.getRequestBuilder()
+			.setPath("/me/player/previous")
+			.setMethod("POST")
+			.build()
+			.run();
+	}
+
+	play() {
+		return this.getRequestBuilder()
+			.setPath("/me/player/play")
+			.setMethod("PUT")
+			.build()
+			.run();
+	}
+
+	pause() {
+		return this.getRequestBuilder()
+			.setPath("/me/player/pause")
+			.setMethod("PUT")
+			.build()
+			.run();
+	}
+
+	seek(ms) {
+		return this.getRequestBuilder()
+			.setPath("/me/player/seek")
+			.setMethod("PUT")
+			.setParams({ position_ms: ms })
+			.build()
+			.run();
+	}
+
+	shuffle(state) {
+		return this.getRequestBuilder()
+			.setPath("/me/player/shuffle")
+			.setMethod("PUT")
+			.setParams({ state })
+			.build()
+			.run();
+	}
+
+	volume(volume_percent) {
+		return this.getRequestBuilder()
+			.setPath("/me/player/volume")
+			.setMethod("PUT")
+			.setParams({ volume_percent })
+			.build()
+			.run();
+	}
+
+	repeat(state) {
+		return this.getRequestBuilder()
+			.setPath("/me/player/repeat")
+			.setMethod("PUT")
+			.setParams({ state })
+			.build()
+			.run();
+	}
+
+	listen(type, id) {
+		let body = {};
+
+		if (type === "track" || type === "episode")
+			body = { uris: [`spotify:${type}:${id}`] };
+		else
+			body = { context_uri: `spotify:${type}:${id}` };
+
+		return this.getRequestBuilder()
+			.setPath("/me/player/play")
+			.setMethod("PUT")
+			.setBody(body)
+			.build()
+			.run();
+	}
+ 
 	queue(type, id) {
 		return this.getRequestBuilder()
 			.setPath("/me/player/queue")
