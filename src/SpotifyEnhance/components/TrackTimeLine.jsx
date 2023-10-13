@@ -12,24 +12,22 @@ function formatMsToTime(ms) {
 export default ({ duration, isPlaying, progress }) => {
 	const [position, setPosition] = usePropBasedState(progress);
 	const sliderRef = React.useRef();
+	const sliderActive = sliderRef.current?.state?.active;
 
 	React.useEffect(() => {
 		if (!isPlaying) return;
 		const interval = setInterval(() => {
-			if (sliderRef.current?.state?.active) return;
-
-			setPosition(p => {
-				if (p >= duration) clearInterval(interval);
-				return p + 1000;
-			});
+			if (sliderActive) return;
+			if (position >= duration) clearInterval(interval);
+			setPosition(position + 1000);
 		}, 1000);
 
 		return () => clearInterval(interval);
-	}, [isPlaying]);
+	}, [duration, position, isPlaying]);
 
 	const rangeChangeHandler = e => {
 		const pos = Math.floor(e);
-		if (!sliderRef.current?.state?.active) return;
+		if (sliderActive) return;
 		setPosition(pos);
 		SpotifyWrapper.Player.seek(pos);
 		console.log(pos);
