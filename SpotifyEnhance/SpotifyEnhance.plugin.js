@@ -23,6 +23,322 @@ const config = {
 	}
 }
 
+const css = `
+
+:root {
+	--spotify-green: #1ed760;
+	--text-normal: #fff;
+	--text-sub: #a7a7a7;
+	--radius: 8px;
+	--icon-size: 18px;
+	--gutter: 10px;
+	--font: gg sans, Helvetica Neue, helvetica, arial, Hiragino Kaku Gothic Pro, Meiryo, MS Gothic;
+	--accent: #1ed760;
+}
+
+/* Spotify Indicator */
+
+.spotifyActivityIndicatorIcon {
+	color: var(--spotify-green);
+	vertical-align: text-bottom;
+	margin: 0 0 0 0.5rem;
+}
+
+[class^="repliedMessage"] .spotifyActivityIndicatorIcon {
+	margin: 0 0.25rem 0 0;
+}
+
+/* Spotify Embed */
+.spotifyEmbed-Container {
+	background:
+		linear-gradient(#00000090 0 0),
+		var(--thumbnail) top center/9999% no-repeat;
+	max-width: 350px;
+	min-width: 350px;
+	padding: var(--gutter);
+	border-radius: var(--radius);
+	font-family: var(--font);
+
+	display: grid;
+	column-gap: var(--gutter);
+	grid-template-columns: auto minmax(0, 1fr) auto;
+	grid-template-rows: auto auto minmax(0, 1fr);
+	grid-template-areas:
+		"thumbnail title icon"
+		"thumbnail description ."
+		"thumbnail controls .";
+}
+
+.spotifyEmbed-thumbnail {
+	grid-area: thumbnail;
+
+	width: 80px;
+	height: 80px;
+	background: var(--thumbnail) center/cover no-repeat;
+	border-radius: var(--radius);
+}
+
+.spotifyEmbed-title {
+	grid-area: title;
+
+	font-weight: bold;
+	color: var(--text-normal);
+	margin: 0;
+	margin-top: 3px;
+	align-self: center;
+
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+.spotifyEmbed-description {
+	grid-area: description;
+
+	font-weight: 500;
+	margin: 0;
+	margin-top: 3px;
+	color: var(--text-sub);
+	font-size: 0.7rem;
+
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+.spotifyEmbed-controls {
+	grid-area: controls;
+	height: 30px;
+	display: flex;
+	align-self: center;
+	gap: var(--gutter);
+}
+
+.spotifyEmbed-btn {
+	background: #0000004d;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	padding: 6px;
+	border-radius: 50%;
+	color: #fff;
+	box-sizing: border-box;
+}
+
+.spotifyEmbed-btn svg {
+	width: var(--icon-size);
+	height: var(--icon-size);
+}
+
+.spotifyEmbed-spotifyIcon {
+	grid-area: icon;
+	cursor: pointer;
+	display: flex;
+	color: var(--spotify-green);
+}
+
+/* spotify activity controls */
+.spotify-activity-controls {
+	display: flex;
+	margin-top: 10px;
+	gap: 8px;
+}
+
+.spotify-activity-controls svg {
+	width: 18px;
+	height: 18px;
+}
+
+.spotify-activity-controls button > div {
+	font-size: 0;
+	line-height: 1;
+}
+
+.spotify-activity-controls button {
+	padding: 3px 6px !important;
+}
+
+.spotify-activity-controls > :first-child {
+	flex: 1;
+}
+
+/* Spotify Player */
+.spotify-player-container {
+	padding: 10px 10px;
+
+	display: flex;
+	flex-direction: column;
+}
+
+.spotify-player-media {
+	color: white;
+	font-size: 0.9rem;
+
+	display: grid;
+	column-gap: 10px;
+	grid-template-columns: 64px 1fr;
+	grid-template-rows: repeat(3, auto);
+	align-items: center;
+	
+	grid-template-areas:
+		"banner title"
+		"banner artist"
+		"banner album";
+}
+
+.spotify-player-banner {
+	grid-area: banner;
+	cursor: pointer;
+	width: 64px;
+	height: 64px;
+	background: var(--banner) center/cover no-repeat;
+	border-radius: 5px;
+}
+
+.spotify-player-title {
+	grid-area: title;
+	font-weight: bold;
+	color: #fff;
+	font-size:1.05rem;
+	
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.spotify-player-artist {
+	grid-area: artist;
+	font-size: 0.8rem;
+	--text-link: var(--text-sub);
+
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.spotify-player-album {
+	grid-area: album;
+	--text-link: var(--text-sub);
+
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.spotify-player-controls {
+	display: flex;
+	justify-content: space-between;
+	width: 100%;
+	overflow: hidden;
+}
+
+.spotify-player-controls button > div {
+	font-size: 0;
+	line-height: 1;
+}
+
+.spotify-player-controls svg {
+	width: 16px;
+	height: 16px;
+}
+
+.spotify-player-controls-btn {
+	padding: 3px !important;
+	color: #ccc;
+	transition: all 100ms linear;
+	border-radius: 5px;
+}
+
+.spotify-player-controls-btn:hover {
+	background: #ccc3;
+	color: fff;
+	scale: 1.1;
+}
+
+.spotify-player-controls-btn.enabled {
+	color: var(--spotify-green);
+}
+
+.spotify-player-timeline {
+	margin-bottom: 2px;
+	color: white;
+	display: flex;
+	flex-wrap: wrap;
+	font-size: 0.8rem;
+	flex:1;
+}
+
+.spotify-player-timeline-progress {
+	flex: 1;
+}
+
+.spotify-player-timeline-trackbar {
+	margin-top: -8px;
+	margin-bottom: 8px;
+	cursor: pointer;
+}
+
+.spotify-player-timeline:hover .spotify-player-timeline-trackbar-grabber {
+	opacity: 1;
+}
+
+.spotify-player-timeline .spotify-player-timeline-trackbar-grabber {
+	opacity: 0;
+	cursor: grab;
+	width: 10px;
+	height: 10px;
+	margin-top: 4px;
+}
+
+ .spotify-player-timeline .spotify-player-timeline-trackbar-bar {
+	background: hsl(0deg 0% 100% / 30%);
+	height: 6px;
+}
+
+.spotify-player-timeline .spotify-player-timeline-trackbar-bar > div {
+	background: #fff;
+	border-radius: 4px;
+}
+
+.spotify-player-timeline:hover .spotify-player-timeline-trackbar-bar > div {
+	background: var(--spotify-green);
+}
+
+.spotify-player-container {
+	background: hsl(228 8% 12%);
+	border-bottom: 1px solid hsl(228deg 6% 33% / 48%);
+}
+
+.spotify-player-controls-volume-slider-wrapper {
+	box-sizing: border-box;
+	background: #000;
+	width: 100px;
+	height: 22px;
+	padding: 2px 5px;
+	border-radius: 999px;
+}
+
+.spotify-player-controls-volume-slider {
+	width: 100%;
+	box-sizing: border-box;
+	position: relative;
+	top: -10px;
+}
+
+.spotify-player-controls-volume-slider-wrapper .spotify-player-controls-volume-slider-grabber {
+	width: 10px;
+	height: 10px;
+	margin-top: 3px;
+	cursor: initial;
+}
+
+.spotify-player-controls-volume-slider-wrapper .spotify-player-controls-volume-slider-bar {
+	height: 4px;
+}
+
+.spotify-player-controls-volume-slider-wrapper .spotify-player-controls-volume-slider-bar > div {
+	background: var(--spotify-green);
+}`;
+
 const Logger = {
 	error(...args) {
 		this.p(console.error, ...args);
@@ -1816,7 +2132,7 @@ class SpotifyEnhance {
 	start() {
 		try {
 			Settings.init(config.settings);
-
+			DOM.addStyle(css);
 			SpotifyWrapper.init();
 			patchListenAlong();
 			patchSpotifyEmbed();
