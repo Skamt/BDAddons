@@ -1,3 +1,4 @@
+
 :root {
 	--spotify-green: #1ed760;
 	--text-normal: #fff;
@@ -5,8 +6,7 @@
 	--radius: 8px;
 	--icon-size: 18px;
 	--gutter: 10px;
-	--font: Helvetica Neue, helvetica, arial, Hiragino Kaku Gothic Pro, Meiryo, MS Gothic;
-	--embed-font: "gg sans";
+	--font: gg sans, Helvetica Neue, helvetica, arial, Hiragino Kaku Gothic Pro, Meiryo, MS Gothic;
 	--accent: #1ed760;
 }
 
@@ -31,7 +31,7 @@
 	min-width: 350px;
 	padding: var(--gutter);
 	border-radius: var(--radius);
-	font-family: var(--embed-font);
+	font-family: var(--font);
 
 	display: grid;
 	column-gap: var(--gutter);
@@ -93,7 +93,6 @@
 	cursor: pointer;
 	display: flex;
 	align-items: center;
-
 	padding: 6px;
 	border-radius: 50%;
 	color: #fff;
@@ -107,7 +106,7 @@
 
 .spotifyEmbed-spotifyIcon {
 	grid-area: icon;
-
+	cursor: pointer;
 	display: flex;
 	color: var(--spotify-green);
 }
@@ -152,8 +151,9 @@
 	display: grid;
 	column-gap: 10px;
 	grid-template-columns: 64px 1fr;
-	grid-template-rows: repeat(3, minmax(0, 1fr));
+	grid-template-rows: repeat(3, auto);
 	align-items: center;
+	
 	grid-template-areas:
 		"banner title"
 		"banner artist"
@@ -172,8 +172,9 @@
 .spotify-player-title {
 	grid-area: title;
 	font-weight: bold;
-	--text-link: #fff;
-
+	color: #fff;
+	font-size:1.05rem;
+	
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -184,14 +185,13 @@
 	font-size: 0.8rem;
 	--text-link: var(--text-sub);
 
-	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
 }
 
 .spotify-player-album {
 	grid-area: album;
-	--text-link: #fff;
+	--text-link: var(--text-sub);
 
 	white-space: nowrap;
 	overflow: hidden;
@@ -233,7 +233,7 @@
 }
 
 .spotify-player-timeline {
-	margin-bottom: 10px;
+	margin-bottom: 2px;
 	color: white;
 	display: flex;
 	flex-wrap: wrap;
