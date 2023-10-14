@@ -23,323 +23,6 @@ const config = {
 	}
 }
 
-const css = `
-:root {
-	--spotify-green: #1ed760;
-	--text-normal: #fff;
-	--text-sub: #a7a7a7;
-	--radius: 8px;
-	--icon-size: 18px;
-	--gutter: 10px;
-	--font: Helvetica Neue, helvetica, arial, Hiragino Kaku Gothic Pro, Meiryo, MS Gothic;
-	--embed-font: "gg sans";
-	--accent: #1ed760;
-}
-
-/* Spotify Indicator */
-
-.spotifyActivityIndicatorIcon {
-	color: var(--spotify-green);
-	vertical-align: text-bottom;
-	margin: 0 0 0 0.5rem;
-}
-
-[class^="repliedMessage"] .spotifyActivityIndicatorIcon {
-	margin: 0 0.25rem 0 0;
-}
-
-/* Spotify Embed */
-.spotifyEmbed-Container {
-	background:
-		linear-gradient(#00000090 0 0),
-		var(--thumbnail) top center/9999% no-repeat;
-	max-width: 350px;
-	min-width: 350px;
-	padding: var(--gutter);
-	border-radius: var(--radius);
-	font-family: var(--embed-font);
-
-	display: grid;
-	column-gap: var(--gutter);
-	grid-template-columns: auto minmax(0, 1fr) auto;
-	grid-template-rows: auto auto minmax(0, 1fr);
-	grid-template-areas:
-		"thumbnail title icon"
-		"thumbnail description ."
-		"thumbnail controls .";
-}
-
-.spotifyEmbed-thumbnail {
-	grid-area: thumbnail;
-
-	width: 80px;
-	height: 80px;
-	background: var(--thumbnail) center/cover no-repeat;
-	border-radius: var(--radius);
-}
-
-.spotifyEmbed-title {
-	grid-area: title;
-
-	font-weight: bold;
-	color: var(--text-normal);
-	margin: 0;
-	margin-top: 3px;
-	align-self: center;
-
-	overflow: hidden;
-	white-space: nowrap;
-	text-overflow: ellipsis;
-}
-
-.spotifyEmbed-description {
-	grid-area: description;
-
-	font-weight: 500;
-	margin: 0;
-	margin-top: 3px;
-	color: var(--text-sub);
-	font-size: 0.7rem;
-
-	overflow: hidden;
-	white-space: nowrap;
-	text-overflow: ellipsis;
-}
-
-.spotifyEmbed-controls {
-	grid-area: controls;
-	height: 30px;
-	display: flex;
-	align-self: center;
-	gap: var(--gutter);
-}
-
-.spotifyEmbed-btn {
-	background: #0000004d;
-	cursor: pointer;
-	display: flex;
-	align-items: center;
-
-	padding: 6px;
-	border-radius: 50%;
-	color: #fff;
-	box-sizing: border-box;
-}
-
-.spotifyEmbed-btn svg {
-	width: var(--icon-size);
-	height: var(--icon-size);
-}
-
-.spotifyEmbed-spotifyIcon {
-	grid-area: icon;
-
-	display: flex;
-	color: var(--spotify-green);
-}
-
-/* spotify activity controls */
-.spotify-activity-controls {
-	display: flex;
-	margin-top: 10px;
-	gap: 8px;
-}
-
-.spotify-activity-controls svg {
-	width: 18px;
-	height: 18px;
-}
-
-.spotify-activity-controls button > div {
-	font-size: 0;
-	line-height: 1;
-}
-
-.spotify-activity-controls button {
-	padding: 3px 6px !important;
-}
-
-.spotify-activity-controls > :first-child {
-	flex: 1;
-}
-
-/* Spotify Player */
-.spotify-player-container {
-	padding: 10px 10px;
-
-	display: flex;
-	flex-direction: column;
-}
-
-.spotify-player-media {
-	color: white;
-	font-size: 0.9rem;
-
-	display: grid;
-	column-gap: 10px;
-	grid-template-columns: 64px 1fr;
-	grid-template-rows: repeat(3, minmax(0, 1fr));
-	align-items: center;
-	grid-template-areas:
-		"banner title"
-		"banner artist"
-		"banner album";
-}
-
-.spotify-player-banner {
-	grid-area: banner;
-	cursor: pointer;
-	width: 64px;
-	height: 64px;
-	background: var(--banner) center/cover no-repeat;
-	border-radius: 5px;
-}
-
-.spotify-player-title {
-	grid-area: title;
-	font-weight: bold;
-	--text-link: #fff;
-
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-}
-
-.spotify-player-artist {
-	grid-area: artist;
-	font-size: 0.8rem;
-	--text-link: var(--text-sub);
-
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-}
-
-.spotify-player-album {
-	grid-area: album;
-	--text-link: #fff;
-
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-}
-
-.spotify-player-controls {
-	display: flex;
-	justify-content: space-between;
-	width: 100%;
-	overflow: hidden;
-}
-
-.spotify-player-controls button > div {
-	font-size: 0;
-	line-height: 1;
-}
-
-.spotify-player-controls svg {
-	width: 16px;
-	height: 16px;
-}
-
-.spotify-player-controls-btn {
-	padding: 3px !important;
-	color: #ccc;
-	transition: all 100ms linear;
-	border-radius: 5px;
-}
-
-.spotify-player-controls-btn:hover {
-	background: #ccc3;
-	color: fff;
-	scale: 1.1;
-}
-
-.spotify-player-controls-btn.enabled {
-	color: var(--spotify-green);
-}
-
-.spotify-player-timeline {
-	margin-bottom: 10px;
-	color: white;
-	display: flex;
-	flex-wrap: wrap;
-	font-size: 0.8rem;
-	flex:1;
-}
-
-.spotify-player-timeline-progress {
-	flex: 1;
-}
-
-.spotify-player-timeline-trackbar {
-	margin-top: -8px;
-	margin-bottom: 8px;
-	cursor: pointer;
-}
-
-.spotify-player-timeline:hover .spotify-player-timeline-trackbar-grabber {
-	opacity: 1;
-}
-
-.spotify-player-timeline .spotify-player-timeline-trackbar-grabber {
-	opacity: 0;
-	cursor: grab;
-	width: 10px;
-	height: 10px;
-	margin-top: 4px;
-}
-
- .spotify-player-timeline .spotify-player-timeline-trackbar-bar {
-	background: hsl(0deg 0% 100% / 30%);
-	height: 6px;
-}
-
-.spotify-player-timeline .spotify-player-timeline-trackbar-bar > div {
-	background: #fff;
-	border-radius: 4px;
-}
-
-.spotify-player-timeline:hover .spotify-player-timeline-trackbar-bar > div {
-	background: var(--spotify-green);
-}
-
-.spotify-player-container {
-	background: hsl(228 8% 12%);
-	border-bottom: 1px solid hsl(228deg 6% 33% / 48%);
-}
-
-.spotify-player-controls-volume-slider-wrapper {
-	box-sizing: border-box;
-	background: #000;
-	width: 100px;
-	height: 22px;
-	padding: 2px 5px;
-	border-radius: 999px;
-}
-
-.spotify-player-controls-volume-slider {
-	width: 100%;
-	box-sizing: border-box;
-	position: relative;
-	top: -11px;
-}
-
-.spotify-player-controls-volume-slider-wrapper .spotify-player-controls-volume-slider-grabber {
-	width: 10px;
-	height: 10px;
-	margin-top: 3px;
-	cursor: initial;
-}
-
-.spotify-player-controls-volume-slider-wrapper .spotify-player-controls-volume-slider-bar {
-	height: 4px;
-}
-
-.spotify-player-controls-volume-slider-wrapper .spotify-player-controls-volume-slider-bar > div {
-	background: var(--spotify-green);
-}
-`;
-
 const Logger = {
 	error(...args) {
 		this.p(console.error, ...args);
@@ -541,6 +224,15 @@ function getFluxContainer() {
 	return instance.child;
 }
 
+function sanitizeSpotifyLink(link) {
+	try {
+		const url = new URL(link);
+		return url.origin + url.pathname;
+	} catch {
+		return link;
+	}
+}
+
 const ImageModal = getModule(Filters.byStrings("original", "maxHeight", "maxWidth", "noreferrer noopener"), { searchExports: true });
 
 const ModalRoot = getModule(Filters.byStrings("onAnimationEnd"), { searchExports: true });
@@ -714,43 +406,85 @@ class SpotifyClientAPI {
 	}
 
 	next() {
-		return this.getRequestBuilder().setPath("/me/player/next").setMethod("POST").build().run();
+		return this.getRequestBuilder()
+			.setPath("/me/player/next")
+			.setMethod("POST")
+			.build()
+			.run();
 	}
 
 	previous() {
-		return this.getRequestBuilder().setPath("/me/player/previous").setMethod("POST").build().run();
+		return this.getRequestBuilder()
+			.setPath("/me/player/previous")
+			.setMethod("POST")
+			.build()
+			.run();
 	}
 
 	play() {
-		return this.getRequestBuilder().setPath("/me/player/play").setMethod("PUT").build().run();
-	}
-
-	pause() {
-		return this.getRequestBuilder().setPath("/me/player/pause").setMethod("PUT").build().run();
-	}
-
-	seek(ms) {
-		return this.getRequestBuilder().setPath("/me/player/seek").setMethod("PUT").setParams({ position_ms: ms }).build().run();
-	}
-
-	shuffle(state) {
-		return this.getRequestBuilder().setPath("/me/player/shuffle").setMethod("PUT").setParams({ state }).build().run();
-	}
-
-	volume(volume_percent) {
-		return this.getRequestBuilder().setPath("/me/player/volume").setMethod("PUT").setParams({ volume_percent }).build().run();
-	}
-
-	repeat(state) {
-		return this.getRequestBuilder().setPath("/me/player/repeat").setMethod("PUT").setParams({ state }).build().run();
-	}
-
-	listen(type, id) {
 		return this.getRequestBuilder()
 			.setPath("/me/player/play")
 			.setMethod("PUT")
-			.setBody({
-				[type === "track" || "episode" ? "uris" : "context_uri"]: [`spotify:${type}:${id}`] })
+			.build()
+			.run();
+	}
+
+	pause() {
+		return this.getRequestBuilder()
+			.setPath("/me/player/pause")
+			.setMethod("PUT")
+			.build()
+			.run();
+	}
+
+	seek(ms) {
+		return this.getRequestBuilder()
+			.setPath("/me/player/seek")
+			.setMethod("PUT")
+			.setParams({ position_ms: ms })
+			.build()
+			.run();
+	}
+
+	shuffle(state) {
+		return this.getRequestBuilder()
+			.setPath("/me/player/shuffle")
+			.setMethod("PUT")
+			.setParams({ state })
+			.build()
+			.run();
+	}
+
+	volume(volume_percent) {
+		return this.getRequestBuilder()
+			.setPath("/me/player/volume")
+			.setMethod("PUT")
+			.setParams({ volume_percent })
+			.build()
+			.run();
+	}
+
+	repeat(state) {
+		return this.getRequestBuilder()
+			.setPath("/me/player/repeat")
+			.setMethod("PUT")
+			.setParams({ state })
+			.build()
+			.run();
+	}
+
+	listen(type, id) {
+		let body = {};
+
+		if (type === "track" || type === "episode")
+			body = { uris: [`spotify:${type}:${id}`] };
+		else
+			body = { context_uri: `spotify:${type}:${id}` };
+
+		return this.getRequestBuilder()
+			.setPath("/me/player/play")
+			.setMethod("PUT")
+			.setBody(body)
 			.build()
 			.run();
 	}
@@ -817,21 +551,24 @@ function playerActions(prop) {
 }
 
 function ressourceActions(prop) {
-	const { success, error } = prop === "queue" ? {
-		success: (type, name) => `Queued ${type} ${name}`,
-		error: (type, name, reason) => `Could not queue ${type} ${name}\n${reason}`
-	} : {
-		success: (type, name) => `Playing ${type} ${name}`,
-		error: (type, name, reason) => `Could not play ${type} ${name}\n${reason}`
-	};
+	const { success, error } = {
+		queue: {
+			success: (type, name) => `Queued ${type} ${name}`,
+			error: (type, name, reason) => `Could not queue ${type} ${name}\n${reason}`
+		},
+		listen: {
+			success: (type, name) => `Playing ${type} ${name}`,
+			error: (type, name, reason) => `Could not play ${type} ${name}\n${reason}`
+		}
+	} [prop];
 
 	return (type, id, description) =>
 		requestHandler(() => SpotifyAPI[prop](type, id))
 		.then(() => {
 			Toast.success(success(type, description));
 		})
-		.catch(() => {
-			Toast.error(error(type, description));
+		.catch((reason) => {
+			Toast.error(error(type, description, reason));
 		});
 }
 
@@ -860,7 +597,6 @@ const SpotifyAPIWrapper = new Proxy({}, {
 				};
 			default:
 				return Promise.reject("Unknown API Command", prop);
-
 		}
 	}
 });
@@ -904,75 +640,35 @@ const SpotifySocketListener = new(class SpotifySocketListener extends ChangeEmit
 
 const ConnectedAccountsStore = getModule(m => m._dispatchToken && m.getName() === "ConnectedAccountsStore");
 
-const SpotifyConnectionsListener = new(class SpotifyConnectionsListener extends ChangeEmitter {
-	constructor() {
-		super();
-		this.listener = this.listener.bind(this);
+class SpotifyAccount {
+	constructor(socket) {
+		this.socket = socket;
 	}
 
-	init() {
-		ConnectedAccountsStore.addChangeListener(this.listener);
-		this.connectedAccounts = this.getAccounts().length;
+	get accessToken() {
+		return this.socket.accessToken;
 	}
 
-	dispose() {
-		ConnectedAccountsStore.removeChangeListener(this.listener);
-		delete this.connectedAccounts;
-	}
-
-	listener() {
-		const spotifyAccounts = this.getAccounts();
-		if (spotifyAccounts.length === this.connectedAccounts) return;
-		this.connectedAccounts = spotifyAccounts.length;
-
-		this.emit();
-	}
-
-	getAccounts() {
-		const connectedAccounts = ConnectedAccountsStore.getAccounts();
-		return connectedAccounts.filter(account => account.type === "spotify");
-	}
-})();
-
-class Track {
-	constructor(track) {
-		this.track = track;
+	set accessToken(token) {
+		this.socket.accessToken = token;
 	}
 
 	get id() {
-		return this.track.id;
+		return this.socket.accountId;
 	}
 
-	get url() {
-		return this.track.external_urls.spotify;
+	get isActive() {
+		return this.device?.is_active;
 	}
 
-	get artists() {
-		return this.track.artists;
+	setDevices(devices) {
+		this.device = devices.find(d => d.is_active) || devices[0];
+		if (!this.isActive) this.playerState = undefined;
 	}
 
-	get duration() {
-		return this.track["duration_ms"];
-	}
-
-	get explicit() {
-		return this.track.explicit;
-	}
-
-	get name() {
-		return this.track.name;
-	}
-
-	get bannerObj() {
-		return this.track.album.images;
-	}
-
-	get albumName() {
-		return this.track.album.name;
-	}
-
-	get albumUrl() {
-		return this.track.album.external_urls.spotify;
+	setPlayerState(playerState) {
+		this.playerState = new PlayerState(playerState);
+		this.device = playerState.device;
 	}
 }
 
@@ -1023,35 +719,45 @@ class PlayerState {
 	}
 }
 
-class SpotifyAccount {
-	constructor(socket) {
-		this.socket = socket;
-	}
-
-	get accessToken() {
-		return this.socket.accessToken;
-	}
-
-	set accessToken(token) {
-		this.socket.accessToken = token;
+class Track {
+	constructor(track) {
+		this.track = track;
 	}
 
 	get id() {
-		return this.socket.accountId;
+		return this.track.id;
 	}
 
-	get isActive() {
-		return this.device?.is_active;
+	get url() {
+		return this.track.external_urls.spotify;
 	}
 
-	setDevices(devices) {
-		this.device = devices.find(d => d.is_active) || devices[0];
-		if (!this.isActive) this.playerState = undefined;
+	get artists() {
+		return this.track.artists;
 	}
 
-	setPlayerState(playerState) {
-		this.playerState = new PlayerState(playerState);
-		this.device = playerState.device;
+	get duration() {
+		return this.track["duration_ms"];
+	}
+
+	get explicit() {
+		return this.track.explicit;
+	}
+
+	get name() {
+		return this.track.name;
+	}
+
+	get bannerObj() {
+		return this.track.album.images;
+	}
+
+	get albumName() {
+		return this.track.album.name;
+	}
+
+	get albumUrl() {
+		return this.track.album.external_urls.spotify;
 	}
 }
 
@@ -1060,18 +766,17 @@ const SpotifyActiveAccount = new(class SpotifyActiveAccount extends ChangeEmitte
 		super();
 		this.onSocketEvent = this.onSocketEvent.bind(this);
 		this.onSpotifyStoreChange = this.onSpotifyStoreChange.bind(this);
-		this.onSpotifyAccountChanged = this.onSpotifyAccountChanged.bind(this);
+		this.onAccountsChanged = this.onAccountsChanged.bind(this);
 	}
 
 	async init() {
 		this.activeAccount = undefined;
 
 		SpotifySocketListener.init();
-		SpotifyConnectionsListener.init();
 		SpotifySocketListener.on(this.onSocketEvent);
-		SpotifyConnectionsListener.on(this.onSpotifyAccountChanged);
-		SpotifyStore.addChangeListener(this.onSpotifyStoreChange);
 
+		SpotifyStore.addChangeListener(this.onSpotifyStoreChange);
+		ConnectedAccountsStore.addChangeListener(this.onAccountsChanged);
 		const { socket } = SpotifyStore.getActiveSocketAndDevice() || {};
 		if (!socket) return;
 
@@ -1085,15 +790,17 @@ const SpotifyActiveAccount = new(class SpotifyActiveAccount extends ChangeEmitte
 	dispose() {
 		SpotifyStore.removeChangeListener(this.onSpotifyStoreChange);
 		SpotifySocketListener.off(this.onSocketEvent);
-		SpotifyConnectionsListener.off(this.onSpotifyAccountChanged);
+		ConnectedAccountsStore.removeChangeListener(this.onAccountsChanged);
 		SpotifySocketListener.dispose();
-		SpotifyConnectionsListener.dispose();
 		clearTimeout(this.idleTimeoutId);
 		delete this.activeAccount;
 	}
 
-	onSpotifyAccountChanged() {
+	onAccountsChanged() {
 		if (!this.activeAccount) return;
+		const connectedAccounts = ConnectedAccountsStore.getAccounts().filter(account => account.type === "spotify");
+		if (connectedAccounts.some(a => a.id === this.activeAccount.id)) return;
+
 		const { socket } = SpotifyStore.getActiveSocketAndDevice() || {};
 		if (socket) return;
 		this.activeAccount = undefined;
@@ -1124,7 +831,44 @@ const SpotifyActiveAccount = new(class SpotifyActiveAccount extends ChangeEmitte
 				break;
 		}
 		if (!this.activeAccount?.isActive) this.activeAccount = undefined;
+		this.checkActivityInterval();
 		this.emit();
+	}
+
+	checkActivityInterval() {
+		if (!this.activeAccount?.playerState && this.idleTimeoutId) {
+			console.log("Clear Idle Timeout");
+			clearTimeout(this.idleTimeoutId);
+			this.idleTimeoutId = null;
+			return;
+		}
+
+		if (!this.activeAccount?.playerState) return;
+
+		const { isPlaying } = this.activeAccount.playerState;
+
+		if (isPlaying && this.idleTimeoutId) {
+			console.log("Clear Idle Timeout");
+			clearTimeout(this.idleTimeoutId);
+			this.idleTimeoutId = null;
+			return;
+		}
+
+		if (!isPlaying && this.idleTimeoutId) return;
+
+		if (!isPlaying) {
+			console.log("Start Idle Timeout");
+			this.idleTimeoutId = setTimeout(
+				() => {
+					clearTimeout(this.idleTimeoutId);
+					this.idleTimeoutId = null;
+					this.activeAccount = undefined;
+					console.log("Idle Timeout HIT");
+					this.emit();
+				},
+				20 * 60 * 1000
+			);
+		}
 	}
 
 	setToken() {
@@ -1147,8 +891,6 @@ const SpotifyActiveAccount = new(class SpotifyActiveAccount extends ChangeEmitte
 		return this.activeAccount;
 	}
 })();
-
-// 			30 * 60 * 1000
 
 const SelectedChannelStore = getModule(m => m._dispatchToken && m.getName() === "SelectedChannelStore");
 
@@ -1205,17 +947,20 @@ const insertText = (() => {
 const Utils = {
 	copySpotifyLink(link) {
 		if (!link) return Toast.error("Could not resolve url");
+		link = sanitizeSpotifyLink(link);
 		copy(link);
 		Toast.success("Link copied!");
 	},
 	openSpotifyLink(link) {
 		if (!link) return Toast.error("Could not resolve url");
+		link = sanitizeSpotifyLink(link);
 		window.open(link, "_blank");
 	},
 	share(link) {
 		if (!link) return Toast.error("Could not resolve url");
 		const id = SelectedChannelStore.getCurrentlySelectedChannelId();
 		if (!id) return Toast.info("There is no Selected Channel");
+		link = sanitizeSpotifyLink(link);
 		sendMessageDirectly({ id }, link).catch(a => {
 			Toast.error(a.message);
 			insertText(link);
@@ -1251,30 +996,10 @@ const SpotifyWrapper = new(class SpotifyWrapper extends ChangeEmitter {
 		this.emit();
 	}
 
-	getDeviceState() {
-		return this.activeAccount?.isActive;
-	}
-
-	getPlayerState() {
-		return this.activeAccount?.playerState;
-	}
-
-	getCurrentlyPlaying() {
-		if (!this.activeAccount?.playerState?.isPlaying) return;
-		return this.activeAccount.playerState.track;
-	}
-
-	getCurrentlyPlayingById(id) {
-		const currentlyPlaying = this.getCurrentlyPlaying();
-		if (!currentlyPlaying) return;
-		if (currentlyPlaying.ressourceId !== id) return;
-		return currentlyPlaying;
-	}
-
 	getSpotifyState() {
 		return {
-			deviceState: this.getDeviceState(),
-			playerState: this.getPlayerState()
+			deviceState: this.activeAccount?.isActive,
+			playerState: this.activeAccount?.playerState
 		};
 	}
 })();
@@ -1397,15 +1122,12 @@ const TrackTimeLine = ({ duration, isPlaying, progress }) => {
 		if (!isPlaying) return;
 		const interval = setInterval(() => {
 			if (sliderRef.current?.state?.active) return;
-
-			setPosition(p => {
-				if (p >= duration) clearInterval(interval);
-				return p + 1000;
-			});
+			if (position >= duration) clearInterval(interval);
+			setPosition(position + 1000);
 		}, 1000);
 
 		return () => clearInterval(interval);
-	}, [isPlaying]);
+	}, [duration, position, isPlaying]);
 
 	const rangeChangeHandler = e => {
 		const pos = Math.floor(e);
@@ -1433,18 +1155,18 @@ const TrackTimeLine = ({ duration, isPlaying, progress }) => {
 
 const SpotifyEmbed = ({ embed }) => {
 	const [{ deviceState: isActive, playerState }, setState] = React.useState(SpotifyWrapper.getSpotifyState());
+	const { thumbnail, rawTitle, rawDescription, url } = embed;
+	const [type, id] = parseSpotifyUrl(url);
+	const { duration, isPlaying, progress } = playerState || {};
+	const isThis = playerState?.track?.id === id && progress !== 0;
 
 	React.useEffect(() => {
 		return SpotifyWrapper.on(() => {
 			const newState = SpotifyWrapper.getSpotifyState();
-			if (newState.deviceState === isActive && newState?.playerState?.track?.id === playerState?.track?.id) return;
+			if (newState.deviceState === isActive && newState?.playerState?.isPlaying && newState?.playerState?.track?.id !== id) return;
 			setState(newState);
 		});
 	}, []);
-
-	const { thumbnail, rawTitle, rawDescription, url } = embed;
-	const [type, id] = parseSpotifyUrl(url);
-	const isThis = playerState?.track?.id === id;
 
 	const thumbnailClickHandler = () => {
 		let { proxyURL, url, width, height } = thumbnail;
@@ -1468,8 +1190,6 @@ const SpotifyEmbed = ({ embed }) => {
 			embed: embed,
 		})
 	);
-
-	const { duration, isPlaying, progress } = playerState;
 
 	return (
 		React.createElement('div', {
@@ -1742,7 +1462,7 @@ function Artist({ artists }) {
 		transformArtist(artists[0]) :
 		artists.map(transformArtist).reduce((acc, el, index, obj) => {
 			acc.push(el);
-			if (index < obj.length - 1) acc.push(",");
+			if (index < obj.length - 1) acc.push(", ");
 			return acc;
 		}, []);
 
@@ -2031,7 +1751,7 @@ const SpotifyPlayer = React.memo(function SpotifyPlayer() {
 
 	const { disallowedActions, track, duration, shuffle, volume, repeat, isPlaying, progress } = playerState;
 	const { url } = track;
-
+	console.log(track, "duration: " + duration, "shuffle: " + shuffle, "volume: " + volume, "repeat: " + repeat, "isPlaying: " + isPlaying, "progress: " + progress);
 	return (
 		React.createElement('div', { className: "spotify-player-container", }, React.createElement(TrackMediaDetails, { track: track, }), React.createElement(TrackTimeLine, { ...{ duration, isPlaying, progress }, }), React.createElement(SpotifyPlayerControls, {
 			disallowedActions: disallowedActions,
@@ -2096,7 +1816,7 @@ class SpotifyEnhance {
 	start() {
 		try {
 			Settings.init(config.settings);
-			DOM.addStyle(css);
+
 			SpotifyWrapper.init();
 			patchListenAlong();
 			patchSpotifyEmbed();
