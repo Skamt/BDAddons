@@ -12,3 +12,12 @@ export function getFluxContainer(){
 	if(!instance) return;
 	return instance.child;
 }
+
+export function sanitizeSpotifyLink(link){
+	try{
+		const url = new URL(link);
+		return url.origin + url.pathname;
+	}catch{
+		return link;
+	}
+}

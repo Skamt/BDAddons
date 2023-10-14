@@ -3,31 +3,35 @@ import Toast from "@Utils/Toast";
 import { copy } from "@Utils";
 import ChangeEmitter from "@Utils/ChangeEmitter";
 import SpotifyActiveAccount from "./SpotifyActiveAccount";
+import { sanitizeSpotifyLink } from "./Utils";
 import SelectedChannelStore from "@Stores/SelectedChannelStore";
 import { sendMessageDirectly, insertText } from "@Utils/Messages";
 
 const Utils = {
 	copySpotifyLink(link) {
 		if (!link) return Toast.error("Could not resolve url");
+		link = sanitizeSpotifyLink(link);
 		copy(link);
 		Toast.success("Link copied!");
 	},
 	openSpotifyLink(link) {
 		if (!link) return Toast.error("Could not resolve url");
+		link = sanitizeSpotifyLink(link);
 		window.open(link, "_blank");
 	},
-	share(link){
+	share(link) {
 		if (!link) return Toast.error("Could not resolve url");
 		const id = SelectedChannelStore.getCurrentlySelectedChannelId();
 		if (!id) return Toast.info("There is no Selected Channel");
+		link = sanitizeSpotifyLink(link);
 		sendMessageDirectly({ id }, link).catch(a => {
 			Toast.error(a.message);
 			insertText(link);
 		});
-	} 
+	}
 };
 
-export default new (class SpotifyWrapper extends ChangeEmitter {
+export default new(class SpotifyWrapper extends ChangeEmitter {
 	constructor() {
 		super();
 		this.onStateChange = this.onStateChange.bind(this);
@@ -55,30 +59,10 @@ export default new (class SpotifyWrapper extends ChangeEmitter {
 		this.emit();
 	}
 
-	getDeviceState() {
-		return this.activeAccount?.isActive;
-	}
-
-	getPlayerState() {
-		return this.activeAccount?.playerState;
-	}
-
-	getCurrentlyPlaying() {
-		if (!this.activeAccount?.playerState?.isPlaying) return;
-		return this.activeAccount.playerState.track;
-	}
-
-	getCurrentlyPlayingById(id) {
-		const currentlyPlaying = this.getCurrentlyPlaying();
-		if (!currentlyPlaying) return;
-		if (currentlyPlaying.ressourceId !== id) return;
-		return currentlyPlaying;
-	}
-
 	getSpotifyState() {
 		return {
-			deviceState: this.getDeviceState(),
-			playerState: this.getPlayerState()
+			deviceState: this.activeAccount?.isActive,
+			playerState: this.activeAccount?.playerState
 		};
 	}
 })();

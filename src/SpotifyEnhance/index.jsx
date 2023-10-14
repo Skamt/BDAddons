@@ -20,7 +20,7 @@ export default class SpotifyEnhance {
 	start() {
 		try {
 			Settings.init(config.settings);
-			DOM.addStyle(css);
+			// DOM.addStyle(css);
 			SpotifyWrapper.init();
 			patchListenAlong();
 			patchSpotifyEmbed();

@@ -37,7 +37,7 @@ function Artist({ artists }) {
 			? transformArtist(artists[0])
 			: artists.map(transformArtist).reduce((acc, el, index, obj) => {
 					acc.push(el);
-					if (index < obj.length - 1) acc.push(",");
+					if (index < obj.length - 1) acc.push(", ");
 					return acc;
 			  }, []);
 

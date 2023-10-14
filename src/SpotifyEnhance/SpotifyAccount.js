@@ -30,48 +30,6 @@ export default class SpotifyAccount {
 	}
 }
 
-class Track {
-	constructor(track) {
-		this.track = track;
-	}
-
-	get id() {
-		return this.track.id;
-	}
-
-	get url() {
-		return this.track.external_urls.spotify;
-	}
-
-	get artists() {
-		return this.track.artists;
-	}
-
-	get duration() {
-		return this.track["duration_ms"];
-	}
-
-	get explicit() {
-		return this.track.explicit;
-	}
-
-	get name() {
-		return this.track.name;
-	}
-
-	get bannerObj() {
-		return this.track.album.images;
-	}
-
-	get albumName() {
-		return this.track.album.name;
-	}
-
-	get albumUrl() {
-		return this.track.album.external_urls.spotify;
-	}
-}
-
 class PlayerState {
 	constructor(playerState) {
 		this.playerState = playerState;
@@ -116,5 +74,47 @@ class PlayerState {
 
 	get volume() {
 		return this.playerState.device["volume_percent"];
+	}
+}
+
+class Track {
+	constructor(track) {
+		this.track = track;
+	}
+
+	get id() {
+		return this.track.id;
+	}
+
+	get url() {
+		return this.track.external_urls.spotify;
+	}
+
+	get artists() {
+		return this.track.artists;
+	}
+
+	get duration() {
+		return this.track["duration_ms"];
+	}
+
+	get explicit() {
+		return this.track.explicit;
+	}
+
+	get name() {
+		return this.track.name;
+	}
+
+	get bannerObj() {
+		return this.track.album.images;
+	}
+
+	get albumName() {
+		return this.track.album.name;
+	}
+
+	get albumUrl() {
+		return this.track.album.external_urls.spotify;
 	}
 }

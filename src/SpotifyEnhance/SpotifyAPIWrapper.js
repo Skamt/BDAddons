@@ -32,52 +32,52 @@ function playerActions(prop) {
 }
 
 function ressourceActions(prop) {
-	const { success, error } = prop === "queue" ? {
-		success: (type, name) => `Queued ${type} ${name}`,
-		error: (type, name, reason) => `Could not queue ${type} ${name}\n${reason}`
-	} : {
-		success: (type, name) => `Playing ${type} ${name}`,
-		error: (type, name, reason) => `Could not play ${type} ${name}\n${reason}`
-	};
+	const { success, error } = {
+		queue: {
+			success: (type, name) => `Queued ${type} ${name}`,
+			error: (type, name, reason) => `Could not queue ${type} ${name}\n${reason}`
+		},
+		listen: {
+			success: (type, name) => `Playing ${type} ${name}`,
+			error: (type, name, reason) => `Could not play ${type} ${name}\n${reason}`
+		}
+	} [prop];
 
 	return (type, id, description) =>
 		requestHandler(() => SpotifyAPI[prop](type, id))
-			.then(() => {
-				Toast.success(success(type, description));
-			})
-			.catch(() => {
-				Toast.error(error(type, description));
-			});
+		.then(() => {
+			Toast.success(success(type, description));
+		})
+		.catch((reason) => {
+			Toast.error(error(type, description, reason));
+		});
 }
 
-export default new Proxy(
-	{},
-	{
-		get(_, prop) {
-			switch (prop) {
-				case "queue":
-				case "listen":
-					return ressourceActions(prop);
-				case "play":
-				case "pause":
-				case "shuffle":
-				case "repeat":
-				case "seek":
-				case "next":
-				case "previous":
-				case "volume":
-					return playerActions(prop);
-				case "getPlayerState":
-				case "getDevices":
-					return () => requestHandler(() => SpotifyAPI[prop]());
-				case "updateToken":
-					return socket => {
-						SpotifyAPI.token = socket?.accessToken;
-						SpotifyAPI.accountId = socket?.accountId;
-					};
-				default: return Promise.reject("Unknown API Command", prop);
-					
-			}
+export default new Proxy({}, {
+	get(_, prop) {
+		switch (prop) {
+			case "queue":
+			case "listen":
+				return ressourceActions(prop);
+			case "play":
+			case "pause":
+			case "shuffle":
+			case "repeat":
+			case "seek":
+			case "next":
+			case "previous":
+			case "volume":
+				return playerActions(prop);
+			case "getPlayerState":
+			case "getDevices":
+				return () => requestHandler(() => SpotifyAPI[prop]());
+			case "updateToken":
+				return socket => {
+					SpotifyAPI.token = socket?.accessToken;
+					SpotifyAPI.accountId = socket?.accountId;
+				};
+			default:
+				return Promise.reject("Unknown API Command", prop);
 		}
 	}
-);
+});

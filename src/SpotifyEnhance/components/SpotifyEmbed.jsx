@@ -12,18 +12,18 @@ import TrackTimeLine from "./TrackTimeLine";
 
 export default ({ embed }) => {
 	const [{ deviceState: isActive, playerState }, setState] = React.useState(SpotifyWrapper.getSpotifyState());
+	const { thumbnail, rawTitle, rawDescription, url } = embed;
+	const [type, id] = parseSpotifyUrl(url);
+	const { duration, isPlaying, progress } = playerState || {};
+	const isThis = playerState?.track?.id === id && progress !== 0;
 
 	React.useEffect(() => {
 		return SpotifyWrapper.on(() => {
 			const newState = SpotifyWrapper.getSpotifyState();
-			if (newState.deviceState === isActive && newState?.playerState?.track?.id === playerState?.track?.id) return;
+			if (newState.deviceState === isActive && newState?.playerState?.isPlaying && newState?.playerState?.track?.id !== id) return;
 			setState(newState);
 		});
 	}, []);
-
-	const { thumbnail, rawTitle, rawDescription, url } = embed;
-	const [type, id] = parseSpotifyUrl(url);
-	const isThis = playerState?.track?.id === id;
 
 	const thumbnailClickHandler = () => {
 		let { proxyURL, url, width, height } = thumbnail;
@@ -48,8 +48,6 @@ export default ({ embed }) => {
 		/>
 	);
 
-	const { duration, isPlaying, progress } = playerState || {};
-
 	return (
 		<div
 			className="spotifyEmbed-Container"
@@ -64,7 +62,7 @@ export default ({ embed }) => {
 			{type && id && (
 				<div className="spotifyEmbed-controls">
 					{!isThis && isActive && [listenBtn, queueBtn]}
-					{isThis && isPlaying && <TrackTimeLine {...{ duration, isPlaying, progress }} />}
+					{isThis && <TrackTimeLine {...{ duration, isPlaying, progress }} />}
 					<Copy url={url} />
 				</div>
 			)}
