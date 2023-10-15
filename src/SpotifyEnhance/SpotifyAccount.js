@@ -7,10 +7,6 @@ export default class SpotifyAccount {
 		return this.socket.accessToken;
 	}
 
-	set accessToken(token) {
-		this.socket.accessToken = token;
-	}
-
 	get id() {
 		return this.socket.accountId;
 	}

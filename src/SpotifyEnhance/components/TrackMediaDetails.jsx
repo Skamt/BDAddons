@@ -44,17 +44,19 @@ function Artist({ artists }) {
 	return <div className="spotify-player-artist">by {artist}</div>;
 }
 
-function TrackBanner({ banner }) {
-	const [{ height, width, url }, , { url: playerThumbnail }] = banner;
+function TrackBanner({ banner = [] }) {
+	const smBanner = banner[2];
 
 	const thumbnailClickHandler = () => {
-		openModal(getImageModalComponent(url, { height, width }));
+		const lgBanner = banner[0];
+		if(!lgBanner) return;
+		openModal(getImageModalComponent(lgBanner.url, lgBanner));
 	};
 
 	return (
 		<div
 			onClick={thumbnailClickHandler}
-			style={{ "--banner": `url(${playerThumbnail})` }}
+			style={{ "--banner": `url(${smBanner && smBanner.url})` }}
 			className="spotify-player-banner"></div>
 	);
 }

@@ -165,7 +165,7 @@
 	cursor: pointer;
 	width: 64px;
 	height: 64px;
-	background: var(--banner) center/cover no-repeat;
+	background: var(--banner) center/cover no-repeat, lime;
 	border-radius: 5px;
 }
 
