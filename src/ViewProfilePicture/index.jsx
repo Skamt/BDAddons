@@ -9,7 +9,7 @@ import ErrorIcon from "@Components/ErrorIcon";
 import ProfileTypeEnum from "@Enums/ProfileTypeEnum";
 import UserBannerMask from "@Patch/UserBannerMask";
 import SelectedGuildStore from "@Stores/SelectedGuildStore";
-import ImageModal from "@Modules/ImageModal";
+import ImageModalVideoModal from "@Modules/ImageModalVideoModal";
 import RenderLinkComponent from "@Modules/RenderLinkComponent";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 import ColorModalComponent from "./components/ColorModalComponent";
@@ -21,7 +21,7 @@ import ModalRoot from "@Modules/ModalRoot";
 const IMG_WIDTH = 4096;
 
 const getImageModalComponent = (url) => (
-	<ImageModal
+	<ImageModalVideoModal.ImageModal
 		height={IMG_WIDTH}
 		width={IMG_WIDTH}
 		src={url}

@@ -97,7 +97,7 @@
 			"options": "{ searchExports: false }"
 		},
 		"ChannelComponent": {
-			"filter": "Filters.byStrings(\"canHaveDot\", \"isFavoriteSuggestion\", \"mentionCount\")",
+			"filter": "Filters.byStrings(\"hasActiveThreads\",\"canHaveDot\", \"isFavoriteSuggestion\", \"mentionCount\")",
 			"options": "{ searchExports: true }"
 		},
 		"ChannelActions": {
@@ -112,9 +112,9 @@
 			"filter": "Filters.byProps(\"dispatch\", \"subscribe\")",
 			"options": "{ searchExports: false }"
 		},
-		"ImageModal": {
-			"filter": "Filters.byStrings(\"original\", \"maxHeight\", \"maxWidth\", \"noreferrer noopener\")",
-			"options": "{ searchExports: true }"
+		"ImageModalVideoModal": {
+			"filter": "Filters.byProps(\"ImageModal\")",
+			"options": "{ searchExports: false }"
 		},
 		"ModalCarousel": {
 			"filter": "Filters.byPrototypeFields(\"navigateTo\", \"preloadImage\")",
@@ -133,7 +133,7 @@
 			"options": "{ searchExports: false }"
 		},
 		"UserBannerMask": {
-			"filter": "Filters.byStrings(\"showPremiumBadgeUpsell\")",
+			"filter": "Filters.byStrings(\"getBannerURL\", \"showPremiumBadgeUpsell\")",
 			"options": "{ searchExports: true }"
 		}
 	},

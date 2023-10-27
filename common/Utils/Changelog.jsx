@@ -86,7 +86,8 @@ function showChangelog() {
 export default function shouldChangelog() {
 	const { version = config.info.version, changelog = false } = Data.load("metadata") || {};
 
-	if (version == config.info.version || changelog) return;
-	Data.save("metadata", { version: config.info.version, changelog: true });
-	return showChangelog;
+	if (version != config.info.version || !changelog) {
+		Data.save("metadata", { version: config.info.version, changelog: true });
+		return showChangelog;
+	}
 }

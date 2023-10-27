@@ -1,11 +1,12 @@
 import { React } from "@Api";
 import { Patcher, getOwnerInstance } from "@Api";
-import ImageModal from "@Modules/ImageModal";
+import ImageModalVideoModal from "@Modules/ImageModalVideoModal";
 import ModalRoot from "@Modules/ModalRoot";
 import RenderLinkComponent from "@Modules/RenderLinkComponent";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 import ErrorBoundary from "@Components/ErrorBoundary";
 
+const ImageModal = ImageModalVideoModal.ImageModal;
 
 export const openModal = children => {
 	TheBigBoyBundle.openModal(props => {
