@@ -1,41 +1,16 @@
 {
 	"info": {
 		"name": "SendStickersAsLinks",
-		"version": "2.2.1",
+		"version": "2.2.2",
 		"description": "Enables you to send custom Stickers as links",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SendStickersAsLinks/SendStickersAsLinks.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SendStickersAsLinks"
 	},
-	"defaultConfig": [{
-		"type": "switch",
-		"id": "sendDirectly",
-		"name": "Send Directly",
-		"note": "Send the sticker link in a message directly instead of putting it in the chat box.",
-		"value": false
-	}, {
-		"type": "switch",
-		"id": "ignoreEmbedPermissions",
-		"name": "Ignore Embed Permissions",
-		"note": "Send sticker links regardless of embed permissions, meaning links will not turn into images.",
-		"value": false
-	}, {
-		"type": "switch",
-		"id": "shouldSendAnimatedStickers",
-		"name": "Send animated stickers",
-		"note": "Animated stickers do not animate, sending them will only send the first picture of the animation. (still useful)",
-		"value": false
-	}, {
-		"type": "switch",
-		"id": "shouldHighlightAnimated",
-		"name": "Highlight animated stickers",
-		"value": true
-	}, {
-		"type": "slider",
-		"id": "stickerSize",
-		"name": "Sticker Size",
-		"note": "The size of the sticker in pixels. 160 is recommended.",
-		"value": 160,
-		"markers": [80, 100, 128, 160],
-		"stickToMarkers": true
-	}]
+	"settings":{
+		"sendDirectly":false,
+		"ignoreEmbedPermissions":false,
+		"shouldSendAnimatedStickers":false,
+		"shouldHighlightAnimated":true,
+		"stickerSize":160
+	}
 }

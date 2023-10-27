@@ -5,8 +5,8 @@ import DiscordPermissionsEnum from "@Enums/DiscordPermissionsEnum";
 
 export default () => {
 	if (DiscordPermissions)
-		Patcher.after(DiscordPermissions, "can", (_, [{ permission }], ret) =>
+		Patcher.after(DiscordPermissions, "can", (_, [permission], ret) => 
 			ret || DiscordPermissionsEnum.USE_EXTERNAL_EMOJIS === permission
 		);
 	else Logger.patch("patchChannelGuildPermissions");
-}
+};

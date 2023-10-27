@@ -3,6 +3,7 @@ import Logger from "@Utils/Logger";
 import { handleSticker } from "../Utils";
 import MessageActions from "@Modules/MessageActions";
 import { sendMessageDirectly } from "@Utils/Messages";
+import { getStickerUrl } from "../Utils";
 
 export default () => {
 	/**
@@ -20,7 +21,7 @@ export default () => {
 				if (!stickerObj.isSendable) {
 					delete args[3].stickerIds;
 					setTimeout(() => {
-						sendMessageDirectly(stickerObj);
+						sendMessageDirectly(stickerObj.channel, getStickerUrl(stickerId));
 					}, 0);
 				}
 			}

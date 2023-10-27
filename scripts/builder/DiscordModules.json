@@ -68,13 +68,9 @@
 			"filter": "Filters.byProps(\"computePermissions\")",
 			"options": "{ searchExports: false }"
 		},
-		"isStickerSendable": {
-			"filter": "Filters.byStrings(\"=r.SENDABLE\")",
-			"options": "{ searchExports: true }"
-		},
-		"getStickerSendability": {
-			"filter": "Filters.byStrings(\"canUseStickersEverywhere\", \"USE_EXTERNAL_STICKERS\")",
-			"options": "{ searchExports: true }"
+		"StickerSendability": {
+			"filter": "Filters.byProps(\"StickerSendability\", \"getStickerSendability\")",
+			"options": "{ searchExports: false }"
 		},
 		"CloseExpressionPicker": {
 			"filter": "Filters.byStrings(\"activeView:null,activeViewType:null\")",
@@ -259,16 +255,6 @@
 				"APNG": 2,
 				"LOTTIE": 3,
 				"GIF": 4
-			}
-		},
-		"StickersSendabilityEnum": {
-			"filter": "Filters.byProps(\"SENDABLE_WITH_BOOSTED_GUILD\")",
-			"options": "{ searchExports: true }",
-			"fallback": {
-				"SENDABLE": 0,
-				"SENDABLE_WITH_PREMIUM": 1,
-				"NONSENDABLE": 2,
-				"SENDABLE_WITH_BOOSTED_GUILD": 3
 			}
 		},
 		"ProfileTypeEnum": {

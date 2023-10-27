@@ -1,17 +1,31 @@
 import StickerTypeEnum from "@Enums/StickerTypeEnum";
 import StickerFormatEnum from "@Enums/StickerFormatEnum";
-import StickersSendabilityEnum from "@Enums/StickersSendabilityEnum";
-
+import Settings from "@Utils/Settings";
 import UserStore from "@Stores/UserStore";
 import StickersStore from "@Stores/StickersStore";
 import ChannelStore from "@Stores/ChannelStore";
+import { sendMessageDirectly, insertText } from "@Utils/Messages";
+import Toast from "@Utils/Toast";
+import StickerSendability from "@Modules/StickerSendability";
 
-import StickerSendability from "@Patch/getStickerSendability";
-const getStickerSendability = StickerSendability.module[StickerSendability.key];
+const { StickerSendability: StickersSendabilityEnum, getStickerSendability } = StickerSendability;
 
+export function sendStickerAsLink({ channel, sticker }) {
+	const content = getStickerUrl(sticker.id);
+	
+	if (!Settings.get("sendDirectly")) return insertText(content);
 
-export function getStickerUrl(stickerId, size) {
-	return `https://media.discordapp.net/stickers/${stickerId}?size=${size}&passthrough=false`;
+	try {
+		sendMessageDirectly(channel, content);
+	} catch {
+		insertText(content);
+		Toast.error("Could not send directly.");
+	}
+}
+
+export function getStickerUrl(stickerId) {
+	const stickerSize = Settings.get("stickerSize") || 160;
+	return `https://media.discordapp.net/stickers/${stickerId}?size=${stickerSize}&passthrough=false`;
 }
 
 export function isAnimatedSticker(sticker) {
@@ -35,5 +49,5 @@ export function handleSticker(channelId, stickerId) {
 		sticker,
 		channel,
 		isSendable: isStickerSendable(sticker, channel, user)
-	}
+	};
 }
