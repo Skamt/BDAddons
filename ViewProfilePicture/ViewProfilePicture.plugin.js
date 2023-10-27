@@ -1,7 +1,7 @@
 /**
  * @name ViewProfilePicture
  * @description Adds a button to the user popout and profile that allows you to view the Avatar and banner.
- * @version 1.2.3
+ * @version 1.2.4
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "ViewProfilePicture",
-		"version": "1.2.3",
+		"version": "1.2.4",
 		"description": "Adds a button to the user popout and profile that allows you to view the Avatar and banner.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture",
@@ -39,7 +39,6 @@ svg:has(path[d="M10 0C4.486 0 0 4.486 0 10C0 15.515 4.486 20 10 20C15.514 20 20 
 	border-radius: 50%;
 	top: 10px;
 	color: #fff;
-	
 }
 
 .VPP-Button svg {
@@ -92,7 +91,7 @@ svg:has(path[d="M10 0C4.486 0 0 4.486 0 10C0 15.515 4.486 20 10 20C15.514 20 20 
 }
 
 /* Carousel Modal */
-.VPP-carousel.carouselModal-1eUFoq:not(#idontthinkso) {
+.VPP-carousel:not(#idontthinkso) {
 	height: auto;
 	width: auto;
 	position: static;
@@ -101,23 +100,15 @@ svg:has(path[d="M10 0C4.486 0 0 4.486 0 10C0 15.515 4.486 20 10 20C15.514 20 20 
 	background: none;
 }
 
-.VPP-carousel .modalCarouselWrapper-YK1MX4 {
+.VPP-carousel > div {
 	position: static;
 }
 
-.VPP-carousel .arrowContainer-2wpC4q {
+.VPP-carousel button {
 	margin: 0 15px;
 	opacity: 0.8;
 	background: var(--background-primary);
 	border-radius: 50%;
-}
-
-.VPP-carousel .imageWrapper-oMkQl4.imageWrapperBackground-3Vss_C {
-	min-height: 50vh;
-}
-
-.VPP-carousel .imageWrapper-oMkQl4 > img {
-	max-height: 80vh;
 }
 
 /* Copy color button */
@@ -127,7 +118,6 @@ svg:has(path[d="M10 0C4.486 0 0 4.486 0 10C0 15.515 4.486 20 10 20C15.514 20 20 
 	display: flex;
 	cursor: pointer;
 	gap: 5px;
-	
 }
 
 .VPP-copy-color-label,
@@ -254,7 +244,7 @@ function getModuleAndKey(filter, options) {
 	return { module, key };
 }
 
-const ImageModal = getModule(Filters.byStrings("original", "maxHeight", "maxWidth", "noreferrer noopener"), { searchExports: true });
+const ImageModalVideoModal = getModule(Filters.byProps("ImageModal"), { searchExports: false });
 
 const ModalRoot = getModule(Filters.byStrings("onAnimationEnd"), { searchExports: true });
 
@@ -348,7 +338,7 @@ const ProfileTypeEnum = getModule(Filters.byProps("POPOUT", "SETTINGS"), { searc
 	"CARD": 4
 };
 
-const UserBannerMask = getModuleAndKey(Filters.byStrings("showPremiumBadgeUpsell"), { searchExports: true });
+const UserBannerMask = getModuleAndKey(Filters.byStrings("getBannerURL", "showPremiumBadgeUpsell"), { searchExports: true });
 
 function showToast(content, type) {
 	UI.showToast(`[${config.info.name}] ${content}`, { type });
@@ -502,7 +492,7 @@ const SettingComponent = () => React.createElement(ShowOnHoverSwitch, null);
 const IMG_WIDTH = 4096;
 
 const getImageModalComponent = (url) => (
-	React.createElement(ImageModal, {
+	React.createElement(ImageModalVideoModal.ImageModal, {
 		height: IMG_WIDTH,
 		width: IMG_WIDTH,
 		src: url,

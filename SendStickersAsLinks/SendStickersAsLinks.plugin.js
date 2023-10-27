@@ -1,7 +1,7 @@
 /**
  * @name SendStickersAsLinks
  * @description Enables you to send custom Stickers as links
- * @version 2.2.1
+ * @version 2.2.2
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/SendStickersAsLinks
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/SendStickersAsLinks/SendStickersAsLinks.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "SendStickersAsLinks",
-		"version": "2.2.1",
+		"version": "2.2.2",
 		"description": "Enables you to send custom Stickers as links",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SendStickersAsLinks/SendStickersAsLinks.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SendStickersAsLinks",
@@ -18,44 +18,25 @@ const config = {
 			"name": "Skamt"
 		}]
 	},
-	"defaultConfig": [{
-			"type": "switch",
-			"id": "sendDirectly",
-			"name": "Send Directly",
-			"note": "Send the sticker link in a message directly instead of putting it in the chat box.",
-			"value": false
-		},
-		{
-			"type": "switch",
-			"id": "ignoreEmbedPermissions",
-			"name": "Ignore Embed Permissions",
-			"note": "Send sticker links regardless of embed permissions, meaning links will not turn into images.",
-			"value": false
-		},
-		{
-			"type": "switch",
-			"id": "shouldSendAnimatedStickers",
-			"name": "Send animated stickers",
-			"note": "Animated stickers do not animate, sending them will only send the first picture of the animation. (still useful)",
-			"value": false
-		},
-		{
-			"type": "switch",
-			"id": "shouldHighlightAnimated",
-			"name": "Highlight animated stickers",
-			"value": true
-		},
-		{
-			"type": "slider",
-			"id": "stickerSize",
-			"name": "Sticker Size",
-			"note": "The size of the sticker in pixels. 160 is recommended.",
-			"value": 160,
-			"markers": [80, 100, 128, 160],
-			"stickToMarkers": true
-		}
-	]
+	"settings": {
+		"sendDirectly": false,
+		"ignoreEmbedPermissions": false,
+		"shouldSendAnimatedStickers": false,
+		"shouldHighlightAnimated": true,
+		"stickerSize": 160
+	}
 }
+
+const Api = new BdApi(config.info.name);
+
+const UI = Api.UI;
+const DOM = Api.DOM;
+const Data = Api.Data;
+const React = Api.React;
+const Patcher = Api.Patcher;
+
+const getModule = Api.Webpack.getModule;
+const Filters = Api.Webpack.Filters;
 
 const css = `
 .animatedSticker{
@@ -78,21 +59,65 @@ const css = `
     border-radius:4px;
 }`;
 
-const Settings = {
-	settings: {},
+class ChangeEmitter {
+	constructor() {
+		this.listeners = new Set();
+	}
+
+	isInValid(handler) {
+		return !handler || typeof handler !== "function";
+	}
+
+	on(handler) {
+		if (this.isInValid(handler)) return;
+		this.listeners.add(handler);
+		return () => this.off(handler);
+	}
+
+	off(handler) {
+		if (this.isInValid(handler)) return;
+		this.listeners.delete(handler);
+	}
+
+	emit(payload) {
+		for (const listener of this.listeners) {
+			try {
+				listener(payload);
+			} catch (err) {
+				console.error(`Could not run listener`, err);
+			}
+		}
+	}
+}
+
+const Settings = new(class Settings extends ChangeEmitter {
+	constructor() {
+		super();
+	}
+
+	init(defaultSettings) {
+		this.settings = Data.load("settings") || defaultSettings;
+	}
+
 	get(key) {
 		return this.settings[key];
-	},
-	set(key, val) {
-		return this.settings[key] = val;
-	},
-	update(settings) {
-		this.init(settings);
-	},
-	init(settings) {
-		this.settings = settings;
 	}
-};
+
+	set(key, val) {
+		this.settings[key] = val;
+		this.commit();
+	}
+
+	setMultiple(newSettings) {
+		this.settings = Object.assign(this.settings, newSettings);
+		this.commit();
+	}
+
+	commit() {
+		Data.save("settings", this.settings);
+		this.emit();
+	}
+})();
 
 const Logger = {
 	error(...args) {
@@ -102,35 +127,16 @@ const Logger = {
 		console.error(`%c[${config.info.name}] %c Error at %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
 	},
 	log(...args) {
-		this.p(console.error, ...args);
+		this.p(console.log, ...args);
 	},
 	p(target, ...args) {
 		target(`%c[${config.info.name}]`, "color: #3a71c1;font-weight: bold;", ...args);
 	}
 };
 
-const Api = new BdApi(config.info.name);
-
-const UI = Api.UI;
-const DOM = Api.DOM;
-const Patcher = Api.Patcher;
-
-const getModule = Api.Webpack.getModule;
-const Filters = Api.Webpack.Filters;
-
-class MissingZlibAddon {
-	stop() {}
-	start() {
-		BdApi.alert("Missing library", [`**ZeresPluginLibrary** is needed to run **${config.info.name}**.`,
-			"Please download it from the officiel website",
-			"https://betterdiscord.app/plugin/ZeresPluginLibrary"
-		]);
-	}
-}
-
 function getModuleAndKey(filter, options) {
 	let module;
-	const target = getModule((entry, m) => filter(entry) ? (module = m) : false, options);
+	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
 	module = module?.exports;
 	if (!module) return undefined;
 	const key = Object.keys(module).find(k => module[k] === target);
@@ -138,14 +144,99 @@ function getModuleAndKey(filter, options) {
 	return { module, key };
 }
 
-const isStickerSendable$1 = getModuleAndKey(Filters.byStrings("=r.SENDABLE"), { searchExports: true });
+const TheBigBoyBundle = getModule(Filters.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
+
+const Switch = TheBigBoyBundle.FormSwitch ||
+	function SwitchComponentFallback(props) {
+		return (
+			React.createElement('div', { style: { color: "#fff" }, }, props.children, React.createElement('input', {
+				type: "checkbox",
+				checked: props.value,
+				onChange: e => props.onChange(e.target.checked),
+			}))
+		);
+	};
+
+const Heading = getModule(Filters.byStrings("LEGEND", "LABEL"), { searchExports: true });
+
+const Slider = TheBigBoyBundle.Slider;
+const FormText = TheBigBoyBundle.FormText;
+
+const SettingComponent = () => {
+	return [
+		...[{
+				hideBorder: false,
+				description: "Send Directly",
+				note: "Send the sticker link in a message directly instead of putting it in the chat box.",
+				value: Settings.get("sendDirectly"),
+				onChange: e => Settings.set("sendDirectly", e)
+			},
+			{
+				hideBorder: false,
+				description: "Ignore Embed Permissions",
+				note: "Send sticker links regardless of embed permissions, meaning links will not turn into images.",
+				value: Settings.get("ignoreEmbedPermissions"),
+				onChange: e => Settings.set("ignoreEmbedPermissions", e)
+			},
+			{
+				hideBorder: false,
+				description: "Send animated stickers",
+				note: "Animated stickers do not animate, sending them will only send the first picture of the animation. (still useful)",
+				value: Settings.get("shouldSendAnimatedStickers"),
+				onChange: e => Settings.set("shouldSendAnimatedStickers", e)
+			},
+			{
+				hideBorder: false,
+				description: "Highlight animated stickers",
+				value: Settings.get("shouldHighlightAnimated"),
+				onChange: e => Settings.set("shouldHighlightAnimated", e)
+			}
+		].map(Toggle),
+		React.createElement(StickerSize, null)
+	];
+};
+
+function StickerSize() {
+
+	return (
+		React.createElement(React.Fragment, null, React.createElement(Heading, { tag: "h5", }, "Sticker Size")
+
+			, React.createElement(Slider, {
+				stickToMarkers: true,
+				markers: [80, 100, 128, 160],
+				minValue: 80,
+				maxValue: 160,
+				initialValue: Settings.get("stickerSize"),
+				onValueChange: e => Settings.set("stickerSize", e),
+			}), React.createElement(FormText, { type: "description", }, "The size of the sticker in pixels. 160 is recommended")
+		)
+	);
+}
+
+function Toggle(props) {
+	const [enabled, setEnabled] = React.useState(props.value);
+	return (
+		React.createElement(Switch, {
+			value: enabled,
+			note: props.note,
+			hideBorder: props.hideBorder,
+			onChange: e => {
+				props.onChange(e);
+				setEnabled(e);
+			},
+		}, props.description)
+	);
+}
+
+const StickerSendability = getModule(Filters.byProps("StickerSendability", "getStickerSendability"), { searchExports: false });
 
 const patchStickerClickability = () => {
 	/**
 	 * Make stickers clickable.
 	 **/
-	const { module, key } = isStickerSendable$1;
-	if (module && key) Patcher.after(module, key, () => true);
+
+	if (StickerSendability)
+		Patcher.after(StickerSendability, "isSendableSticker", () => true);
 	else Logger.patch("patchStickerClickability");
 };
 
@@ -160,51 +251,6 @@ const Toast = {
 	error(content) { showToast(content, "error"); }
 };
 
-const MessageActions = getModule(Filters.byProps('jumpToMessage', '_sendMessage'), { searchExports: false });
-
-const Dispatcher = getModule(Filters.byProps("dispatch", "subscribe"), { searchExports: false });
-
-const PendingReplyStore = getModule(m => m._dispatchToken && m.getName() === "PendingReplyStore");
-
-function getReply(channelId) {
-	const reply = PendingReplyStore?.getPendingReply(channelId);
-	if (!reply) return {};
-	Dispatcher?.dispatch({ type: "DELETE_PENDING_REPLY", channelId });
-	return {
-		messageReference: {
-			guild_id: reply.channel.guild_id,
-			channel_id: reply.channel.id,
-			message_id: reply.message.id
-		},
-		allowedMentions: reply.shouldMention ? undefined : {
-			parse: ["users", "roles", "everyone"],
-			replied_user: false
-		}
-	}
-}
-
-function sendMessageDirectly(channel, content) {
-	if (MessageActions)
-		MessageActions.sendMessage(channel.id, {
-			validNonShortcutEmojis: [],
-			content
-		}, undefined, getReply(channel.id));
-	else
-		throw new Error("Can't send message directly.");
-}
-
-const insertText = (() => {
-	let ComponentDispatch;
-	return (content) => {
-		if (!ComponentDispatch) ComponentDispatch = getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners('INSERT_TEXT').length, { searchExports: true });
-		setTimeout(() => {
-			ComponentDispatch.dispatchToLastSubscribed("INSERT_TEXT", {
-				plainText: content
-			});
-		});
-	}
-})();
-
 const DiscordPermissions = getModule(Filters.byProps("computePermissions"), { searchExports: false });
 
 const DiscordPermissionsEnum = getModule(Filters.byProps("ADD_REACTIONS"), { searchExports: true }) || {
@@ -213,12 +259,14 @@ const DiscordPermissionsEnum = getModule(Filters.byProps("ADD_REACTIONS"), { sea
 };
 
 function hasEmbedPerms(channel, user) {
-	return !channel.guild_id || DiscordPermissions?.can({
-		permission: DiscordPermissionsEnum.EMBED_LINKS,
-		context: channel,
+	return !channel.guild_id || DiscordPermissions?.can(
+		DiscordPermissionsEnum.EMBED_LINKS,
+		channel,
 		user
-	});
+	);
 }
+
+const MessageActions = getModule(Filters.byProps('jumpToMessage', '_sendMessage'), { searchExports: false });
 
 const STRINGS = {
 	sendLottieStickerErrorMessage: "Official Discord Stickers are not supported.",
@@ -238,25 +286,78 @@ const StickerFormatEnum = getModule(Filters.byProps("APNG", "LOTTIE"), { searchE
 	"GIF": 4
 };
 
-const StickersSendabilityEnum = getModule(Filters.byProps("SENDABLE_WITH_BOOSTED_GUILD"), { searchExports: true }) || {
-	"SENDABLE": 0,
-	"SENDABLE_WITH_PREMIUM": 1,
-	"NONSENDABLE": 2,
-	"SENDABLE_WITH_BOOSTED_GUILD": 3
-};
-
 const UserStore = getModule(m => m._dispatchToken && m.getName() === "UserStore");
 
 const StickersStore = getModule(m => m._dispatchToken && m.getName() === "StickersStore");
 
 const ChannelStore = getModule(m => m._dispatchToken && m.getName() === "ChannelStore");
 
-const getStickerSendability$1 = getModuleAndKey(Filters.byStrings("canUseStickersEverywhere", "USE_EXTERNAL_STICKERS"), { searchExports: true });
+const Dispatcher = getModule(Filters.byProps("dispatch", "subscribe"), { searchExports: false });
 
-const getStickerSendability = getStickerSendability$1.module[getStickerSendability$1.key];
+const PendingReplyStore = getModule(m => m._dispatchToken && m.getName() === "PendingReplyStore");
 
-function getStickerUrl(stickerId, size) {
-	return `https://media.discordapp.net/stickers/${stickerId}?size=${size}&passthrough=false`;
+function getReply(channelId) {
+	const reply = PendingReplyStore?.getPendingReply(channelId);
+	if (!reply) return {};
+	Dispatcher?.dispatch({ type: "DELETE_PENDING_REPLY", channelId });
+	return {
+		messageReference: {
+			guild_id: reply.channel.guild_id,
+			channel_id: reply.channel.id,
+			message_id: reply.message.id
+		},
+		allowedMentions: reply.shouldMention ?
+			undefined : {
+				parse: ["users", "roles", "everyone"],
+				replied_user: false
+			}
+	};
+}
+
+async function sendMessageDirectly(channel, content) {
+	if (!MessageActions || !MessageActions.sendMessage || typeof MessageActions.sendMessage !== "function")
+		throw new Error("Can't send message directly.");
+
+	return MessageActions.sendMessage(
+		channel.id, {
+			validNonShortcutEmojis: [],
+			content
+		},
+		undefined,
+		getReply(channel.id)
+	);
+}
+
+const insertText = (() => {
+	let ComponentDispatch;
+	return content => {
+		if (!ComponentDispatch) ComponentDispatch = getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners("INSERT_TEXT").length, { searchExports: true });
+		setTimeout(() => {
+			ComponentDispatch.dispatchToLastSubscribed("INSERT_TEXT", {
+				plainText: content
+			});
+		});
+	};
+})();
+
+const { StickerSendability: StickersSendabilityEnum, getStickerSendability } = StickerSendability;
+
+function sendStickerAsLink({ channel, sticker }) {
+	const content = getStickerUrl(sticker.id);
+
+	if (!Settings.get("sendDirectly")) return insertText(content);
+
+	try {
+		sendMessageDirectly(channel, content);
+	} catch {
+		insertText(content);
+		Toast.error("Could not send directly.");
+	}
+}
+
+function getStickerUrl(stickerId) {
+	const stickerSize = Settings.get("stickerSize") || 160;
+	return `https://media.discordapp.net/stickers/${stickerId}?size=${stickerSize}&passthrough=false`;
 }
 
 function isAnimatedSticker(sticker) {
@@ -280,24 +381,15 @@ function handleSticker(channelId, stickerId) {
 		sticker,
 		channel,
 		isSendable: isStickerSendable(sticker, channel, user)
-	}
+	};
 }
 
-function sendStickerAsLink(sticker, channel) {
-	const content = getStickerUrl(sticker.id, Settings.get("stickerSize"));
-	if (Settings.get("sendDirectly")) {
-		try { return sendMessageDirectly(channel, content); } catch { Toast.error("Could not send directly."); }
-	}
-	insertText(content);
-}
+function handleUnsendableSticker(stickerObj) {
+	const { user, sticker, channel } = stickerObj;
+	if (isAnimatedSticker(sticker) && !Settings.get("shouldSendAnimatedStickers")) return Toast.info(STRINGS.disabledAnimatedStickersErrorMessage);
+	if (!hasEmbedPerms(channel, user) && !Settings.get("ignoreEmbedPermissions")) return Toast.info(STRINGS.missingEmbedPermissionsErrorMessage);
 
-function handleUnsendableSticker({ user, sticker, channel }) {
-	if (isAnimatedSticker(sticker) && !Settings.get("shouldSendAnimatedStickers"))
-		return Toast.info(STRINGS.disabledAnimatedStickersErrorMessage);
-	if (!hasEmbedPerms(channel, user) && !Settings.get("ignoreEmbedPermissions"))
-		return Toast.info(STRINGS.missingEmbedPermissionsErrorMessage);
-
-	sendStickerAsLink(sticker, channel);
+	sendStickerAsLink(stickerObj);
 }
 
 const patchSendSticker = () => {
@@ -305,13 +397,11 @@ const patchSendSticker = () => {
 	 * Main Patch
 	 * */
 	if (MessageActions)
-		Patcher.instead(MessageActions, 'sendStickers', (_, args, originalFunc) => {
+		Patcher.instead(MessageActions, "sendStickers", (_, args, originalFunc) => {
 			const [channelId, [stickerId]] = args;
 			const stickerObj = handleSticker(channelId, stickerId);
-			if (stickerObj.isSendable)
-				originalFunc.apply(_, args);
-			else
-				handleUnsendableSticker(stickerObj);
+			if (stickerObj.isSendable) originalFunc.apply(_, args);
+			else handleUnsendableSticker(stickerObj);
 		});
 	else Logger.patch("patchSendSticker");
 };
@@ -348,7 +438,7 @@ const patchStickerAttachement = () => {
 				if (!stickerObj.isSendable) {
 					delete args[3].stickerIds;
 					setTimeout(() => {
-						sendMessageDirectly(stickerObj);
+						sendMessageDirectly(stickerObj.channel, getStickerUrl(stickerId));
 					}, 0);
 				}
 			}
@@ -360,11 +450,11 @@ const patchStickerSuggestion = () => {
 	/**
 	 * Enables suggestions
 	 * */
-	const { module, key } = getStickerSendability$1;
-	if (module && key)
-		Patcher.after(module, key, (_, args, returnValue) => {
+
+	if (StickerSendability)
+		Patcher.after(StickerSendability, "getStickerSendability", (_, args, returnValue) => {
 			if (args[0].type === StickerTypeEnum.GUILD) {
-				const { SENDABLE } = StickersSendabilityEnum;
+				const { SENDABLE } = StickerSendability.StickerSendability;
 				return returnValue !== SENDABLE ? SENDABLE : returnValue;
 			}
 		});
@@ -373,49 +463,37 @@ const patchStickerSuggestion = () => {
 
 const patchChannelGuildPermissions = () => {
 	if (DiscordPermissions)
-		Patcher.after(DiscordPermissions, "can", (_, [{ permission }], ret) =>
+		Patcher.after(DiscordPermissions, "can", (_, [permission], ret) =>
 			ret || DiscordPermissionsEnum.USE_EXTERNAL_EMOJIS === permission
 		);
 	else Settings.patch("patchChannelGuildPermissions");
 };
 
-const index = !global.ZeresPluginLibrary ? MissingZlibAddon : (() => {
-	const [Plugin] = global.ZeresPluginLibrary.buildPlugin(config);
+class SendStickersAsLinks {
+	start() {
+		try {
+			Settings.init(config.settings);
+			DOM.addStyle(css);
+			patchStickerClickability();
+			patchSendSticker();
+			patchStickerComponent();
+			patchStickerAttachement();
+			patchStickerSuggestion();
+			patchChannelGuildPermissions();
 
-	return class SendStickersAsLinks extends Plugin {
-		constructor() {
-			super();
+		} catch (e) {
+			Logger.error(e);
 		}
+	}
 
-		onStart() {
-			try {
-				DOM.addStyle(css);
-				patchStickerClickability();
-				patchSendSticker();
-				patchStickerComponent();
-				patchStickerAttachement();
-				patchStickerSuggestion();
-				patchChannelGuildPermissions();
-				Settings.init(this.settings);
-			} catch (e) {
-				Logger.error(e);
-			}
-		}
+	stop() {
+		DOM.removeStyle();
+		Patcher.unpatchAll();
+	}
 
-		onStop() {
-			this.cleanUp?.();
-			DOM.removeStyle();
-			Patcher.unpatchAll();
-		}
+	getSettingsPanel() {
+		return React.createElement(SettingComponent, null);
+	}
+}
 
-		getSettingsPanel() {
-			const panel = this.buildSettingsPanel();
-			panel.addListener(() => {
-				Settings.update(this.settings);
-			});
-			return panel.getElement();
-		}
-	};
-})();
-
-module.exports = index;
+module.exports = SendStickersAsLinks;

@@ -1,7 +1,7 @@
 /**
  * @name CopyImageLink
  * @description Adds (Copy Link) button next to (Open Original) under images
- * @version 1.2.0
+ * @version 1.2.1
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/CopyImageLink
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/CopyImageLink/CopyImageLink.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "CopyImageLink",
-		"version": "1.2.0",
+		"version": "1.2.1",
 		"description": "Adds (Copy Link) button next to (Open Original) under images",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/CopyImageLink/CopyImageLink.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/CopyImageLink",
@@ -56,7 +56,7 @@ const Logger = {
 		console.error(`%c[${config.info.name}] %c Error at %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
 	},
 	log(...args) {
-		this.p(console.error, ...args);
+		this.p(console.log, ...args);
 	},
 	p(target, ...args) {
 		target(`%c[${config.info.name}]`, "color: #3a71c1;font-weight: bold;", ...args);
@@ -73,15 +73,7 @@ const Patcher = Api.Patcher;
 const getModule = Api.Webpack.getModule;
 const Filters = Api.Webpack.Filters;
 
-function getModuleAndKey(filter, options) {
-	let module;
-	const target = getModule((entry, m) => filter(entry) ? (module = m) : false, options);
-	module = module?.exports;
-	if (!module) return undefined;
-	const key = Object.keys(module).find(k => module[k] === target);
-	if (!key) return undefined;
-	return { module, key };
-}
+const ImageModalVideoModal = getModule(Filters.byProps("ImageModal"), { searchExports: false });
 
 function copy(data) {
 	DiscordNative.clipboard.copy(data);
@@ -118,15 +110,12 @@ const CopyButtonComponent = ({ href }) => {
 	);
 };
 
-const ImageModal = getModuleAndKey(Filters.byStrings("original", "maxHeight", "maxWidth", "noreferrer noopener"), { searchExports: true });
-
 class CopyImageLink {
 	start() {
 		try {
 			DOM.addStyle(css);
-			const { module, key } = ImageModal;
-			if (module && key)
-				Patcher.after(module, key, (_, __, returnValue) => {
+			if (ImageModalVideoModal)
+				Patcher.after(ImageModalVideoModal, "ImageModal", (_, __, returnValue) => {
 					const children = getNestedProp(returnValue, "props.children");
 					const { href } = getNestedProp(returnValue, "props.children.2.props");
 					children.push(React.createElement(CopyButtonComponent, { href: href, }));

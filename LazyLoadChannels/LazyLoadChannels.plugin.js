@@ -1,7 +1,7 @@
 /**
  * @name LazyLoadChannels
  * @description Lets you choose whether to load a channel
- * @version 1.2.2
+ * @version 1.2.3
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "LazyLoadChannels",
-		"version": "1.2.2",
+		"version": "1.2.3",
 		"description": "Lets you choose whether to load a channel",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels",
@@ -21,12 +21,7 @@ const config = {
 	"settings": {
 		"autoloadedChannelIndicator": false,
 		"lazyLoadDMs": false
-	},
-	"changelog": [{
-		"type": "added",
-		"title": "added",
-		"items": ["DMs can be included in lazy loading, Enable/Disable in setting.", "Can now hold Ctrl + Click to autoload a channel."]
-	}]
+	}
 }
 
 const css = `
@@ -195,65 +190,85 @@ const Filters = Api.Webpack.Filters;
 
 const getOwnerInstance = Api.ReactUtils.getOwnerInstance;
 
-const Settings = {
-	_listeners: [],
-	_settings: {},
-	_commit() {
-		Data.save("settings", this._settings);
-		this._notify();
-	},
-	_notify() {
-		this._listeners.forEach(listener => listener?.());
-	},
-	get(key) {
-		return this._settings[key];
-	},
-	set(key, val) {
-		this._settings[key] = val;
-		this._commit();
-	},
-	setMultiple(newSettings) {
-		this._settings = {
-			...this._settings,
-			...newSettings
-		};
-		this._commit();
-	},
-	init(defaultSettings) {
-		this._settings = Data.load("settings") || defaultSettings;
-	},
-	addUpdateListener(listener) {
-		this._listeners.push(listener);
-		return () => this._listeners.splice(this._listeners.length - 1, 1);
+class ChangeEmitter {
+	constructor() {
+		this.listeners = new Set();
 	}
-};
+
+	isInValid(handler) {
+		return !handler || typeof handler !== "function";
+	}
+
+	on(handler) {
+		if (this.isInValid(handler)) return;
+		this.listeners.add(handler);
+		return () => this.off(handler);
+	}
+
+	off(handler) {
+		if (this.isInValid(handler)) return;
+		this.listeners.delete(handler);
+	}
+
+	emit(payload) {
+		for (const listener of this.listeners) {
+			try {
+				listener(payload);
+			} catch (err) {
+				console.error(`Could not run listener`, err);
+			}
+		}
+	}
+}
+
+const Settings = new(class Settings extends ChangeEmitter {
+	constructor() {
+		super();
+	}
+
+	init(defaultSettings) {
+		this.settings = Data.load("settings") || defaultSettings;
+	}
+
+	get(key) {
+		return this.settings[key];
+	}
+
+	set(key, val) {
+		this.settings[key] = val;
+		this.commit();
+	}
+
+	setMultiple(newSettings) {
+		this.settings = Object.assign(this.settings, newSettings);
+		this.commit();
+	}
+
+	commit() {
+		Data.save("settings", this.settings);
+		this.emit();
+	}
+})();
 
 const ControlKeys = {
 	init() {
-		this.subs = [
-			["keydown", this.keydownHandler],
-			["keyup", this.keyupHandler]
-		].map(([event, handler]) => {
-			const boundHandler = handler.bind(this);
-			document.addEventListener(event, boundHandler);
-			return () => document.removeEventListener(event, boundHandler);
+		this.subs = ["keydown", "keyup"].map(event => {
+			const handler = e => this.e = e;
+			document.addEventListener(event, handler);
+			return () => document.removeEventListener(event, handler);
 		});
-		this.ctrlKey = false;
-		this.shiftKey = false;
-		this.metaKey = false;
 	},
 	clean() {
-		this.subs.forEach(unsub => unsub && typeof unsub === "function" && unsub());
+		this.subs?.forEach(unsub => unsub && typeof unsub === "function" && unsub());
 	},
-	keydownHandler(e) {
-		this.ctrlKey = e.ctrlKey;
-		this.shiftKey = e.shiftKey;
-		this.metaKey = e.metaKey;
+	get ctrlKey() {
+		return this.e?.ctrlKey;
 	},
-	keyupHandler(e) {
-		this.ctrlKey = e.ctrlKey;
-		this.shiftKey = e.shiftKey;
-		this.metaKey = e.metaKey;
+	get shiftKey() {
+		return this.e?.shiftKey;
+	},
+	get metaKey() {
+		return this.e?.metaKey;
 	}
 };
 
@@ -265,7 +280,7 @@ const Logger = {
 		console.error(`%c[${config.info.name}] %c Error at %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
 	},
 	log(...args) {
-		this.p(console.error, ...args);
+		this.p(console.log, ...args);
 	},
 	p(target, ...args) {
 		target(`%c[${config.info.name}]`, "color: #3a71c1;font-weight: bold;", ...args);
@@ -368,7 +383,7 @@ function Toggle(props) {
 	);
 }
 
-const ChannelComponent = getModuleAndKey(Filters.byStrings("canHaveDot", "isFavoriteSuggestion", "mentionCount"), { searchExports: true });
+const ChannelComponent = getModuleAndKey(Filters.byStrings("hasActiveThreads", "canHaveDot", "isFavoriteSuggestion", "mentionCount"), { searchExports: true });
 
 const patchChannel = () => {
 	const { module, key } = ChannelComponent;
@@ -399,6 +414,45 @@ const patchCreateChannel = () => {
 
 const ChannelContent = getModule(m => m.type && m.type.toString?.().includes("showingSpamBanner"), { searchExports: false });
 
+class ErrorBoundary extends React.Component {
+	state = { hasError: false, error: null, info: null };
+
+	componentDidCatch(error, info) {
+		this.setState({ error, info, hasError: true });
+		const errorMessage = `\n\t${error?.message || ""}${(info?.componentStack || "").split("\n").slice(0, 20).join("\n")}`;
+		console.error(`%c[${this.props.plugin}] %cthrew an exception at %c[${this.props.id}]\n`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
+	}
+
+	renderErrorBoundary() {
+		return (
+			React.createElement('div', { style: { background: "#292c2c", padding: "20px", borderRadius: "10px" }, }, React.createElement('b', { style: { color: "#e0e1e5" }, }, "An error has occured while rendering ", React.createElement('span', { style: { color: "orange" }, }, this.props.id)))
+		);
+	}
+
+	renderFallback() {
+		if (React.isValidElement(this.props.fallback)) {
+			if (this.props.passMetaProps)
+				this.props.fallback.props = {
+					id: this.props.id,
+					plugin: this.props.plugin,
+					...this.props.fallback.props
+				};
+			return this.props.fallback;
+		}
+		return (
+			React.createElement(this.props.fallback, {
+				id: this.props.id,
+				plugin: this.props.plugin,
+			})
+		);
+	}
+
+	render() {
+		if (!this.state.hasError) return this.props.children;
+		return this.props.fallback ? this.renderFallback() : this.renderErrorBoundary();
+	}
+}
+
 const EVENTS = [
 	"THREAD_CREATE_LOCAL",
 	"THREAD_LIST_SYNC",
@@ -415,29 +469,17 @@ const REGEX = {
 	video: /(mp4|avi|wmv|mov|flv|mkv|webm|vob|ogv|m4v|3gp|3g2|mpeg|mpg|m2v|m4v|svi|3gpp|3gpp2|mxf|roq|nsv|flv|f4v|f4p|f4a|f4b)/i
 };
 
-class ErrorBoundary extends React.Component {
-	state = { hasError: false, error: null, info: null };
-	componentDidCatch(error, info) {
-		this.setState({ error, info, hasError: true });
-		const errorMessage = `\n\t${error?.message || ""}${(info?.componentStack || "").split("\n").slice(0, 20).join("\n")}`;
-		console.error(`%c[${this.props.plugin}] %cthrew an exception at %c[${this.props.id}]\n`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
-	}
-
-	render() {
-		if (this.state.hasError) {
-			return (
-				React.createElement('div', { id: COMPONENT_ID, className: `EB-${this.props.plugin}-${this.props.id}`, }, React.createElement('div', { className: "logo", }), React.createElement('div', { className: "title", }, "An error has occured while rendering ", React.createElement('span', { style: { fontWeight: "bold", color: "orange" }, }, this.props.id)), React.createElement('div', { className: "description", }, "Open console for more information"))
-			);
-		}
-		return this.props.children;
-	}
-}
+const ErrorFallbackComponent = props => {
+	return (
+		React.createElement('div', { id: COMPONENT_ID, }, React.createElement('div', { className: "logo", }), React.createElement('div', { className: "title", }, "An error has occured while rendering ", React.createElement('span', { style: { fontWeight: "bold", color: "orange" }, }, props.id)), React.createElement('div', { className: "description", }, "Open console for more information"))
+	);
+};
 
 function reRender(selector) {
 	const target = document.querySelector(selector)?.parentElement;
 	if (!target) return;
 	const instance = getOwnerInstance(target);
-	const unpatch = Patcher.instead(instance, 'render', () => unpatch());
+	const unpatch = Patcher.instead(instance, "render", () => unpatch());
 	instance.forceUpdate(() => instance.forceUpdate());
 }
 
@@ -582,6 +624,8 @@ const patchChannelContent = context => {
 			return (
 				React.createElement(ErrorBoundary, {
 					id: "LazyLoaderComponent",
+					passMetaProps: true,
+					fallback: ErrorFallbackComponent,
 					plugin: config.info.name,
 				}, React.createElement(LazyLoaderComponent, {
 					channel: channel,
@@ -637,103 +681,6 @@ const patchContextMenu = () => {
 		)
 	]
 };
-
-const changelogStyles = `
-#changelog-container {
-	font-family: "gg sans", "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
-	--added: #2dc770;
-	--improved: #949cf7;
-	--fixed: #f23f42;
-	--notice: #f0b132;
-	color:white;
-
-    padding: 10px;
-    max-width: 450px;
-}
-#changelog-container .title {
-    text-transform: uppercase;
-    display: flex;
-    align-items: center;
-    font-weight: 700;
-    margin-top: 20px;
-	color: var(--c);
-}
-#changelog-container .title:after {
-    content: "";
-    height: 1px;
-    flex: 1 1 auto;
-    margin-left: 8px;
-    opacity: .6;
-    background: currentColor;
-}
-#changelog-container ul {
-    list-style: none;
-    margin: 20px 0 8px 20px;
-}
-#changelog-container ul > li {
-    position:relative;
-    line-height: 20px;
-    margin-bottom: 8px;
-    color: #c4c9ce;
-}
-#changelog-container ul > li:before {
-    content: "";
-    position: absolute;
-    background:currentColor;
-    top: 10px;
-    left: -15px;
-    width: 6px;
-    height: 6px;
-    margin-top: -4px;
-    margin-left: -3px;
-    border-radius: 50%;
-    opacity: .5;
-}`;
-
-class ChangelogComponent extends React.Component {
-	constructor() {
-		super();
-	}
-
-	componentWillUnmount() {
-		BdApi.DOM.removeStyle("Changelog");
-	}
-
-	render() {
-		BdApi.DOM.addStyle("Changelog", changelogStyles);
-		const { id, changelog } = this.props;
-		return React.createElement('div', { id: id, }, changelog);
-	}
-}
-
-function showChangelog() {
-	if (!config.changelog || !Array.isArray(config.changelog)) return;
-	const changelog = config.changelog?.map(({ title, type, items }) => [
-		React.createElement('h3', {
-			style: { "--c": `var(--${type})` },
-			className: "title",
-		}, title),
-		React.createElement('ul', null, items.map(item => (
-			React.createElement('li', null, item)
-		)))
-	]);
-
-	UI.showConfirmationModal(
-		`${config.info.name} v${config.info.version}`,
-		React.createElement(ChangelogComponent, {
-			id: "changelog-container",
-			changelog: changelog,
-		})
-	);
-}
-
-function shouldChangelog() {
-	const { version = config.info.version, changelog = false } = Data.load("metadata") || {};
-	if (version != config.info.version || !changelog) {
-		Data.save("metadata", { version: config.info.version, changelog: true });
-		return showChangelog;
-	}
-}
 
 class LazyLoadChannels {
 	constructor() {
@@ -839,6 +786,5 @@ class LazyLoadChannels {
 		return React.createElement(SettingComponent, null);
 	}
 }
-shouldChangelog()?.();
 
 module.exports = LazyLoadChannels;
