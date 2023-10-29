@@ -4,9 +4,9 @@
 			"filter": "a => a?.type?.toString().includes(\"GUILD_SIDEBAR_THREAD_A11Y_LABEL_WITH_UNREADS\")",
 			"options": "{ searchExports: false }"
 		},
-		"useStateFromStores": {
-			"filter": "Filters.byStrings(\"useStateFromStores\")",
-			"options": "{ searchExports: true }"
+		"FluxHelpers": {
+			"filter": "Filters.byProps(\"useStateFromStores\")",
+			"options": "{ searchExports: false }"
 		},
 		"TimeBar": {
 			"filter": "a => a.prototype.render && a.defaultProps.themed === false",

@@ -1,7 +1,7 @@
 import { React } from "@Api";
 import Button from "@Components/Button";
 import SpotifyStore from "@Stores/SpotifyStore";
-import useStateFromStores from "@Modules/useStateFromStores";
+import FluxHelpers from "@Modules/FluxHelpers";
 import { parseSpotifyUrl } from "../Utils.js";
 import SpotifyWrapper from "../SpotifyWrapper";
 
@@ -9,7 +9,7 @@ import SpotifyWrapper from "../SpotifyWrapper";
 export default ({ embed }) => {
 	const { url } = embed;
 	const [type, id] = parseSpotifyUrl(url);
-	const spotifySocket = useStateFromStores([SpotifyStore], () => SpotifyStore.getActiveSocketAndDevice()?.socket);
+	const spotifySocket = FluxHelpers.useStateFromStores([SpotifyStore], () => SpotifyStore.getActiveSocketAndDevice()?.socket);
 	if (!spotifySocket) return null;
 	const listenBtn = type !== "show" && (
 		<ControlBtn

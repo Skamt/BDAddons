@@ -5,8 +5,8 @@ import MessageHeader from "@Patch/MessageHeader";
 import PresenceStore from "@Stores/PresenceStore";
 import SpotifyIcon from "@Components/SpotifyIcon";
 import Tooltip from "@Components/Tooltip";
+import FluxHelpers from "@Modules/FluxHelpers";
 
-import useStateFromStores from "@Modules/useStateFromStores";
 
 function spotifyActivityFilter(activity) {
 	return activity.name.toLowerCase() === "spotify";
@@ -33,7 +33,7 @@ export default () => {
 };
 
 function SpotifyActivityIndicator({ userId }) {
-	const spotifyActivity = useStateFromStores([PresenceStore], () => getUserActivity(userId, spotifyActivityFilter));
+	const spotifyActivity = FluxHelpers.useStateFromStores([PresenceStore], () => getUserActivity(userId, spotifyActivityFilter));
 	if (!spotifyActivity) return null;
 
 	return (

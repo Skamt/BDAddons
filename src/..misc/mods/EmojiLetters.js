@@ -47,37 +47,39 @@ export default class EmojiLetters extends Disposable {
 			"m": ":regional_indicator_m: ",
 			"n": ":regional_indicator_n: ",
 			" ": "	",
-			"!": ":exclamation: ",
+			"!": ":exclamation: "
 		};
 	}
 
 	keyDownHandler(e) {
 		if (e?.code?.includes?.("End")) {
 			this.active = !this.active;
-			document.querySelector('.wordmarkWindows-2dq6rw').classList.toggle('active');
+			document.querySelector("[class*=wordmarkWindows]").classList.toggle("active");
 		}
 	}
 
 	Init() {
-		document.addEventListener('keydown', this.keyDownHandler);
+		document.addEventListener("keydown", this.keyDownHandler);
 		if (MessageActions)
 			this.patches = [
 				Patcher.before(MessageActions, "sendMessage", (_, [, messageObject]) => {
-					try {
-						if (this.active)
-							messageObject.content = messageObject.content.split('').map(a => this.mappings[a] || a).join('');
-					} catch {} finally {
-						this.active = false;
-						document.querySelector('.wordmarkWindows-2dq6rw').classList.remove('active');
-					}
+					if (this.active)
+						try {
+							messageObject.content = messageObject.content
+								.split("")
+								.map(a => this.mappings[a] || a)
+								.join("");
+						} catch {} finally {
+							this.active = false;
+							document.querySelector("[class*=wordmarkWindows]").classList.remove("active");
+						}
 				})
 			];
-		else
-			Logger.patch("EmojiLetters");
+		else Logger.patch("EmojiLetters");
 	}
 
 	Dispose() {
 		super.Dispose();
-		document.removeEventListener('keydown', this.keyDownHandler);
+		document.removeEventListener("keydown", this.keyDownHandler);
 	}
 }
