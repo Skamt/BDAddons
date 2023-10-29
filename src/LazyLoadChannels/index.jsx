@@ -8,6 +8,7 @@ import Dispatcher from "@Modules/Dispatcher";
 import ChannelActions from "@Modules/ChannelActions";
 import SettingComponent from "./components/SettingComponent";
 import patchChannel from "./patches/patchChannel";
+import patchThread from "./patches/patchThread";
 import patchCreateChannel from "./patches/patchCreateChannel";
 import patchChannelContent from "./patches/patchChannelContent";
 import patchContextMenu from "./patches/patchContextMenu";
@@ -95,6 +96,7 @@ export default class LazyLoadChannels {
 			DOM.addStyle(css);
 			this.setupHandlers();
 			patchChannel();
+			patchThread();
 			patchCreateChannel();
 			patchChannelContent(this);
 			this.unpatchContextMenu = patchContextMenu();

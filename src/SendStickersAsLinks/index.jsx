@@ -1,8 +1,7 @@
-import { React } from "@Api";
 import css from "./styles";
 import Settings from "@Utils/Settings";
 import Logger from "@Utils/Logger";
-import { DOM, Patcher } from "@Api";
+import { React, DOM, Patcher } from "@Api";
 import SettingComponent from "./components/SettingComponent";
 import patchStickerClickability from "./patches/patchStickerClickability";
 import patchSendSticker from "./patches/patchSendSticker";

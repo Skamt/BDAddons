@@ -61,11 +61,11 @@ function ChangelogComponent({ id, changelog }) {
 
 function showChangelog() {
 	if (!config.changelog || !Array.isArray(config.changelog)) return;
-	const changelog = config.changelog.map(({ title, type, items }) => [
+	const changelog = config.changelog.map(({ type, items }) => [
 		<h3
 			style={{ "color": `var(--${type})` }}
 			className="title">
-			{title}
+			{type}
 		</h3>,
 		<ul>
 			{items.map(item => (

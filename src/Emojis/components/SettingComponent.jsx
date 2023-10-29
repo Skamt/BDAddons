@@ -13,29 +13,30 @@ export default () => {
 			{
 				hideBorder: false,
 				description: "Send Directly",
-				note: "Send the sticker link in a message directly instead of putting it in the chat box.",
+				note: "Send the emoji link in a message directly instead of putting it in the chat box.",
 				value: Settings.get("sendDirectly"),
 				onChange: e => Settings.set("sendDirectly", e)
 			},
 			{
 				hideBorder: false,
 				description: "Ignore Embed Permissions",
-				note: "Send sticker links regardless of embed permissions, meaning links will not turn into images.",
+				note: "Send emoji links regardless of embed permissions, meaning links will not turn into images.",
 				value: Settings.get("ignoreEmbedPermissions"),
 				onChange: e => Settings.set("ignoreEmbedPermissions", e)
 			},
 			{
 				hideBorder: false,
 				description: "Send animated stickers",
-				note: "Animated stickers do not animate, sending them will only send the first picture of the animation. (still useful)",
-				value: Settings.get("shouldSendAnimatedStickers"),
-				onChange: e => Settings.set("shouldSendAnimatedStickers", e)
+				note: "Animated emojis are sent as GIFs, making most of them hidden by discord's GIF tag.",
+				value: Settings.get("shouldSendAnimatedEmojis"),
+				onChange: e => Settings.set("shouldSendAnimatedEmojis", e)
 			},
 			{
 				hideBorder: false,
-				description: "Highlight animated stickers",
-				value: Settings.get("shouldHighlightAnimated"),
-				onChange: e => Settings.set("shouldHighlightAnimated", e)
+				description: "Send animated as webp",
+				note: "Meaning the emoji will show only the first frame, making them act as normal emoji, unless the first frame is empty.",
+				value: Settings.get("sendEmojiAsWebp"),
+				onChange: e => Settings.set("sendEmojiAsWebp", e)
 			}
 		].map(Toggle),
 		<StickerSize />
@@ -45,17 +46,17 @@ export default () => {
 function StickerSize() {
 	return (
 		<>
-			<Heading tag="h5">Sticker Size</Heading>
+			<Heading tag="h5">Emoji Size</Heading>
 			
 			<Slider
 				stickToMarkers={true}
-				markers={[80, 100, 128, 160]}
-				minValue={80}
-				maxValue={160}
-				initialValue={Settings.get("stickerSize")}
-				onValueChange={e => Settings.set("stickerSize", e)}
+				markers={[40, 48, 60, 64, 80, 96]}
+				minValue={40}
+				maxValue={96}
+				initialValue={Settings.get("emojiSize")}
+				onValueChange={e => Settings.set("emojiSize", e)}
 			/>
-			<FormText type="description">The size of the sticker in pixels. 160 is recommended</FormText>
+			<FormText type="description">The size of the Emoji in pixels.</FormText>
 		</>
 	);
 }
