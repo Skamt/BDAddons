@@ -363,7 +363,7 @@ const React = Api.React;
 const Patcher = Api.Patcher;
 
 const getModule = Api.Webpack.getModule;
-const Filters$1 = Api.Webpack.Filters;
+const Filters = Api.Webpack.Filters;
 const getInternalInstance = Api.ReactUtils.getInternalInstance;
 
 class ChangeEmitter {
@@ -517,14 +517,14 @@ function usePropBasedState(prop) {
 	return [state, setState];
 }
 
-const TheBigBoyBundle = getModule(Filters$1.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
+const TheBigBoyBundle = getModule(Filters.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
 
 const Button = TheBigBoyBundle.Button ||
 	function ButtonComponentFallback(props) {
 		return React.createElement('button', { ...props, });
 	};
 
-const FluxHelpers = getModule(Filters$1.byProps("useStateFromStores"), { searchExports: false });
+const FluxHelpers = getModule(Filters.byProps("useStateFromStores"), { searchExports: false });
 
 const activityPanelClasses = getModule(Filters.byProps("activityPanel", "panels"), { searchExports: false });
 
@@ -551,9 +551,9 @@ function sanitizeSpotifyLink(link) {
 	}
 }
 
-const ImageModalVideoModal = getModule(Filters$1.byProps("ImageModal"), { searchExports: false });
+const ImageModalVideoModal = getModule(Filters.byProps("ImageModal"), { searchExports: false });
 
-const ModalRoot = getModule(Filters$1.byStrings("onAnimationEnd"), { searchExports: true });
+const ModalRoot = getModule(Filters.byStrings("onAnimationEnd"), { searchExports: true });
 
 const RenderLinkComponent = getModule(m => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false });
 
@@ -830,7 +830,7 @@ class SpotifyClientAPI {
 
 const SpotifyAPI = new SpotifyClientAPI();
 
-const RefreshToken = getModule(Filters$1.byStrings("CONNECTION_ACCESS_TOKEN"), { searchExports: true });
+const RefreshToken = getModule(Filters.byStrings("CONNECTION_ACCESS_TOKEN"), { searchExports: true });
 
 function showToast(content, type) {
 	UI.showToast(`[${config.info.name}] ${content}`, { type });
@@ -1210,9 +1210,9 @@ const SpotifyActiveAccount = new(class SpotifyActiveAccount extends ChangeEmitte
 
 const SelectedChannelStore = getModule(m => m._dispatchToken && m.getName() === "SelectedChannelStore");
 
-const MessageActions = getModule(Filters$1.byProps('jumpToMessage', '_sendMessage'), { searchExports: false });
+const MessageActions = getModule(Filters.byProps('jumpToMessage', '_sendMessage'), { searchExports: false });
 
-const Dispatcher = getModule(Filters$1.byProps("dispatch", "subscribe"), { searchExports: false });
+const Dispatcher = getModule(Filters.byProps("dispatch", "subscribe"), { searchExports: false });
 
 const PendingReplyStore = getModule(m => m._dispatchToken && m.getName() === "PendingReplyStore");
 
@@ -1624,8 +1624,8 @@ const ShareIcon = () => {
 	);
 };
 
-const getUserSyncActivityState = getModule(Filters$1.byStrings("USER_ACTIVITY_SYNC", "spotifyData"), { searchExports: true });
-const getUserPlayActivityState = getModule(Filters$1.byStrings("USER_ACTIVITY_PLAY", "spotifyData"), { searchExports: true });
+const getUserSyncActivityState = getModule(Filters.byStrings("USER_ACTIVITY_SYNC", "spotifyData"), { searchExports: true });
+const getUserPlayActivityState = getModule(Filters.byStrings("USER_ACTIVITY_PLAY", "spotifyData"), { searchExports: true });
 
 function ActivityControlButton({ value, onClick, ...rest }) {
 	return (
@@ -1710,7 +1710,7 @@ const patchSpotifyActivity = () => {
 	else Logger.patch("SpotifyActivityComponent");
 };
 
-const MessageHeader = getModuleAndKey(Filters$1.byStrings("userOverride", "withMentionPrefix"), { searchExports: false });
+const MessageHeader = getModuleAndKey(Filters.byStrings("userOverride", "withMentionPrefix"), { searchExports: false });
 
 const PresenceStore = getModule(m => m._dispatchToken && m.getName() === "PresenceStore");
 
@@ -2094,7 +2094,7 @@ const patchSpotifyPlayer = () => {
 	fluxContainer.stateNode.forceUpdate();
 };
 
-const Heading = getModule(Filters$1.byStrings("LEGEND", "LABEL"), { searchExports: true });
+const Heading = getModule(Filters.byStrings("LEGEND", "LABEL"), { searchExports: true });
 
 const SettingComponent = React.createElement(SpotifyEmbedOptions, null);
 

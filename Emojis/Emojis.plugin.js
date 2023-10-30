@@ -249,7 +249,31 @@ const patchIsEmojiFiltered = () => {
 		Logger.patch("IsEmojiFiltered");
 };
 
-const UserStore = getModule(m => m._dispatchToken && m.getName() === "UserStore");
+function showToast(content, type) {
+	UI.showToast(`[${config.info.name}] ${content}`, { type });
+}
+
+const Toast = {
+	success(content) { showToast(content, "success"); },
+	info(content) { showToast(content, "info"); },
+	warning(content) { showToast(content, "warning"); },
+	error(content) { showToast(content, "error"); }
+};
+
+const DiscordPermissions = getModule(Filters.byProps("computePermissions"), { searchExports: false });
+
+const DiscordPermissionsEnum = getModule(Filters.byProps("ADD_REACTIONS"), { searchExports: true }) || {
+	"EMBED_LINKS": "16384n",
+	"USE_EXTERNAL_EMOJIS": "262144n"
+};
+
+function hasEmbedPerms(channel, user) {
+	return !channel.guild_id || DiscordPermissions?.can(
+		DiscordPermissionsEnum.EMBED_LINKS,
+		channel,
+		user
+	);
+}
 
 const MessageActions = getModule(Filters.byProps('jumpToMessage', '_sendMessage'), { searchExports: false });
 
@@ -301,31 +325,7 @@ const insertText = (() => {
 	};
 })();
 
-const DiscordPermissions = getModule(Filters.byProps("computePermissions"), { searchExports: false });
-
-const DiscordPermissionsEnum = getModule(Filters.byProps("ADD_REACTIONS"), { searchExports: true }) || {
-	"EMBED_LINKS": "16384n",
-	"USE_EXTERNAL_EMOJIS": "262144n"
-};
-
-function hasEmbedPerms(channel, user) {
-	return !channel.guild_id || DiscordPermissions?.can(
-		DiscordPermissionsEnum.EMBED_LINKS,
-		channel,
-		user
-	);
-}
-
-function showToast(content, type) {
-	UI.showToast(`[${config.info.name}] ${content}`, { type });
-}
-
-const Toast = {
-	success(content) { showToast(content, "success"); },
-	info(content) { showToast(content, "info"); },
-	warning(content) { showToast(content, "warning"); },
-	error(content) { showToast(content, "error"); }
-};
+const UserStore = getModule(m => m._dispatchToken && m.getName() === "UserStore");
 
 function isEmojiSendable(e) {
 	return EmojiFunctions.getEmojiUnavailableReason?.__originalFunction?.(e) === null;
@@ -369,26 +369,27 @@ function sendEmojiAsLink(emoji, channel) {
 	insertText(content);
 }
 
-function handleUnsendableEmoji(emoji, channel, user) {
+function handleUnsendableEmoji(emoji, channel) {
 	if (emoji.animated && !Settings.get("shouldSendAnimatedEmojis"))
 		return Toast.info(STRINGS.disabledAnimatedEmojiErrorMessage);
+
+	const user = UserStore.getCurrentUser();
 	if (!hasEmbedPerms(channel, user) && !Settings.get("ignoreEmbedPermissions"))
 		return Toast.info(STRINGS.missingEmbedPermissionsErrorMessage);
 
 	sendEmojiAsLink(emoji, channel);
 }
 
-function emojiHandler(channel, emoji) {
-	const user = UserStore.getCurrentUser();
-	const intention = EmojiIntentionEnum.CHAT;
-
-	if (!isEmojiSendable({ emoji, channel, intention })) handleUnsendableEmoji(emoji, channel, user);
-}
-
-const patchEmojiComponent = () => {
+const patchExpressionPicker = () => {
 	if (ExpressionPicker)
 		Patcher.before(ExpressionPicker, "type", (_, [props]) => {
-			props.onSelectEmoji = emojiHandler.bind(null, props.channel);
+			const orig = props.onSelectEmoji;
+			props.onSelectEmoji = (...args) => {
+				const [emoji] = args;
+				const channel = props.channel;
+				if (!isEmojiSendable({ emoji, channel, intention: EmojiIntentionEnum.CHAT })) handleUnsendableEmoji(emoji, channel);
+				else orig.apply(null, args);
+			};
 		});
 	else Logger.patch("ExpressionPicker");
 };
@@ -402,17 +403,6 @@ const patchIsEmojiDisabled = () => {
 	else Logger.patch("IsEmojiDisabled");
 };
 
-const patchIsEmojiPremiumLocked = () => {
-
-	if (EmojiFunctions)
-		Patcher.after(EmojiFunctions, "isEmojiPremiumLocked", (_, args, ret) => {
-			console.log('isEmojiPremiumLocked', args, ret);
-			return ret;
-		});
-	else
-		Logger.patch("IsEmojiPremiumLocked");
-};
-
 class Emojis {
 	start() {
 		try {
@@ -420,9 +410,8 @@ class Emojis {
 			DOM.addStyle(css);
 			patchIsEmojiFiltered();
 			patchGetEmojiUnavailableReason();
-			patchEmojiComponent();
+			patchExpressionPicker();
 			patchIsEmojiDisabled();
-			patchIsEmojiPremiumLocked();
 		} catch (e) {
 			console.error(e);
 		}
