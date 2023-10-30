@@ -6,7 +6,6 @@ import patchGetEmojiUnavailableReason from "./patches/patchGetEmojiUnavailableRe
 import patchIsEmojiFiltered from "./patches/patchIsEmojiFiltered";
 import patchExpressionPicker from "./patches/patchExpressionPicker";
 import patchIsEmojiDisabled from "./patches/patchIsEmojiDisabled";
-import patchIsEmojiPremiumLocked from "./patches/patchIsEmojiPremiumLocked";
 
 
 
@@ -19,7 +18,6 @@ export default class Emojis {
 			patchGetEmojiUnavailableReason();
 			patchExpressionPicker();
 			patchIsEmojiDisabled();
-			patchIsEmojiPremiumLocked();
 		} catch (e) {
 			console.error(e);
 		}
