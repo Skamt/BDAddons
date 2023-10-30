@@ -348,7 +348,7 @@ const STRINGS = {
 	disabledAnimatedEmojiErrorMessage: "You have disabled animated emojis in settings."
 };
 
-const ExpressionPicker = getModule(a => a?.type?.toString().includes("IF,children:D.defau"), { searchExports: false });
+const ExpressionPicker = getModule(a => a?.type?.toString().includes("handleDrawerResizeHandleMouseDown"), { searchExports: false });
 
 function getEmojiUrl(emoji, size) {
 	if (Settings.get("sendEmojiAsWebp")) return getEmojiWebpUrl(emoji, size);
