@@ -16,5 +16,5 @@ export default () => {
 				return returnValue !== SENDABLE ? SENDABLE : returnValue;
 			}
 		});
-	else Logger.patch("patchStickerSuggestion");
+	else Logger.patch("StickerSuggestion");
 }

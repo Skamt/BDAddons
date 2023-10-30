@@ -16,5 +16,5 @@ export default () => {
 				}
 			}
 		});
-	else Logger.patch("patchGetStickerById");
+	else Logger.patch("GetStickerById");
 }

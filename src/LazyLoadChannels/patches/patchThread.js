@@ -12,5 +12,5 @@ export default () => {
 			if (ChannelsStateManager.getChannelstate(thread.guild_id, thread.id)) 
 				returnValue.props.className += " autoload";
 		});
-	else Logger.patch("patchTread");
+	else Logger.patch("Tread");
 };

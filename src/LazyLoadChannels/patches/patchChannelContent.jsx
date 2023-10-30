@@ -26,5 +26,5 @@ export default context => {
 				</ErrorBoundary>
 			);
 		});
-	else Logger.patch("patchChannelContent");
+	else Logger.patch("ChannelContent");
 };

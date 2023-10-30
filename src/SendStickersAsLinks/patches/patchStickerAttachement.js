@@ -26,5 +26,5 @@ export default () => {
 				}
 			}
 		});
-	else Logger.patch("patchStickerAttachement");
+	else Logger.patch("StickerAttachement");
 };

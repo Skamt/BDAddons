@@ -65,7 +65,7 @@ export default class ViewProfilePicture {
 	}
 
 	patchUserBannerMask() {
-		if (!UserBannerMask) return Logger.patch("patchUserBannerMask");
+		if (!UserBannerMask) return Logger.patch("UserBannerMask");
 
 		const { module, key } = UserBannerMask;
 

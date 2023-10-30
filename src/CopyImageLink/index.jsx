@@ -15,7 +15,7 @@ export default class CopyImageLink {
                     const { href } = getNestedProp(returnValue, "props.children.2.props");
                     children.push(<CopyButtonComponent href={href} />);
                 });
-            else Logger.patch("patchImageModal");
+            else Logger.patch("ImageModal");
         } catch (e) {
             Logger.error(e);
         }

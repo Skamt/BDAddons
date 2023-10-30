@@ -2,7 +2,7 @@ import { findInTree, getInternalInstance } from "@Api";
 import EmojiFunctions from "@Modules/EmojiFunctions";
 
 export function isEmojiSendable(e) {
-	return EmojiFunctions.getEmojiUnavailableReason(e) === null;
+	return EmojiFunctions.getEmojiUnavailableReason?.__originalFunction?.(e) === null;
 }
 
 export function parseEmojiUrl(emoji, size) {

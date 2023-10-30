@@ -52,5 +52,5 @@ export default () => {
 				</ErrorBoundary>
 			);
 		});
-	else Logger.patch("patchUserBannerMask");
+	else Logger.patch("UserBannerMask");
 };

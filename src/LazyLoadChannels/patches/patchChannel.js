@@ -13,5 +13,5 @@ export default () => {
 			if (ChannelsStateManager.getChannelstate(channel.guild_id, channel.id)) 
 				returnValue.props.children.props.children[1].props.className += " autoload";
 		});
-	else Logger.patch("patchChannel");
+	else Logger.patch("Channel");
 };

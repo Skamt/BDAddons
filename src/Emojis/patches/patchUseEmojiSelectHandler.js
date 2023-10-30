@@ -1,8 +1,6 @@
 import { Patcher } from "@Api";
 import Logger from "@Utils/Logger";
 
-const module = s.moduleById(86678).exports.default;
-
 export default () => {
 	/**
 	 * This patches allows server icons to show up on the left side of the picker
@@ -15,21 +13,10 @@ export default () => {
 			return false;
 		});
 	else
-		Logger.patch("patchIsEmojiFiltered");
+		Logger.patch("IsEmojiFiltered");
 }
 
 
 
 
-// Patcher.after(EmojiFunctions, "isEmojiPremiumLocked", (_, [{ intention }], ret) => {
-// 			return false;
-// 		});
-		
-// 		Patcher.after(EmojiFunctions, "isEmojiDisabled", (_, [{ intention }], ret) => {
-// 			return false;
-// 		});
-		
-// 		unpatch = Patcher.after(s.moduleById(86678).exports.default.type, "render", (_, args, ret) => {
-// 			// unpatch();
-// 			console.log(...args);
-// 		});
+

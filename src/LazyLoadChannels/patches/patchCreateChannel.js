@@ -14,5 +14,5 @@ export default () => {
 					ChannelsStateManager.add("channels", body.id);
 				});
 		});
-	else Logger.patch("patchCreateChannel");
+	else Logger.patch("CreateChannel");
 };

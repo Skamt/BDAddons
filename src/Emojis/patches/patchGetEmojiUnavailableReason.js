@@ -13,8 +13,9 @@ export default () => {
 	if (EmojiFunctions)
 		Patcher.after(EmojiFunctions, "getEmojiUnavailableReason", (_, [{ intention }], ret) => {
 			if (intention !== EmojiIntentionEnum.CHAT) return ret;
-			return ret === EmojiSendAvailabilityEnum.DISALLOW_EXTERNAL ? EmojiSendAvailabilityEnum.PREMIUM_LOCKED : ret;
+			return null;
+			// ret === EmojiSendAvailabilityEnum.DISALLOW_EXTERNAL ? EmojiSendAvailabilityEnum.PREMIUM_LOCKED : ret;
 		});
 	else
-		Logger.patch("patchGetEmojiUnavailableReason");
+		Logger.patch("GetEmojiUnavailableReason");
 };

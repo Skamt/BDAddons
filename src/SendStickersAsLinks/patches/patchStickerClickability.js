@@ -9,5 +9,5 @@ export default () => {
 
 	if (StickerSendability) 
 		Patcher.after(StickerSendability, "isSendableSticker", () => true);
-	else Logger.patch("patchStickerClickability");
+	else Logger.patch("StickerClickability");
 };

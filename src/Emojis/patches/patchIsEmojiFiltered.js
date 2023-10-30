@@ -15,5 +15,5 @@ export default () => {
 			return false;
 		});
 	else
-		Logger.patch("patchIsEmojiFiltered");
+		Logger.patch("IsEmojiFiltered");
 }
