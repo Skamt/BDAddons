@@ -16,7 +16,7 @@ import EmojiIntentionEnum from "@Enums/EmojiIntentionEnum";
 import { getEmojiWebpUrl, getEmojiGifUrl, isEmojiSendable, parseEmojiUrl } from "../Utils";
 import STRINGS from "../Constants";
 
-const ExpressionPicker = getModule(a => a?.type?.toString().includes("IF,children:D.defau"), { searchExports: false });
+const ExpressionPicker = getModule(a => a?.type?.toString().includes("handleDrawerResizeHandleMouseDown"), { searchExports: false });
 
 function getEmojiUrl(emoji, size) {
 	if (Settings.get("sendEmojiAsWebp")) return getEmojiWebpUrl(emoji, size);
