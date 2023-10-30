@@ -191,7 +191,7 @@ const css = `
 	cursor: pointer;
 	width: 64px;
 	height: 64px;
-	background: var(--banner) center/cover no-repeat;
+	background: var(--banner) center/cover no-repeat, lime;
 	border-radius: 5px;
 }
 
@@ -363,7 +363,7 @@ const React = Api.React;
 const Patcher = Api.Patcher;
 
 const getModule = Api.Webpack.getModule;
-const Filters = Api.Webpack.Filters;
+const Filters$1 = Api.Webpack.Filters;
 const getInternalInstance = Api.ReactUtils.getInternalInstance;
 
 class ChangeEmitter {
@@ -517,14 +517,16 @@ function usePropBasedState(prop) {
 	return [state, setState];
 }
 
-const TheBigBoyBundle = getModule(Filters.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
+const TheBigBoyBundle = getModule(Filters$1.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
 
 const Button = TheBigBoyBundle.Button ||
 	function ButtonComponentFallback(props) {
 		return React.createElement('button', { ...props, });
 	};
 
-const useStateFromStores = getModule(Filters.byStrings("useStateFromStores"), { searchExports: true });
+const FluxHelpers = getModule(Filters$1.byProps("useStateFromStores"), { searchExports: false });
+
+const activityPanelClasses = getModule(Filters.byProps("activityPanel", "panels"), { searchExports: false });
 
 function parseSpotifyUrl(url) {
 	if (typeof url !== "string") return undefined;
@@ -533,7 +535,7 @@ function parseSpotifyUrl(url) {
 }
 
 function getFluxContainer() {
-	const el = document.querySelector(".panels-3wFtMD");
+	const el = document.querySelector(`.${activityPanelClasses.panels}`);
 	if (!el) return;
 	const instance = getInternalInstance(el);
 	if (!instance) return;
@@ -549,11 +551,13 @@ function sanitizeSpotifyLink(link) {
 	}
 }
 
-const ImageModal = getModule(Filters.byStrings("original", "maxHeight", "maxWidth", "noreferrer noopener"), { searchExports: true });
+const ImageModalVideoModal = getModule(Filters$1.byProps("ImageModal"), { searchExports: false });
 
-const ModalRoot = getModule(Filters.byStrings("onAnimationEnd"), { searchExports: true });
+const ModalRoot = getModule(Filters$1.byStrings("onAnimationEnd"), { searchExports: true });
 
 const RenderLinkComponent = getModule(m => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false });
+
+const ImageModal = ImageModalVideoModal.ImageModal;
 
 const openModal = children => {
 	TheBigBoyBundle.openModal(props => {
@@ -826,7 +830,7 @@ class SpotifyClientAPI {
 
 const SpotifyAPI = new SpotifyClientAPI();
 
-const RefreshToken = getModule(Filters.byStrings("CONNECTION_ACCESS_TOKEN"), { searchExports: true });
+const RefreshToken = getModule(Filters$1.byStrings("CONNECTION_ACCESS_TOKEN"), { searchExports: true });
 
 function showToast(content, type) {
 	UI.showToast(`[${config.info.name}] ${content}`, { type });
@@ -963,10 +967,6 @@ class SpotifyAccount {
 
 	get accessToken() {
 		return this.socket.accessToken;
-	}
-
-	set accessToken(token) {
-		this.socket.accessToken = token;
 	}
 
 	get id() {
@@ -1210,9 +1210,9 @@ const SpotifyActiveAccount = new(class SpotifyActiveAccount extends ChangeEmitte
 
 const SelectedChannelStore = getModule(m => m._dispatchToken && m.getName() === "SelectedChannelStore");
 
-const MessageActions = getModule(Filters.byProps('jumpToMessage', '_sendMessage'), { searchExports: false });
+const MessageActions = getModule(Filters$1.byProps('jumpToMessage', '_sendMessage'), { searchExports: false });
 
-const Dispatcher = getModule(Filters.byProps("dispatch", "subscribe"), { searchExports: false });
+const Dispatcher = getModule(Filters$1.byProps("dispatch", "subscribe"), { searchExports: false });
 
 const PendingReplyStore = getModule(m => m._dispatchToken && m.getName() === "PendingReplyStore");
 
@@ -1323,7 +1323,7 @@ const SpotifyWrapper = new(class SpotifyWrapper extends ChangeEmitter {
 const SpotifyControls = ({ embed }) => {
 	const { url } = embed;
 	const [type, id] = parseSpotifyUrl(url);
-	const spotifySocket = useStateFromStores([SpotifyStore], () => SpotifyStore.getActiveSocketAndDevice()?.socket);
+	const spotifySocket = FluxHelpers.useStateFromStores([SpotifyStore], () => SpotifyStore.getActiveSocketAndDevice()?.socket);
 	if (!spotifySocket) return null;
 	const listenBtn = type !== "show" && (
 		React.createElement(ControlBtn, {
@@ -1624,8 +1624,8 @@ const ShareIcon = () => {
 	);
 };
 
-const getUserSyncActivityState = getModule(Filters.byStrings("USER_ACTIVITY_SYNC", "spotifyData"), { searchExports: true });
-const getUserPlayActivityState = getModule(Filters.byStrings("USER_ACTIVITY_PLAY", "spotifyData"), { searchExports: true });
+const getUserSyncActivityState = getModule(Filters$1.byStrings("USER_ACTIVITY_SYNC", "spotifyData"), { searchExports: true });
+const getUserPlayActivityState = getModule(Filters$1.byStrings("USER_ACTIVITY_PLAY", "spotifyData"), { searchExports: true });
 
 function ActivityControlButton({ value, onClick, ...rest }) {
 	return (
@@ -1639,7 +1639,7 @@ function ActivityControlButton({ value, onClick, ...rest }) {
 }
 
 const SpotifyActivityControls = ({ activity, user, source, renderActions }) => {
-	const spotifySocket = useStateFromStores([SpotifyStore], () => SpotifyStore.getActiveSocketAndDevice()?.socket);
+	const spotifySocket = FluxHelpers.useStateFromStores([SpotifyStore], () => SpotifyStore.getActiveSocketAndDevice()?.socket);
 
 	const userSyncActivityState = getUserSyncActivityState(activity, user, source);
 	const userPlayActivityState = getUserPlayActivityState(activity, user, source);
@@ -1710,7 +1710,7 @@ const patchSpotifyActivity = () => {
 	else Logger.patch("SpotifyActivityComponent");
 };
 
-const MessageHeader = getModuleAndKey(Filters.byStrings("userOverride", "withMentionPrefix"), { searchExports: false });
+const MessageHeader = getModuleAndKey(Filters$1.byStrings("userOverride", "withMentionPrefix"), { searchExports: false });
 
 const PresenceStore = getModule(m => m._dispatchToken && m.getName() === "PresenceStore");
 
@@ -1738,7 +1738,7 @@ const patchMessageHeader = () => {
 };
 
 function SpotifyActivityIndicator({ userId }) {
-	const spotifyActivity = useStateFromStores([PresenceStore], () => getUserActivity(userId, spotifyActivityFilter));
+	const spotifyActivity = FluxHelpers.useStateFromStores([PresenceStore], () => getUserActivity(userId, spotifyActivityFilter));
 	if (!spotifyActivity) return null;
 
 	return (
@@ -1785,17 +1785,19 @@ function Artist({ artists }) {
 	return React.createElement('div', { className: "spotify-player-artist", }, "by ", artist);
 }
 
-function TrackBanner({ banner }) {
-	const [{ height, width, url }, , { url: playerThumbnail }] = banner;
+function TrackBanner({ banner = [] }) {
+	const smBanner = banner[2];
 
 	const thumbnailClickHandler = () => {
-		openModal(getImageModalComponent(url, { height, width }));
+		const lgBanner = banner[0];
+		if (!lgBanner) return;
+		openModal(getImageModalComponent(lgBanner.url, lgBanner));
 	};
 
 	return (
 		React.createElement('div', {
 			onClick: thumbnailClickHandler,
-			style: { "--banner": `url(${playerThumbnail})` },
+			style: { "--banner": `url(${smBanner && smBanner.url})` },
 			className: "spotify-player-banner",
 		})
 	);
@@ -2092,7 +2094,7 @@ const patchSpotifyPlayer = () => {
 	fluxContainer.stateNode.forceUpdate();
 };
 
-const Heading = getModule(Filters.byStrings("LEGEND", "LABEL"), { searchExports: true });
+const Heading = getModule(Filters$1.byStrings("LEGEND", "LABEL"), { searchExports: true });
 
 const SettingComponent = React.createElement(SpotifyEmbedOptions, null);
 
