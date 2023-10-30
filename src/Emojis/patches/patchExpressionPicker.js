@@ -34,26 +34,27 @@ function sendEmojiAsLink(emoji, channel) {
 	insertText(content);
 }
 
-function handleUnsendableEmoji(emoji, channel, user) {
-	if (emoji.animated && !Settings.get("shouldSendAnimatedEmojis")) 
+function handleUnsendableEmoji(emoji, channel) {
+	if (emoji.animated && !Settings.get("shouldSendAnimatedEmojis"))
 		return Toast.info(STRINGS.disabledAnimatedEmojiErrorMessage);
-	if (!hasEmbedPerms(channel, user) && !Settings.get("ignoreEmbedPermissions")) 
+
+	const user = UserStore.getCurrentUser();
+	if (!hasEmbedPerms(channel, user) && !Settings.get("ignoreEmbedPermissions"))
 		return Toast.info(STRINGS.missingEmbedPermissionsErrorMessage);
 
 	sendEmojiAsLink(emoji, channel);
 }
 
-function emojiHandler(channel, emoji) {
-	const user = UserStore.getCurrentUser();
-	const intention = EmojiIntentionEnum.CHAT;
-	// const channel = ChannelStore.getChannel(SelectedChannelStore.getChannelId());
-	if (!isEmojiSendable({ emoji, channel, intention })) handleUnsendableEmoji(emoji, channel, user);
-}
-
 export default () => {
 	if (ExpressionPicker)
 		Patcher.before(ExpressionPicker, "type", (_, [props]) => {
-			props.onSelectEmoji = emojiHandler.bind(null, props.channel);
+			const orig = props.onSelectEmoji;
+			props.onSelectEmoji = (...args) => {
+				const [emoji] = args;
+				const channel = props.channel;
+				if (!isEmojiSendable({ emoji, channel, intention: EmojiIntentionEnum.CHAT })) handleUnsendableEmoji(emoji, channel);
+				else orig.apply(null, args);
+			};
 		});
 	else Logger.patch("ExpressionPicker");
 };

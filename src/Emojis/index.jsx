@@ -4,7 +4,7 @@ import SettingComponent from "./components/SettingComponent";
 import Settings from "@Utils/Settings";
 import patchGetEmojiUnavailableReason from "./patches/patchGetEmojiUnavailableReason";
 import patchIsEmojiFiltered from "./patches/patchIsEmojiFiltered";
-import patchEmojiComponent from "./patches/patchEmojiComponent";
+import patchExpressionPicker from "./patches/patchExpressionPicker";
 import patchIsEmojiDisabled from "./patches/patchIsEmojiDisabled";
 import patchIsEmojiPremiumLocked from "./patches/patchIsEmojiPremiumLocked";
 
@@ -17,7 +17,7 @@ export default class Emojis {
 			DOM.addStyle(css);
 			patchIsEmojiFiltered();
 			patchGetEmojiUnavailableReason();
-			patchEmojiComponent();
+			patchExpressionPicker();
 			patchIsEmojiDisabled();
 			patchIsEmojiPremiumLocked();
 		} catch (e) {
