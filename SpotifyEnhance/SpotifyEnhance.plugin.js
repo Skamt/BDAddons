@@ -1,6 +1,6 @@
 /**
  * @name SpotifyEnhance
- * @description Empty description
+ * @description All in one better spotify-discord experience.
  * @version 1.0.0
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance
@@ -11,7 +11,7 @@ const config = {
 	"info": {
 		"name": "SpotifyEnhance",
 		"version": "1.0.0",
-		"description": "Empty description",
+		"description": "All in one better spotify-discord experience.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance",
 		"authors": [{
