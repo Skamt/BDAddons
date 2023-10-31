@@ -48,7 +48,7 @@ export const Modules = {
 		if (args?.length > 5 || !args) return [];
 
 		const req = args.split(",")[2];
-		const re = new RegExp(`(?:\\s|\\(|,|=)${req}\\((\\d+)\\)`, "g");
+		const re = new RegExp(`(?:\\s|\\(|,|=)${req}\\("?(\\d+)"?\\)`, "g");
 		const imports = Array.from(rawSource.matchAll(re));
 
 		return imports.map(id => id[1]);

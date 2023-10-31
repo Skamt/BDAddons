@@ -35,11 +35,11 @@ export class Module {
 		return this.module.exports;
 	}
 
-	get modulesImported() {
+	get modulesUsed() {
 		return Modules.modulesImportedInModuleById(this.module.id).reduce((acc, id) => defineModuleGetter(acc, id), {});
 	}
 
-	get modulesImportedIn() {
+	get modulesUsing() {
 		return Modules.modulesImportingModuleById(this.module.id).reduce((acc, id) => defineModuleGetter(acc, id), {});
 	}
 }
