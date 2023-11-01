@@ -328,7 +328,7 @@ const css = `
 	width: 10px;
 	height: 10px;
 	margin-top: 3px;
-	cursor: initial;
+	cursor: pointer;
 }
 
 .spotify-player-controls-volume-slider-wrapper .spotify-player-controls-volume-slider-bar {
@@ -1917,7 +1917,7 @@ const { MenuItem, Menu, Slider } = TheBigBoyBundle;
 const SpotifyPlayerControls = ({ disallowedActions, state, data }) => {
 	if (!disallowedActions || !state || !data) return;
 
-	const { url, volume } = data;
+	const { url, banner: [{ url: posterUrl }], volume } = data;
 	const { shuffle, repeat, isPlaying } = state;
 	const { toggling_shuffle, toggling_repeat_track, /* pausing, resuming, seeking, */ skipping_next, skipping_prev } = disallowedActions;
 
@@ -1945,12 +1945,16 @@ const SpotifyPlayerControls = ({ disallowedActions, state, data }) => {
 	const shuffleHandler = () => SpotifyWrapper.Player.shuffle(!shuffle);
 	const previousHandler = () => SpotifyWrapper.Player.previous();
 	const nextHandler = () => SpotifyWrapper.Player.next();
-	const shareHandler = () => SpotifyWrapper.Utils.share(url);
-	const copyHandler = () => SpotifyWrapper.Utils.copySpotifyLink(url);
 	const repeatHandler = () => SpotifyWrapper.Player.repeat(repeatArg);
 	const pauseHandler = () => SpotifyWrapper.Player.pause();
 	const playHandler = () => SpotifyWrapper.Player.play();
 	const volumeHandler = v => SpotifyWrapper.Player.volume(Math.round(v));
+
+	const shareSongHandler = () => SpotifyWrapper.Utils.share(url);
+	const sharePosterHandler = () => SpotifyWrapper.Utils.share(posterUrl);
+
+	const copySongHandler = () => SpotifyWrapper.Utils.copySpotifyLink(url);
+	const copyPosterHandler = () => SpotifyWrapper.Utils.copySpotifyLink(posterUrl);
 
 	const { playPauseTooltip, playPauseHandler, playPauseIcon, playPauseClassName } = {
 		"true": {
@@ -1971,15 +1975,25 @@ const SpotifyPlayerControls = ({ disallowedActions, state, data }) => {
 		React.createElement('div', { className: "spotify-player-controls", }, React.createElement(Popout$1, {
 				renderPopout: t => (
 					React.createElement(Menu, { onClose: t.closePopout, }, React.createElement(MenuItem, {
-						id: "copy-spotify-link",
-						key: "copy-spotify-link",
-						action: copyHandler,
-						label: "Copy link",
+						id: "copy-song-link",
+						key: "copy-song-link",
+						action: copySongHandler,
+						label: "Copy song url",
 					}), React.createElement(MenuItem, {
-						id: "share-spotify-link",
-						key: "share-spotify-link",
-						action: shareHandler,
-						label: "Share in current channel",
+						id: "copy-poster-link",
+						key: "copy-poster-link",
+						action: copyPosterHandler,
+						label: "Copy poster url",
+					}), React.createElement(MenuItem, {
+						id: "share-song-link",
+						key: "share-song-link",
+						action: shareSongHandler,
+						label: "Share song in current channel",
+					}), React.createElement(MenuItem, {
+						id: "share-poster-link",
+						key: "share-poster-link",
+						action: sharePosterHandler,
+						label: "Share poster in current channel",
 					}))
 				),
 				position: "top",
@@ -2074,7 +2088,7 @@ const SpotifyPlayer = React.memo(function SpotifyPlayer() {
 		React.createElement('div', { className: "spotify-player-container", }, React.createElement(TrackMediaDetails, { track: track, }), React.createElement(TrackTimeLine, { ...{ duration, isPlaying, progress }, }), React.createElement(SpotifyPlayerControls, {
 			disallowedActions: disallowedActions,
 			state: { shuffle, isPlaying, repeat },
-			data: { url, volume },
+			data: { banner: track.bannerObj, url, volume },
 		}))
 	);
 });
