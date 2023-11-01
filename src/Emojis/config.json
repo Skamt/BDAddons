@@ -11,6 +11,7 @@
 		"ignoreEmbedPermissions":false,
 		"shouldSendAnimatedEmojis":false,
 		"sendEmojiAsWebp":false,
+		"shouldHihglightAnimatedEmojis":true,
 		"emojiSize":160
 	}
 }

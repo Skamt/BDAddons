@@ -37,6 +37,12 @@ export default () => {
 				note: "Meaning the emoji will show only the first frame, making them act as normal emoji, unless the first frame is empty.",
 				value: Settings.get("sendEmojiAsWebp"),
 				onChange: e => Settings.set("sendEmojiAsWebp", e)
+			},
+			{
+				hideBorder: false,
+				description: "Highlight animated emoji",
+				value: Settings.get("shouldHihglightAnimatedEmojis"),
+				onChange: e => Settings.set("shouldHihglightAnimatedEmojis", e)
 			}
 		].map(Toggle),
 		<StickerSize />

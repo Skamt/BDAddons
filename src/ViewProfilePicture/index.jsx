@@ -1,7 +1,7 @@
 import css from "./styles";
 import {  Data, DOM, React, Patcher } from "@Api";
 import Settings from "@Utils/Settings";
-import { getNestedProp } from "@Utils";
+
 import { isSelf } from "@Utils/User";
 import Logger from "@Utils/Logger";
 import ErrorBoundary from "@Components/ErrorBoundary";

@@ -9,11 +9,10 @@ export default () => {
 	 * if external emojis are disabled, servers get filtered out
 	 * and it's handy to scroll through emojis easily
 	 */
-	if (EmojiFunctions)
+	if (EmojiFunctions && EmojiFunctions.isEmojiFiltered)
 		Patcher.after(EmojiFunctions, "isEmojiFiltered", (_, [, , intention], ret) => {
 			if (intention !== EmojiIntentionEnum.CHAT) return ret;
 			return false;
 		});
-	else
-		Logger.patch("IsEmojiFiltered");
-}
+	else Logger.patch("IsEmojiFiltered");
+};

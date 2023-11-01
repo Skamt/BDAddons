@@ -10,7 +10,7 @@ export default () => {
 	 * if external emojis are disabled, they don't get added to the picker
 	 * PREMIUM_LOCKED is returned becaause that is what's returned normally 
 	 */
-	if (EmojiFunctions)
+	if (EmojiFunctions && EmojiFunctions.getEmojiUnavailableReason)
 		Patcher.after(EmojiFunctions, "getEmojiUnavailableReason", (_, [{ intention }], ret) => {
 			if (intention !== EmojiIntentionEnum.CHAT) return ret;
 			return null;

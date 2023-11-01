@@ -49,7 +49,7 @@ function handleUnsendableEmoji(emoji, channel) {
 }
 
 export default () => {
-	if (ExpressionPicker)
+	if (ExpressionPicker && ExpressionPicker.type)
 		Patcher.before(ExpressionPicker, "type", (_, [props]) => {
 			const orig = props.onSelectEmoji;
 			props.onSelectEmoji = (...args) => {
