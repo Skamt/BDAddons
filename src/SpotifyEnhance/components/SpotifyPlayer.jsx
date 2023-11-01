@@ -17,7 +17,7 @@ export default React.memo(function SpotifyPlayer() {
 
 	const { disallowedActions, track, duration, shuffle, volume, repeat, isPlaying, progress } = playerState;
 	const { url } = track;
-	console.log(track, "duration: "+duration, "shuffle: "+shuffle, "volume: "+volume, "repeat: "+repeat, "isPlaying: "+isPlaying, "progress: "+progress);
+	console.log(track, "duration: " + duration, "shuffle: " + shuffle, "volume: " + volume, "repeat: " + repeat, "isPlaying: " + isPlaying, "progress: " + progress);
 	return (
 		<div className="spotify-player-container">
 			<TrackMediaDetails track={track} />
@@ -25,7 +25,7 @@ export default React.memo(function SpotifyPlayer() {
 			<SpotifyPlayerControls
 				disallowedActions={disallowedActions}
 				state={{ shuffle, isPlaying, repeat }}
-				data={{ url, volume }}
+				data={{ banner: track.bannerObj, url, volume }}
 			/>
 		</div>
 	);

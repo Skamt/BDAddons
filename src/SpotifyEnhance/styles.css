@@ -1,4 +1,3 @@
-
 :root {
 	--spotify-green: #1ed760;
 	--text-normal: #fff;
@@ -153,7 +152,7 @@
 	grid-template-columns: 64px 1fr;
 	grid-template-rows: repeat(3, auto);
 	align-items: center;
-	
+
 	grid-template-areas:
 		"banner title"
 		"banner artist"
@@ -165,7 +164,9 @@
 	cursor: pointer;
 	width: 64px;
 	height: 64px;
-	background: var(--banner) center/cover no-repeat, lime;
+	background:
+		var(--banner) center/cover no-repeat,
+		lime;
 	border-radius: 5px;
 }
 
@@ -173,8 +174,8 @@
 	grid-area: title;
 	font-weight: bold;
 	color: #fff;
-	font-size:1.05rem;
-	
+	font-size: 1.05rem;
+
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -238,7 +239,7 @@
 	display: flex;
 	flex-wrap: wrap;
 	font-size: 0.8rem;
-	flex:1;
+	flex: 1;
 }
 
 .spotify-player-timeline-progress {
@@ -263,7 +264,7 @@
 	margin-top: 4px;
 }
 
- .spotify-player-timeline .spotify-player-timeline-trackbar-bar {
+.spotify-player-timeline .spotify-player-timeline-trackbar-bar {
 	background: hsl(0deg 0% 100% / 30%);
 	height: 6px;
 }
@@ -302,7 +303,7 @@
 	width: 10px;
 	height: 10px;
 	margin-top: 3px;
-	cursor: initial;
+	cursor: pointer;
 }
 
 .spotify-player-controls-volume-slider-wrapper .spotify-player-controls-volume-slider-bar {

@@ -35,7 +35,7 @@ const { MenuItem, Menu, Slider } = TheBigBoyBundle;
 export default ({ disallowedActions, state, data }) => {
 	if (!disallowedActions || !state || !data) return;
 
-	const { url, volume } = data;
+	const { url, banner:[{ url:posterUrl }], volume } = data;
 	const { shuffle, repeat, isPlaying } = state;
 	const { toggling_shuffle, toggling_repeat_track, /* pausing, resuming, seeking, */ skipping_next, skipping_prev } = disallowedActions;
 
@@ -63,12 +63,16 @@ export default ({ disallowedActions, state, data }) => {
 	const shuffleHandler = () => SpotifyWrapper.Player.shuffle(!shuffle);
 	const previousHandler = () => SpotifyWrapper.Player.previous();
 	const nextHandler = () => SpotifyWrapper.Player.next();
-	const shareHandler = () => SpotifyWrapper.Utils.share(url);
-	const copyHandler = () => SpotifyWrapper.Utils.copySpotifyLink(url);
 	const repeatHandler = () => SpotifyWrapper.Player.repeat(repeatArg);
 	const pauseHandler = () => SpotifyWrapper.Player.pause();
 	const playHandler = () => SpotifyWrapper.Player.play();
 	const volumeHandler = v => SpotifyWrapper.Player.volume(Math.round(v));
+
+	const shareSongHandler = () => SpotifyWrapper.Utils.share(url);
+	const sharePosterHandler = () => SpotifyWrapper.Utils.share(posterUrl);
+
+	const copySongHandler = () => SpotifyWrapper.Utils.copySpotifyLink(url);
+	const copyPosterHandler = () => SpotifyWrapper.Utils.copySpotifyLink(posterUrl);
 
 	const { playPauseTooltip, playPauseHandler, playPauseIcon, playPauseClassName } = {
 		"true": {
@@ -91,16 +95,28 @@ export default ({ disallowedActions, state, data }) => {
 				renderPopout={t => (
 					<Menu onClose={t.closePopout}>
 						<MenuItem
-							id="copy-spotify-link"
-							key="copy-spotify-link"
-							action={copyHandler}
-							label="Copy link"
+							id="copy-song-link"
+							key="copy-song-link"
+							action={copySongHandler}
+							label="Copy song url"
 						/>
 						<MenuItem
-							id="share-spotify-link"
-							key="share-spotify-link"
-							action={shareHandler}
-							label="Share in current channel"
+							id="copy-poster-link"
+							key="copy-poster-link"
+							action={copyPosterHandler}
+							label="Copy poster url"
+						/>
+						<MenuItem
+							id="share-song-link"
+							key="share-song-link"
+							action={shareSongHandler}
+							label="Share song in current channel"
+						/>
+						<MenuItem
+							id="share-poster-link"
+							key="share-poster-link"
+							action={sharePosterHandler}
+							label="Share poster in current channel"
 						/>
 					</Menu>
 				)}
