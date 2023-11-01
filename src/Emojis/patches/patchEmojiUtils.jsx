@@ -28,9 +28,9 @@ export default () => {
 						copy(url);
 						Toast.success("Copid");
 					}}>
-					{"POOP"}
+					{"Copy url"}
 				</Button>
 			);
 		});
-	else Logger.patch("patchEmojiUtils");
+	else Logger.patch("EmojiUtils");
 };
