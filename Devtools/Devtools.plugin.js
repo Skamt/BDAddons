@@ -123,7 +123,7 @@ const Modules = {
 		if (args?.length > 5 || !args) return [];
 
 		const req = args.split(",")[2];
-		const re = new RegExp(`(?:\\s|\\(|,|=)${req}\\((\\d+)\\)`, "g");
+		const re = new RegExp(`(?:\\s|\\(|,|=)${req}\\("?(\\d+)"?\\)`, "g");
 		const imports = Array.from(rawSource.matchAll(re));
 
 		return imports.map(id => id[1]);
@@ -217,11 +217,11 @@ class Module {
 		return this.module.exports;
 	}
 
-	get modulesImported() {
+	get modulesUsed() {
 		return Modules.modulesImportedInModuleById(this.module.id).reduce((acc, id) => defineModuleGetter(acc, id), {});
 	}
 
-	get modulesImportedIn() {
+	get modulesUsing() {
 		return Modules.modulesImportingModuleById(this.module.id).reduce((acc, id) => defineModuleGetter(acc, id), {});
 	}
 }

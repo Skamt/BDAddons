@@ -46,6 +46,16 @@ const Patcher = Api.Patcher;
 const getModule = Api.Webpack.getModule;
 const Filters = Api.Webpack.Filters;
 
+function getModuleAndKey(filter, options) {
+	let module;
+	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
+	module = module?.exports;
+	if (!module) return undefined;
+	const key = Object.keys(module).find(k => module[k] === target);
+	if (!key) return undefined;
+	return { module, key };
+}
+
 const TheBigBoyBundle = getModule(Filters.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
 
 const Switch = TheBigBoyBundle.FormSwitch ||
@@ -153,6 +163,12 @@ const SettingComponent = () => {
 				note: "Meaning the emoji will show only the first frame, making them act as normal emoji, unless the first frame is empty.",
 				value: Settings.get("sendEmojiAsWebp"),
 				onChange: e => Settings.set("sendEmojiAsWebp", e)
+			},
+			{
+				hideBorder: false,
+				description: "Highlight animated emoji",
+				value: Settings.get("shouldHihglightAnimatedEmojis"),
+				onChange: e => Settings.set("shouldHihglightAnimatedEmojis", e)
 			}
 		].map(Toggle),
 		React.createElement(StickerSize, null)
@@ -224,7 +240,7 @@ const patchGetEmojiUnavailableReason = () => {
 	 * if external emojis are disabled, they don't get added to the picker
 	 * PREMIUM_LOCKED is returned becaause that is what's returned normally
 	 */
-	if (EmojiFunctions)
+	if (EmojiFunctions && EmojiFunctions.getEmojiUnavailableReason)
 		Patcher.after(EmojiFunctions, "getEmojiUnavailableReason", (_, [{ intention }], ret) => {
 			if (intention !== EmojiIntentionEnum.CHAT) return ret;
 			return null;
@@ -240,13 +256,12 @@ const patchIsEmojiFiltered = () => {
 	 * if external emojis are disabled, servers get filtered out
 	 * and it's handy to scroll through emojis easily
 	 */
-	if (EmojiFunctions)
+	if (EmojiFunctions && EmojiFunctions.isEmojiFiltered)
 		Patcher.after(EmojiFunctions, "isEmojiFiltered", (_, [, , intention], ret) => {
 			if (intention !== EmojiIntentionEnum.CHAT) return ret;
 			return false;
 		});
-	else
-		Logger.patch("IsEmojiFiltered");
+	else Logger.patch("IsEmojiFiltered");
 };
 
 function showToast(content, type) {
@@ -381,7 +396,7 @@ function handleUnsendableEmoji(emoji, channel) {
 }
 
 const patchExpressionPicker = () => {
-	if (ExpressionPicker)
+	if (ExpressionPicker && ExpressionPicker.type)
 		Patcher.before(ExpressionPicker, "type", (_, [props]) => {
 			const orig = props.onSelectEmoji;
 			props.onSelectEmoji = (...args) => {
@@ -395,12 +410,67 @@ const patchExpressionPicker = () => {
 };
 
 const patchIsEmojiDisabled = () => {
-	if (EmojiFunctions)
+	if (EmojiFunctions && EmojiFunctions.isEmojiDisabled)
 		Patcher.after(EmojiFunctions, "isEmojiDisabled", (_, [{ intention }], ret) => {
 			if (intention !== EmojiIntentionEnum.CHAT) return ret;
 			return false;
 		});
 	else Logger.patch("IsEmojiDisabled");
+};
+
+function copy(data) {
+	DiscordNative.clipboard.copy(data);
+}
+
+function getNestedProp(obj, path) {
+	return path.split(".").reduce(function(ob, prop) {
+		return ob && ob[prop];
+	}, obj);
+}
+
+const EmojiComponent = getModuleAndKey(Filters.byStrings("getDisambiguatedEmojiContext", "isFavoriteEmojiWithoutFetchingLatest", "allowAnimatedEmoji"));
+
+const patchHighlightAnimatedEmoji = () => {
+	const { module, key } = EmojiComponent;
+	if (module && key)
+		Patcher.after(module, key, (_, [{ descriptor }], ret) => {
+			if (descriptor.emoji.animated && Settings.get("shouldHihglightAnimatedEmojis")) ret.props.className += " animated";
+		});
+	else Logger.patch("HighlightAnimatedEmoji");
+};
+
+const Button = TheBigBoyBundle.Button ||
+	function ButtonComponentFallback(props) {
+		return React.createElement('button', { ...props, });
+	};
+
+const EmojiStore = getModule(m => m._dispatchToken && m.getName() === "EmojiStore");
+
+const MessageDecorations = getModule(Filters.byProps("MessagePopoutContent"));
+
+const patchEmojiUtils = () => {
+	if (MessageDecorations && MessageDecorations.MessagePopoutContent)
+		Patcher.after(MessageDecorations, "MessagePopoutContent", (_, __, ret) => {
+			const { emojiId } = getNestedProp(ret, "props.children.0.props.children.0.props.children.0.props") || {};
+			if (!emojiId) return ret;
+
+			const children = getNestedProp(ret, "props.children.0.props.children");
+
+			if (!children) return ret;
+			children.push(
+				React.createElement(Button, {
+					size: Button.Sizes.SMALL,
+					color: Button.Colors.GREEN,
+					onClick: () => {
+						const { url } = EmojiStore.getCustomEmojiById(emojiId) || {};
+						if (!url) return Toast.error("no url found");
+						copy(url);
+						Toast.success("Copid");
+					},
+				}, "Copy url")
+			);
+		});
+	else Logger.patch("EmojiUtils");
 };
 
 class Emojis {
@@ -412,6 +482,8 @@ class Emojis {
 			patchGetEmojiUnavailableReason();
 			patchExpressionPicker();
 			patchIsEmojiDisabled();
+			patchHighlightAnimatedEmoji();
+			patchEmojiUtils();
 		} catch (e) {
 			console.error(e);
 		}
