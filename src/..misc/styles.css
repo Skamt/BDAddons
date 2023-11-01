@@ -69,7 +69,8 @@
 	color: var(--interactive-normal);
 }
 
-:where(.selected-2TbFuo, .containerDefault-YUSmu3:hover) .channelMuteButton {
+ul[aria-label="Channels"] > li[class*="selected"] .channelMuteButton, 
+ul[aria-label="Channels"] > li:hover .channelMuteButton {
 	display: block;
 }
 
