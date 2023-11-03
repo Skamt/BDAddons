@@ -1,8 +1,9 @@
 import { React } from "@Api";
 
 import { getImageModalComponent, openModal } from "@Utils";
+import Toast from "@Utils/Toast";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
-
+import Tooltip from "@Components/Tooltip";
 const { Anchor } = TheBigBoyBundle;
 
 export default ({ track }) => {
@@ -13,13 +14,15 @@ export default ({ track }) => {
 	return (
 		<div className="spotify-player-media">
 			<TrackBanner banner={bannerObj} />
-			<Anchor
-				href={url}
-				className="spotify-player-title">
-				{name}
-			</Anchor>
-
+			<Tooltip note={name}>
+				<Anchor
+					href={url}
+					className="spotify-player-title">
+					{name}
+				</Anchor>
+			</Tooltip>
 			<Artist artists={artists} />
+
 			<div className="spotify-player-album">
 				on <Anchor href={albumUrl}>{albumName}</Anchor>{" "}
 			</div>
@@ -48,15 +51,20 @@ function TrackBanner({ banner = [] }) {
 	const smBanner = banner[2];
 
 	const thumbnailClickHandler = () => {
-		const lgBanner = banner[0];
-		if(!lgBanner) return;
-		openModal(getImageModalComponent(lgBanner.url, lgBanner));
+		if (!banner[0]) return Toast.error("Could not open banner");
+		const { url, ...rest } = banner[0];
+		openModal(getImageModalComponent(url, {
+			...rest,
+			className: "transparent"
+		}));
 	};
 
 	return (
-		<div
-			onClick={thumbnailClickHandler}
-			style={{ "--banner": `url(${smBanner && smBanner.url})` }}
-			className="spotify-player-banner"></div>
+		<Tooltip note="View">
+			<div
+				onClick={thumbnailClickHandler}
+				style={{ "--banner": `url(${smBanner && smBanner.url})` }}
+				className="spotify-player-banner"></div>
+		</Tooltip>
 	);
 }

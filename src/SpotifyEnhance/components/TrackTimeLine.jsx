@@ -29,7 +29,6 @@ export default ({ duration, isPlaying, progress }) => {
 		if (!sliderRef.current?.state?.active) return;
 		setPosition(pos);
 		SpotifyWrapper.Player.seek(pos);
-		console.log(pos);
 	};
 
 	return (

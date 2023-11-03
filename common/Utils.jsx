@@ -1,11 +1,10 @@
 import { React } from "@Api";
 import { Patcher, getOwnerInstance } from "@Api";
 import ImageModalVideoModal from "@Modules/ImageModalVideoModal";
-import ModalRoot from "@Modules/ModalRoot";
 import RenderLinkComponent from "@Modules/RenderLinkComponent";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 import ErrorBoundary from "@Components/ErrorBoundary";
-
+const { ModalRoot, ModalSize } = TheBigBoyBundle;
 const ImageModal = ImageModalVideoModal.ImageModal;
 
 export const openModal = children => {
@@ -16,7 +15,8 @@ export const openModal = children => {
 				plugin={config.info.name}>
 				<ModalRoot
 					{...props}
-					className="modal-3Crloo">
+					onClick={props.onClose}
+					size={ModalSize.DYNAMIC}>
 					{children}
 				</ModalRoot>
 			</ErrorBoundary>
@@ -24,7 +24,7 @@ export const openModal = children => {
 	});
 };
 
-export const getImageModalComponent = (url, rest) => (
+export const getImageModalComponent = (url, rest = {width:4096, height:4096}) => (
 	<ImageModal
 		{...rest}
 		src={url}
@@ -32,6 +32,7 @@ export const getImageModalComponent = (url, rest) => (
 		renderLinkComponent={p => <RenderLinkComponent {...p} />}
 	/>
 );
+
 
 export const promiseHandler = promise => promise.then(data => [, data]).catch(err => [err]);
 

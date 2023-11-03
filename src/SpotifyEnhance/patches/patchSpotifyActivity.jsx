@@ -10,8 +10,7 @@ export default () => {
 		Patcher.before(ActivityComponent.prototype, "render", ({ props }) => {
 			if (!props.activity) return;
 			if (props.activity.name.toLowerCase() !== "spotify") return;
-			// console.log(props);
-
+			
 			const renderActions = props.renderActions;
 			props.renderActions = () => (
 				<ErrorBoundary

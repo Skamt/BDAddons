@@ -1,8 +1,9 @@
 import css from "./styles";
-import {  Data, DOM, React, Patcher } from "@Api";
+import { Data, DOM, React, Patcher } from "@Api";
 import Settings from "@Utils/Settings";
 
 import { isSelf } from "@Utils/User";
+import { getImageModalComponent, openModal } from "@Utils";
 import Logger from "@Utils/Logger";
 import ErrorBoundary from "@Components/ErrorBoundary";
 import ErrorIcon from "@Components/ErrorIcon";
@@ -13,36 +14,11 @@ import ImageModalVideoModal from "@Modules/ImageModalVideoModal";
 import RenderLinkComponent from "@Modules/RenderLinkComponent";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 import ColorModalComponent from "./components/ColorModalComponent";
-import DisplayCarouselComponent from "./components/DisplayCarouselComponent";
 import ViewProfilePictureButtonComponent from "./components/ViewProfilePictureButtonComponent";
 import SettingComponent from "./components/SettingComponent";
-import ModalRoot from "@Modules/ModalRoot";
+import ModalCarousel from "@Modules/ModalCarousel";
 
 const IMG_WIDTH = 4096;
-
-const getImageModalComponent = (url) => (
-	<ImageModalVideoModal.ImageModal
-		height={IMG_WIDTH}
-		width={IMG_WIDTH}
-		src={url}
-		original={url}
-		renderLinkComponent={p => <RenderLinkComponent {...p} />}
-	/>
-);
-
-function openCarousel(items) {
-	TheBigBoyBundle.openModal(props => (
-		<ErrorBoundary
-			id="DisplayCarouselComponent"
-			plugin={config.info.name}>
-			<ModalRoot
-				{...props}
-				className="VPP-carousel carouselModal-1eUFoq zoomedCarouselModalRoot-beLNhM">
-				<DisplayCarouselComponent items={items} />
-			</ModalRoot>
-		</ErrorBoundary>
-	));
-}
 
 function getButtonClasses(user, profileType, banner) {
 	let res = "VPP-Button";
@@ -61,7 +37,13 @@ export default class ViewProfilePicture {
 		const bannerURL = displayProfile.getBannerURL({});
 		const AvatarImageComponent = getImageModalComponent(avatarURL);
 		const BannerImageComponent = bannerURL ? getImageModalComponent(bannerURL) : <ColorModalComponent color={displayProfile.accentColor} />;
-		openCarousel([AvatarImageComponent, BannerImageComponent]);
+		openModal(
+			<ModalCarousel
+				startWith={0}
+				className="VPP-carousel"
+				items={[AvatarImageComponent, BannerImageComponent].map(item => ({ "component": item }))}
+			/>
+		);
 	}
 
 	patchUserBannerMask() {
