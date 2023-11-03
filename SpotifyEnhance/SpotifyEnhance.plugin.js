@@ -24,7 +24,6 @@ const config = {
 }
 
 const css = `
-
 :root {
 	--spotify-green: #1ed760;
 	--text-normal: #fff;
@@ -179,7 +178,7 @@ const css = `
 	grid-template-columns: 64px 1fr;
 	grid-template-rows: repeat(3, auto);
 	align-items: center;
-	
+
 	grid-template-areas:
 		"banner title"
 		"banner artist"
@@ -191,7 +190,9 @@ const css = `
 	cursor: pointer;
 	width: 64px;
 	height: 64px;
-	background: var(--banner) center/cover no-repeat, lime;
+	background:
+		var(--banner) center/cover no-repeat,
+		lime;
 	border-radius: 5px;
 }
 
@@ -199,8 +200,8 @@ const css = `
 	grid-area: title;
 	font-weight: bold;
 	color: #fff;
-	font-size:1.05rem;
-	
+	font-size: 1.05rem;
+
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -264,7 +265,7 @@ const css = `
 	display: flex;
 	flex-wrap: wrap;
 	font-size: 0.8rem;
-	flex:1;
+	flex: 1;
 }
 
 .spotify-player-timeline-progress {
@@ -289,7 +290,7 @@ const css = `
 	margin-top: 4px;
 }
 
- .spotify-player-timeline .spotify-player-timeline-trackbar-bar {
+.spotify-player-timeline .spotify-player-timeline-trackbar-bar {
 	background: hsl(0deg 0% 100% / 30%);
 	height: 6px;
 }
@@ -337,7 +338,8 @@ const css = `
 
 .spotify-player-controls-volume-slider-wrapper .spotify-player-controls-volume-slider-bar > div {
 	background: var(--spotify-green);
-}`;
+}
+`;
 
 const Logger = {
 	error(...args) {
@@ -553,10 +555,9 @@ function sanitizeSpotifyLink(link) {
 
 const ImageModalVideoModal = getModule(Filters.byProps("ImageModal"), { searchExports: false });
 
-const ModalRoot = getModule(Filters.byStrings("onAnimationEnd"), { searchExports: true });
-
 const RenderLinkComponent = getModule(m => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false });
 
+const { ModalRoot, ModalSize } = TheBigBoyBundle;
 const ImageModal = ImageModalVideoModal.ImageModal;
 
 const openModal = children => {
@@ -567,13 +568,14 @@ const openModal = children => {
 				plugin: config.info.name,
 			}, React.createElement(ModalRoot, {
 				...props,
-				className: "modal-3Crloo",
+				onClick: props.onClose,
+				size: ModalSize.DYNAMIC,
 			}, children))
 		);
 	});
 };
 
-const getImageModalComponent = (url, rest) => (
+const getImageModalComponent = (url, rest = { width: 4096, height: 4096 }) => (
 	React.createElement(ImageModal, {
 		...rest,
 		src: url,
@@ -1308,7 +1310,7 @@ const SpotifyWrapper = new(class SpotifyWrapper extends ChangeEmitter {
 
 	onStateChange() {
 		this.activeAccount = SpotifyActiveAccount.getActiveAccount();
-		console.log("activeAccount", this.activeAccount?.playerState);
+		console.log("activeAccount", this.activeAccount);
 		this.emit();
 	}
 
@@ -1450,7 +1452,6 @@ const TrackTimeLine = ({ duration, isPlaying, progress }) => {
 		if (!sliderRef.current?.state?.active) return;
 		setPosition(pos);
 		SpotifyWrapper.Player.seek(pos);
-		console.log(pos);
 	};
 
 	return (
@@ -1758,12 +1759,12 @@ const TrackMediaDetails = ({ track }) => {
 	const { albumName, albumUrl, bannerObj, url, name, artists } = track;
 
 	return (
-		React.createElement('div', { className: "spotify-player-media", }, React.createElement(TrackBanner, { banner: bannerObj, }), React.createElement(Anchor, {
+		React.createElement('div', { className: "spotify-player-media", }, React.createElement(TrackBanner, { banner: bannerObj, }), React.createElement(Tooltip$1, { note: name, }, React.createElement(Anchor, {
 				href: url,
 				className: "spotify-player-title",
-			}, name)
+			}, name)), React.createElement(Artist, { artists: artists, })
 
-			, React.createElement(Artist, { artists: artists, }), React.createElement('div', { className: "spotify-player-album", }, "on ", React.createElement(Anchor, { href: albumUrl, }, albumName), " ")
+			, React.createElement('div', { className: "spotify-player-album", }, "on ", React.createElement(Anchor, { href: albumUrl, }, albumName), " ")
 		)
 	);
 };
@@ -1789,17 +1790,20 @@ function TrackBanner({ banner = [] }) {
 	const smBanner = banner[2];
 
 	const thumbnailClickHandler = () => {
-		const lgBanner = banner[0];
-		if (!lgBanner) return;
-		openModal(getImageModalComponent(lgBanner.url, lgBanner));
+		if (!banner[0]) return Toast.error("Could not open banner");
+		const { url, ...rest } = banner[0];
+		openModal(getImageModalComponent(url, {
+			...rest,
+			className: "transparent"
+		}));
 	};
 
 	return (
-		React.createElement('div', {
+		React.createElement(Tooltip$1, { note: "View", }, React.createElement('div', {
 			onClick: thumbnailClickHandler,
 			style: { "--banner": `url(${smBanner && smBanner.url})` },
 			className: "spotify-player-banner",
-		})
+		}))
 	);
 }
 
@@ -2083,7 +2087,7 @@ const SpotifyPlayer = React.memo(function SpotifyPlayer() {
 
 	const { disallowedActions, track, duration, shuffle, volume, repeat, isPlaying, progress } = playerState;
 	const { url } = track;
-	console.log(track, "duration: " + duration, "shuffle: " + shuffle, "volume: " + volume, "repeat: " + repeat, "isPlaying: " + isPlaying, "progress: " + progress);
+
 	return (
 		React.createElement('div', { className: "spotify-player-container", }, React.createElement(TrackMediaDetails, { track: track, }), React.createElement(TrackTimeLine, { ...{ duration, isPlaying, progress }, }), React.createElement(SpotifyPlayerControls, {
 			disallowedActions: disallowedActions,
