@@ -185,6 +185,10 @@ const css = `
 		"banner album";
 }
 
+div:has(> .spotify-player-banner-modal) {
+	background: #0000;
+}
+
 .spotify-player-banner {
 	grid-area: banner;
 	cursor: pointer;
@@ -1760,12 +1764,9 @@ const TrackMediaDetails = ({ track }) => {
 
 	return (
 		React.createElement('div', { className: "spotify-player-media", }, React.createElement(TrackBanner, { banner: bannerObj, }), React.createElement(Tooltip$1, { note: name, }, React.createElement(Anchor, {
-				href: url,
-				className: "spotify-player-title",
-			}, name)), React.createElement(Artist, { artists: artists, })
-
-			, React.createElement('div', { className: "spotify-player-album", }, "on ", React.createElement(Anchor, { href: albumUrl, }, albumName), " ")
-		)
+			href: url,
+			className: "spotify-player-title",
+		}, name)), React.createElement(Artist, { artists: artists, }), React.createElement(Tooltip$1, { note: albumName, }, React.createElement('div', { className: "spotify-player-album", }, "on ", React.createElement(Anchor, { href: albumUrl, }, albumName), " ")))
 	);
 };
 
@@ -1792,10 +1793,7 @@ function TrackBanner({ banner = [] }) {
 	const thumbnailClickHandler = () => {
 		if (!banner[0]) return Toast.error("Could not open banner");
 		const { url, ...rest } = banner[0];
-		openModal(getImageModalComponent(url, {
-			...rest,
-			className: "transparent"
-		}));
+		openModal(React.createElement('div', { className: "spotify-player-banner-modal", }, getImageModalComponent(url, rest)));
 	};
 
 	return (
