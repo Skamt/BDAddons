@@ -159,6 +159,10 @@
 		"banner album";
 }
 
+div:has(> .spotify-player-banner-modal) {
+	background: #0000;
+}
+
 .spotify-player-banner {
 	grid-area: banner;
 	cursor: pointer;

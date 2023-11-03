@@ -22,10 +22,11 @@ export default ({ track }) => {
 				</Anchor>
 			</Tooltip>
 			<Artist artists={artists} />
-
-			<div className="spotify-player-album">
-				on <Anchor href={albumUrl}>{albumName}</Anchor>{" "}
-			</div>
+			<Tooltip note={albumName}>
+				<div className="spotify-player-album">
+					on <Anchor href={albumUrl}>{albumName}</Anchor>{" "}
+				</div>
+			</Tooltip>
 		</div>
 	);
 };
@@ -53,10 +54,7 @@ function TrackBanner({ banner = [] }) {
 	const thumbnailClickHandler = () => {
 		if (!banner[0]) return Toast.error("Could not open banner");
 		const { url, ...rest } = banner[0];
-		openModal(getImageModalComponent(url, {
-			...rest,
-			className: "transparent"
-		}));
+		openModal(<div className="spotify-player-banner-modal">{getImageModalComponent(url, rest)}</div>);
 	};
 
 	return (
