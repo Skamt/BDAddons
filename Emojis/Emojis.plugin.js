@@ -23,6 +23,7 @@ const config = {
 		"ignoreEmbedPermissions": false,
 		"shouldSendAnimatedEmojis": false,
 		"sendEmojiAsWebp": false,
+		"shouldHihglightAnimatedEmojis": true,
 		"emojiSize": 160
 	}
 }
@@ -444,15 +445,14 @@ const Button = TheBigBoyBundle.Button ||
 		return React.createElement('button', { ...props, });
 	};
 
-const EmojiStore = getModule(m => m._dispatchToken && m.getName() === "EmojiStore");
-
 const MessageDecorations = getModule(Filters.byProps("MessagePopoutContent"));
+const AssetURLUtils = getModule(Filters.byProps("getEmojiURL"));
 
 const patchEmojiUtils = () => {
 	if (MessageDecorations && MessageDecorations.MessagePopoutContent)
 		Patcher.after(MessageDecorations, "MessagePopoutContent", (_, __, ret) => {
-			const { emojiId } = getNestedProp(ret, "props.children.0.props.children.0.props.children.0.props") || {};
-			if (!emojiId) return ret;
+			const { emojiId: id } = getNestedProp(ret, "props.children.0.props.children.0.props.children.0.props") || {};
+			if (!id) return ret;
 
 			const children = getNestedProp(ret, "props.children.0.props.children");
 
@@ -462,7 +462,7 @@ const patchEmojiUtils = () => {
 					size: Button.Sizes.SMALL,
 					color: Button.Colors.GREEN,
 					onClick: () => {
-						const { url } = EmojiStore.getCustomEmojiById(emojiId) || {};
+						const url = AssetURLUtils.getEmojiURL({ id });
 						if (!url) return Toast.error("no url found");
 						copy(url);
 						Toast.success("Copid");
