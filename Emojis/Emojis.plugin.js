@@ -451,26 +451,62 @@ const AssetURLUtils = getModule(Filters.byProps("getEmojiURL"));
 const patchEmojiUtils = () => {
 	if (MessageDecorations && MessageDecorations.MessagePopoutContent)
 		Patcher.after(MessageDecorations, "MessagePopoutContent", (_, __, ret) => {
-			const { emojiId: id } = getNestedProp(ret, "props.children.0.props.children.0.props.children.0.props") || {};
+			const { animated, emojiName, emojiId: id } = getNestedProp(ret, "props.children.0.props.children.0.props.children.0.props") || {};
 			if (!id) return ret;
 
 			const children = getNestedProp(ret, "props.children.0.props.children");
 
 			if (!children) return ret;
 			children.push(
-				React.createElement(Button, {
-					size: Button.Sizes.SMALL,
-					color: Button.Colors.GREEN,
-					onClick: () => {
-						const url = AssetURLUtils.getEmojiURL({ id });
-						if (!url) return Toast.error("no url found");
-						copy(url);
-						Toast.success("Copid");
-					},
-				}, "Copy url")
+				React.createElement('div', { style: { display: "flex" }, }, React.createElement(Button, {
+						size: Button.Sizes.SMALL,
+						color: Button.Colors.GREEN,
+						onClick: () => {
+							const url = AssetURLUtils.getEmojiURL({ id });
+							if (!url) return Toast.error("no url found");
+							copy(url);
+							Toast.success("Copid");
+						},
+					}, "Copy url")
+
+					, React.createElement(Button, {
+						size: Button.Sizes.SMALL,
+						color: Button.Colors.GREEN,
+						onClick: () => {
+							const emojis = Data.load("emojis") || [];
+							emojis.push({
+								animated,
+								id,
+								name: emojiName.replace(/:/gi, ""),
+								allNamesString: emojiName,
+								available: true,
+								managed: false,
+								require_colons: true,
+								url: `https://cdn.discordapp.com/emojis/${id}.webp?size=4096&quality=lossless`,
+								type: "GUILD_EMOJI"
+							});
+							Data.save("emojis", emojis);
+						},
+					}, "Save")
+				)
 			);
 		});
 	else Logger.patch("EmojiUtils");
+};
+
+const emojiHooks = getModule(Filters.byProps("useFavoriteEmojis"));
+
+const patchFavoriteEmojis = () => {
+	if (emojiHooks)
+		Patcher.after(emojiHooks, "useFavoriteEmojis", (_, args, ret) => {
+			const emojis = Data.load("emojis");
+			for (let i = emojis.length - 1; i >= 0; i--) {
+				const emoji = emojis[i];
+				if (ret.some(e => e.id === emoji.id)) continue;
+				ret.push(emoji);
+			}
+		});
+	else Logger.patch("useFavoriteEmojis");
 };
 
 class Emojis {
@@ -484,6 +520,7 @@ class Emojis {
 			patchIsEmojiDisabled();
 			patchHighlightAnimatedEmoji();
 			patchEmojiUtils();
+			patchFavoriteEmojis();
 		} catch (e) {
 			console.error(e);
 		}
