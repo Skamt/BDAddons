@@ -36,19 +36,24 @@ export default () => {
 						size={Button.Sizes.SMALL}
 						color={Button.Colors.GREEN}
 						onClick={() => {
-							const emojis = Data.load("emojis") || [];
-							emojis.push({
-								animated,
-								id,
-								name: emojiName.replace(/:/gi, ""),
-								allNamesString: emojiName,
-								available: true,
-								managed: false,
-								require_colons: true,
-								url: `https://cdn.discordapp.com/emojis/${id}.webp?size=4096&quality=lossless`,
-								type: "GUILD_EMOJI"
-							});
-							Data.save("emojis", emojis);
+							try {
+								const emojis = Data.load("emojis") || [];
+								emojis.push({
+									animated,
+									id,
+									name: emojiName.replace(/:/gi, ""),
+									allNamesString: emojiName,
+									available: true,
+									managed: false,
+									require_colons: true,
+									url: `https://cdn.discordapp.com/emojis/${id}.webp?size=4096&quality=lossless`,
+									type: "GUILD_EMOJI"
+								});
+								Data.save("emojis", emojis);
+								Toast.success("Saved.");
+							} catch {
+								Toast.error("Could not save.");
+							}
 						}}>
 						{"Save"}
 					</Button>
