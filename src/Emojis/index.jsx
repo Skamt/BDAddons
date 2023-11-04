@@ -8,6 +8,7 @@ import patchExpressionPicker from "./patches/patchExpressionPicker";
 import patchIsEmojiDisabled from "./patches/patchIsEmojiDisabled";
 import patchHighlightAnimatedEmoji from "./patches/patchHighlightAnimatedEmoji";
 import patchEmojiUtils from "./patches/patchEmojiUtils";
+import patchFavoriteEmojis from "./patches/patchFavoriteEmojis";
 
 export default class Emojis {
 	start() {
@@ -20,6 +21,7 @@ export default class Emojis {
 			patchIsEmojiDisabled();
 			patchHighlightAnimatedEmoji();
 			patchEmojiUtils();
+			patchFavoriteEmojis();
 		} catch (e) {
 			console.error(e);
 		}
