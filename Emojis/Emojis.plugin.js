@@ -130,8 +130,7 @@ const Settings = new(class Settings extends ChangeEmitter {
 	}
 })();
 
-const Heading = getModule(Filters.byStrings("LEGEND", "LABEL"), { searchExports: true });
-
+const Heading = TheBigBoyBundle.Heading;
 const Slider = TheBigBoyBundle.Slider;
 const FormText = TheBigBoyBundle.FormText;
 

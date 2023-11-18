@@ -1374,7 +1374,7 @@ function AddToQueueIcon() {
 			width: "24",
 			height: "24",
 			viewBox: "0 0 24 24",
-		}, React.createElement('path', { d: "M12 2.00098C6.486 2.00098 2 6.48698 2 12.001C2 17.515 6.486 22.001 12 22.001C17.514 22.001 22 17.515 22 12.001C22 6.48698 17.514 2.00098 12 2.00098ZM17 13.001H13V17.001H11V13.001H7V11.001H11V7.00098H13V11.001H17V13.001Z", }))
+		}, React.createElement('path', { d: "M16 15H2v-1.5h14V15zm0-4.5H2V9h14v1.5zm-8.034-6A5.484 5.484 0 0 1 7.187 6H13.5a2.5 2.5 0 0 0 0-5H7.966c.159.474.255.978.278 1.5H13.5a1 1 0 1 1 0 2H7.966zM2 2V0h1.5v2h2v1.5h-2v2H2v-2H0V2h2z", }))
 	);
 }
 
@@ -2110,9 +2110,7 @@ const patchSpotifyPlayer = () => {
 	fluxContainer.stateNode.forceUpdate();
 };
 
-const Heading = getModule(Filters.byStrings("LEGEND", "LABEL"), { searchExports: true });
-
-const SettingComponent = React.createElement(SpotifyEmbedOptions, null);
+const Heading = TheBigBoyBundle.Heading;
 
 const { RadioGroup } = TheBigBoyBundle;
 
@@ -2142,6 +2140,8 @@ function SpotifyEmbedOptions() {
 		}))
 	);
 }
+
+const SettingComponent = React.createElement(SpotifyEmbedOptions, null);
 
 window.SpotifyWrapper = SpotifyWrapper;
 window.SpotifyAPI = SpotifyAPI;

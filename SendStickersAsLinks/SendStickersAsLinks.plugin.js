@@ -1,7 +1,7 @@
 /**
  * @name SendStickersAsLinks
  * @description Enables you to send custom Stickers as links
- * @version 2.2.2
+ * @version 2.2.1
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/SendStickersAsLinks
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/SendStickersAsLinks/SendStickersAsLinks.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "SendStickersAsLinks",
-		"version": "2.2.2",
+		"version": "2.2.1",
 		"description": "Enables you to send custom Stickers as links",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SendStickersAsLinks/SendStickersAsLinks.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SendStickersAsLinks",
@@ -27,17 +27,6 @@ const config = {
 	}
 }
 
-const Api = new BdApi(config.info.name);
-
-const UI = Api.UI;
-const DOM = Api.DOM;
-const Data = Api.Data;
-const React = Api.React;
-const Patcher = Api.Patcher;
-
-const getModule = Api.Webpack.getModule;
-const Filters = Api.Webpack.Filters;
-
 const css = `
 .animatedSticker{
     position:relative;
@@ -53,11 +42,18 @@ const css = `
     top:-2px;
     left:-2px;
     z-index:55;
-}
-
-.stickerInspected-mwnU6w .animatedSticker:before{
-    border-radius:4px;
 }`;
+
+const Api = new BdApi(config.info.name);
+
+const UI = Api.UI;
+const DOM = Api.DOM;
+const Data = Api.Data;
+const React = Api.React;
+const Patcher = Api.Patcher;
+
+const getModule = Api.Webpack.getModule;
+const Filters = Api.Webpack.Filters;
 
 class ChangeEmitter {
 	constructor() {
@@ -157,8 +153,7 @@ const Switch = TheBigBoyBundle.FormSwitch ||
 		);
 	};
 
-const Heading = getModule(Filters.byStrings("LEGEND", "LABEL"), { searchExports: true });
-
+const Heading = TheBigBoyBundle.Heading;
 const Slider = TheBigBoyBundle.Slider;
 const FormText = TheBigBoyBundle.FormText;
 
@@ -197,7 +192,6 @@ const SettingComponent = () => {
 };
 
 function StickerSize() {
-
 	return (
 		React.createElement(React.Fragment, null, React.createElement(Heading, { tag: "h5", }, "Sticker Size")
 
@@ -237,7 +231,7 @@ const patchStickerClickability = () => {
 
 	if (StickerSendability)
 		Patcher.after(StickerSendability, "isSendableSticker", () => true);
-	else Logger.patch("patchStickerClickability");
+	else Logger.patch("StickerClickability");
 };
 
 function showToast(content, type) {
@@ -403,7 +397,7 @@ const patchSendSticker = () => {
 			if (stickerObj.isSendable) originalFunc.apply(_, args);
 			else handleUnsendableSticker(stickerObj);
 		});
-	else Logger.patch("patchSendSticker");
+	else Logger.patch("SendSticker");
 };
 
 const StickerModule = getModuleAndKey(Filters.byStrings("sticker", "withLoadingIndicator"), { searchExports: false });
@@ -419,7 +413,7 @@ const patchStickerComponent = () => {
 				}
 			}
 		});
-	else Settings.patch("patchGetStickerById");
+	else Settings.patch("GetStickerById");
 };
 
 const patchStickerAttachement = () => {
@@ -443,7 +437,7 @@ const patchStickerAttachement = () => {
 				}
 			}
 		});
-	else Logger.patch("patchStickerAttachement");
+	else Logger.patch("StickerAttachement");
 };
 
 const patchStickerSuggestion = () => {
@@ -458,7 +452,7 @@ const patchStickerSuggestion = () => {
 				return returnValue !== SENDABLE ? SENDABLE : returnValue;
 			}
 		});
-	else Logger.patch("patchStickerSuggestion");
+	else Logger.patch("StickerSuggestion");
 };
 
 const patchChannelGuildPermissions = () => {
@@ -466,7 +460,7 @@ const patchChannelGuildPermissions = () => {
 		Patcher.after(DiscordPermissions, "can", (_, [permission], ret) =>
 			ret || DiscordPermissionsEnum.USE_EXTERNAL_EMOJIS === permission
 		);
-	else Settings.patch("patchChannelGuildPermissions");
+	else Settings.patch("ChannelGuildPermissions");
 };
 
 class SendStickersAsLinks {
