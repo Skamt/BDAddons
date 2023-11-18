@@ -61,7 +61,6 @@ module.exports = function getConfig(inputPath, outputPath, pluginConfig) {
 	return {
 		input: {
 			input: path.resolve(inputPath, "index"),
-			external: "electron",
 			treeshake: "smallest",
 			plugins: [
 				nodeResolve({ extensions: [".json", ".js", ".jsx", ".css"] }),

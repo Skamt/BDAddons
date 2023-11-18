@@ -12,10 +12,6 @@
 			"filter": "a => a.prototype.render && a.defaultProps.themed === false",
 			"options": "{ searchExports: false }"
 		},
-		"Heading": {
-			"filter": "Filters.byStrings(\"LEGEND\", \"LABEL\")",
-			"options": "{ searchExports: true }"
-		},
 		"RefreshToken": {
 			"filter": "Filters.byStrings(\"CONNECTION_ACCESS_TOKEN\")",
 			"options": "{ searchExports: true }"

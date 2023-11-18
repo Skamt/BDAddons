@@ -1,10 +1,9 @@
 import { React } from "@Api";
 import Settings from "@Utils/Settings";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
-import Heading from "@Modules/Heading";
 import { EmbedStyleEnum } from "../consts.js";
 
-export default <SpotifyEmbedOptions />;
+const Heading = TheBigBoyBundle.Heading;
 
 const { RadioGroup } = TheBigBoyBundle;
 function SpotifyEmbedOptions() {
@@ -37,3 +36,5 @@ function SpotifyEmbedOptions() {
 		</>
 	);
 }
+
+export default <SpotifyEmbedOptions />;

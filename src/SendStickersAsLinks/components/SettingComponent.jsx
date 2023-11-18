@@ -1,9 +1,9 @@
 import { React } from "@Api";
 import Switch from "@Components/Switch";
 import Settings from "@Utils/Settings";
-import Heading from "@Modules/Heading";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 
+const Heading = TheBigBoyBundle.Heading;
 const Slider = TheBigBoyBundle.Slider;
 const FormText = TheBigBoyBundle.FormText;
 

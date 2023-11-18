@@ -1,8 +1,8 @@
 import { React } from "@Api";
 import Switch from "@Components/Switch";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
-import Heading from "@Modules/Heading";
 import Settings from "@Utils/Settings";
+
 
 function ShowOnHoverSwitch() {
 	const [enabled, setEnabled] = React.useState(Settings.get("showOnHover"));
