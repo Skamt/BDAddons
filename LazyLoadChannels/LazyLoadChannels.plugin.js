@@ -1,7 +1,7 @@
 /**
  * @name LazyLoadChannels
  * @description Lets you choose whether to load a channel
- * @version 1.2.3
+ * @version 1.2.5
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "LazyLoadChannels",
-		"version": "1.2.3",
+		"version": "1.2.5",
 		"description": "Lets you choose whether to load a channel",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels",
@@ -172,6 +172,7 @@ const css = `
   }
 }
 
+.autoload > div > div,
 .autoload a{
 	border-left:4px solid #2e7d46;
 }`;
@@ -323,16 +324,6 @@ const ChannelsStateManager = {
 	}
 };
 
-function getModuleAndKey(filter, options) {
-	let module;
-	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
-	module = module?.exports;
-	if (!module) return undefined;
-	const key = Object.keys(module).find(k => module[k] === target);
-	if (!key) return undefined;
-	return { module, key };
-}
-
 const Dispatcher = getModule(Filters.byProps("dispatch", "subscribe"), { searchExports: false });
 
 const ChannelActions = getModule(Filters.byProps("actions", "fetchMessages"), { searchExports: true });
@@ -383,17 +374,28 @@ function Toggle(props) {
 	);
 }
 
-const ChannelComponent = getModuleAndKey(Filters.byStrings("hasActiveThreads", "canHaveDot", "isFavoriteSuggestion", "mentionCount"), { searchExports: true });
+const ChannelComponent = getModule(Filters.byProps("ChannelItemIcon", "default"), { searchExports: false });
 
 const patchChannel = () => {
-	const { module, key } = ChannelComponent;
-	if (module && key)
-		Patcher.after(module, key, (_, [{ channel }], returnValue) => {
+	if (ChannelComponent)
+		Patcher.after(ChannelComponent, "default", (_, [{ channel }], returnValue) => {
 			if (!Settings.get("autoloadedChannelIndicator")) return;
 			if (ChannelsStateManager.getChannelstate(channel.guild_id, channel.id))
 				returnValue.props.children.props.children[1].props.className += " autoload";
 		});
-	else Logger.patch("patchChannel");
+	else Logger.patch("Channel");
+};
+
+const TreadComponent = getModule(a => a?.type?.toString().includes("GUILD_SIDEBAR_THREAD_A11Y_LABEL_WITH_UNREADS"), { searchExports: false });
+
+const patchThread = () => {
+	if (TreadComponent)
+		Patcher.after(TreadComponent, "type", (_, [{ thread }], returnValue) => {
+			if (!Settings.get("autoloadedChannelIndicator")) return;
+			if (ChannelsStateManager.getChannelstate(thread.guild_id, thread.id))
+				returnValue.props.className += " autoload";
+		});
+	else Logger.patch("Tread");
 };
 
 const CreateChannel = getModule(m => m.createChannel, { searchExports: false });
@@ -409,7 +411,7 @@ const patchCreateChannel = () => {
 					ChannelsStateManager.add("channels", body.id);
 				});
 		});
-	else Logger.patch("patchCreateChannel");
+	else Logger.patch("CreateChannel");
 };
 
 const ChannelContent = getModule(m => m.type && m.type.toString?.().includes("showingSpamBanner"), { searchExports: false });
@@ -634,7 +636,7 @@ const patchChannelContent = context => {
 				}))
 			);
 		});
-	else Logger.patch("patchChannelContent");
+	else Logger.patch("ChannelContent");
 };
 
 const ChannelTypeEnum = getModule(Filters.byProps("GUILD_TEXT", "DM"), { searchExports: true }) || {
@@ -762,6 +764,7 @@ class LazyLoadChannels {
 			DOM.addStyle(css);
 			this.setupHandlers();
 			patchChannel();
+			patchThread();
 			patchCreateChannel();
 			patchChannelContent(this);
 			this.unpatchContextMenu = patchContextMenu();
