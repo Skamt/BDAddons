@@ -93,8 +93,8 @@
 			"options": "{ searchExports: false }"
 		},
 		"ChannelComponent": {
-			"filter": "Filters.byStrings(\"hasActiveThreads\",\"canHaveDot\", \"isFavoriteSuggestion\", \"mentionCount\")",
-			"options": "{ searchExports: true }"
+			"filter": "Filters.byProps(\"ChannelItemIcon\", \"default\" )",
+			"options": "{ searchExports: false }"
 		},
 		"ChannelActions": {
 			"filter": "Filters.byProps(\"actions\", \"fetchMessages\")",

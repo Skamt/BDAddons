@@ -12,8 +12,9 @@ const ModulesHandler = {
 	resolve(moduleName, type) {
 		const { filter, options } = DiscordModules.Modules[moduleName];
 		const accessor = type === "Patch" ? "getModuleAndKey" : "getModule";
+		const faileSafe = type === "Patch" ? " || {};" : "";
 		const isFilter = filter.includes("Filters.") ? "Filters," : "";
-		return `import { {{filter}}${accessor} } from "@Webpack"; export default ${accessor}(${filter},${options})`.replace("{{filter}}", isFilter);
+		return `import { {{filter}}${accessor} } from "@Webpack"; export default ${accessor}(${filter},${options})${faileSafe}`.replace("{{filter}}", isFilter);
 	}
 };
 

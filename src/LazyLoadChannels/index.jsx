@@ -13,7 +13,7 @@ import patchCreateChannel from "./patches/patchCreateChannel";
 import patchChannelContent from "./patches/patchChannelContent";
 import patchContextMenu from "./patches/patchContextMenu";
 
-import { COMPONENT_ID, EVENTS } from "./Constants";
+import {  EVENTS } from "./Constants";
 
 
 export default class LazyLoadChannels {
