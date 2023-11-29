@@ -1,7 +1,7 @@
 /**
  * @name ViewProfilePicture
  * @description Adds a button to the user popout and profile that allows you to view the Avatar and banner.
- * @version 1.2.4
+ * @version 1.2.5
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "ViewProfilePicture",
-		"version": "1.2.4",
+		"version": "1.2.5",
 		"description": "Adds a button to the user popout and profile that allows you to view the Avatar and banner.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture",
@@ -91,16 +91,13 @@ svg:has(path[d="M10 0C4.486 0 0 4.486 0 10C0 15.515 4.486 20 10 20C15.514 20 20 
 }
 
 /* Carousel Modal */
-.VPP-carousel:not(#idontthinkso) {
-	height: auto;
-	width: auto;
-	position: static;
-	box-shadow: none;
-	transform: none !important;
-	background: none;
+div:has(> .VPP-carousel) {
+	background: #0000;
+	width: 100vw;
+	box-shadow: none !important;
 }
 
-.VPP-carousel > div {
+.VPP-carousel {
 	position: static;
 }
 
@@ -244,9 +241,14 @@ function getModuleAndKey(filter, options) {
 	return { module, key };
 }
 
-const ImageModalVideoModal = getModule(Filters.byProps("ImageModal"), { searchExports: false });
+const UserStore = getModule(m => m._dispatchToken && m.getName() === "UserStore");
 
-const ModalRoot = getModule(Filters.byStrings("onAnimationEnd"), { searchExports: true });
+function isSelf(user) {
+	const currentUser = UserStore.getCurrentUser();
+	return user?.id === currentUser?.id;
+}
+
+const ImageModalVideoModal = getModule(Filters.byProps("ImageModal"), { searchExports: false });
 
 const RenderLinkComponent = getModule(m => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false });
 
@@ -291,15 +293,35 @@ class ErrorBoundary extends React.Component {
 	}
 }
 
+const { ModalRoot, ModalSize } = TheBigBoyBundle;
+const ImageModal = ImageModalVideoModal.ImageModal;
+
+const openModal = children => {
+	TheBigBoyBundle.openModal(props => {
+		return (
+			React.createElement(ErrorBoundary, {
+				id: "modal",
+				plugin: config.info.name,
+			}, React.createElement(ModalRoot, {
+				...props,
+				onClick: props.onClose,
+				size: ModalSize.DYNAMIC,
+			}, children))
+		);
+	});
+};
+
+const getImageModalComponent = (url, rest = { width: innerWidth * .6 }) => (
+	React.createElement(ImageModal, {
+		...rest,
+		src: url,
+		original: url,
+		renderLinkComponent: p => React.createElement(RenderLinkComponent, { ...p, }),
+	})
+);
+
 function copy(data) {
 	DiscordNative.clipboard.copy(data);
-}
-
-const UserStore = getModule(m => m._dispatchToken && m.getName() === "UserStore");
-
-function isSelf(user) {
-	const currentUser = UserStore.getCurrentUser();
-	return user?.id === currentUser?.id;
 }
 
 const Logger = {
@@ -338,7 +360,7 @@ const ProfileTypeEnum = getModule(Filters.byProps("POPOUT", "SETTINGS"), { searc
 	"CARD": 4
 };
 
-const UserBannerMask = getModuleAndKey(Filters.byStrings("getBannerURL", "showPremiumBadgeUpsell"), { searchExports: true });
+const UserBannerMask = getModuleAndKey(Filters.byStrings("getBannerURL", "showPremiumBadgeUpsell"), { searchExports: true }) || {};
 
 function showToast(content, type) {
 	UI.showToast(`[${config.info.name}] ${content}`, { type });
@@ -394,18 +416,6 @@ const ColorModalComponent = ({ color }) => (
 
 	)))
 );
-
-const ModalCarousel = getModule(Filters.byPrototypeFields("navigateTo", "preloadImage"), { searchExports: false });
-
-const DisplayCarouselComponent = ({ items }) => {
-	return (
-		React.createElement(ModalCarousel, {
-			startWith: 0,
-			className: "modalCarouselWrapper-YK1MX4",
-			items: items.map(item => ({ "component": item })),
-		})
-	);
-};
 
 function useSettings(key) {
 	const target = Settings.get(key);
@@ -489,29 +499,7 @@ function ShowOnHoverSwitch() {
 
 const SettingComponent = () => React.createElement(ShowOnHoverSwitch, null);
 
-const IMG_WIDTH = 4096;
-
-const getImageModalComponent = (url) => (
-	React.createElement(ImageModalVideoModal.ImageModal, {
-		height: IMG_WIDTH,
-		width: IMG_WIDTH,
-		src: url,
-		original: url,
-		renderLinkComponent: p => React.createElement(RenderLinkComponent, { ...p, }),
-	})
-);
-
-function openCarousel(items) {
-	TheBigBoyBundle.openModal(props => (
-		React.createElement(ErrorBoundary, {
-			id: "DisplayCarouselComponent",
-			plugin: config.info.name,
-		}, React.createElement(ModalRoot, {
-			...props,
-			className: "VPP-carousel carouselModal-1eUFoq zoomedCarouselModalRoot-beLNhM",
-		}, React.createElement(DisplayCarouselComponent, { items: items, })))
-	));
-}
+const ModalCarousel = getModule(Filters.byPrototypeFields("navigateTo", "preloadImage"), { searchExports: false });
 
 function getButtonClasses(user, profileType, banner) {
 	let res = "VPP-Button";
@@ -526,15 +514,21 @@ function getButtonClasses(user, profileType, banner) {
 
 class ViewProfilePicture {
 	clickHandler({ user, displayProfile }) {
-		const avatarURL = user.getAvatarURL(displayProfile.guildId, IMG_WIDTH, true);
+		const avatarURL = user.getAvatarURL(displayProfile.guildId, 4096, true);
 		const bannerURL = displayProfile.getBannerURL({});
 		const AvatarImageComponent = getImageModalComponent(avatarURL);
-		const BannerImageComponent = bannerURL ? getImageModalComponent(bannerURL) : React.createElement(ColorModalComponent, { color: displayProfile.accentColor, });
-		openCarousel([AvatarImageComponent, BannerImageComponent]);
+		const BannerImageComponent = bannerURL ? getImageModalComponent(bannerURL, { width: innerWidth * .8 }) : React.createElement(ColorModalComponent, { color: displayProfile.accentColor, });
+		openModal(
+			React.createElement(ModalCarousel, {
+				startWith: 0,
+				className: "VPP-carousel",
+				items: [AvatarImageComponent, BannerImageComponent].map(item => ({ "component": item })),
+			})
+		);
 	}
 
 	patchUserBannerMask() {
-		if (!UserBannerMask) return Logger.patch("patchUserBannerMask");
+		if (!UserBannerMask) return Logger.patch("UserBannerMask");
 
 		const { module, key } = UserBannerMask;
 
