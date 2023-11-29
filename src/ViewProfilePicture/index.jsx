@@ -18,8 +18,6 @@ import ViewProfilePictureButtonComponent from "./components/ViewProfilePictureBu
 import SettingComponent from "./components/SettingComponent";
 import ModalCarousel from "@Modules/ModalCarousel";
 
-const IMG_WIDTH = 4096;
-
 function getButtonClasses(user, profileType, banner) {
 	let res = "VPP-Button";
 	if (profileType === ProfileTypeEnum.MODAL) res += " VPP-profile";
@@ -33,10 +31,10 @@ function getButtonClasses(user, profileType, banner) {
 
 export default class ViewProfilePicture {
 	clickHandler({ user, displayProfile }) {
-		const avatarURL = user.getAvatarURL(displayProfile.guildId, IMG_WIDTH, true);
+		const avatarURL = user.getAvatarURL(displayProfile.guildId, 4096, true);
 		const bannerURL = displayProfile.getBannerURL({});
 		const AvatarImageComponent = getImageModalComponent(avatarURL);
-		const BannerImageComponent = bannerURL ? getImageModalComponent(bannerURL) : <ColorModalComponent color={displayProfile.accentColor} />;
+		const BannerImageComponent = bannerURL ? getImageModalComponent(bannerURL, { width: innerWidth * .8 }) : <ColorModalComponent color={displayProfile.accentColor} />;
 		openModal(
 			<ModalCarousel
 				startWith={0}

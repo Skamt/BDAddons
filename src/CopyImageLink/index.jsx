@@ -13,6 +13,7 @@ export default class CopyImageLink {
                 Patcher.after(ImageModalVideoModal, "ImageModal", (_, __, returnValue) => {
                     const children = getNestedProp(returnValue, "props.children");
                     const { href } = getNestedProp(returnValue, "props.children.2.props");
+                    if(!children || !href) return;
                     children.push(<CopyButtonComponent href={href} />);
                 });
             else Logger.patch("ImageModal");

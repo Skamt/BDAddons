@@ -24,7 +24,7 @@ export const openModal = children => {
 	});
 };
 
-export const getImageModalComponent = (url, rest = {width:4096, height:4096}) => (
+export const getImageModalComponent = (url, rest = { width: innerWidth * .6 }) => (
 	<ImageModal
 		{...rest}
 		src={url}
@@ -32,7 +32,6 @@ export const getImageModalComponent = (url, rest = {width:4096, height:4096}) =>
 		renderLinkComponent={p => <RenderLinkComponent {...p} />}
 	/>
 );
-
 
 export const promiseHandler = promise => promise.then(data => [, data]).catch(err => [err]);
 
