@@ -17,12 +17,10 @@ export default () => {
 			const [channelId, , , attachments] = args;
 			if (attachments && attachments.stickerIds && attachments.stickerIds.filter) {
 				const [stickerId] = attachments.stickerIds;
-				const stickerObj = handleSticker(channelId, stickerId);
-				if (!stickerObj.isSendable) {
+				const { isSendable, sticker, channel } = handleSticker(channelId, stickerId);
+				if (!isSendable) {
 					delete args[3].stickerIds;
-					setTimeout(() => {
-						sendMessageDirectly(stickerObj.channel, getStickerUrl(stickerId));
-					}, 0);
+					setTimeout(() => sendMessageDirectly(channel, getStickerUrl(sticker)));
 				}
 			}
 		});

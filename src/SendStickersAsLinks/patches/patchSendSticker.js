@@ -10,12 +10,12 @@ import STRINGS from "../Constants";
 
 import { isAnimatedSticker, sendStickerAsLink, handleSticker } from "../Utils";
 
-function handleUnsendableSticker(stickerObj) {
-	const { user, sticker, channel } = stickerObj;
+function handleUnsendableSticker({ user, sticker, channel }) {
+
 	if (isAnimatedSticker(sticker) && !Settings.get("shouldSendAnimatedStickers")) return Toast.info(STRINGS.disabledAnimatedStickersErrorMessage);
 	if (!hasEmbedPerms(channel, user) && !Settings.get("ignoreEmbedPermissions")) return Toast.info(STRINGS.missingEmbedPermissionsErrorMessage);
 
-	sendStickerAsLink(stickerObj);
+	sendStickerAsLink(sticker, channel);
 }
 
 export default () => {

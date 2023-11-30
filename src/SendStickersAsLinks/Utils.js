@@ -1,4 +1,4 @@
-import StickerTypeEnum from "@Enums/StickerTypeEnum";
+import { getModule, Filters } from "@Webpack";
 import StickerFormatEnum from "@Enums/StickerFormatEnum";
 import Settings from "@Utils/Settings";
 import UserStore from "@Stores/UserStore";
@@ -8,11 +8,12 @@ import { sendMessageDirectly, insertText } from "@Utils/Messages";
 import Toast from "@Utils/Toast";
 import StickerSendability from "@Modules/StickerSendability";
 
+const StickerMethods = getModule(Filters.byProps("getStickerAssetUrl"));
 const { StickerSendability: StickersSendabilityEnum, getStickerSendability } = StickerSendability;
 
-export function sendStickerAsLink({ channel, sticker }) {
-	const content = getStickerUrl(sticker.id);
-	
+export function sendStickerAsLink(sticker, channel) {
+	const content = getStickerUrl(sticker);
+
 	if (!Settings.get("sendDirectly")) return insertText(content);
 
 	try {
@@ -23,13 +24,12 @@ export function sendStickerAsLink({ channel, sticker }) {
 	}
 }
 
-export function getStickerUrl(stickerId) {
-	const stickerSize = Settings.get("stickerSize") || 160;
-	return `https://media.discordapp.net/stickers/${stickerId}?size=${stickerSize}&passthrough=false`;
+export function getStickerUrl(sticker){
+	return StickerMethods.getStickerAssetUrl(sticker, { size: Settings.get("stickerSize") || 160 });
 }
 
 export function isAnimatedSticker(sticker) {
-	return sticker["format_type"] === StickerFormatEnum.APNG;
+	return sticker["format_type"] !== StickerFormatEnum.PNG;
 }
 
 export function isStickerSendable(sticker, channel, user) {
@@ -37,7 +37,7 @@ export function isStickerSendable(sticker, channel, user) {
 }
 
 export function isLottieSticker(sticker) {
-	return sticker.type === StickerTypeEnum.STANDARD;
+	return sticker["format_type"] === StickerFormatEnum.LOTTIE;
 }
 
 export function handleSticker(channelId, stickerId) {
