@@ -1,4 +1,6 @@
 const chunkName = Object.keys(window).find(key => key.startsWith("webpackChunk"));
 const chunk = window[chunkName];
-export default chunk.push([[Symbol()], {}, r => r]);
+let webpackreq;
+chunk.push([[Symbol()], {}, r => webpackreq = r]);
 chunk.pop();
+export default webpackreq;
