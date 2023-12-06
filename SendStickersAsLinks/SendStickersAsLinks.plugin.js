@@ -268,11 +268,6 @@ const STRINGS = {
 	disabledAnimatedStickersErrorMessage: "You have disabled animated stickers in settings."
 };
 
-const StickerTypeEnum = getModule(Filters.byProps("GUILD", "STANDARD"), { searchExports: true }) || {
-	"STANDARD": 1,
-	"GUILD": 2
-};
-
 const StickerFormatEnum = getModule(Filters.byProps("APNG", "LOTTIE"), { searchExports: true }) || {
 	"PNG": 1,
 	"APNG": 2,
@@ -334,10 +329,11 @@ const insertText = (() => {
 	};
 })();
 
+const StickerMethods = getModule(Filters.byProps("getStickerAssetUrl"));
 const { StickerSendability: StickersSendabilityEnum, getStickerSendability } = StickerSendability;
 
-function sendStickerAsLink({ channel, sticker }) {
-	const content = getStickerUrl(sticker.id);
+function sendStickerAsLink(sticker, channel) {
+	const content = getStickerUrl(sticker);
 
 	if (!Settings.get("sendDirectly")) return insertText(content);
 
@@ -349,13 +345,12 @@ function sendStickerAsLink({ channel, sticker }) {
 	}
 }
 
-function getStickerUrl(stickerId) {
-	const stickerSize = Settings.get("stickerSize") || 160;
-	return `https://media.discordapp.net/stickers/${stickerId}?size=${stickerSize}&passthrough=false`;
+function getStickerUrl(sticker) {
+	return StickerMethods.getStickerAssetUrl(sticker, { size: Settings.get("stickerSize") || 160 });
 }
 
 function isAnimatedSticker(sticker) {
-	return sticker["format_type"] === StickerFormatEnum.APNG;
+	return sticker["format_type"] !== StickerFormatEnum.PNG;
 }
 
 function isStickerSendable(sticker, channel, user) {
@@ -363,7 +358,7 @@ function isStickerSendable(sticker, channel, user) {
 }
 
 function isLottieSticker(sticker) {
-	return sticker.type === StickerTypeEnum.STANDARD;
+	return sticker["format_type"] === StickerFormatEnum.LOTTIE;
 }
 
 function handleSticker(channelId, stickerId) {
@@ -378,12 +373,12 @@ function handleSticker(channelId, stickerId) {
 	};
 }
 
-function handleUnsendableSticker(stickerObj) {
-	const { user, sticker, channel } = stickerObj;
+function handleUnsendableSticker({ user, sticker, channel }) {
+
 	if (isAnimatedSticker(sticker) && !Settings.get("shouldSendAnimatedStickers")) return Toast.info(STRINGS.disabledAnimatedStickersErrorMessage);
 	if (!hasEmbedPerms(channel, user) && !Settings.get("ignoreEmbedPermissions")) return Toast.info(STRINGS.missingEmbedPermissionsErrorMessage);
 
-	sendStickerAsLink(stickerObj);
+	sendStickerAsLink(sticker, channel);
 }
 
 const patchSendSticker = () => {
@@ -400,7 +395,7 @@ const patchSendSticker = () => {
 	else Logger.patch("SendSticker");
 };
 
-const StickerModule = getModuleAndKey(Filters.byStrings("sticker", "withLoadingIndicator"), { searchExports: false });
+const StickerModule = getModuleAndKey(Filters.byStrings("sticker", "withLoadingIndicator"), { searchExports: false }) || {};
 
 const patchStickerComponent = () => {
 	const { module, key } = StickerModule;
@@ -428,16 +423,19 @@ const patchStickerAttachement = () => {
 			const [channelId, , , attachments] = args;
 			if (attachments && attachments.stickerIds && attachments.stickerIds.filter) {
 				const [stickerId] = attachments.stickerIds;
-				const stickerObj = handleSticker(channelId, stickerId);
-				if (!stickerObj.isSendable) {
+				const { isSendable, sticker, channel } = handleSticker(channelId, stickerId);
+				if (!isSendable) {
 					delete args[3].stickerIds;
-					setTimeout(() => {
-						sendMessageDirectly(stickerObj.channel, getStickerUrl(stickerId));
-					}, 0);
+					setTimeout(() => sendMessageDirectly(channel, getStickerUrl(sticker)));
 				}
 			}
 		});
 	else Logger.patch("StickerAttachement");
+};
+
+const StickerTypeEnum = getModule(Filters.byProps("GUILD", "STANDARD"), { searchExports: true }) || {
+	"STANDARD": 1,
+	"GUILD": 2
 };
 
 const patchStickerSuggestion = () => {

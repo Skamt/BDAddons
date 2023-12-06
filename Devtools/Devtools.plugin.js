@@ -52,11 +52,13 @@ function getModuleAndKey(filter, options) {
 
 const chunkName = Object.keys(window).find(key => key.startsWith("webpackChunk"));
 const chunk = window[chunkName];
-const webpackRequire = chunk.push([
+let webpackreq;
+chunk.push([
 	[Symbol()], {},
-	r => r
+	r => webpackreq = r
 ]);
 chunk.pop();
+const webpackRequire = webpackreq;
 
 const Sources = {
 	_sources: webpackRequire.m,

@@ -1,7 +1,7 @@
 /**
  * @name LazyLoadChannels
  * @description Lets you choose whether to load a channel
- * @version 1.2.5
+ * @version 1.2.6
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "LazyLoadChannels",
-		"version": "1.2.5",
+		"version": "1.2.6",
 		"description": "Lets you choose whether to load a channel",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels",
@@ -414,7 +414,7 @@ const patchCreateChannel = () => {
 	else Logger.patch("CreateChannel");
 };
 
-const ChannelContent = getModule(m => m.type && m.type.toString?.().includes("showingSpamBanner"), { searchExports: false });
+const ChannelContent = getModule(m => m.type && m.type.toString?.().includes("messageGroupSpacing"), { searchExports: false });
 
 class ErrorBoundary extends React.Component {
 	state = { hasError: false, error: null, info: null };
