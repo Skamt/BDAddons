@@ -89,7 +89,7 @@
 			"options": "{ searchExports: false }"
 		},
 		"ChannelContent": {
-			"filter": "m => m.type && m.type.toString?.().includes(\"showingSpamBanner\")",
+			"filter": "m => m.type && m.type.toString?.().includes(\"messageGroupSpacing\")",
 			"options": "{ searchExports: false }"
 		},
 		"ChannelComponent": {
