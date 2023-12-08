@@ -1,18 +1,14 @@
 import { Data, Patcher } from "@Api";
-import { getModule, Filters } from "@Webpack";
 import Logger from "@Utils/Logger";
+import EmojiStore from "@Stores/EmojiStore";
 
-const emojiHooks = getModule(Filters.byProps("useFavoriteEmojis"));
+const emojiContextConstructor = EmojiStore?.getDisambiguatedEmojiContext?.().constructor;
 
 export default () => {
-	if (emojiHooks)
-		Patcher.after(emojiHooks, "useFavoriteEmojis", (_, args, ret) => {
+	if (emojiContextConstructor)
+		Patcher.after(emojiContextConstructor.prototype, "rebuildFavoriteEmojisWithoutFetchingLatest", (_, args, ret) => {
 			const emojis = Data.load("emojis");
-			for (let i = emojis.length - 1; i >= 0; i--) {
-				const emoji = emojis[i];
-				if (ret.some(e => e.id === emoji.id)) continue;
-				ret.push(emoji);
-			}
+			ret[0] = [...ret[0],...emojis];
 		});
-	else Logger.patch("useFavoriteEmojis");
+	else Logger.patch("emojiContextConstructor");
 };

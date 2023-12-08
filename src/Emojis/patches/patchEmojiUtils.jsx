@@ -19,7 +19,7 @@ export default () => {
 
 			if (!children) return ret;
 			children.push(
-				<div style={{ display: "flex" }}>
+				<div className="emojiControls">
 					<Button
 						size={Button.Sizes.SMALL}
 						color={Button.Colors.GREEN}
