@@ -34,6 +34,13 @@ const css = `
 }
 .emojiItemDisabled-3VVnwp {
     filter: unset;
+}
+
+.emojiControls{
+	display: flex;
+	justify-content: flex-end;
+	gap:4px;
+	margin-top:5px;
 }`;
 
 const Api = new BdApi(config.info.name);
@@ -457,7 +464,7 @@ const patchEmojiUtils = () => {
 
 			if (!children) return ret;
 			children.push(
-				React.createElement('div', { style: { display: "flex" }, }, React.createElement(Button, {
+				React.createElement('div', { className: "emojiControls", }, React.createElement(Button, {
 						size: Button.Sizes.SMALL,
 						color: Button.Colors.GREEN,
 						onClick: () => {
@@ -498,19 +505,17 @@ const patchEmojiUtils = () => {
 	else Logger.patch("EmojiUtils");
 };
 
-const emojiHooks = getModule(Filters.byProps("useFavoriteEmojis"));
+const EmojiStore = getModule(m => m._dispatchToken && m.getName() === "EmojiStore");
+
+const emojiContextConstructor = EmojiStore?.getDisambiguatedEmojiContext?.().constructor;
 
 const patchFavoriteEmojis = () => {
-	if (emojiHooks)
-		Patcher.after(emojiHooks, "useFavoriteEmojis", (_, args, ret) => {
+	if (emojiContextConstructor)
+		Patcher.after(emojiContextConstructor.prototype, "rebuildFavoriteEmojisWithoutFetchingLatest", (_, args, ret) => {
 			const emojis = Data.load("emojis");
-			for (let i = emojis.length - 1; i >= 0; i--) {
-				const emoji = emojis[i];
-				if (ret.some(e => e.id === emoji.id)) continue;
-				ret.push(emoji);
-			}
+			ret[0] = [...ret[0], ...emojis];
 		});
-	else Logger.patch("useFavoriteEmojis");
+	else Logger.patch("emojiContextConstructor");
 };
 
 class Emojis {
