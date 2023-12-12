@@ -12,25 +12,20 @@ import TrackTimeLine from "./TrackTimeLine";
 
 export default ({ embed }) => {
 	const [{ deviceState: isActive, playerState }, setState] = React.useState(SpotifyWrapper.getSpotifyState());
+
 	const { thumbnail, rawTitle, rawDescription, url } = embed;
 	const [type, id] = parseSpotifyUrl(url);
-	const { duration, isPlaying, progress } = playerState || {};
-	const isThis = playerState?.track?.id === id && progress !== 0;
+	const isThis = playerState?.track?.id === id;
 
+	console.log(rawTitle);
 	React.useEffect(() => {
 		return SpotifyWrapper.on(() => {
 			const newState = SpotifyWrapper.getSpotifyState();
-			if (newState.deviceState === isActive && newState?.playerState?.isPlaying && newState?.playerState?.track?.id !== id) return;
-			setState(newState);
+			if (newState.deviceState !== isActive) return setState(newState);
+			if (newState?.playerState?.track?.id === id && !isThis) return setState(newState);
+			if (newState?.playerState?.track?.id !== id && isThis) return setState(newState);
 		});
-	}, []);
-
-	const thumbnailClickHandler = () => {
-		let { proxyURL, url, width, height } = thumbnail;
-		width = width > 650 ? 650 : width;
-		height = height > 650 ? 650 : height;
-		openModal(getImageModalComponent(proxyURL || url, { width, height }));
-	};
+	}, [isActive, playerState]);
 
 	const listenBtn = type !== "show" && (
 		<Listen
@@ -53,7 +48,7 @@ export default ({ embed }) => {
 			className="spotifyEmbed-Container"
 			style={{ "--thumbnail": `url(${thumbnail.proxyURL || thumbnail.url})` }}>
 			<div
-				onClick={thumbnailClickHandler}
+				onClick={() => thumbnailClickHandler(thumbnail)}
 				className="spotifyEmbed-thumbnail"></div>
 
 			<h2 className="spotifyEmbed-title">{rawTitle}</h2>
@@ -62,13 +57,20 @@ export default ({ embed }) => {
 			{type && id && (
 				<div className="spotifyEmbed-controls">
 					{!isThis && isActive && [listenBtn, queueBtn]}
-					{isThis && <TrackTimeLine {...{ duration, isPlaying, progress }} />}
 					<Copy url={url} />
+					{isThis && "Playing..."}
 				</div>
 			)}
 			<SpotifyLogoBtn url={url} />
 		</div>
 	);
+};
+
+const thumbnailClickHandler = thumbnail => {
+	let { proxyURL, url, width, height } = thumbnail;
+	width = width > 650 ? 650 : width;
+	height = height > 650 ? 650 : height;
+	openModal(getImageModalComponent(proxyURL || url, { width, height }));
 };
 
 function SpotifyLogoBtn({ url }) {
@@ -94,6 +96,7 @@ function Copy({ url }) {
 		</Tooltip>
 	);
 }
+
 function Listen({ type, id, embed }) {
 	return (
 		<Tooltip note={`Play ${type}`}>
