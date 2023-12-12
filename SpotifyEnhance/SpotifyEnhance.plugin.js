@@ -19,7 +19,7 @@ const config = {
 		}]
 	},
 	"settings": {
-		"spotifyEmbed": "keep"
+		"spotifyEmbed": "REPLACE"
 	}
 }
 
@@ -1485,9 +1485,9 @@ const SpotifyEmbed = ({ embed }) => {
 	React.useEffect(() => {
 		return SpotifyWrapper.on(() => {
 			const newState = SpotifyWrapper.getSpotifyState();
-			if (newState.deviceState !== isActive) setState(newState);
-			else if (newState?.playerState?.track?.id === id && !isThis) setState(newState);
-			else if (newState?.playerState?.track?.id !== id && isThis) setState(newState);
+			if (newState.deviceState !== isActive) return setState(newState);
+			if (newState?.playerState?.track?.id === id && !isThis) return setState(newState);
+			if (newState?.playerState?.track?.id !== id && isThis) return setState(newState);
 		});
 	}, [isActive, playerState]);
 
@@ -1519,7 +1519,7 @@ const SpotifyEmbed = ({ embed }) => {
 			, React.createElement('h2', { className: "spotifyEmbed-title", }, rawTitle), React.createElement('p', { className: "spotifyEmbed-description", }, rawDescription)
 
 			, type && id && (
-				React.createElement('div', { className: "spotifyEmbed-controls", }, !isThis && isActive && [listenBtn, queueBtn], isThis && "Playing...", React.createElement(Copy, { url: url, }))
+				React.createElement('div', { className: "spotifyEmbed-controls", }, !isThis && isActive && [listenBtn, queueBtn], React.createElement(Copy, { url: url, }), isThis && "Playing...")
 			), React.createElement(SpotifyLogoBtn, { url: url, })
 		)
 	);
