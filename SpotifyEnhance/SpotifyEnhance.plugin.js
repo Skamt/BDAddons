@@ -579,7 +579,7 @@ const openModal = children => {
 	});
 };
 
-const getImageModalComponent = (url, rest = { width: 4096, height: 4096 }) => (
+const getImageModalComponent = (url, rest = { width: innerWidth * .6 }) => (
 	React.createElement(ImageModal, {
 		...rest,
 		src: url,
@@ -1373,7 +1373,7 @@ function AddToQueueIcon() {
 			fill: "currentColor",
 			width: "24",
 			height: "24",
-			viewBox: "0 0 24 24",
+			viewBox: "-1 -1 18 18",
 		}, React.createElement('path', { d: "M16 15H2v-1.5h14V15zm0-4.5H2V9h14v1.5zm-8.034-6A5.484 5.484 0 0 1 7.187 6H13.5a2.5 2.5 0 0 0 0-5H7.966c.159.474.255.978.278 1.5H13.5a1 1 0 1 1 0 2H7.966zM2 2V0h1.5v2h2v1.5h-2v2H2v-2H0V2h2z", }))
 	);
 }
@@ -1476,25 +1476,20 @@ const TrackTimeLine = ({ duration, isPlaying, progress }) => {
 
 const SpotifyEmbed = ({ embed }) => {
 	const [{ deviceState: isActive, playerState }, setState] = React.useState(SpotifyWrapper.getSpotifyState());
+
 	const { thumbnail, rawTitle, rawDescription, url } = embed;
 	const [type, id] = parseSpotifyUrl(url);
-	const { duration, isPlaying, progress } = playerState || {};
-	const isThis = playerState?.track?.id === id && progress !== 0;
+	const isThis = playerState?.track?.id === id;
 
+	console.log(rawTitle);
 	React.useEffect(() => {
 		return SpotifyWrapper.on(() => {
 			const newState = SpotifyWrapper.getSpotifyState();
-			if (newState.deviceState === isActive && newState?.playerState?.isPlaying && newState?.playerState?.track?.id !== id) return;
-			setState(newState);
+			if (newState.deviceState !== isActive) setState(newState);
+			else if (newState?.playerState?.track?.id === id && !isThis) setState(newState);
+			else if (newState?.playerState?.track?.id !== id && isThis) setState(newState);
 		});
-	}, []);
-
-	const thumbnailClickHandler = () => {
-		let { proxyURL, url, width, height } = thumbnail;
-		width = width > 650 ? 650 : width;
-		height = height > 650 ? 650 : height;
-		openModal(getImageModalComponent(proxyURL || url, { width, height }));
-	};
+	}, [isActive, playerState]);
 
 	const listenBtn = type !== "show" && (
 		React.createElement(Listen, {
@@ -1517,17 +1512,24 @@ const SpotifyEmbed = ({ embed }) => {
 				className: "spotifyEmbed-Container",
 				style: { "--thumbnail": `url(${thumbnail.proxyURL || thumbnail.url})` },
 			}, React.createElement('div', {
-				onClick: thumbnailClickHandler,
+				onClick: () => thumbnailClickHandler(thumbnail),
 				className: "spotifyEmbed-thumbnail",
 			})
 
 			, React.createElement('h2', { className: "spotifyEmbed-title", }, rawTitle), React.createElement('p', { className: "spotifyEmbed-description", }, rawDescription)
 
 			, type && id && (
-				React.createElement('div', { className: "spotifyEmbed-controls", }, !isThis && isActive && [listenBtn, queueBtn], isThis && React.createElement(TrackTimeLine, { ...{ duration, isPlaying, progress }, }), React.createElement(Copy, { url: url, }))
+				React.createElement('div', { className: "spotifyEmbed-controls", }, !isThis && isActive && [listenBtn, queueBtn], isThis && "Playing...", React.createElement(Copy, { url: url, }))
 			), React.createElement(SpotifyLogoBtn, { url: url, })
 		)
 	);
+};
+
+const thumbnailClickHandler = thumbnail => {
+	let { proxyURL, url, width, height } = thumbnail;
+	width = width > 650 ? 650 : width;
+	height = height > 650 ? 650 : height;
+	openModal(getImageModalComponent(proxyURL || url, { width, height }));
 };
 
 function SpotifyLogoBtn({ url }) {
@@ -1715,7 +1717,7 @@ const patchSpotifyActivity = () => {
 	else Logger.patch("SpotifyActivityComponent");
 };
 
-const MessageHeader = getModuleAndKey(Filters.byStrings("userOverride", "withMentionPrefix"), { searchExports: false });
+const MessageHeader = getModuleAndKey(Filters.byStrings("userOverride", "withMentionPrefix"), { searchExports: false }) || {};
 
 const PresenceStore = getModule(m => m._dispatchToken && m.getName() === "PresenceStore");
 
