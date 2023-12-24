@@ -17,6 +17,10 @@ const config = {
 		"authors": [{
 			"name": "Skamt"
 		}]
+	},
+	"settings": {
+		"previewState": false,
+		"previewDefaultState": false
 	}
 }
 
@@ -41,37 +45,6 @@ const css = `
 	box-sizing:border-box;
 }`;
 
-const Settings = {
-	settings: {},
-	get(key) {
-		return this.settings[key];
-	},
-	set(key, val) {
-		return this.settings[key] = val;
-	},
-	update(settings) {
-		this.init(settings);
-	},
-	init(settings) {
-		this.settings = settings;
-	}
-};
-
-const Logger = {
-	error(...args) {
-		this.p(console.error, ...args);
-	},
-	patch(patchId) {
-		console.error(`%c[${config.info.name}] %c Error at %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
-	},
-	log(...args) {
-		this.p(console.error, ...args);
-	},
-	p(target, ...args) {
-		target(`%c[${config.info.name}]`, "color: #3a71c1;font-weight: bold;", ...args);
-	}
-};
-
 const Api = new BdApi(config.info.name);
 const DOM = Api.DOM;
 const Data = Api.Data;
@@ -81,9 +54,84 @@ const Patcher = Api.Patcher;
 const getModule = Api.Webpack.getModule;
 const Filters = Api.Webpack.Filters;
 
+class ChangeEmitter {
+	constructor() {
+		this.listeners = new Set();
+	}
+
+	isInValid(handler) {
+		return !handler || typeof handler !== "function";
+	}
+
+	on(handler) {
+		if (this.isInValid(handler)) return;
+		this.listeners.add(handler);
+		return () => this.off(handler);
+	}
+
+	off(handler) {
+		if (this.isInValid(handler)) return;
+		this.listeners.delete(handler);
+	}
+
+	emit(payload) {
+		for (const listener of this.listeners) {
+			try {
+				listener(payload);
+			} catch (err) {
+				console.error(`Could not run listener`, err);
+			}
+		}
+	}
+}
+
+const Settings = new(class Settings extends ChangeEmitter {
+	constructor() {
+		super();
+	}
+
+	init(defaultSettings) {
+		this.settings = Data.load("settings") || defaultSettings;
+	}
+
+	get(key) {
+		return this.settings[key];
+	}
+
+	set(key, val) {
+		this.settings[key] = val;
+		this.commit();
+	}
+
+	setMultiple(newSettings) {
+		this.settings = Object.assign(this.settings, newSettings);
+		this.commit();
+	}
+
+	commit() {
+		Data.save("settings", this.settings);
+		this.emit();
+	}
+})();
+
+const Logger = {
+	error(...args) {
+		this.p(console.error, ...args);
+	},
+	patch(patchId) {
+		console.error(`%c[${config.info.name}] %c Error at %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
+	},
+	log(...args) {
+		this.p(console.log, ...args);
+	},
+	p(target, ...args) {
+		target(`%c[${config.info.name}]`, "color: #3a71c1;font-weight: bold;", ...args);
+	}
+};
+
 function getModuleAndKey(filter, options) {
 	let module;
-	const target = getModule((entry, m) => filter(entry) ? (module = m) : false, options);
+	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
 	module = module?.exports;
 	if (!module) return undefined;
 	const key = Object.keys(module).find(k => module[k] === target);
@@ -91,13 +139,52 @@ function getModuleAndKey(filter, options) {
 	return { module, key };
 }
 
+const TheBigBoyBundle = getModule(Filters.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
+
+class ErrorBoundary extends React.Component {
+	state = { hasError: false, error: null, info: null };
+
+	componentDidCatch(error, info) {
+		this.setState({ error, info, hasError: true });
+		const errorMessage = `\n\t${error?.message || ""}${(info?.componentStack || "").split("\n").slice(0, 20).join("\n")}`;
+		console.error(`%c[${this.props.plugin}] %cthrew an exception at %c[${this.props.id}]\n`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
+	}
+
+	renderErrorBoundary() {
+		return (
+			React.createElement('div', { style: { background: "#292c2c", padding: "20px", borderRadius: "10px" }, }, React.createElement('b', { style: { color: "#e0e1e5" }, }, "An error has occured while rendering ", React.createElement('span', { style: { color: "orange" }, }, this.props.id)))
+		);
+	}
+
+	renderFallback() {
+		if (React.isValidElement(this.props.fallback)) {
+			if (this.props.passMetaProps)
+				this.props.fallback.props = {
+					id: this.props.id,
+					plugin: this.props.plugin,
+					...this.props.fallback.props
+				};
+			return this.props.fallback;
+		}
+		return (
+			React.createElement(this.props.fallback, {
+				id: this.props.id,
+				plugin: this.props.plugin,
+			})
+		);
+	}
+
+	render() {
+		if (!this.state.hasError) return this.props.children;
+		return this.props.fallback ? this.renderFallback() : this.renderErrorBoundary();
+	}
+}
+
 const nop = () => {};
 
-const ExpressionPickerInspector = getModuleAndKey(Filters.byStrings("EMOJI_IS_FAVORITE_ARIA_LABEL"), { searchExports: false });
+const ExpressionPickerInspector = getModuleAndKey(Filters.byStrings("EMOJI_IS_FAVORITE_ARIA_LABEL"), { searchExports: false }) || {};
 
-const CloseExpressionPicker = getModuleAndKey(Filters.byStrings("activeView:null,activeViewType:null"), { searchExports: true });
-
-const TheBigBoyBundle = getModule(Filters.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
+const CloseExpressionPicker = getModuleAndKey(Filters.byStrings("activeView:null,activeViewType:null"), { searchExports: true }) || {};
 
 const PREVIEW_SIZE = 300;
 const PREVIEW_UNAVAILABLE = `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="rgb(202 204 206)" d="M12 2C6.477 2 2 6.477 2 12C2 17.522 6.477 22 12 22C17.523 22 22 17.522 22 12C22 6.477 17.523 2 12 2ZM8 6C9.104 6 10 6.896 10 8C10 9.105 9.104 10 8 10C6.896 10 6 9.105 6 8C6 6.896 6.896 6 8 6ZM18 14C18 16.617 15.14 19 12 19C8.86 19 6 16.617 6 14V13H18V14ZM16 10C14.896 10 14 9.105 14 8C14 6.896 14.896 6 16 6C17.104 6 18 6.896 18 8C18 9.105 17.104 10 16 10Z"></path></svg>`;
@@ -133,20 +220,6 @@ const PreviewComponent = ({ target, defaultState, setPreviewState, previewCompon
 		}, () => target)
 	);
 };
-
-class ErrorBoundary extends React.Component {
-	state = { hasError: false, error: null, info: null };
-
-	componentDidCatch(error, info) {
-		this.setState({ error, info, hasError: true });
-		const errorMessage = `\n\t${error?.message || ""}${(info?.componentStack || "").split("\n").slice(0, 20).join("\n")}`;
-		console.error(`%c[${this.props.plugin}] %cthrew an exception at %c[${this.props.id}]\n`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
-	}
-
-	render() {
-		return this.state.hasError ? (this.props.fallback || React.createElement('b', { style: { color: "red" }, }, "Error occured while rendering")) : this.props.children;
-	}
-}
 
 function getMediaInfo({ props, type }) {
 	if (props.sticker) return [type, props];
@@ -188,7 +261,7 @@ const patchPickerInspector = () => {
 				}))
 			);
 		});
-	else Logger.patch("patchUserBannerMask");
+	else Logger.patch("UserBannerMask");
 };
 
 const patchCloseExpressionPicker = () => {
@@ -200,7 +273,7 @@ const patchCloseExpressionPicker = () => {
 		Patcher.after(module, key, () => {
 			Settings.set("previewState", Settings.get("previewDefaultState"));
 		});
-	else Logger.patch("patchCloseExpressionPicker");
+	else Logger.patch("CloseExpressionPicker");
 };
 
 const Switch = TheBigBoyBundle.FormSwitch ||
@@ -230,8 +303,7 @@ const SettingComponent = props => {
 
 class StickerEmojiPreview {
 	constructor() {
-		this.settings = Data.load("settings") || { previewState: false, previewDefaultState: false };
-		Settings.init(this.settings);
+		Settings.init(config.settings);
 	}
 
 	start() {
@@ -253,13 +325,12 @@ class StickerEmojiPreview {
 		return (
 			React.createElement(SettingComponent, {
 				description: "Preview open by default.",
-				value: this.settings.previewDefaultState,
-				onChange: e => {
-					this.settings.previewDefaultState = e;
-					this.settings.previewState = e;
-					Settings.update(this.settings);
-					Data.save("settings", this.settings);
-				},
+				value: Settings.get("previewDefaultState"),
+				onChange: e =>
+					Settings.setMultiple({
+						previewDefaultState: e,
+						previewState: e
+					}),
 			})
 		);
 	}

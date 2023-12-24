@@ -118,9 +118,10 @@ class CopyImageLink {
 				Patcher.after(ImageModalVideoModal, "ImageModal", (_, __, returnValue) => {
 					const children = getNestedProp(returnValue, "props.children");
 					const { href } = getNestedProp(returnValue, "props.children.2.props");
+					if (!children || !href) return;
 					children.push(React.createElement(CopyButtonComponent, { href: href, }));
 				});
-			else Logger.patch("patchImageModal");
+			else Logger.patch("ImageModal");
 		} catch (e) {
 			Logger.error(e);
 		}

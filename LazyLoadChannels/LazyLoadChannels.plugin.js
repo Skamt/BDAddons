@@ -1,7 +1,7 @@
 /**
  * @name LazyLoadChannels
  * @description Lets you choose whether to load a channel
- * @version 1.2.6
+ * @version 1.2.7
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "LazyLoadChannels",
-		"version": "1.2.6",
+		"version": "1.2.7",
 		"description": "Lets you choose whether to load a channel",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels",
@@ -658,6 +658,16 @@ const ChannelTypeEnum = getModule(Filters.byProps("GUILD_TEXT", "DM"), { searchE
 
 const patchContextMenu = () => {
 	return [
+		ContextMenu.patch("user-context", (retVal, { channel, targetIsUser }) => {
+			if (targetIsUser) return;
+			if (!Settings.get("lazyLoadDMs")) return;
+			retVal.props.children.splice(1, 0, ContextMenu.buildItem({
+				type: "toggle",
+				label: "Auto load",
+				active: ChannelsStateManager.getChannelstate(channel.guild_id, channel.id),
+				action: () => ChannelsStateManager.toggelChannel(channel.guild_id, channel.id)
+			}));
+		}),
 		ContextMenu.patch("guild-context", (retVal, { guild }) => {
 			if (guild)
 				retVal.props.children.splice(1, 0, ContextMenu.buildItem({
