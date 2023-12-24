@@ -10,14 +10,12 @@ import { sendMessageDirectly, insertText } from "@Utils/Messages";
 const Utils = {
 	copySpotifyLink(link) {
 		if (!link) return Toast.error("Could not resolve url");
-		link = sanitizeSpotifyLink(link);
-		copy(link);
+		copy(sanitizeSpotifyLink(link));
 		Toast.success("Link copied!");
 	},
 	openSpotifyLink(link) {
 		if (!link) return Toast.error("Could not resolve url");
-		link = sanitizeSpotifyLink(link);
-		window.open(link, "_blank");
+		window.open(sanitizeSpotifyLink(link), "_blank");
 	},
 	share(link) {
 		if (!link) return Toast.error("Could not resolve url");
