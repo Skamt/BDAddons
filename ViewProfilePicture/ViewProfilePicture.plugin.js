@@ -1,7 +1,7 @@
 /**
  * @name ViewProfilePicture
  * @description Adds a button to the user popout and profile that allows you to view the Avatar and banner.
- * @version 1.2.5
+ * @version 1.2.6
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "ViewProfilePicture",
-		"version": "1.2.5",
+		"version": "1.2.6",
 		"description": "Adds a button to the user popout and profile that allows you to view the Avatar and banner.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture",
@@ -461,10 +461,11 @@ function ImageIcon() {
 
 const ViewProfilePictureButtonComponent = props => {
 	const showOnHover = useSettings("showOnHover");
+	if (showOnHover) props.className += " VPP-hover";
 	return (
 		React.createElement(Tooltip$1, { note: "View profile picture", }, React.createElement('div', {
 			...props,
-			className: `${props.className} ${showOnHover && "VPP-hover"}`,
+			className: props.className,
 		}, React.createElement(ImageIcon, null)))
 	);
 };
@@ -501,23 +502,24 @@ const SettingComponent = () => React.createElement(ShowOnHoverSwitch, null);
 
 const ModalCarousel = getModule(Filters.byPrototypeFields("navigateTo", "preloadImage"), { searchExports: false });
 
-function getButtonClasses(user, profileType, banner) {
+function getButtonClasses({ user, profileType }, isNotNitro, banner) {
 	let res = "VPP-Button";
 	if (profileType === ProfileTypeEnum.MODAL) res += " VPP-profile";
+
 	if (isSelf(user)) res += " VPP-self";
 	else {
-		if (banner) res += " VPP-left";
+		if (banner && isNotNitro) res += " VPP-left";
 		else res += " VPP-right";
 	}
 	return res;
 }
 
 class ViewProfilePicture {
-	clickHandler({ user, displayProfile }) {
+	clickHandler({ user, displayProfile }, { backgroundColor, backgroundImage }) {
 		const avatarURL = user.getAvatarURL(displayProfile.guildId, 4096, true);
-		const bannerURL = displayProfile.getBannerURL({});
 		const AvatarImageComponent = getImageModalComponent(avatarURL);
-		const BannerImageComponent = bannerURL ? getImageModalComponent(bannerURL, { width: innerWidth * .8 }) : React.createElement(ColorModalComponent, { color: displayProfile.accentColor, });
+		const BannerImageComponent = backgroundImage ? getImageModalComponent(backgroundImage, { width: window.innerWidth * 0.8 }) : React.createElement(ColorModalComponent, { color: backgroundColor, });
+
 		openModal(
 			React.createElement(ModalCarousel, {
 				startWith: 0,
@@ -532,33 +534,28 @@ class ViewProfilePicture {
 
 		const { module, key } = UserBannerMask;
 
-		Patcher.after(module, key, (_, [props], returnValue) => {
-			const { user, isHovering, profileType } = props;
+		Patcher.after(module, key, (_, [props], el) => {
+			if (props.profileType === ProfileTypeEnum.SETTINGS) return;
 
-			if (profileType === ProfileTypeEnum.SETTINGS) return;
-
-			const bannerElement = returnValue.props.children.props;
+			const bannerElement = el.props.children.props;
 
 			bannerElement.className += " VPP-container";
-
 			const bannerObject = bannerElement.style;
 			const children = bannerElement.children;
 
-			const buttonClasses = getButtonClasses(user, profileType, bannerObject?.backgroundImage);
+			const buttonClasses = getButtonClasses(props, children[0], bannerObject?.backgroundImage);
 
-			if (Array.isArray(children) && bannerObject) {
-				children.push(
-					React.createElement(ErrorBoundary, {
-						id: "ViewProfilePictureButtonComponent",
-						plugin: config.info.name,
-						fallback: React.createElement(ErrorIcon, { className: buttonClasses, }),
-					}, React.createElement(ViewProfilePictureButtonComponent, {
-						className: buttonClasses,
-						isHovering: isHovering,
-						onClick: () => this.clickHandler(props),
-					}))
-				);
-			}
+			children.push(
+				React.createElement(ErrorBoundary, {
+					id: "ViewProfilePictureButtonComponent",
+					plugin: config.info.name,
+					fallback: React.createElement(ErrorIcon, { className: buttonClasses, }),
+				}, React.createElement(ViewProfilePictureButtonComponent, {
+					className: buttonClasses,
+					isHovering: props.isHovering,
+					onClick: () => this.clickHandler(props, bannerObject),
+				}))
+			);
 		});
 	}
 
