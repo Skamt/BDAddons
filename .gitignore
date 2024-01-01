@@ -6,3 +6,4 @@ test.js
 ~misc
 ~test
 **/PermissionsOverride/**
+.env

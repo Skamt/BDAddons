@@ -18,23 +18,24 @@ import ViewProfilePictureButtonComponent from "./components/ViewProfilePictureBu
 import SettingComponent from "./components/SettingComponent";
 import ModalCarousel from "@Modules/ModalCarousel";
 
-function getButtonClasses(user, profileType, banner) {
+function getButtonClasses({ user, profileType }, isNotNitro, banner) {
 	let res = "VPP-Button";
 	if (profileType === ProfileTypeEnum.MODAL) res += " VPP-profile";
+
 	if (isSelf(user)) res += " VPP-self";
 	else {
-		if (banner) res += " VPP-left";
+		if (banner && isNotNitro) res += " VPP-left";
 		else res += " VPP-right";
 	}
 	return res;
 }
 
 export default class ViewProfilePicture {
-	clickHandler({ user, displayProfile }) {
+	clickHandler({ user, displayProfile }, { backgroundColor, backgroundImage }) {
 		const avatarURL = user.getAvatarURL(displayProfile.guildId, 4096, true);
-		const bannerURL = displayProfile.getBannerURL({});
 		const AvatarImageComponent = getImageModalComponent(avatarURL);
-		const BannerImageComponent = bannerURL ? getImageModalComponent(bannerURL, { width: innerWidth * .8 }) : <ColorModalComponent color={displayProfile.accentColor} />;
+		const BannerImageComponent = backgroundImage ? getImageModalComponent(backgroundImage, { width: window.innerWidth * 0.8 }) : <ColorModalComponent color={backgroundColor} />;
+
 		openModal(
 			<ModalCarousel
 				startWith={0}
@@ -49,34 +50,29 @@ export default class ViewProfilePicture {
 
 		const { module, key } = UserBannerMask;
 
-		Patcher.after(module, key, (_, [props], returnValue) => {
-			const { user, isHovering, profileType } = props;
+		Patcher.after(module, key, (_, [props], el) => {
+			if (props.profileType === ProfileTypeEnum.SETTINGS) return;
 
-			if (profileType === ProfileTypeEnum.SETTINGS) return;
-
-			const bannerElement = returnValue.props.children.props;
+			const bannerElement = el.props.children.props;
 
 			bannerElement.className += " VPP-container";
-
 			const bannerObject = bannerElement.style;
 			const children = bannerElement.children;
 
-			const buttonClasses = getButtonClasses(user, profileType, bannerObject?.backgroundImage);
+			const buttonClasses = getButtonClasses(props, children[0], bannerObject?.backgroundImage);
 
-			if (Array.isArray(children) && bannerObject) {
-				children.push(
-					<ErrorBoundary
-						id="ViewProfilePictureButtonComponent"
-						plugin={config.info.name}
-						fallback={<ErrorIcon className={buttonClasses} />}>
-						<ViewProfilePictureButtonComponent
-							className={buttonClasses}
-							isHovering={isHovering}
-							onClick={() => this.clickHandler(props)}
-						/>
-					</ErrorBoundary>
-				);
-			}
+			children.push(
+				<ErrorBoundary
+					id="ViewProfilePictureButtonComponent"
+					plugin={config.info.name}
+					fallback={<ErrorIcon className={buttonClasses} />}>
+					<ViewProfilePictureButtonComponent
+						className={buttonClasses}
+						isHovering={props.isHovering}
+						onClick={() => this.clickHandler(props, bannerObject)}
+					/>
+				</ErrorBoundary>
+			);
 		});
 	}
 
