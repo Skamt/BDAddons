@@ -290,7 +290,7 @@ div:has(> .spotify-player-banner-modal) {
 .spotify-player-controls-volume-slider-wrapper {
 	height:120px;
 	width:20px;
-	background: #fff;
+	background: var(--background-floating);
 	padding:5px 1px;
 	border-radius:99px;
 }
