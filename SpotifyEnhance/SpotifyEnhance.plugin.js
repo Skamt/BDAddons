@@ -314,35 +314,21 @@ div:has(> .spotify-player-banner-modal) {
 }
 
 .spotify-player-controls-volume-slider-wrapper {
-	box-sizing: border-box;
-	background: #000;
-	width: 100px;
-	height: 22px;
-	padding: 2px 5px;
-	border-radius: 999px;
+	height:120px;
+	width:20px;
+	background: #fff;
+	padding:5px 1px;
+	border-radius:99px;
 }
 
 .spotify-player-controls-volume-slider {
-	width: 100%;
-	box-sizing: border-box;
-	position: relative;
-	top: -10px;
+	margin:0;
+	width:100%;
+	height:100%;
+	accent-color: var(--spotify-green);
+	appearance: slider-vertical;
 }
 
-.spotify-player-controls-volume-slider-wrapper .spotify-player-controls-volume-slider-grabber {
-	width: 10px;
-	height: 10px;
-	margin-top: 3px;
-	cursor: pointer;
-}
-
-.spotify-player-controls-volume-slider-wrapper .spotify-player-controls-volume-slider-bar {
-	height: 4px;
-}
-
-.spotify-player-controls-volume-slider-wrapper .spotify-player-controls-volume-slider-bar > div {
-	background: var(--spotify-green);
-}
 `;
 
 const Logger = {
@@ -542,10 +528,25 @@ function parseSpotifyUrl(url) {
 
 function getFluxContainer() {
 	const el = document.querySelector(`.${activityPanelClasses.panels}`);
-	if (!el) return;
-	const instance = getInternalInstance(el);
-	if (!instance) return;
-	return instance.child;
+	if (el) {
+		const instance = getInternalInstance(el);
+		if (instance) return Promise.resolve(instance.child);
+	}
+	return new Promise(resolve => {
+		const interval = setInterval(() => {
+			const el = document.querySelector(`.${activityPanelClasses.panels}`);
+			if (!el) return;
+			const instance = getInternalInstance(el);
+			if (!instance) return;
+			resolve(instance.child);
+			clearInterval(interval);
+		}, 500);
+
+		setTimeout(() => {
+			resolve(null);
+			clearInterval(interval);
+		}, 20 * 1000);
+	});
 }
 
 function sanitizeSpotifyLink(link) {
@@ -619,28 +620,20 @@ async function responseToJson(response) {
 	if (!error) return data;
 	return {
 		invalidJson: true,
-		data: await failsafeResponse.text()
+		data: failsafeResponse
 	};
 }
 
 async function wrappedFetch(url, options) {
 	const response = await fetch(url, options);
 
-	if (!response.ok)
-		switch (response.status) {
-			case 400:
-			case 401:
-			case 403:
-			case 404:
-			case 429:
-			case 503:
-				const data = await responseToJson(response);
-				throw data.invalidJson ? data.data : data.error;
-			default:
-				throw response;
-		}
+	if (!response.ok) {
+		const data = await responseToJson(response.clone());
+		throw data.invalidJson ? response : data.error;
+	}
 
-	if (response.status === 204) return;
+	if (response.status === 204) return true;
+
 	return await responseToJson(response);
 }
 
@@ -732,87 +725,44 @@ class SpotifyClientAPI {
 	}
 
 	next() {
-		return this.getRequestBuilder()
-			.setPath("/me/player/next")
-			.setMethod("POST")
-			.build()
-			.run();
+		return this.getRequestBuilder().setPath("/me/player/next").setMethod("POST").build().run();
 	}
 
 	previous() {
-		return this.getRequestBuilder()
-			.setPath("/me/player/previous")
-			.setMethod("POST")
-			.build()
-			.run();
+		return this.getRequestBuilder().setPath("/me/player/previous").setMethod("POST").build().run();
 	}
 
 	play() {
-		return this.getRequestBuilder()
-			.setPath("/me/player/play")
-			.setMethod("PUT")
-			.build()
-			.run();
+		return this.getRequestBuilder().setPath("/me/player/play").setMethod("PUT").build().run();
 	}
 
 	pause() {
-		return this.getRequestBuilder()
-			.setPath("/me/player/pause")
-			.setMethod("PUT")
-			.build()
-			.run();
+		return this.getRequestBuilder().setPath("/me/player/pause").setMethod("PUT").build().run();
 	}
 
 	seek(ms) {
-		return this.getRequestBuilder()
-			.setPath("/me/player/seek")
-			.setMethod("PUT")
-			.setParams({ position_ms: ms })
-			.build()
-			.run();
+		return this.getRequestBuilder().setPath("/me/player/seek").setMethod("PUT").setParams({ position_ms: ms }).build().run();
 	}
 
 	shuffle(state) {
-		return this.getRequestBuilder()
-			.setPath("/me/player/shuffle")
-			.setMethod("PUT")
-			.setParams({ state })
-			.build()
-			.run();
+		return this.getRequestBuilder().setPath("/me/player/shuffle").setMethod("PUT").setParams({ state }).build().run();
 	}
 
 	volume(volume_percent) {
-		return this.getRequestBuilder()
-			.setPath("/me/player/volume")
-			.setMethod("PUT")
-			.setParams({ volume_percent })
-			.build()
-			.run();
+		return this.getRequestBuilder().setPath("/me/player/volume").setMethod("PUT").setParams({ volume_percent }).build().run();
 	}
 
 	repeat(state) {
-		return this.getRequestBuilder()
-			.setPath("/me/player/repeat")
-			.setMethod("PUT")
-			.setParams({ state })
-			.build()
-			.run();
+		return this.getRequestBuilder().setPath("/me/player/repeat").setMethod("PUT").setParams({ state }).build().run();
 	}
 
 	listen(type, id) {
 		let body = {};
 
-		if (type === "track" || type === "episode")
-			body = { uris: [`spotify:${type}:${id}`] };
-		else
-			body = { context_uri: `spotify:${type}:${id}` };
+		if (type === "track" || type === "episode") body = { uris: [`spotify:${type}:${id}`] };
+		else body = { context_uri: `spotify:${type}:${id}` };
 
-		return this.getRequestBuilder()
-			.setPath("/me/player/play")
-			.setMethod("PUT")
-			.setBody(body)
-			.build()
-			.run();
+		return this.getRequestBuilder().setPath("/me/player/play").setMethod("PUT").setBody(body).build().run();
 	}
 
 	queue(type, id) {
@@ -849,8 +799,8 @@ const Toast = {
 	error(content) { showToast(content, "error"); }
 };
 
-function handleError(msg, error) {
-	const e = new Error(msg || "Unknown error", { error });
+function createAndLogError(msg = "Unknown error", cause = "Unknown cause") {
+	const e = new Error(msg, { cause });
 	Logger.error(e);
 	return e;
 }
@@ -858,14 +808,15 @@ function handleError(msg, error) {
 async function requestHandler(action) {
 	let repeatOnce = 2;
 	while (repeatOnce--) {
-		const [err, res] = await promiseHandler(action());
-		if (!err) return res;
-		if (err.status !== 401) throw handleError(err.message, err);
+		const [actionError, actionResponse] = await promiseHandler(action());
+		if (!actionError) return actionResponse;
+		if (actionError.status !== 401) throw createAndLogError(actionError.message, actionError);
 
-		if (!SpotifyAPI.accountId) throw "Unknown account ID";
-		const [error, response] = await promiseHandler(RefreshToken(SpotifyAPI.accountId));
-		if (error) throw handleError("Could not refresh Spotify token", error);
-		SpotifyAPI.token = response.body.access_token;
+		if (!SpotifyAPI.accountId) throw createAndLogError("Can't refresh expired access token", "Unknown account ID");
+
+		const [tokenRefreshError, tokenRefreshResponse] = await promiseHandler(RefreshToken(SpotifyAPI.accountId));
+		if (tokenRefreshError) throw createAndLogError("Could not refresh Spotify token", tokenRefreshError);
+		SpotifyAPI.token = tokenRefreshResponse.body.access_token;
 	}
 }
 
@@ -893,7 +844,7 @@ function ressourceActions(prop) {
 		.then(() => {
 			Toast.success(success(type, description));
 		})
-		.catch((reason) => {
+		.catch(reason => {
 			Toast.error(error(type, description, reason));
 		});
 }
@@ -1269,14 +1220,12 @@ const insertText = (() => {
 const Utils = {
 	copySpotifyLink(link) {
 		if (!link) return Toast.error("Could not resolve url");
-		link = sanitizeSpotifyLink(link);
-		copy(link);
+		copy(sanitizeSpotifyLink(link));
 		Toast.success("Link copied!");
 	},
 	openSpotifyLink(link) {
 		if (!link) return Toast.error("Could not resolve url");
-		link = sanitizeSpotifyLink(link);
-		window.open(link, "_blank");
+		window.open(sanitizeSpotifyLink(link), "_blank");
 	},
 	share(link) {
 		if (!link) return Toast.error("Could not resolve url");
@@ -1426,51 +1375,6 @@ const Tooltip$1 = ({ note, position, children }) => {
 			};
 			return children;
 		})
-	);
-};
-
-const { Slider: Slider$1 } = TheBigBoyBundle;
-
-function formatMsToTime(ms) {
-	const time = new Date(ms);
-	return [time.getUTCHours(), String(time.getUTCMinutes()), String(time.getUTCSeconds()).padStart(2, "0")].filter(Boolean).join(":");
-}
-
-const TrackTimeLine = ({ duration, isPlaying, progress }) => {
-	const [position, setPosition] = usePropBasedState(progress);
-	const sliderRef = React.useRef();
-
-	React.useEffect(() => {
-		if (!isPlaying) return;
-		const interval = setInterval(() => {
-			if (sliderRef.current?.state?.active) return;
-			if (position >= duration) clearInterval(interval);
-			setPosition(position + 1000);
-		}, 1000);
-
-		return () => clearInterval(interval);
-	}, [duration, position, isPlaying]);
-
-	const rangeChangeHandler = e => {
-		const pos = Math.floor(e);
-		if (!sliderRef.current?.state?.active) return;
-		setPosition(pos);
-		SpotifyWrapper.Player.seek(pos);
-	};
-
-	return (
-		React.createElement('div', { className: "spotify-player-timeline", }, React.createElement(Slider$1, {
-			className: "spotify-player-timeline-trackbar",
-			mini: true,
-			minValue: 0,
-			maxValue: duration,
-			initialValue: position < 1000 ? 0 : position,
-			onValueChange: rangeChangeHandler,
-			onValueRender: formatMsToTime,
-			ref: sliderRef,
-			grabberClassName: "spotify-player-timeline-trackbar-grabber",
-			barClassName: "spotify-player-timeline-trackbar-bar",
-		}), React.createElement('div', { className: "spotify-player-timeline-progress", }, formatMsToTime(position)), React.createElement('div', { className: "spotify-player-timeline-duration", }, formatMsToTime(duration)))
 	);
 };
 
@@ -1809,7 +1713,7 @@ function TrackBanner({ banner = [] }) {
 
 const { Popout } = TheBigBoyBundle;
 
-const Popout$1 = ({ spacing, position, animation, renderPopout, children }) => {
+const Popout$1 = ({ spacing, forceShow, position, animation, align, renderPopout, children }) => {
 	const [show, setShow] = React.useState(false);
 
 	return (
@@ -1819,9 +1723,10 @@ const Popout$1 = ({ spacing, position, animation, renderPopout, children }) => {
 			onMouseEnter: () => setShow(true),
 		}, React.createElement(Popout, {
 			renderPopout: renderPopout,
-			shouldShow: show,
+			shouldShow: forceShow || show,
 			onRequestClose: () => setShow(false),
 			position: position ?? "top",
+			align: align ?? "left",
 			animation: animation ?? "1",
 			spacing: spacing ?? 8,
 		}, () => children))
@@ -1894,6 +1799,17 @@ function VolumeIcon() {
 	);
 }
 
+function MuteVolumeIcon() {
+	return (
+		React.createElement('svg', {
+			fill: "currentColor",
+			width: "24",
+			height: "24",
+			viewBox: "0 0 16 16",
+		}, React.createElement('path', { d: "M13.86 5.47a.75.75 0 0 0-1.061 0l-1.47 1.47-1.47-1.47A.75.75 0 0 0 8.8 6.53L10.269 8l-1.47 1.47a.75.75 0 1 0 1.06 1.06l1.47-1.47 1.47 1.47a.75.75 0 0 0 1.06-1.06L12.39 8l1.47-1.47a.75.75 0 0 0 0-1.06z", }), React.createElement('path', { d: "M10.116 1.5A.75.75 0 0 0 8.991.85l-6.925 4a3.642 3.642 0 0 0-1.33 4.967 3.639 3.639 0 0 0 1.33 1.332l6.925 4a.75.75 0 0 0 1.125-.649v-1.906a4.73 4.73 0 0 1-1.5-.694v1.3L2.817 9.852a2.141 2.141 0 0 1-.781-2.92c.187-.324.456-.594.78-.782l5.8-3.35v1.3c.45-.313.956-.55 1.5-.694V1.5z", }), " ")
+	);
+}
+
 function PlayIcon() {
 	return (
 		React.createElement('svg', {
@@ -1916,12 +1832,16 @@ function RepeatOneIcon() {
 	);
 }
 
-const { MenuItem, Menu, Slider } = TheBigBoyBundle;
+const { MenuItem, Menu } = TheBigBoyBundle;
 
 const SpotifyPlayerControls = ({ disallowedActions, state, data }) => {
 	if (!disallowedActions || !state || !data) return;
 
-	const { url, banner: [{ url: posterUrl }], volume } = data;
+	const {
+		url,
+		banner: [{ url: posterUrl }],
+		volume
+	} = data;
 	const { shuffle, repeat, isPlaying } = state;
 	const { toggling_shuffle, toggling_repeat_track, /* pausing, resuming, seeking, */ skipping_next, skipping_prev } = disallowedActions;
 
@@ -1952,7 +1872,6 @@ const SpotifyPlayerControls = ({ disallowedActions, state, data }) => {
 	const repeatHandler = () => SpotifyWrapper.Player.repeat(repeatArg);
 	const pauseHandler = () => SpotifyWrapper.Player.pause();
 	const playHandler = () => SpotifyWrapper.Player.play();
-	const volumeHandler = v => SpotifyWrapper.Player.volume(Math.round(v));
 
 	const shareSongHandler = () => SpotifyWrapper.Utils.share(url);
 	const sharePosterHandler = () => SpotifyWrapper.Utils.share(posterUrl);
@@ -2000,6 +1919,7 @@ const SpotifyPlayerControls = ({ disallowedActions, state, data }) => {
 						label: "Share poster in current channel",
 					}))
 				),
+				align: "left",
 				position: "top",
 				animation: "1",
 				spacing: 0,
@@ -2036,28 +1956,7 @@ const SpotifyPlayerControls = ({ disallowedActions, state, data }) => {
 				value: repeatIcon,
 			}))
 
-			, React.createElement(Popout$1, {
-				renderPopout: () => (
-					React.createElement('div', { className: "spotify-player-controls-volume-slider-wrapper", }, React.createElement(Slider, {
-						className: "spotify-player-controls-volume-slider",
-						mini: true,
-						minValue: 0,
-						maxValue: 100,
-						initialValue: volume,
-						onValueRender: a => "" + Math.round(a),
-						onValueChange: volumeHandler,
-						grabberClassName: "spotify-player-controls-volume-slider-grabber",
-						barClassName: "spotify-player-controls-volume-slider-bar",
-					}))
-				),
-				position: "right",
-				animation: "1",
-				spacing: 0,
-			}, React.createElement(SpotifyPlayerButton, {
-				className: "spotify-player-controls-volume",
-
-				value: React.createElement(VolumeIcon, null),
-			}))
+			, React.createElement(Volume, { volume: volume, })
 		)
 	);
 };
@@ -2074,6 +1973,107 @@ function SpotifyPlayerButton({ value, onClick, className, active, ...rest }) {
 		}, value)
 	);
 }
+
+function Volume({ volume }) {
+	const [isMute, setIsMute] = React.useState(!volume);
+	const volumeRef = React.useRef(volume || 25);
+	const [val, setVal] = React.useState(volume);
+
+	React.useEffect(() => {
+		if (volume) volumeRef.current = volume;
+	}, [volume]);
+
+	React.useEffect(() => {
+		if (!volume) setIsMute(true);
+		else setIsMute(false);
+	}, [volume]);
+
+	React.useEffect(() => setVal(volume), [volume]);
+
+	const muteHandler = () => {
+		setIsMute(!isMute);
+		setVal(isMute ? volumeRef.current : 0);
+		SpotifyWrapper.Player.volume(isMute ? volumeRef.current : 0).catch(() => {
+			setIsMute(isMute);
+			setVal(!isMute ? volumeRef.current : 0);
+		});
+	};
+
+	const onChange = e => {
+		const value = Math.round(e.target.value);
+		setVal(value);
+		SpotifyWrapper.Player.volume(value);
+	};
+
+	return (
+		React.createElement(Popout$1, {
+			renderPopout: () => (
+				React.createElement('div', { className: "spotify-player-controls-volume-slider-wrapper", }, React.createElement('input', {
+					value: val,
+					onChange: onChange,
+					type: "range",
+					step: "1",
+					min: "0",
+					max: "100",
+					className: "spotify-player-controls-volume-slider",
+				}))
+			),
+			position: "top",
+			align: "center",
+			animation: "1",
+			spacing: 0,
+		}, React.createElement(SpotifyPlayerButton, {
+			className: "spotify-player-controls-volume",
+			onClick: muteHandler,
+			value: isMute ? React.createElement(MuteVolumeIcon, null) : React.createElement(VolumeIcon, null),
+		}))
+	);
+}
+
+const { Slider } = TheBigBoyBundle;
+
+function formatMsToTime(ms) {
+	const time = new Date(ms);
+	return [time.getUTCHours(), String(time.getUTCMinutes()), String(time.getUTCSeconds()).padStart(2, "0")].filter(Boolean).join(":");
+}
+
+const TrackTimeLine = ({ duration, isPlaying, progress }) => {
+	const [position, setPosition] = usePropBasedState(progress);
+	const sliderRef = React.useRef();
+
+	React.useEffect(() => {
+		if (!isPlaying) return;
+		const interval = setInterval(() => {
+			if (sliderRef.current?.state?.active) return;
+			if (position >= duration) clearInterval(interval);
+			setPosition(position + 1000);
+		}, 1000);
+
+		return () => clearInterval(interval);
+	}, [duration, position, isPlaying]);
+
+	const rangeChangeHandler = e => {
+		const pos = Math.floor(e);
+		if (!sliderRef.current?.state?.active) return;
+		setPosition(pos);
+		SpotifyWrapper.Player.seek(pos);
+	};
+
+	return (
+		React.createElement('div', { className: "spotify-player-timeline", }, React.createElement(Slider, {
+			className: "spotify-player-timeline-trackbar",
+			mini: true,
+			minValue: 0,
+			maxValue: duration,
+			initialValue: position < 1000 ? 0 : position,
+			onValueChange: rangeChangeHandler,
+			onValueRender: formatMsToTime,
+			ref: sliderRef,
+			grabberClassName: "spotify-player-timeline-trackbar-grabber",
+			barClassName: "spotify-player-timeline-trackbar-bar",
+		}), React.createElement('div', { className: "spotify-player-timeline-progress", }, formatMsToTime(position)), React.createElement('div', { className: "spotify-player-timeline-duration", }, formatMsToTime(duration)))
+	);
+};
 
 const SpotifyPlayer = React.memo(function SpotifyPlayer() {
 	const [{ deviceState, playerState }, setState] = React.useState(SpotifyWrapper.getSpotifyState());
@@ -2097,8 +2097,8 @@ const SpotifyPlayer = React.memo(function SpotifyPlayer() {
 	);
 });
 
-const patchSpotifyPlayer = () => {
-	const fluxContainer = getFluxContainer();
+const patchSpotifyPlayer = async () => {
+	const fluxContainer = await getFluxContainer();
 	if (!fluxContainer) return Logger.patch("SpotifyPlayer");
 	Patcher.after(fluxContainer.type.prototype, "render", (_, __, ret) => {
 		return [
@@ -2164,14 +2164,14 @@ class SpotifyEnhance {
 		}
 	}
 
-	stop() {
+	async stop() {
 		try {
 			SpotifyWrapper.dispose();
 			DOM.removeStyle();
 			Patcher.unpatchAll();
 
-			const fluxContainer = getFluxContainer();
-			if (fluxContainer) fluxContainer?.stateNode?.forceUpdate();
+			const fluxContainer = await getFluxContainer();
+			if (fluxContainer) fluxContainer.stateNode.forceUpdate();
 		} catch (e) {
 			Logger.error(e);
 		}
