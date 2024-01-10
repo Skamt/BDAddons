@@ -43,7 +43,7 @@ function Artist({ artists }) {
 					acc.push(el);
 					if (index < obj.length - 1) acc.push(", ");
 					return acc;
-			  }, []);
+				}, []);
 
 	return <div className="spotify-player-artist">by {artist}</div>;
 }

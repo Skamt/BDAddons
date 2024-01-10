@@ -4,8 +4,8 @@ import SpotifyPlayer from "../components/SpotifyPlayer";
 import Logger from "@Utils/Logger";
 import ErrorBoundary from "@Components/ErrorBoundary";
 
-export default () => {
-	const fluxContainer = getFluxContainer();
+export default async () => {
+	const fluxContainer = await getFluxContainer();
 	if (!fluxContainer) return Logger.patch("SpotifyPlayer");
 	Patcher.after(fluxContainer.type.prototype, "render", (_, __, ret) => {
 		return [

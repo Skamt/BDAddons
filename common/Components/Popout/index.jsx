@@ -3,7 +3,7 @@ import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 
 const { Popout } = TheBigBoyBundle;
 
-export default ({ spacing, position, animation, renderPopout, children }) => {
+export default ({ spacing, forceShow,position, animation, align, renderPopout, children }) => {
 	const [show, setShow] = React.useState(false);
 	// const [mouse, setMouse] = React.useState(false);
 
@@ -33,9 +33,10 @@ export default ({ spacing, position, animation, renderPopout, children }) => {
 			onMouseEnter={() => setShow(true)}>
 			<Popout
 				renderPopout={renderPopout}
-				shouldShow={show}
+				shouldShow={forceShow || show}
 				onRequestClose={() => setShow(false)}
 				position={position ?? "top"}
+				align={align ?? "left"}
 				animation={animation ?? "1"}
 				spacing={spacing ?? 8}>
 				{() => children}

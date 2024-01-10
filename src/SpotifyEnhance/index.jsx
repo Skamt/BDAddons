@@ -32,14 +32,14 @@ export default class SpotifyEnhance {
 		}
 	}
 
-	stop() {
+	async stop() {
 		try {
 			SpotifyWrapper.dispose();
 			DOM.removeStyle();
 			Patcher.unpatchAll();
 
-			const fluxContainer = getFluxContainer();
-			if (fluxContainer) fluxContainer?.stateNode?.forceUpdate();
+			const fluxContainer = await getFluxContainer();
+			if (fluxContainer) fluxContainer.stateNode.forceUpdate();
 		} catch (e) {
 			Logger.error(e);
 		}

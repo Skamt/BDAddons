@@ -11,13 +11,14 @@ import ShuffleIcon from "@Components/ShuffleIcon";
 
 import NextIcon from "@Components/NextIcon";
 import VolumeIcon from "@Components/VolumeIcon";
+import MuteVolumeIcon from "@Components/MuteVolumeIcon";
 import Tooltip from "@Components/Tooltip";
 import PreviousIcon from "@Components/PreviousIcon";
 import RepeatOneIcon from "@Components/RepeatOneIcon";
 
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 
-const { MenuItem, Menu, Slider } = TheBigBoyBundle;
+const { MenuItem, Menu } = TheBigBoyBundle;
 
 // {
 //   "interrupting_playback": false,
@@ -35,7 +36,11 @@ const { MenuItem, Menu, Slider } = TheBigBoyBundle;
 export default ({ disallowedActions, state, data }) => {
 	if (!disallowedActions || !state || !data) return;
 
-	const { url, banner:[{ url:posterUrl }], volume } = data;
+	const {
+		url,
+		banner: [{ url: posterUrl }],
+		volume
+	} = data;
 	const { shuffle, repeat, isPlaying } = state;
 	const { toggling_shuffle, toggling_repeat_track, /* pausing, resuming, seeking, */ skipping_next, skipping_prev } = disallowedActions;
 
@@ -66,7 +71,6 @@ export default ({ disallowedActions, state, data }) => {
 	const repeatHandler = () => SpotifyWrapper.Player.repeat(repeatArg);
 	const pauseHandler = () => SpotifyWrapper.Player.pause();
 	const playHandler = () => SpotifyWrapper.Player.play();
-	const volumeHandler = v => SpotifyWrapper.Player.volume(Math.round(v));
 
 	const shareSongHandler = () => SpotifyWrapper.Utils.share(url);
 	const sharePosterHandler = () => SpotifyWrapper.Utils.share(posterUrl);
@@ -120,6 +124,7 @@ export default ({ disallowedActions, state, data }) => {
 						/>
 					</Menu>
 				)}
+				align="left"
 				position="top"
 				animation="1"
 				spacing={0}>
@@ -171,31 +176,7 @@ export default ({ disallowedActions, state, data }) => {
 				/>
 			</Tooltip>
 
-			<Popout
-				renderPopout={() => (
-					<div className="spotify-player-controls-volume-slider-wrapper">
-						<Slider
-							className="spotify-player-controls-volume-slider"
-							mini={true}
-							minValue={0}
-							maxValue={100}
-							initialValue={volume}
-							onValueRender={a => "" + Math.round(a)}
-							onValueChange={volumeHandler}
-							grabberClassName="spotify-player-controls-volume-slider-grabber"
-							barClassName="spotify-player-controls-volume-slider-bar"
-						/>
-					</div>
-				)}
-				position="right"
-				animation="1"
-				spacing={0}>
-				<SpotifyPlayerButton
-					className="spotify-player-controls-volume"
-					// onClick={copyHandler}
-					value={<VolumeIcon />}
-				/>
-			</Popout>
+			<Volume volume={volume} />
 		</div>
 	);
 };
@@ -211,5 +192,64 @@ function SpotifyPlayerButton({ value, onClick, className, active, ...rest }) {
 			{...rest}>
 			{value}
 		</Button>
+	);
+}
+
+function Volume({ volume }) {
+	const [isMute, setIsMute] = React.useState(!volume);
+	const volumeRef = React.useRef(volume || 25);
+	const [val, setVal] = React.useState(volume);
+
+	React.useEffect(() => {
+		if (volume) volumeRef.current = volume;
+	}, [volume]);
+
+	React.useEffect(() => {
+		if (!volume) setIsMute(true);
+		else setIsMute(false);
+	}, [volume]);
+
+	React.useEffect(() => setVal(volume), [volume]);
+
+	const muteHandler = () => {
+		setIsMute(!isMute);
+		setVal(isMute ? volumeRef.current : 0);
+		SpotifyWrapper.Player.volume(isMute ? volumeRef.current : 0).catch(() => {
+			setIsMute(isMute);
+			setVal(!isMute ? volumeRef.current : 0);
+		});
+	};
+
+	const onChange = e => {
+		const value = Math.round(e.target.value);
+		setVal(value);
+		SpotifyWrapper.Player.volume(value);
+	};
+
+	return (
+		<Popout
+			renderPopout={() => (
+				<div className="spotify-player-controls-volume-slider-wrapper">
+					<input
+						value={val}
+						onChange={onChange}
+						type="range"
+						step="1"
+						min="0"
+						max="100"
+						className="spotify-player-controls-volume-slider"
+					/>
+				</div>
+			)}
+			position="top"
+			align="center"
+			animation="1"
+			spacing={0}>
+			<SpotifyPlayerButton
+				className="spotify-player-controls-volume"
+				onClick={muteHandler}
+				value={isMute ? <MuteVolumeIcon /> : <VolumeIcon />}
+			/>
+		</Popout>
 	);
 }

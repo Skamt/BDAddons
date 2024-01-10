@@ -11,10 +11,25 @@ export function parseSpotifyUrl(url) {
 
 export function getFluxContainer() {
 	const el = document.querySelector(`.${activityPanelClasses.panels}`);
-	if (!el) return;
-	const instance = getInternalInstance(el);
-	if (!instance) return;
-	return instance.child;
+	if (el) {
+		const instance = getInternalInstance(el);
+		if (instance) return Promise.resolve(instance.child);
+	}
+	return new Promise(resolve => {
+		const interval = setInterval(() => {
+			const el = document.querySelector(`.${activityPanelClasses.panels}`);
+			if (!el) return;
+			const instance = getInternalInstance(el);
+			if (!instance) return;
+			resolve(instance.child);
+			clearInterval(interval);
+		}, 500);
+
+		setTimeout(() => {
+			resolve(null);
+			clearInterval(interval);
+		}, 20 * 1000);
+	});
 }
 
 export function sanitizeSpotifyLink(link) {

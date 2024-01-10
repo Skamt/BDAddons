@@ -8,7 +8,6 @@ import CopyIcon from "@Components/CopyIcon";
 import ListenIcon from "@Components/ListenIcon";
 import SpotifyIcon from "@Components/SpotifyIcon";
 import Tooltip from "@Components/Tooltip";
-import TrackTimeLine from "./TrackTimeLine";
 
 export default ({ embed }) => {
 	const [{ deviceState: isActive, playerState }, setState] = React.useState(SpotifyWrapper.getSpotifyState());
