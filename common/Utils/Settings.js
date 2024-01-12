@@ -7,7 +7,10 @@ export default new (class Settings extends ChangeEmitter {
 	}
 
 	init(defaultSettings) {
-		this.settings = Data.load("settings") || defaultSettings;
+		this.settings = {
+			...defaultSettings,
+			...Data.load("settings")
+		};
 	}
 
 	get(key) {

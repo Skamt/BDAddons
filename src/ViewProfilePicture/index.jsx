@@ -33,14 +33,19 @@ function getButtonClasses({ user, profileType }, isNotNitro, banner) {
 export default class ViewProfilePicture {
 	clickHandler({ user, displayProfile }, { backgroundColor, backgroundImage }) {
 		const avatarURL = user.getAvatarURL(displayProfile.guildId, 4096, true);
-		const AvatarImageComponent = getImageModalComponent(avatarURL);
-		const BannerImageComponent = backgroundImage ? getImageModalComponent(backgroundImage, { width: window.innerWidth * 0.8 }) : <ColorModalComponent color={backgroundColor} />;
+		const bannerURL = backgroundImage && displayProfile.getBannerURL({ canAnimate: true, size: 4096 });
 
+		const items = [
+			getImageModalComponent(avatarURL, { width: 4096, height: 4096 }), 
+			bannerURL && getImageModalComponent(bannerURL, { width: 2800, height: 848 }), 
+			(!bannerURL || Settings.get("bannerColor")) && <ColorModalComponent color={backgroundColor} />
+		].filter(Boolean).map(item => ({ "component": item, ...item.props }));
+		
 		openModal(
 			<ModalCarousel
 				startWith={0}
 				className="VPP-carousel"
-				items={[AvatarImageComponent, BannerImageComponent].map(item => ({ "component": item }))}
+				items={items}
 			/>
 		);
 	}

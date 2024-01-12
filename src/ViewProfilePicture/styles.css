@@ -68,11 +68,13 @@ svg:has(path[d="M10 0C4.486 0 0 4.486 0 10C0 15.515 4.486 20 10 20C15.514 20 20 
 div:has(> .VPP-carousel) {
 	background: #0000;
 	width: 100vw;
+	height: 100vh;
 	box-shadow: none !important;
 }
 
 .VPP-carousel {
 	position: static;
+	margin: auto;
 }
 
 .VPP-carousel button {

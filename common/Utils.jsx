@@ -24,11 +24,12 @@ export const openModal = children => {
 	});
 };
 
-export const getImageModalComponent = (url, rest = { width: innerWidth * .6 }) => (
+export const getImageModalComponent = (url, rest = {}) => (
 	<ImageModal
 		{...rest}
 		src={url}
 		original={url}
+		response={true}
 		renderLinkComponent={p => <RenderLinkComponent {...p} />}
 	/>
 );
