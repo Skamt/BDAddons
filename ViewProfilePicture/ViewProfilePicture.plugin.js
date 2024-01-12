@@ -19,8 +19,13 @@ const config = {
 		}]
 	},
 	"settings": {
-		"showOnHover": false
-	}
+		"showOnHover": false,
+		"bannerColor": false
+	},
+	"changelog": [{
+		"type": "added",
+		"items": ["new setting to always show banner color in carousel"]
+	}]
 }
 
 const css = `
@@ -94,11 +99,13 @@ svg:has(path[d="M10 0C4.486 0 0 4.486 0 10C0 15.515 4.486 20 10 20C15.514 20 20 
 div:has(> .VPP-carousel) {
 	background: #0000;
 	width: 100vw;
+	height: 100vh;
 	box-shadow: none !important;
 }
 
 .VPP-carousel {
 	position: static;
+	margin: auto;
 }
 
 .VPP-carousel button {
@@ -208,7 +215,10 @@ const Settings = new(class Settings extends ChangeEmitter {
 	}
 
 	init(defaultSettings) {
-		this.settings = Data.load("settings") || defaultSettings;
+		this.settings = {
+			...defaultSettings,
+			...Data.load("settings")
+		};
 	}
 
 	get(key) {
@@ -311,11 +321,12 @@ const openModal = children => {
 	});
 };
 
-const getImageModalComponent = (url, rest = { width: innerWidth * .6 }) => (
+const getImageModalComponent = (url, rest = {}) => (
 	React.createElement(ImageModal, {
 		...rest,
 		src: url,
 		original: url,
+		response: true,
 		renderLinkComponent: p => React.createElement(RenderLinkComponent, { ...p, }),
 	})
 );
@@ -481,15 +492,24 @@ const Switch = TheBigBoyBundle.FormSwitch ||
 		);
 	};
 
-function ShowOnHoverSwitch() {
-	const [enabled, setEnabled] = React.useState(Settings.get("showOnHover"));
+function useSetting(setting) {
+	return {
+		get: React.useCallback(() => Settings.get(setting), []),
+		set: React.useCallback(e => Settings.set(setting, e), [])
+	};
+}
+
+function ShowOnHover() {
+	const { get, set } = useSetting("showOnHover");
+	const [enabled, setEnabled] = React.useState(get());
+
 	return (
 		React.createElement(Switch, {
 				value: enabled,
 				note: "By default hide ViewProfilePicture button and show on hover.",
-				hideBorder: true,
+				hideBorder: false,
 				onChange: e => {
-					Settings.set("showOnHover", e);
+					set(e);
 					setEnabled(e);
 				},
 			}, "Show on hover"
@@ -498,9 +518,116 @@ function ShowOnHoverSwitch() {
 	);
 }
 
-const SettingComponent = () => React.createElement(ShowOnHoverSwitch, null);
+function IncludeBannerColor() {
+	const { get, set } = useSetting("bannerColor");
+	const [enabled, setEnabled] = React.useState(get());
+	return (
+		React.createElement(Switch, {
+				value: enabled,
+				note: "Always include banner color in carousel, even if a banner is present.",
+				hideBorder: true,
+				onChange: e => {
+					set(e);
+					setEnabled(e);
+				},
+			}, "Include banner color"
+
+		)
+	);
+}
+
+const SettingComponent = () => [React.createElement(ShowOnHover, null), React.createElement(IncludeBannerColor, null)];
 
 const ModalCarousel = getModule(Filters.byPrototypeFields("navigateTo", "preloadImage"), { searchExports: false });
+
+const changelogStyles = `
+#changelog-container {
+	font-family: "gg sans", "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+	--added: #2dc770;
+	--improved: #949cf7;
+	--fixed: #f23f42;
+	--notice: #f0b132;
+	color:white;
+
+    padding: 10px;
+    max-width: 450px;
+}
+#changelog-container .title {
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    font-weight: 700;
+    margin-top: 20px;
+}
+#changelog-container .title:after {
+    content: "";
+    height: 1px;
+    flex: 1 1 auto;
+    margin-left: 8px;
+    opacity: .6;
+    background: currentColor;
+}
+#changelog-container ul {
+    list-style: none;
+    margin: 20px 0 8px 20px;
+}
+#changelog-container ul > li {
+    position:relative;
+    line-height: 20px;
+    margin-bottom: 8px;
+    color: #c4c9ce;
+}
+#changelog-container ul > li:before {
+    content: "";
+    position: absolute;
+    background:currentColor;
+    top: 10px;
+    left: -15px;
+    width: 6px;
+    height: 6px;
+    margin-top: -4px;
+    margin-left: -3px;
+    border-radius: 50%;
+    opacity: .5;
+}`;
+
+function ChangelogComponent({ id, changelog }) {
+	React.useEffect(() => {
+		BdApi.DOM.addStyle(id, changelogStyles);
+		return () => BdApi.DOM.removeStyle(id);
+	}, []);
+	return React.createElement('div', { id: "changelog-container", }, changelog);
+}
+
+function showChangelog() {
+	if (!config.changelog || !Array.isArray(config.changelog)) return;
+	const changelog = config.changelog.map(({ type, items }) => [
+		React.createElement('h3', {
+			style: { "color": `var(--${type})` },
+			className: "title",
+		}, type),
+		React.createElement('ul', null, items.map(item => (
+			React.createElement('li', null, item)
+		)))
+	]);
+
+	UI.showConfirmationModal(
+		`${config.info.name} v${config.info.version}`,
+		React.createElement(ChangelogComponent, {
+			id: `Changelog-${config.info.name}`,
+			changelog: changelog,
+		})
+	);
+}
+
+function shouldChangelog() {
+	const { version = config.info.version, changelog = false } = Data.load("metadata") || {};
+
+	if (version != config.info.version || !changelog) {
+		Data.save("metadata", { version: config.info.version, changelog: true });
+		return showChangelog;
+	}
+}
 
 function getButtonClasses({ user, profileType }, isNotNitro, banner) {
 	let res = "VPP-Button";
@@ -517,14 +644,19 @@ function getButtonClasses({ user, profileType }, isNotNitro, banner) {
 class ViewProfilePicture {
 	clickHandler({ user, displayProfile }, { backgroundColor, backgroundImage }) {
 		const avatarURL = user.getAvatarURL(displayProfile.guildId, 4096, true);
-		const AvatarImageComponent = getImageModalComponent(avatarURL);
-		const BannerImageComponent = backgroundImage ? getImageModalComponent(backgroundImage, { width: window.innerWidth * 0.8 }) : React.createElement(ColorModalComponent, { color: backgroundColor, });
+		const bannerURL = backgroundImage && displayProfile.getBannerURL({ canAnimate: true, size: 4096 });
+
+		const items = [
+			getImageModalComponent(avatarURL, { width: 4096, height: 4096 }),
+			bannerURL && getImageModalComponent(bannerURL, { width: 2800, height: 848 }),
+			(!bannerURL || Settings.get("bannerColor")) && React.createElement(ColorModalComponent, { color: backgroundColor, })
+		].filter(Boolean).map(item => ({ "component": item, ...item.props }));
 
 		openModal(
 			React.createElement(ModalCarousel, {
 				startWith: 0,
 				className: "VPP-carousel",
-				items: [AvatarImageComponent, BannerImageComponent].map(item => ({ "component": item })),
+				items: items,
 			})
 		);
 	}
@@ -578,5 +710,6 @@ class ViewProfilePicture {
 		return React.createElement(SettingComponent, null);
 	}
 }
+shouldChangelog()?.();
 
 module.exports = ViewProfilePicture;
