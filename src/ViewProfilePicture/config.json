@@ -9,5 +9,11 @@
 	"settings": {
 		"showOnHover": false,
 		"bannerColor": false
-	}
+	},
+	"changelog": [
+		{
+			"type": "added",
+			"items": ["new setting to always show banner color in carousel"]
+		}
+	]
 }

@@ -3,16 +3,24 @@ import Switch from "@Components/Switch";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 import Settings from "@Utils/Settings";
 
+function useSetting(setting) {
+	return {
+		get: React.useCallback(() => Settings.get(setting), []),
+		set: React.useCallback(e => Settings.set(setting, e), [])
+	};
+}
 
 function ShowOnHover() {
-	const [enabled, setEnabled] = React.useState(Settings.get("showOnHover"));
+	const { get, set } = useSetting("showOnHover");
+	const [enabled, setEnabled] = React.useState(get());
+
 	return (
 		<Switch
 			value={enabled}
 			note="By default hide ViewProfilePicture button and show on hover."
 			hideBorder={false}
 			onChange={e => {
-				Settings.set("showOnHover", e);
+				set(e);
 				setEnabled(e);
 			}}>
 			Show on hover
@@ -20,21 +28,21 @@ function ShowOnHover() {
 	);
 }
 
-
 function IncludeBannerColor() {
-	const [enabled, setEnabled] = React.useState(Settings.get("showOnHover"));
+	const { get, set } = useSetting("bannerColor");
+	const [enabled, setEnabled] = React.useState(get());
 	return (
 		<Switch
 			value={enabled}
-			note="Always include banner color even if banner is present"
+			note="Always include banner color in carousel, even if a banner is present."
 			hideBorder={true}
 			onChange={e => {
-				Settings.set("bannerColor", e);
+				set( e);
 				setEnabled(e);
 			}}>
-			Include banner color if present
+			Include banner color
 		</Switch>
 	);
 }
 
-export default () => [<ShowOnHover />,<IncludeBannerColor />];
+export default () => [<ShowOnHover />, <IncludeBannerColor />];
