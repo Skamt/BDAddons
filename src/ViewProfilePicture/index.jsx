@@ -37,7 +37,7 @@ export default class ViewProfilePicture {
 
 		const items = [
 			getImageModalComponent(avatarURL, { width: 4096, height: 4096 }), 
-			bannerURL && getImageModalComponent(bannerURL, { width: 2800, height: 848 }), 
+			bannerURL && getImageModalComponent(bannerURL, { width: 4096 }), 
 			(!bannerURL || Settings.get("bannerColor")) && <ColorModalComponent color={backgroundColor} />
 		].filter(Boolean).map(item => ({ "component": item, ...item.props }));
 		

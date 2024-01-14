@@ -21,10 +21,10 @@ const mods = [
 	// new Spotify(),
 	new NoTrack(),
 	new ShowUserInfo(),
-	// new SpotifyListenAlong()
+	new SpotifyListenAlong()
 ];
 
-if(console.context)console = console.context();
+if(console.context) console = console.context();
 
 export default () => ({
 	start() {
