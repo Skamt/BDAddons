@@ -335,6 +335,19 @@ function copy(data) {
 	DiscordNative.clipboard.copy(data);
 }
 
+function getImageDimensions(url) {
+	return new Promise((resolve, reject) => {
+		const img = new Image();
+		img.onload = () =>
+			resolve({
+				width: img.width,
+				height: img.height
+			});
+		img.onerror = reject;
+		img.src = url;
+	});
+}
+
 const Logger = {
 	error(...args) {
 		this.p(console.error, ...args);
@@ -641,14 +654,36 @@ function getButtonClasses({ user, profileType }, isNotNitro, banner) {
 	return res;
 }
 
+function calculateAspectRatioFit(width, height) {
+
+	const ratio = Math.min(innerWidth / width, innerHeight / height);
+
+	return {
+		width: Math.round(width * ratio),
+		height: Math.round(height * ratio)
+	};
+}
+
+async function getBannerDimenions(src) {
+	src = src.replace("url(", "").replace(")");
+	try {
+		const dims = await getImageDimensions(src);
+		return calculateAspectRatioFit(dims.width, dims.height);
+	} catch {
+		return {
+			width: 480
+		};
+	}
+}
+
 class ViewProfilePicture {
-	clickHandler({ user, displayProfile }, { backgroundColor, backgroundImage }) {
+	async clickHandler({ user, displayProfile }, { backgroundColor, backgroundImage }) {
 		const avatarURL = user.getAvatarURL(displayProfile.guildId, 4096, true);
 		const bannerURL = backgroundImage && displayProfile.getBannerURL({ canAnimate: true, size: 4096 });
 
 		const items = [
 			getImageModalComponent(avatarURL, { width: 4096, height: 4096 }),
-			bannerURL && getImageModalComponent(bannerURL, { width: 4096 }),
+			bannerURL && getImageModalComponent(bannerURL, await getBannerDimenions(backgroundImage)),
 			(!bannerURL || Settings.get("bannerColor")) && React.createElement(ColorModalComponent, { color: backgroundColor, })
 		].filter(Boolean).map(item => ({ "component": item, ...item.props }));
 
