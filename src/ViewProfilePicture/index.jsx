@@ -3,7 +3,7 @@ import { Data, DOM, React, Patcher } from "@Api";
 import Settings from "@Utils/Settings";
 
 import { isSelf } from "@Utils/User";
-import { getImageModalComponent, openModal } from "@Utils";
+import { getImageModalComponent, openModal, getImageDimensions } from "@Utils";
 import Logger from "@Utils/Logger";
 import ErrorBoundary from "@Components/ErrorBoundary";
 import ErrorIcon from "@Components/ErrorIcon";
@@ -30,17 +30,36 @@ function getButtonClasses({ user, profileType }, isNotNitro, banner) {
 	return res;
 }
 
+function stretchToFit({width, height}) {
+	const ratio = Math.min(innerWidth  / width, innerHeight  / height);
+
+	return { 
+		width: Math.round(width * ratio), 
+		height: Math.round(height * ratio) 
+	};
+}
+
+async function getBannerDimenions(src) {
+	src = src.replace("url(", "").replace(")");
+	try {
+		const dims = await getImageDimensions(src);
+		return stretchToFit(dims, dims);
+	} catch {
+		return {};
+	}
+}
+
 export default class ViewProfilePicture {
-	clickHandler({ user, displayProfile }, { backgroundColor, backgroundImage }) {
+	async clickHandler({ user, displayProfile }, { backgroundColor, backgroundImage }) {
 		const avatarURL = user.getAvatarURL(displayProfile.guildId, 4096, true);
 		const bannerURL = backgroundImage && displayProfile.getBannerURL({ canAnimate: true, size: 4096 });
 
 		const items = [
 			getImageModalComponent(avatarURL, { width: 4096, height: 4096 }), 
-			bannerURL && getImageModalComponent(bannerURL, { width: 4096 }), 
+			bannerURL && getImageModalComponent(bannerURL, await getBannerDimenions(backgroundImage)), 
 			(!bannerURL || Settings.get("bannerColor")) && <ColorModalComponent color={backgroundColor} />
 		].filter(Boolean).map(item => ({ "component": item, ...item.props }));
-		
+
 		openModal(
 			<ModalCarousel
 				startWith={0}
