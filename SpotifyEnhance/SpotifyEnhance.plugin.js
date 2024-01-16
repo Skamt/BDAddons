@@ -211,7 +211,7 @@ div:has(> .spotify-player-banner-modal) {
 	text-overflow: ellipsis;
 }
 
-.spotify-player-artist {
+.spotify-player-artist-container {
 	grid-area: artist;
 	font-size: 0.8rem;
 	--text-link: var(--text-sub);
@@ -220,6 +220,24 @@ div:has(> .spotify-player-banner-modal) {
 	text-overflow: ellipsis;
 }
 
+.spotify-player-artists{
+	background:var(--background-secondary-alt);
+	padding:10px;
+	gap:2px;
+	border-radius:5px;
+	display:flex;
+	flex-direction:column;
+}
+
+.spotify-player-artists .spotify-player-artist-link{
+	font-size: .9rem;
+	--text-link: var(--text-sub);
+	counter-increment:p;
+}
+
+.spotify-player-artists .spotify-player-artist-link:before{
+	content: counter(p) ") ";
+}
 .spotify-player-album {
 	grid-area: album;
 	--text-link: var(--text-sub);
@@ -316,7 +334,7 @@ div:has(> .spotify-player-banner-modal) {
 .spotify-player-controls-volume-slider-wrapper {
 	height:120px;
 	width:20px;
-	background: #fff;
+	background: var(--background-floating);
 	padding:5px 1px;
 	border-radius:99px;
 }
@@ -395,7 +413,10 @@ const Settings = new(class Settings extends ChangeEmitter {
 	}
 
 	init(defaultSettings) {
-		this.settings = Data.load("settings") || defaultSettings;
+		this.settings = {
+			...defaultSettings,
+			...Data.load("settings")
+		};
 	}
 
 	get(key) {
@@ -500,15 +521,6 @@ function useSettings(key) {
 	return state;
 }
 
-function usePropBasedState(prop) {
-	const [state, setState] = React.useState(prop);
-	React.useEffect(() => {
-		setState(prop);
-	}, [prop]);
-
-	return [state, setState];
-}
-
 const TheBigBoyBundle = getModule(Filters.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
 
 const Button = TheBigBoyBundle.Button ||
@@ -580,11 +592,12 @@ const openModal = children => {
 	});
 };
 
-const getImageModalComponent = (url, rest = { width: innerWidth * .6 }) => (
+const getImageModalComponent = (url, rest = {}) => (
 	React.createElement(ImageModal, {
 		...rest,
 		src: url,
 		original: url,
+		response: true,
 		renderLinkComponent: p => React.createElement(RenderLinkComponent, { ...p, }),
 	})
 );
@@ -873,7 +886,7 @@ const SpotifyAPIWrapper = new Proxy({}, {
 					SpotifyAPI.accountId = socket?.accountId;
 				};
 			default:
-				return Promise.reject("Unknown API Command", prop);
+				throw new Error(`Unknown API Command: ${prop}`);
 		}
 	}
 });
@@ -906,7 +919,11 @@ const SpotifySocketListener = new(class SpotifySocketListener extends ChangeEmit
 	async init() {
 		const socket = await getSocket();
 		if (this.unpatch) this.unpatch();
-		this.unpatch = Patcher.after(socket.prototype, "handleEvent", (socket, [event]) => this.emit({ socket, event }));
+		this.unpatch = Patcher.after(socket.prototype, "handleEvent", this.onSocketEvent.bind(this));
+	}
+
+	onSocketEvent(socket, [event]) {
+		this.emit({ socket, event });
 	}
 
 	dispose() {
@@ -1661,6 +1678,49 @@ function SpotifyActivityIndicator({ userId }) {
 	);
 }
 
+const { Popout } = TheBigBoyBundle;
+
+const Popout$1 = ({ delay, spacing, forceShow, position, animation, align, renderPopout, children }) => {
+	const [show, setShow] = React.useState(false);
+	const leaveRef = React.useRef();
+	const enterRef = React.useRef();
+	return (
+		React.createElement('div', {
+			className: `${config.info.name}-popout-container`,
+			onMouseLeave: () => {
+				clearTimeout(enterRef.current);
+				enterRef.current = null;
+				leaveRef.current = setTimeout(() => {
+					setShow(false);
+					leaveRef.current = null;
+				}, 150);
+			},
+			onMouseEnter: () => {
+				if (leaveRef.current) {
+					clearTimeout(leaveRef.current);
+					leaveRef.current = null;
+					return;
+				}
+
+				enterRef.current = setTimeout(() => {
+					console.log("onMouseEnter delayed setShow setTimeout");
+					setShow(true);
+				}, delay || 150);
+			},
+		}, React.createElement(Popout, {
+			renderPopout: renderPopout,
+			nudgeAlignIntoViewport: true,
+			shouldShow: forceShow || show,
+			onRequestClose: () => console.log("onRequestClose"),
+			onRequestOpen: () => console.log("onRequestOpen"),
+			position: position ?? "top",
+			align: align ?? "left",
+			animation: animation ?? "1",
+			spacing: spacing ?? 8,
+		}, () => children))
+	);
+};
+
 const { Anchor } = TheBigBoyBundle;
 
 const TrackMediaDetails = ({ track }) => {
@@ -1677,20 +1737,21 @@ const TrackMediaDetails = ({ track }) => {
 };
 
 function transformArtist(artist) {
-	return React.createElement(Anchor, { href: `https://open.spotify.com/artist/${artist.id}`, }, artist.name);
+	return React.createElement(Anchor, { className: "spotify-player-artist-link", href: `https://open.spotify.com/artist/${artist.id}`, }, artist.name);
 }
 
 function Artist({ artists }) {
-	const artist =
-		artists?.length === 1 ?
-		transformArtist(artists[0]) :
-		artists.map(transformArtist).reduce((acc, el, index, obj) => {
-			acc.push(el);
-			if (index < obj.length - 1) acc.push(", ");
-			return acc;
-		}, []);
+	if (artists.length === 1) return React.createElement('div', { className: "spotify-player-artist-container", }, "by ", transformArtist(artists[0]));
 
-	return React.createElement('div', { className: "spotify-player-artist", }, "by ", artist);
+	return (
+		React.createElement(Popout$1, {
+			renderPopout: () => React.createElement('div', { className: "spotify-player-artists", }, " ", artists.map(transformArtist)),
+			position: "top",
+			align: "center",
+			animation: "1",
+			spacing: 0,
+		}, React.createElement('div', { className: "spotify-player-artist-container", }, React.createElement(Anchor, null, "Multiple artists...")))
+	);
 }
 
 function TrackBanner({ banner = [] }) {
@@ -1710,28 +1771,6 @@ function TrackBanner({ banner = [] }) {
 		}))
 	);
 }
-
-const { Popout } = TheBigBoyBundle;
-
-const Popout$1 = ({ spacing, forceShow, position, animation, align, renderPopout, children }) => {
-	const [show, setShow] = React.useState(false);
-
-	return (
-		React.createElement('div', {
-			className: `${config.info.name}-popout-container`,
-			onMouseLeave: () => setShow(false),
-			onMouseEnter: () => setShow(true),
-		}, React.createElement(Popout, {
-			renderPopout: renderPopout,
-			shouldShow: forceShow || show,
-			onRequestClose: () => setShow(false),
-			position: position ?? "top",
-			align: align ?? "left",
-			animation: animation ?? "1",
-			spacing: spacing ?? 8,
-		}, () => children))
-	);
-};
 
 function PauseIcon() {
 	return (
@@ -1975,34 +2014,34 @@ function SpotifyPlayerButton({ value, onClick, className, active, ...rest }) {
 }
 
 function Volume({ volume }) {
-	const [isMute, setIsMute] = React.useState(!volume);
+	const [isVolumeInputActive, setVolumeInputActive] = React.useState(false);
+
 	const volumeRef = React.useRef(volume || 25);
 	const [val, setVal] = React.useState(volume);
 
 	React.useEffect(() => {
+		if (!isVolumeInputActive) return setVal(volume);
 		if (volume) volumeRef.current = volume;
 	}, [volume]);
 
-	React.useEffect(() => {
-		if (!volume) setIsMute(true);
-		else setIsMute(false);
-	}, [volume]);
-
-	React.useEffect(() => setVal(volume), [volume]);
-
 	const muteHandler = () => {
-		setIsMute(!isMute);
-		setVal(isMute ? volumeRef.current : 0);
-		SpotifyWrapper.Player.volume(isMute ? volumeRef.current : 0).catch(() => {
-			setIsMute(isMute);
-			setVal(!isMute ? volumeRef.current : 0);
+		const target = val ? 0 : volumeRef.current;
+		SpotifyWrapper.Player.volume(target).then(() => {
+			setVal(target);
 		});
 	};
 
 	const onChange = e => {
 		const value = Math.round(e.target.value);
 		setVal(value);
+	};
+
+	const onMouseDown = () => setVolumeInputActive(true);
+
+	const onMouseUp = e => {
+		const value = Math.round(e.target.value);
 		SpotifyWrapper.Player.volume(value);
+		setVolumeInputActive(false);
 	};
 
 	return (
@@ -2011,6 +2050,8 @@ function Volume({ volume }) {
 				React.createElement('div', { className: "spotify-player-controls-volume-slider-wrapper", }, React.createElement('input', {
 					value: val,
 					onChange: onChange,
+					onMouseDown: onMouseDown,
+					onMouseUp: onMouseUp,
 					type: "range",
 					step: "1",
 					min: "0",
@@ -2021,11 +2062,11 @@ function Volume({ volume }) {
 			position: "top",
 			align: "center",
 			animation: "1",
-			spacing: 0,
+			spacing: 8,
 		}, React.createElement(SpotifyPlayerButton, {
 			className: "spotify-player-controls-volume",
 			onClick: muteHandler,
-			value: isMute ? React.createElement(MuteVolumeIcon, null) : React.createElement(VolumeIcon, null),
+			value: val ? React.createElement(VolumeIcon, null) : React.createElement(MuteVolumeIcon, null),
 		}))
 	);
 }
@@ -2038,23 +2079,31 @@ function formatMsToTime(ms) {
 }
 
 const TrackTimeLine = ({ duration, isPlaying, progress }) => {
-	const [position, setPosition] = usePropBasedState(progress);
+	const [position, setPosition] = React.useState(progress);
+
 	const sliderRef = React.useRef();
+	const intervalRef = React.useRef();
+
+	React.useEffect(() => {
+		if (sliderRef.current?.state?.active) return;
+		setPosition(progress);
+	}, [progress]);
 
 	React.useEffect(() => {
 		if (!isPlaying) return;
-		const interval = setInterval(() => {
+		intervalRef.current = setInterval(() => {
 			if (sliderRef.current?.state?.active) return;
-			if (position >= duration) clearInterval(interval);
+			if (position >= duration) clearInterval(intervalRef.current);
 			setPosition(position + 1000);
 		}, 1000);
 
-		return () => clearInterval(interval);
+		return () => clearInterval(intervalRef.current);
 	}, [duration, position, isPlaying]);
 
 	const rangeChangeHandler = e => {
-		const pos = Math.floor(e);
 		if (!sliderRef.current?.state?.active) return;
+		const pos = Math.floor(e);
+		clearInterval(intervalRef.current);
 		setPosition(pos);
 		SpotifyWrapper.Player.seek(pos);
 	};
