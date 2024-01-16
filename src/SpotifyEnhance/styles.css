@@ -185,7 +185,7 @@ div:has(> .spotify-player-banner-modal) {
 	text-overflow: ellipsis;
 }
 
-.spotify-player-artist {
+.spotify-player-artist-container {
 	grid-area: artist;
 	font-size: 0.8rem;
 	--text-link: var(--text-sub);
@@ -194,6 +194,24 @@ div:has(> .spotify-player-banner-modal) {
 	text-overflow: ellipsis;
 }
 
+.spotify-player-artists{
+	background:var(--background-secondary-alt);
+	padding:10px;
+	gap:2px;
+	border-radius:5px;
+	display:flex;
+	flex-direction:column;
+}
+
+.spotify-player-artists .spotify-player-artist-link{
+	font-size: .9rem;
+	--text-link: var(--text-sub);
+	counter-increment:p;
+}
+
+.spotify-player-artists .spotify-player-artist-link:before{
+	content: counter(p) ") ";
+}
 .spotify-player-album {
 	grid-area: album;
 	--text-link: var(--text-sub);

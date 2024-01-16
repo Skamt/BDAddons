@@ -1,5 +1,5 @@
 import { React } from "@Api";
-
+import Popout from "@Components/Popout";
 import { getImageModalComponent, openModal } from "@Utils";
 import Toast from "@Utils/Toast";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
@@ -32,20 +32,22 @@ export default ({ track }) => {
 };
 
 function transformArtist(artist) {
-	return <Anchor href={`https://open.spotify.com/artist/${artist.id}`}>{artist.name}</Anchor>;
+	return <Anchor className="spotify-player-artist-link" href={`https://open.spotify.com/artist/${artist.id}`}>{artist.name}</Anchor>;
 }
 
 function Artist({ artists }) {
-	const artist =
-		artists?.length === 1
-			? transformArtist(artists[0])
-			: artists.map(transformArtist).reduce((acc, el, index, obj) => {
-					acc.push(el);
-					if (index < obj.length - 1) acc.push(", ");
-					return acc;
-				}, []);
+	if (artists.length === 1) return <div className="spotify-player-artist-container">by {transformArtist(artists[0])}</div>;
 
-	return <div className="spotify-player-artist">by {artist}</div>;
+	return (
+		<Popout
+			renderPopout={() => <div className="spotify-player-artists"> {artists.map(transformArtist)}</div>}
+			position="top"
+			align="center"
+			animation="1"
+			spacing={0}>
+			<div className="spotify-player-artist-container"><Anchor>Multiple artists...</Anchor></div>
+		</Popout>
+	);
 }
 
 function TrackBanner({ banner = [] }) {

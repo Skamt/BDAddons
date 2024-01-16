@@ -196,34 +196,34 @@ function SpotifyPlayerButton({ value, onClick, className, active, ...rest }) {
 }
 
 function Volume({ volume }) {
-	const [isMute, setIsMute] = React.useState(!volume);
+	const [isVolumeInputActive, setVolumeInputActive] = React.useState(false);
+
 	const volumeRef = React.useRef(volume || 25);
 	const [val, setVal] = React.useState(volume);
 
 	React.useEffect(() => {
+		if (!isVolumeInputActive) return setVal(volume);
 		if (volume) volumeRef.current = volume;
 	}, [volume]);
 
-	React.useEffect(() => {
-		if (!volume) setIsMute(true);
-		else setIsMute(false);
-	}, [volume]);
-
-	React.useEffect(() => setVal(volume), [volume]);
-
 	const muteHandler = () => {
-		setIsMute(!isMute);
-		setVal(isMute ? volumeRef.current : 0);
-		SpotifyWrapper.Player.volume(isMute ? volumeRef.current : 0).catch(() => {
-			setIsMute(isMute);
-			setVal(!isMute ? volumeRef.current : 0);
+		const target = val ? 0 : volumeRef.current;
+		SpotifyWrapper.Player.volume(target).then(() => {
+			setVal(target);
 		});
 	};
 
 	const onChange = e => {
 		const value = Math.round(e.target.value);
 		setVal(value);
+	};
+
+	const onMouseDown = () => setVolumeInputActive(true);
+
+	const onMouseUp = e => {
+		const value = Math.round(e.target.value);
 		SpotifyWrapper.Player.volume(value);
+		setVolumeInputActive(false);
 	};
 
 	return (
@@ -233,6 +233,8 @@ function Volume({ volume }) {
 					<input
 						value={val}
 						onChange={onChange}
+						onMouseDown={onMouseDown}
+						onMouseUp={onMouseUp}
 						type="range"
 						step="1"
 						min="0"
@@ -244,11 +246,11 @@ function Volume({ volume }) {
 			position="top"
 			align="center"
 			animation="1"
-			spacing={0}>
+			spacing={8}>
 			<SpotifyPlayerButton
 				className="spotify-player-controls-volume"
 				onClick={muteHandler}
-				value={isMute ? <MuteVolumeIcon /> : <VolumeIcon />}
+				value={val ? <VolumeIcon /> : <MuteVolumeIcon />}
 			/>
 		</Popout>
 	);

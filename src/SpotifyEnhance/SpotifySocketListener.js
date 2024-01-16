@@ -22,6 +22,8 @@ function getSocket() {
 	});
 }
 
+
+
 export default new (class SpotifySocketListener extends ChangeEmitter {
 	constructor() {
 		super();
@@ -29,8 +31,12 @@ export default new (class SpotifySocketListener extends ChangeEmitter {
 
 	async init() {
 		const socket = await getSocket();
-		if(this.unpatch) this.unpatch();
-		this.unpatch = Patcher.after(socket.prototype, "handleEvent", (socket, [event]) => this.emit({ socket, event }));
+		if (this.unpatch) this.unpatch();
+		this.unpatch = Patcher.after(socket.prototype, "handleEvent", this.onSocketEvent.bind(this));
+	}
+
+	onSocketEvent(socket, [event]) {
+		this.emit({ socket, event });
 	}
 
 	dispose() {

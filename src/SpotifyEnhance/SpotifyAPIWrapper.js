@@ -80,7 +80,7 @@ export default new Proxy(
 						SpotifyAPI.accountId = socket?.accountId;
 					};
 				default:
-					return Promise.reject("Unknown API Command", prop);
+					throw new Error(`Unknown API Command: ${prop}`);
 			}
 		}
 	}
