@@ -654,8 +654,7 @@ function getButtonClasses({ user, profileType }, isNotNitro, banner) {
 	return res;
 }
 
-function calculateAspectRatioFit(width, height) {
-
+function stretchToFit({ width, height }) {
 	const ratio = Math.min(innerWidth / width, innerHeight / height);
 
 	return {
@@ -668,11 +667,9 @@ async function getBannerDimenions(src) {
 	src = src.replace("url(", "").replace(")");
 	try {
 		const dims = await getImageDimensions(src);
-		return calculateAspectRatioFit(dims.width, dims.height);
+		return stretchToFit(dims);
 	} catch {
-		return {
-			width: 480
-		};
+		return {};
 	}
 }
 

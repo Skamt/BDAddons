@@ -19,7 +19,9 @@ const config = {
 		}]
 	},
 	"settings": {
-		"spotifyEmbed": "REPLACE"
+		"spotifyEmbed": "REPLACE",
+		"activity": false,
+		"player": false
 	}
 }
 
@@ -139,26 +141,27 @@ const css = `
 /* spotify activity controls */
 .spotify-activity-controls {
 	display: flex;
-	margin-top: 10px;
+	margin-top: 12px;
 	gap: 8px;
 }
 
-.spotify-activity-controls svg {
-	width: 18px;
-	height: 18px;
-}
-
-.spotify-activity-controls button > div {
-	font-size: 0;
-	line-height: 1;
-}
-
 .spotify-activity-controls button {
-	padding: 3px 6px !important;
+	padding: 0px ;
+	height: 32px;
+	width: 32px; 
+	flex:0 0 32px;
 }
 
-.spotify-activity-controls > :first-child {
-	flex: 1;
+.spotify-activity-controls button > div{
+	width:100%;
+	height:100%;
+	display:flex;
+	align-items:center;
+	justify-content:center;
+}
+
+.spotify-activity-controls .activity-controls-listen{
+	flex:1;
 }
 
 /* Spotify Player */
@@ -957,12 +960,12 @@ class SpotifyAccount {
 	}
 
 	setPlayerState(playerState) {
-		this.playerState = new PlayerState(playerState);
+		this.playerState = new PlayerState$1(playerState);
 		this.device = playerState.device;
 	}
 }
 
-class PlayerState {
+let PlayerState$1 = class PlayerState {
 	constructor(playerState) {
 		this.playerState = playerState;
 		this.track = playerState.item ? new Track(playerState.item) : null;
@@ -1007,7 +1010,7 @@ class PlayerState {
 	get volume() {
 		return this.playerState.device["volume_percent"];
 	}
-}
+};
 
 class Track {
 	constructor(track) {
@@ -1156,7 +1159,7 @@ const SpotifyActiveAccount = new(class SpotifyActiveAccount extends ChangeEmitte
 					console.log("Idle Timeout HIT");
 					this.emit();
 				},
-				20 * 60 * 1000
+				10 * 60 * 1000
 			);
 		}
 	}
@@ -1552,39 +1555,23 @@ const ShareIcon = () => {
 	);
 };
 
-const getUserSyncActivityState = getModule(Filters.byStrings("USER_ACTIVITY_SYNC", "spotifyData"), { searchExports: true });
-const getUserPlayActivityState = getModule(Filters.byStrings("USER_ACTIVITY_PLAY", "spotifyData"), { searchExports: true });
+const { useSpotifyPlayAction, useSpotifySyncAction } = getModule(Filters.byProps("useSpotifyPlayAction"));
 
-function ActivityControlButton({ value, onClick, ...rest }) {
-	return (
-		React.createElement(Button, {
-			size: Button.Sizes.NONE,
-			color: Button.Colors.PRIMARY,
-			onClick: onClick,
-			...rest,
-		}, value)
-	);
-}
-
-const SpotifyActivityControls = ({ activity, user, source, renderActions }) => {
+const SpotifyActivityControls = ({ activity, user, source }) => {
 	const spotifySocket = FluxHelpers.useStateFromStores([SpotifyStore], () => SpotifyStore.getActiveSocketAndDevice()?.socket);
 
-	const userSyncActivityState = getUserSyncActivityState(activity, user, source);
-	const userPlayActivityState = getUserPlayActivityState(activity, user, source);
-
-	if (!spotifySocket) return renderActions();
-
-	const queue = () => SpotifyWrapper.Player.queue("track", activity.sync_id, activity.details);
-	const share = () => SpotifyWrapper.Utils.share(`https://open.spotify.com/track/${activity.sync_id}`);
+	const userSyncActivityState = useSpotifySyncAction(activity, user, source);
+	const userPlayActivityState = useSpotifyPlayAction(activity, user, source);
 
 	return (
 		React.createElement('div', { className: "spotify-activity-controls", }, React.createElement(Play, { userPlayActivityState: userPlayActivityState, }), React.createElement(Tooltip$1, { note: "Add to queue", }, React.createElement(ActivityControlButton, {
 			className: "activity-controls-queue",
 			value: React.createElement(AddToQueueIcon, null),
-			onClick: queue,
+			disabled: !spotifySocket,
+			onClick: () => SpotifyWrapper.Player.queue("track", activity.sync_id, activity.details),
 		})), React.createElement(Tooltip$1, { note: "Share in current channel", }, React.createElement(ActivityControlButton, {
 			className: "activity-controls-share",
-			onClick: share,
+			onClick: () => SpotifyWrapper.Utils.share(`https://open.spotify.com/track/${activity.sync_id}`),
 			value: React.createElement(ShareIcon, null),
 		})), React.createElement(ListenAlong, { userSyncActivityState: userSyncActivityState, }))
 	);
@@ -1596,6 +1583,8 @@ function Play({ userPlayActivityState }) {
 	return (
 		React.createElement(Tooltip$1, { note: tooltip || label, }, React.createElement(ActivityControlButton, {
 			disabled: disabled,
+			fullWidth: true,
+			grow: true,
 			className: "activity-controls-listen",
 			value: React.createElement(ListenIcon, null),
 			onClick: onClick,
@@ -1616,22 +1605,34 @@ function ListenAlong({ userSyncActivityState }) {
 	);
 }
 
+function ActivityControlButton({ grow, value, onClick, ...rest }) {
+	return (
+		React.createElement(Button, {
+			size: Button.Sizes.NONE,
+			color: Button.Colors.PRIMARY,
+			look: Button.Colors.OUTLINED,
+			onClick: onClick,
+			grow: grow || false,
+			...rest,
+		}, value)
+	);
+}
+
 const ActivityComponent = getModule(a => a.prototype.isStreamerOnTypeActivityFeed);
 
 const patchSpotifyActivity = () => {
 	if (ActivityComponent)
 		Patcher.before(ActivityComponent.prototype, "render", ({ props }) => {
+			if (!Settings.get("activity")) return;
 			if (!props.activity) return;
 			if (props.activity.name.toLowerCase() !== "spotify") return;
 
-			const renderActions = props.renderActions;
 			props.renderActions = () => (
 				React.createElement(ErrorBoundary, {
 					id: "SpotifyEmbed",
 					plugin: config.info.name,
 				}, React.createElement(SpotifyActivityControls, {
 					...props,
-					renderActions: renderActions,
 				}))
 			);
 		});
@@ -2125,11 +2126,13 @@ const TrackTimeLine = ({ duration, isPlaying, progress }) => {
 };
 
 const SpotifyPlayer = React.memo(function SpotifyPlayer() {
+	const player = useSettings("player");
 	const [{ deviceState, playerState }, setState] = React.useState(SpotifyWrapper.getSpotifyState());
 	React.useEffect(() => {
 		return SpotifyWrapper.on(() => setState(SpotifyWrapper.getSpotifyState()));
 	}, []);
 
+	if (!player) return;
 	if (!deviceState) return;
 	if (!playerState) return;
 	if (!playerState.track) return;
@@ -2161,14 +2164,36 @@ const patchSpotifyPlayer = async () => {
 	fluxContainer.stateNode.forceUpdate();
 };
 
-const Heading = TheBigBoyBundle.Heading;
+const Switch = TheBigBoyBundle.FormSwitch ||
+	function SwitchComponentFallback(props) {
+		return (
+			React.createElement('div', { style: { color: "#fff" }, }, props.children, React.createElement('input', {
+				type: "checkbox",
+				checked: props.value,
+				onChange: e => props.onChange(e.target.checked),
+			}))
+		);
+	};
 
-const { RadioGroup } = TheBigBoyBundle;
+const { Heading, RadioGroup } = TheBigBoyBundle;
+
+function useSetting(setting) {
+	return {
+		get: React.useCallback(() => Settings.get(setting), []),
+		set: React.useCallback(e => Settings.set(setting, e), [])
+	};
+}
 
 function SpotifyEmbedOptions() {
-	const [selected, setSelected] = React.useState(Settings.get("spotifyEmbed"));
+	const { get, set } = useSetting("spotifyEmbed");
+	const [selected, setSelected] = React.useState(get());
 	return (
-		React.createElement(React.Fragment, null, React.createElement(Heading, { tag: "h5", }, "spotify embed style"), React.createElement(RadioGroup, {
+		React.createElement(React.Fragment, null, React.createElement(Heading, {
+				style: { marginBottom: 15 },
+				tag: "h5",
+			}, "spotify embed style"
+
+		), React.createElement(RadioGroup, {
 			options: [{
 					"value": EmbedStyleEnum.KEEP,
 					"name": "Keep: Use original Spotify Embed"
@@ -2185,17 +2210,52 @@ function SpotifyEmbedOptions() {
 			orientation: "horizontal",
 			value: selected,
 			onChange: e => {
-				Settings.set("spotifyEmbed", e.value);
+				set(e.value);
 				setSelected(e.value);
 			},
 		}))
 	);
 }
 
-const SettingComponent = React.createElement(SpotifyEmbedOptions, null);
+function PlayerState() {
+	const { get, set } = useSetting("player");
+	const [enabled, setEnabled] = React.useState(get());
+	return (
+		React.createElement(Switch, {
+				value: enabled,
+				hideBorder: false,
+				onChange: e => {
+					set(e);
+					setEnabled(e);
+				},
+			}, "Enable/Disable player"
+
+		)
+	);
+}
+
+function ActivityState() {
+	const { get, set } = useSetting("activity");
+	const [enabled, setEnabled] = React.useState(get());
+	return (
+		React.createElement(Switch, {
+				value: enabled,
+				hideBorder: false,
+				onChange: e => {
+					set(e);
+					setEnabled(e);
+				},
+			}, "Modify activity"
+
+		)
+	);
+}
+
+const SettingComponent = [React.createElement(PlayerState, null), React.createElement(ActivityState, null), React.createElement(SpotifyEmbedOptions, null)];
 
 window.SpotifyWrapper = SpotifyWrapper;
 window.SpotifyAPI = SpotifyAPI;
+window.Settings = Settings;
 
 class SpotifyEnhance {
 	start() {
