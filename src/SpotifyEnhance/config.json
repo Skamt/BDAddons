@@ -7,6 +7,8 @@
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance"
 	},
 	"settings":{
-		"spotifyEmbed":"REPLACE"
+		"spotifyEmbed":"REPLACE",
+		"activity":false,
+		"player":false
 	}
 }

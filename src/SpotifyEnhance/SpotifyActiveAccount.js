@@ -111,7 +111,7 @@ export default new(class SpotifyActiveAccount extends ChangeEmitter {
 					console.log("Idle Timeout HIT");
 					this.emit();
 				},
-				20 * 60 * 1000
+				10 * 60 * 1000
 			);
 		}
 	}

@@ -1,11 +1,7 @@
 import { React } from "@Api";
 import SpotifyWrapper from "../SpotifyWrapper";
-import { usePropBasedState } from "@Utils/Hooks";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 const { Slider } = TheBigBoyBundle;
-
-
-
 
 function formatMsToTime(ms) {
 	const time = new Date(ms);

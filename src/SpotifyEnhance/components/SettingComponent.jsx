@@ -1,16 +1,27 @@
 import { React } from "@Api";
+import Switch from "@Components/Switch";
 import Settings from "@Utils/Settings";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 import { EmbedStyleEnum } from "../consts.js";
+const { Heading, RadioGroup } = TheBigBoyBundle;
 
-const Heading = TheBigBoyBundle.Heading;
+function useSetting(setting) {
+	return {
+		get: React.useCallback(() => Settings.get(setting), []),
+		set: React.useCallback(e => Settings.set(setting, e), [])
+	};
+}
 
-const { RadioGroup } = TheBigBoyBundle;
 function SpotifyEmbedOptions() {
-	const [selected, setSelected] = React.useState(Settings.get("spotifyEmbed"));
+	const { get, set } = useSetting("spotifyEmbed");
+	const [selected, setSelected] = React.useState(get());
 	return (
 		<>
-			<Heading tag="h5">spotify embed style</Heading>
+			<Heading
+				style={{ marginBottom: 15 }}
+				tag="h5">
+				spotify embed style
+			</Heading>
 			<RadioGroup
 				options={[
 					{
@@ -29,7 +40,7 @@ function SpotifyEmbedOptions() {
 				orientation={"horizontal"}
 				value={selected}
 				onChange={e => {
-					Settings.set("spotifyEmbed", e.value);
+					set(e.value);
 					setSelected(e.value);
 				}}
 			/>
@@ -37,4 +48,36 @@ function SpotifyEmbedOptions() {
 	);
 }
 
-export default <SpotifyEmbedOptions />;
+function PlayerState() {
+	const { get, set } = useSetting("player");
+	const [enabled, setEnabled] = React.useState(get());
+	return (
+		<Switch
+			value={enabled}
+			hideBorder={false}
+			onChange={e => {
+				set(e);
+				setEnabled(e);
+			}}>
+			Enable/Disable player
+		</Switch>
+	);
+}
+
+function ActivityState() {
+	const { get, set } = useSetting("activity");
+	const [enabled, setEnabled] = React.useState(get());
+	return (
+		<Switch
+			value={enabled}
+			hideBorder={false}
+			onChange={e => {
+				set(e);
+				setEnabled(e);
+			}}>
+			Modify activity
+		</Switch>
+	);
+}
+
+export default [<PlayerState />, <ActivityState />, <SpotifyEmbedOptions />];

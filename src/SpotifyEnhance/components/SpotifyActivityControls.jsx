@@ -9,34 +9,15 @@ import ListenAlongIcon from "@Components/ListenAlongIcon";
 import ListenIcon from "@Components/ListenIcon";
 import ShareIcon from "@Components/ShareIcon";
 import Tooltip from "@Components/Tooltip";
-
 import FluxHelpers from "@Modules/FluxHelpers";
 
-const getUserSyncActivityState = getModule(Filters.byStrings("USER_ACTIVITY_SYNC", "spotifyData"), { searchExports: true });
-const getUserPlayActivityState = getModule(Filters.byStrings("USER_ACTIVITY_PLAY", "spotifyData"), { searchExports: true });
+const { useSpotifyPlayAction, useSpotifySyncAction } = getModule(Filters.byProps("useSpotifyPlayAction"));
 
-function ActivityControlButton({ value, onClick, ...rest }) {
-	return (
-		<Button
-			size={Button.Sizes.NONE}
-			color={Button.Colors.PRIMARY}
-			onClick={onClick}
-			{...rest}>
-			{value}
-		</Button>
-	);
-}
-
-export default ({ activity, user, source, renderActions }) => {
+export default ({ activity, user, source }) => {
 	const spotifySocket = FluxHelpers.useStateFromStores([SpotifyStore], () => SpotifyStore.getActiveSocketAndDevice()?.socket);
-	
-	const userSyncActivityState = getUserSyncActivityState(activity, user, source);
-	const userPlayActivityState = getUserPlayActivityState(activity, user, source);
 
-	if (!spotifySocket) return renderActions();
-
-	const queue = () => SpotifyWrapper.Player.queue("track", activity.sync_id, activity.details);
-	const share = () => SpotifyWrapper.Utils.share(`https://open.spotify.com/track/${activity.sync_id}`);
+	const userSyncActivityState = useSpotifySyncAction(activity, user, source);
+	const userPlayActivityState = useSpotifyPlayAction(activity, user, source);
 
 	return (
 		<div className="spotify-activity-controls">
@@ -45,13 +26,14 @@ export default ({ activity, user, source, renderActions }) => {
 				<ActivityControlButton
 					className="activity-controls-queue"
 					value={<AddToQueueIcon />}
-					onClick={queue}
+					disabled={!spotifySocket}
+					onClick={() => SpotifyWrapper.Player.queue("track", activity.sync_id, activity.details)}
 				/>
 			</Tooltip>
 			<Tooltip note="Share in current channel">
 				<ActivityControlButton
 					className="activity-controls-share"
-					onClick={share}
+					onClick={() => SpotifyWrapper.Utils.share(`https://open.spotify.com/track/${activity.sync_id}`)}
 					value={<ShareIcon />}
 				/>
 			</Tooltip>
@@ -61,12 +43,14 @@ export default ({ activity, user, source, renderActions }) => {
 };
 
 function Play({ userPlayActivityState }) {
-	const { label,disabled, onClick, tooltip } = userPlayActivityState;
+	const { label, disabled, onClick, tooltip } = userPlayActivityState;
 
 	return (
 		<Tooltip note={tooltip || label}>
 			<ActivityControlButton
 				disabled={disabled}
+				fullWidth={true}
+				grow={true}
 				className="activity-controls-listen"
 				value={<ListenIcon />}
 				onClick={onClick}
@@ -87,5 +71,19 @@ function ListenAlong({ userSyncActivityState }) {
 				value={<ListenAlongIcon />}
 			/>
 		</Tooltip>
+	);
+}
+
+function ActivityControlButton({ grow, value, onClick, ...rest }) {
+	return (
+		<Button
+			size={Button.Sizes.NONE}
+			color={Button.Colors.PRIMARY}
+			look={Button.Colors.OUTLINED}
+			onClick={onClick}
+			grow={grow||false}
+			{...rest}>
+			{value}
+		</Button>
 	);
 }

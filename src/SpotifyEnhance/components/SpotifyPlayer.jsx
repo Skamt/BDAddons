@@ -1,23 +1,25 @@
 import { React } from "@Api";
 import SpotifyWrapper from "../SpotifyWrapper";
-
+import { useSettings } from "@Utils/Hooks";
 import TrackMediaDetails from "./TrackMediaDetails";
 import SpotifyPlayerControls from "./SpotifyPlayerControls";
 import TrackTimeLine from "./TrackTimeLine";
 
 export default React.memo(function SpotifyPlayer() {
+	const player = useSettings("player");
 	const [{ deviceState, playerState }, setState] = React.useState(SpotifyWrapper.getSpotifyState());
 	React.useEffect(() => {
 		return SpotifyWrapper.on(() => setState(SpotifyWrapper.getSpotifyState()));
 	}, []);
 
+	if (!player) return;
 	if (!deviceState) return;
 	if (!playerState) return;
 	if (!playerState.track) return;
 
 	const { disallowedActions, track, duration, shuffle, volume, repeat, isPlaying, progress } = playerState;
 	const { url } = track;
-	
+
 	return (
 		<div className="spotify-player-container">
 			<TrackMediaDetails track={track} />

@@ -22,8 +22,6 @@ function getSocket() {
 	});
 }
 
-
-
 export default new (class SpotifySocketListener extends ChangeEmitter {
 	constructor() {
 		super();
