@@ -79,6 +79,35 @@ const css = `
 	border-radius: var(--radius);
 }
 
+.spotifyEmbed-Container.playing .spotifyEmbed-thumbnail{
+	border-radius:50%;
+	position: relative;
+	box-shadow: 0 0 0 0 #0008;
+	animation:
+		r 10s linear infinite,
+		b 1.5s infinite linear
+	;
+	position: relative;
+}
+
+.spotifyEmbed-Container.playing .spotifyEmbed-thumbnail:after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	border-radius: inherit;
+	box-shadow: 0 0 0 0 #0004;
+	animation: inherit;
+	animation-delay: -0.5s;
+}
+
+@keyframes r{
+	to { rotate:360deg; }
+}
+
+@keyframes b {
+	100% { box-shadow: 0 0 0 20px #0000; }
+}
+
 .spotifyEmbed-title {
 	grid-area: title;
 
@@ -179,7 +208,7 @@ const css = `
 	display: grid;
 	column-gap: 10px;
 	grid-template-columns: 64px 1fr;
-	grid-template-rows: repeat(3, auto);
+	grid-template-rows: repeat(3, 1fr);
 	align-items: center;
 
 	grid-template-areas:
@@ -212,6 +241,12 @@ div:has(> .spotify-player-banner-modal) {
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
+}
+
+.spotify-player-title:first-child{
+	grid-column:1/-1;
+	grid-row:1/-1;
+	margin-bottom:5px;
 }
 
 .spotify-player-artist-container {
@@ -968,7 +1003,7 @@ class SpotifyAccount {
 let PlayerState$1 = class PlayerState {
 	constructor(playerState) {
 		this.playerState = playerState;
-		this.track = playerState.item ? new Track(playerState.item) : null;
+		this.track = new Track(playerState.item);
 	}
 
 	get disallowedActions() {
@@ -981,14 +1016,6 @@ let PlayerState$1 = class PlayerState {
 
 	get context() {
 		return this.playerState.context;
-	}
-
-	get ressourceId() {
-		return this.track?.id;
-	}
-
-	get duration() {
-		return this.track?.duration;
 	}
 
 	get shuffle() {
@@ -1014,43 +1041,51 @@ let PlayerState$1 = class PlayerState {
 
 class Track {
 	constructor(track) {
-		this.track = track;
+		this.track = track || {};
 	}
 
 	get id() {
-		return this.track.id;
+		return this.track.id || "";
 	}
 
 	get url() {
-		return this.track.external_urls.spotify;
+		return this.track.external_urls?.spotify || "";
 	}
 
 	get artists() {
-		return this.track.artists;
+		return this.track.artists || [];
 	}
 
 	get duration() {
-		return this.track["duration_ms"];
+		return this.track["duration_ms"] || 0;
 	}
 
 	get explicit() {
-		return this.track.explicit;
+		return this.track.explicit || false;
 	}
 
 	get name() {
-		return this.track.name;
+		return this.track.name || "";
 	}
 
-	get bannerObj() {
-		return this.track.album.images;
+	get bannerSm() {
+		return this.track.album?.images[2] || {};
+	}
+
+	get bannerMd() {
+		return this.track.album?.images[1] || {};
+	}
+
+	get bannerLg() {
+		return this.track.album?.images[0] || {};
 	}
 
 	get albumName() {
-		return this.track.album.name;
+		return this.track.album?.name || "";
 	}
 
 	get albumUrl() {
-		return this.track.album.external_urls.spotify;
+		return this.track.album?.external_urls?.spotify || "";
 	}
 }
 
@@ -1282,7 +1317,9 @@ const SpotifyWrapper = new(class SpotifyWrapper extends ChangeEmitter {
 	}
 
 	onStateChange() {
-		this.activeAccount = SpotifyActiveAccount.getActiveAccount();
+		const newState = SpotifyActiveAccount.getActiveAccount();
+		if (newState?.playerState?.currentlyPlayingType === "ad") return;
+		this.activeAccount = newState;
 		console.log("activeAccount", this.activeAccount);
 		this.emit();
 	}
@@ -1399,21 +1436,30 @@ const Tooltip$1 = ({ note, position, children }) => {
 };
 
 const SpotifyEmbed = ({ embed }) => {
-	const [{ deviceState: isActive, playerState }, setState] = React.useState(SpotifyWrapper.getSpotifyState());
+	const [state, setState] = React.useState(SpotifyWrapper.getSpotifyState());
+
+	const { deviceState: isActive, playerState } = state;
 
 	const { thumbnail, rawTitle, rawDescription, url } = embed;
 	const [type, id] = parseSpotifyUrl(url);
 	const isThis = playerState?.track?.id === id;
+	const isPlaying = playerState?.isPlaying;
 
-	console.log(rawTitle);
 	React.useEffect(() => {
 		return SpotifyWrapper.on(() => {
 			const newState = SpotifyWrapper.getSpotifyState();
 			if (newState.deviceState !== isActive) return setState(newState);
-			if (newState?.playerState?.track?.id === id && !isThis) return setState(newState);
-			if (newState?.playerState?.track?.id !== id && isThis) return setState(newState);
+
+			const newTrackId = newState?.playerState?.track?.id;
+			const newIsPlaying = newState?.playerState?.isPlaying;
+
+			if (newTrackId === id && isThis && newIsPlaying === isPlaying) return;
+
+			if (newTrackId !== id && !isThis) return;
+
+			setState(newState);
 		});
-	}, [isActive, playerState]);
+	}, [isActive, isPlaying, isThis]);
 
 	const listenBtn = type !== "show" && (
 		React.createElement(Listen, {
@@ -1430,10 +1476,11 @@ const SpotifyEmbed = ({ embed }) => {
 			embed: embed,
 		})
 	);
-
+	let className = "spotifyEmbed-Container";
+	if (isThis && isPlaying) className += "playing";
 	return (
 		React.createElement('div', {
-				className: "spotifyEmbed-Container",
+				className: className,
 				style: { "--thumbnail": `url(${thumbnail.proxyURL || thumbnail.url})` },
 			}, React.createElement('div', {
 				onClick: () => thumbnailClickHandler(thumbnail),
@@ -1443,7 +1490,7 @@ const SpotifyEmbed = ({ embed }) => {
 			, React.createElement('h2', { className: "spotifyEmbed-title", }, rawTitle), React.createElement('p', { className: "spotifyEmbed-description", }, rawDescription)
 
 			, type && id && (
-				React.createElement('div', { className: "spotifyEmbed-controls", }, !isThis && isActive && [listenBtn, queueBtn], React.createElement(Copy, { url: url, }), isThis && "Playing...")
+				React.createElement('div', { className: "spotifyEmbed-controls", }, !isThis && isActive && [listenBtn, queueBtn], React.createElement(Copy, { url: url, }))
 			), React.createElement(SpotifyLogoBtn, { url: url, })
 		)
 	);
@@ -1724,21 +1771,33 @@ const Popout$1 = ({ delay, spacing, forceShow, position, animation, align, rende
 
 const { Anchor } = TheBigBoyBundle;
 
-const TrackMediaDetails = ({ track }) => {
-	if (!track) return;
+const TrackMediaDetails = ({ currentlyPlayingType, track }) => {
+	if (currentlyPlayingType !== "track") {
+		return (
+			React.createElement('div', { className: "spotify-player-media", }, React.createElement('div', { className: "spotify-player-title", }, "Playing ", currentlyPlayingType))
+		);
+	}
 
-	const { albumName, albumUrl, bannerObj, url, name, artists } = track;
+	const { albumName, albumUrl, bannerSm, bannerLg, url, name, artists } = track;
 
 	return (
-		React.createElement('div', { className: "spotify-player-media", }, React.createElement(TrackBanner, { banner: bannerObj, }), React.createElement(Tooltip$1, { note: name, }, React.createElement(Anchor, {
+		React.createElement('div', { className: "spotify-player-media", }, React.createElement(TrackBanner, {
+			bannerSm: bannerSm,
+			bannerLg: bannerLg,
+		}), React.createElement(Tooltip$1, { note: name, }, React.createElement(Anchor, {
 			href: url,
 			className: "spotify-player-title",
-		}, name)), React.createElement(Artist, { artists: artists, }), React.createElement(Tooltip$1, { note: albumName, }, React.createElement('div', { className: "spotify-player-album", }, "on ", React.createElement(Anchor, { href: albumUrl, }, albumName), " ")))
+		}, name)), React.createElement(Artist, { artists: artists, }), React.createElement(Tooltip$1, { note: albumName, }, React.createElement('div', { className: "spotify-player-album", }, "on ", React.createElement(Anchor, { href: albumUrl, }, albumName))))
 	);
 };
 
 function transformArtist(artist) {
-	return React.createElement(Anchor, { className: "spotify-player-artist-link", href: `https://open.spotify.com/artist/${artist.id}`, }, artist.name);
+	return (
+		React.createElement(Anchor, {
+			className: "spotify-player-artist-link",
+			href: `https://open.spotify.com/artist/${artist.id}`,
+		}, artist.name)
+	);
 }
 
 function Artist({ artists }) {
@@ -1755,19 +1814,17 @@ function Artist({ artists }) {
 	);
 }
 
-function TrackBanner({ banner = [] }) {
-	const smBanner = banner[2];
-
+function TrackBanner({ bannerLg, bannerSm }) {
 	const thumbnailClickHandler = () => {
-		if (!banner[0]) return Toast.error("Could not open banner");
-		const { url, ...rest } = banner[0];
+		if (!bannerLg.url) return Toast.error("Could not open banner");
+		const { url, ...rest } = bannerLg;
 		openModal(React.createElement('div', { className: "spotify-player-banner-modal", }, getImageModalComponent(url, rest)));
 	};
 
 	return (
 		React.createElement(Tooltip$1, { note: "View", }, React.createElement('div', {
 			onClick: thumbnailClickHandler,
-			style: { "--banner": `url(${smBanner && smBanner.url})` },
+			style: { "--banner": `url(${bannerSm && bannerSm.url})` },
 			className: "spotify-player-banner",
 		}))
 	);
@@ -1877,11 +1934,7 @@ const { MenuItem, Menu } = TheBigBoyBundle;
 const SpotifyPlayerControls = ({ disallowedActions, state, data }) => {
 	if (!disallowedActions || !state || !data) return;
 
-	const {
-		url,
-		banner: [{ url: posterUrl }],
-		volume
-	} = data;
+	const { url, banner, volume } = data;
 	const { shuffle, repeat, isPlaying } = state;
 	const { toggling_shuffle, toggling_repeat_track, /* pausing, resuming, seeking, */ skipping_next, skipping_prev } = disallowedActions;
 
@@ -1914,10 +1967,10 @@ const SpotifyPlayerControls = ({ disallowedActions, state, data }) => {
 	const playHandler = () => SpotifyWrapper.Player.play();
 
 	const shareSongHandler = () => SpotifyWrapper.Utils.share(url);
-	const sharePosterHandler = () => SpotifyWrapper.Utils.share(posterUrl);
+	const sharePosterHandler = () => SpotifyWrapper.Utils.share(banner);
 
 	const copySongHandler = () => SpotifyWrapper.Utils.copySpotifyLink(url);
-	const copyPosterHandler = () => SpotifyWrapper.Utils.copySpotifyLink(posterUrl);
+	const copyPosterHandler = () => SpotifyWrapper.Utils.copySpotifyLink(banner);
 
 	const { playPauseTooltip, playPauseHandler, playPauseIcon, playPauseClassName } = {
 		"true": {
@@ -2079,7 +2132,7 @@ function formatMsToTime(ms) {
 	return [time.getUTCHours(), String(time.getUTCMinutes()), String(time.getUTCSeconds()).padStart(2, "0")].filter(Boolean).join(":");
 }
 
-const TrackTimeLine = ({ duration, isPlaying, progress }) => {
+const TrackTimeLine = ({ currentlyPlayingType, duration, isPlaying, progress }) => {
 	const [position, setPosition] = React.useState(progress);
 
 	const sliderRef = React.useRef();
@@ -2109,6 +2162,10 @@ const TrackTimeLine = ({ duration, isPlaying, progress }) => {
 		SpotifyWrapper.Player.seek(pos);
 	};
 
+	if (currentlyPlayingType !== "track")
+		return (
+			React.createElement('div', { className: "spotify-player-timeline", }, React.createElement('div', { className: "spotify-player-timeline-progress", }, formatMsToTime(position)))
+		);
 	return (
 		React.createElement('div', { className: "spotify-player-timeline", }, React.createElement(Slider, {
 			className: "spotify-player-timeline-trackbar",
@@ -2135,16 +2192,23 @@ const SpotifyPlayer = React.memo(function SpotifyPlayer() {
 	if (!player) return;
 	if (!deviceState) return;
 	if (!playerState) return;
-	if (!playerState.track) return;
 
-	const { disallowedActions, track, duration, shuffle, volume, repeat, isPlaying, progress } = playerState;
-	const { url } = track;
+	const { disallowedActions, track, currentlyPlayingType, shuffle, volume, repeat, isPlaying, progress } = playerState;
+	const { duration, url, bannerLg } = track;
 
 	return (
-		React.createElement('div', { className: "spotify-player-container", }, React.createElement(TrackMediaDetails, { track: track, }), React.createElement(TrackTimeLine, { ...{ duration, isPlaying, progress }, }), React.createElement(SpotifyPlayerControls, {
+		React.createElement('div', { className: "spotify-player-container", }, React.createElement(TrackMediaDetails, {
+			currentlyPlayingType: currentlyPlayingType,
+			track: track,
+		}), React.createElement(TrackTimeLine, {
+			currentlyPlayingType: currentlyPlayingType,
+			duration: duration,
+			isPlaying: isPlaying,
+			progress: progress,
+		}), React.createElement(SpotifyPlayerControls, {
 			disallowedActions: disallowedActions,
 			state: { shuffle, isPlaying, repeat },
-			data: { banner: track.bannerObj, url, volume },
+			data: { banner: bannerLg.url, url, volume },
 		}))
 	);
 });
