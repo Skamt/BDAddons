@@ -29,7 +29,7 @@ export default class SpotifyAccount {
 class PlayerState {
 	constructor(playerState) {
 		this.playerState = playerState;
-		this.track = playerState.item ? new Track(playerState.item) : null;
+		this.track = new Track(playerState.item);
 	}
 
 	get disallowedActions() {
@@ -42,14 +42,6 @@ class PlayerState {
 
 	get context() {
 		return this.playerState.context;
-	}
-
-	get ressourceId() {
-		return this.track?.id;
-	}
-
-	get duration() {
-		return this.track?.duration;
 	}
 
 	get shuffle() {
@@ -75,42 +67,50 @@ class PlayerState {
 
 class Track {
 	constructor(track) {
-		this.track = track;
+		this.track = track || {};
 	}
 
 	get id() {
-		return this.track.id;
+		return this.track.id || "";
 	}
 
 	get url() {
-		return this.track.external_urls.spotify;
+		return this.track.external_urls?.spotify || "";
 	}
 
 	get artists() {
-		return this.track.artists;
+		return this.track.artists || [];
 	}
 
 	get duration() {
-		return this.track["duration_ms"];
+		return this.track["duration_ms"] || 0;
 	}
 
 	get explicit() {
-		return this.track.explicit;
+		return this.track.explicit || false;
 	}
 
 	get name() {
-		return this.track.name;
+		return this.track.name || "";
 	}
 
-	get bannerObj() {
-		return this.track.album.images;
+	get bannerSm() {
+		return this.track.album?.images[2] || {};
+	}
+
+	get bannerMd() {
+		return this.track.album?.images[1] || {};
+	}
+
+	get bannerLg() {
+		return this.track.album?.images[0] || {};
 	}
 
 	get albumName() {
-		return this.track.album.name;
+		return this.track.album?.name || "";
 	}
 
 	get albumUrl() {
-		return this.track.album.external_urls.spotify;
+		return this.track.album?.external_urls?.spotify || "";
 	}
 }

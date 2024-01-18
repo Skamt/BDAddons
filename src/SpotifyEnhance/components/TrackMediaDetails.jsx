@@ -6,14 +6,23 @@ import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 import Tooltip from "@Components/Tooltip";
 const { Anchor } = TheBigBoyBundle;
 
-export default ({ track }) => {
-	if (!track) return;
+export default ({ currentlyPlayingType, track }) => {
+	if (currentlyPlayingType !== "track") {
+		return (
+			<div className="spotify-player-media">
+				<div className="spotify-player-title">Playing {currentlyPlayingType}</div>
+			</div>
+		);
+	}
 
-	const { albumName, albumUrl, bannerObj, url, name, artists } = track;
+	const { albumName, albumUrl, bannerSm, bannerLg, url, name, artists } = track;
 
 	return (
 		<div className="spotify-player-media">
-			<TrackBanner banner={bannerObj} />
+			<TrackBanner
+				bannerSm={bannerSm}
+				bannerLg={bannerLg}
+			/>
 			<Tooltip note={name}>
 				<Anchor
 					href={url}
@@ -24,7 +33,7 @@ export default ({ track }) => {
 			<Artist artists={artists} />
 			<Tooltip note={albumName}>
 				<div className="spotify-player-album">
-					on <Anchor href={albumUrl}>{albumName}</Anchor>{" "}
+					on <Anchor href={albumUrl}>{albumName}</Anchor>
 				</div>
 			</Tooltip>
 		</div>
@@ -32,7 +41,13 @@ export default ({ track }) => {
 };
 
 function transformArtist(artist) {
-	return <Anchor className="spotify-player-artist-link" href={`https://open.spotify.com/artist/${artist.id}`}>{artist.name}</Anchor>;
+	return (
+		<Anchor
+			className="spotify-player-artist-link"
+			href={`https://open.spotify.com/artist/${artist.id}`}>
+			{artist.name}
+		</Anchor>
+	);
 }
 
 function Artist({ artists }) {
@@ -45,17 +60,17 @@ function Artist({ artists }) {
 			align="center"
 			animation="1"
 			spacing={0}>
-			<div className="spotify-player-artist-container"><Anchor>Multiple artists...</Anchor></div>
+			<div className="spotify-player-artist-container">
+				<Anchor>Multiple artists...</Anchor>
+			</div>
 		</Popout>
 	);
 }
 
-function TrackBanner({ banner = [] }) {
-	const smBanner = banner[2];
-
+function TrackBanner({ bannerLg, bannerSm }) {
 	const thumbnailClickHandler = () => {
-		if (!banner[0]) return Toast.error("Could not open banner");
-		const { url, ...rest } = banner[0];
+		if (!bannerLg.url) return Toast.error("Could not open banner");
+		const { url, ...rest } = bannerLg;
 		openModal(<div className="spotify-player-banner-modal">{getImageModalComponent(url, rest)}</div>);
 	};
 
@@ -63,7 +78,7 @@ function TrackBanner({ banner = [] }) {
 		<Tooltip note="View">
 			<div
 				onClick={thumbnailClickHandler}
-				style={{ "--banner": `url(${smBanner && smBanner.url})` }}
+				style={{ "--banner": `url(${bannerSm && bannerSm.url})` }}
 				className="spotify-player-banner"></div>
 		</Tooltip>
 	);

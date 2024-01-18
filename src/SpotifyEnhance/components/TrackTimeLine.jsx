@@ -8,7 +8,7 @@ function formatMsToTime(ms) {
 	return [time.getUTCHours(), String(time.getUTCMinutes()), String(time.getUTCSeconds()).padStart(2, "0")].filter(Boolean).join(":");
 }
 
-export default ({ duration, isPlaying, progress }) => {
+export default ({ currentlyPlayingType, duration, isPlaying, progress }) => {
 	const [position, setPosition] = React.useState(progress);
 
 	const sliderRef = React.useRef();
@@ -38,6 +38,12 @@ export default ({ duration, isPlaying, progress }) => {
 		SpotifyWrapper.Player.seek(pos);
 	};
 
+	if (currentlyPlayingType !== "track")
+		return (
+			<div className="spotify-player-timeline">
+				<div className="spotify-player-timeline-progress">{formatMsToTime(position)}</div>
+			</div>
+		);
 	return (
 		<div className="spotify-player-timeline">
 			<Slider

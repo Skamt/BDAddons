@@ -36,11 +36,7 @@ const { MenuItem, Menu } = TheBigBoyBundle;
 export default ({ disallowedActions, state, data }) => {
 	if (!disallowedActions || !state || !data) return;
 
-	const {
-		url,
-		banner: [{ url: posterUrl }],
-		volume
-	} = data;
+	const { url, banner, volume } = data;
 	const { shuffle, repeat, isPlaying } = state;
 	const { toggling_shuffle, toggling_repeat_track, /* pausing, resuming, seeking, */ skipping_next, skipping_prev } = disallowedActions;
 
@@ -73,10 +69,10 @@ export default ({ disallowedActions, state, data }) => {
 	const playHandler = () => SpotifyWrapper.Player.play();
 
 	const shareSongHandler = () => SpotifyWrapper.Utils.share(url);
-	const sharePosterHandler = () => SpotifyWrapper.Utils.share(posterUrl);
+	const sharePosterHandler = () => SpotifyWrapper.Utils.share(banner);
 
 	const copySongHandler = () => SpotifyWrapper.Utils.copySpotifyLink(url);
-	const copyPosterHandler = () => SpotifyWrapper.Utils.copySpotifyLink(posterUrl);
+	const copyPosterHandler = () => SpotifyWrapper.Utils.copySpotifyLink(banner);
 
 	const { playPauseTooltip, playPauseHandler, playPauseIcon, playPauseClassName } = {
 		"true": {

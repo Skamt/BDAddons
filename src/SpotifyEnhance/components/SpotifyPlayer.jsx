@@ -15,19 +15,26 @@ export default React.memo(function SpotifyPlayer() {
 	if (!player) return;
 	if (!deviceState) return;
 	if (!playerState) return;
-	if (!playerState.track) return;
 
-	const { disallowedActions, track, duration, shuffle, volume, repeat, isPlaying, progress } = playerState;
-	const { url } = track;
+	const { disallowedActions, track, currentlyPlayingType, shuffle, volume, repeat, isPlaying, progress } = playerState;
+	const { duration, url, bannerLg } = track;
 
 	return (
 		<div className="spotify-player-container">
-			<TrackMediaDetails track={track} />
-			<TrackTimeLine {...{ duration, isPlaying, progress }} />
+			<TrackMediaDetails
+				currentlyPlayingType={currentlyPlayingType}
+				track={track}
+			/>
+			<TrackTimeLine
+				currentlyPlayingType={currentlyPlayingType}
+				duration={duration}
+				isPlaying={isPlaying}
+				progress={progress}
+			/>
 			<SpotifyPlayerControls
 				disallowedActions={disallowedActions}
 				state={{ shuffle, isPlaying, repeat }}
-				data={{ banner: track.bannerObj, url, volume }}
+				data={{ banner: bannerLg.url, url, volume }}
 			/>
 		</div>
 	);

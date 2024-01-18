@@ -52,7 +52,9 @@ export default new(class SpotifyWrapper extends ChangeEmitter {
 	}
 
 	onStateChange() {
-		this.activeAccount = SpotifyActiveAccount.getActiveAccount();
+		const newState = SpotifyActiveAccount.getActiveAccount();
+		if(newState?.playerState?.currentlyPlayingType === "ad") return;
+		this.activeAccount = newState;
 		console.log("activeAccount", this.activeAccount);
 		this.emit();
 	}

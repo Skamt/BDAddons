@@ -10,21 +10,30 @@ import SpotifyIcon from "@Components/SpotifyIcon";
 import Tooltip from "@Components/Tooltip";
 
 export default ({ embed }) => {
-	const [{ deviceState: isActive, playerState }, setState] = React.useState(SpotifyWrapper.getSpotifyState());
+	const [state, setState] = React.useState(SpotifyWrapper.getSpotifyState());
+
+	const { deviceState: isActive, playerState } = state;
 
 	const { thumbnail, rawTitle, rawDescription, url } = embed;
 	const [type, id] = parseSpotifyUrl(url);
 	const isThis = playerState?.track?.id === id;
+	const isPlaying = playerState?.isPlaying;
 
-	console.log(rawTitle);
 	React.useEffect(() => {
 		return SpotifyWrapper.on(() => {
 			const newState = SpotifyWrapper.getSpotifyState();
 			if (newState.deviceState !== isActive) return setState(newState);
-			if (newState?.playerState?.track?.id === id && !isThis) return setState(newState);
-			if (newState?.playerState?.track?.id !== id && isThis) return setState(newState);
+
+			const newTrackId = newState?.playerState?.track?.id;
+			const newIsPlaying = newState?.playerState?.isPlaying;
+
+			if (newTrackId === id && isThis && newIsPlaying === isPlaying) return;
+
+			if (newTrackId !== id && !isThis) return;
+
+			setState(newState);
 		});
-	}, [isActive, playerState]);
+	}, [isActive, isPlaying, isThis]);
 
 	const listenBtn = type !== "show" && (
 		<Listen
@@ -41,10 +50,11 @@ export default ({ embed }) => {
 			embed={embed}
 		/>
 	);
-
+	let	className = "spotifyEmbed-Container";
+	if(isThis && isPlaying) className+= "playing";
 	return (
 		<div
-			className="spotifyEmbed-Container"
+			className={className}
 			style={{ "--thumbnail": `url(${thumbnail.proxyURL || thumbnail.url})` }}>
 			<div
 				onClick={() => thumbnailClickHandler(thumbnail)}
@@ -57,7 +67,6 @@ export default ({ embed }) => {
 				<div className="spotifyEmbed-controls">
 					{!isThis && isActive && [listenBtn, queueBtn]}
 					<Copy url={url} />
-					{isThis && "Playing..."}
 				</div>
 			)}
 			<SpotifyLogoBtn url={url} />
