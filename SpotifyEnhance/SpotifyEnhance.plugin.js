@@ -210,7 +210,7 @@ const css = `
 	grid-template-columns: 64px 1fr;
 	grid-template-rows: repeat(3, 1fr);
 	align-items: center;
-
+	justify-items: flex-start;
 	grid-template-areas:
 		"banner title"
 		"banner artist"
