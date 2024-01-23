@@ -72,21 +72,20 @@ const css = `
 
 .spotifyEmbed-thumbnail {
 	grid-area: thumbnail;
-
+	cursor: pointer;
 	width: 80px;
 	height: 80px;
 	background: var(--thumbnail) center/cover no-repeat;
 	border-radius: var(--radius);
 }
 
-.spotifyEmbed-Container.playing .spotifyEmbed-thumbnail{
-	border-radius:50%;
+.spotifyEmbed-Container.playing .spotifyEmbed-thumbnail {
+	border-radius: 50%;
 	position: relative;
 	box-shadow: 0 0 0 0 #0008;
 	animation:
 		r 10s linear infinite,
-		b 1.5s infinite linear
-	;
+		b 1.5s infinite linear;
 	position: relative;
 }
 
@@ -100,12 +99,16 @@ const css = `
 	animation-delay: -0.5s;
 }
 
-@keyframes r{
-	to { rotate:360deg; }
+@keyframes r {
+	to {
+		rotate: 360deg;
+	}
 }
 
 @keyframes b {
-	100% { box-shadow: 0 0 0 20px #0000; }
+	100% {
+		box-shadow: 0 0 0 20px #0000;
+	}
 }
 
 .spotifyEmbed-title {
@@ -175,22 +178,22 @@ const css = `
 }
 
 .spotify-activity-controls button {
-	padding: 0px ;
+	padding: 0px;
 	height: 32px;
-	width: 32px; 
-	flex:0 0 32px;
+	width: 32px;
+	flex: 0 0 32px;
 }
 
-.spotify-activity-controls button > div{
-	width:100%;
-	height:100%;
-	display:flex;
-	align-items:center;
-	justify-content:center;
+.spotify-activity-controls button > div {
+	width: 100%;
+	height: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 }
 
-.spotify-activity-controls .activity-controls-listen{
-	flex:1;
+.spotify-activity-controls .activity-controls-listen {
+	flex: 1;
 }
 
 /* Spotify Player */
@@ -217,7 +220,7 @@ const css = `
 		"banner album";
 }
 
-div:has(> .spotify-player-banner-modal) {
+div:has(> .spotify-banner-modal) {
 	background: #0000;
 }
 
@@ -237,49 +240,49 @@ div:has(> .spotify-player-banner-modal) {
 	font-weight: bold;
 	color: #fff;
 	font-size: 1.05rem;
-	max-width:100%;
+	max-width: 100%;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
 }
 
-.spotify-player-title:first-child{
-	grid-column:1/-1;
-	grid-row:1/-1;
-	margin-bottom:5px;
+.spotify-player-title:first-child {
+	grid-column: 1/-1;
+	grid-row: 1/-1;
+	margin-bottom: 5px;
 }
 
 .spotify-player-artist {
 	grid-area: artist;
 	font-size: 0.8rem;
 	--text-link: var(--text-sub);
-	max-width:100%;
+	max-width: 100%;
 	overflow: hidden;
 	text-overflow: ellipsis;
 }
 
-.spotify-player-artists{
-	background:var(--background-secondary-alt);
-	padding:10px;
-	gap:2px;
-	border-radius:5px;
-	display:flex;
-	flex-direction:column;
+.spotify-player-artists {
+	background: var(--background-secondary-alt);
+	padding: 10px;
+	gap: 2px;
+	border-radius: 5px;
+	display: flex;
+	flex-direction: column;
 }
 
-.spotify-player-artists .spotify-player-artist-link{
-	font-size: .9rem;
+.spotify-player-artists .spotify-player-artist-link {
+	font-size: 0.9rem;
 	--text-link: var(--text-sub);
-	counter-increment:p;
+	counter-increment: p;
 }
 
-.spotify-player-artists .spotify-player-artist-link:before{
+.spotify-player-artists .spotify-player-artist-link:before {
 	content: counter(p) ") ";
 }
 .spotify-player-album {
 	grid-area: album;
 	--text-link: var(--text-sub);
-	max-width:100%;
+	max-width: 100%;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -370,21 +373,20 @@ div:has(> .spotify-player-banner-modal) {
 }
 
 .spotify-player-controls-volume-slider-wrapper {
-	height:120px;
-	width:20px;
+	height: 120px;
+	width: 20px;
 	background: var(--background-floating);
-	padding:5px 1px;
-	border-radius:99px;
+	padding: 5px 1px;
+	border-radius: 99px;
 }
 
 .spotify-player-controls-volume-slider {
-	margin:0;
-	width:100%;
-	height:100%;
+	margin: 0;
+	width: 100%;
+	height: 100%;
 	accent-color: var(--spotify-green);
 	appearance: slider-vertical;
 }
-
 `;
 
 const Logger = {
@@ -1477,30 +1479,26 @@ const SpotifyEmbed = ({ embed }) => {
 		})
 	);
 	let className = "spotifyEmbed-Container";
-	if (isThis && isPlaying) className += "playing";
+	if (isThis && isPlaying) className += " playing";
 	return (
 		React.createElement('div', {
 				className: className,
 				style: { "--thumbnail": `url(${thumbnail.proxyURL || thumbnail.url})` },
-			}, React.createElement('div', {
-				onClick: () => thumbnailClickHandler(thumbnail),
+			}, React.createElement(Tooltip$1, { note: "View", }, React.createElement('div', {
+				onClick: () => {
+					let { proxyURL, url, width, height } = thumbnail;
+					width = width > 650 ? 650 : width;
+					height = height > 650 ? 650 : height;
+					openModal(React.createElement('div', { className: "spotify-banner-modal", }, getImageModalComponent(proxyURL || url, { width, height })));
+				},
 				className: "spotifyEmbed-thumbnail",
-			})
-
-			, React.createElement('h2', { className: "spotifyEmbed-title", }, rawTitle), React.createElement('p', { className: "spotifyEmbed-description", }, rawDescription)
+			})), React.createElement('h2', { className: "spotifyEmbed-title", }, rawTitle), React.createElement('p', { className: "spotifyEmbed-description", }, rawDescription)
 
 			, type && id && (
 				React.createElement('div', { className: "spotifyEmbed-controls", }, !isThis && isActive && [listenBtn, queueBtn], React.createElement(Copy, { url: url, }))
 			), React.createElement(SpotifyLogoBtn, { url: url, })
 		)
 	);
-};
-
-const thumbnailClickHandler = thumbnail => {
-	let { proxyURL, url, width, height } = thumbnail;
-	width = width > 650 ? 650 : width;
-	height = height > 650 ? 650 : height;
-	openModal(getImageModalComponent(proxyURL || url, { width, height }));
 };
 
 function SpotifyLogoBtn({ url }) {
@@ -1818,7 +1816,7 @@ function TrackBanner({ bannerLg, bannerSm }) {
 	const thumbnailClickHandler = () => {
 		if (!bannerLg.url) return Toast.error("Could not open banner");
 		const { url, ...rest } = bannerLg;
-		openModal(React.createElement('div', { className: "spotify-player-banner-modal", }, getImageModalComponent(url, rest)));
+		openModal(React.createElement('div', { className: "spotify-banner-modal", }, getImageModalComponent(url, rest)));
 	};
 
 	return (
