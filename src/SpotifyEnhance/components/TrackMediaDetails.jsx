@@ -51,7 +51,7 @@ function transformArtist(artist) {
 }
 
 function Artist({ artists }) {
-	if (artists.length === 1) return <div className="spotify-player-artist-container">by {transformArtist(artists[0])}</div>;
+	if (artists.length === 1) return <div className="spotify-player-artist">by {transformArtist(artists[0])}</div>;
 
 	return (
 		<Popout
@@ -60,7 +60,7 @@ function Artist({ artists }) {
 			align="center"
 			animation="1"
 			spacing={0}>
-			<div className="spotify-player-artist-container">
+			<div className="spotify-player-artist">
 				<Anchor>Multiple artists...</Anchor>
 			</div>
 		</Popout>

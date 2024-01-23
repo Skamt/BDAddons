@@ -209,7 +209,7 @@ div:has(> .spotify-player-banner-modal) {
 	font-weight: bold;
 	color: #fff;
 	font-size: 1.05rem;
-
+	width:100%;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -221,11 +221,11 @@ div:has(> .spotify-player-banner-modal) {
 	margin-bottom:5px;
 }
 
-.spotify-player-artist-container {
+.spotify-player-artist {
 	grid-area: artist;
 	font-size: 0.8rem;
 	--text-link: var(--text-sub);
-
+	width:100%;
 	overflow: hidden;
 	text-overflow: ellipsis;
 }
@@ -251,7 +251,7 @@ div:has(> .spotify-player-banner-modal) {
 .spotify-player-album {
 	grid-area: album;
 	--text-link: var(--text-sub);
-
+	width:100%;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
