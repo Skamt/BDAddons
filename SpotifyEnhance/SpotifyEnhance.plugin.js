@@ -237,7 +237,7 @@ div:has(> .spotify-player-banner-modal) {
 	font-weight: bold;
 	color: #fff;
 	font-size: 1.05rem;
-
+	max-width:100%;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -249,11 +249,11 @@ div:has(> .spotify-player-banner-modal) {
 	margin-bottom:5px;
 }
 
-.spotify-player-artist-container {
+.spotify-player-artist {
 	grid-area: artist;
 	font-size: 0.8rem;
 	--text-link: var(--text-sub);
-
+	max-width:100%;
 	overflow: hidden;
 	text-overflow: ellipsis;
 }
@@ -279,7 +279,7 @@ div:has(> .spotify-player-banner-modal) {
 .spotify-player-album {
 	grid-area: album;
 	--text-link: var(--text-sub);
-
+	max-width:100%;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -1801,7 +1801,7 @@ function transformArtist(artist) {
 }
 
 function Artist({ artists }) {
-	if (artists.length === 1) return React.createElement('div', { className: "spotify-player-artist-container", }, "by ", transformArtist(artists[0]));
+	if (artists.length === 1) return React.createElement('div', { className: "spotify-player-artist", }, "by ", transformArtist(artists[0]));
 
 	return (
 		React.createElement(Popout$1, {
@@ -1810,7 +1810,7 @@ function Artist({ artists }) {
 			align: "center",
 			animation: "1",
 			spacing: 0,
-		}, React.createElement('div', { className: "spotify-player-artist-container", }, React.createElement(Anchor, null, "Multiple artists...")))
+		}, React.createElement('div', { className: "spotify-player-artist", }, React.createElement(Anchor, null, "Multiple artists...")))
 	);
 }
 
