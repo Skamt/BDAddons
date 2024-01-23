@@ -71,7 +71,7 @@ function TrackBanner({ bannerLg, bannerSm }) {
 	const thumbnailClickHandler = () => {
 		if (!bannerLg.url) return Toast.error("Could not open banner");
 		const { url, ...rest } = bannerLg;
-		openModal(<div className="spotify-player-banner-modal">{getImageModalComponent(url, rest)}</div>);
+		openModal(<div className="spotify-banner-modal">{getImageModalComponent(url, rest)}</div>);
 	};
 
 	return (

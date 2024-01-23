@@ -50,16 +50,22 @@ export default ({ embed }) => {
 			embed={embed}
 		/>
 	);
-	let	className = "spotifyEmbed-Container";
-	if(isThis && isPlaying) className+= "playing";
+	let className = "spotifyEmbed-Container";
+	if (isThis && isPlaying) className += " playing";
 	return (
 		<div
 			className={className}
 			style={{ "--thumbnail": `url(${thumbnail.proxyURL || thumbnail.url})` }}>
-			<div
-				onClick={() => thumbnailClickHandler(thumbnail)}
-				className="spotifyEmbed-thumbnail"></div>
-
+			<Tooltip note="View">
+				<div
+					onClick={() => {
+						let { proxyURL, url, width, height } = thumbnail;
+						width = width > 650 ? 650 : width;
+						height = height > 650 ? 650 : height;
+						openModal(<div className="spotify-banner-modal">{getImageModalComponent(proxyURL || url, { width, height })}</div>);
+					}}
+					className="spotifyEmbed-thumbnail"></div>
+			</Tooltip>
 			<h2 className="spotifyEmbed-title">{rawTitle}</h2>
 			<p className="spotifyEmbed-description">{rawDescription}</p>
 
@@ -72,13 +78,6 @@ export default ({ embed }) => {
 			<SpotifyLogoBtn url={url} />
 		</div>
 	);
-};
-
-const thumbnailClickHandler = thumbnail => {
-	let { proxyURL, url, width, height } = thumbnail;
-	width = width > 650 ? 650 : width;
-	height = height > 650 ? 650 : height;
-	openModal(getImageModalComponent(proxyURL || url, { width, height }));
 };
 
 function SpotifyLogoBtn({ url }) {
