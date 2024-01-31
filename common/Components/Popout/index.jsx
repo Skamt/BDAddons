@@ -3,13 +3,14 @@ import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 
 const { Popout } = TheBigBoyBundle;
 
-export default ({ delay, spacing, forceShow, position, animation, align, renderPopout, children }) => {
+export default ({ delay, spacing, forceShow, position, animation, align, className, renderPopout, children }) => {
 	const [show, setShow] = React.useState(false);
 	const leaveRef = React.useRef();
 	const enterRef = React.useRef();
+
 	return (
 		<div
-			className={`${config.info.name}-popout-container`}
+			className={`${config.info.name}-popout-container ${className ? className : ""}`}
 			onMouseLeave={() => {
 				clearTimeout(enterRef.current);
 				enterRef.current = null;
@@ -32,7 +33,6 @@ export default ({ delay, spacing, forceShow, position, animation, align, renderP
 			}}>
 			<Popout
 				renderPopout={renderPopout}
-				nudgeAlignIntoViewport={true}
 				shouldShow={forceShow || show}
 				onRequestClose={() => console.log("onRequestClose")}
 				onRequestOpen={() => console.log("onRequestOpen")}

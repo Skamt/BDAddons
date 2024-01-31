@@ -179,10 +179,10 @@
 .spotify-player-media {
 	color: white;
 	font-size: 0.9rem;
-
+	overflow:hidden;
 	display: grid;
 	column-gap: 10px;
-	grid-template-columns: 64px 1fr;
+	grid-template-columns: 64px minmax(0, 1fr);
 	grid-template-rows: repeat(3, 1fr);
 	align-items: center;
 	justify-items: flex-start;
@@ -229,11 +229,16 @@ div:has(> .spotify-banner-modal) {
 	font-size: 0.8rem;
 	--text-link: var(--text-sub);
 	max-width: 100%;
+	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
 }
 
-.spotify-player-artists {
+.spotify-player-multiple-artists{
+	display:contents;
+}
+
+.spotify-player-artists-popout {
 	background: var(--background-secondary-alt);
 	padding: 10px;
 	gap: 2px;
@@ -242,13 +247,13 @@ div:has(> .spotify-banner-modal) {
 	flex-direction: column;
 }
 
-.spotify-player-artists .spotify-player-artist-link {
+.spotify-player-artists-popout .spotify-player-artist-link {
 	font-size: 0.9rem;
 	--text-link: var(--text-sub);
 	counter-increment: p;
 }
 
-.spotify-player-artists .spotify-player-artist-link:before {
+.spotify-player-artists-popout .spotify-player-artist-link:before {
 	content: counter(p) ") ";
 }
 .spotify-player-album {
@@ -358,4 +363,9 @@ div:has(> .spotify-banner-modal) {
 	height: 100%;
 	accent-color: var(--spotify-green);
 	appearance: slider-vertical;
+}
+
+.spotify-player-share-menuitem svg{
+	width:16px;
+	height:16px;
 }

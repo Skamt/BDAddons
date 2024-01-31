@@ -8,7 +8,7 @@ import PauseIcon from "@Components/PauseIcon";
 import PlayIcon from "@Components/PlayIcon";
 import RepeatIcon from "@Components/RepeatIcon";
 import ShuffleIcon from "@Components/ShuffleIcon";
-
+import CopyIcon from "@Components/CopyIcon";
 import NextIcon from "@Components/NextIcon";
 import VolumeIcon from "@Components/VolumeIcon";
 import MuteVolumeIcon from "@Components/MuteVolumeIcon";
@@ -95,35 +95,42 @@ export default ({ disallowedActions, state, data }) => {
 				renderPopout={t => (
 					<Menu onClose={t.closePopout}>
 						<MenuItem
+							className="spotify-player-share-menuitem"
 							id="copy-song-link"
 							key="copy-song-link"
+							icon={CopyIcon}
 							action={copySongHandler}
 							label="Copy song url"
 						/>
 						<MenuItem
+							className="spotify-player-share-menuitem"
 							id="copy-poster-link"
 							key="copy-poster-link"
 							action={copyPosterHandler}
+							icon={CopyIcon}
 							label="Copy poster url"
 						/>
 						<MenuItem
+							className="spotify-player-share-menuitem"
 							id="share-song-link"
 							key="share-song-link"
 							action={shareSongHandler}
+							icon={ShareIcon}
 							label="Share song in current channel"
 						/>
 						<MenuItem
+							className="spotify-player-share-menuitem"
 							id="share-poster-link"
 							key="share-poster-link"
 							action={sharePosterHandler}
+							icon={ShareIcon}
 							label="Share poster in current channel"
 						/>
 					</Menu>
 				)}
 				align="left"
 				position="top"
-				animation="1"
-				spacing={0}>
+				animation="1">
 				<SpotifyPlayerButton
 					className="spotify-player-controls-share"
 					value={<ShareIcon />}

@@ -18,10 +18,10 @@ export default class {
 		this.listeners.delete(handler);
 	}
 
-	emit(payload) {
+	emit(...payload) {
 		for (const listener of this.listeners) {
 			try {
-				listener(payload);
+				listener.apply(null, payload);
 			} catch (err) {
 				console.error(`Could not run listener`, err);
 			}

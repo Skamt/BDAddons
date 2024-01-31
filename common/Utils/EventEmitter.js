@@ -23,12 +23,12 @@ export default class {
 		delete this.listeners[event];
 	}
 
-	emit(event, payload) {
+	emit(event, ...payload) {
 		if (!this.listeners[event]) return;
 
 		for (const listener of this.listeners[event]) {
 			try {
-				listener(payload);
+				listener.apply(null, payload);
 			} catch (err) {
 				console.error(`Could not run listener for ${event}`, err);
 			}

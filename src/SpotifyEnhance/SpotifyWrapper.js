@@ -29,7 +29,7 @@ const Utils = {
 	}
 };
 
-export default new(class SpotifyWrapper extends ChangeEmitter {
+export default new (class SpotifyWrapper extends ChangeEmitter {
 	constructor() {
 		super();
 		this.onStateChange = this.onStateChange.bind(this);
@@ -53,10 +53,32 @@ export default new(class SpotifyWrapper extends ChangeEmitter {
 
 	onStateChange() {
 		const newState = SpotifyActiveAccount.getActiveAccount();
-		if(newState?.playerState?.currentlyPlayingType === "ad") return;
+		if (newState?.playerState?.currentlyPlayingType === "ad") return;
 		this.activeAccount = newState;
 		console.log("activeAccount", this.activeAccount);
 		this.emit();
+	}
+
+	getTrack(id) {
+		const track = this.activeAccount?.playerState?.track;
+		if (!track) return;
+		if (!id) return track;
+		if (id && id === track.id) return track;
+	}
+
+	getActiveState() {
+		return this.activeAccount?.isActive;
+	}
+
+	getPlayerState(){
+		return this.activeAccount?.playerState;
+	}
+
+	getEmbedData(id){
+		const track = this.activeAccount?.playerState?.track;
+		const isPlaying = this.activeAccount?.playerState?.isPlaying;
+		if (id !== track?.id) return;
+		if (isPlaying) return true;
 	}
 
 	getSpotifyState() {

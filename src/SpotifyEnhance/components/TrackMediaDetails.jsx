@@ -7,6 +7,7 @@ import Tooltip from "@Components/Tooltip";
 const { Anchor } = TheBigBoyBundle;
 
 export default ({ currentlyPlayingType, track }) => {
+	
 	if (currentlyPlayingType !== "track") {
 		return (
 			<div className="spotify-player-media">
@@ -51,18 +52,18 @@ function transformArtist(artist) {
 }
 
 function Artist({ artists }) {
-	if (artists.length === 1) return <div className="spotify-player-artist">by {transformArtist(artists[0])}</div>;
+	const first = <div className="spotify-player-artist">by {transformArtist(artists[0])}</div>;
 
+	if (artists.length === 1) return first;
 	return (
 		<Popout
-			renderPopout={() => <div className="spotify-player-artists"> {artists.map(transformArtist)}</div>}
+			renderPopout={() => <div className="spotify-player-artists-popout"> {artists.map(transformArtist)}</div>}
 			position="top"
 			align="center"
 			animation="1"
+			className="spotify-player-multiple-artists"
 			spacing={0}>
-			<div className="spotify-player-artist">
-				<Anchor>Multiple artists...</Anchor>
-			</div>
+			{first}
 		</Popout>
 	);
 }
