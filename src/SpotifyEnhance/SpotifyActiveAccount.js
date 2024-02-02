@@ -1,4 +1,5 @@
 import ChangeEmitter from "@Utils/ChangeEmitter";
+import Timer from "@Utils/Timer";
 import SpotifyAPIWrapper from "./SpotifyAPIWrapper";
 import { promiseHandler } from "@Utils";
 import SpotifySocketListener from "./SpotifySocketListener";
@@ -6,7 +7,7 @@ import SpotifyStore from "@Stores/SpotifyStore";
 import ConnectedAccountsStore from "@Stores/ConnectedAccountsStore";
 import SpotifyAccount from "./SpotifyAccount";
 
-export default new(class SpotifyActiveAccount extends ChangeEmitter {
+export default new (class SpotifyActiveAccount extends ChangeEmitter {
 	constructor() {
 		super();
 		this.onSocketEvent = this.onSocketEvent.bind(this);
@@ -16,7 +17,14 @@ export default new(class SpotifyActiveAccount extends ChangeEmitter {
 
 	async init() {
 		this.activeAccount = undefined;
-
+		this.timer = new Timer(
+			() => {
+				console.log("Idle Timeout HIT: ", Date());
+				this.activeAccount = undefined;
+				this.emit();
+			},
+			10 * 60 * 1000
+		);
 		SpotifySocketListener.init();
 		SpotifySocketListener.on(this.onSocketEvent);
 
@@ -38,6 +46,8 @@ export default new(class SpotifyActiveAccount extends ChangeEmitter {
 		ConnectedAccountsStore.removeChangeListener(this.onAccountsChanged);
 		SpotifySocketListener.dispose();
 		clearTimeout(this.idleTimeoutId);
+		this.timer = null;
+		delete this.timer;
 		delete this.activeAccount;
 	}
 
@@ -81,39 +91,13 @@ export default new(class SpotifyActiveAccount extends ChangeEmitter {
 	}
 
 	checkActivityInterval() {
-		if (!this.activeAccount?.playerState && this.idleTimeoutId) {
-			console.log("Clear Idle Timeout");
-			clearTimeout(this.idleTimeoutId);
-			this.idleTimeoutId = null;
-			return;
-		}
-
-		if (!this.activeAccount?.playerState) return;
+		if (!this.activeAccount?.playerState) return this.timer.stop();
 
 		const { isPlaying } = this.activeAccount.playerState;
 
-		if (isPlaying && this.idleTimeoutId) {
-			console.log("Clear Idle Timeout");
-			clearTimeout(this.idleTimeoutId);
-			this.idleTimeoutId = null;
-			return;
-		}
+		if (isPlaying) return this.timer.stop();
 
-		if (!isPlaying && this.idleTimeoutId) return;
-
-		if (!isPlaying) {
-			console.log("Start Idle Timeout");
-			this.idleTimeoutId = setTimeout(
-				() => {
-					clearTimeout(this.idleTimeoutId);
-					this.idleTimeoutId = null;
-					this.activeAccount = undefined;
-					console.log("Idle Timeout HIT");
-					this.emit();
-				},
-				10 * 60 * 1000
-			);
-		}
+		if (!isPlaying) return this.timer.start();
 	}
 
 	setToken() {
