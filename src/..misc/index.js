@@ -7,6 +7,7 @@ import GuildInfo from "./mods/GuildInfo";
 import MemUsage from "./mods/MemUsage";
 import NoTrack from "./mods/NoTrack";
 import ShowUserInfo from "./mods/ShowUserInfo";
+import NoLinkPreview from "./mods/NoLinkPreview";
 import SpotifyListenAlong from "./mods/SpotifyListenAlong";
 import Whois from "./mods/Whois";
 import Spotify from "./mods/Spotify";
@@ -16,6 +17,7 @@ const mods = [
 	new ConsoleToggleButton(),
 	new EmojiLetters(),
 	new GuildInfo(),
+	new NoLinkPreview(),
 	// new MemUsage(),
 	// new Whois(),
 	// new Spotify(),

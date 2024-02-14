@@ -40,6 +40,7 @@ export const insertText = (() => {
 	let ComponentDispatch;
 	return content => {
 		if (!ComponentDispatch) ComponentDispatch = getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners("INSERT_TEXT").length, { searchExports: true });
+		if (!ComponentDispatch) return;
 		setTimeout(() => {
 			ComponentDispatch.dispatchToLastSubscribed("INSERT_TEXT", {
 				plainText: content

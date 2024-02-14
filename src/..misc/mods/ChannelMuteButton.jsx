@@ -8,9 +8,7 @@ export default class ChannelMuteButton extends Disposable {
 	Init() {
 		if (ChannelComponent)
 			this.patches = [
-				Patcher.after(ChannelComponent, "default", (_, [{ muted, channel: { guild_id, id } }], ret) => {
-					const children = ret.props?.children?.props?.children[1].props?.children.props.children[1].props.children;
-					if (!children.some(a => a?.props?.id === "channelMuteButton"))
+				Patcher.before(ChannelComponent, "default", (_, [{children, muted, channel: { guild_id, id } }]) => {
 						children?.push?.(
 							<b
 								id="channelMuteButton"
