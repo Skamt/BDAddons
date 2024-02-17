@@ -30,7 +30,7 @@ function buildFetchRequestOptions(builderObj) {
 		headers: builderObj.headers
 	};
 
-	if (builderObj.body) options["body"] = JSON.stringify(builderObj.body);
+	if (builderObj.body) options.body = JSON.stringify(builderObj.body);
 	return options;
 }
 
@@ -92,19 +92,19 @@ class SpotifyClientAPI {
 	}
 
 	set token(value) {
-		this.credentials["token"] = value;
+		this.credentials.token = value;
 	}
 
 	get token() {
-		return this.credentials["token"] || null;
+		return this.credentials.token || null;
 	}
 
 	set accountId(value) {
-		this.credentials["accountId"] = value;
+		this.credentials.accountId = value;
 	}
 
 	get accountId() {
-		return this.credentials["accountId"] || null;
+		return this.credentials.accountId || null;
 	}
 
 	getRequestBuilder() {

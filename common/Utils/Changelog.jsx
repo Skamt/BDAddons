@@ -63,7 +63,7 @@ function showChangelog() {
 	if (!config.changelog || !Array.isArray(config.changelog)) return;
 	const changelog = config.changelog.map(({ type, items }) => [
 		<h3
-			style={{ "color": `var(--${type})` }}
+			style={{ color: `var(--${type})` }}
 			className="title">
 			{type}
 		</h3>,

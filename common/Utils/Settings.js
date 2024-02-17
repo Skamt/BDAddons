@@ -2,10 +2,6 @@ import { Data } from "@Api";
 import ChangeEmitter from "@Utils/ChangeEmitter";
 
 export default new (class Settings extends ChangeEmitter {
-	constructor() {
-		super();
-	}
-
 	init(defaultSettings) {
 		this.settings = {
 			...defaultSettings,

@@ -23,7 +23,7 @@ export default class {
 			try {
 				listener.apply(null, payload);
 			} catch (err) {
-				console.error(`Could not run listener`, err);
+				console.error("Could not run listener", err);
 			}
 		}
 	}

@@ -1,22 +1,17 @@
 import { React } from "@Api";
 import { Patcher, getOwnerInstance } from "@Api";
+import ErrorBoundary from "@Components/ErrorBoundary";
 import ImageModalVideoModal from "@Modules/ImageModalVideoModal";
 import RenderLinkComponent from "@Modules/RenderLinkComponent";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
-import ErrorBoundary from "@Components/ErrorBoundary";
 const { ModalRoot, ModalSize } = TheBigBoyBundle;
 const ImageModal = ImageModalVideoModal.ImageModal;
 
-export const openModal = children => {
-	TheBigBoyBundle.openModal(props => {
+export const openModal = (children) => {
+	TheBigBoyBundle.openModal((props) => {
 		return (
-			<ErrorBoundary
-				id="modal"
-				plugin={config.info.name}>
-				<ModalRoot
-					{...props}
-					onClick={props.onClose}
-					size={ModalSize.DYNAMIC}>
+			<ErrorBoundary id="modal" plugin={config.info.name}>
+				<ModalRoot {...props} onClick={props.onClose} size={ModalSize.DYNAMIC}>
 					{children}
 				</ModalRoot>
 			</ErrorBoundary>
@@ -30,20 +25,19 @@ export const getImageModalComponent = (url, rest = {}) => (
 		src={url}
 		original={url}
 		response={true}
-		renderLinkComponent={p => <RenderLinkComponent {...p} />}
+		renderLinkComponent={(p) => <RenderLinkComponent {...p} />}
 	/>
 );
 
-export const promiseHandler = promise => promise.then(data => [, data]).catch(err => [err]);
+export const promiseHandler = (promise) =>
+	promise.then((data) => [undefined, data]).catch((err) => [err]);
 
 export function copy(data) {
 	DiscordNative.clipboard.copy(data);
 }
 
 export function getNestedProp(obj, path) {
-	return path.split(".").reduce(function (ob, prop) {
-		return ob && ob[prop];
-	}, obj);
+	return path.split(".").reduce((ob, prop) => ob?.[prop], obj);
 }
 
 export class BrokenAddon {
@@ -56,7 +50,11 @@ export class BrokenAddon {
 export class MissingZlibAddon {
 	stop() {}
 	start() {
-		BdApi.alert("Missing library", [`**ZeresPluginLibrary** is needed to run **${config.info.name}**.`, "Please download it from the officiel website", "https://betterdiscord.app/plugin/ZeresPluginLibrary"]);
+		BdApi.alert("Missing library", [
+			`**ZeresPluginLibrary** is needed to run **${config.info.name}**.`,
+			"Please download it from the officiel website",
+			"https://betterdiscord.app/plugin/ZeresPluginLibrary",
+		]);
 	}
 }
 
@@ -66,7 +64,7 @@ export class Disposable {
 	}
 
 	Dispose() {
-		this.patches?.forEach(p => p?.());
+		this.patches?.forEach((p) => p?.());
 		this.patches = [];
 	}
 }
@@ -82,26 +80,31 @@ export function reRender(selector) {
 export const nop = () => {};
 
 export function sleep(delay) {
-	return new Promise(done => setTimeout(() => done(), delay * 1000));
+	return new Promise((done) => setTimeout(() => done(), delay * 1000));
 }
 
 export function prettyfiyBytes(bytes, si = false, dp = 1) {
 	const thresh = si ? 1000 : 1024;
 
 	if (Math.abs(bytes) < thresh) {
-		return bytes + " B";
+		return `${bytes} B`;
 	}
 
-	const units = si ? ["kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"] : ["KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"];
+	const units = si
+		? ["kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"]
+		: ["KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"];
 	let u = -1;
 	const r = 10 ** dp;
 
 	do {
 		bytes /= thresh;
 		++u;
-	} while (Math.round(Math.abs(bytes) * r) / r >= thresh && u < units.length - 1);
+	} while (
+		Math.round(Math.abs(bytes) * r) / r >= thresh &&
+		u < units.length - 1
+	);
 
-	return bytes.toFixed(dp) + " " + units[u];
+	return `${bytes.toFixed(dp)} ${units[u]}`;
 }
 
 export function parseSnowflake(snowflake) {
@@ -109,7 +112,8 @@ export function parseSnowflake(snowflake) {
 }
 
 export function genUrlParamsFromArray(params) {
-	if (typeof params !== "object") throw new Error("params argument must be an object or array");
+	if (typeof params !== "object")
+		throw new Error("params argument must be an object or array");
 	if (typeof params === "object" && !Array.isArray(params)) {
 		params = Object.entries(params);
 	}
@@ -131,7 +135,7 @@ export function getImageDimensions(url) {
 		img.onload = () =>
 			resolve({
 				width: img.width,
-				height: img.height
+				height: img.height,
 			});
 		img.onerror = reject;
 		img.src = url;

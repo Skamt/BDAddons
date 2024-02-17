@@ -31,7 +31,7 @@ export default class GuildInfo extends Disposable {
 						el(`Owner: ${UserStore.getUser(guild.ownerId)?.tag || guild.ownerId}`),
 						el(`Created At: ${new Date(parseSnowflake(+guild.id)).toLocaleDateString()}`),
 						el(`Joined At: ${guild.joinedAt.toLocaleDateString()}`),
-						el(`Clyde`, { style: { color: guild.features.has(GuildFeaturesEnum.CLYDE_ENABLED) ? "lime" : "red" } }),
+						el("Clyde", { style: { color: guild.features.has(GuildFeaturesEnum.CLYDE_ENABLED) ? "lime" : "red" } }),
 						el(`Roles: ${Object.keys(guild.roles).length}`),
 						el(`Channels: ${GuildChannelStore.getChannels(guild.id).count}`),
 						el(`Members: ${GuildMemberCountStore.getMemberCount(guild.id)}`),
