@@ -450,17 +450,13 @@ class ChangeEmitter {
 			try {
 				listener.apply(null, payload);
 			} catch (err) {
-				console.error(`Could not run listener`, err);
+				console.error("Could not run listener", err);
 			}
 		}
 	}
 }
 
 const Settings = new(class Settings extends ChangeEmitter {
-	constructor() {
-		super();
-	}
-
 	init(defaultSettings) {
 		this.settings = {
 			...defaultSettings,
@@ -626,17 +622,10 @@ const RenderLinkComponent = getModule(m => m.type?.toString?.().includes("MASKED
 const { ModalRoot, ModalSize } = TheBigBoyBundle;
 const ImageModal = ImageModalVideoModal.ImageModal;
 
-const openModal = children => {
-	TheBigBoyBundle.openModal(props => {
+const openModal = (children) => {
+	TheBigBoyBundle.openModal((props) => {
 		return (
-			React.createElement(ErrorBoundary, {
-				id: "modal",
-				plugin: config.info.name,
-			}, React.createElement(ModalRoot, {
-				...props,
-				onClick: props.onClose,
-				size: ModalSize.DYNAMIC,
-			}, children))
+			React.createElement(ErrorBoundary, { id: "modal", plugin: config.info.name, }, React.createElement(ModalRoot, { ...props, onClick: props.onClose, size: ModalSize.DYNAMIC, }, children))
 		);
 	});
 };
@@ -647,18 +636,20 @@ const getImageModalComponent = (url, rest = {}) => (
 		src: url,
 		original: url,
 		response: true,
-		renderLinkComponent: p => React.createElement(RenderLinkComponent, { ...p, }),
+		renderLinkComponent: (p) => React.createElement(RenderLinkComponent, { ...p, }),
 	})
 );
 
-const promiseHandler = promise => promise.then(data => [, data]).catch(err => [err]);
+const promiseHandler = (promise) =>
+	promise.then((data) => [undefined, data]).catch((err) => [err]);
 
 function copy(data) {
 	DiscordNative.clipboard.copy(data);
 }
 
 function genUrlParamsFromArray(params) {
-	if (typeof params !== "object") throw new Error("params argument must be an object or array");
+	if (typeof params !== "object")
+		throw new Error("params argument must be an object or array");
 	if (typeof params === "object" && !Array.isArray(params)) {
 		params = Object.entries(params);
 	}
@@ -705,7 +696,7 @@ function buildFetchRequestOptions(builderObj) {
 		headers: builderObj.headers
 	};
 
-	if (builderObj.body) options["body"] = JSON.stringify(builderObj.body);
+	if (builderObj.body) options.body = JSON.stringify(builderObj.body);
 	return options;
 }
 
@@ -767,19 +758,19 @@ class SpotifyClientAPI {
 	}
 
 	set token(value) {
-		this.credentials["token"] = value;
+		this.credentials.token = value;
 	}
 
 	get token() {
-		return this.credentials["token"] || null;
+		return this.credentials.token || null;
 	}
 
 	set accountId(value) {
-		this.credentials["accountId"] = value;
+		this.credentials.accountId = value;
 	}
 
 	get accountId() {
-		return this.credentials["accountId"] || null;
+		return this.credentials.accountId || null;
 	}
 
 	getRequestBuilder() {
@@ -939,6 +930,31 @@ const SpotifyAPIWrapper = new Proxy({}, {
 		}
 	}
 });
+
+class Timer {
+	constructor(fn, delay) {
+		this.delay = delay;
+		this.fn = fn;
+		this.running = false;
+	}
+
+	start() {
+		if (this.running) return;
+		this.running = true;
+		this.timerId = setTimeout(() => {
+			this.stop();
+			try {
+				this.fn.apply(null);
+			} catch {}
+		}, this.delay);
+	}
+
+	stop() {
+		if (!this.running) return;
+		clearTimeout(this.timerId);
+		this.running = false;
+	}
+}
 
 function getSocketConstructor() {
 	const playableComputerDevices = SpotifyStore.getPlayableComputerDevices() || [];
@@ -1110,7 +1126,14 @@ const SpotifyActiveAccount = new(class SpotifyActiveAccount extends ChangeEmitte
 
 	async init() {
 		this.activeAccount = undefined;
-
+		this.timer = new Timer(
+			() => {
+				console.log("Idle Timeout HIT: ", Date());
+				this.activeAccount = undefined;
+				this.emit();
+			},
+			10 * 60 * 1000
+		);
 		SpotifySocketListener.init();
 		SpotifySocketListener.on(this.onSocketEvent);
 
@@ -1132,6 +1155,8 @@ const SpotifyActiveAccount = new(class SpotifyActiveAccount extends ChangeEmitte
 		ConnectedAccountsStore.removeChangeListener(this.onAccountsChanged);
 		SpotifySocketListener.dispose();
 		clearTimeout(this.idleTimeoutId);
+		this.timer = null;
+		delete this.timer;
 		delete this.activeAccount;
 	}
 
@@ -1175,39 +1200,13 @@ const SpotifyActiveAccount = new(class SpotifyActiveAccount extends ChangeEmitte
 	}
 
 	checkActivityInterval() {
-		if (!this.activeAccount?.playerState && this.idleTimeoutId) {
-			console.log("Clear Idle Timeout");
-			clearTimeout(this.idleTimeoutId);
-			this.idleTimeoutId = null;
-			return;
-		}
-
-		if (!this.activeAccount?.playerState) return;
+		if (!this.activeAccount?.playerState) return this.timer.stop();
 
 		const { isPlaying } = this.activeAccount.playerState;
 
-		if (isPlaying && this.idleTimeoutId) {
-			console.log("Clear Idle Timeout");
-			clearTimeout(this.idleTimeoutId);
-			this.idleTimeoutId = null;
-			return;
-		}
+		if (isPlaying) return this.timer.stop();
 
-		if (!isPlaying && this.idleTimeoutId) return;
-
-		if (!isPlaying) {
-			console.log("Start Idle Timeout");
-			this.idleTimeoutId = setTimeout(
-				() => {
-					clearTimeout(this.idleTimeoutId);
-					this.idleTimeoutId = null;
-					this.activeAccount = undefined;
-					console.log("Idle Timeout HIT");
-					this.emit();
-				},
-				10 * 60 * 1000
-			);
-		}
+		if (!isPlaying) return this.timer.start();
 	}
 
 	setToken() {
@@ -1275,6 +1274,7 @@ const insertText = (() => {
 	let ComponentDispatch;
 	return content => {
 		if (!ComponentDispatch) ComponentDispatch = getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners("INSERT_TEXT").length, { searchExports: true });
+		if (!ComponentDispatch) return;
 		setTimeout(() => {
 			ComponentDispatch.dispatchToLastSubscribed("INSERT_TEXT", {
 				plainText: content
@@ -2104,34 +2104,24 @@ function SpotifyPlayerButton({ value, onClick, className, active, ...rest }) {
 }
 
 function Volume({ volume }) {
-	const [isVolumeInputActive, setVolumeInputActive] = React.useState(false);
-
 	const volumeRef = React.useRef(volume || 25);
 	const [val, setVal] = React.useState(volume);
 
-	React.useEffect(() => {
-		if (!isVolumeInputActive) return setVal(volume);
-		if (volume) volumeRef.current = volume;
-	}, [volume]);
-
-	const muteHandler = () => {
+	const volumeMuteHandler = () => {
 		const target = val ? 0 : volumeRef.current;
 		SpotifyWrapper.Player.volume(target).then(() => {
 			setVal(target);
 		});
 	};
 
-	const onChange = e => {
-		const value = Math.round(e.target.value);
-		setVal(value);
-	};
+	const volumeOnChange = e => setVal(Math.round(e.target.value));
 
-	const onMouseDown = () => setVolumeInputActive(true);
-
-	const onMouseUp = e => {
+	const volumeOnMouseUp = e => {
 		const value = Math.round(e.target.value);
-		SpotifyWrapper.Player.volume(value);
-		setVolumeInputActive(false);
+		SpotifyWrapper.Player.volume(value).then(() => {
+			volumeRef.current = value;
+			setVal(value);
+		});
 	};
 
 	return (
@@ -2139,9 +2129,8 @@ function Volume({ volume }) {
 			renderPopout: () => (
 				React.createElement('div', { className: "spotify-player-controls-volume-slider-wrapper", }, React.createElement('input', {
 					value: val,
-					onChange: onChange,
-					onMouseDown: onMouseDown,
-					onMouseUp: onMouseUp,
+					onChange: volumeOnChange,
+					onMouseUp: volumeOnMouseUp,
 					type: "range",
 					step: "1",
 					min: "0",
@@ -2155,7 +2144,7 @@ function Volume({ volume }) {
 			spacing: 8,
 		}, React.createElement(SpotifyPlayerButton, {
 			className: "spotify-player-controls-volume",
-			onClick: muteHandler,
+			onClick: volumeMuteHandler,
 			value: val ? React.createElement(VolumeIcon, null) : React.createElement(MuteVolumeIcon, null),
 		}))
 	);
