@@ -199,34 +199,24 @@ function SpotifyPlayerButton({ value, onClick, className, active, ...rest }) {
 }
 
 function Volume({ volume }) {
-	const [isVolumeInputActive, setVolumeInputActive] = React.useState(false);
-
 	const volumeRef = React.useRef(volume || 25);
 	const [val, setVal] = React.useState(volume);
 
-	React.useEffect(() => {
-		if (!isVolumeInputActive) return setVal(volume);
-		if (volume) volumeRef.current = volume;
-	}, [volume]);
-
-	const muteHandler = () => {
+	const volumeMuteHandler = () => {
 		const target = val ? 0 : volumeRef.current;
 		SpotifyWrapper.Player.volume(target).then(() => {
 			setVal(target);
 		});
 	};
 
-	const onChange = e => {
-		const value = Math.round(e.target.value);
-		setVal(value);
-	};
+	const volumeOnChange = e => setVal(Math.round(e.target.value));
 
-	const onMouseDown = () => setVolumeInputActive(true);
-
-	const onMouseUp = e => {
+	const volumeOnMouseUp = e => {
 		const value = Math.round(e.target.value);
-		SpotifyWrapper.Player.volume(value);
-		setVolumeInputActive(false);
+		SpotifyWrapper.Player.volume(value).then(() => {
+			volumeRef.current = value;
+			setVal(value);
+		});
 	};
 
 	return (
@@ -235,9 +225,8 @@ function Volume({ volume }) {
 				<div className="spotify-player-controls-volume-slider-wrapper">
 					<input
 						value={val}
-						onChange={onChange}
-						onMouseDown={onMouseDown}
-						onMouseUp={onMouseUp}
+						onChange={volumeOnChange}
+						onMouseUp={volumeOnMouseUp}
 						type="range"
 						step="1"
 						min="0"
@@ -252,7 +241,7 @@ function Volume({ volume }) {
 			spacing={8}>
 			<SpotifyPlayerButton
 				className="spotify-player-controls-volume"
-				onClick={muteHandler}
+				onClick={volumeMuteHandler}
 				value={val ? <VolumeIcon /> : <MuteVolumeIcon />}
 			/>
 		</Popout>
