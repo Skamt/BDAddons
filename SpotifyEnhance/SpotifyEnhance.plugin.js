@@ -210,6 +210,7 @@ const css = `
 	overflow:hidden;
 	display: grid;
 	column-gap: 10px;
+	z-index:5;
 	grid-template-columns: 64px minmax(0, 1fr);
 	grid-template-rows: repeat(3, 1fr);
 	align-items: center;
