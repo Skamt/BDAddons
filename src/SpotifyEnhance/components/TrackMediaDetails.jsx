@@ -80,7 +80,7 @@ function TrackBanner({ bannerLg, bannerSm }) {
 			<div
 				onClick={thumbnailClickHandler}
 				style={{ "--banner": `url(${bannerSm && bannerSm.url})` }}
-				className="spotify-player-banner"></div>
+				className="spotify-player-banner" />
 		</Tooltip>
 	);
 }
