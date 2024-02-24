@@ -2107,6 +2107,11 @@ function Volume({ volume }) {
 	const volumeRef = React.useRef(volume || 25);
 	const [val, setVal] = React.useState(volume);
 
+	React.useEffect(() => {
+		if (volume) volumeRef.current = volume;
+		setVal(volume);
+	}, [volume]);
+
 	const volumeMuteHandler = () => {
 		const target = val ? 0 : volumeRef.current;
 		SpotifyWrapper.Player.volume(target).then(() => {
