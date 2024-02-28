@@ -231,7 +231,7 @@ div:has(> .spotify-banner-modal) {
 	width: 64px;
 	height: 64px;
 	background:
-		var(--banner) center/cover no-repeat,
+		var(--banner-sm) center/cover no-repeat,
 		lime;
 	border-radius: 5px;
 }
@@ -1799,7 +1799,6 @@ const Popout$1 = ({ delay, spacing, forceShow, position, animation, align, class
 const { Anchor } = TheBigBoyBundle;
 
 const TrackMediaDetails = ({ currentlyPlayingType, track }) => {
-
 	if (currentlyPlayingType !== "track") {
 		return (
 			React.createElement('div', { className: "spotify-player-media", }, React.createElement('div', { className: "spotify-player-title", }, "Playing ", currentlyPlayingType))
@@ -1854,7 +1853,6 @@ function TrackBanner({ bannerLg, bannerSm }) {
 	return (
 		React.createElement(Tooltip$1, { note: "View", }, React.createElement('div', {
 			onClick: thumbnailClickHandler,
-			style: { "--banner": `url(${bannerSm && bannerSm.url})` },
 			className: "spotify-player-banner",
 		}))
 	);
@@ -2225,10 +2223,17 @@ const SpotifyPlayer = React.memo(function SpotifyPlayer() {
 	if (!playerState) return;
 
 	const { disallowedActions, track, currentlyPlayingType, shuffle, volume, repeat, isPlaying, progress } = playerState;
-	const { duration, url, bannerLg } = track;
+	const { duration, url, bannerMd, bannerSm, bannerLg } = track;
 
 	return (
-		React.createElement('div', { className: "spotify-player-container", }, React.createElement(TrackMediaDetails, {
+		React.createElement('div', {
+			style: {
+				"--banner-sm": `url(${bannerSm?.url})`,
+				"--banner-md": `url(${bannerMd?.url})`,
+				"--banner-lg": `url(${bannerLg?.url})`
+			},
+			className: "spotify-player-container",
+		}, React.createElement(TrackMediaDetails, {
 			currentlyPlayingType: currentlyPlayingType,
 			track: track,
 		}), React.createElement(TrackTimeLine, {
