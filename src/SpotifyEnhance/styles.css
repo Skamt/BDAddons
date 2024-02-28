@@ -203,7 +203,7 @@ div:has(> .spotify-banner-modal) {
 	width: 64px;
 	height: 64px;
 	background:
-		var(--banner) center/cover no-repeat,
+		var(--banner-sm) center/cover no-repeat,
 		lime;
 	border-radius: 5px;
 }

@@ -7,7 +7,6 @@ import Tooltip from "@Components/Tooltip";
 const { Anchor } = TheBigBoyBundle;
 
 export default ({ currentlyPlayingType, track }) => {
-	
 	if (currentlyPlayingType !== "track") {
 		return (
 			<div className="spotify-player-media">
@@ -79,8 +78,8 @@ function TrackBanner({ bannerLg, bannerSm }) {
 		<Tooltip note="View">
 			<div
 				onClick={thumbnailClickHandler}
-				style={{ "--banner": `url(${bannerSm && bannerSm.url})` }}
-				className="spotify-player-banner" />
+				className="spotify-player-banner"
+			/>
 		</Tooltip>
 	);
 }

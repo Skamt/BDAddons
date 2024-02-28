@@ -17,10 +17,16 @@ export default React.memo(function SpotifyPlayer() {
 	if (!playerState) return;
 
 	const { disallowedActions, track, currentlyPlayingType, shuffle, volume, repeat, isPlaying, progress } = playerState;
-	const { duration, url, bannerLg } = track;
+	const { duration, url, bannerMd,bannerSm, bannerLg } = track;
 
 	return (
-		<div className="spotify-player-container">
+		<div 
+		style={{ 
+			"--banner-sm": `url(${bannerSm?.url})`,
+			"--banner-md": `url(${bannerMd?.url})`,
+			"--banner-lg": `url(${bannerLg?.url})` 
+		}}
+		className="spotify-player-container">
 			<TrackMediaDetails
 				currentlyPlayingType={currentlyPlayingType}
 				track={track}
