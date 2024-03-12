@@ -1,7 +1,8 @@
-import { Filters, getModule } from "@Api";
+import { waitForModule, Filters, getModule } from "@Api";
 
 export { getModule };
 export { Filters };
+export { waitForModule };
 
 export function getModuleAndKey(filter, options) {
 	let module;

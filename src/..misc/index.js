@@ -6,7 +6,9 @@ import EmojiLetters from "./mods/EmojiLetters";
 import GuildInfo from "./mods/GuildInfo";
 import MemUsage from "./mods/MemUsage";
 import NoTrack from "./mods/NoTrack";
+import FriendsSince from "./mods/FriendsSince";
 import ShowUserInfo from "./mods/ShowUserInfo";
+import NoReplyPing from "./mods/NoReplyPing";
 import NoLinkPreview from "./mods/NoLinkPreview";
 import SpotifyListenAlong from "./mods/SpotifyListenAlong";
 import Whois from "./mods/Whois";
@@ -18,10 +20,12 @@ const mods = [
 	new EmojiLetters(),
 	new GuildInfo(),
 	new NoLinkPreview(),
+	new NoReplyPing(),
 	// new MemUsage(),
 	// new Whois(),
 	// new Spotify(),
 	new NoTrack(),
+	new FriendsSince(),
 	new ShowUserInfo(),
 	new SpotifyListenAlong()
 ];
