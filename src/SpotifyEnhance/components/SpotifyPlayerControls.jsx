@@ -3,18 +3,18 @@ import SpotifyWrapper from "../SpotifyWrapper";
 
 import Button from "@Components/Button";
 import Popout from "@Components/Popout";
-import ShareIcon from "@Components/ShareIcon";
-import PauseIcon from "@Components/PauseIcon";
-import PlayIcon from "@Components/PlayIcon";
-import RepeatIcon from "@Components/RepeatIcon";
-import ShuffleIcon from "@Components/ShuffleIcon";
-import CopyIcon from "@Components/CopyIcon";
-import NextIcon from "@Components/NextIcon";
-import VolumeIcon from "@Components/VolumeIcon";
-import MuteVolumeIcon from "@Components/MuteVolumeIcon";
+import ShareIcon from "@Components/icons/ShareIcon";
+import PauseIcon from "@Components/icons/PauseIcon";
+import PlayIcon from "@Components/icons/PlayIcon";
+import RepeatIcon from "@Components/icons/RepeatIcon";
+import ShuffleIcon from "@Components/icons/ShuffleIcon";
+import CopyIcon from "@Components/icons/CopyIcon";
+import NextIcon from "@Components/icons/NextIcon";
+import VolumeIcon from "@Components/icons/VolumeIcon";
+import MuteVolumeIcon from "@Components/icons/MuteVolumeIcon";
 import Tooltip from "@Components/Tooltip";
-import PreviousIcon from "@Components/PreviousIcon";
-import RepeatOneIcon from "@Components/RepeatOneIcon";
+import PreviousIcon from "@Components/icons/PreviousIcon";
+import RepeatOneIcon from "@Components/icons/RepeatOneIcon";
 
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 

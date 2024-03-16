@@ -5,7 +5,7 @@ import ErrorBoundary from "@Components/ErrorBoundary";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 // import Tooltip from "@Components/Tooltip";
 import Button from "@Components/Button";
-// import ShareIcon from "@Components/ShareIcon";
+// import ShareIcon from "@Components/icons/ShareIcon";
 // import { getInternalInstance } from "@Api";
 import ModalRoot from "@Modules/ModalRoot";
 // const { closeModal, openModal, Popout, MenuItem, Menu, MenuGroup } = TheBigBoyBundle;

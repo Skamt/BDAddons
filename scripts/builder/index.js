@@ -89,7 +89,7 @@ function dev() {
 		}
 	});
 
-	watcher.on("change", function (file) {
+	watcher.on("change", (file) => {
 		console.log(`[===] Changed: ${file.replace(pluginsDir, "")}`);
 	});
 
@@ -100,7 +100,7 @@ function dev() {
 	if (process.stdin.isTTY) process.stdin.setRawMode(true);
 	let working = false;
 	process.stdin.on("keypress", (chunk, { ctrl, name }) => {
-		if (ctrl && name == "c" && !working) {
+		if (ctrl && name === "c" && !working) {
 			working = true;
 			build([pluginFolder]).then(() => process.exit(0));
 		}

@@ -3,10 +3,10 @@ import { getImageModalComponent, openModal } from "@Utils";
 
 import { parseSpotifyUrl } from "../Utils.js";
 import SpotifyWrapper from "../SpotifyWrapper";
-import AddToQueueIcon from "@Components/AddToQueueIcon";
-import CopyIcon from "@Components/CopyIcon";
-import ListenIcon from "@Components/ListenIcon";
-import SpotifyIcon from "@Components/SpotifyIcon";
+import AddToQueueIcon from "@Components/icons/AddToQueueIcon";
+import CopyIcon from "@Components/icons/CopyIcon";
+import ListenIcon from "@Components/icons/ListenIcon";
+import SpotifyIcon from "@Components/icons/SpotifyIcon";
 import Tooltip from "@Components/Tooltip";
 
 export default ({ embed: { thumbnail = {}, rawTitle, rawDescription, url } }) => {

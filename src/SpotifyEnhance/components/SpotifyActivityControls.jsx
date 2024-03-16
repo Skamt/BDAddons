@@ -4,10 +4,10 @@ import { Filters, getModule } from "@Webpack";
 import SpotifyStore from "@Stores/SpotifyStore";
 import SpotifyWrapper from "../SpotifyWrapper";
 import Button from "@Components/Button";
-import AddToQueueIcon from "@Components/AddToQueueIcon";
-import ListenAlongIcon from "@Components/ListenAlongIcon";
-import ListenIcon from "@Components/ListenIcon";
-import ShareIcon from "@Components/ShareIcon";
+import AddToQueueIcon from "@Components/icons/AddToQueueIcon";
+import ListenAlongIcon from "@Components/icons/ListenAlongIcon";
+import ListenIcon from "@Components/icons/ListenIcon";
+import ShareIcon from "@Components/icons/ShareIcon";
 import Tooltip from "@Components/Tooltip";
 import FluxHelpers from "@Modules/FluxHelpers";
 

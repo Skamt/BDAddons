@@ -6,7 +6,7 @@ import { isSelf } from "@Utils/User";
 import { getImageModalComponent, openModal, getImageDimensions } from "@Utils";
 import Logger from "@Utils/Logger";
 import ErrorBoundary from "@Components/ErrorBoundary";
-import ErrorIcon from "@Components/ErrorIcon";
+import ErrorIcon from "@Components/icons/ErrorIcon";
 import ProfileTypeEnum from "@Enums/ProfileTypeEnum";
 import UserBannerMask from "@Patch/UserBannerMask";
 import SelectedGuildStore from "@Stores/SelectedGuildStore";
@@ -30,12 +30,12 @@ function getButtonClasses({ user, profileType }, isNotNitro, banner) {
 	return res;
 }
 
-function stretchToFit({width, height}) {
-	const ratio = Math.min(innerWidth  / width, innerHeight  / height);
+function stretchToFit({ width, height }) {
+	const ratio = Math.min(innerWidth / width, innerHeight / height);
 
-	return { 
-		width: Math.round(width * ratio), 
-		height: Math.round(height * ratio) 
+	return {
+		width: Math.round(width * ratio),
+		height: Math.round(height * ratio)
 	};
 }
 
@@ -54,18 +54,15 @@ export default class ViewProfilePicture {
 		const avatarURL = user.getAvatarURL(displayProfile.guildId, 4096, true);
 		const bannerURL = backgroundImage && displayProfile.getBannerURL({ canAnimate: true, size: 4096 });
 
-		const items = [
-			getImageModalComponent(avatarURL, { width: 4096, height: 4096 }), 
-			bannerURL && getImageModalComponent(bannerURL, await getBannerDimenions(backgroundImage)), 
-			(!bannerURL || Settings.get("bannerColor")) && <ColorModalComponent color={backgroundColor} />
-		].filter(Boolean).map(item => ({ "component": item, ...item.props }));
+		const items = [getImageModalComponent(avatarURL, { width: 4096, height: 4096 }), bannerURL && getImageModalComponent(bannerURL, await getBannerDimenions(backgroundImage)), (!bannerURL || Settings.get("bannerColor")) && <ColorModalComponent color={backgroundColor} />].filter(Boolean).map(item => ({ component: item, ...item.props }));
 
 		openModal(
 			<ModalCarousel
 				startWith={0}
 				className="VPP-carousel"
 				items={items}
-			/>
+			/>,
+			"VPP-carousel"
 		);
 	}
 

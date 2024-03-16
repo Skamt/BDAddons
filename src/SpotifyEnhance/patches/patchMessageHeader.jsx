@@ -3,7 +3,7 @@ import Logger from "@Utils/Logger";
 import ErrorBoundary from "@Components/ErrorBoundary";
 import MessageHeader from "@Patch/MessageHeader";
 import PresenceStore from "@Stores/PresenceStore";
-import SpotifyIcon from "@Components/SpotifyIcon";
+import SpotifyIcon from "@Components/icons/SpotifyIcon";
 import Tooltip from "@Components/Tooltip";
 import FluxHelpers from "@Modules/FluxHelpers";
 
