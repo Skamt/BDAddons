@@ -8,6 +8,7 @@ import MemUsage from "./mods/MemUsage";
 import NoTrack from "./mods/NoTrack";
 import FriendsSince from "./mods/FriendsSince";
 import ShowUserInfo from "./mods/ShowUserInfo";
+import RefreshChannel from "./mods/RefreshChannel";
 import NoReplyPing from "./mods/NoReplyPing";
 import NoLinkPreview from "./mods/NoLinkPreview";
 import SpotifyListenAlong from "./mods/SpotifyListenAlong";
@@ -24,21 +25,34 @@ const mods = [
 	// new MemUsage(),
 	// new Whois(),
 	// new Spotify(),
+	new RefreshChannel(),
 	new NoTrack(),
 	new FriendsSince(),
 	new ShowUserInfo(),
 	new SpotifyListenAlong()
 ];
 
-if(console.context) console = console.context();
+if (console.context) console = console.context();
 
 export default () => ({
 	start() {
 		DOM.addStyle(css);
-		mods.forEach(mod => { try { mod.Init?.() } catch (e) { console.log(mod, '\nInit failed\n', e) } });
+		for (const mod of mods) {
+			try {
+				mod.Init?.();
+			} catch (e) {
+				console.log(mod, "\nInit failed\n", e);
+			}
+		}
 	},
 	stop() {
 		DOM.removeStyle();
-		mods.forEach(mod => { try { mod.Dispose?.() } catch (e) { console.log(mod, '\nDispose failed\n', e) } });
+		for (const mod of mods) {
+			try {
+				mod.Dispose?.();
+			} catch (e) {
+				console.log(mod, "\nDispose failed\n", e);
+			}
+		}
 	}
 });

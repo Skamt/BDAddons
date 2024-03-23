@@ -2,12 +2,11 @@ import { promiseHandler, buildUrl } from "@Utils";
 const API_ENDPOINT = "https://api.spotify.com/v1";
 
 async function responseToJson(response) {
-	const failsafeResponse = response.clone();
 	const [error, data] = await promiseHandler(response.json());
 	if (!error) return data;
 	return {
 		invalidJson: true,
-		data: failsafeResponse
+		error
 	};
 }
 
