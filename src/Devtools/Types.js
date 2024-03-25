@@ -11,17 +11,9 @@ function defineModuleGetter(obj, id) {
 	});
 }
 
-function defineGetter(obj, id, val) {
-	Object.defineProperty(obj, id, {
-		get() {
-			return val;
-		}
-	});
-}
-
 export class Module {
 	constructor(module) {
-		defineGetter(this, "module", module);
+		this.module = module;
 	}
 
 	get id() {
@@ -35,18 +27,18 @@ export class Module {
 		return this.module.exports;
 	}
 
-	get modulesUsed() {
+	get imports() {
 		return Modules.modulesImportedInModuleById(this.module.id).reduce((acc, id) => defineModuleGetter(acc, id), {});
 	}
 
-	get modulesUsing() {
+	get modulesUsingThisModule() {
 		return Modules.modulesImportingModuleById(this.module.id).reduce((acc, id) => defineModuleGetter(acc, id), {});
 	}
 }
 
 export class Source {
 	constructor(source) {
-		defineGetter(this, "source", source);
+		this.source = source;
 	}
 
 	get loader() {
@@ -61,41 +53,43 @@ export class Source {
 		return Modules.moduleById(this.source.id);
 	}
 
-	get string(){
+	get string() {
 		return this.source.source.toString();
 	}
 }
 
 export class Store {
 	constructor(module) {
-		defineGetter(this, "module", module);
+		this.module = module;
 		this.name = this.store.getName();
 
-		const methods = {};
+		this.methods = {};
 		const _this = this;
+		// biome-ignore lint/complexity/noForEach: <explanation>
 		Object.getOwnPropertyNames(this.store.__proto__).forEach(key => {
 			if (key === "constructor") return;
 			const func = this.store[key];
 			if (typeof func !== "function") return;
 			if (func.length === 0)
-				return Object.defineProperty(methods, key, {
+				return Object.defineProperty(this.methods, key, {
 					get() { return _this.store[key](); }
 				});
-			else methods[key] = func;
+			this.methods[key] = func;
 		});
 
-		defineGetter(this, "methods", methods);
+
 	}
 
+	// biome-ignore lint/suspicious/useGetterReturn: <explanation>
 	get store() {
 		for (const key of ["Z", "ZP", "default"])
 			if (key in this.module.exports) return this.module.exports[key];
 	}
 
-	get localVars() {
-		return this.store.__getLocalVars();
-	}
-	
+	// get localVars() {
+	// 	return this.store.__getLocalVars();
+	// }
+
 	get events() {
 		return Stores.getStoreListeners(this.name);
 	}

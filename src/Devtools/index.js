@@ -1,12 +1,14 @@
 import Logger from "@Utils/Logger";
-import { getModule, getModuleAndKey } from "@Webpack";
-import { Module, Source, Store } from "./Types";
+import { getModuleAndKey } from "@Webpack";
+
 import { Modules } from "./Modules";
 import { Sources } from "./Sources";
 import { Stores } from "./Stores";
+
 import webpackRequire from "./webpackRequire";
 import Dispatcher from "@Modules/Dispatcher";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
+
 const Misc = {
 	getAllAssets() {
 		return Object.values(Modules.getModules())
@@ -54,18 +56,20 @@ const Misc = {
 };
 
 function init() {
-	["Filters", "getModule"].forEach(a => (window[a] = BdApi.Webpack[a]));
+	["Filters", "getModule", "getModules"].forEach(a => (window[a] = BdApi.Webpack[a]));
 	window.getModuleAndKey = getModuleAndKey;
-	window.s = {
+
+	window.s = Object.assign(id => Modules.moduleById(id), {
 		r: webpackRequire,
 		...Misc,
 		...Stores,
 		...Sources,
 		...Modules,
 		DiscordModules: {
-			Dispatcher,TheBigBoyBundle
+			Dispatcher,
+			TheBigBoyBundle
 		}
-	};
+	});
 }
 
 export default class Devtools {
