@@ -1,14 +1,12 @@
 import { Patcher } from "@Api";
 import Logger from "@Utils/Logger";
-import { getModule, Filters } from "@Webpack";
+import { getModule, waitForModule, Filters } from "@Webpack";
 import { promiseHandler, Disposable } from "@Utils";
 import ChannelSettingsStore from "@Stores/ChannelSettingsStore";
 
-const Settings = getModule(Filters.byPrototypeKeys(["getPredicateSections"]));
-
 const { createChannel } = getModule(a => a.createChannel);
 const { batchChannelUpdate } = getModule(a => a.batchChannelUpdate);
-const { deleteChannel } = getModule(a => a.deleteChannel);
+const { deleteChannel } = getModule(Filters.byProps("deleteChannel", "saveChannel"));
 
 function textToJSON(str) {
 	try {
@@ -30,7 +28,8 @@ function repositionChannel(guildId, channelId, position) {
 }
 
 export default class RefreshChannel extends Disposable {
-	Init() {
+	async Init() {
+		const Settings = await waitForModule(Filters.byPrototypeKeys(["getPredicateSections"]));
 		if (Settings)
 			this.patches = [
 				Patcher.after(Settings.prototype, "getPredicateSections", (_, __, ret) => {
@@ -55,27 +54,40 @@ export default class RefreshChannel extends Disposable {
 
 							console.log(newChannelObj);
 
-							const [error, data] = await promiseHandler(createChannel(newChannelObj));
+							createChannel(newChannelObj)
+								.then(data => {
+									const newlyCreatedChannel = textToJSON(data.text);
+									if (!newlyCreatedChannel) throw new Error("Can't Parse response", data);
+									return repositionChannel(guild_id, newlyCreatedChannel.id, position);
+								})
+								.then(data => {
+									console.log(data);
+									return deleteChannel(id);
+								})
+								.then(console.log)
+								.catch(printError);
 
-							if (error) return printError(error);
+							// const [error, data] = await promiseHandler(createChannel(newChannelObj));
 
-							if (!data.text) return printError(data);
+							// if (error) return printError(error);
 
-							const newlyCreatedChannel = textToJSON(data.text);
+							// if (!data.text) return printError(data);
 
-							if (!newlyCreatedChannel) return printError("Can't Parse response", data);
+							// const newlyCreatedChannel = textToJSON(data.text);
 
-							const [positionError, positionRes] = await promiseHandler(repositionChannel(guild_id, newlyCreatedChannel.id, position));
+							// if (!newlyCreatedChannel) return printError("Can't Parse response", data);
 
-							if (positionError) return printError(positionError);
+							// const [positionError, positionRes] = await promiseHandler(repositionChannel(guild_id, newlyCreatedChannel.id, position));
 
-							console.log(positionRes);
+							// if (positionError) return printError(positionError);
 
-							const [deleteChannelError, deleteChannelRes] = await promiseHandler(deleteChannel(id));
+							// console.log(positionRes);
 
-							if (deleteChannelError) return printError(deleteChannelError);
+							// const [deleteChannelError, deleteChannelRes] = await promiseHandler(deleteChannel(id));
 
-							console.log(deleteChannelRes);
+							// if (deleteChannelError) return printError(deleteChannelError);
+
+							// console.log(deleteChannelRes);
 						}
 					});
 				})

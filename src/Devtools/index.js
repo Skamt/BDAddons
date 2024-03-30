@@ -1,6 +1,6 @@
 import Logger from "@Utils/Logger";
 import { getModuleAndKey } from "@Webpack";
-
+import * as Utils from "@Utils";
 import { Modules } from "./Modules";
 import { Sources } from "./Sources";
 import { Stores } from "./Stores";
@@ -60,6 +60,7 @@ function init() {
 	window.getModuleAndKey = getModuleAndKey;
 
 	window.s = Object.assign(id => Modules.moduleById(id), {
+		Utils,
 		r: webpackRequire,
 		...Misc,
 		...Stores,
