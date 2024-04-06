@@ -1,6 +1,7 @@
 import Logger from "@Utils/Logger";
 import { getModuleAndKey } from "@Webpack";
 import * as Utils from "@Utils";
+import ErrorBoundary from "@Components/ErrorBoundary";
 import { Modules } from "./Modules";
 import { Sources } from "./Sources";
 import { Stores } from "./Stores";
@@ -11,19 +12,8 @@ import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 
 const Misc = {
 	getAllAssets() {
-		return Object.values(Modules.getModules())
-			.filter(a => typeof a.exports === "string" && a.exports.match(/\/assets\/.+/))
+		return Modules.getModules(a => typeof a.exports === "string" && a.exports.match(/\/assets\/.+/))
 			.map(a => a.exports);
-	},
-	byPropValue(val, first = true) {
-		return Modules.getModule(
-			exports => {
-				try {
-					return Object.values(exports).some(v => v === val);
-				} catch {}
-			},
-			{ first }
-		);
 	},
 	getEventListeners(eventName) {
 		const nodes = Dispatcher._actionHandlers._dependencyGraph.nodes;
@@ -49,7 +39,7 @@ const Misc = {
 	getGraph: (() => {
 		let graph = null;
 		return function getGraph(refresh = false) {
-			if (graph === null || refresh) graph = Object.keys(Modules.getModules()).map(a => ({ id: a, modules: Modules.modulesImportedInModuleById(a) }));
+			if (graph === null || refresh) graph = Object.keys(Modules.getWebpackModules()).map(a => ({ id: a, modules: Modules.modulesImportedInModuleById(a) }));
 			return graph;
 		};
 	})()
@@ -60,7 +50,10 @@ function init() {
 	window.getModuleAndKey = getModuleAndKey;
 
 	window.s = Object.assign(id => Modules.moduleById(id), {
-		Utils,
+		Utils:{
+			ErrorBoundary,
+			...Utils
+		},
 		r: webpackRequire,
 		...Misc,
 		...Stores,

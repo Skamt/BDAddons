@@ -52,13 +52,6 @@ export class BrokenAddon {
 	}
 }
 
-export class MissingZlibAddon {
-	stop() {}
-	start() {
-		BdApi.alert("Missing library", [`**ZeresPluginLibrary** is needed to run **${config.info.name}**.`, "Please download it from the officiel website", "https://betterdiscord.app/plugin/ZeresPluginLibrary"]);
-	}
-}
-
 export class Disposable {
 	constructor() {
 		this.patches = [];

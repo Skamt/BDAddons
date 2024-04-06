@@ -1,17 +1,54 @@
-import { Store } from "./Types";
 import { Modules } from "./Modules";
+import { Sources } from "./Sources";
 import Dispatcher from "@Modules/Dispatcher";
+
+class Store {
+	constructor(module) {
+		this.module = module;
+		this.name = this.store.getName();
+
+		this.methods = {};
+		const _this = this;
+		// biome-ignore lint/complexity/noForEach: <explanation>
+		Object.getOwnPropertyNames(this.store.__proto__).forEach(key => {
+			if (key === "constructor") return;
+			const func = this.store[key];
+			if (typeof func !== "function") return;
+			if (func.length === 0)
+				return Object.defineProperty(this.methods, key, {
+					get() {
+						return _this.store[key]();
+					}
+				});
+			this.methods[key] = func;
+		});
+	}
+
+
+	get store() {
+		return this.module.exports.default;
+	}
+
+	// get localVars() {
+	// 	return this.store.__getLocalVars();
+	// }
+
+	get events() {
+		return Stores.getStoreListeners(this.name);
+	}
+}
+
+const Zustand = Sources.getSource("/ServerSideRendering|^Deno\\//");
 
 export const Stores = {
 	getStore(storeName) {
-		const storeFilter = exp => exp && ["Z", "ZP", "default"].some(k => exp[k]?._dispatchToken && exp[k]?.getName() === storeName);
+		const storeFilter = exp => exp?.default?._dispatchToken && exp?.default?.getName() === storeName;
 		const module = Modules.getModule(storeFilter);
 		if (!module) return undefined;
 		return new Store(module);
 	},
 	getStoreFuzzy(str = "") {
-		str = str.toLowerCase();
-		const storeFilter = exp => exp && ["Z", "ZP", "default"].some(k => exp[k]?._dispatchToken && exp[k]?.getName().toLowerCase().includes(str));
+		const storeFilter = exp => exp?.default?._dispatchToken && exp?.default?.getName().toLowerCase().includes(str.toLowerCase());
 		return Modules.getModules(storeFilter).map(module => new Store(module));
 	},
 	getStoreListeners(storeName) {
@@ -23,11 +60,15 @@ export const Stores = {
 		let stores = null;
 		return function getSortedStores(force) {
 			if (!stores || force) {
-				stores = Stores.getStoreFuzzy()
-					.map(store => [store.name, store])
-					.sort((a, b) => a[0].localeCompare(b[0]));
+				stores = Modules.getModule(a => a?.Store).exports.Store.getAll()
+					.map(store => [store.getName(), store])
+					.sort((a, b) => a[0].localeCompare(b[0]))
+					.map(([a,b]) => ({[a]:b}));
 			}
 			return stores;
 		};
-	})()
+	})(),
+	getZustanStores(){
+		return Zustand.module.modulesUsingThisModule;
+	}
 };

@@ -1,23 +1,95 @@
 import webpackRequire from "./webpackRequire";
 import { Sources } from "./Sources";
-import { Module } from "./Types";
+
+function defineModuleGetter(obj, id) {
+	return Object.defineProperty(obj, id, {
+		enumerable: true,
+		get() {
+			return Modules.moduleById(id);
+		}
+	});
+}
+
+class Module {
+	constructor(id, module) {
+		this.id = id;
+		this.rawModule = module;
+		this.exports = module.exports;
+		const source = Sources.sourceById(id);
+		this.loader = source.loader;
+	}
+
+	get code() {
+		return this.loader.toString();
+	}
+
+	get imports() {
+		return Modules.modulesImportedInModuleById(this.id).reduce((acc, id) => defineModuleGetter(acc, id), {});
+	}
+
+	get modulesUsingThisModule() {
+		return Modules.modulesImportingModuleById(this.id).reduce((acc, id) => defineModuleGetter(acc, id), {});
+	}
+
+	get saveSourceToDesktop() {
+		try {
+			const fs = require("fs");
+			const path = `${process.env.USERPROFILE}\\Desktop\\${this.id}.js`;
+			fs.writeFileSync(path, this.code, "utf8");
+
+			return `Saved to: ${path}`;
+		} catch (e) {
+			return e;
+		}
+	}
+	get saveAllToDesktop() {
+		try {
+			const fs = require("fs");
+			const path = `${process.env.USERPROFILE}\\Desktop\\${this.id}`;
+			if (!fs.existsSync(path)) fs.mkdirSync(path);
+			fs.writeFileSync(`${path}\\__MAIN-${this.id}.js`, this.code, "utf8");
+			fs.mkdirSync(`${path}\\modulesUsingThisModule`);
+			fs.mkdirSync(`${path}\\imports`);
+			{
+				const modules = Object.entries(this.modulesUsingThisModule);
+				for (let i = modules.length - 1; i >= 0; i--) {
+					const [id, module] = modules[i];
+					const code = module.code;
+					fs.writeFileSync(`${path}\\modulesUsingThisModule\\${id}.js`, code, "utf8");
+				}
+			}
+
+			{
+				const modules = Object.entries(this.imports);
+				for (let i = modules.length - 1; i >= 0; i--) {
+					const [id, module] = modules[i];
+					const code = module.code;
+					fs.writeFileSync(`${path}\\imports\\${id}.js`, code, "utf8");
+				}
+			}
+			return `Saved to: ${path}`;
+		} catch (e) {
+			return e;
+		}
+	}
+}
 
 function getWebpackModules() {
 	return webpackRequire.c;
 }
 
 function moduleById(id) {
-	return new Module(webpackRequire.c[id]);
+	return new Module(id, webpackRequire.c[id]);
 }
 
 function modulesImportedInModuleById(id) {
-	const rawSource = Sources.sourceById(id).string;
-	const args = rawSource.match(/\((.+?)\)/i)?.[1];
+	const {code} = Sources.sourceById(id);
+	const args = code.match(/\((.+?)\)/i)?.[1];
 	if (args?.length > 5 || !args) return [];
 
 	const req = args.split(",")[2];
 	const re = new RegExp(`(?:\\s|\\(|,|=)${req}\\("?(\\d+)"?\\)`, "g");
-	const imports = Array.from(rawSource.matchAll(re));
+	const imports = Array.from(code.matchAll(re));
 
 	return imports.map(id => id[1]);
 }
@@ -27,7 +99,7 @@ function modulesImportingModuleById(id) {
 }
 
 function noExports(filter, module, exports) {
-	if (filter(exports)) return new Module(module);
+	if (filter(exports)) return new Module(module.id, module);
 }
 
 function doExports(filter, module, exports, index) {
@@ -40,19 +112,13 @@ function doExports(filter, module, exports, index) {
 			continue;
 		}
 		if (!target) continue;
-		if (filter(target, module, index)) return { target, entryKey, module: new Module(module) };
+		if (filter(target, module, index)) return { target, entryKey, module: new Module(module.id, module) };
 	}
 }
 
 function sanitizeExports(exports) {
 	if (!exports) return;
-	const exportsExceptions = [
-		exports => typeof exports === "boolean",
-		exports => exports === window,
-		exports => exports.TypedArray,
-		exports => exports === document.documentElement,
-		exports => exports[Symbol.toStringTag] === "DOMTokenList"
-	];
+	const exportsExceptions = [exports => typeof exports === "boolean", exports => exports === window, exports => exports.TypedArray, exports => exports === document.documentElement, exports => exports[Symbol.toStringTag] === "DOMTokenList"];
 	for (let index = exportsExceptions.length - 1; index >= 0; index--) {
 		if (exportsExceptions[index](exports)) return true;
 	}
@@ -62,7 +128,7 @@ function* moduleLookup(filter, options = {}) {
 	const { searchExports = false } = options;
 	const gauntlet = searchExports ? doExports : noExports;
 
-	const modules = Object.values(getWebpackModules());
+	const modules = Object.values(webpackRequire.c);
 	for (let index = modules.length - 1; index >= 0; index--) {
 		const module = modules[index];
 		const { exports } = module;
