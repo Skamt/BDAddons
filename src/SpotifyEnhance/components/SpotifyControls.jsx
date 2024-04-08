@@ -5,23 +5,20 @@ import FluxHelpers from "@Modules/FluxHelpers";
 import { parseSpotifyUrl } from "../Utils.js";
 import SpotifyWrapper from "../SpotifyWrapper";
 
-
-export default ({ embed }) => {
-	const { url } = embed;
-	const [type, id] = parseSpotifyUrl(url);
+export default ({ id, type, embed: { rawTitle, url } }) => {
 	const spotifySocket = FluxHelpers.useStateFromStores([SpotifyStore], () => SpotifyStore.getActiveSocketAndDevice()?.socket);
 	if (!spotifySocket) return null;
 	const listenBtn = type !== "show" && (
 		<ControlBtn
 			value="listen"
-			onClick={() => SpotifyWrapper.Player.listen(type, id, embed.rawTitle)}
+			onClick={() => SpotifyWrapper.Player.listen(type, id, rawTitle)}
 		/>
 	);
 
 	const queueBtn = (type === "track" || type === "episode") && (
 		<ControlBtn
 			value="add to queue"
-			onClick={() => SpotifyWrapper.Player.queue(type, id, embed.rawTitle)}
+			onClick={() => SpotifyWrapper.Player.queue(type, id, rawTitle)}
 		/>
 	);
 

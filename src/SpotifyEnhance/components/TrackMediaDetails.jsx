@@ -67,7 +67,7 @@ function Artist({ artists }) {
 	);
 }
 
-function TrackBanner({ bannerLg, bannerSm }) {
+function TrackBanner({ bannerLg }) {
 	const thumbnailClickHandler = () => {
 		if (!bannerLg.url) return Toast.error("Could not open banner");
 		const { url, ...rest } = bannerLg;

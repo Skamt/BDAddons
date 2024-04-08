@@ -13,9 +13,7 @@ import { getFluxContainer } from "./Utils";
 
 import SpotifyWrapper from "./SpotifyWrapper";
 
-window.SpotifyWrapper = SpotifyWrapper;
-window.SpotifyAPI = SpotifyAPI;
-window.Settings = Settings;
+
 
 export default class SpotifyEnhance {
 	start() {
