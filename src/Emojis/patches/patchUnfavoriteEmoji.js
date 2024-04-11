@@ -35,7 +35,7 @@ export default () => {
 	if (bbb?.default)
 		Patcher.after(bbb, "default", (_, [{ type, id }], ret) => {
 			if (type !== "emoji") return;
-			if (id && ret.props.id === "favorite") {
+			if (id && ret?.props?.id === "favorite") {
 				return (
 					<MenuItem
 						action={() => fav(id)}
