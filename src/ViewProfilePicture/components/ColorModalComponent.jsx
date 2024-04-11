@@ -2,7 +2,6 @@ import { React } from "@Api";
 import { copy } from "@Utils";
 import Toast from "@Utils/Toast";
 import Color from "@Modules/Color";
-import Settings from "@Utils/Settings";
 
 function copyColor(type, color) {
 	let c = color;

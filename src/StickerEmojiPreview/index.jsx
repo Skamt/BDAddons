@@ -1,7 +1,7 @@
 import css from "./styles";
 import Settings from "@Utils/Settings";
 import Logger from "@Utils/Logger";
-import { Data, DOM, React, Patcher } from "@Api";
+import { DOM, React, Patcher } from "@Api";
 
 import patchPickerInspector from "./patches/patchPickerInspector";
 import patchCloseExpressionPicker from "./patches/patchCloseExpressionPicker";

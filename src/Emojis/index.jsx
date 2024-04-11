@@ -1,5 +1,5 @@
 import css from "./styles";
-import { React, DOM, Patcher } from "@Api";
+import {  React, DOM, Patcher } from "@Api";
 import SettingComponent from "./components/SettingComponent";
 import Settings from "@Utils/Settings";
 import patchGetEmojiUnavailableReason from "./patches/patchGetEmojiUnavailableReason";
@@ -9,6 +9,9 @@ import patchIsEmojiDisabled from "./patches/patchIsEmojiDisabled";
 import patchHighlightAnimatedEmoji from "./patches/patchHighlightAnimatedEmoji";
 import patchEmojiUtils from "./patches/patchEmojiUtils";
 import patchFavoriteEmojis from "./patches/patchFavoriteEmojis";
+import patchUseEmojiGrid from "./patches/patchUseEmojiGrid";
+import patchUnfavoriteEmoji from "./patches/patchUnfavoriteEmoji";
+
 
 export default class Emojis {
 	start() {
@@ -22,6 +25,8 @@ export default class Emojis {
 			patchHighlightAnimatedEmoji();
 			patchEmojiUtils();
 			patchFavoriteEmojis();
+			patchUseEmojiGrid();
+			patchUnfavoriteEmoji();
 		} catch (e) {
 			console.error(e);
 		}

@@ -1,7 +1,7 @@
 import { React } from "@Api";
 import Switch from "@Components/Switch";
-import Settings from "@Utils/Settings";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
+import Settings from "@Utils/Settings";
 import { EmbedStyleEnum } from "../consts.js";
 const { Heading, RadioGroup } = TheBigBoyBundle;
 
@@ -25,16 +25,16 @@ function SpotifyEmbedOptions() {
 			<RadioGroup
 				options={[
 					{
-						"value": EmbedStyleEnum.KEEP,
-						"name": "Keep: Use original Spotify Embed"
+						value: EmbedStyleEnum.KEEP,
+						name: "Keep: Use original Spotify Embed"
 					},
 					{
-						"value": EmbedStyleEnum.REPLACE,
-						"name": "Replace: A less laggy Spotify Embed"
+						value: EmbedStyleEnum.REPLACE,
+						name: "Replace: A less laggy Spotify Embed"
 					},
 					{
-						"value": EmbedStyleEnum.HIDE,
-						"name": "Hide: Completely remove spotify embed"
+						value: EmbedStyleEnum.HIDE,
+						name: "Hide: Completely remove spotify embed"
 					}
 				]}
 				orientation={"horizontal"}
@@ -80,4 +80,5 @@ function ActivityState() {
 	);
 }
 
+// eslint-disable-next-line react/jsx-key
 export default [<PlayerState />, <ActivityState />, <SpotifyEmbedOptions />];

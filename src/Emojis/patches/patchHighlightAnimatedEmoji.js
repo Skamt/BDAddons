@@ -1,7 +1,6 @@
-import { React, Patcher } from "@Api";
+import { Patcher } from "@Api";
 import { Filters, getModuleAndKey } from "@Webpack";
 import Logger from "@Utils/Logger";
-import { getNestedProp, copy } from "@Utils";
 import Settings from "@Utils/Settings";
 
 const EmojiComponent = getModuleAndKey(Filters.byStrings("getDisambiguatedEmojiContext", "isFavoriteEmojiWithoutFetchingLatest", "allowAnimatedEmoji"));

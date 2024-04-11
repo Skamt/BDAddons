@@ -9,6 +9,7 @@ export default async () => {
 	if (!fluxContainer) return Logger.patch("SpotifyPlayer");
 	Patcher.after(fluxContainer.type.prototype, "render", (_, __, ret) => {
 		return [
+			// eslint-disable-next-line react/jsx-key
 			<ErrorBoundary
 				id="SpotifyPlayer"
 				plugin={config.info.name}>

@@ -1,8 +1,7 @@
 import { React } from "@Api";
 import Button from "@Components/Button";
-import SpotifyStore from "@Stores/SpotifyStore";
 import FluxHelpers from "@Modules/FluxHelpers";
-import { parseSpotifyUrl } from "../Utils.js";
+import SpotifyStore from "@Stores/SpotifyStore";
 import SpotifyWrapper from "../SpotifyWrapper";
 
 export default ({ id, type, embed: { rawTitle, url } }) => {

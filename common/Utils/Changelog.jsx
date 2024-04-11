@@ -62,13 +62,16 @@ function ChangelogComponent({ id, changelog }) {
 function showChangelog() {
 	if (!config.changelog || !Array.isArray(config.changelog)) return;
 	const changelog = config.changelog.map(({ type, items }) => [
+		// eslint-disable-next-line react/jsx-key
 		<h3
 			style={{ color: `var(--${type})` }}
 			className="title">
 			{type}
 		</h3>,
+		// eslint-disable-next-line react/jsx-key
 		<ul>
 			{items.map(item => (
+				// eslint-disable-next-line react/jsx-key
 				<li>{item}</li>
 			))}
 		</ul>
@@ -86,7 +89,7 @@ function showChangelog() {
 export default function shouldChangelog() {
 	const { version = config.info.version, changelog = false } = Data.load("metadata") || {};
 
-	if (version != config.info.version || !changelog) {
+	if (version !== config.info.version || !changelog) {
 		Data.save("metadata", { version: config.info.version, changelog: true });
 		return showChangelog;
 	}

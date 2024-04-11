@@ -1,12 +1,10 @@
-import { React } from "@Api";
+import {  React } from "@Api";
 import Switch from "@Components/Switch";
 import Settings from "@Utils/Settings";
 
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 
-const Heading = TheBigBoyBundle.Heading;
-const Slider = TheBigBoyBundle.Slider;
-const FormText = TheBigBoyBundle.FormText;
+const { FormText, Slider, Heading } = TheBigBoyBundle.Heading;
 
 export default () => {
 	return [
@@ -46,6 +44,7 @@ export default () => {
 				onChange: e => Settings.set("shouldHihglightAnimatedEmojis", e)
 			}
 		].map(Toggle),
+		// eslint-disable-next-line react/jsx-key
 		<StickerSize />
 	];
 };
@@ -53,9 +52,13 @@ export default () => {
 function StickerSize() {
 	return (
 		<>
-			<Heading tag="h5">Emoji Size</Heading>
-			
+			<Heading
+				style={{ marginBottom: 20 }}
+				tag="h5">
+				Emoji Size
+			</Heading>
 			<Slider
+				className="emojiSizeSlider"
 				stickToMarkers={true}
 				markers={[40, 48, 60, 64, 80, 96]}
 				minValue={40}

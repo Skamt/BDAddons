@@ -1,5 +1,5 @@
 import css from "./styles";
-import { Data, DOM, React, Patcher } from "@Api";
+import {  DOM, React, Patcher } from "@Api";
 import Settings from "@Utils/Settings";
 
 import { isSelf } from "@Utils/User";
@@ -9,10 +9,6 @@ import ErrorBoundary from "@Components/ErrorBoundary";
 import ErrorIcon from "@Components/icons/ErrorIcon";
 import ProfileTypeEnum from "@Enums/ProfileTypeEnum";
 import UserBannerMask from "@Patch/UserBannerMask";
-import SelectedGuildStore from "@Stores/SelectedGuildStore";
-import ImageModalVideoModal from "@Modules/ImageModalVideoModal";
-import RenderLinkComponent from "@Modules/RenderLinkComponent";
-import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 import ColorModalComponent from "./components/ColorModalComponent";
 import ViewProfilePictureButtonComponent from "./components/ViewProfilePictureButtonComponent";
 import SettingComponent from "./components/SettingComponent";

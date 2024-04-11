@@ -1,18 +1,12 @@
 import { Patcher } from "@Api";
 import { getModule } from "@Webpack";
-
 import Toast from "@Utils/Toast";
 import Logger from "@Utils/Logger";
 import Settings from "@Utils/Settings";
 import { hasEmbedPerms } from "@Utils/Permissions";
 import { sendMessageDirectly, insertText } from "@Utils/Messages";
-
 import UserStore from "@Stores/UserStore";
-import ChannelStore from "@Stores/ChannelStore";
-import SelectedChannelStore from "@Stores/SelectedChannelStore";
-
 import EmojiIntentionEnum from "@Enums/EmojiIntentionEnum";
-
 import { getEmojiWebpUrl, getEmojiGifUrl, isEmojiSendable, parseEmojiUrl } from "../Utils";
 import STRINGS from "../Constants";
 

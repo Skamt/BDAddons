@@ -33,7 +33,6 @@ function sourceById(id) {
 }
 
 function* sourceLookup(...args) {
-	const sum = [];
 	const strArr = args;
 	const invert = typeof args[args.length - 1] === "boolean" ? args.pop() : false;
 

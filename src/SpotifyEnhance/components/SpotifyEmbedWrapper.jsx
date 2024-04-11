@@ -10,6 +10,7 @@ export default function SpotifyEmbedWrapper({ id, type, embedObject, embedCompon
 		case EmbedStyleEnum.KEEP:
 			return [
 				embedComponent,
+				// eslint-disable-next-line react/jsx-key
 				<SpotifyControls
 					id={id}
 					type={type}

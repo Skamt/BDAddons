@@ -1,13 +1,18 @@
 .CHAT .premiumPromo-1eKAIB {
-    display:none;
+	display: none;
 }
 .emojiItemDisabled-3VVnwp {
-    filter: unset;
+	filter: unset;
 }
 
-.emojiControls{
+.emojiControls {
 	display: flex;
 	justify-content: flex-end;
-	gap:4px;
-	margin-top:5px;
+	gap: 4px;
+	margin-top: 5px;
 }
+.emojiSizeSlider {
+	line-height: 1;
+}
+
+

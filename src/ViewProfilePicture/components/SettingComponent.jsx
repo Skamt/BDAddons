@@ -1,6 +1,5 @@
 import { React } from "@Api";
 import Switch from "@Components/Switch";
-import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 import Settings from "@Utils/Settings";
 
 function useSetting(setting) {
@@ -45,4 +44,5 @@ function IncludeBannerColor() {
 	);
 }
 
+// eslint-disable-next-line react/jsx-key
 export default () => [<ShowOnHover />, <IncludeBannerColor />];

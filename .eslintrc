@@ -5,8 +5,8 @@
 	},
 	"extends": [
 		"eslint:recommended",
+		"plugin:react/jsx-runtime",
 		"plugin:react/recommended",
-		"plugin:react/jsx-runtime"
 	],
 	"rules": {
 		"react/prop-types": [0],
@@ -28,7 +28,7 @@
 	"plugins": [
 		"react"
 	],
-	"ignorePatterns":["**.css","**.json"],
+	"ignorePatterns":["**.css","**.json","**.png","**.md","**.gif","**.svg","**.TODO"],
 	"globals": {
 		"config": "readonly",
 		"process": "readonly",

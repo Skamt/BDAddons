@@ -10,7 +10,7 @@ const MessageDecorations = getModule(Filters.byProps("MessagePopoutContent"));
 const AssetURLUtils = getModule(Filters.byProps("getEmojiURL"));
 
 export default () => {
-	if (MessageDecorations && MessageDecorations.MessagePopoutContent)
+	if (MessageDecorations?.MessagePopoutContent)
 		Patcher.after(MessageDecorations, "MessagePopoutContent", (_, __, ret) => {
 			const { animated, emojiName, emojiId: id } = getNestedProp(ret, "props.children.0.props.children.0.props.children.0.props") || {};
 			if (!id) return ret;

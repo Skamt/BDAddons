@@ -38,6 +38,7 @@ export default () => {
 				onChange: e => Settings.set("shouldHighlightAnimated", e)
 			}
 		].map(Toggle),
+		// eslint-disable-next-line react/jsx-key
 		<StickerSize />
 	];
 };
