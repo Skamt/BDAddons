@@ -1,15 +1,16 @@
 import Logger from "@Utils/Logger";
 import { React, Patcher } from "@Api";
+import { getModule, Filters } from "@Webpack";
 import ErrorBoundary from "@Components/ErrorBoundary";
-import EmbedComponent from "@Modules/EmbedComponent";
 import SpotifyEmbedWrapper from "../components/SpotifyEmbedWrapper";
 import { parseSpotifyUrl } from "../Utils";
 
 const ALLOWD_TYPES = ["track", "playlist", "album", "show", "episode"];
+const SpotifyEmbed = getModule(Filters.byStrings("open.spotify.com","/playlist/"),{defaultExport:false});
 
 export default () => {
-	if (EmbedComponent)
-		Patcher.after(EmbedComponent.prototype, "render", ({ props: { embed } }, args, ret) => {
+	if (SpotifyEmbed)
+		Patcher.after(SpotifyEmbed, "default", (_,  [{ embed }], ret) => {
 			if (embed?.provider?.name !== "Spotify") return;
 
 			const [type, id] = parseSpotifyUrl(embed.url) || [];
