@@ -30,18 +30,24 @@ const config = {
 
 const css = `
 .CHAT .premiumPromo-1eKAIB {
-    display:none;
+	display: none;
 }
 .emojiItemDisabled-3VVnwp {
-    filter: unset;
+	filter: unset;
 }
 
-.emojiControls{
+.emojiControls {
 	display: flex;
 	justify-content: flex-end;
-	gap:4px;
-	margin-top:5px;
-}`;
+	gap: 4px;
+	margin-top: 5px;
+}
+.emojiSizeSlider {
+	line-height: 1;
+}
+
+
+`;
 
 const Api = new BdApi(config.info.name);
 
@@ -97,24 +103,23 @@ class ChangeEmitter {
 		this.listeners.delete(handler);
 	}
 
-	emit(payload) {
+	emit(...payload) {
 		for (const listener of this.listeners) {
 			try {
-				listener(payload);
+				listener.apply(null, payload);
 			} catch (err) {
-				console.error(`Could not run listener`, err);
+				console.error("Could not run listener", err);
 			}
 		}
 	}
 }
 
 const Settings = new(class Settings extends ChangeEmitter {
-	constructor() {
-		super();
-	}
-
 	init(defaultSettings) {
-		this.settings = Data.load("settings") || defaultSettings;
+		this.settings = {
+			...defaultSettings,
+			...Data.load("settings")
+		};
 	}
 
 	get(key) {
@@ -137,9 +142,7 @@ const Settings = new(class Settings extends ChangeEmitter {
 	}
 })();
 
-const Heading = TheBigBoyBundle.Heading;
-const Slider = TheBigBoyBundle.Slider;
-const FormText = TheBigBoyBundle.FormText;
+const { FormText, Slider, Heading } = TheBigBoyBundle.Heading;
 
 const SettingComponent = () => {
 	return [
@@ -178,23 +181,27 @@ const SettingComponent = () => {
 				onChange: e => Settings.set("shouldHihglightAnimatedEmojis", e)
 			}
 		].map(Toggle),
+
 		React.createElement(StickerSize, null)
 	];
 };
 
 function StickerSize() {
 	return (
-		React.createElement(React.Fragment, null, React.createElement(Heading, { tag: "h5", }, "Emoji Size")
+		React.createElement(React.Fragment, null, React.createElement(Heading, {
+				style: { marginBottom: 20 },
+				tag: "h5",
+			}, "Emoji Size"
 
-			, React.createElement(Slider, {
-				stickToMarkers: true,
-				markers: [40, 48, 60, 64, 80, 96],
-				minValue: 40,
-				maxValue: 96,
-				initialValue: Settings.get("emojiSize"),
-				onValueChange: e => Settings.set("emojiSize", e),
-			}), React.createElement(FormText, { type: "description", }, "The size of the Emoji in pixels.")
-		)
+		), React.createElement(Slider, {
+			className: "emojiSizeSlider",
+			stickToMarkers: true,
+			markers: [40, 48, 60, 64, 80, 96],
+			minValue: 40,
+			maxValue: 96,
+			initialValue: Settings.get("emojiSize"),
+			onValueChange: e => Settings.set("emojiSize", e),
+		}), React.createElement(FormText, { type: "description", }, "The size of the Emoji in pixels."))
 	);
 }
 
@@ -231,14 +238,7 @@ const Logger = {
 const EmojiFunctions = getModule(Filters.byProps("getEmojiUnavailableReason"), { searchExports: true });
 
 const EmojiIntentionEnum = getModule(Filters.byProps("GUILD_ROLE_BENEFIT_EMOJI"), { searchExports: true }) || {
-	"REACTION": 0,
-	"STATUS": 1,
-	"COMMUNITY_CONTENT": 2,
-	"CHAT": 3,
-	"GUILD_STICKER_RELATED_EMOJI": 4,
-	"GUILD_ROLE_BENEFIT_EMOJI": 5,
-	"COMMUNITY_CONTENT_ONLY": 6,
-	"SOUNDBOARD": 7
+	"CHAT": 3
 };
 
 const patchGetEmojiUnavailableReason = () => {
@@ -247,7 +247,7 @@ const patchGetEmojiUnavailableReason = () => {
 	 * if external emojis are disabled, they don't get added to the picker
 	 * PREMIUM_LOCKED is returned becaause that is what's returned normally
 	 */
-	if (EmojiFunctions && EmojiFunctions.getEmojiUnavailableReason)
+	if (EmojiFunctions?.getEmojiUnavailableReason)
 		Patcher.after(EmojiFunctions, "getEmojiUnavailableReason", (_, [{ intention }], ret) => {
 			if (intention !== EmojiIntentionEnum.CHAT) return ret;
 			return null;
@@ -339,6 +339,7 @@ const insertText = (() => {
 	let ComponentDispatch;
 	return content => {
 		if (!ComponentDispatch) ComponentDispatch = getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners("INSERT_TEXT").length, { searchExports: true });
+		if (!ComponentDispatch) return;
 		setTimeout(() => {
 			ComponentDispatch.dispatchToLastSubscribed("INSERT_TEXT", {
 				plainText: content
@@ -425,16 +426,6 @@ const patchIsEmojiDisabled = () => {
 	else Logger.patch("IsEmojiDisabled");
 };
 
-function copy(data) {
-	DiscordNative.clipboard.copy(data);
-}
-
-function getNestedProp(obj, path) {
-	return path.split(".").reduce(function(ob, prop) {
-		return ob && ob[prop];
-	}, obj);
-}
-
 const EmojiComponent = getModuleAndKey(Filters.byStrings("getDisambiguatedEmojiContext", "isFavoriteEmojiWithoutFetchingLatest", "allowAnimatedEmoji"));
 
 const patchHighlightAnimatedEmoji = () => {
@@ -446,6 +437,14 @@ const patchHighlightAnimatedEmoji = () => {
 	else Logger.patch("HighlightAnimatedEmoji");
 };
 
+function copy(data) {
+	DiscordNative.clipboard.copy(data);
+}
+
+function getNestedProp(obj, path) {
+	return path.split(".").reduce((ob, prop) => ob?.[prop], obj);
+}
+
 const Button = TheBigBoyBundle.Button ||
 	function ButtonComponentFallback(props) {
 		return React.createElement('button', { ...props, });
@@ -455,7 +454,7 @@ const MessageDecorations = getModule(Filters.byProps("MessagePopoutContent"));
 const AssetURLUtils = getModule(Filters.byProps("getEmojiURL"));
 
 const patchEmojiUtils = () => {
-	if (MessageDecorations && MessageDecorations.MessagePopoutContent)
+	if (MessageDecorations?.MessagePopoutContent)
 		Patcher.after(MessageDecorations, "MessagePopoutContent", (_, __, ret) => {
 			const { animated, emojiName, emojiId: id } = getNestedProp(ret, "props.children.0.props.children.0.props.children.0.props") || {};
 			if (!id) return ret;
@@ -532,6 +531,69 @@ const patchFavoriteEmojis = () => {
 	});
 };
 
+const emojiHooks = getModule(a => a.useEmojiGrid);
+const patchUseEmojiGrid = () => {
+	if (emojiHooks?.useEmojiGrid)
+		Patcher.after(emojiHooks, "useEmojiGrid", (_, [{ pickerIntention }], ret) => {
+			if (pickerIntention !== EmojiIntentionEnum.CHAT) return ret;
+			for (const a of ret.sectionDescriptors) {
+				a.isNitroLocked = false;
+			}
+		});
+	else Logger.patch("emojiHooks");
+};
+
+const { MenuItem } = TheBigBoyBundle;
+const bbb = getModule(Filters.byStrings("useIsFavoriteEmoji"), { defaultExport: false });
+
+function unfavHandler(id) {
+	const emojis = Data.load("emojis");
+	for (let i = emojis.length - 1; i >= 0; i--) {
+		const emoji = emojis[i];
+		if (emoji.id === id) {
+			emojis.splice(i, 1);
+			Data.save("emojis", emojis);
+			break;
+		}
+	}
+}
+
+function fav(id) {
+	const emoji = EmojiStore.getDisambiguatedEmojiContext().getById(id);
+	if (!emoji) return Toast.error(`Could not find Emoji: ${id}`);
+
+	const emojis = Data.load("emojis");
+	emoji.push(emoji);
+	Data.save("emojis", emojis);
+	Toast.success(`Emoji ${id} Saved.`);
+}
+
+const patchUnfavoriteEmoji = () => {
+	if (bbb?.default)
+		Patcher.after(bbb, "default", (_, [{ type, id }], ret) => {
+			if (type !== "emoji") return;
+			if (id && ret?.props?.id === "favorite") {
+				return (
+					React.createElement(MenuItem, {
+						action: () => fav(id),
+						label: "favorite",
+						id: "favorite",
+					})
+				);
+			}
+
+			if (!ret)
+				return (
+					React.createElement(MenuItem, {
+						action: () => unfavHandler(id),
+						label: "unfavorite",
+						id: "unfavorite",
+					})
+				);
+		});
+	else Logger.patch("patchUnfavoriteEmoji");
+};
+
 class Emojis {
 	start() {
 		try {
@@ -544,6 +606,8 @@ class Emojis {
 			patchHighlightAnimatedEmoji();
 			patchEmojiUtils();
 			patchFavoriteEmojis();
+			patchUseEmojiGrid();
+			patchUnfavoriteEmoji();
 		} catch (e) {
 			console.error(e);
 		}
