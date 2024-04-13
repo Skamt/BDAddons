@@ -99,10 +99,10 @@ function modulesImportingModuleById(id) {
 }
 
 function noExports(filter, module, exports) {
-	if (filter(exports)) return new Module(module.id, module);
+	if (filter(exports, module, module.id)) return new Module(module.id, module);
 }
 
-function doExports(filter, module, exports, index) {
+function doExports(filter, module, exports) {
 	if (typeof exports !== "object") return;
 	for (const entryKey in exports) {
 		let target = null;
@@ -112,13 +112,19 @@ function doExports(filter, module, exports, index) {
 			continue;
 		}
 		if (!target) continue;
-		if (filter(target, module, index)) return { target, entryKey, module: new Module(module.id, module) };
+		if (filter(target, module, module.id)) return { target, entryKey, module: new Module(module.id, module) };
 	}
 }
 
 function sanitizeExports(exports) {
 	if (!exports) return;
-	const exportsExceptions = [exports => typeof exports === "boolean", exports => exports === window, exports => exports.TypedArray, exports => exports === document.documentElement, exports => exports[Symbol.toStringTag] === "DOMTokenList"];
+	const exportsExceptions = [
+		exports => typeof exports === "boolean", 
+		exports => exports === window, 
+		exports => exports.TypedArray, 
+		exports => exports === document.documentElement, 
+		exports => exports[Symbol.toStringTag] === "DOMTokenList"
+	];
 	for (let index = exportsExceptions.length - 1; index >= 0; index--) {
 		if (exportsExceptions[index](exports)) return true;
 	}
@@ -133,7 +139,7 @@ function* moduleLookup(filter, options = {}) {
 		const module = modules[index];
 		const { exports } = module;
 		if (sanitizeExports(exports)) continue;
-		const match = gauntlet(filter, module, exports, index);
+		const match = gauntlet(filter, module, exports);
 		if (match) yield match;
 	}
 }

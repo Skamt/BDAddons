@@ -1,5 +1,6 @@
 import css from "./styles";
-import {  DOM, React, Patcher } from "@Api";
+import { DOM, React, Patcher } from "@Api";
+import { Filters, getModuleAndKey } from "@Webpack";
 import Settings from "@Utils/Settings";
 
 import { isSelf } from "@Utils/User";
@@ -8,7 +9,6 @@ import Logger from "@Utils/Logger";
 import ErrorBoundary from "@Components/ErrorBoundary";
 import ErrorIcon from "@Components/icons/ErrorIcon";
 import ProfileTypeEnum from "@Enums/ProfileTypeEnum";
-import UserBannerMask from "@Patch/UserBannerMask";
 import ColorModalComponent from "./components/ColorModalComponent";
 import ViewProfilePictureButtonComponent from "./components/ViewProfilePictureButtonComponent";
 import SettingComponent from "./components/SettingComponent";
@@ -44,6 +44,8 @@ async function getBannerDimenions(src) {
 		return {};
 	}
 }
+
+const UserBannerMask = getModuleAndKey(Filters.byStrings("bannerSrc", "showPremiumBadgeUpsell"), { searchExports: true }) || {};
 
 export default class ViewProfilePicture {
 	async clickHandler({ user, displayProfile }, { backgroundColor, backgroundImage }) {

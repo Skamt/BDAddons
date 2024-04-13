@@ -127,10 +127,6 @@
 		"TheBigBoyBundle": {
 			"filter": "Filters.byProps(\"openModal\", \"FormSwitch\", \"Anchor\")",
 			"options": "{ searchExports: false }"
-		},
-		"UserBannerMask": {
-			"filter": "Filters.byStrings(\"getBannerURL\", \"showPremiumBadgeUpsell\")",
-			"options": "{ searchExports: true }"
 		}
 	},
 	"Enums": {
