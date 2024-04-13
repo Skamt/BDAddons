@@ -1,19 +1,20 @@
-import Logger from "@Utils/Logger";
-import { getModuleAndKey } from "@Webpack";
-import * as Utils from "@Utils";
+import { React } from "@Api";
 import ErrorBoundary from "@Components/ErrorBoundary";
-import { Modules } from "./Modules";
-import { Sources } from "./Sources";
-import { Stores } from "./Stores";
-
-import webpackRequire from "./webpackRequire";
 import Dispatcher from "@Modules/Dispatcher";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
+import * as Utils from "@Utils";
+import Logger from "@Utils/Logger";
+
+import { getModuleAndKey } from "@Webpack";
+import { Modules } from "./Modules";
+import SettingComponent from "./SettingComponent";
+import { Sources } from "./Sources";
+import { Stores } from "./Stores";
+import webpackRequire from "./webpackRequire";
 
 const Misc = {
 	getAllAssets() {
-		return Modules.getModules(a => typeof a.exports === "string" && a.exports.match(/\/assets\/.+/))
-			.map(a => a.exports);
+		return Modules.getModules(a => typeof a.exports === "string" && a.exports.match(/\/assets\/.+/)).map(a => a.exports);
 	},
 	getEventListeners(eventName) {
 		const nodes = Dispatcher._actionHandlers._dependencyGraph.nodes;
@@ -50,7 +51,7 @@ function init() {
 	window.getModuleAndKey = getModuleAndKey;
 
 	window.s = Object.assign(id => Modules.moduleById(id), {
-		Utils:{
+		Utils: {
 			ErrorBoundary,
 			...Utils
 		},
@@ -66,6 +67,27 @@ function init() {
 	});
 }
 
+const settings = {
+	expEnabled:false
+};
+
+function enableExp(b) {
+	const DeveloperExperimentStore = Stores.getStore("DeveloperExperimentStore");
+	const ExperimentStore = Stores.getStore("ExperimentStore");
+	const UserStore = Stores.getStore("UserStore").store;
+	const flag = !b ? 256 : 1;
+	try {
+		UserStore.getCurrentUser().flags = flag;
+		DeveloperExperimentStore.events.actionHandler.CONNECTION_OPEN();
+		ExperimentStore.events.actionHandler.OVERLAY_INITIALIZE({
+			user: {
+				flags: flag
+			}
+		});
+		ExperimentStore.events.storeDidChange();
+	} catch {}
+}
+
 export default class Devtools {
 	start() {
 		try {
@@ -77,5 +99,10 @@ export default class Devtools {
 
 	stop() {
 		"s" in window && delete window.s;
+		settings.expEnabled && enableExp(false);
+	}
+
+	getSettingsPanel() {
+		return <SettingComponent settings={settings} enableExp={enableExp} />;
 	}
 }
