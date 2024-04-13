@@ -1,7 +1,7 @@
 /**
  * @name ViewProfilePicture
  * @description Adds a button to the user popout and profile that allows you to view the Avatar and banner.
- * @version 1.2.6
+ * @version 1.2.7
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "ViewProfilePicture",
-		"version": "1.2.6",
+		"version": "1.2.7",
 		"description": "Adds a button to the user popout and profile that allows you to view the Avatar and banner.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture",
@@ -21,11 +21,7 @@ const config = {
 	"settings": {
 		"showOnHover": false,
 		"bannerColor": false
-	},
-	"changelog": [{
-		"type": "added",
-		"items": ["new setting to always show banner color in carousel"]
-	}]
+	}
 }
 
 const css = `
@@ -178,6 +174,16 @@ const Patcher = Api.Patcher;
 const getModule = Api.Webpack.getModule;
 const Filters = Api.Webpack.Filters;
 
+function getModuleAndKey(filter, options) {
+	let module;
+	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
+	module = module?.exports;
+	if (!module) return undefined;
+	const key = Object.keys(module).find(k => module[k] === target);
+	if (!key) return undefined;
+	return { module, key };
+}
+
 class ChangeEmitter {
 	constructor() {
 		this.listeners = new Set();
@@ -198,22 +204,18 @@ class ChangeEmitter {
 		this.listeners.delete(handler);
 	}
 
-	emit(payload) {
+	emit(...payload) {
 		for (const listener of this.listeners) {
 			try {
-				listener(payload);
+				listener.apply(null, payload);
 			} catch (err) {
-				console.error(`Could not run listener`, err);
+				console.error("Could not run listener", err);
 			}
 		}
 	}
 }
 
 const Settings = new(class Settings extends ChangeEmitter {
-	constructor() {
-		super();
-	}
-
 	init(defaultSettings) {
 		this.settings = {
 			...defaultSettings,
@@ -241,28 +243,12 @@ const Settings = new(class Settings extends ChangeEmitter {
 	}
 })();
 
-function getModuleAndKey(filter, options) {
-	let module;
-	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
-	module = module?.exports;
-	if (!module) return undefined;
-	const key = Object.keys(module).find(k => module[k] === target);
-	if (!key) return undefined;
-	return { module, key };
-}
-
 const UserStore = getModule(m => m._dispatchToken && m.getName() === "UserStore");
 
 function isSelf(user) {
 	const currentUser = UserStore.getCurrentUser();
 	return user?.id === currentUser?.id;
 }
-
-const ImageModalVideoModal = getModule(Filters.byProps("ImageModal"), { searchExports: false });
-
-const RenderLinkComponent = getModule(m => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false });
-
-const TheBigBoyBundle = getModule(Filters.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
 
 class ErrorBoundary extends React.Component {
 	state = { hasError: false, error: null, info: null };
@@ -303,14 +289,21 @@ class ErrorBoundary extends React.Component {
 	}
 }
 
+const ImageModalVideoModal = getModule(Filters.byProps("ImageModal"), { searchExports: false });
+
+const RenderLinkComponent = getModule(m => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false });
+
+const TheBigBoyBundle = getModule(Filters.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
+
 const { ModalRoot, ModalSize } = TheBigBoyBundle;
 const ImageModal = ImageModalVideoModal.ImageModal;
 
-const openModal = children => {
+const openModal = (children, tag) => {
+	const id = `${tag ? `${tag}-` : ""}modal`;
 	TheBigBoyBundle.openModal(props => {
 		return (
 			React.createElement(ErrorBoundary, {
-				id: "modal",
+				id: id,
 				plugin: config.info.name,
 			}, React.createElement(ModalRoot, {
 				...props,
@@ -383,8 +376,6 @@ const ProfileTypeEnum = getModule(Filters.byProps("POPOUT", "SETTINGS"), { searc
 	"PANEL": 3,
 	"CARD": 4
 };
-
-const UserBannerMask = getModuleAndKey(Filters.byStrings("getBannerURL", "showPremiumBadgeUpsell"), { searchExports: true }) || {};
 
 function showToast(content, type) {
 	UI.showToast(`[${config.info.name}] ${content}`, { type });
@@ -553,95 +544,6 @@ const SettingComponent = () => [React.createElement(ShowOnHover, null), React.cr
 
 const ModalCarousel = getModule(Filters.byPrototypeFields("navigateTo", "preloadImage"), { searchExports: false });
 
-const changelogStyles = `
-#changelog-container {
-	font-family: "gg sans", "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
-	--added: #2dc770;
-	--improved: #949cf7;
-	--fixed: #f23f42;
-	--notice: #f0b132;
-	color:white;
-
-    padding: 10px;
-    max-width: 450px;
-}
-#changelog-container .title {
-    text-transform: uppercase;
-    display: flex;
-    align-items: center;
-    font-weight: 700;
-    margin-top: 20px;
-}
-#changelog-container .title:after {
-    content: "";
-    height: 1px;
-    flex: 1 1 auto;
-    margin-left: 8px;
-    opacity: .6;
-    background: currentColor;
-}
-#changelog-container ul {
-    list-style: none;
-    margin: 20px 0 8px 20px;
-}
-#changelog-container ul > li {
-    position:relative;
-    line-height: 20px;
-    margin-bottom: 8px;
-    color: #c4c9ce;
-}
-#changelog-container ul > li:before {
-    content: "";
-    position: absolute;
-    background:currentColor;
-    top: 10px;
-    left: -15px;
-    width: 6px;
-    height: 6px;
-    margin-top: -4px;
-    margin-left: -3px;
-    border-radius: 50%;
-    opacity: .5;
-}`;
-
-function ChangelogComponent({ id, changelog }) {
-	React.useEffect(() => {
-		BdApi.DOM.addStyle(id, changelogStyles);
-		return () => BdApi.DOM.removeStyle(id);
-	}, []);
-	return React.createElement('div', { id: "changelog-container", }, changelog);
-}
-
-function showChangelog() {
-	if (!config.changelog || !Array.isArray(config.changelog)) return;
-	const changelog = config.changelog.map(({ type, items }) => [
-		React.createElement('h3', {
-			style: { "color": `var(--${type})` },
-			className: "title",
-		}, type),
-		React.createElement('ul', null, items.map(item => (
-			React.createElement('li', null, item)
-		)))
-	]);
-
-	UI.showConfirmationModal(
-		`${config.info.name} v${config.info.version}`,
-		React.createElement(ChangelogComponent, {
-			id: `Changelog-${config.info.name}`,
-			changelog: changelog,
-		})
-	);
-}
-
-function shouldChangelog() {
-	const { version = config.info.version, changelog = false } = Data.load("metadata") || {};
-
-	if (version != config.info.version || !changelog) {
-		Data.save("metadata", { version: config.info.version, changelog: true });
-		return showChangelog;
-	}
-}
-
 function getButtonClasses({ user, profileType }, isNotNitro, banner) {
 	let res = "VPP-Button";
 	if (profileType === ProfileTypeEnum.MODAL) res += " VPP-profile";
@@ -673,23 +575,22 @@ async function getBannerDimenions(src) {
 	}
 }
 
+const UserBannerMask = getModuleAndKey(Filters.byStrings("bannerSrc", "showPremiumBadgeUpsell"), { searchExports: true }) || {};
+
 class ViewProfilePicture {
 	async clickHandler({ user, displayProfile }, { backgroundColor, backgroundImage }) {
 		const avatarURL = user.getAvatarURL(displayProfile.guildId, 4096, true);
 		const bannerURL = backgroundImage && displayProfile.getBannerURL({ canAnimate: true, size: 4096 });
 
-		const items = [
-			getImageModalComponent(avatarURL, { width: 4096, height: 4096 }),
-			bannerURL && getImageModalComponent(bannerURL, await getBannerDimenions(backgroundImage)),
-			(!bannerURL || Settings.get("bannerColor")) && React.createElement(ColorModalComponent, { color: backgroundColor, })
-		].filter(Boolean).map(item => ({ "component": item, ...item.props }));
+		const items = [getImageModalComponent(avatarURL, { width: 4096, height: 4096 }), bannerURL && getImageModalComponent(bannerURL, await getBannerDimenions(backgroundImage)), (!bannerURL || Settings.get("bannerColor")) && React.createElement(ColorModalComponent, { color: backgroundColor, })].filter(Boolean).map(item => ({ component: item, ...item.props }));
 
 		openModal(
 			React.createElement(ModalCarousel, {
 				startWith: 0,
 				className: "VPP-carousel",
 				items: items,
-			})
+			}),
+			"VPP-carousel"
 		);
 	}
 
@@ -742,6 +643,5 @@ class ViewProfilePicture {
 		return React.createElement(SettingComponent, null);
 	}
 }
-shouldChangelog()?.();
 
 module.exports = ViewProfilePicture;
