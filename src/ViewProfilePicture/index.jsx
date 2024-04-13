@@ -52,7 +52,11 @@ export default class ViewProfilePicture {
 		const avatarURL = user.getAvatarURL(displayProfile.guildId, 4096, true);
 		const bannerURL = backgroundImage && displayProfile.getBannerURL({ canAnimate: true, size: 4096 });
 
-		const items = [getImageModalComponent(avatarURL, { width: 4096, height: 4096 }), bannerURL && getImageModalComponent(bannerURL, await getBannerDimenions(backgroundImage)), (!bannerURL || Settings.get("bannerColor")) && <ColorModalComponent color={backgroundColor} />].filter(Boolean).map(item => ({ component: item, ...item.props }));
+		const items = [
+			getImageModalComponent(avatarURL, { width: 4096, height: 4096 }), 
+			bannerURL && getImageModalComponent(bannerURL, await getBannerDimenions(backgroundImage)), 
+			(!bannerURL || Settings.get("bannerColor")) && <ColorModalComponent color={backgroundColor} />
+		].filter(Boolean).map(item => ({ component: item, ...item.props }));
 
 		openModal(
 			<ModalCarousel
@@ -84,7 +88,8 @@ export default class ViewProfilePicture {
 				<ErrorBoundary
 					id="ViewProfilePictureButtonComponent"
 					plugin={config.info.name}
-					fallback={<ErrorIcon className={buttonClasses} />}>
+					fallback={<ErrorIcon className={buttonClasses} />}
+				>
 					<ViewProfilePictureButtonComponent
 						className={buttonClasses}
 						isHovering={props.isHovering}
