@@ -20,39 +20,15 @@ const config = {
 	}
 }
 
-const Logger = {
-	error(...args) {
-		this.p(console.error, ...args);
-	},
-	patch(patchId) {
-		console.error(`%c[${config.info.name}] %c Error at %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
-	},
-	log(...args) {
-		this.p(console.log, ...args);
-	},
-	p(target, ...args) {
-		target(`%c[${config.info.name}]`, "color: #3a71c1;font-weight: bold;", ...args);
-	}
-};
-
 const Api = new BdApi(config.info.name);
 const React = Api.React;
+const ReactDOM = Api.ReactDOM;
 const Patcher = Api.Patcher;
 
 const getModule$1 = Api.Webpack.getModule;
 const Filters = Api.Webpack.Filters;
 
 const getOwnerInstance = Api.ReactUtils.getOwnerInstance;
-
-function getModuleAndKey(filter, options) {
-	let module;
-	const target = getModule$1((entry, m) => (filter(entry) ? (module = m) : false), options);
-	module = module?.exports;
-	if (!module) return undefined;
-	const key = Object.keys(module).find(k => module[k] === target);
-	if (!key) return undefined;
-	return { module, key };
-}
 
 class ErrorBoundary extends React.Component {
 	state = { hasError: false, error: null, info: null };
@@ -93,11 +69,23 @@ class ErrorBoundary extends React.Component {
 	}
 }
 
+function getModuleAndKey(filter, options) {
+	let module;
+	const target = getModule$1((entry, m) => (filter(entry) ? (module = m) : false), options);
+	module = module?.exports;
+	if (!module) return undefined;
+	const key = Object.keys(module).find(k => module[k] === target);
+	if (!key) return undefined;
+	return { module, key };
+}
+
+const Dispatcher = getModule$1(Filters.byProps("dispatch", "subscribe"), { searchExports: false });
+
+const TheBigBoyBundle = getModule$1(Filters.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
+
 const ImageModalVideoModal = getModule$1(Filters.byProps("ImageModal"), { searchExports: false });
 
 const RenderLinkComponent = getModule$1(m => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false });
-
-const TheBigBoyBundle = getModule$1(Filters.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
 
 const { ModalRoot, ModalSize } = TheBigBoyBundle;
 const ImageModal = ImageModalVideoModal.ImageModal;
@@ -223,16 +211,105 @@ function getImageDimensions(url) {
 	});
 }
 
+const d = (() => {
+	const cache = new WeakMap();
+	const emptyDoc = document.createDocumentFragment();
+
+	function isValidCSSSelector(selector) {
+		try {
+			emptyDoc.querySelector(selector);
+		} catch {
+			return false;
+		}
+		return true;
+	}
+
+	function getElement(target) {
+		if (typeof target === "string" && isValidCSSSelector(target)) return document.querySelector(target);
+
+		if (target instanceof HTMLElement) return target;
+
+		return undefined;
+	}
+
+	function getCssRules(el) {
+		const output = {};
+		for (let i = 0; i < document.styleSheets.length; i++) {
+			const stylesheet = document.styleSheets[i];
+			const { rules } = stylesheet;
+			const ID = stylesheet.href || stylesheet.ownerNode.id || i;
+			output[ID] = {};
+
+			el.classList.forEach(c => {
+				output[ID][c] = [];
+				for (let j = 0; j < rules.length; j++) {
+					const rule = rules[j];
+					if (rule.cssText.includes(c)) output[ID][c].push(rule);
+				}
+				if (output[ID][c].length === 0) delete output[ID][c];
+			});
+			if (Object.keys(output[ID]).length === 0) delete output[ID];
+		}
+		return output;
+	}
+
+	function getCssRulesForElement(target, noCache) {
+		const el = getElement(target);
+
+		if (!el) return;
+
+		if (!noCache || cache.has(el)) return cache.get(el);
+
+		const data = getCssRules(el);
+		cache.set(el, data);
+		return data;
+	}
+
+	function scrollerStylesForElement(el) {
+		const output = [];
+		const styles = getCssRulesForElement(el);
+		for (const cssStyleRules of Object.values(styles)) {
+			for (const rules of Object.values(cssStyleRules)) {
+				for (let i = 0; i < rules.length; i++) {
+					const rule = rules[i];
+					if (rule.selectorText?.includes("-webkit-scrollbar")) output.push(rule);
+				}
+			}
+		}
+		return output;
+	}
+
+	return {
+		getCssRulesForElement,
+		scrollerStylesForElement
+	};
+})();
+
+function hook(hook, ...args) {
+	let v;
+	const b = document.createElement("div");
+
+	ReactDOM.render(
+
+		React.createElement(() => ((v = hook(...args)), null)),
+		b
+	);
+	BdApi.ReactDOM.unmountComponentAtNode(b);
+	return v;
+}
+
 const Utils = /*#__PURE__*/ Object.freeze({
 	__proto__: null,
 	BrokenAddon,
 	Disposable,
 	buildUrl,
 	copy,
+	d,
 	genUrlParamsFromArray,
 	getImageDimensions,
 	getImageModalComponent,
 	getNestedProp,
+	hook,
 	nop,
 	openModal,
 	parseSnowflake,
@@ -241,6 +318,21 @@ const Utils = /*#__PURE__*/ Object.freeze({
 	reRender,
 	sleep
 });
+
+const Logger = {
+	error(...args) {
+		this.p(console.error, ...args);
+	},
+	patch(patchId) {
+		console.error(`%c[${config.info.name}] %c Error at %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
+	},
+	log(...args) {
+		this.p(console.log, ...args);
+	},
+	p(target, ...args) {
+		target(`%c[${config.info.name}]`, "color: #3a71c1;font-weight: bold;", ...args);
+	}
+};
 
 const chunkName = Object.keys(window).find(key => key.startsWith("webpackChunk"));
 const chunk = window[chunkName];
@@ -412,10 +504,10 @@ function modulesImportingModuleById(id) {
 }
 
 function noExports(filter, module, exports) {
-	if (filter(exports)) return new Module(module.id, module);
+	if (filter(exports, module, module.id)) return new Module(module.id, module);
 }
 
-function doExports(filter, module, exports, index) {
+function doExports(filter, module, exports) {
 	if (typeof exports !== "object") return;
 	for (const entryKey in exports) {
 		let target = null;
@@ -425,13 +517,19 @@ function doExports(filter, module, exports, index) {
 			continue;
 		}
 		if (!target) continue;
-		if (filter(target, module, index)) return { target, entryKey, module: new Module(module.id, module) };
+		if (filter(target, module, module.id)) return { target, entryKey, module: new Module(module.id, module) };
 	}
 }
 
 function sanitizeExports(exports) {
 	if (!exports) return;
-	const exportsExceptions = [exports => typeof exports === "boolean", exports => exports === window, exports => exports.TypedArray, exports => exports === document.documentElement, exports => exports[Symbol.toStringTag] === "DOMTokenList"];
+	const exportsExceptions = [
+		exports => typeof exports === "boolean",
+		exports => exports === window,
+		exports => exports.TypedArray,
+		exports => exports === document.documentElement,
+		exports => exports[Symbol.toStringTag] === "DOMTokenList"
+	];
 	for (let index = exportsExceptions.length - 1; index >= 0; index--) {
 		if (exportsExceptions[index](exports)) return true;
 	}
@@ -446,7 +544,7 @@ function* moduleLookup(filter, options = {}) {
 		const module = modules[index];
 		const { exports } = module;
 		if (sanitizeExports(exports)) continue;
-		const match = gauntlet(filter, module, exports, index);
+		const match = gauntlet(filter, module, exports);
 		if (match) yield match;
 	}
 }
@@ -472,7 +570,34 @@ const Modules = {
 	getModule
 };
 
-const Dispatcher = getModule$1(Filters.byProps("dispatch", "subscribe"), { searchExports: false });
+const Switch = TheBigBoyBundle.FormSwitch ||
+	function SwitchComponentFallback(props) {
+		return (
+			React.createElement('div', { style: { color: "#fff" }, }, props.children, React.createElement('input', {
+				type: "checkbox",
+				checked: props.value,
+				onChange: e => props.onChange(e.target.checked),
+			}))
+		);
+	};
+
+function SettingComponent({ settings, enableExp }) {
+	const [enabled, setEnabled] = React.useState(settings.expEnabled);
+
+	return (
+		React.createElement(Switch, {
+				value: enabled,
+				hideBorder: false,
+				onChange: e => {
+					settings.expEnabled = e;
+					setEnabled(e);
+					enableExp(e);
+				},
+			}, "enableExperiments"
+
+		)
+	);
+}
 
 class Store {
 	constructor(module) {
@@ -543,8 +668,7 @@ const Stores = {
 
 const Misc = {
 	getAllAssets() {
-		return Modules.getModules(a => typeof a.exports === "string" && a.exports.match(/\/assets\/.+/))
-			.map(a => a.exports);
+		return Modules.getModules(a => typeof a.exports === "string" && a.exports.match(/\/assets\/.+/)).map(a => a.exports);
 	},
 	getEventListeners(eventName) {
 		const nodes = Dispatcher._actionHandlers._dependencyGraph.nodes;
@@ -597,6 +721,27 @@ function init() {
 	});
 }
 
+const settings = {
+	expEnabled: false
+};
+
+function enableExp(b) {
+	const DeveloperExperimentStore = Stores.getStore("DeveloperExperimentStore");
+	const ExperimentStore = Stores.getStore("ExperimentStore");
+	const UserStore = Stores.getStore("UserStore").store;
+	const flag = !b ? 256 : 1;
+	try {
+		UserStore.getCurrentUser().flags = flag;
+		DeveloperExperimentStore.events.actionHandler.CONNECTION_OPEN();
+		ExperimentStore.events.actionHandler.OVERLAY_INITIALIZE({
+			user: {
+				flags: flag
+			}
+		});
+		ExperimentStore.events.storeDidChange();
+	} catch {}
+}
+
 class Devtools {
 	start() {
 		try {
@@ -608,6 +753,11 @@ class Devtools {
 
 	stop() {
 		"s" in window && delete window.s;
+		settings.expEnabled && enableExp(false);
+	}
+
+	getSettingsPanel() {
+		return React.createElement(SettingComponent, { settings: settings, enableExp: enableExp, });
 	}
 }
 

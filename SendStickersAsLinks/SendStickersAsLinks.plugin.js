@@ -1,7 +1,7 @@
 /**
  * @name SendStickersAsLinks
  * @description Enables you to send custom Stickers as links
- * @version 2.2.4
+ * @version 2.2.5
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/SendStickersAsLinks
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/SendStickersAsLinks/SendStickersAsLinks.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "SendStickersAsLinks",
-		"version": "2.2.4",
+		"version": "2.2.5",
 		"description": "Enables you to send custom Stickers as links",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SendStickersAsLinks/SendStickersAsLinks.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SendStickersAsLinks",
@@ -75,24 +75,23 @@ class ChangeEmitter {
 		this.listeners.delete(handler);
 	}
 
-	emit(payload) {
+	emit(...payload) {
 		for (const listener of this.listeners) {
 			try {
-				listener(payload);
+				listener.apply(null, payload);
 			} catch (err) {
-				console.error(`Could not run listener`, err);
+				console.error("Could not run listener", err);
 			}
 		}
 	}
 }
 
 const Settings = new(class Settings extends ChangeEmitter {
-	constructor() {
-		super();
-	}
-
 	init(defaultSettings) {
-		this.settings = Data.load("settings") || defaultSettings;
+		this.settings = {
+			...defaultSettings,
+			...Data.load("settings")
+		};
 	}
 
 	get(key) {
@@ -187,6 +186,7 @@ const SettingComponent = () => {
 				onChange: e => Settings.set("shouldHighlightAnimated", e)
 			}
 		].map(Toggle),
+
 		React.createElement(StickerSize, null)
 	];
 };
@@ -268,13 +268,6 @@ const STRINGS = {
 	disabledAnimatedStickersErrorMessage: "You have disabled animated stickers in settings."
 };
 
-const StickerFormatEnum = getModule(Filters.byProps("APNG", "LOTTIE"), { searchExports: true }) || {
-	"PNG": 1,
-	"APNG": 2,
-	"LOTTIE": 3,
-	"GIF": 4
-};
-
 const UserStore = getModule(m => m._dispatchToken && m.getName() === "UserStore");
 
 const StickersStore = getModule(m => m._dispatchToken && m.getName() === "StickersStore");
@@ -321,6 +314,7 @@ const insertText = (() => {
 	let ComponentDispatch;
 	return content => {
 		if (!ComponentDispatch) ComponentDispatch = getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners("INSERT_TEXT").length, { searchExports: true });
+		if (!ComponentDispatch) return;
 		setTimeout(() => {
 			ComponentDispatch.dispatchToLastSubscribed("INSERT_TEXT", {
 				plainText: content
@@ -331,6 +325,16 @@ const insertText = (() => {
 
 const StickerMethods = getModule(Filters.byProps("getStickerAssetUrl"));
 const { StickerSendability: StickersSendabilityEnum, getStickerSendability } = StickerSendability;
+const StickerFormatEnum = {
+	"1": "PNG",
+	"2": "APNG",
+	"3": "LOTTIE",
+	"4": "GIF",
+	"PNG": 1,
+	"APNG": 2,
+	"LOTTIE": 3,
+	"GIF": 4
+};
 
 function sendStickerAsLink(sticker, channel) {
 	const content = getStickerUrl(sticker);

@@ -582,7 +582,11 @@ class ViewProfilePicture {
 		const avatarURL = user.getAvatarURL(displayProfile.guildId, 4096, true);
 		const bannerURL = backgroundImage && displayProfile.getBannerURL({ canAnimate: true, size: 4096 });
 
-		const items = [getImageModalComponent(avatarURL, { width: 4096, height: 4096 }), bannerURL && getImageModalComponent(bannerURL, await getBannerDimenions(backgroundImage)), (!bannerURL || Settings.get("bannerColor")) && React.createElement(ColorModalComponent, { color: backgroundColor, })].filter(Boolean).map(item => ({ component: item, ...item.props }));
+		const items = [
+			getImageModalComponent(avatarURL, { width: 4096, height: 4096 }),
+			bannerURL && getImageModalComponent(bannerURL, await getBannerDimenions(backgroundImage)),
+			(!bannerURL || Settings.get("bannerColor")) && React.createElement(ColorModalComponent, { color: backgroundColor, })
+		].filter(Boolean).map(item => ({ component: item, ...item.props }));
 
 		openModal(
 			React.createElement(ModalCarousel, {
@@ -612,14 +616,17 @@ class ViewProfilePicture {
 
 			children.push(
 				React.createElement(ErrorBoundary, {
-					id: "ViewProfilePictureButtonComponent",
-					plugin: config.info.name,
-					fallback: React.createElement(ErrorIcon, { className: buttonClasses, }),
-				}, React.createElement(ViewProfilePictureButtonComponent, {
-					className: buttonClasses,
-					isHovering: props.isHovering,
-					onClick: () => this.clickHandler(props, bannerObject),
-				}))
+						id: "ViewProfilePictureButtonComponent",
+						plugin: config.info.name,
+						fallback: React.createElement(ErrorIcon, { className: buttonClasses, }),
+					}
+
+					, React.createElement(ViewProfilePictureButtonComponent, {
+						className: buttonClasses,
+						isHovering: props.isHovering,
+						onClick: () => this.clickHandler(props, bannerObject),
+					})
+				)
 			);
 		});
 	}
