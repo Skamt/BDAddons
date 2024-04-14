@@ -1,5 +1,4 @@
 import { getModule, Filters } from "@Webpack";
-import StickerFormatEnum from "@Enums/StickerFormatEnum";
 import Settings from "@Utils/Settings";
 import UserStore from "@Stores/UserStore";
 import StickersStore from "@Stores/StickersStore";
@@ -10,6 +9,16 @@ import StickerSendability from "@Modules/StickerSendability";
 
 const StickerMethods = getModule(Filters.byProps("getStickerAssetUrl"));
 const { StickerSendability: StickersSendabilityEnum, getStickerSendability } = StickerSendability;
+const StickerFormatEnum = {
+	"1": "PNG",
+	"2": "APNG",
+	"3": "LOTTIE",
+	"4": "GIF",
+	"PNG": 1,
+	"APNG": 2,
+	"LOTTIE": 3,
+	"GIF": 4
+};
 
 export function sendStickerAsLink(sticker, channel) {
 	const content = getStickerUrl(sticker);
@@ -24,7 +33,7 @@ export function sendStickerAsLink(sticker, channel) {
 	}
 }
 
-export function getStickerUrl(sticker){
+export function getStickerUrl(sticker) {
 	return StickerMethods.getStickerAssetUrl(sticker, { size: Settings.get("stickerSize") || 160 });
 }
 

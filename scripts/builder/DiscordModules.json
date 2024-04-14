@@ -167,16 +167,6 @@
 				"GUILD": 2
 			}
 		},
-		"StickerFormatEnum": {
-			"filter": "Filters.byProps(\"APNG\", \"LOTTIE\")",
-			"options": "{ searchExports: true }",
-			"fallback": {
-				"PNG": 1,
-				"APNG": 2,
-				"LOTTIE": 3,
-				"GIF": 4
-			}
-		},
 		"ProfileTypeEnum": {
 			"filter": "Filters.byProps(\"POPOUT\", \"SETTINGS\")",
 			"options": "{ searchExports: true }",

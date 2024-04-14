@@ -4,6 +4,7 @@ export const UI = Api.UI;
 export const DOM = Api.DOM;
 export const Data = Api.Data;
 export const React = Api.React;
+export const ReactDOM = Api.ReactDOM;
 export const Patcher = Api.Patcher;
 export const ContextMenu = Api.ContextMenu;
 
