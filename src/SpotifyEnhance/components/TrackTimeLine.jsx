@@ -20,15 +20,15 @@ export default ({ currentlyPlayingType, duration, isPlaying, progress }) => {
 	}, [progress]);
 
 	React.useEffect(() => {
-		if (!isPlaying) return;
+		if (!isPlaying || progress === duration) return;
+
 		intervalRef.current = setInterval(() => {
 			if (sliderRef.current?.state?.active) return;
-			if (position >= duration) clearInterval(intervalRef.current);
-			setPosition(position + 1000);
+			setPosition(p => p + 1000);
 		}, 1000);
 
 		return () => clearInterval(intervalRef.current);
-	}, [duration, position, isPlaying]);
+	}, [duration, progress, isPlaying]);
 
 	const rangeChangeHandler = e => {
 		if (!sliderRef.current?.state?.active) return;
