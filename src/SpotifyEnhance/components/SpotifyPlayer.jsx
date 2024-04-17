@@ -5,7 +5,8 @@ import TrackMediaDetails from "./TrackMediaDetails";
 import SpotifyPlayerControls from "./SpotifyPlayerControls";
 import TrackTimeLine from "./TrackTimeLine";
 
-export default React.memo(function SpotifyPlayer() {
+
+function SpotifyPlayer() {
 	const player = useSettings("player");
 	const [{ deviceState, playerState }, setState] = React.useState(SpotifyWrapper.getSpotifyState());
 	React.useEffect(() => {
@@ -17,16 +18,16 @@ export default React.memo(function SpotifyPlayer() {
 	if (!playerState) return;
 
 	const { disallowedActions, track, currentlyPlayingType, shuffle, volume, repeat, isPlaying, progress } = playerState;
-	const { duration, url, bannerMd,bannerSm, bannerLg } = track;
+	const { duration, url, bannerMd, bannerSm, bannerLg } = track;
 
 	return (
-		<div 
-		style={{ 
-			"--banner-sm": `url(${bannerSm?.url})`,
-			"--banner-md": `url(${bannerMd?.url})`,
-			"--banner-lg": `url(${bannerLg?.url})` 
-		}}
-		className="spotify-player-container">
+		<div
+			style={{
+				"--banner-sm": `url(${bannerSm?.url})`,
+				"--banner-md": `url(${bannerMd?.url})`,
+				"--banner-lg": `url(${bannerLg?.url})`
+			}}
+			className="spotify-player-container">
 			<TrackMediaDetails
 				currentlyPlayingType={currentlyPlayingType}
 				track={track}
@@ -44,4 +45,14 @@ export default React.memo(function SpotifyPlayer() {
 			/>
 		</div>
 	);
+}
+
+import SpotifyStore from "./../SpotifyStore";
+
+export default React.memo(function TestPlayer() {
+	console.log("player rerendered");
+	const isActive = SpotifyStore(a => a.isActive);
+	console.log("isActive",isActive);
+	if(!isActive) return null;
+	return <div style={{color:"#fff"}}>{`${isActive}`}</div>;
 });

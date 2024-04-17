@@ -2,7 +2,6 @@ import ChangeEmitter from "@Utils/ChangeEmitter";
 import Timer from "@Utils/Timer";
 import SpotifyAPIWrapper from "./SpotifyAPIWrapper";
 import { promiseHandler } from "@Utils";
-import SpotifySocketListener from "./SpotifySocketListener";
 import SpotifyStore from "@Stores/SpotifyStore";
 import ConnectedAccountsStore from "@Stores/ConnectedAccountsStore";
 import SpotifyAccount from "./SpotifyAccount";
@@ -25,9 +24,7 @@ export default new (class SpotifyActiveAccount extends ChangeEmitter {
 			},
 			10 * 60 * 1000
 		);
-		SpotifySocketListener.init();
-		SpotifySocketListener.on(this.onSocketEvent);
-
+		
 		SpotifyStore.addChangeListener(this.onSpotifyStoreChange);
 		ConnectedAccountsStore.addChangeListener(this.onAccountsChanged);
 		const { socket } = SpotifyStore.getActiveSocketAndDevice() || {};
@@ -42,9 +39,7 @@ export default new (class SpotifyActiveAccount extends ChangeEmitter {
 
 	dispose() {
 		SpotifyStore.removeChangeListener(this.onSpotifyStoreChange);
-		SpotifySocketListener.off(this.onSocketEvent);
 		ConnectedAccountsStore.removeChangeListener(this.onAccountsChanged);
-		SpotifySocketListener.dispose();
 		clearTimeout(this.idleTimeoutId);
 		this.timer = null;
 		delete this.timer;

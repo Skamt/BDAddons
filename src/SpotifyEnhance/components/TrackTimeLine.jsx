@@ -23,6 +23,9 @@ export default ({ currentlyPlayingType, duration, isPlaying, progress }) => {
 		if (!isPlaying || progress === duration) return;
 
 		intervalRef.current = setInterval(() => {
+			if(progress === duration){
+				clearInterval(intervalRef.current);
+			}
 			if (sliderRef.current?.state?.active) return;
 			setPosition(p => p + 1000);
 		}, 1000);

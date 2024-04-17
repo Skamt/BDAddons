@@ -6,13 +6,13 @@ import SpotifyEmbedWrapper from "../components/SpotifyEmbedWrapper";
 import { parseSpotifyUrl } from "../Utils";
 
 const ALLOWD_TYPES = ["track", "playlist", "album", "show", "episode"];
-const SpotifyEmbed = getModule(Filters.byStrings("open.spotify.com","/playlist/"),{defaultExport:false});
+const SpotifyEmbed = getModule(Filters.byStrings("open.spotify.com", "/playlist/"), { defaultExport: false });
 
 export default () => {
 	if (SpotifyEmbed)
-		Patcher.after(SpotifyEmbed, "default", (_,  [{ embed }], ret) => {
+		Patcher.after(SpotifyEmbed, "default", (_, [{ embed }], ret) => {
 			if (embed?.provider?.name !== "Spotify") return;
-
+			return null;
 			const [type, id] = parseSpotifyUrl(embed.url) || [];
 			if (!ALLOWD_TYPES.includes(type)) {
 				Logger.log(`Spotify ${type}`, embed.url);

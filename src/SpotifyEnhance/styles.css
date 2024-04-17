@@ -10,7 +10,6 @@
 }
 
 /* Spotify Indicator */
-
 .spotifyActivityIndicatorIcon {
 	color: var(--spotify-green);
 	vertical-align: text-bottom;
@@ -171,7 +170,7 @@
 /* Spotify Player */
 .spotify-player-container {
 	padding: 10px 10px;
-
+color:white;
 	display: flex;
 	flex-direction: column;
 }
