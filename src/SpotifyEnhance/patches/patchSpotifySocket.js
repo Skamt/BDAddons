@@ -30,7 +30,7 @@ export default async function () {
 		Logger.log("Spotify Socket", socketEvent);
 		const state = SpotifyStore.getState();
 
-		if (state.accountId && socket.accountId !== state.accountId) return;
+		if (state.socket.accountId && socket.accountId !== state.socket.accountId) return;
 		const { type, event } = socketEvent;
 
 		switch (type) {
