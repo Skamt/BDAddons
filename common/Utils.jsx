@@ -1,11 +1,17 @@
-import { ReactDOM, React } from "@Api";
-import { Patcher, getOwnerInstance } from "@Api";
+import { ReactDOM, React, Api } from "@Api";
+import { Patcher } from "@Api";
 import ErrorBoundary from "@Components/ErrorBoundary";
 import ImageModalVideoModal from "@Modules/ImageModalVideoModal";
 import RenderLinkComponent from "@Modules/RenderLinkComponent";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 const { ModalRoot, ModalSize } = TheBigBoyBundle;
 const ImageModal = ImageModalVideoModal.ImageModal;
+
+export const debounce = Api.Utils.debounce;
+export const findInTree = Api.Utils.findInTree;
+
+export const getOwnerInstance = Api.ReactUtils.getOwnerInstance;
+export const getInternalInstance = Api.ReactUtils.getInternalInstance;
 
 export const openModal = (children, tag) => {
 	const id = `${tag ? `${tag}-` : ""}modal`;

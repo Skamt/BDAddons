@@ -6,16 +6,25 @@ import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 import Tooltip from "@Components/Tooltip";
 const { Anchor } = TheBigBoyBundle;
 
-export default ({ currentlyPlayingType, track }) => {
-	if (currentlyPlayingType !== "track") {
+export default ({ media, mediaType }) => {
+	if (mediaType !== "track" || !media) {
 		return (
 			<div className="spotify-player-media">
-				<div className="spotify-player-title">Playing {currentlyPlayingType}</div>
+				<div className="spotify-player-title">Playing {mediaType || "Unknown"}</div>
 			</div>
 		);
 	}
 
-	const { albumName, albumUrl, bannerSm, bannerLg, url, name, artists } = track;
+	const albumName = media.album.name;
+	const albumUrl = media.album.external_urls.spotify;
+	const url = media.external_urls.spotify;
+	const name = media.name;
+	const artists = media.artists;
+
+	const { bannerSm, bannerLg } = {
+		bannerSm: media.album.images[2],
+		bannerLg: media.album.images[0]
+	};
 
 	return (
 		<div className="spotify-player-media">

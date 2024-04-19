@@ -11,8 +11,8 @@ function createAndLogError(msg = "Unknown error", cause = "Unknown cause") {
 }
 
 async function requestHandler(action) {
-	let repeatOnce = 2;
-	while (repeatOnce--) {
+	let repeat = 2;
+	while (repeat--) {
 		const [actionError, actionResponse] = await promiseHandler(action());
 		if (!actionError) return actionResponse;
 		if (actionError.status !== 401) throw createAndLogError(actionError.message, actionError);
@@ -74,13 +74,13 @@ export default new Proxy(
 				case "getPlayerState":
 				case "getDevices":
 					return () => requestHandler(() => SpotifyAPI[prop]());
-				case "updateToken":
+				case "setToken":
 					return socket => {
 						SpotifyAPI.token = socket?.accessToken;
 						SpotifyAPI.accountId = socket?.accountId;
 					};
 				default:
-					throw new Error(`Unknown API Command: ${prop}`);
+					return undefined;
 			}
 		}
 	}

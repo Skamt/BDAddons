@@ -2,7 +2,7 @@ import { React } from "@Api";
 import Button from "@Components/Button";
 import FluxHelpers from "@Modules/FluxHelpers";
 import SpotifyStore from "@Stores/SpotifyStore";
-import SpotifyWrapper from "../SpotifyWrapper";
+// import SpotifyWrapper from "../SpotifyWrapper";
 
 export default ({ id, type, embed: { rawTitle, url } }) => {
 	const spotifySocket = FluxHelpers.useStateFromStores([SpotifyStore], () => SpotifyStore.getActiveSocketAndDevice()?.socket);

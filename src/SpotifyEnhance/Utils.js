@@ -1,4 +1,4 @@
-import { getInternalInstance } from "@Api";
+import { getInternalInstance } from "@Utils";
 import { Filters, getModule } from "@Webpack";
 
 export function parseSpotifyUrl(url) {

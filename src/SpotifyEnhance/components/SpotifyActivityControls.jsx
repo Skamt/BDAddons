@@ -2,7 +2,7 @@ import { React } from "@Api";
 import { Filters, getModule } from "@Webpack";
 
 import SpotifyStore from "@Stores/SpotifyStore";
-import SpotifyWrapper from "../SpotifyWrapper";
+// import SpotifyWrapper from "../SpotifyWrapper";
 import Button from "@Components/Button";
 import AddToQueueIcon from "@Components/icons/AddToQueueIcon";
 import ListenAlongIcon from "@Components/icons/ListenAlongIcon";

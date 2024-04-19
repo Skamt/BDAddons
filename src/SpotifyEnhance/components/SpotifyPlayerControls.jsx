@@ -1,6 +1,5 @@
 import { React } from "@Api";
-import SpotifyWrapper from "../SpotifyWrapper";
-
+import SpotifyApi from "../SpotifyAPIWrapper";
 import Button from "@Components/Button";
 import Popout from "@Components/Popout";
 import ShareIcon from "@Components/icons/ShareIcon";
@@ -20,40 +19,33 @@ import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 
 const { MenuItem, Menu } = TheBigBoyBundle;
 
-// {
-//   "interrupting_playback": false,
-//   "pausing": false,
-//   "resuming": false,
-//   "seeking": false,
-//   "skipping_next": false,
-//   "skipping_prev": false,
-//   "toggling_repeat_context": false,
-//   "toggling_shuffle": false,
-//   "toggling_repeat_track": false,
-//   "transferring_playback": false
-// }
+import Store from "./../Store";
 
-export default ({ disallowedActions, state, data }) => {
-	if (!disallowedActions || !state || !data) return;
+export default ({ banner, media }) => {
+	const isPlaying = Store(Store.selectors.isPlaying);
+	const shuffle = Store(Store.selectors.shuffle);
+	const repeat = Store(Store.selectors.repeat);
+	const volume = Store(Store.selectors.volume);
+	const actions = Store(Store.selectors.actions);
 
-	const { url, banner, volume } = data;
-	const { shuffle, repeat, isPlaying } = state;
-	const { toggling_shuffle, toggling_repeat_track, /* pausing, resuming, seeking, */ skipping_next, skipping_prev } = disallowedActions;
+	if (!media) return;
+	const url = media.external_urls.spotify;
+	const { toggling_shuffle, toggling_repeat_track, skipping_next, skipping_prev } = actions || {};
 
 	const { repeatTooltip, repeatActive, repeatIcon, repeatArg } = {
-		"off": {
+		off: {
 			repeatTooltip: "Repeat",
 			repeatArg: "context",
 			repeatIcon: <RepeatIcon />,
 			repeatActive: false
 		},
-		"context": {
+		context: {
 			repeatTooltip: "Repeat track",
 			repeatArg: "track",
 			repeatIcon: <RepeatIcon />,
 			repeatActive: true
 		},
-		"track": {
+		track: {
 			repeatTooltip: "Repeat off",
 			repeatArg: "off",
 			repeatIcon: <RepeatOneIcon />,
@@ -61,27 +53,27 @@ export default ({ disallowedActions, state, data }) => {
 		}
 	}[repeat];
 
-	const shuffleHandler = () => SpotifyWrapper.Player.shuffle(!shuffle);
-	const previousHandler = () => SpotifyWrapper.Player.previous();
-	const nextHandler = () => SpotifyWrapper.Player.next();
-	const repeatHandler = () => SpotifyWrapper.Player.repeat(repeatArg);
-	const pauseHandler = () => SpotifyWrapper.Player.pause();
-	const playHandler = () => SpotifyWrapper.Player.play();
+	const shuffleHandler = () => SpotifyApi.shuffle(!shuffle);
+	const previousHandler = () => SpotifyApi.previous();
+	const nextHandler = () => SpotifyApi.next();
+	const repeatHandler = () => SpotifyApi.repeat(repeatArg);
+	const pauseHandler = () => SpotifyApi.pause();
+	const playHandler = () => SpotifyApi.play();
 
-	const shareSongHandler = () => SpotifyWrapper.Utils.share(url);
-	const sharePosterHandler = () => SpotifyWrapper.Utils.share(banner);
+	const shareSongHandler = () => SpotifyApi.Utils.share(url);
+	const sharePosterHandler = () => SpotifyApi.Utils.share(banner);
 
-	const copySongHandler = () => SpotifyWrapper.Utils.copySpotifyLink(url);
-	const copyPosterHandler = () => SpotifyWrapper.Utils.copySpotifyLink(banner);
+	const copySongHandler = () => SpotifyApi.Utils.copySpotifyLink(url);
+	const copyPosterHandler = () => SpotifyApi.Utils.copySpotifyLink(banner);
 
 	const { playPauseTooltip, playPauseHandler, playPauseIcon, playPauseClassName } = {
-		"true": {
+		true: {
 			playPauseTooltip: "Pause",
 			playPauseClassName: "spotify-player-controls-pause",
 			playPauseHandler: pauseHandler,
 			playPauseIcon: <PauseIcon />
 		},
-		"false": {
+		false: {
 			playPauseTooltip: "Play",
 			playPauseClassName: "spotify-player-controls-play",
 			playPauseHandler: playHandler,
@@ -199,30 +191,33 @@ function SpotifyPlayerButton({ value, onClick, className, active, ...rest }) {
 }
 
 function Volume({ volume }) {
-	const volumeRef = React.useRef(volume || 25);
 	const [val, setVal] = React.useState(volume);
+	const [active, setActive] = React.useState(false);
+	const volumeRef = React.useRef(volume || 25);
 
 	React.useEffect(() => {
 		if (volume) volumeRef.current = volume;
-		setVal(volume);
+		if (!active) setVal(volume);
 	}, [volume]);
 
 	const volumeMuteHandler = () => {
 		const target = val ? 0 : volumeRef.current;
-		SpotifyWrapper.Player.volume(target).then(() => {
+		SpotifyApi.volume(target).then(() => {
 			setVal(target);
 		});
 	};
 
-	const volumeOnChange = e => setVal(Math.round(e.target.value));
-
 	const volumeOnMouseUp = e => {
+		setActive(false);
 		const value = Math.round(e.target.value);
-		SpotifyWrapper.Player.volume(value).then(() => {
+		SpotifyApi.volume(value).then(() => {
 			volumeRef.current = value;
 			setVal(value);
 		});
 	};
+	
+	const volumeOnChange = e => setVal(Math.round(e.target.value));
+	const volumeOnMouseDown = () => setActive(true);
 
 	return (
 		<Popout
@@ -232,6 +227,7 @@ function Volume({ volume }) {
 						value={val}
 						onChange={volumeOnChange}
 						onMouseUp={volumeOnMouseUp}
+						onMouseDown={volumeOnMouseDown}
 						type="range"
 						step="1"
 						min="0"

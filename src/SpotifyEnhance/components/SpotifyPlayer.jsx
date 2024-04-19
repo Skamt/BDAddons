@@ -1,24 +1,24 @@
 import { React } from "@Api";
-import SpotifyWrapper from "../SpotifyWrapper";
-import { useSettings } from "@Utils/Hooks";
-import TrackMediaDetails from "./TrackMediaDetails";
 import SpotifyPlayerControls from "./SpotifyPlayerControls";
+import TrackMediaDetails from "./TrackMediaDetails";
 import TrackTimeLine from "./TrackTimeLine";
+import Store from "./../Store";
 
+export default React.memo(function SpotifyPlayer() {
+	console.log("player rerendered");
 
-function SpotifyPlayer() {
-	const player = useSettings("player");
-	const [{ deviceState, playerState }, setState] = React.useState(SpotifyWrapper.getSpotifyState());
-	React.useEffect(() => {
-		return SpotifyWrapper.on(() => setState(SpotifyWrapper.getSpotifyState()));
-	}, []);
+	const isActive = Store(Store.selectors.isActive);
+	const media = Store(Store.selectors.media);
+	const mediaType = Store(Store.selectors.mediaType);
 
-	if (!player) return;
-	if (!deviceState) return;
-	if (!playerState) return;
+	if (!isActive) return null;
+	if (!media) return null;
 
-	const { disallowedActions, track, currentlyPlayingType, shuffle, volume, repeat, isPlaying, progress } = playerState;
-	const { duration, url, bannerMd, bannerSm, bannerLg } = track;
+	const { bannerMd, bannerSm, bannerLg } = {
+		bannerSm: media?.album?.images[2],
+		bannerMd: media?.album?.images[1],
+		bannerLg: media?.album?.images[0]
+	};
 
 	return (
 		<div
@@ -28,31 +28,21 @@ function SpotifyPlayer() {
 				"--banner-lg": `url(${bannerLg?.url})`
 			}}
 			className="spotify-player-container">
+
 			<TrackMediaDetails
-				currentlyPlayingType={currentlyPlayingType}
-				track={track}
+				mediaType={mediaType}
+				media={media}
 			/>
+
 			<TrackTimeLine
-				currentlyPlayingType={currentlyPlayingType}
-				duration={duration}
-				isPlaying={isPlaying}
-				progress={progress}
+				mediaType={mediaType}
+				media={media}
 			/>
+
 			<SpotifyPlayerControls
-				disallowedActions={disallowedActions}
-				state={{ shuffle, isPlaying, repeat }}
-				data={{ banner: bannerLg.url, url, volume }}
+				banner={bannerLg}
+				media={media}
 			/>
 		</div>
 	);
-}
-
-import SpotifyStore from "./../SpotifyStore";
-
-export default React.memo(function TestPlayer() {
-	console.log("player rerendered");
-	const isActive = SpotifyStore(a => a.isActive);
-	console.log("isActive",isActive);
-	if(!isActive) return null;
-	return <div style={{color:"#fff"}}>{`${isActive}`}</div>;
 });

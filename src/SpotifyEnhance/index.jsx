@@ -2,27 +2,24 @@ import { DOM, Patcher } from "@Api";
 import Logger from "@Utils/Logger";
 // import Settings from "@Utils/Settings";
 import { getFluxContainer } from "./Utils";
-// import SettingComponent from "./components/SettingComponent";
-// import patchMessageHeader from "./patches/patchMessageHeader";
-// import patchSpotifyActivity from "./patches/patchSpotifyActivity";
 import patchListenAlong from "./patches/patchListenAlong";
 import patchSpotifySocket from "./patches/patchSpotifySocket";
 import patchSpotifyEmbed from "./patches/patchSpotifyEmbed";
 import patchSpotifyPlayer from "./patches/patchSpotifyPlayer";
-// import css from "./styles";
-// import SpotifySocketListener from "./SpotifySocketListener";
-// import SpotifyWrapper from "./SpotifyWrapper";
-import SpotifyStore from "./SpotifyStore";
+import css from "./styles";
+import Store from "./Store";
+import SpotifyAPI from "@Utils/SpotifyAPI";
 
-window.SpotifyStore = SpotifyStore;
+window.SpotifyStore = Store;
+window.SpotifyAPI = SpotifyAPI;
 
 
 export default class SpotifyEnhance {
 	start() {
 		try {
 			// Settings.init(config.settings);
-			// DOM.addStyle(css);
-			SpotifyStore.init();
+			DOM.addStyle(css);
+			Store.init();
 			// SpotifyWrapper.init();
 			patchListenAlong();
 			patchSpotifyEmbed();
@@ -30,7 +27,6 @@ export default class SpotifyEnhance {
 			// patchSpotifyActivity();
 			// patchMessageHeader();
 			patchSpotifyPlayer();
-			// console.log(SpotifyStore);
 		} catch (e) {
 			Logger.error(e);
 		}
@@ -38,8 +34,7 @@ export default class SpotifyEnhance {
 
 	async stop() {
 		try {
-			// SpotifyWrapper.dispose();
-			SpotifyStore.dispose();
+			Store.dispose();
 			DOM.removeStyle();
 			Patcher.unpatchAll();
 
