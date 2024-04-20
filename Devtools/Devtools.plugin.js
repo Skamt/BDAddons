@@ -28,8 +28,6 @@ const Patcher = Api.Patcher;
 const getModule$1 = Api.Webpack.getModule;
 const Filters = Api.Webpack.Filters;
 
-const getOwnerInstance = Api.ReactUtils.getOwnerInstance;
-
 class ErrorBoundary extends React.Component {
 	state = { hasError: false, error: null, info: null };
 
@@ -89,6 +87,12 @@ const RenderLinkComponent = getModule$1(m => m.type?.toString?.().includes("MASK
 
 const { ModalRoot, ModalSize } = TheBigBoyBundle;
 const ImageModal = ImageModalVideoModal.ImageModal;
+
+const debounce = Api.Utils.debounce;
+const findInTree = Api.Utils.findInTree;
+
+const getOwnerInstance = Api.ReactUtils.getOwnerInstance;
+const getInternalInstance = Api.ReactUtils.getInternalInstance;
 
 const openModal = (children, tag) => {
 	const id = `${tag ? `${tag}-` : ""}modal`;
@@ -211,7 +215,7 @@ function getImageDimensions(url) {
 	});
 }
 
-const d = (() => {
+const d = () => {
 	const cache = new WeakMap();
 	const emptyDoc = document.createDocumentFragment();
 
@@ -283,7 +287,7 @@ const d = (() => {
 		getCssRulesForElement,
 		scrollerStylesForElement
 	};
-})();
+};
 
 function hook(hook, ...args) {
 	let v;
@@ -305,10 +309,14 @@ const Utils = /*#__PURE__*/ Object.freeze({
 	buildUrl,
 	copy,
 	d,
+	debounce,
+	findInTree,
 	genUrlParamsFromArray,
 	getImageDimensions,
 	getImageModalComponent,
+	getInternalInstance,
 	getNestedProp,
+	getOwnerInstance,
 	hook,
 	nop,
 	openModal,
@@ -523,13 +531,7 @@ function doExports(filter, module, exports) {
 
 function sanitizeExports(exports) {
 	if (!exports) return;
-	const exportsExceptions = [
-		exports => typeof exports === "boolean",
-		exports => exports === window,
-		exports => exports.TypedArray,
-		exports => exports === document.documentElement,
-		exports => exports[Symbol.toStringTag] === "DOMTokenList"
-	];
+	const exportsExceptions = [exports => typeof exports === "boolean", exports => exports === window, exports => exports.TypedArray, exports => exports === document.documentElement, exports => exports[Symbol.toStringTag] === "DOMTokenList"];
 	for (let index = exportsExceptions.length - 1; index >= 0; index--) {
 		if (exportsExceptions[index](exports)) return true;
 	}
@@ -544,8 +546,10 @@ function* moduleLookup(filter, options = {}) {
 		const module = modules[index];
 		const { exports } = module;
 		if (sanitizeExports(exports)) continue;
-		const match = gauntlet(filter, module, exports);
-		if (match) yield match;
+		try {
+			const match = gauntlet(filter, module, exports);
+			if (match) yield match;
+		} catch {}
 	}
 }
 
