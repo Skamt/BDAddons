@@ -83,7 +83,7 @@ function moduleById(id) {
 }
 
 function modulesImportedInModuleById(id) {
-	const {code} = Sources.sourceById(id);
+	const { code } = Sources.sourceById(id);
 	const args = code.match(/\((.+?)\)/i)?.[1];
 	if (args?.length > 5 || !args) return [];
 
@@ -118,13 +118,7 @@ function doExports(filter, module, exports) {
 
 function sanitizeExports(exports) {
 	if (!exports) return;
-	const exportsExceptions = [
-		exports => typeof exports === "boolean", 
-		exports => exports === window, 
-		exports => exports.TypedArray, 
-		exports => exports === document.documentElement, 
-		exports => exports[Symbol.toStringTag] === "DOMTokenList"
-	];
+	const exportsExceptions = [exports => typeof exports === "boolean", exports => exports === window, exports => exports.TypedArray, exports => exports === document.documentElement, exports => exports[Symbol.toStringTag] === "DOMTokenList"];
 	for (let index = exportsExceptions.length - 1; index >= 0; index--) {
 		if (exportsExceptions[index](exports)) return true;
 	}
@@ -139,8 +133,10 @@ function* moduleLookup(filter, options = {}) {
 		const module = modules[index];
 		const { exports } = module;
 		if (sanitizeExports(exports)) continue;
-		const match = gauntlet(filter, module, exports);
-		if (match) yield match;
+		try {
+			const match = gauntlet(filter, module, exports);
+			if (match) yield match;
+		} catch {}
 	}
 }
 
