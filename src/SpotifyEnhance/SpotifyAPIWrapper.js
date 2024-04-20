@@ -4,23 +4,23 @@ import Logger from "@Utils/Logger";
 import Toast from "@Utils/Toast";
 import { promiseHandler } from "@Utils";
 
-function createAndLogError(msg = "Unknown error", cause = "Unknown cause") {
-	const e = new Error(msg, { cause });
-	Logger.error(e);
-	return e;
-}
-
 async function requestHandler(action) {
 	let repeat = 2;
 	while (repeat--) {
 		const [actionError, actionResponse] = await promiseHandler(action());
 		if (!actionError) return actionResponse;
-		if (actionError.status !== 401) throw createAndLogError(actionError.message, actionError);
+		if (actionError.status !== 401) {
+			Logger.error(actionError);
+			throw actionError;
+		}
 
-		if (!SpotifyAPI.accountId) throw createAndLogError("Can't refresh expired access token", "Unknown account ID");
+		if (!SpotifyAPI.accountId) throw "Can't refresh expired access token Unknown account ID";
 
 		const [tokenRefreshError, tokenRefreshResponse] = await promiseHandler(RefreshToken(SpotifyAPI.accountId));
-		if (tokenRefreshError) throw createAndLogError("Could not refresh Spotify token", tokenRefreshError);
+		if (tokenRefreshError) {
+			Logger.error(tokenRefreshError);
+			throw "Could not refresh Spotify token";
+		}
 		SpotifyAPI.token = tokenRefreshResponse.body.access_token;
 	}
 }
@@ -28,7 +28,7 @@ async function requestHandler(action) {
 function playerActions(prop) {
 	return (...args) =>
 		requestHandler(() => SpotifyAPI[prop].apply(SpotifyAPI, args)).catch(reason => {
-			Toast.error(`Could not execute ${prop} command\n${reason}`);
+			Toast.error(`Could not execute ${prop} command\n${reason.message}`);
 		});
 }
 
@@ -50,7 +50,7 @@ function ressourceActions(prop) {
 				Toast.success(success(type, description));
 			})
 			.catch(reason => {
-				Toast.error(error(type, description, reason));
+				Toast.error(error(type, description, reason.message));
 			});
 }
 

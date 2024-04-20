@@ -136,7 +136,7 @@ export function getImageDimensions(url) {
 	});
 }
 
-export const d = (() => {
+export const d = () => {
 	const cache = new WeakMap();
 	const emptyDoc = document.createDocumentFragment();
 
@@ -209,7 +209,7 @@ export const d = (() => {
 		getCssRulesForElement,
 		scrollerStylesForElement
 	};
-})();
+};
 
 export function hook(hook, ...args) {
 	let v;

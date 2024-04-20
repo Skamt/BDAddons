@@ -8,6 +8,7 @@ import patchSpotifyEmbed from "./patches/patchSpotifyEmbed";
 import patchSpotifyPlayer from "./patches/patchSpotifyPlayer";
 import css from "./styles";
 import Store from "./Store";
+// import SpotifyAPI from "./SpotifyAPIWrapper";
 import SpotifyAPI from "@Utils/SpotifyAPI";
 
 window.SpotifyStore = Store;

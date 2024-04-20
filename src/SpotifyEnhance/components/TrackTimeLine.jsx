@@ -16,25 +16,28 @@ export default ({ mediaType }) => {
 
 	const [position, setPosition] = React.useState(progress);
 	const sliderRef = React.useRef();
-	
+	const intervalRef = React.useRef();
+
 	React.useEffect(() => {
 		if (!sliderRef.current?.state?.active) setPosition(progress);
 	}, [progress]);
 
 	React.useEffect(() => {
-		if (!isPlaying || progress >= duration) return;
-		
-		const interval = setInterval(() => {
-			if (progress >= duration || sliderRef.current?.state?.active) 
-				return clearInterval(interval);
-			setPosition(p => p + 1000);
-		}, 1000);
+		if (isPlaying) return;
+		if (position < duration) return;
+		clearInterval(intervalRef.current);
+		setPosition(duration);
+	}, [position, isPlaying]);
 
-		return () => clearInterval(interval);
+	React.useEffect(() => {
+		if (!isPlaying) return;
+		intervalRef.current = setInterval(() => setPosition(p => p + 1000), 1000);
+		return () => clearInterval(intervalRef.current);
 	}, [progress, isPlaying]);
 
 	const rangeChangeHandler = e => {
 		if (!sliderRef.current?.state?.active) return;
+		clearInterval(intervalRef.current);
 		const pos = Math.floor(e);
 		setPosition(pos);
 		SpotifyApi.seek(pos);

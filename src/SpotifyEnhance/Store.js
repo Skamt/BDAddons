@@ -4,6 +4,7 @@ import ConnectedAccountsStore from "@Stores/ConnectedAccountsStore";
 import SpotifyStore from "@Stores/SpotifyStore";
 import { promiseHandler } from "@Utils";
 import SpotifyApi from "./SpotifyAPIWrapper";
+import Timer from "@Utils/Timer";
 
 const createStore = getModule(Filters.byStrings("subscribeWithSelector", "useReducer"));
 
@@ -94,6 +95,21 @@ const Store = Object.assign(
 	}
 );
 
+const timer = new Timer(
+	() => {
+		const state = Store.getState();
+		console.log("Idle Timeout HIT: ", Date());
+		state.setAccount(undefined);
+	},
+	10 * 60 * 1000
+);
+
+Store.subscribe(isPlaying => {
+	console.log(timer);
+	if (isPlaying) return timer.stop();
+	if (!isPlaying) return timer.start();
+}, Store.selectors.isPlaying);
+
 function onSpotifyStoreChange() {
 	try {
 		const state = Store.getState();
@@ -126,6 +142,5 @@ function onAccountsChanged() {
 		Logger.error(e);
 	}
 }
-
 
 export default Store;

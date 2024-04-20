@@ -1,7 +1,7 @@
 import { UI } from "@Api";
 
 function showToast(content, type) {
-	UI.showToast(`[${config.info.name}] ${content}`, { type });
+	UI.showToast(`[${config.info.name}] ${content}`, { timeout:5000, type });
 }
 
 export default {
