@@ -125,17 +125,9 @@ export const Store = Object.assign(
 	}
 );
 
-const timer = new Timer(
-	() => {
-		const state = Store.getState();
-		console.log("Idle Timeout HIT: ", Date());
-		state.setAccount(undefined);
-	},
-	10 * 60 * 1000
-);
+const timer = new Timer(() => Store.getState().setAccount(undefined), 10 * 60 * 1000);
 
 Store.subscribe(isPlaying => {
-	console.log(timer);
 	if (isPlaying) return timer.stop();
 	if (!isPlaying) return timer.start();
 }, Store.selectors.isPlaying);

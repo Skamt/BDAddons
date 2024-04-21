@@ -8,8 +8,6 @@ import { useSettings } from "@Utils/Hooks";
 export default React.memo(function SpotifyPlayer() {
 	const player = useSettings("player");
 
-	console.log("SpotifyPlayer");
-
 	const isActive = Store(Store.selectors.isActive);
 	const media = Store(Store.selectors.media);
 	const mediaType = Store(Store.selectors.mediaType);

@@ -1,20 +1,16 @@
+import css from "./styles";
 import { DOM, Patcher } from "@Api";
 import Logger from "@Utils/Logger";
 import Settings from "@Utils/Settings";
+import { Store } from "./Store";
 import { getFluxContainer } from "./Utils";
+import SettingComponent from "./components/SettingComponent";
 import patchListenAlong from "./patches/patchListenAlong";
-import patchSpotifySocket from "./patches/patchSpotifySocket";
+import patchSpotifyActivity from "./patches/patchSpotifyActivity";
 import patchSpotifyEmbed from "./patches/patchSpotifyEmbed";
 import patchSpotifyPlayer from "./patches/patchSpotifyPlayer";
-import patchSpotifyActivity from "./patches/patchSpotifyActivity";
-import SettingComponent from "./components/SettingComponent";
-import css from "./styles";
-import { Store } from "./Store";
-import SpotifyAPI from "@Utils/SpotifyAPI";
-
-window.SpotifyStore = Store;
-window.SpotifyAPI = SpotifyAPI;
-window.SpotSettings = Settings;
+import patchSpotifySocket from "./patches/patchSpotifySocket";
+import patchMessageHeader from "./patches/patchMessageHeader";
 
 export default class SpotifyEnhance {
 	start() {
@@ -26,7 +22,7 @@ export default class SpotifyEnhance {
 			patchSpotifyEmbed();
 			patchSpotifySocket();
 			patchSpotifyActivity();
-			// patchMessageHeader();
+			patchMessageHeader();
 			patchSpotifyPlayer();
 		} catch (e) {
 			Logger.error(e);

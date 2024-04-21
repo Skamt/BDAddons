@@ -15,7 +15,6 @@ function getSocket() {
 	return new Promise(resolve => {
 		function listener() {
 			try {
-				console.log("getSocket listener");
 				const socket = getSocketConstructor();
 				if (!socket) return;
 				SpotifyStore.removeChangeListener(listener);
