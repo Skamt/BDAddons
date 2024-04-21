@@ -1,25 +1,23 @@
 import { React } from "@Api";
-import SpotifyApi from "../SpotifyAPIWrapper";
 import Button from "@Components/Button";
 import Popout from "@Components/Popout";
-import ShareIcon from "@Components/icons/ShareIcon";
+import Tooltip from "@Components/Tooltip";
+import CopyIcon from "@Components/icons/CopyIcon";
+import MuteVolumeIcon from "@Components/icons/MuteVolumeIcon";
+import NextIcon from "@Components/icons/NextIcon";
 import PauseIcon from "@Components/icons/PauseIcon";
 import PlayIcon from "@Components/icons/PlayIcon";
-import RepeatIcon from "@Components/icons/RepeatIcon";
-import ShuffleIcon from "@Components/icons/ShuffleIcon";
-import CopyIcon from "@Components/icons/CopyIcon";
-import NextIcon from "@Components/icons/NextIcon";
-import VolumeIcon from "@Components/icons/VolumeIcon";
-import MuteVolumeIcon from "@Components/icons/MuteVolumeIcon";
-import Tooltip from "@Components/Tooltip";
 import PreviousIcon from "@Components/icons/PreviousIcon";
+import RepeatIcon from "@Components/icons/RepeatIcon";
 import RepeatOneIcon from "@Components/icons/RepeatOneIcon";
-
+import ShareIcon from "@Components/icons/ShareIcon";
+import ShuffleIcon from "@Components/icons/ShuffleIcon";
+import VolumeIcon from "@Components/icons/VolumeIcon";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
+import SpotifyApi from "../SpotifyAPIWrapper";
+import { Store } from "../Store";
 
 const { MenuItem, Menu } = TheBigBoyBundle;
-
-import Store from "./../Store";
 
 export default ({ banner, media }) => {
 	const isPlaying = Store(Store.selectors.isPlaying);
@@ -28,8 +26,7 @@ export default ({ banner, media }) => {
 	const volume = Store(Store.selectors.volume);
 	const actions = Store(Store.selectors.actions);
 
-	if (!media) return;
-	const url = media.external_urls.spotify;
+	const url = media?.external_urls?.spotify;
 	const { toggling_shuffle, toggling_repeat_track, skipping_next, skipping_prev } = actions || {};
 
 	const { repeatTooltip, repeatActive, repeatIcon, repeatArg } = {
@@ -51,7 +48,7 @@ export default ({ banner, media }) => {
 			repeatIcon: <RepeatOneIcon />,
 			repeatActive: true
 		}
-	}[repeat];
+	}[repeat || "off"];
 
 	const shuffleHandler = () => SpotifyApi.shuffle(!shuffle);
 	const previousHandler = () => SpotifyApi.previous();
@@ -60,11 +57,11 @@ export default ({ banner, media }) => {
 	const pauseHandler = () => SpotifyApi.pause();
 	const playHandler = () => SpotifyApi.play();
 
-	const shareSongHandler = () => SpotifyApi.Utils.share(url);
-	const sharePosterHandler = () => SpotifyApi.Utils.share(banner);
+	const shareSongHandler = () => Store.Utils.share(url);
+	const sharePosterHandler = () => Store.Utils.share(banner);
 
-	const copySongHandler = () => SpotifyApi.Utils.copySpotifyLink(url);
-	const copyPosterHandler = () => SpotifyApi.Utils.copySpotifyLink(banner);
+	const copySongHandler = () => Store.Utils.copySpotifyLink(url);
+	const copyPosterHandler = () => Store.Utils.copySpotifyLink(banner);
 
 	const { playPauseTooltip, playPauseHandler, playPauseIcon, playPauseClassName } = {
 		true: {
@@ -207,17 +204,12 @@ function Volume({ volume }) {
 		});
 	};
 
-	const volumeOnMouseUp = e => {
-		setActive(false);
-		const value = Math.round(e.target.value);
-		SpotifyApi.volume(value).then(() => {
-			volumeRef.current = value;
-			setVal(value);
-		});
-	};
-	
 	const volumeOnChange = e => setVal(Math.round(e.target.value));
 	const volumeOnMouseDown = () => setActive(true);
+	const volumeOnMouseUp = () => {
+		setActive(false);
+		SpotifyApi.volume(val).then(() => (volumeRef.current = val));
+	};
 
 	return (
 		<Popout

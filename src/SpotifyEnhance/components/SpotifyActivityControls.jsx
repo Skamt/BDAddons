@@ -1,20 +1,21 @@
 import { React } from "@Api";
 import { Filters, getModule } from "@Webpack";
 
-import SpotifyStore from "@Stores/SpotifyStore";
-// import SpotifyWrapper from "../SpotifyWrapper";
+// import SpotifyStore from "@Stores/SpotifyStore";
+import SpotifyApi from "../SpotifyAPIWrapper";
+import { Store } from "../Store";
 import Button from "@Components/Button";
 import AddToQueueIcon from "@Components/icons/AddToQueueIcon";
 import ListenAlongIcon from "@Components/icons/ListenAlongIcon";
 import ListenIcon from "@Components/icons/ListenIcon";
 import ShareIcon from "@Components/icons/ShareIcon";
 import Tooltip from "@Components/Tooltip";
-import FluxHelpers from "@Modules/FluxHelpers";
+// import FluxHelpers from "@Modules/FluxHelpers";
 
 const { useSpotifyPlayAction, useSpotifySyncAction } = getModule(Filters.byProps("useSpotifyPlayAction"));
 
 export default ({ activity, user, source }) => {
-	const spotifySocket = FluxHelpers.useStateFromStores([SpotifyStore], () => SpotifyStore.getActiveSocketAndDevice()?.socket);
+	const isActive = Store(Store.selectors.isActive);
 
 	const userSyncActivityState = useSpotifySyncAction(activity, user, source);
 	const userPlayActivityState = useSpotifyPlayAction(activity, user, source);
@@ -26,14 +27,14 @@ export default ({ activity, user, source }) => {
 				<ActivityControlButton
 					className="activity-controls-queue"
 					value={<AddToQueueIcon />}
-					disabled={!spotifySocket}
-					onClick={() => SpotifyWrapper.Player.queue("track", activity.sync_id, activity.details)}
+					disabled={!isActive}
+					onClick={() => SpotifyApi.queue("track", activity.sync_id, activity.details)}
 				/>
 			</Tooltip>
 			<Tooltip note="Share in current channel">
 				<ActivityControlButton
 					className="activity-controls-share"
-					onClick={() => SpotifyWrapper.Utils.share(`https://open.spotify.com/track/${activity.sync_id}`)}
+					onClick={() => Store.Utils.share(`https://open.spotify.com/track/${activity.sync_id}`)}
 					value={<ShareIcon />}
 				/>
 			</Tooltip>

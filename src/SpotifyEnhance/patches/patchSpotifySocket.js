@@ -1,7 +1,7 @@
 import { Patcher } from "@Api";
 import Logger from "@Utils/Logger";
 import SpotifyStore from "@Stores/SpotifyStore";
-import Store from "./../Store";
+import { Store } from "../Store";
 
 function getSocketConstructor() {
 	const playableComputerDevices = SpotifyStore.getPlayableComputerDevices() || [];

@@ -1,9 +1,10 @@
 import { React } from "@Api";
 import Popout from "@Components/Popout";
+import Tooltip from "@Components/Tooltip";
+import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 import { getImageModalComponent, openModal } from "@Utils";
 import Toast from "@Utils/Toast";
-import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
-import Tooltip from "@Components/Tooltip";
+
 const { Anchor } = TheBigBoyBundle;
 
 export default ({ media, mediaType }) => {

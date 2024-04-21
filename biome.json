@@ -1,0 +1,13 @@
+{
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "suspicious": {
+        "useKeyWithClickEvents": "off"
+      },
+      "style": {
+        "useKeyWithClickEvents": "off"
+      }
+    }
+  }
+}

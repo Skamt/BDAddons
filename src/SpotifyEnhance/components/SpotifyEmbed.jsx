@@ -1,57 +1,46 @@
 import { React } from "@Api";
-import { getImageModalComponent, openModal } from "@Utils";
-
-
-// import SpotifyWrapper from "../SpotifyWrapper";
+import Tooltip from "@Components/Tooltip";
 import AddToQueueIcon from "@Components/icons/AddToQueueIcon";
 import CopyIcon from "@Components/icons/CopyIcon";
 import ListenIcon from "@Components/icons/ListenIcon";
 import SpotifyIcon from "@Components/icons/SpotifyIcon";
-import Tooltip from "@Components/Tooltip";
+import { getImageModalComponent, openModal } from "@Utils";
+import SpotifyApi from "../SpotifyAPIWrapper";
+import { Store } from "../Store";
 
-export default ({ id, type, embed: { thumbnail = {}, rawTitle, rawDescription, url } }) => {
-	console.log(rawTitle);
-
-	const [isActive, setIsActive] = React.useState(SpotifyWrapper.getActiveState());
-	const [isThis, setIsThis] = React.useState(SpotifyWrapper.getEmbedData(id));
-
-	React.useEffect(() => {
-		return SpotifyWrapper.on(() => {
-			const newState = SpotifyWrapper.getEmbedData(id);
-			if (newState !== isThis) setIsThis(newState);
-		});
-	}, [isThis]);
-
-	React.useEffect(() => {
-		return SpotifyWrapper.on(() => {
-			const newState = SpotifyWrapper.getActiveState(id);
-			if (newState !== isActive) setIsActive(newState);
-		});
-	}, [isActive]);
+export default ({ id, type, embed: { thumbnail, rawTitle, rawDescription, url } }) => {
+	const isPlaying = Store(Store.selectors.isPlaying);
+	const isActive = Store(Store.selectors.isActive);
+	const mediaId = Store(Store.selectors.mediaId, (n, o) => n === o || (n !== id && o !== id));
+	const isThis = mediaId === id;
 
 	const listenBtn = type !== "show" && (
-		<Listen
-			type={type}
-			id={id}
-			tag={rawTitle}
-		/>
+		<Tooltip note={`Play ${type}`}>
+			<div
+				onClick={() => SpotifyApi.listen(type, id, rawTitle)}
+				className="spotifyEmbed-btn spotifyEmbed-btn-listen">
+				<ListenIcon />
+			</div>
+		</Tooltip>
 	);
 
 	const queueBtn = (type === "track" || type === "episode") && (
-		<AddToQueue
-			type={type}
-			id={id}
-			tag={rawTitle}
-		/>
+		<Tooltip note={`Add ${type} to queue`}>
+			<div
+				onClick={() => SpotifyApi.queue(type, id, rawTitle)}
+				className="spotifyEmbed-btn spotifyEmbed-btn-addToQueue">
+				<AddToQueueIcon />
+			</div>
+		</Tooltip>
 	);
 
 	let className = "spotifyEmbed-Container";
-	if (isThis) className += " playing";
+	if (isThis && isPlaying) className += " playing";
 
 	return (
 		<div
 			className={className}
-			style={{ "--thumbnail": `url(${thumbnail.proxyURL || thumbnail.url})` }}>
+			style={{ "--thumbnail": `url(${thumbnail?.proxyURL || thumbnail?.url})` }}>
 			<Tooltip note="View">
 				<div
 					onClick={() => {
@@ -60,7 +49,8 @@ export default ({ id, type, embed: { thumbnail = {}, rawTitle, rawDescription, u
 						height = height > 650 ? 650 : height;
 						openModal(<div className="spotify-banner-modal">{getImageModalComponent(proxyURL || url, { width, height })}</div>);
 					}}
-					className="spotifyEmbed-thumbnail"></div>
+					className="spotifyEmbed-thumbnail"
+				/>
 			</Tooltip>
 			<h2 className="spotifyEmbed-title">{rawTitle}</h2>
 			<p className="spotifyEmbed-description">{rawDescription}</p>
@@ -68,58 +58,22 @@ export default ({ id, type, embed: { thumbnail = {}, rawTitle, rawDescription, u
 			{type && id && (
 				<div className="spotifyEmbed-controls">
 					{!isThis && isActive && [listenBtn, queueBtn]}
-					<Copy url={url} />
+					<Tooltip note="Copy link">
+						<div
+							onClick={() => Store.Utils.copySpotifyLink(url)}
+							className="spotifyEmbed-btn spotifyEmbed-btn-copy">
+							<CopyIcon />
+						</div>
+					</Tooltip>
 				</div>
 			)}
-			<SpotifyLogoBtn url={url} />
+			<Tooltip note="Play on Spotify">
+				<div
+					onClick={() => Store.Utils.openSpotifyLink(url)}
+					className="spotifyEmbed-spotifyIcon">
+					<SpotifyIcon />
+				</div>
+			</Tooltip>
 		</div>
 	);
 };
-
-function SpotifyLogoBtn({ url }) {
-	return (
-		<Tooltip note="Play on Spotify">
-			<div
-				onClick={() => SpotifyWrapper.Utils.openSpotifyLink(url)}
-				className="spotifyEmbed-spotifyIcon">
-				<SpotifyIcon />
-			</div>
-		</Tooltip>
-	);
-}
-
-function Copy({ url }) {
-	return (
-		<Tooltip note="Copy link">
-			<div
-				onClick={() => SpotifyWrapper.Utils.copySpotifyLink(url)}
-				className="spotifyEmbed-btn spotifyEmbed-btn-copy">
-				<CopyIcon />
-			</div>
-		</Tooltip>
-	);
-}
-
-function Listen({ type, id, tag }) {
-	return (
-		<Tooltip note={`Play ${type}`}>
-			<div
-				onClick={() => SpotifyWrapper.Player.listen(type, id, tag)}
-				className="spotifyEmbed-btn spotifyEmbed-btn-listen">
-				<ListenIcon />
-			</div>
-		</Tooltip>
-	);
-}
-
-function AddToQueue({ type, id, tag }) {
-	return (
-		<Tooltip note={`Add ${type} to queue`}>
-			<div
-				onClick={() => SpotifyWrapper.Player.queue(type, id, tag)}
-				className="spotifyEmbed-btn spotifyEmbed-btn-addToQueue">
-				<AddToQueueIcon />
-			</div>
-		</Tooltip>
-	);
-}

@@ -1,32 +1,59 @@
-import { Filters, getModule } from "@Webpack";
-import Logger from "@Utils/Logger";
 import ConnectedAccountsStore from "@Stores/ConnectedAccountsStore";
+import SelectedChannelStore from "@Stores/SelectedChannelStore";
 import SpotifyStore from "@Stores/SpotifyStore";
 import { promiseHandler } from "@Utils";
-import SpotifyApi from "./SpotifyAPIWrapper";
+import { copy } from "@Utils";
+import Logger from "@Utils/Logger";
+import { insertText, sendMessageDirectly } from "@Utils/Messages";
 import Timer from "@Utils/Timer";
+import Toast from "@Utils/Toast";
+import { Filters, getModule } from "@Webpack";
+import SpotifyApi from "./SpotifyAPIWrapper";
+import { sanitizeSpotifyLink } from "./Utils";
 
 const createStore = getModule(Filters.byStrings("subscribeWithSelector", "useReducer"));
 
-const Store = Object.assign(
+const Utils = {
+	copySpotifyLink(link) {
+		if (!link) return Toast.error("Could not resolve url");
+		copy(sanitizeSpotifyLink(link));
+		Toast.success("Link copied!");
+	},
+	openSpotifyLink(link) {
+		if (!link) return Toast.error("Could not resolve url");
+		window.open(sanitizeSpotifyLink(link), "_blank");
+	},
+	share(link) {
+		if (!link) return Toast.error("Could not resolve url");
+		const id = SelectedChannelStore.getCurrentlySelectedChannelId();
+		if (!id) return Toast.info("There is no Selected Channel");
+		link = sanitizeSpotifyLink(link);
+		sendMessageDirectly({ id }, link).catch(a => {
+			Toast.error(a.message);
+			insertText(link);
+		});
+	}
+};
+
+export const Store = Object.assign(
 	createStore((set, get) => {
-		const setState = args => {
-			console.log("applying", args);
-			console.log("old state", get());
-			set(args);
-			console.log("new state", get());
-		};
+		// const set = args => {
+		// 	console.log("applying", args);
+		// 	console.log("old state", get());
+		// 	setState(args);
+		// 	console.log("new state", get());
+		// };
 
 		return {
 			account: undefined,
 			setAccount: socket => {
 				if (socket === get().account) return;
 				SpotifyApi.setToken(socket);
-				setState({ account: socket, isActive: !!socket });
+				set({ account: socket, isActive: !!socket });
 			},
 
 			isActive: false,
-			setDeviceState: isActive => setState({ isActive }),
+			setDeviceState: isActive => set({ isActive }),
 
 			async fetchPlayerState() {
 				const [err, playerState] = await promiseHandler(SpotifyApi.getPlayerState());
@@ -34,30 +61,31 @@ const Store = Object.assign(
 				get().setPlayerState(playerState);
 			},
 
-			media: undefined,
-			mediaType: undefined,
-			volume: undefined,
-			progress: undefined,
-			isPlaying: undefined,
-			repeat: undefined,
-			shuffle: undefined,
-			actions: undefined,
-			context: undefined,
+			media: {},
+			mediaType: "",
+			volume: 50,
+			progress: 0,
+			isPlaying: false,
+			mediaId: "",
+			repeat: "",
+			shuffle: false,
+			actions: {},
 			setPlayerState: playerState => {
 				if (!playerState || playerState.currently_playing_type === "ad") return;
 				const state = get();
-				setState({
-					isActive: !!playerState.device?.is_active,
-					volume: playerState.device?.volume_percent,
-					context: playerState.context,
-					duration: playerState.item?.duration_ms,
-					progress: playerState.progress_ms,
-					isPlaying: playerState.is_playing,
-					repeat: playerState.repeat_state,
-					shuffle: playerState.shuffle_state,
-					media: playerState.item?.id === state.media?.id ? state.media : playerState.item,
-					mediaType: playerState.currently_playing_type,
-					actions: playerState.actions?.disallows
+				const media = playerState.item?.id === state.media?.id ? state.media : playerState.item;
+				set({
+					isActive: !!playerState?.device?.is_active,
+					volume: playerState?.device?.volume_percent,
+					duration: playerState?.item?.duration_ms,
+					progress: playerState?.progress_ms,
+					isPlaying: playerState?.is_playing,
+					repeat: playerState?.repeat_state,
+					shuffle: playerState?.shuffle_state,
+					media: media,
+					mediaId: media?.id,
+					mediaType: playerState?.currently_playing_type,
+					actions: playerState?.actions?.disallows
 				});
 			}
 		};
@@ -78,19 +106,21 @@ const Store = Object.assign(
 			ConnectedAccountsStore.removeChangeListener(onAccountsChanged);
 			Store.getState().setAccount();
 			Store.getState().setPlayerState({});
+			timer.stop();
 		},
+		Utils,
 		selectors: {
 			isActive: state => state.isActive,
 			media: state => state.media,
 			mediaType: state => state.mediaType,
 			volume: state => state.volume,
 			progress: state => state.progress,
+			mediaId: state => state.mediaId,
 			isPlaying: state => state.isPlaying,
 			duration: state => state.duration,
 			repeat: state => state.repeat,
 			shuffle: state => state.shuffle,
-			actions: state => state.actions,
-			context: state => state.context
+			actions: state => state.actions
 		}
 	}
 );
@@ -143,4 +173,4 @@ function onAccountsChanged() {
 	}
 }
 
-export default Store;
+// export default Store;

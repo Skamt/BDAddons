@@ -1,8 +1,7 @@
 import { React } from "@Api";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
-
 import SpotifyApi from "../SpotifyAPIWrapper";
-import Store from "./../Store";
+import { Store } from "../Store";
 
 function formatMsToTime(ms) {
 	const time = new Date(ms);
@@ -26,7 +25,7 @@ export default ({ mediaType }) => {
 		if (isPlaying) return;
 		if (position < duration) return;
 		clearInterval(intervalRef.current);
-		setPosition(duration);
+		setPosition(duration || progress);
 	}, [position, isPlaying]);
 
 	React.useEffect(() => {

@@ -369,3 +369,14 @@ div:has(> .spotify-banner-modal) {
 	width:16px;
 	height:16px;
 }
+
+.spotify-no-embed-controls{
+	display:flex;
+	min-width:400px;
+	max-width: 400px;
+	gap:5px;
+}
+.spotify-no-embed-controls > button{
+	flex:1 0 0;
+	text-transform: capitalize;
+}

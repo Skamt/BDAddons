@@ -2,18 +2,20 @@ import { React } from "@Api";
 import SpotifyPlayerControls from "./SpotifyPlayerControls";
 import TrackMediaDetails from "./TrackMediaDetails";
 import TrackTimeLine from "./TrackTimeLine";
-import Store from "./../Store";
+import { Store } from "../Store";
+import { useSettings } from "@Utils/Hooks";
 
 export default React.memo(function SpotifyPlayer() {
-	console.log("player rerendered");
+	const player = useSettings("player");
+
+	console.log("SpotifyPlayer");
 
 	const isActive = Store(Store.selectors.isActive);
 	const media = Store(Store.selectors.media);
 	const mediaType = Store(Store.selectors.mediaType);
-
-	if (!isActive) return null;
-	if (!media) return null;
-
+	
+	if(!player || !isActive || !mediaType) return;
+	
 	const { bannerMd, bannerSm, bannerLg } = {
 		bannerSm: media?.album?.images[2],
 		bannerMd: media?.album?.images[1],

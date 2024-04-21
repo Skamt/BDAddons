@@ -11,8 +11,6 @@ const SpotifyEmbed = getModule(Filters.byStrings("open.spotify.com", "/playlist/
 export default () => {
 	if (SpotifyEmbed)
 		Patcher.after(SpotifyEmbed, "default", (_, [{ embed }], ret) => {
-			if (embed?.provider?.name !== "Spotify") return;
-			return null;
 			const [type, id] = parseSpotifyUrl(embed.url) || [];
 			if (!ALLOWD_TYPES.includes(type)) {
 				Logger.log(`Spotify ${type}`, embed.url);
