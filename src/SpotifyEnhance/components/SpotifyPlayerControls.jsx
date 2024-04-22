@@ -16,10 +16,13 @@ import VolumeIcon from "@Components/icons/VolumeIcon";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 import SpotifyApi from "../SpotifyAPIWrapper";
 import { Store } from "../Store";
+import { useSettings } from "@Utils/Hooks";
 
 const { MenuItem, Menu } = TheBigBoyBundle;
 
 export default ({ banner, media }) => {
+	const playerButtons = useSettings("playerButtons");
+
 	const isPlaying = Store(Store.selectors.isPlaying);
 	const shuffle = Store(Store.selectors.shuffle);
 	const repeat = Store(Store.selectors.repeat);
@@ -80,110 +83,76 @@ export default ({ banner, media }) => {
 
 	return (
 		<div className="spotify-player-controls">
-			<Popout
-				renderPopout={t => (
-					<Menu onClose={t.closePopout}>
-						<MenuItem
-							className="spotify-player-share-menuitem"
-							id="copy-song-link"
-							key="copy-song-link"
-							icon={CopyIcon}
-							action={copySongHandler}
-							label="Copy song url"
-						/>
-						<MenuItem
-							className="spotify-player-share-menuitem"
-							id="copy-poster-link"
-							key="copy-poster-link"
-							action={copyPosterHandler}
-							icon={CopyIcon}
-							label="Copy poster url"
-						/>
-						<MenuItem
-							className="spotify-player-share-menuitem"
-							id="share-song-link"
-							key="share-song-link"
-							action={shareSongHandler}
-							icon={ShareIcon}
-							label="Share song in current channel"
-						/>
-						<MenuItem
-							className="spotify-player-share-menuitem"
-							id="share-poster-link"
-							key="share-poster-link"
-							action={sharePosterHandler}
-							icon={ShareIcon}
-							label="Share poster in current channel"
-						/>
-					</Menu>
-				)}
-				align="left"
-				position="top"
-				animation="1">
-				<SpotifyPlayerButton
-					className="spotify-player-controls-share"
-					value={<ShareIcon />}
-				/>
-			</Popout>
-
-			<Tooltip note="shuffle">
-				<SpotifyPlayerButton
-					active={shuffle}
-					className="spotify-player-controls-shuffle"
-					disabled={toggling_shuffle}
-					onClick={shuffleHandler}
-					value={<ShuffleIcon />}
-				/>
-			</Tooltip>
-			<Tooltip note="Previous">
-				<SpotifyPlayerButton
-					className="spotify-player-controls-previous"
-					disabled={skipping_prev}
-					onClick={previousHandler}
-					value={<PreviousIcon />}
-				/>
-			</Tooltip>
-			<Tooltip note={playPauseTooltip}>
-				<SpotifyPlayerButton
-					className={playPauseClassName}
-					onClick={playPauseHandler}
-					value={playPauseIcon}
-				/>
-			</Tooltip>
-			<Tooltip note="Next">
-				<SpotifyPlayerButton
-					className="spotify-player-controls-next"
-					disabled={skipping_next}
-					onClick={nextHandler}
-					value={<NextIcon />}
-				/>
-			</Tooltip>
-			<Tooltip note={repeatTooltip}>
-				<SpotifyPlayerButton
-					active={repeatActive}
-					className="spotify-player-controls-repeat"
-					disabled={toggling_repeat_track}
-					onClick={repeatHandler}
-					value={repeatIcon}
-				/>
-			</Tooltip>
-
-			<Volume volume={volume} />
+			{playerButtons["Share"] && (
+				<Popout
+					renderPopout={t => (
+						<Menu onClose={t.closePopout}>
+							<MenuItem
+								className="spotify-player-share-menuitem"
+								id="copy-song-link"
+								key="copy-song-link"
+								icon={CopyIcon}
+								action={copySongHandler}
+								label="Copy song url"
+							/>
+							<MenuItem
+								className="spotify-player-share-menuitem"
+								id="copy-poster-link"
+								key="copy-poster-link"
+								action={copyPosterHandler}
+								icon={CopyIcon}
+								label="Copy poster url"
+							/>
+							<MenuItem
+								className="spotify-player-share-menuitem"
+								id="share-song-link"
+								key="share-song-link"
+								action={shareSongHandler}
+								icon={ShareIcon}
+								label="Share song in current channel"
+							/>
+							<MenuItem
+								className="spotify-player-share-menuitem"
+								id="share-poster-link"
+								key="share-poster-link"
+								action={sharePosterHandler}
+								icon={ShareIcon}
+								label="Share poster in current channel"
+							/>
+						</Menu>
+					)}
+					align="left"
+					position="top"
+					animation="1">
+					<SpotifyPlayerButton
+						className="spotify-player-controls-share"
+						value={<ShareIcon />}
+					/>
+				</Popout>
+			)}
+			{[
+				playerButtons["Shuffle"] && { name: "Shuffle", value: <ShuffleIcon />, className: "spotify-player-controls-shuffle", disabled: toggling_shuffle, active: shuffle, onClick: shuffleHandler }, 
+				playerButtons["Previous"] && { name: "Previous", value: <PreviousIcon />, className: "spotify-player-controls-previous", disabled: skipping_prev, onClick: previousHandler }, { name: playPauseTooltip, value: playPauseIcon, className: playPauseClassName, disabled: false, onClick: playPauseHandler }, 
+				playerButtons["Next"] && { name: "Next", value: <NextIcon />, className: "spotify-player-controls-next", disabled: skipping_next, onClick: nextHandler }, 
+				playerButtons["Repeat"] && { name: repeatTooltip, value: repeatIcon, className: "spotify-player-controls-repeat", disabled: toggling_repeat_track, active: repeatActive, onClick: repeatHandler }
+			].filter(Boolean).map(SpotifyPlayerButton)}
+			{playerButtons["Volume"] && <Volume volume={volume} />}
 		</div>
 	);
 };
 
-function SpotifyPlayerButton({ value, onClick, className, active, ...rest }) {
+function SpotifyPlayerButton({ className, active, name, value, ...rest }) {
 	return (
-		<Button
-			className={`spotify-player-controls-btn ${className} ${active ? "enabled" : ""}`}
-			size={Button.Sizes.NONE}
-			color={Button.Colors.PRIMARY}
-			look={Button.Looks.BLANK}
-			onClick={onClick}
-			{...rest}>
-			{value}
-		</Button>
+		<Tooltip note={name}>
+			<Button
+				className={`spotify-player-controls-btn ${className} ${active ? "enabled" : ""}`}
+				size={Button.Sizes.NONE}
+				color={Button.Colors.PRIMARY}
+				look={Button.Looks.BLANK}
+				{...rest}>
+				{value}
+			</Button>
+		</Tooltip>
 	);
 }
 

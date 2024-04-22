@@ -5,10 +5,12 @@ import CopyIcon from "@Components/icons/CopyIcon";
 import ListenIcon from "@Components/icons/ListenIcon";
 import SpotifyIcon from "@Components/icons/SpotifyIcon";
 import { getImageModalComponent, openModal } from "@Utils";
+import { useSettings } from "@Utils/Hooks";
 import SpotifyApi from "../SpotifyAPIWrapper";
 import { Store } from "../Store";
 
 export default ({ id, type, embed: { thumbnail, rawTitle, rawDescription, url } }) => {
+	const embedBannerBackground = useSettings("embedBannerBackground");
 	const isPlaying = Store(Store.selectors.isPlaying);
 	const isActive = Store(Store.selectors.isActive);
 	const mediaId = Store(Store.selectors.mediaId, (n, o) => n === o || (n !== id && o !== id));
@@ -34,8 +36,9 @@ export default ({ id, type, embed: { thumbnail, rawTitle, rawDescription, url } 
 		</Tooltip>
 	);
 
-	let className = "spotifyEmbed-Container";
+	let className = "spotifyEmbed-container";
 	if (isThis && isPlaying) className += " playing";
+	if (embedBannerBackground) className += " bannerBackground";
 
 	return (
 		<div

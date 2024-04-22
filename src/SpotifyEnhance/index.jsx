@@ -11,7 +11,7 @@ import patchSpotifyEmbed from "./patches/patchSpotifyEmbed";
 import patchSpotifyPlayer from "./patches/patchSpotifyPlayer";
 import patchSpotifySocket from "./patches/patchSpotifySocket";
 import patchMessageHeader from "./patches/patchMessageHeader";
-
+window.spotSettings = Settings;
 export default class SpotifyEnhance {
 	start() {
 		try {

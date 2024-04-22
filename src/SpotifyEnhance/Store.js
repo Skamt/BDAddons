@@ -99,7 +99,7 @@ export const Store = Object.assign(
 			const { socket } = SpotifyStore.getActiveSocketAndDevice() || {};
 			if (!socket) return;
 			state.setAccount(socket);
-			state.fetchPlayerState();
+			// state.fetchPlayerState();
 		},
 		dispose() {
 			SpotifyStore.removeChangeListener(onSpotifyStoreChange);

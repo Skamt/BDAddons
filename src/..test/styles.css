@@ -1,3 +1,7 @@
 .transparentBackground{
 /*	background: red;*/
 }
+
+.test *{
+	box-sizing: border-box;
+}

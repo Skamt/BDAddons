@@ -8,7 +8,18 @@
 	},
 	"settings":{
 		"spotifyEmbed":"REPLACE",
-		"activity":false,
-		"player":false
+		"activityIndicator":true,
+		"playerBannerBackground":true,
+		"embedBannerBackground":true,
+		"activity":true,
+		"player":true,
+		"playerButtons":{
+			"Share":true,
+			"Shuffle":true,
+			"Previous":true,
+			"Next":true,
+			"Repeat":true,
+			"Volume":true
+		}
 	}
 }

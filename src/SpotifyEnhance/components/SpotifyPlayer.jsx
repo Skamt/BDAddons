@@ -7,6 +7,7 @@ import { useSettings } from "@Utils/Hooks";
 
 export default React.memo(function SpotifyPlayer() {
 	const player = useSettings("player");
+	const playerBannerBackground = useSettings("playerBannerBackground");
 
 	const isActive = Store(Store.selectors.isActive);
 	const media = Store(Store.selectors.media);
@@ -27,7 +28,7 @@ export default React.memo(function SpotifyPlayer() {
 				"--banner-md": `url(${bannerMd?.url})`,
 				"--banner-lg": `url(${bannerLg?.url})`
 			}}
-			className="spotify-player-container">
+			className={playerBannerBackground ? "spotify-player-container bannerBackground" : "spotify-player-container"}>
 
 			<TrackMediaDetails
 				mediaType={mediaType}
