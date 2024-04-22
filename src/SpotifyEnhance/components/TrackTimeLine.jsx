@@ -22,11 +22,10 @@ export default ({ mediaType }) => {
 	}, [progress]);
 
 	React.useEffect(() => {
-		if (isPlaying) return;
 		if (position < duration) return;
 		clearInterval(intervalRef.current);
 		setPosition(duration || progress);
-	}, [position, isPlaying]);
+	}, [position]);
 
 	React.useEffect(() => {
 		if (!isPlaying) return;
