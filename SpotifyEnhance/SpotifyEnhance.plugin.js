@@ -20,8 +20,19 @@ const config = {
 	},
 	"settings": {
 		"spotifyEmbed": "REPLACE",
-		"activity": false,
-		"player": false
+		"activityIndicator": true,
+		"playerBannerBackground": true,
+		"embedBannerBackground": true,
+		"activity": true,
+		"player": true,
+		"playerButtons": {
+			"Share": true,
+			"Shuffle": true,
+			"Previous": true,
+			"Next": true,
+			"Repeat": true,
+			"Volume": true
+		}
 	}
 }
 
@@ -37,6 +48,18 @@ const css = `
 	--accent: #1ed760;
 }
 
+.SpotifyEnhance-settings *{
+	box-sizing: border-box
+}
+
+.SpotifyEnhance-settings .spotify-player-controls{
+	background:#00000050;
+	padding:5px;
+	border-radius:10px;
+	width:auto;
+	flex:1;
+}
+
 /* Spotify Indicator */
 .spotifyActivityIndicatorIcon {
 	color: var(--spotify-green);
@@ -49,7 +72,7 @@ const css = `
 }
 
 /* Spotify Embed */
-.spotifyEmbed-Container {
+.spotifyEmbed-container {
 	background:
 		linear-gradient(#00000090 0 0),
 		var(--thumbnail) top center/9999% no-repeat;
@@ -78,7 +101,7 @@ const css = `
 	border-radius: var(--radius);
 }
 
-.spotifyEmbed-Container.playing .spotifyEmbed-thumbnail {
+.spotifyEmbed-container.playing .spotifyEmbed-thumbnail {
 	border-radius: 50%;
 	position: relative;
 	box-shadow: 0 0 0 0 #0008;
@@ -88,7 +111,7 @@ const css = `
 	position: relative;
 }
 
-.spotifyEmbed-Container.playing .spotifyEmbed-thumbnail:after {
+.spotifyEmbed-container.playing .spotifyEmbed-thumbnail:after {
 	content: "";
 	position: absolute;
 	inset: 0;
@@ -169,6 +192,22 @@ const css = `
 	color: var(--spotify-green);
 }
 
+.spotifyEmbed-container.bannerBackground{
+	position:relative;
+	border:1px solid rgba(43, 45, 49, 0.9);
+	background:unset;
+	overflow:hidden;
+}
+.spotifyEmbed-container.bannerBackground:before{
+	content:"";
+	background: linear-gradient(#000000a0 0 0),var(--thumbnail) center/cover no-repeat;
+	position:absolute;
+	inset:0px;
+	filter:blur(5px);
+	z-index:-1;
+}
+
+
 /* spotify activity controls */
 .spotify-activity-controls {
 	display: flex;
@@ -198,18 +237,33 @@ const css = `
 /* Spotify Player */
 .spotify-player-container {
 	padding: 10px 10px;
-color:white;
+	color: white;
 	display: flex;
 	flex-direction: column;
+}
+
+.spotify-player-container.bannerBackground {
+	transform: translate(0);
+}
+
+.spotify-player-container.bannerBackground:after {
+	content: "";
+	background:
+		linear-gradient(#000000b0 0 0),
+		var(--banner-lg) center/cover no-repeat;
+	position: absolute;
+	inset: 0;
+	filter: blur(8px);
+	z-index: -1;
 }
 
 .spotify-player-media {
 	color: white;
 	font-size: 0.9rem;
-	overflow:hidden;
+	overflow: hidden;
 	display: grid;
 	column-gap: 10px;
-	z-index:5;
+	z-index: 5;
 	grid-template-columns: 64px minmax(0, 1fr);
 	grid-template-rows: repeat(3, 1fr);
 	align-items: center;
@@ -262,8 +316,8 @@ div:has(> .spotify-banner-modal) {
 	text-overflow: ellipsis;
 }
 
-.spotify-player-multiple-artists{
-	display:contents;
+.spotify-player-multiple-artists {
+	display: contents;
 }
 
 .spotify-player-artists-popout {
@@ -393,21 +447,22 @@ div:has(> .spotify-banner-modal) {
 	appearance: slider-vertical;
 }
 
-.spotify-player-share-menuitem svg{
-	width:16px;
-	height:16px;
+.spotify-player-share-menuitem svg {
+	width: 16px;
+	height: 16px;
 }
 
-.spotify-no-embed-controls{
-	display:flex;
-	min-width:400px;
+.spotify-no-embed-controls {
+	display: flex;
+	min-width: 400px;
 	max-width: 400px;
-	gap:5px;
+	gap: 5px;
 }
-.spotify-no-embed-controls > button{
-	flex:1 0 0;
+.spotify-no-embed-controls > button {
+	flex: 1 0 0;
 	text-transform: capitalize;
-}`;
+}
+`;
 
 const Api = new BdApi(config.info.name);
 
@@ -1074,7 +1129,7 @@ const Store = Object.assign(
 			const { socket } = SpotifyStore.getActiveSocketAndDevice() || {};
 			if (!socket) return;
 			state.setAccount(socket);
-			state.fetchPlayerState();
+
 		},
 		dispose() {
 			SpotifyStore.removeChangeListener(onSpotifyStoreChange);
@@ -1150,13 +1205,115 @@ const Switch = TheBigBoyBundle.FormSwitch ||
 		);
 	};
 
+const Button = TheBigBoyBundle.Button ||
+	function ButtonComponentFallback(props) {
+		return React.createElement('button', { ...props, });
+	};
+
+const { Tooltip } = TheBigBoyBundle;
+
+const Tooltip$1 = ({ note, position, children }) => {
+	return (
+		React.createElement(Tooltip, {
+			text: note,
+			position: position || "top",
+		}, props => {
+			children.props = {
+				...props,
+				...children.props
+			};
+			return children;
+		})
+	);
+};
+
+function NextIcon() {
+	return (
+		React.createElement('svg', {
+			fill: "currentColor",
+			height: "24",
+			width: "24",
+			viewBox: "0 0 16 16",
+		}, React.createElement('path', { d: "M12.7 1a.7.7 0 0 0-.7.7v5.15L2.05 1.107A.7.7 0 0 0 1 1.712v12.575a.7.7 0 0 0 1.05.607L12 9.149V14.3a.7.7 0 0 0 .7.7h1.6a.7.7 0 0 0 .7-.7V1.7a.7.7 0 0 0-.7-.7h-1.6z", }))
+	);
+}
+
+function PlayIcon$1() {
+	return (
+		React.createElement('svg', {
+			fill: "currentColor",
+			width: "24",
+			height: "24",
+			viewBox: "0 0 16 16",
+		}, React.createElement('path', { d: "M3 1.713a.7.7 0 0 1 1.05-.607l10.89 6.288a.7.7 0 0 1 0 1.212L4.05 14.894A.7.7 0 0 1 3 14.288V1.713z", }), "\t")
+	);
+}
+
+function PlayIcon() {
+	return (
+		React.createElement('svg', {
+			fill: "currentColor",
+			height: "24",
+			width: "24",
+			viewBox: "0 0 16 16",
+		}, React.createElement('path', { d: "M3.3 1a.7.7 0 0 1 .7.7v5.15l9.95-5.744a.7.7 0 0 1 1.05.606v12.575a.7.7 0 0 1-1.05.607L4 9.149V14.3a.7.7 0 0 1-.7.7H1.7a.7.7 0 0 1-.7-.7V1.7a.7.7 0 0 1 .7-.7h1.6z", }))
+	);
+}
+
+function RepeatIcon() {
+	return (
+		React.createElement('svg', {
+			fill: "currentColor",
+			width: "24",
+			height: "24",
+			viewBox: "0 0 16 16",
+		}, React.createElement('path', { d: "M0 4.75A3.75 3.75 0 0 1 3.75 1h8.5A3.75 3.75 0 0 1 16 4.75v5a3.75 3.75 0 0 1-3.75 3.75H9.81l1.018 1.018a.75.75 0 1 1-1.06 1.06L6.939 12.75l2.829-2.828a.75.75 0 1 1 1.06 1.06L9.811 12h2.439a2.25 2.25 0 0 0 2.25-2.25v-5a2.25 2.25 0 0 0-2.25-2.25h-8.5A2.25 2.25 0 0 0 1.5 4.75v5A2.25 2.25 0 0 0 3.75 12H5v1.5H3.75A3.75 3.75 0 0 1 0 9.75v-5z", }))
+	);
+}
+
+const ShareIcon = () => {
+	return (
+		React.createElement('svg', {
+			fill: "currentColor",
+			width: "24",
+			height: "24",
+			viewBox: "0 0 24 24",
+		}, React.createElement('path', { d: "M13.803 5.33333C13.803 3.49238 15.3022 2 17.1515 2C19.0008 2 20.5 3.49238 20.5 5.33333C20.5 7.17428 19.0008 8.66667 17.1515 8.66667C16.2177 8.66667 15.3738 8.28596 14.7671 7.67347L10.1317 10.8295C10.1745 11.0425 10.197 11.2625 10.197 11.4872C10.197 11.9322 10.109 12.3576 9.94959 12.7464L15.0323 16.0858C15.6092 15.6161 16.3473 15.3333 17.1515 15.3333C19.0008 15.3333 20.5 16.8257 20.5 18.6667C20.5 20.5076 19.0008 22 17.1515 22C15.3022 22 13.803 20.5076 13.803 18.6667C13.803 18.1845 13.9062 17.7255 14.0917 17.3111L9.05007 13.9987C8.46196 14.5098 7.6916 14.8205 6.84848 14.8205C4.99917 14.8205 3.5 13.3281 3.5 11.4872C3.5 9.64623 4.99917 8.15385 6.84848 8.15385C7.9119 8.15385 8.85853 8.64725 9.47145 9.41518L13.9639 6.35642C13.8594 6.03359 13.803 5.6896 13.803 5.33333Z", }))
+	);
+};
+
+function ShuffleIcon() {
+	return (
+		React.createElement('svg', {
+			fill: "currentColor",
+			height: "24",
+			width: "24",
+			viewBox: "0 0 16 16",
+		}, React.createElement('path', { d: "M13.151.922a.75.75 0 1 0-1.06 1.06L13.109 3H11.16a3.75 3.75 0 0 0-2.873 1.34l-6.173 7.356A2.25 2.25 0 0 1 .39 12.5H0V14h.391a3.75 3.75 0 0 0 2.873-1.34l6.173-7.356a2.25 2.25 0 0 1 1.724-.804h1.947l-1.017 1.018a.75.75 0 0 0 1.06 1.06L15.98 3.75 13.15.922zM.391 3.5H0V2h.391c1.109 0 2.16.49 2.873 1.34L4.89 5.277l-.979 1.167-1.796-2.14A2.25 2.25 0 0 0 .39 3.5z", }), React.createElement('path', { d: "m7.5 10.723.98-1.167.957 1.14a2.25 2.25 0 0 0 1.724.804h1.947l-1.017-1.018a.75.75 0 1 1 1.06-1.06l2.829 2.828-2.829 2.828a.75.75 0 1 1-1.06-1.06L13.109 13H11.16a3.75 3.75 0 0 1-2.873-1.34l-.787-.938z", }))
+	);
+}
+
+function VolumeIcon() {
+	return (
+		React.createElement('svg', {
+			fill: "currentColor",
+			width: "24",
+			height: "24",
+			viewBox: "0 0 16 16",
+		}, React.createElement('path', { d: "M9.741.85a.75.75 0 0 1 .375.65v13a.75.75 0 0 1-1.125.65l-6.925-4a3.642 3.642 0 0 1-1.33-4.967 3.639 3.639 0 0 1 1.33-1.332l6.925-4a.75.75 0 0 1 .75 0zm-6.924 5.3a2.139 2.139 0 0 0 0 3.7l5.8 3.35V2.8l-5.8 3.35zm8.683 4.29V5.56a2.75 2.75 0 0 1 0 4.88z", }), React.createElement('path', { d: "M11.5 13.614a5.752 5.752 0 0 0 0-11.228v1.55a4.252 4.252 0 0 1 0 8.127v1.55z", }))
+	);
+}
+
 const EmbedStyleEnum = {
 	KEEP: "KEEP",
 	REPLACE: "REPLACE",
 	HIDE: "HIDE"
 };
 
-const { Heading, RadioGroup } = TheBigBoyBundle;
+const { FormDivider, Heading } = TheBigBoyBundle;
+
+const Group = getModule(Filters.byStrings("groupCollapsedRow"));
+const Flex = getModule(a => a.Flex).Flex;
 
 function useSetting(setting) {
 	return {
@@ -1167,72 +1324,137 @@ function useSetting(setting) {
 
 function SpotifyEmbedOptions() {
 	const { get, set } = useSetting("spotifyEmbed");
-	const [selected, setSelected] = React.useState(get());
 	return (
-		React.createElement(React.Fragment, null, React.createElement(Heading, {
-				style: { marginBottom: 15 },
-				tag: "h5",
-			}, "spotify embed style"
-
-		), React.createElement(RadioGroup, {
+		React.createElement('div', null, React.createElement(Group, {
+			changeTitle: "Change Spotify embed style",
 			options: [{
 					value: EmbedStyleEnum.KEEP,
-					name: "Keep: Use original Spotify Embed"
+					highlightColor: "statusGreen",
+					description: "Use original Spotify Embed"
 				},
 				{
 					value: EmbedStyleEnum.REPLACE,
-					name: "Replace: A less laggy Spotify Embed"
+					highlightColor: "statusGreen",
+					description: "A less laggy Spotify Embed"
 				},
 				{
 					value: EmbedStyleEnum.HIDE,
-					name: "Hide: Completely remove spotify embed"
+					highlightColor: "statusGreen",
+					description: "Completely remove spotify embed"
 				}
 			],
-			orientation: "horizontal",
-			value: selected,
-			onChange: e => {
-				set(e.value);
-				setSelected(e.value);
-			},
+			value: get(),
+			onChange: e => set(e.value),
 		}))
 	);
 }
 
-function PlayerState() {
-	const { get, set } = useSetting("player");
+function SettingsToggle({ settingKey, note, hideBorder = false, description }) {
+	const { get, set } = useSetting(settingKey);
 	const [enabled, setEnabled] = React.useState(get());
 	return (
 		React.createElement(Switch, {
-				value: enabled,
-				hideBorder: false,
-				onChange: e => {
-					set(e);
-					setEnabled(e);
-				},
-			}, "Enable/Disable player"
+			value: enabled,
+			note: note,
+			hideBorder: hideBorder,
+			onChange: e => {
+				set(e);
+				setEnabled(e);
+			},
+		}, description)
+	);
+}
 
+const Switches = [{
+		settingKey: "player",
+		description: "Enable/Disable player."
+	},
+	{
+		settingKey: "activity",
+		description: "Modify Spotify activity."
+	},
+	{
+		settingKey: "activityIndicator",
+		description: "Show user's Spotify activity in chat."
+	},
+	{
+		settingKey: "playerBannerBackground",
+		description: "Use the banner as background for the player."
+	},
+	{
+		settingKey: "embedBannerBackground",
+		description: "Use the banner as background for the embed."
+	}
+];
+
+function SpotifyPlayerButton$1({ value, onClick, className, active, ...rest }) {
+	return (
+		React.createElement(Button, {
+			className: `spotify-player-controls-btn ${className} ${active ? "enabled" : ""}`,
+			size: Button.Sizes.NONE,
+			color: Button.Colors.PRIMARY,
+			look: Button.Looks.BLANK,
+			onClick: onClick,
+			...rest,
+		}, value)
+	);
+}
+
+function PlayerBtn({ name, value, className, disabled }) {
+	const { get, set } = useSetting("playerButtons");
+	const [, update] = React.useReducer(e => e + 1, 0);
+
+	const handler = e => {
+		const btnObj = get();
+		set(Object.assign({}, btnObj, {
+			[e]: !btnObj[e] }));
+		update();
+	};
+
+	const val = name === "Play" ? true : get()[name];
+
+	return (
+		React.createElement(Tooltip$1, { note: val ? `${name} will be shown` : `${name} will be hidden`, }, React.createElement(SpotifyPlayerButton$1, {
+			active: val,
+			disabled: disabled,
+			className: className,
+			onClick: () => handler(name),
+			value: value,
+		}))
+	);
+}
+
+function Brrr() {
+	return (
+		React.createElement(Flex, {
+				style: { marginTop: 15 },
+				direction: Flex.Direction.HORIZONTAL,
+				align: Flex.Align.CENTER,
+			}
+
+			, React.createElement(Heading, {
+					tag: "h5",
+					style: { whiteSpace: "nowrap", flex: "1", marginBottom: 5 },
+				}, "Show/Hide player buttons"
+
+			), React.createElement('div', { className: "spotify-player-controls", }, [
+				{ className: "spotify-player-controls-share", name: "Share", value: React.createElement(ShareIcon, null) },
+				{ className: "spotify-player-controls-shuffle", name: "Shuffle", value: React.createElement(ShuffleIcon, null) },
+				{ className: "spotify-player-controls-previous", name: "Previous", value: React.createElement(PlayIcon, null) },
+				{ className: "spotify-player-controls-play", name: "Play", value: React.createElement(PlayIcon$1, null), disabled: true },
+				{ className: "spotify-player-controls-next", name: "Next", value: React.createElement(NextIcon, null) },
+				{ className: "spotify-player-controls-repeat", name: "Repeat", value: React.createElement(RepeatIcon, null) },
+				{ className: "spotify-player-controls-volume", name: "Volume", value: React.createElement(VolumeIcon, null) }
+			].map(PlayerBtn))
 		)
 	);
 }
 
-function ActivityState() {
-	const { get, set } = useSetting("activity");
-	const [enabled, setEnabled] = React.useState(get());
+function SettingComponent() {
 	return (
-		React.createElement(Switch, {
-				value: enabled,
-				hideBorder: false,
-				onChange: e => {
-					set(e);
-					setEnabled(e);
-				},
-			}, "Modify activity"
-
-		)
+		React.createElement('div', { className: `${config.info.name}-settings`, }, React.createElement(FormDivider, { style: { marginBottom: 20 }, }), Switches.map(SettingsToggle), React.createElement(SpotifyEmbedOptions, null), React.createElement(FormDivider, { style: { marginTop: 20 }, }), React.createElement(Brrr, null))
 	);
 }
-
-const SettingComponent = [React.createElement(PlayerState, null), React.createElement(ActivityState, null), React.createElement(SpotifyEmbedOptions, null)];
 
 const patchListenAlong = () => {
 	if (SpotifyStore)
@@ -1242,11 +1464,6 @@ const patchListenAlong = () => {
 		});
 	else Logger.patch("ListenAlong");
 };
-
-const Button = TheBigBoyBundle.Button ||
-	function ButtonComponentFallback(props) {
-		return React.createElement('button', { ...props, });
-	};
 
 function AddToQueueIcon() {
 	return (
@@ -1282,34 +1499,6 @@ function ListenIcon() {
 		}, React.createElement('path', { d: "M22 16.53C22 18.3282 20.2485 19.7837 18.089 19.7837C15.9285 19.7837 14.5396 18.3277 14.5396 16.53C14.5396 14.7319 15.9286 13.2746 18.089 13.2746C18.7169 13.2746 19.3089 13.4013 19.8353 13.6205V5.814L9.46075 7.32352V18.7449C9.46075 20.5424 7.70957 22 5.54941 22C3.38871 22 2 20.5443 2 18.7456C2 16.9481 3.3892 15.4898 5.54941 15.4898C6.17823 15.4898 6.76966 15.6162 7.29604 15.836C7.29604 11.3608 7.29604 8.5366 7.29604 4.1395L21.9996 2L22 16.53Z", }))
 	);
 }
-
-const ShareIcon = () => {
-	return (
-		React.createElement('svg', {
-			fill: "currentColor",
-			width: "24",
-			height: "24",
-			viewBox: "0 0 24 24",
-		}, React.createElement('path', { d: "M13.803 5.33333C13.803 3.49238 15.3022 2 17.1515 2C19.0008 2 20.5 3.49238 20.5 5.33333C20.5 7.17428 19.0008 8.66667 17.1515 8.66667C16.2177 8.66667 15.3738 8.28596 14.7671 7.67347L10.1317 10.8295C10.1745 11.0425 10.197 11.2625 10.197 11.4872C10.197 11.9322 10.109 12.3576 9.94959 12.7464L15.0323 16.0858C15.6092 15.6161 16.3473 15.3333 17.1515 15.3333C19.0008 15.3333 20.5 16.8257 20.5 18.6667C20.5 20.5076 19.0008 22 17.1515 22C15.3022 22 13.803 20.5076 13.803 18.6667C13.803 18.1845 13.9062 17.7255 14.0917 17.3111L9.05007 13.9987C8.46196 14.5098 7.6916 14.8205 6.84848 14.8205C4.99917 14.8205 3.5 13.3281 3.5 11.4872C3.5 9.64623 4.99917 8.15385 6.84848 8.15385C7.9119 8.15385 8.85853 8.64725 9.47145 9.41518L13.9639 6.35642C13.8594 6.03359 13.803 5.6896 13.803 5.33333Z", }))
-	);
-};
-
-const { Tooltip } = TheBigBoyBundle;
-
-const Tooltip$1 = ({ note, position, children }) => {
-	return (
-		React.createElement(Tooltip, {
-			text: note,
-			position: position || "top",
-		}, props => {
-			children.props = {
-				...props,
-				...children.props
-			};
-			return children;
-		})
-	);
-};
 
 const { useSpotifyPlayAction, useSpotifySyncAction } = getModule(Filters.byProps("useSpotifyPlayAction"));
 
@@ -1469,6 +1658,7 @@ function SpotifyIcon(props) {
 }
 
 const SpotifyEmbed$1 = ({ id, type, embed: { thumbnail, rawTitle, rawDescription, url } }) => {
+	const embedBannerBackground = useSettings("embedBannerBackground");
 	const isPlaying = Store(Store.selectors.isPlaying);
 	const isActive = Store(Store.selectors.isActive);
 	const mediaId = Store(Store.selectors.mediaId, (n, o) => n === o || (n !== id && o !== id));
@@ -1488,8 +1678,9 @@ const SpotifyEmbed$1 = ({ id, type, embed: { thumbnail, rawTitle, rawDescription
 		}, React.createElement(AddToQueueIcon, null)))
 	);
 
-	let className = "spotifyEmbed-Container";
+	let className = "spotifyEmbed-container";
 	if (isThis && isPlaying) className += " playing";
+	if (embedBannerBackground) className += " bannerBackground";
 
 	return (
 		React.createElement('div', {
@@ -1633,17 +1824,6 @@ function MuteVolumeIcon() {
 	);
 }
 
-function NextIcon() {
-	return (
-		React.createElement('svg', {
-			fill: "currentColor",
-			height: "24",
-			width: "24",
-			viewBox: "0 0 16 16",
-		}, React.createElement('path', { d: "M12.7 1a.7.7 0 0 0-.7.7v5.15L2.05 1.107A.7.7 0 0 0 1 1.712v12.575a.7.7 0 0 0 1.05.607L12 9.149V14.3a.7.7 0 0 0 .7.7h1.6a.7.7 0 0 0 .7-.7V1.7a.7.7 0 0 0-.7-.7h-1.6z", }))
-	);
-}
-
 function PauseIcon() {
 	return (
 		React.createElement('svg', {
@@ -1652,39 +1832,6 @@ function PauseIcon() {
 			height: "24",
 			viewBox: "0 0 16 16",
 		}, React.createElement('path', { d: "M2.7 1a.7.7 0 0 0-.7.7v12.6a.7.7 0 0 0 .7.7h2.6a.7.7 0 0 0 .7-.7V1.7a.7.7 0 0 0-.7-.7H2.7zm8 0a.7.7 0 0 0-.7.7v12.6a.7.7 0 0 0 .7.7h2.6a.7.7 0 0 0 .7-.7V1.7a.7.7 0 0 0-.7-.7h-2.6z", }))
-	);
-}
-
-function PlayIcon$1() {
-	return (
-		React.createElement('svg', {
-			fill: "currentColor",
-			width: "24",
-			height: "24",
-			viewBox: "0 0 16 16",
-		}, React.createElement('path', { d: "M3 1.713a.7.7 0 0 1 1.05-.607l10.89 6.288a.7.7 0 0 1 0 1.212L4.05 14.894A.7.7 0 0 1 3 14.288V1.713z", }), "\t")
-	);
-}
-
-function PlayIcon() {
-	return (
-		React.createElement('svg', {
-			fill: "currentColor",
-			height: "24",
-			width: "24",
-			viewBox: "0 0 16 16",
-		}, React.createElement('path', { d: "M3.3 1a.7.7 0 0 1 .7.7v5.15l9.95-5.744a.7.7 0 0 1 1.05.606v12.575a.7.7 0 0 1-1.05.607L4 9.149V14.3a.7.7 0 0 1-.7.7H1.7a.7.7 0 0 1-.7-.7V1.7a.7.7 0 0 1 .7-.7h1.6z", }))
-	);
-}
-
-function RepeatIcon() {
-	return (
-		React.createElement('svg', {
-			fill: "currentColor",
-			width: "24",
-			height: "24",
-			viewBox: "0 0 16 16",
-		}, React.createElement('path', { d: "M0 4.75A3.75 3.75 0 0 1 3.75 1h8.5A3.75 3.75 0 0 1 16 4.75v5a3.75 3.75 0 0 1-3.75 3.75H9.81l1.018 1.018a.75.75 0 1 1-1.06 1.06L6.939 12.75l2.829-2.828a.75.75 0 1 1 1.06 1.06L9.811 12h2.439a2.25 2.25 0 0 0 2.25-2.25v-5a2.25 2.25 0 0 0-2.25-2.25h-8.5A2.25 2.25 0 0 0 1.5 4.75v5A2.25 2.25 0 0 0 3.75 12H5v1.5H3.75A3.75 3.75 0 0 1 0 9.75v-5z", }))
 	);
 }
 
@@ -1699,31 +1846,11 @@ function RepeatOneIcon() {
 	);
 }
 
-function ShuffleIcon() {
-	return (
-		React.createElement('svg', {
-			fill: "currentColor",
-			height: "24",
-			width: "24",
-			viewBox: "0 0 16 16",
-		}, React.createElement('path', { d: "M13.151.922a.75.75 0 1 0-1.06 1.06L13.109 3H11.16a3.75 3.75 0 0 0-2.873 1.34l-6.173 7.356A2.25 2.25 0 0 1 .39 12.5H0V14h.391a3.75 3.75 0 0 0 2.873-1.34l6.173-7.356a2.25 2.25 0 0 1 1.724-.804h1.947l-1.017 1.018a.75.75 0 0 0 1.06 1.06L15.98 3.75 13.15.922zM.391 3.5H0V2h.391c1.109 0 2.16.49 2.873 1.34L4.89 5.277l-.979 1.167-1.796-2.14A2.25 2.25 0 0 0 .39 3.5z", }), React.createElement('path', { d: "m7.5 10.723.98-1.167.957 1.14a2.25 2.25 0 0 0 1.724.804h1.947l-1.017-1.018a.75.75 0 1 1 1.06-1.06l2.829 2.828-2.829 2.828a.75.75 0 1 1-1.06-1.06L13.109 13H11.16a3.75 3.75 0 0 1-2.873-1.34l-.787-.938z", }))
-	);
-}
-
-function VolumeIcon() {
-	return (
-		React.createElement('svg', {
-			fill: "currentColor",
-			width: "24",
-			height: "24",
-			viewBox: "0 0 16 16",
-		}, React.createElement('path', { d: "M9.741.85a.75.75 0 0 1 .375.65v13a.75.75 0 0 1-1.125.65l-6.925-4a3.642 3.642 0 0 1-1.33-4.967 3.639 3.639 0 0 1 1.33-1.332l6.925-4a.75.75 0 0 1 .75 0zm-6.924 5.3a2.139 2.139 0 0 0 0 3.7l5.8 3.35V2.8l-5.8 3.35zm8.683 4.29V5.56a2.75 2.75 0 0 1 0 4.88z", }), React.createElement('path', { d: "M11.5 13.614a5.752 5.752 0 0 0 0-11.228v1.55a4.252 4.252 0 0 1 0 8.127v1.55z", }))
-	);
-}
-
 const { MenuItem, Menu } = TheBigBoyBundle;
 
 const SpotifyPlayerControls = ({ banner, media }) => {
+	const playerButtons = useSettings("playerButtons");
+
 	const isPlaying = Store(Store.selectors.isPlaying);
 	const shuffle = Store(Store.selectors.shuffle);
 	const repeat = Store(Store.selectors.repeat);
@@ -1783,7 +1910,8 @@ const SpotifyPlayerControls = ({ banner, media }) => {
 	} [isPlaying];
 
 	return (
-		React.createElement('div', { className: "spotify-player-controls", }, React.createElement(Popout$1, {
+		React.createElement('div', { className: "spotify-player-controls", }, playerButtons["Share"] && (
+			React.createElement(Popout$1, {
 				renderPopout: t => (
 					React.createElement(Menu, { onClose: t.closePopout, }, React.createElement(MenuItem, {
 						className: "spotify-player-share-menuitem",
@@ -1822,50 +1950,24 @@ const SpotifyPlayerControls = ({ banner, media }) => {
 				className: "spotify-player-controls-share",
 				value: React.createElement(ShareIcon, null),
 			}))
-
-			, React.createElement(Tooltip$1, { note: "shuffle", }, React.createElement(SpotifyPlayerButton, {
-				active: shuffle,
-				className: "spotify-player-controls-shuffle",
-				disabled: toggling_shuffle,
-				onClick: shuffleHandler,
-				value: React.createElement(ShuffleIcon, null),
-			})), React.createElement(Tooltip$1, { note: "Previous", }, React.createElement(SpotifyPlayerButton, {
-				className: "spotify-player-controls-previous",
-				disabled: skipping_prev,
-				onClick: previousHandler,
-				value: React.createElement(PlayIcon, null),
-			})), React.createElement(Tooltip$1, { note: playPauseTooltip, }, React.createElement(SpotifyPlayerButton, {
-				className: playPauseClassName,
-				onClick: playPauseHandler,
-				value: playPauseIcon,
-			})), React.createElement(Tooltip$1, { note: "Next", }, React.createElement(SpotifyPlayerButton, {
-				className: "spotify-player-controls-next",
-				disabled: skipping_next,
-				onClick: nextHandler,
-				value: React.createElement(NextIcon, null),
-			})), React.createElement(Tooltip$1, { note: repeatTooltip, }, React.createElement(SpotifyPlayerButton, {
-				active: repeatActive,
-				className: "spotify-player-controls-repeat",
-				disabled: toggling_repeat_track,
-				onClick: repeatHandler,
-				value: repeatIcon,
-			}))
-
-			, React.createElement(Volume, { volume: volume, })
-		)
+		), [
+			playerButtons["Shuffle"] && { name: "Shuffle", value: React.createElement(ShuffleIcon, null), className: "spotify-player-controls-shuffle", disabled: toggling_shuffle, active: shuffle, onClick: shuffleHandler },
+			playerButtons["Previous"] && { name: "Previous", value: React.createElement(PlayIcon, null), className: "spotify-player-controls-previous", disabled: skipping_prev, onClick: previousHandler }, { name: playPauseTooltip, value: playPauseIcon, className: playPauseClassName, disabled: false, onClick: playPauseHandler },
+			playerButtons["Next"] && { name: "Next", value: React.createElement(NextIcon, null), className: "spotify-player-controls-next", disabled: skipping_next, onClick: nextHandler },
+			playerButtons["Repeat"] && { name: repeatTooltip, value: repeatIcon, className: "spotify-player-controls-repeat", disabled: toggling_repeat_track, active: repeatActive, onClick: repeatHandler }
+		].filter(Boolean).map(SpotifyPlayerButton), playerButtons["Volume"] && React.createElement(Volume, { volume: volume, }))
 	);
 };
 
-function SpotifyPlayerButton({ value, onClick, className, active, ...rest }) {
+function SpotifyPlayerButton({ className, active, name, value, ...rest }) {
 	return (
-		React.createElement(Button, {
+		React.createElement(Tooltip$1, { note: name, }, React.createElement(Button, {
 			className: `spotify-player-controls-btn ${className} ${active ? "enabled" : ""}`,
 			size: Button.Sizes.NONE,
 			color: Button.Colors.PRIMARY,
 			look: Button.Looks.BLANK,
-			onClick: onClick,
 			...rest,
-		}, value)
+		}, value))
 	);
 }
 
@@ -2051,6 +2153,7 @@ const TrackTimeLine = ({ mediaType }) => {
 
 const SpotifyPlayer = React.memo(function SpotifyPlayer() {
 	const player = useSettings("player");
+	const playerBannerBackground = useSettings("playerBannerBackground");
 
 	const isActive = Store(Store.selectors.isActive);
 	const media = Store(Store.selectors.media);
@@ -2071,7 +2174,7 @@ const SpotifyPlayer = React.memo(function SpotifyPlayer() {
 					"--banner-md": `url(${bannerMd?.url})`,
 					"--banner-lg": `url(${bannerLg?.url})`
 				},
-				className: "spotify-player-container",
+				className: playerBannerBackground ? "spotify-player-container bannerBackground" : "spotify-player-container",
 			}
 
 			, React.createElement(TrackMediaDetails, {
@@ -2185,8 +2288,9 @@ const patchMessageHeader = () => {
 };
 
 function SpotifyActivityIndicator({ userId }) {
+	const activityIndicator = useSettings("activityIndicator");
 	const spotifyActivity = FluxHelpers.useStateFromStores([PresenceStore], () => getUserActivity(userId, spotifyActivityFilter));
-	if (!spotifyActivity) return null;
+	if (!activityIndicator || !spotifyActivity) return null;
 
 	return (
 		React.createElement(Tooltip$1, { note: `${spotifyActivity.details} - ${spotifyActivity.state}`, }, React.createElement(SpotifyIcon, {
@@ -2197,6 +2301,7 @@ function SpotifyActivityIndicator({ userId }) {
 	);
 }
 
+window.spotSettings = Settings;
 class SpotifyEnhance {
 	start() {
 		try {
