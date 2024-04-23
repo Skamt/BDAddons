@@ -21,6 +21,7 @@ const config = {
 	"settings": {
 		"spotifyEmbed": "REPLACE",
 		"activityIndicator": true,
+		"enableListenAlong": true,
 		"playerBannerBackground": true,
 		"embedBannerBackground": true,
 		"activity": true,
@@ -490,65 +491,6 @@ const Logger = {
 	}
 };
 
-class ChangeEmitter {
-	constructor() {
-		this.listeners = new Set();
-	}
-
-	isInValid(handler) {
-		return !handler || typeof handler !== "function";
-	}
-
-	on(handler) {
-		if (this.isInValid(handler)) return;
-		this.listeners.add(handler);
-		return () => this.off(handler);
-	}
-
-	off(handler) {
-		if (this.isInValid(handler)) return;
-		this.listeners.delete(handler);
-	}
-
-	emit(...payload) {
-		for (const listener of this.listeners) {
-			try {
-				listener.apply(null, payload);
-			} catch (err) {
-				console.error("Could not run listener", err);
-			}
-		}
-	}
-}
-
-const Settings = new(class Settings extends ChangeEmitter {
-	init(defaultSettings) {
-		this.settings = {
-			...defaultSettings,
-			...Data.load("settings")
-		};
-	}
-
-	get(key) {
-		return this.settings[key];
-	}
-
-	set(key, val) {
-		this.settings[key] = val;
-		this.commit();
-	}
-
-	setMultiple(newSettings) {
-		this.settings = Object.assign(this.settings, newSettings);
-		this.commit();
-	}
-
-	commit() {
-		Data.save("settings", this.settings);
-		this.emit();
-	}
-})();
-
 function getModuleAndKey(filter, options) {
 	let module;
 	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
@@ -558,6 +500,43 @@ function getModuleAndKey(filter, options) {
 	if (!key) return undefined;
 	return { module, key };
 }
+
+const zustand = getModule(Filters.byStrings("subscribeWithSelector", "useReducer"), { searchExports: false });
+
+const SettingsStoreSelectors = {};
+const persistMiddleware = config => (set, get, api) => config(args => (set(args), Data.save("settings", get().getRawState())), get, api);
+
+const Settings = Object.assign(
+	zustand(
+		persistMiddleware((set, get) => {
+			const settingsObj = Object.create(null);
+
+			for (const [key, value] of Object.entries({
+					...config.info.settings,
+					...Data.load("settings")
+				})) {
+				settingsObj[key] = value;
+				settingsObj[`set${key}`] = newValue => set({
+					[key]: newValue });
+				SettingsStoreSelectors[key] = state => state[key];
+			}
+			settingsObj.getRawState = () => {
+				return Object.entries(get())
+					.filter(([, val]) => typeof val !== "function")
+					.reduce((acc, [key, val]) => {
+						acc[key] = val;
+						return acc;
+					}, {});
+			};
+			return settingsObj;
+		})
+	), {
+		useSetting: function(key) {
+			return this(state => [state[key], state[`set${key}`]]);
+		},
+		selectors: SettingsStoreSelectors
+	}
+);
 
 const ConnectedAccountsStore = getModule(m => m._dispatchToken && m.getName() === "ConnectedAccountsStore");
 
@@ -1048,8 +1027,6 @@ function getFluxContainer() {
 	});
 }
 
-const createStore = getModule(Filters.byStrings("subscribeWithSelector", "useReducer"));
-
 const Utils = {
 	copySpotifyLink(link) {
 		if (!link) return Toast.error("Could not resolve url");
@@ -1073,7 +1050,7 @@ const Utils = {
 };
 
 const Store = Object.assign(
-	createStore((set, get) => {
+	zustand((set, get) => {
 
 		return {
 			account: undefined,
@@ -1315,15 +1292,8 @@ const { FormDivider, Heading } = TheBigBoyBundle;
 const Group = getModule(Filters.byStrings("groupCollapsedRow"));
 const Flex = getModule(a => a.Flex).Flex;
 
-function useSetting(setting) {
-	return {
-		get: React.useCallback(() => Settings.get(setting), []),
-		set: React.useCallback(e => Settings.set(setting, e), [])
-	};
-}
-
 function SpotifyEmbedOptions() {
-	const { get, set } = useSetting("spotifyEmbed");
+	const [val, set] = Settings.useSetting("spotifyEmbed");
 	return (
 		React.createElement('div', null, React.createElement(Group, {
 			changeTitle: "Change Spotify embed style",
@@ -1343,24 +1313,20 @@ function SpotifyEmbedOptions() {
 					description: "Completely remove spotify embed"
 				}
 			],
-			value: get(),
+			value: val,
 			onChange: e => set(e.value),
 		}))
 	);
 }
 
 function SettingsToggle({ settingKey, note, hideBorder = false, description }) {
-	const { get, set } = useSetting(settingKey);
-	const [enabled, setEnabled] = React.useState(get());
+	const [val, set] = Settings.useSetting(settingKey);
 	return (
 		React.createElement(Switch, {
-			value: enabled,
+			value: val,
 			note: note,
 			hideBorder: hideBorder,
-			onChange: e => {
-				set(e);
-				setEnabled(e);
-			},
+			onChange: set,
 		}, description)
 	);
 }
@@ -1368,6 +1334,10 @@ function SettingsToggle({ settingKey, note, hideBorder = false, description }) {
 const Switches = [{
 		settingKey: "player",
 		description: "Enable/Disable player."
+	},
+	{
+		settingKey: "enableListenAlong",
+		description: "Enables/Disable listen along without premium."
 	},
 	{
 		settingKey: "activity",
@@ -1401,17 +1371,16 @@ function SpotifyPlayerButton$1({ value, onClick, className, active, ...rest }) {
 }
 
 function PlayerBtn({ name, value, className, disabled }) {
-	const { get, set } = useSetting("playerButtons");
+	const [btnObj, set] = Settings.useSetting("playerButtons");
 	const [, update] = React.useReducer(e => e + 1, 0);
 
 	const handler = e => {
-		const btnObj = get();
 		set(Object.assign({}, btnObj, {
 			[e]: !btnObj[e] }));
 		update();
 	};
 
-	const val = name === "Play" ? true : get()[name];
+	const val = name === "Play" ? true : btnObj[name];
 
 	return (
 		React.createElement(Tooltip$1, { note: val ? `${name} will be shown` : `${name} will be hidden`, }, React.createElement(SpotifyPlayerButton$1, {
@@ -1427,26 +1396,23 @@ function PlayerBtn({ name, value, className, disabled }) {
 function Brrr() {
 	return (
 		React.createElement(Flex, {
-				style: { marginTop: 15 },
-				direction: Flex.Direction.HORIZONTAL,
-				align: Flex.Align.CENTER,
-			}
+			style: { marginTop: 15 },
+			direction: Flex.Direction.HORIZONTAL,
+			align: Flex.Align.CENTER,
+		}, React.createElement(Heading, {
+				tag: "h5",
+				style: { whiteSpace: "nowrap", flex: "1", marginBottom: 5 },
+			}, "Show/Hide player buttons"
 
-			, React.createElement(Heading, {
-					tag: "h5",
-					style: { whiteSpace: "nowrap", flex: "1", marginBottom: 5 },
-				}, "Show/Hide player buttons"
-
-			), React.createElement('div', { className: "spotify-player-controls", }, [
-				{ className: "spotify-player-controls-share", name: "Share", value: React.createElement(ShareIcon, null) },
-				{ className: "spotify-player-controls-shuffle", name: "Shuffle", value: React.createElement(ShuffleIcon, null) },
-				{ className: "spotify-player-controls-previous", name: "Previous", value: React.createElement(PlayIcon, null) },
-				{ className: "spotify-player-controls-play", name: "Play", value: React.createElement(PlayIcon$1, null), disabled: true },
-				{ className: "spotify-player-controls-next", name: "Next", value: React.createElement(NextIcon, null) },
-				{ className: "spotify-player-controls-repeat", name: "Repeat", value: React.createElement(RepeatIcon, null) },
-				{ className: "spotify-player-controls-volume", name: "Volume", value: React.createElement(VolumeIcon, null) }
-			].map(PlayerBtn))
-		)
+		), React.createElement('div', { className: "spotify-player-controls", }, [
+			{ className: "spotify-player-controls-share", name: "Share", value: React.createElement(ShareIcon, null) },
+			{ className: "spotify-player-controls-shuffle", name: "Shuffle", value: React.createElement(ShuffleIcon, null) },
+			{ className: "spotify-player-controls-previous", name: "Previous", value: React.createElement(PlayIcon, null) },
+			{ className: "spotify-player-controls-play", name: "Play", value: React.createElement(PlayIcon$1, null), disabled: true },
+			{ className: "spotify-player-controls-next", name: "Next", value: React.createElement(NextIcon, null) },
+			{ className: "spotify-player-controls-repeat", name: "Repeat", value: React.createElement(RepeatIcon, null) },
+			{ className: "spotify-player-controls-volume", name: "Volume", value: React.createElement(VolumeIcon, null) }
+		].map(PlayerBtn)))
 	);
 }
 
@@ -1459,6 +1425,7 @@ function SettingComponent() {
 const patchListenAlong = () => {
 	if (SpotifyStore)
 		Patcher.after(SpotifyStore, "getActiveSocketAndDevice", (_, __, ret) => {
+			if (!Settings.getState().enableListenAlong) return;
 			if (ret?.socket) ret.socket.isPremium = true;
 			return ret;
 		});
@@ -1568,7 +1535,7 @@ const ActivityComponent = getModule(a => a.prototype.isStreamerOnTypeActivityFee
 const patchSpotifyActivity = () => {
 	if (ActivityComponent)
 		Patcher.before(ActivityComponent.prototype, "render", ({ props }) => {
-			if (!Settings.get("activity")) return;
+			if (!Settings.getState().activity) return;
 			if (!props.activity) return;
 			if (props.activity.name.toLowerCase() !== "spotify") return;
 
@@ -1576,27 +1543,11 @@ const patchSpotifyActivity = () => {
 				React.createElement(ErrorBoundary, {
 					id: "SpotifyEmbed",
 					plugin: config.info.name,
-				}, React.createElement(SpotifyActivityControls, {
-					...props,
-				}))
+				}, React.createElement(SpotifyActivityControls, { ...props, }))
 			);
 		});
 	else Logger.patch("SpotifyActivityComponent");
 };
-
-function useSettings(key) {
-	const target = Settings.get(key);
-	const [state, setState] = React.useState(target);
-	React.useEffect(() => {
-		function settingsChangeHandler() {
-			const newVal = Settings.get(key);
-			setState(newVal);
-		}
-		return Settings.on(settingsChangeHandler);
-	}, []);
-
-	return state;
-}
 
 const SpotifyControls = ({ id, type, embed: { rawTitle, url } }) => {
 	const isActive = Store(Store.selectors.isActive);
@@ -1658,7 +1609,7 @@ function SpotifyIcon(props) {
 }
 
 const SpotifyEmbed$1 = ({ id, type, embed: { thumbnail, rawTitle, rawDescription, url } }) => {
-	const embedBannerBackground = useSettings("embedBannerBackground");
+	const embedBannerBackground = Settings(Settings.selectors.embedBannerBackground);
 	const isPlaying = Store(Store.selectors.isPlaying);
 	const isActive = Store(Store.selectors.isActive);
 	const mediaId = Store(Store.selectors.mediaId, (n, o) => n === o || (n !== id && o !== id));
@@ -1710,7 +1661,7 @@ const SpotifyEmbed$1 = ({ id, type, embed: { thumbnail, rawTitle, rawDescription
 };
 
 function SpotifyEmbedWrapper({ id, type, embedObject, embedComponent }) {
-	const spotifyEmbed = useSettings("spotifyEmbed");
+	const spotifyEmbed = Settings(Settings.selectors.spotifyEmbed);
 	switch (spotifyEmbed) {
 		case EmbedStyleEnum.KEEP:
 			return [
@@ -1849,7 +1800,7 @@ function RepeatOneIcon() {
 const { MenuItem, Menu } = TheBigBoyBundle;
 
 const SpotifyPlayerControls = ({ banner, media }) => {
-	const playerButtons = useSettings("playerButtons");
+	const playerButtons = Settings(Settings.selectors.playerButtons);
 
 	const isPlaying = Store(Store.selectors.isPlaying);
 	const shuffle = Store(Store.selectors.shuffle);
@@ -2152,8 +2103,8 @@ const TrackTimeLine = ({ mediaType }) => {
 };
 
 const SpotifyPlayer = React.memo(function SpotifyPlayer() {
-	const player = useSettings("player");
-	const playerBannerBackground = useSettings("playerBannerBackground");
+	const player = Settings(Settings.selectors.player);
+	const playerBannerBackground = Settings(Settings.selectors.playerBannerBackground);
 
 	const isActive = Store(Store.selectors.isActive);
 	const media = Store(Store.selectors.media);
@@ -2288,7 +2239,7 @@ const patchMessageHeader = () => {
 };
 
 function SpotifyActivityIndicator({ userId }) {
-	const activityIndicator = useSettings("activityIndicator");
+	const activityIndicator = Settings(Settings.selectors.activityIndicator);
 	const spotifyActivity = FluxHelpers.useStateFromStores([PresenceStore], () => getUserActivity(userId, spotifyActivityFilter));
 	if (!activityIndicator || !spotifyActivity) return null;
 
@@ -2302,10 +2253,10 @@ function SpotifyActivityIndicator({ userId }) {
 }
 
 window.spotSettings = Settings;
+
 class SpotifyEnhance {
 	start() {
 		try {
-			Settings.init(config.settings);
 			DOM.addStyle(css);
 			Store.init();
 			patchListenAlong();
