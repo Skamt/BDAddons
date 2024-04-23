@@ -10,7 +10,7 @@ const ActivityComponent = getModule(a => a.prototype.isStreamerOnTypeActivityFee
 export default () => {
 	if (ActivityComponent)
 		Patcher.before(ActivityComponent.prototype, "render", ({ props }) => {
-			if (!Settings.get("activity")) return;
+			if (!Settings.getState().activity) return;
 			if (!props.activity) return;
 			if (props.activity.name.toLowerCase() !== "spotify") return;
 
@@ -18,9 +18,7 @@ export default () => {
 				<ErrorBoundary
 					id="SpotifyEmbed"
 					plugin={config.info.name}>
-					<SpotifyActivityControls
-						{...props}
-					/>
+					<SpotifyActivityControls {...props} />
 				</ErrorBoundary>
 			);
 		});

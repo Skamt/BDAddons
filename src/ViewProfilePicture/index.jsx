@@ -2,7 +2,6 @@ import css from "./styles";
 import { DOM, React, Patcher } from "@Api";
 import { Filters, getModuleAndKey } from "@Webpack";
 import Settings from "@Utils/Settings";
-
 import { isSelf } from "@Utils/User";
 import { getImageModalComponent, openModal, getImageDimensions } from "@Utils";
 import Logger from "@Utils/Logger";
@@ -55,7 +54,7 @@ export default class ViewProfilePicture {
 		const items = [
 			getImageModalComponent(avatarURL, { width: 4096, height: 4096 }), 
 			bannerURL && getImageModalComponent(bannerURL, await getBannerDimenions(backgroundImage)), 
-			(!bannerURL || Settings.get("bannerColor")) && <ColorModalComponent color={backgroundColor} />
+			(!bannerURL || Settings.getState().bannerColor) && <ColorModalComponent color={backgroundColor} />
 		].filter(Boolean).map(item => ({ component: item, ...item.props }));
 
 		openModal(
@@ -102,7 +101,6 @@ export default class ViewProfilePicture {
 
 	start() {
 		try {
-			Settings.init(config.settings);
 			DOM.addStyle(css);
 			this.patchUserBannerMask();
 		} catch (e) {

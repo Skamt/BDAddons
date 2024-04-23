@@ -9,6 +9,7 @@
 	"settings":{
 		"spotifyEmbed":"REPLACE",
 		"activityIndicator":true,
+		"enableListenAlong":true,
 		"playerBannerBackground":true,
 		"embedBannerBackground":true,
 		"activity":true,

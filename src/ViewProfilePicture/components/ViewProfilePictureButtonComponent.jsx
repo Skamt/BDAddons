@@ -1,16 +1,16 @@
 import { React } from "@Api";
-import { useSettings } from "@Utils/Hooks";
+import Settings from "@Utils/Settings";
 import Tooltip from "@Components/Tooltip";
 import ImageIcon from "@Components/icons/ImageIcon";
 
-export default props => {
-	const showOnHover = useSettings("showOnHover");
-	if(showOnHover) props.className += " VPP-hover";
+export default ({ className, onClick }) => {
+	const showOnHover = Settings(Settings.selectors.showOnHover);
+	if (showOnHover) className += " VPP-hover";
 	return (
 		<Tooltip note="View profile picture">
 			<div
-				{...props}
-				className={props.className}>
+				onClick={onClick}
+				className={className}>
 				<ImageIcon />
 			</div>
 		</Tooltip>

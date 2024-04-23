@@ -1,30 +1,37 @@
+import zustand from "@Modules/zustand";
 import { Data } from "@Api";
-import ChangeEmitter from "@Utils/ChangeEmitter";
 
-export default new (class Settings extends ChangeEmitter {
-	init(defaultSettings) {
-		this.settings = {
-			...defaultSettings,
-			...Data.load("settings")
-		};
-	}
+const SettingsStoreSelectors = {};
+const persistMiddleware = config => (set, get, api) => config(args => (set(args), Data.save("settings", get().getRawState())), get, api);
 
-	get(key) {
-		return this.settings[key];
-	}
+export default Object.assign(
+	zustand(
+		persistMiddleware((set, get) => {
+			const settingsObj = Object.create(null);
 
-	set(key, val) {
-		this.settings[key] = val;
-		this.commit();
+			for (const [key, value] of Object.entries({
+				...config.info.settings,
+				...Data.load("settings")
+			})) {
+				settingsObj[key] = value;
+				settingsObj[`set${key}`] = newValue => set({ [key]: newValue });
+				SettingsStoreSelectors[key] = state => state[key];
+			}
+			settingsObj.getRawState = () => {
+				return Object.entries(get())
+					.filter(([, val]) => typeof val !== "function")
+					.reduce((acc, [key, val]) => {
+						acc[key] = val;
+						return acc;
+					}, {});
+			};
+			return settingsObj;
+		})
+	),
+	{
+		useSetting: function (key) {
+			return this(state => [state[key], state[`set${key}`]]);
+		},
+		selectors: SettingsStoreSelectors
 	}
-
-	setMultiple(newSettings) {
-		this.settings = Object.assign(this.settings, newSettings);
-		this.commit();
-	}
-
-	commit() {
-		Data.save("settings", this.settings);
-		this.emit();
-	}
-})();
+);

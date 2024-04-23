@@ -5,12 +5,12 @@ import CopyIcon from "@Components/icons/CopyIcon";
 import ListenIcon from "@Components/icons/ListenIcon";
 import SpotifyIcon from "@Components/icons/SpotifyIcon";
 import { getImageModalComponent, openModal } from "@Utils";
-import { useSettings } from "@Utils/Hooks";
+import Settings from "@Utils/Settings";
 import SpotifyApi from "../SpotifyAPIWrapper";
 import { Store } from "../Store";
 
 export default ({ id, type, embed: { thumbnail, rawTitle, rawDescription, url } }) => {
-	const embedBannerBackground = useSettings("embedBannerBackground");
+	const embedBannerBackground = Settings(Settings.selectors.embedBannerBackground);
 	const isPlaying = Store(Store.selectors.isPlaying);
 	const isActive = Store(Store.selectors.isActive);
 	const mediaId = Store(Store.selectors.mediaId, (n, o) => n === o || (n !== id && o !== id));

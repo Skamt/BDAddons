@@ -3,12 +3,13 @@ import SpotifyPlayerControls from "./SpotifyPlayerControls";
 import TrackMediaDetails from "./TrackMediaDetails";
 import TrackTimeLine from "./TrackTimeLine";
 import { Store } from "../Store";
-import { useSettings } from "@Utils/Hooks";
+import Settings from "@Utils/Settings";
 
 export default React.memo(function SpotifyPlayer() {
-	const player = useSettings("player");
-	const playerBannerBackground = useSettings("playerBannerBackground");
+	const player = Settings(Settings.selectors.player);
+	const playerBannerBackground = Settings(Settings.selectors.playerBannerBackground);
 
+	
 	const isActive = Store(Store.selectors.isActive);
 	const media = Store(Store.selectors.media);
 	const mediaType = Store(Store.selectors.mediaType);

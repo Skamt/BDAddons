@@ -1,11 +1,11 @@
 import { React } from "@Api";
 import { EmbedStyleEnum } from "../consts.js";
-import { useSettings } from "@Utils/Hooks";
+import Settings from "@Utils/Settings";
 import SpotifyControls from "./SpotifyControls";
 import SpotifyEmbed from "./SpotifyEmbed";
 
 export default function SpotifyEmbedWrapper({ id, type, embedObject, embedComponent }) {
-	const spotifyEmbed = useSettings("spotifyEmbed");
+	const spotifyEmbed = Settings(Settings.selectors.spotifyEmbed);
 	switch (spotifyEmbed) {
 		case EmbedStyleEnum.KEEP:
 			return [

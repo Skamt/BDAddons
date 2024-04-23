@@ -7,11 +7,9 @@ import Logger from "@Utils/Logger";
 import { insertText, sendMessageDirectly } from "@Utils/Messages";
 import Timer from "@Utils/Timer";
 import Toast from "@Utils/Toast";
-import { Filters, getModule } from "@Webpack";
 import SpotifyApi from "./SpotifyAPIWrapper";
 import { sanitizeSpotifyLink } from "./Utils";
-
-const createStore = getModule(Filters.byStrings("subscribeWithSelector", "useReducer"));
+import zustand from "@Modules/zustand";
 
 const Utils = {
 	copySpotifyLink(link) {
@@ -36,7 +34,7 @@ const Utils = {
 };
 
 export const Store = Object.assign(
-	createStore((set, get) => {
+	zustand((set, get) => {
 		// const set = args => {
 		// 	console.log("applying", args);
 		// 	console.log("old state", get());

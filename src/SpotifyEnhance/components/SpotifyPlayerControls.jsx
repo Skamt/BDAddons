@@ -16,13 +16,13 @@ import VolumeIcon from "@Components/icons/VolumeIcon";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 import SpotifyApi from "../SpotifyAPIWrapper";
 import { Store } from "../Store";
-import { useSettings } from "@Utils/Hooks";
+import Settings from "@Utils/Settings";
 
 const { MenuItem, Menu } = TheBigBoyBundle;
 
 export default ({ banner, media }) => {
-	const playerButtons = useSettings("playerButtons");
-
+	const playerButtons = Settings(Settings.selectors.playerButtons);
+	
 	const isPlaying = Store(Store.selectors.isPlaying);
 	const shuffle = Store(Store.selectors.shuffle);
 	const repeat = Store(Store.selectors.repeat);

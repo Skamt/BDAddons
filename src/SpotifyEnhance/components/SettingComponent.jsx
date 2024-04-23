@@ -19,15 +19,8 @@ const { FormDivider, Heading } = TheBigBoyBundle;
 const Group = getModule(Filters.byStrings("groupCollapsedRow"));
 const Flex = getModule(a => a.Flex).Flex;
 
-function useSetting(setting) {
-	return {
-		get: React.useCallback(() => Settings.get(setting), []),
-		set: React.useCallback(e => Settings.set(setting, e), [])
-	};
-}
-
 function SpotifyEmbedOptions() {
-	const { get, set } = useSetting("spotifyEmbed");
+	const [val, set] = Settings.useSetting("spotifyEmbed");
 	return (
 		<div>
 			<Group
@@ -49,7 +42,7 @@ function SpotifyEmbedOptions() {
 						description: "Completely remove spotify embed"
 					}
 				]}
-				value={get()}
+				value={val}
 				onChange={e => set(e.value)}
 			/>
 		</div>
@@ -57,17 +50,13 @@ function SpotifyEmbedOptions() {
 }
 
 function SettingsToggle({ settingKey, note, hideBorder = false, description }) {
-	const { get, set } = useSetting(settingKey);
-	const [enabled, setEnabled] = React.useState(get());
+	const [val, set] = Settings.useSetting(settingKey);
 	return (
 		<Switch
-			value={enabled}
+			value={val}
 			note={note}
 			hideBorder={hideBorder}
-			onChange={e => {
-				set(e);
-				setEnabled(e);
-			}}>
+			onChange={set}>
 			{description}
 		</Switch>
 	);
@@ -77,6 +66,10 @@ const Switches = [
 	{
 		settingKey: "player",
 		description: "Enable/Disable player."
+	},
+	{
+		settingKey: "enableListenAlong",
+		description: "Enables/Disable listen along without premium."
 	},
 	{
 		settingKey: "activity",
@@ -111,16 +104,15 @@ function SpotifyPlayerButton({ value, onClick, className, active, ...rest }) {
 }
 
 function PlayerBtn({ name, value, className, disabled }) {
-	const { get, set } = useSetting("playerButtons");
+	const [btnObj, set] = Settings.useSetting("playerButtons");
 	const [, update] = React.useReducer(e => e + 1, 0);
 
 	const handler = e => {
-		const btnObj = get();
 		set(Object.assign({}, btnObj, { [e]: !btnObj[e] }));
 		update();
 	};
 
-	const val = name === "Play" ? true : get()[name];
+	const val = name === "Play" ? true : btnObj[name];
 
 	return (
 		<Tooltip note={val ? `${name} will be shown` : `${name} will be hidden`}>
@@ -140,11 +132,10 @@ function Brrr() {
 		<Flex
 			style={{ marginTop: 15 }}
 			direction={Flex.Direction.HORIZONTAL}
-			align={Flex.Align.CENTER}
-			>
+			align={Flex.Align.CENTER}>
 			<Heading
 				tag="h5"
-				style={{ whiteSpace:"nowrap", flex:"1", marginBottom: 5 }}>
+				style={{ whiteSpace: "nowrap", flex: "1", marginBottom: 5 }}>
 				Show/Hide player buttons
 			</Heading>
 			<div className="spotify-player-controls">
