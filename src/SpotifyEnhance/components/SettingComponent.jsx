@@ -46,36 +46,41 @@ function SettingsToggle({ settingKey, note, hideBorder = false, description }) {
 	);
 }
 
-const Switches = [
-	{
-		settingKey: "enableListenAlong",
-		description: "Enables/Disable listen along without premium."
-	},
-	{
-		settingKey: "activity",
-		description: "Modify Spotify activity."
-	},
-	{
-		settingKey: "activityIndicator",
-		description: "Show user's Spotify activity in chat."
-	},
-
-	{
-		settingKey: "embedBannerBackground",
-		description: "Use the banner as background for the embed.",
-		hideBorder: true
-	}
-];
-
-const PlayerButtons = [{ settingKey: "Share" }, { settingKey: "Shuffle" }, { settingKey: "Previous" }, { settingKey: "Play" }, { settingKey: "Next" }, { settingKey: "Repeat" }, { settingKey: "Volume", hideBorder: true }];
-
 export default function () {
 	return (
 		<div className={`${config.info.name}-settings`}>
 			<FormDivider style={{ margin: "20px 0 20px 0" }} />
-			<Collapsible title="Switches">{Switches.map(SettingsToggle)}</Collapsible>
+			<Collapsible title="miscellaneous">
+				{[
+					{
+						settingKey: "player",
+						description: "Enable/Disable player."
+					},
+					{
+						settingKey: "enableListenAlong",
+						description: "Enables/Disable listen along without premium."
+					},
+					{
+						settingKey: "activity",
+						description: "Modify Spotify activity."
+					},
+					{
+						settingKey: "activityIndicator",
+						description: "Show user's Spotify activity in chat."
+					},
+					{
+						settingKey: "playerBannerBackground",
+						description: "Use the banner as background for the player."
+					},
+					{
+						settingKey: "embedBannerBackground",
+						description: "Use the banner as background for the embed.",
+						hideBorder:true
+					}
+				].map(SettingsToggle)}
+			</Collapsible>
 			<FormDivider style={{ margin: "20px 0 20px 0" }} />
-			<Collapsible title="Show/Hide Player buttons">{PlayerButtons.map(SettingsToggle)}</Collapsible>
+			<Collapsible title="Show/Hide Player buttons">{[{ settingKey: "Share" }, { settingKey: "Shuffle" }, { settingKey: "Previous" }, { settingKey: "Play" }, { settingKey: "Next" }, { settingKey: "Repeat" }, { settingKey: "Volume", hideBorder: true }].map(SettingsToggle)}</Collapsible>
 			<FormDivider style={{ margin: "20px 0 20px 0" }} />
 			<Collapsible title="Spotify embed style">
 				<SpotifyEmbedOptions />

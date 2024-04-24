@@ -4,7 +4,6 @@ import Arrow from "@Components/Icons/Arrow";
 import Flex from "@Components/Flex";
 const { Heading } = TheBigBoyBundle;
 
-
 export default function Collapsible({ title, children }) {
 	const [open, setOpen] = React.useState(false);
 
@@ -34,7 +33,13 @@ export default function Collapsible({ title, children }) {
 					}}>
 					<Arrow />
 				</Flex>
-				<Heading tag="h5">{title}</Heading>
+				<Heading
+					style={{
+						textTransform: "capitalize"
+					}}
+					tag="h5">
+					{title}
+				</Heading>
 			</Flex>
 			{open && (
 				<div
