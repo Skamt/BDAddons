@@ -1240,7 +1240,12 @@ function Collapsible({ title, children }) {
 				transition: "rotate 150ms linear",
 				rotate: open ? "90deg" : "0deg"
 			},
-		}, React.createElement(Arrow, null)), React.createElement(Heading, { tag: "h5", }, title)), open && (
+		}, React.createElement(Arrow, null)), React.createElement(Heading, {
+			style: {
+				textTransform: "capitalize"
+			},
+			tag: "h5",
+		}, title)), open && (
 			React.createElement('div', {
 				style: {
 					margin: "0 10px"
@@ -1288,31 +1293,34 @@ function SettingsToggle({ settingKey, note, hideBorder = false, description }) {
 	);
 }
 
-const Switches = [{
-		settingKey: "enableListenAlong",
-		description: "Enables/Disable listen along without premium."
-	},
-	{
-		settingKey: "activity",
-		description: "Modify Spotify activity."
-	},
-	{
-		settingKey: "activityIndicator",
-		description: "Show user's Spotify activity in chat."
-	},
-
-	{
-		settingKey: "embedBannerBackground",
-		description: "Use the banner as background for the embed.",
-		hideBorder: true
-	}
-];
-
-const PlayerButtons = [{ settingKey: "Share" }, { settingKey: "Shuffle" }, { settingKey: "Previous" }, { settingKey: "Play" }, { settingKey: "Next" }, { settingKey: "Repeat" }, { settingKey: "Volume", hideBorder: true }];
-
 function SettingComponent() {
 	return (
-		React.createElement('div', { className: `${config.info.name}-settings`, }, React.createElement(FormDivider, { style: { margin: "20px 0 20px 0" }, }), React.createElement(Collapsible, { title: "Switches", }, Switches.map(SettingsToggle)), React.createElement(FormDivider, { style: { margin: "20px 0 20px 0" }, }), React.createElement(Collapsible, { title: "Show/Hide Player buttons", }, PlayerButtons.map(SettingsToggle)), React.createElement(FormDivider, { style: { margin: "20px 0 20px 0" }, }), React.createElement(Collapsible, { title: "Spotify embed style", }, React.createElement(SpotifyEmbedOptions, null)))
+		React.createElement('div', { className: `${config.info.name}-settings`, }, React.createElement(FormDivider, { style: { margin: "20px 0 20px 0" }, }), React.createElement(Collapsible, { title: "miscellaneous", }, [{
+				settingKey: "player",
+				description: "Enable/Disable player."
+			},
+			{
+				settingKey: "enableListenAlong",
+				description: "Enables/Disable listen along without premium."
+			},
+			{
+				settingKey: "activity",
+				description: "Modify Spotify activity."
+			},
+			{
+				settingKey: "activityIndicator",
+				description: "Show user's Spotify activity in chat."
+			},
+			{
+				settingKey: "playerBannerBackground",
+				description: "Use the banner as background for the player."
+			},
+			{
+				settingKey: "embedBannerBackground",
+				description: "Use the banner as background for the embed.",
+				hideBorder: true
+			}
+		].map(SettingsToggle)), React.createElement(FormDivider, { style: { margin: "20px 0 20px 0" }, }), React.createElement(Collapsible, { title: "Show/Hide Player buttons", }, [{ settingKey: "Share" }, { settingKey: "Shuffle" }, { settingKey: "Previous" }, { settingKey: "Play" }, { settingKey: "Next" }, { settingKey: "Repeat" }, { settingKey: "Volume", hideBorder: true }].map(SettingsToggle)), React.createElement(FormDivider, { style: { margin: "20px 0 20px 0" }, }), React.createElement(Collapsible, { title: "Spotify embed style", }, React.createElement(SpotifyEmbedOptions, null)))
 	);
 }
 
