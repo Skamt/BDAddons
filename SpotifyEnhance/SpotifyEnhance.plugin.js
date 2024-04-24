@@ -26,20 +26,20 @@ const config = {
 		"embedBannerBackground": true,
 		"activity": true,
 		"player": true,
-		"playerButtons": {
-			"Share": true,
-			"Shuffle": true,
-			"Previous": true,
-			"Next": true,
-			"Repeat": true,
-			"Volume": true
-		}
+		"Share": true,
+		"Shuffle": true,
+		"Previous": true,
+		"Play": true,
+		"Next": true,
+		"Repeat": true,
+		"Volume": true
 	}
 }
 
 const css = `
 :root {
 	--spotify-green: #1ed760;
+	--button-disabled: #a7a7a7;
 	--text-normal: #fff;
 	--text-sub: #a7a7a7;
 	--radius: 8px;
@@ -59,6 +59,10 @@ const css = `
 	border-radius:10px;
 	width:auto;
 	flex:1;
+}
+
+.spotify-player-controls-btn.hidden {
+	opacity:.5;
 }
 
 /* Spotify Indicator */
@@ -512,7 +516,7 @@ const Settings = Object.assign(
 			const settingsObj = Object.create(null);
 
 			for (const [key, value] of Object.entries({
-					...config.info.settings,
+					...config.settings,
 					...Data.load("settings")
 				})) {
 				settingsObj[key] = value;
@@ -1182,140 +1186,93 @@ const Switch = TheBigBoyBundle.FormSwitch ||
 		);
 	};
 
-const Button = TheBigBoyBundle.Button ||
-	function ButtonComponentFallback(props) {
-		return React.createElement('button', { ...props, });
-	};
-
-const { Tooltip } = TheBigBoyBundle;
-
-const Tooltip$1 = ({ note, position, children }) => {
-	return (
-		React.createElement(Tooltip, {
-			text: note,
-			position: position || "top",
-		}, props => {
-			children.props = {
-				...props,
-				...children.props
-			};
-			return children;
-		})
-	);
-};
-
-function NextIcon() {
-	return (
-		React.createElement('svg', {
-			fill: "currentColor",
-			height: "24",
-			width: "24",
-			viewBox: "0 0 16 16",
-		}, React.createElement('path', { d: "M12.7 1a.7.7 0 0 0-.7.7v5.15L2.05 1.107A.7.7 0 0 0 1 1.712v12.575a.7.7 0 0 0 1.05.607L12 9.149V14.3a.7.7 0 0 0 .7.7h1.6a.7.7 0 0 0 .7-.7V1.7a.7.7 0 0 0-.7-.7h-1.6z", }))
-	);
-}
-
-function PlayIcon$1() {
-	return (
-		React.createElement('svg', {
-			fill: "currentColor",
-			width: "24",
-			height: "24",
-			viewBox: "0 0 16 16",
-		}, React.createElement('path', { d: "M3 1.713a.7.7 0 0 1 1.05-.607l10.89 6.288a.7.7 0 0 1 0 1.212L4.05 14.894A.7.7 0 0 1 3 14.288V1.713z", }), "\t")
-	);
-}
-
-function PlayIcon() {
-	return (
-		React.createElement('svg', {
-			fill: "currentColor",
-			height: "24",
-			width: "24",
-			viewBox: "0 0 16 16",
-		}, React.createElement('path', { d: "M3.3 1a.7.7 0 0 1 .7.7v5.15l9.95-5.744a.7.7 0 0 1 1.05.606v12.575a.7.7 0 0 1-1.05.607L4 9.149V14.3a.7.7 0 0 1-.7.7H1.7a.7.7 0 0 1-.7-.7V1.7a.7.7 0 0 1 .7-.7h1.6z", }))
-	);
-}
-
-function RepeatIcon() {
-	return (
-		React.createElement('svg', {
-			fill: "currentColor",
-			width: "24",
-			height: "24",
-			viewBox: "0 0 16 16",
-		}, React.createElement('path', { d: "M0 4.75A3.75 3.75 0 0 1 3.75 1h8.5A3.75 3.75 0 0 1 16 4.75v5a3.75 3.75 0 0 1-3.75 3.75H9.81l1.018 1.018a.75.75 0 1 1-1.06 1.06L6.939 12.75l2.829-2.828a.75.75 0 1 1 1.06 1.06L9.811 12h2.439a2.25 2.25 0 0 0 2.25-2.25v-5a2.25 2.25 0 0 0-2.25-2.25h-8.5A2.25 2.25 0 0 0 1.5 4.75v5A2.25 2.25 0 0 0 3.75 12H5v1.5H3.75A3.75 3.75 0 0 1 0 9.75v-5z", }))
-	);
-}
-
-const ShareIcon = () => {
-	return (
-		React.createElement('svg', {
-			fill: "currentColor",
-			width: "24",
-			height: "24",
-			viewBox: "0 0 24 24",
-		}, React.createElement('path', { d: "M13.803 5.33333C13.803 3.49238 15.3022 2 17.1515 2C19.0008 2 20.5 3.49238 20.5 5.33333C20.5 7.17428 19.0008 8.66667 17.1515 8.66667C16.2177 8.66667 15.3738 8.28596 14.7671 7.67347L10.1317 10.8295C10.1745 11.0425 10.197 11.2625 10.197 11.4872C10.197 11.9322 10.109 12.3576 9.94959 12.7464L15.0323 16.0858C15.6092 15.6161 16.3473 15.3333 17.1515 15.3333C19.0008 15.3333 20.5 16.8257 20.5 18.6667C20.5 20.5076 19.0008 22 17.1515 22C15.3022 22 13.803 20.5076 13.803 18.6667C13.803 18.1845 13.9062 17.7255 14.0917 17.3111L9.05007 13.9987C8.46196 14.5098 7.6916 14.8205 6.84848 14.8205C4.99917 14.8205 3.5 13.3281 3.5 11.4872C3.5 9.64623 4.99917 8.15385 6.84848 8.15385C7.9119 8.15385 8.85853 8.64725 9.47145 9.41518L13.9639 6.35642C13.8594 6.03359 13.803 5.6896 13.803 5.33333Z", }))
-	);
-};
-
-function ShuffleIcon() {
-	return (
-		React.createElement('svg', {
-			fill: "currentColor",
-			height: "24",
-			width: "24",
-			viewBox: "0 0 16 16",
-		}, React.createElement('path', { d: "M13.151.922a.75.75 0 1 0-1.06 1.06L13.109 3H11.16a3.75 3.75 0 0 0-2.873 1.34l-6.173 7.356A2.25 2.25 0 0 1 .39 12.5H0V14h.391a3.75 3.75 0 0 0 2.873-1.34l6.173-7.356a2.25 2.25 0 0 1 1.724-.804h1.947l-1.017 1.018a.75.75 0 0 0 1.06 1.06L15.98 3.75 13.15.922zM.391 3.5H0V2h.391c1.109 0 2.16.49 2.873 1.34L4.89 5.277l-.979 1.167-1.796-2.14A2.25 2.25 0 0 0 .39 3.5z", }), React.createElement('path', { d: "m7.5 10.723.98-1.167.957 1.14a2.25 2.25 0 0 0 1.724.804h1.947l-1.017-1.018a.75.75 0 1 1 1.06-1.06l2.829 2.828-2.829 2.828a.75.75 0 1 1-1.06-1.06L13.109 13H11.16a3.75 3.75 0 0 1-2.873-1.34l-.787-.938z", }))
-	);
-}
-
-function VolumeIcon() {
-	return (
-		React.createElement('svg', {
-			fill: "currentColor",
-			width: "24",
-			height: "24",
-			viewBox: "0 0 16 16",
-		}, React.createElement('path', { d: "M9.741.85a.75.75 0 0 1 .375.65v13a.75.75 0 0 1-1.125.65l-6.925-4a3.642 3.642 0 0 1-1.33-4.967 3.639 3.639 0 0 1 1.33-1.332l6.925-4a.75.75 0 0 1 .75 0zm-6.924 5.3a2.139 2.139 0 0 0 0 3.7l5.8 3.35V2.8l-5.8 3.35zm8.683 4.29V5.56a2.75 2.75 0 0 1 0 4.88z", }), React.createElement('path', { d: "M11.5 13.614a5.752 5.752 0 0 0 0-11.228v1.55a4.252 4.252 0 0 1 0 8.127v1.55z", }))
-	);
-}
-
 const EmbedStyleEnum = {
 	KEEP: "KEEP",
 	REPLACE: "REPLACE",
 	HIDE: "HIDE"
 };
 
-const { FormDivider, Heading } = TheBigBoyBundle;
+function Arrow() {
+	return (
+		React.createElement('svg', {
+			width: 24,
+			height: 24,
+			viewBox: "0 0 24 24",
+			fill: "none",
+			xmlns: "http://www.w3.org/2000/svg",
+		}, React.createElement('path', {
+			d: "M9.71069 18.2929C10.1012 18.6834 10.7344 18.6834 11.1249 18.2929L16.0123 13.4006C16.7927 12.6195 16.7924 11.3537 16.0117 10.5729L11.1213 5.68254C10.7308 5.29202 10.0976 5.29202 9.70708 5.68254C9.31655 6.07307 9.31655 6.70623 9.70708 7.09676L13.8927 11.2824C14.2833 11.6729 14.2833 12.3061 13.8927 12.6966L9.71069 16.8787C9.32016 17.2692 9.32016 17.9023 9.71069 18.2929Z",
+			fill: "#ccc",
+		}))
+	);
+}
 
-const Group = getModule(Filters.byStrings("groupCollapsedRow"));
 const Flex = getModule(a => a.Flex).Flex;
+
+const Flex$1 = Flex;
+
+const { Heading } = TheBigBoyBundle;
+
+function Collapsible({ title, children }) {
+	const [open, setOpen] = React.useState(false);
+
+	return (
+		React.createElement(Flex$1, {
+			style: {
+				borderRadius: 5,
+				border: "1px solid rgb(30, 31, 34)",
+				gap: 20
+			},
+			direction: Flex$1.Direction.VERTICAL,
+		}, React.createElement(Flex$1, {
+			onClick: () => setOpen(!open),
+			style: {
+				borderBottom: open && "1px solid rgb(30, 31, 34)",
+				background: "rgba(30, 31, 34, 0.3)",
+				padding: "10px 3px",
+				gap: 8
+			},
+			direction: Flex$1.Direction.HORIZONTAL,
+			align: Flex$1.Align.CENTER,
+		}, React.createElement(Flex$1, {
+			style: {
+				flexGrow: 0,
+				transition: "rotate 150ms linear",
+				rotate: open ? "90deg" : "0deg"
+			},
+		}, React.createElement(Arrow, null)), React.createElement(Heading, { tag: "h5", }, title)), open && (
+			React.createElement('div', {
+				style: {
+					margin: "0 10px"
+				},
+			}, children)
+		))
+	);
+}
+
+const { FormDivider, RadioGroup } = TheBigBoyBundle;
 
 function SpotifyEmbedOptions() {
 	const [val, set] = Settings.useSetting("spotifyEmbed");
 	return (
-		React.createElement('div', null, React.createElement(Group, {
-			changeTitle: "Change Spotify embed style",
+		React.createElement(RadioGroup, {
 			options: [{
 					value: EmbedStyleEnum.KEEP,
-					highlightColor: "statusGreen",
-					description: "Use original Spotify Embed"
+					name: "Keep: Use original Spotify Embed"
 				},
 				{
 					value: EmbedStyleEnum.REPLACE,
-					highlightColor: "statusGreen",
-					description: "A less laggy Spotify Embed"
+					name: "Replace: A less laggy Spotify Embed"
 				},
 				{
 					value: EmbedStyleEnum.HIDE,
-					highlightColor: "statusGreen",
-					description: "Completely remove spotify embed"
+					name: "Hide: Completely remove spotify embed"
 				}
 			],
+			orientation: "horizontal",
 			value: val,
 			onChange: e => set(e.value),
-		}))
+		})
 	);
 }
 
@@ -1327,15 +1284,11 @@ function SettingsToggle({ settingKey, note, hideBorder = false, description }) {
 			note: note,
 			hideBorder: hideBorder,
 			onChange: set,
-		}, description)
+		}, description || settingKey)
 	);
 }
 
 const Switches = [{
-		settingKey: "player",
-		description: "Enable/Disable player."
-	},
-	{
 		settingKey: "enableListenAlong",
 		description: "Enables/Disable listen along without premium."
 	},
@@ -1347,78 +1300,19 @@ const Switches = [{
 		settingKey: "activityIndicator",
 		description: "Show user's Spotify activity in chat."
 	},
-	{
-		settingKey: "playerBannerBackground",
-		description: "Use the banner as background for the player."
-	},
+
 	{
 		settingKey: "embedBannerBackground",
-		description: "Use the banner as background for the embed."
+		description: "Use the banner as background for the embed.",
+		hideBorder: true
 	}
 ];
 
-function SpotifyPlayerButton$1({ value, onClick, className, active, ...rest }) {
-	return (
-		React.createElement(Button, {
-			className: `spotify-player-controls-btn ${className} ${active ? "enabled" : ""}`,
-			size: Button.Sizes.NONE,
-			color: Button.Colors.PRIMARY,
-			look: Button.Looks.BLANK,
-			onClick: onClick,
-			...rest,
-		}, value)
-	);
-}
-
-function PlayerBtn({ name, value, className, disabled }) {
-	const [btnObj, set] = Settings.useSetting("playerButtons");
-	const [, update] = React.useReducer(e => e + 1, 0);
-
-	const handler = e => {
-		set(Object.assign({}, btnObj, {
-			[e]: !btnObj[e] }));
-		update();
-	};
-
-	const val = name === "Play" ? true : btnObj[name];
-
-	return (
-		React.createElement(Tooltip$1, { note: val ? `${name} will be shown` : `${name} will be hidden`, }, React.createElement(SpotifyPlayerButton$1, {
-			active: val,
-			disabled: disabled,
-			className: className,
-			onClick: () => handler(name),
-			value: value,
-		}))
-	);
-}
-
-function Brrr() {
-	return (
-		React.createElement(Flex, {
-			style: { marginTop: 15 },
-			direction: Flex.Direction.HORIZONTAL,
-			align: Flex.Align.CENTER,
-		}, React.createElement(Heading, {
-				tag: "h5",
-				style: { whiteSpace: "nowrap", flex: "1", marginBottom: 5 },
-			}, "Show/Hide player buttons"
-
-		), React.createElement('div', { className: "spotify-player-controls", }, [
-			{ className: "spotify-player-controls-share", name: "Share", value: React.createElement(ShareIcon, null) },
-			{ className: "spotify-player-controls-shuffle", name: "Shuffle", value: React.createElement(ShuffleIcon, null) },
-			{ className: "spotify-player-controls-previous", name: "Previous", value: React.createElement(PlayIcon, null) },
-			{ className: "spotify-player-controls-play", name: "Play", value: React.createElement(PlayIcon$1, null), disabled: true },
-			{ className: "spotify-player-controls-next", name: "Next", value: React.createElement(NextIcon, null) },
-			{ className: "spotify-player-controls-repeat", name: "Repeat", value: React.createElement(RepeatIcon, null) },
-			{ className: "spotify-player-controls-volume", name: "Volume", value: React.createElement(VolumeIcon, null) }
-		].map(PlayerBtn)))
-	);
-}
+const PlayerButtons = [{ settingKey: "Share" }, { settingKey: "Shuffle" }, { settingKey: "Previous" }, { settingKey: "Play" }, { settingKey: "Next" }, { settingKey: "Repeat" }, { settingKey: "Volume", hideBorder: true }];
 
 function SettingComponent() {
 	return (
-		React.createElement('div', { className: `${config.info.name}-settings`, }, React.createElement(FormDivider, { style: { marginBottom: 20 }, }), Switches.map(SettingsToggle), React.createElement(SpotifyEmbedOptions, null), React.createElement(FormDivider, { style: { marginTop: 20 }, }), React.createElement(Brrr, null))
+		React.createElement('div', { className: `${config.info.name}-settings`, }, React.createElement(FormDivider, { style: { margin: "20px 0 20px 0" }, }), React.createElement(Collapsible, { title: "Switches", }, Switches.map(SettingsToggle)), React.createElement(FormDivider, { style: { margin: "20px 0 20px 0" }, }), React.createElement(Collapsible, { title: "Show/Hide Player buttons", }, PlayerButtons.map(SettingsToggle)), React.createElement(FormDivider, { style: { margin: "20px 0 20px 0" }, }), React.createElement(Collapsible, { title: "Spotify embed style", }, React.createElement(SpotifyEmbedOptions, null)))
 	);
 }
 
@@ -1431,6 +1325,11 @@ const patchListenAlong = () => {
 		});
 	else Logger.patch("ListenAlong");
 };
+
+const Button = TheBigBoyBundle.Button ||
+	function ButtonComponentFallback(props) {
+		return React.createElement('button', { ...props, });
+	};
 
 function AddToQueueIcon() {
 	return (
@@ -1466,6 +1365,34 @@ function ListenIcon() {
 		}, React.createElement('path', { d: "M22 16.53C22 18.3282 20.2485 19.7837 18.089 19.7837C15.9285 19.7837 14.5396 18.3277 14.5396 16.53C14.5396 14.7319 15.9286 13.2746 18.089 13.2746C18.7169 13.2746 19.3089 13.4013 19.8353 13.6205V5.814L9.46075 7.32352V18.7449C9.46075 20.5424 7.70957 22 5.54941 22C3.38871 22 2 20.5443 2 18.7456C2 16.9481 3.3892 15.4898 5.54941 15.4898C6.17823 15.4898 6.76966 15.6162 7.29604 15.836C7.29604 11.3608 7.29604 8.5366 7.29604 4.1395L21.9996 2L22 16.53Z", }))
 	);
 }
+
+const ShareIcon = () => {
+	return (
+		React.createElement('svg', {
+			fill: "currentColor",
+			width: "24",
+			height: "24",
+			viewBox: "0 0 24 24",
+		}, React.createElement('path', { d: "M13.803 5.33333C13.803 3.49238 15.3022 2 17.1515 2C19.0008 2 20.5 3.49238 20.5 5.33333C20.5 7.17428 19.0008 8.66667 17.1515 8.66667C16.2177 8.66667 15.3738 8.28596 14.7671 7.67347L10.1317 10.8295C10.1745 11.0425 10.197 11.2625 10.197 11.4872C10.197 11.9322 10.109 12.3576 9.94959 12.7464L15.0323 16.0858C15.6092 15.6161 16.3473 15.3333 17.1515 15.3333C19.0008 15.3333 20.5 16.8257 20.5 18.6667C20.5 20.5076 19.0008 22 17.1515 22C15.3022 22 13.803 20.5076 13.803 18.6667C13.803 18.1845 13.9062 17.7255 14.0917 17.3111L9.05007 13.9987C8.46196 14.5098 7.6916 14.8205 6.84848 14.8205C4.99917 14.8205 3.5 13.3281 3.5 11.4872C3.5 9.64623 4.99917 8.15385 6.84848 8.15385C7.9119 8.15385 8.85853 8.64725 9.47145 9.41518L13.9639 6.35642C13.8594 6.03359 13.803 5.6896 13.803 5.33333Z", }))
+	);
+};
+
+const { Tooltip } = TheBigBoyBundle;
+
+const Tooltip$1 = ({ note, position, children }) => {
+	return (
+		React.createElement(Tooltip, {
+			text: note,
+			position: position || "top",
+		}, props => {
+			children.props = {
+				...props,
+				...children.props
+			};
+			return children;
+		})
+	);
+};
 
 const { useSpotifyPlayAction, useSpotifySyncAction } = getModule(Filters.byProps("useSpotifyPlayAction"));
 
@@ -1775,6 +1702,17 @@ function MuteVolumeIcon() {
 	);
 }
 
+function NextIcon() {
+	return (
+		React.createElement('svg', {
+			fill: "currentColor",
+			height: "24",
+			width: "24",
+			viewBox: "0 0 16 16",
+		}, React.createElement('path', { d: "M12.7 1a.7.7 0 0 0-.7.7v5.15L2.05 1.107A.7.7 0 0 0 1 1.712v12.575a.7.7 0 0 0 1.05.607L12 9.149V14.3a.7.7 0 0 0 .7.7h1.6a.7.7 0 0 0 .7-.7V1.7a.7.7 0 0 0-.7-.7h-1.6z", }))
+	);
+}
+
 function PauseIcon() {
 	return (
 		React.createElement('svg', {
@@ -1786,6 +1724,39 @@ function PauseIcon() {
 	);
 }
 
+function PlayIcon$1() {
+	return (
+		React.createElement('svg', {
+			fill: "currentColor",
+			width: "24",
+			height: "24",
+			viewBox: "0 0 16 16",
+		}, React.createElement('path', { d: "M3 1.713a.7.7 0 0 1 1.05-.607l10.89 6.288a.7.7 0 0 1 0 1.212L4.05 14.894A.7.7 0 0 1 3 14.288V1.713z", }), "\t")
+	);
+}
+
+function PlayIcon() {
+	return (
+		React.createElement('svg', {
+			fill: "currentColor",
+			height: "24",
+			width: "24",
+			viewBox: "0 0 16 16",
+		}, React.createElement('path', { d: "M3.3 1a.7.7 0 0 1 .7.7v5.15l9.95-5.744a.7.7 0 0 1 1.05.606v12.575a.7.7 0 0 1-1.05.607L4 9.149V14.3a.7.7 0 0 1-.7.7H1.7a.7.7 0 0 1-.7-.7V1.7a.7.7 0 0 1 .7-.7h1.6z", }))
+	);
+}
+
+function RepeatIcon() {
+	return (
+		React.createElement('svg', {
+			fill: "currentColor",
+			width: "24",
+			height: "24",
+			viewBox: "0 0 16 16",
+		}, React.createElement('path', { d: "M0 4.75A3.75 3.75 0 0 1 3.75 1h8.5A3.75 3.75 0 0 1 16 4.75v5a3.75 3.75 0 0 1-3.75 3.75H9.81l1.018 1.018a.75.75 0 1 1-1.06 1.06L6.939 12.75l2.829-2.828a.75.75 0 1 1 1.06 1.06L9.811 12h2.439a2.25 2.25 0 0 0 2.25-2.25v-5a2.25 2.25 0 0 0-2.25-2.25h-8.5A2.25 2.25 0 0 0 1.5 4.75v5A2.25 2.25 0 0 0 3.75 12H5v1.5H3.75A3.75 3.75 0 0 1 0 9.75v-5z", }))
+	);
+}
+
 function RepeatOneIcon() {
 	return (
 		React.createElement('svg', {
@@ -1794,6 +1765,28 @@ function RepeatOneIcon() {
 			height: "24",
 			viewBox: "0 0 16 16",
 		}, React.createElement('path', { d: "M0 4.75A3.75 3.75 0 0 1 3.75 1h.75v1.5h-.75A2.25 2.25 0 0 0 1.5 4.75v5A2.25 2.25 0 0 0 3.75 12H5v1.5H3.75A3.75 3.75 0 0 1 0 9.75v-5zM12.25 2.5h-.75V1h.75A3.75 3.75 0 0 1 16 4.75v5a3.75 3.75 0 0 1-3.75 3.75H9.81l1.018 1.018a.75.75 0 1 1-1.06 1.06L6.939 12.75l2.829-2.828a.75.75 0 1 1 1.06 1.06L9.811 12h2.439a2.25 2.25 0 0 0 2.25-2.25v-5a2.25 2.25 0 0 0-2.25-2.25z", }), React.createElement('path', { d: "M9.12 8V1H7.787c-.128.72-.76 1.293-1.787 1.313V3.36h1.57V8h1.55z", }))
+	);
+}
+
+function ShuffleIcon() {
+	return (
+		React.createElement('svg', {
+			fill: "currentColor",
+			height: "24",
+			width: "24",
+			viewBox: "0 0 16 16",
+		}, React.createElement('path', { d: "M13.151.922a.75.75 0 1 0-1.06 1.06L13.109 3H11.16a3.75 3.75 0 0 0-2.873 1.34l-6.173 7.356A2.25 2.25 0 0 1 .39 12.5H0V14h.391a3.75 3.75 0 0 0 2.873-1.34l6.173-7.356a2.25 2.25 0 0 1 1.724-.804h1.947l-1.017 1.018a.75.75 0 0 0 1.06 1.06L15.98 3.75 13.15.922zM.391 3.5H0V2h.391c1.109 0 2.16.49 2.873 1.34L4.89 5.277l-.979 1.167-1.796-2.14A2.25 2.25 0 0 0 .39 3.5z", }), React.createElement('path', { d: "m7.5 10.723.98-1.167.957 1.14a2.25 2.25 0 0 0 1.724.804h1.947l-1.017-1.018a.75.75 0 1 1 1.06-1.06l2.829 2.828-2.829 2.828a.75.75 0 1 1-1.06-1.06L13.109 13H11.16a3.75 3.75 0 0 1-2.873-1.34l-.787-.938z", }))
+	);
+}
+
+function VolumeIcon() {
+	return (
+		React.createElement('svg', {
+			fill: "currentColor",
+			width: "24",
+			height: "24",
+			viewBox: "0 0 16 16",
+		}, React.createElement('path', { d: "M9.741.85a.75.75 0 0 1 .375.65v13a.75.75 0 0 1-1.125.65l-6.925-4a3.642 3.642 0 0 1-1.33-4.967 3.639 3.639 0 0 1 1.33-1.332l6.925-4a.75.75 0 0 1 .75 0zm-6.924 5.3a2.139 2.139 0 0 0 0 3.7l5.8 3.35V2.8l-5.8 3.35zm8.683 4.29V5.56a2.75 2.75 0 0 1 0 4.88z", }), React.createElement('path', { d: "M11.5 13.614a5.752 5.752 0 0 0 0-11.228v1.55a4.252 4.252 0 0 1 0 8.127v1.55z", }))
 	);
 }
 
