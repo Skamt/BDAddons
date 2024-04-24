@@ -1,5 +1,6 @@
 :root {
 	--spotify-green: #1ed760;
+	--button-disabled: #a7a7a7;
 	--text-normal: #fff;
 	--text-sub: #a7a7a7;
 	--radius: 8px;
@@ -19,6 +20,10 @@
 	border-radius:10px;
 	width:auto;
 	flex:1;
+}
+
+.spotify-player-controls-btn.hidden {
+	opacity:.5;
 }
 
 /* Spotify Indicator */

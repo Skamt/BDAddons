@@ -6,21 +6,20 @@
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance"
 	},
-	"settings":{
-		"spotifyEmbed":"REPLACE",
-		"activityIndicator":true,
-		"enableListenAlong":true,
-		"playerBannerBackground":true,
-		"embedBannerBackground":true,
-		"activity":true,
-		"player":true,
-		"playerButtons":{
-			"Share":true,
-			"Shuffle":true,
-			"Previous":true,
-			"Next":true,
-			"Repeat":true,
-			"Volume":true
-		}
+	"settings": {
+		"spotifyEmbed": "REPLACE",
+		"activityIndicator": true,
+		"enableListenAlong": true,
+		"playerBannerBackground": true,
+		"embedBannerBackground": true,
+		"activity": true,
+		"player": true,
+		"Share": true,
+		"Shuffle": true,
+		"Previous": true,
+		"Play": true,
+		"Next": true,
+		"Repeat": true,
+		"Volume": true
 	}
 }

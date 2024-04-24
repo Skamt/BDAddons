@@ -10,7 +10,7 @@ export default Object.assign(
 			const settingsObj = Object.create(null);
 
 			for (const [key, value] of Object.entries({
-				...config.info.settings,
+				...config.settings,
 				...Data.load("settings")
 			})) {
 				settingsObj[key] = value;
