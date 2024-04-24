@@ -10,22 +10,6 @@
 	--accent: #1ed760;
 }
 
-.SpotifyEnhance-settings *{
-	box-sizing: border-box
-}
-
-.SpotifyEnhance-settings .spotify-player-controls{
-	background:#00000050;
-	padding:5px;
-	border-radius:10px;
-	width:auto;
-	flex:1;
-}
-
-.spotify-player-controls-btn.hidden {
-	opacity:.5;
-}
-
 /* Spotify Indicator */
 .spotifyActivityIndicatorIcon {
 	color: var(--spotify-green);
@@ -206,6 +190,7 @@
 	color: white;
 	display: flex;
 	flex-direction: column;
+	overflow:hidden;
 }
 
 .spotify-player-container.bannerBackground {

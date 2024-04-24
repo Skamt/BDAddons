@@ -13,6 +13,9 @@ import RepeatOneIcon from "@Components/icons/RepeatOneIcon";
 import ShareIcon from "@Components/icons/ShareIcon";
 import ShuffleIcon from "@Components/icons/ShuffleIcon";
 import VolumeIcon from "@Components/icons/VolumeIcon";
+import ImageIcon from "@Components/icons/ImageIcon";
+import ListenIcon from "@Components/icons/ListenIcon";
+
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 import SpotifyApi from "../SpotifyAPIWrapper";
 import { Store } from "../Store";
@@ -91,7 +94,7 @@ export default ({ banner, media }) => {
 								className="spotify-player-share-menuitem"
 								id="copy-song-link"
 								key="copy-song-link"
-								icon={CopyIcon}
+								icon={ListenIcon}
 								action={copySongHandler}
 								label="Copy song url"
 							/>
@@ -100,7 +103,7 @@ export default ({ banner, media }) => {
 								id="copy-poster-link"
 								key="copy-poster-link"
 								action={copyPosterHandler}
-								icon={CopyIcon}
+								icon={ImageIcon}
 								label="Copy poster url"
 							/>
 							<MenuItem
@@ -108,7 +111,7 @@ export default ({ banner, media }) => {
 								id="share-song-link"
 								key="share-song-link"
 								action={shareSongHandler}
-								icon={ShareIcon}
+								icon={ListenIcon}
 								label="Share song in current channel"
 							/>
 							<MenuItem
@@ -116,7 +119,7 @@ export default ({ banner, media }) => {
 								id="share-poster-link"
 								key="share-poster-link"
 								action={sharePosterHandler}
-								icon={ShareIcon}
+								icon={ImageIcon}
 								label="Share poster in current channel"
 							/>
 						</Menu>
