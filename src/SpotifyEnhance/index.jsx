@@ -12,7 +12,6 @@ import patchSpotifyPlayer from "./patches/patchSpotifyPlayer";
 import patchSpotifySocket from "./patches/patchSpotifySocket";
 import patchMessageHeader from "./patches/patchMessageHeader";
 import patchChannelAttach from "./patches/patchChannelAttach";
-import patchSpotifyInviteParty from "./patches/patchSpotifyInviteParty";
 
 window.spotSettings = Settings;
 window.spotStore = Store;
@@ -29,7 +28,6 @@ export default class SpotifyEnhance {
 			patchMessageHeader();
 			patchSpotifyPlayer();
 			patchChannelAttach();
-			patchSpotifyInviteParty();
 		} catch (e) {
 			Logger.error(e);
 		}

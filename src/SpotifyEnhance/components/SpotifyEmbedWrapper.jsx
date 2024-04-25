@@ -1,3 +1,5 @@
+/* eslint-disable no-unreachable */
+/* eslint-disable react/jsx-key */
 import { React } from "@Api";
 import { EmbedStyleEnum } from "../consts.js";
 import Settings from "@Utils/Settings";
@@ -5,19 +7,6 @@ import SpotifyControls from "./SpotifyControls";
 import SpotifyEmbed from "./SpotifyEmbed";
 
 export default function SpotifyEmbedWrapper({ id, type, embedObject, embedComponent }) {
-	return [
-		embedComponent,
-		<SpotifyControls
-			id={id}
-			type={type}
-			embed={embedObject}
-		/>,
-		<SpotifyEmbed
-			id={id}
-			type={type}
-			embed={embedObject}
-		/>
-	];
 	const spotifyEmbed = Settings(Settings.selectors.spotifyEmbed);
 
 	switch (spotifyEmbed) {

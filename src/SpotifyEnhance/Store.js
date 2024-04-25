@@ -137,7 +137,7 @@ function onSpotifyStoreChange() {
 		const { socket } = SpotifyStore.getActiveSocketAndDevice() || {};
 		if (!socket) return;
 		state.setAccount(socket);
-		// state.fetchPlayerState();
+		state.fetchPlayerState();
 	} catch (e) {
 		Logger.error(e);
 	}

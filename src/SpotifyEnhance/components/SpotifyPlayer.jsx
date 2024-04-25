@@ -45,7 +45,7 @@ export default React.memo(function SpotifyPlayer() {
 			/>
 
 			<SpotifyPlayerControls
-				banner={bannerLg}
+				banner={bannerLg?.url}
 				media={media}
 			/>
 		</div>
