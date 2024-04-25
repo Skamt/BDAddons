@@ -7,20 +7,24 @@ import Settings from "@Utils/Settings";
 
 export default React.memo(function SpotifyPlayer() {
 	const player = Settings(Settings.selectors.player);
+	const playerCompactMode = Settings(Settings.selectors.playerCompactMode);
 	const playerBannerBackground = Settings(Settings.selectors.playerBannerBackground);
 
-	
 	const isActive = Store(Store.selectors.isActive);
 	const media = Store(Store.selectors.media);
 	const mediaType = Store(Store.selectors.mediaType);
-	
-	if(!player || !isActive || !mediaType) return;
-	
+
+	if (!player || !isActive || !mediaType) return;
+
 	const { bannerMd, bannerSm, bannerLg } = {
 		bannerSm: media?.album?.images[2],
 		bannerMd: media?.album?.images[1],
 		bannerLg: media?.album?.images[0]
 	};
+
+	let className = "spotify-player-container";
+	if (playerCompactMode) className += " compact";
+	if (playerBannerBackground) className += " bannerBackground";
 
 	return (
 		<div
@@ -29,8 +33,7 @@ export default React.memo(function SpotifyPlayer() {
 				"--banner-md": `url(${bannerMd?.url})`,
 				"--banner-lg": `url(${bannerLg?.url})`
 			}}
-			className={playerBannerBackground ? "spotify-player-container bannerBackground" : "spotify-player-container"}>
-
+			className={className}>
 			<TrackMediaDetails
 				mediaType={mediaType}
 				media={media}

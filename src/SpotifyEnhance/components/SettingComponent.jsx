@@ -69,6 +69,10 @@ export default function () {
 						description: "Show user's Spotify activity in chat."
 					},
 					{
+						settingKey: "playerCompactMode",
+						description: "Player compact mode"
+					},
+					{
 						settingKey: "playerBannerBackground",
 						description: "Use the banner as background for the player."
 					},

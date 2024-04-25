@@ -2,7 +2,6 @@ import { React } from "@Api";
 import Button from "@Components/Button";
 import Popout from "@Components/Popout";
 import Tooltip from "@Components/Tooltip";
-import CopyIcon from "@Components/icons/CopyIcon";
 import MuteVolumeIcon from "@Components/icons/MuteVolumeIcon";
 import NextIcon from "@Components/icons/NextIcon";
 import PauseIcon from "@Components/icons/PauseIcon";
@@ -135,7 +134,8 @@ export default ({ banner, media }) => {
 			)}
 			{[
 				playerButtons["Shuffle"] && { name: "Shuffle", value: <ShuffleIcon />, className: "spotify-player-controls-shuffle", disabled: toggling_shuffle, active: shuffle, onClick: shuffleHandler }, 
-				playerButtons["Previous"] && { name: "Previous", value: <PreviousIcon />, className: "spotify-player-controls-previous", disabled: skipping_prev, onClick: previousHandler }, { name: playPauseTooltip, value: playPauseIcon, className: playPauseClassName, disabled: false, onClick: playPauseHandler }, 
+				playerButtons["Previous"] && { name: "Previous", value: <PreviousIcon />, className: "spotify-player-controls-previous", disabled: skipping_prev, onClick: previousHandler }, 
+				{ name: playPauseTooltip, value: playPauseIcon, className: playPauseClassName, disabled: false, onClick: playPauseHandler }, 
 				playerButtons["Next"] && { name: "Next", value: <NextIcon />, className: "spotify-player-controls-next", disabled: skipping_next, onClick: nextHandler }, 
 				playerButtons["Repeat"] && { name: repeatTooltip, value: repeatIcon, className: "spotify-player-controls-repeat", disabled: toggling_repeat_track, active: repeatActive, onClick: repeatHandler }
 			].filter(Boolean).map(SpotifyPlayerButton)}

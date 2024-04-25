@@ -142,21 +142,24 @@
 	color: var(--spotify-green);
 }
 
-.spotifyEmbed-container.bannerBackground{
-	position:relative;
-	border:1px solid rgba(43, 45, 49, 0.9);
-	background:unset;
-	overflow:hidden;
+.spotifyEmbed-container.bannerBackground {
+	position: relative;
+	border: 1px solid rgba(43, 45, 49, 0.9);
+	background: unset;
+	overflow: hidden;
 }
-.spotifyEmbed-container.bannerBackground:before{
-	content:"";
-	background: linear-gradient(#000000a0 0 0),var(--thumbnail) center/cover no-repeat;
-	position:absolute;
-	inset:0px;
-	filter:blur(5px);
-	z-index:-1;
+.spotifyEmbed-container.bannerBackground:before {
+	content: "";
+	background:
+		linear-gradient(#000000a0 0 0),
+		var(--thumbnail) center/cover no-repeat;
+	position: absolute;
+	inset: 0px;
+	filter: blur(5px);
+	z-index: -1;
 }
 
+/* End Spotify Embed */
 
 /* spotify activity controls */
 .spotify-activity-controls {
@@ -184,13 +187,15 @@
 	flex: 1;
 }
 
+/* End spotify activity controls */
+
 /* Spotify Player */
 .spotify-player-container {
 	padding: 10px 10px;
 	color: white;
 	display: flex;
 	flex-direction: column;
-	overflow:hidden;
+	overflow: hidden;
 }
 
 .spotify-player-container.bannerBackground {
@@ -403,13 +408,66 @@ div:has(> .spotify-banner-modal) {
 	height: 16px;
 }
 
+.spotify-player-container.compact {
+	flex-direction: row;
+	padding: 0;
+}
+
+.spotify-player-container.compact .spotify-player-album,
+.spotify-player-container.compact .spotify-player-controls-share,
+.spotify-player-container.compact .spotify-player-controls-shuffle,
+.spotify-player-container.compact .spotify-player-controls-repeat,
+.spotify-player-container.compact .spotify-player-controls-volume,
+.spotify-player-container.compact .spotify-player-timeline {
+	display: none;
+}
+
+.spotify-player-container.compact .spotify-player-artist {
+	font-size: 0.7rem;
+	align-self: flex-start;
+}
+
+.spotify-player-container.compact .spotify-player-title {
+	font-size: 0.9rem;
+	align-self: flex-end;
+}
+
+.spotify-player-container.compact .spotify-player-media {
+	margin-right: auto;
+	grid-template-columns: 48px minmax(0, 1fr);
+	grid-template-rows: repeat(2, auto);
+	justify-content: center;
+	gap: 5px 10px;
+}
+
+.spotify-player-container.compact .spotify-player-banner {
+	height: 48px;
+	width: 48px;
+	grid-row: 1 /3;
+	border-radius: 0;
+}
+
+.spotify-player-container.compact .spotify-player-controls {
+	width: auto;
+	justify-content: unset;
+	align-items: center;
+	margin-right: 5px;
+}
+
+/* End Player */
+
+/* Original Spotify Embed controls */
 .spotify-no-embed-controls {
 	display: flex;
 	min-width: 400px;
-	max-width: 400px;
+	max-width: 100%;
 	gap: 5px;
+	overflow: hidden;
 }
+
 .spotify-no-embed-controls > button {
-	flex: 1 0 0;
+	flex: 1 0 auto;
 	text-transform: capitalize;
 }
+
+/* End Original Spotify Embed controls */

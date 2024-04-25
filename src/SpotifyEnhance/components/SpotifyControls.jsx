@@ -1,15 +1,14 @@
 import { React } from "@Api";
 import Button from "@Components/Button";
-// import FluxHelpers from "@Modules/FluxHelpers";
-// import SpotifyStore from "@Stores/SpotifyStore";
-// import SpotifyWrapper from "../SpotifyWrapper";
 
 import SpotifyApi from "../SpotifyAPIWrapper";
 import { Store } from "../Store";
 
-export default ({ id, type, embed: { rawTitle, url } }) => {
+export default ({ id, type, embed: { thumbnail, rawTitle, url } }) => {
 	const isActive = Store(Store.selectors.isActive);
 	if (!isActive) return null;
+
+	const banner = thumbnail?.proxyURL || thumbnail?.url;
 
 	const listenBtn = type !== "show" && (
 		<ControlBtn
@@ -27,11 +26,15 @@ export default ({ id, type, embed: { rawTitle, url } }) => {
 
 	return (
 		<div className="spotify-no-embed-controls">
-			{listenBtn}
-			{queueBtn}
+			{isActive && listenBtn}
+			{isActive && queueBtn}
 			<ControlBtn
 				value="copy link"
-				onClick={() => Store.copySpotifyLink(url)}
+				onClick={() => Store.Utils.copySpotifyLink(url)}
+			/>
+			<ControlBtn
+				value="copy banner"
+				onClick={() => Store.Utils.copySpotifyLink(banner)}
 			/>
 		</div>
 	);

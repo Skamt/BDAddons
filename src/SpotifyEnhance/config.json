@@ -12,6 +12,7 @@
 		"enableListenAlong": true,
 		"playerBannerBackground": true,
 		"embedBannerBackground": true,
+		"playerCompactMode": true,
 		"activity": true,
 		"player": true,
 		"Share": true,

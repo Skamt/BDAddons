@@ -4,13 +4,17 @@ import AddToQueueIcon from "@Components/icons/AddToQueueIcon";
 import CopyIcon from "@Components/icons/CopyIcon";
 import ListenIcon from "@Components/icons/ListenIcon";
 import SpotifyIcon from "@Components/icons/SpotifyIcon";
+import ImageIcon from "@Components/icons/ImageIcon";
 import { getImageModalComponent, openModal } from "@Utils";
 import Settings from "@Utils/Settings";
 import SpotifyApi from "../SpotifyAPIWrapper";
 import { Store } from "../Store";
+import AccessibilityStore from "@Stores/AccessibilityStore";
+import FluxHelpers from "@Modules/FluxHelpers";
 
 export default ({ id, type, embed: { thumbnail, rawTitle, rawDescription, url } }) => {
 	const embedBannerBackground = Settings(Settings.selectors.embedBannerBackground);
+	const useReducedMotion = FluxHelpers.useStateFromStores([AccessibilityStore], () => AccessibilityStore.useReducedMotion);
 	const isPlaying = Store(Store.selectors.isPlaying);
 	const isActive = Store(Store.selectors.isActive);
 	const mediaId = Store(Store.selectors.mediaId, (n, o) => n === o || (n !== id && o !== id));
@@ -37,13 +41,15 @@ export default ({ id, type, embed: { thumbnail, rawTitle, rawDescription, url } 
 	);
 
 	let className = "spotifyEmbed-container";
-	if (isThis && isPlaying) className += " playing";
+	if (isThis && isPlaying && !useReducedMotion) className += " playing";
 	if (embedBannerBackground) className += " bannerBackground";
+
+	const banner = thumbnail?.proxyURL || thumbnail?.url;
 
 	return (
 		<div
 			className={className}
-			style={{ "--thumbnail": `url(${thumbnail?.proxyURL || thumbnail?.url})` }}>
+			style={{ "--thumbnail": `url(${banner})` }}>
 			<Tooltip note="View">
 				<div
 					onClick={() => {
@@ -66,6 +72,13 @@ export default ({ id, type, embed: { thumbnail, rawTitle, rawDescription, url } 
 							onClick={() => Store.Utils.copySpotifyLink(url)}
 							className="spotifyEmbed-btn spotifyEmbed-btn-copy">
 							<CopyIcon />
+						</div>
+					</Tooltip>
+					<Tooltip note="Copy banner">
+						<div
+							onClick={() => Store.Utils.copySpotifyLink(banner)}
+							className="spotifyEmbed-btn spotifyEmbed-btn-copy">
+							<ImageIcon />
 						</div>
 					</Tooltip>
 				</div>
