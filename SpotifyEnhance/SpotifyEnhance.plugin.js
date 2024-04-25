@@ -24,6 +24,7 @@ const config = {
 		"enableListenAlong": true,
 		"playerBannerBackground": true,
 		"embedBannerBackground": true,
+		"playerCompactMode": true,
 		"activity": true,
 		"player": true,
 		"Share": true,
@@ -47,22 +48,6 @@ const css = `
 	--gutter: 10px;
 	--font: gg sans, Helvetica Neue, helvetica, arial, Hiragino Kaku Gothic Pro, Meiryo, MS Gothic;
 	--accent: #1ed760;
-}
-
-.SpotifyEnhance-settings *{
-	box-sizing: border-box
-}
-
-.SpotifyEnhance-settings .spotify-player-controls{
-	background:#00000050;
-	padding:5px;
-	border-radius:10px;
-	width:auto;
-	flex:1;
-}
-
-.spotify-player-controls-btn.hidden {
-	opacity:.5;
 }
 
 /* Spotify Indicator */
@@ -197,21 +182,24 @@ const css = `
 	color: var(--spotify-green);
 }
 
-.spotifyEmbed-container.bannerBackground{
-	position:relative;
-	border:1px solid rgba(43, 45, 49, 0.9);
-	background:unset;
-	overflow:hidden;
+.spotifyEmbed-container.bannerBackground {
+	position: relative;
+	border: 1px solid rgba(43, 45, 49, 0.9);
+	background: unset;
+	overflow: hidden;
 }
-.spotifyEmbed-container.bannerBackground:before{
-	content:"";
-	background: linear-gradient(#000000a0 0 0),var(--thumbnail) center/cover no-repeat;
-	position:absolute;
-	inset:0px;
-	filter:blur(5px);
-	z-index:-1;
+.spotifyEmbed-container.bannerBackground:before {
+	content: "";
+	background:
+		linear-gradient(#000000a0 0 0),
+		var(--thumbnail) center/cover no-repeat;
+	position: absolute;
+	inset: 0px;
+	filter: blur(5px);
+	z-index: -1;
 }
 
+/* End Spotify Embed */
 
 /* spotify activity controls */
 .spotify-activity-controls {
@@ -239,12 +227,15 @@ const css = `
 	flex: 1;
 }
 
+/* End spotify activity controls */
+
 /* Spotify Player */
 .spotify-player-container {
 	padding: 10px 10px;
 	color: white;
 	display: flex;
 	flex-direction: column;
+	overflow: hidden;
 }
 
 .spotify-player-container.bannerBackground {
@@ -457,16 +448,69 @@ div:has(> .spotify-banner-modal) {
 	height: 16px;
 }
 
+.spotify-player-container.compact {
+	flex-direction: row;
+	padding: 0;
+}
+
+.spotify-player-container.compact .spotify-player-album,
+.spotify-player-container.compact .spotify-player-controls-share,
+.spotify-player-container.compact .spotify-player-controls-shuffle,
+.spotify-player-container.compact .spotify-player-controls-repeat,
+.spotify-player-container.compact .spotify-player-controls-volume,
+.spotify-player-container.compact .spotify-player-timeline {
+	display: none;
+}
+
+.spotify-player-container.compact .spotify-player-artist {
+	font-size: 0.7rem;
+	align-self: flex-start;
+}
+
+.spotify-player-container.compact .spotify-player-title {
+	font-size: 0.9rem;
+	align-self: flex-end;
+}
+
+.spotify-player-container.compact .spotify-player-media {
+	margin-right: auto;
+	grid-template-columns: 48px minmax(0, 1fr);
+	grid-template-rows: repeat(2, auto);
+	justify-content: center;
+	gap: 5px 10px;
+}
+
+.spotify-player-container.compact .spotify-player-banner {
+	height: 48px;
+	width: 48px;
+	grid-row: 1 /3;
+	border-radius: 0;
+}
+
+.spotify-player-container.compact .spotify-player-controls {
+	width: auto;
+	justify-content: unset;
+	align-items: center;
+	margin-right: 5px;
+}
+
+/* End Player */
+
+/* Original Spotify Embed controls */
 .spotify-no-embed-controls {
 	display: flex;
 	min-width: 400px;
-	max-width: 400px;
+	max-width: 100%;
 	gap: 5px;
+	overflow: hidden;
 }
+
 .spotify-no-embed-controls > button {
-	flex: 1 0 0;
+	flex: 1 0 auto;
 	text-transform: capitalize;
 }
+
+/* End Original Spotify Embed controls */
 `;
 
 const Api = new BdApi(config.info.name);
@@ -663,7 +707,8 @@ function getReply(channelId) {
 			message_id: reply.message.id
 		},
 		allowedMentions: reply.shouldMention ?
-			undefined : {
+			undefined :
+			{
 				parse: ["users", "roles", "everyone"],
 				replied_user: false
 			}
@@ -671,8 +716,7 @@ function getReply(channelId) {
 }
 
 async function sendMessageDirectly(channel, content) {
-	if (!MessageActions || !MessageActions.sendMessage || typeof MessageActions.sendMessage !== "function")
-		throw new Error("Can't send message directly.");
+	if (!MessageActions || !MessageActions.sendMessage || typeof MessageActions.sendMessage !== "function") throw new Error("Can't send message directly.");
 
 	return MessageActions.sendMessage(
 		channel.id, {
@@ -689,11 +733,11 @@ const insertText = (() => {
 	return content => {
 		if (!ComponentDispatch) ComponentDispatch = getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners("INSERT_TEXT").length, { searchExports: true });
 		if (!ComponentDispatch) return;
-		setTimeout(() => {
+		setTimeout(() =>
 			ComponentDispatch.dispatchToLastSubscribed("INSERT_TEXT", {
 				plainText: content
-			});
-		});
+			})
+		);
 	};
 })();
 
@@ -1150,7 +1194,7 @@ function onSpotifyStoreChange() {
 		const { socket } = SpotifyStore.getActiveSocketAndDevice() || {};
 		if (!socket) return;
 		state.setAccount(socket);
-
+		state.fetchPlayerState();
 	} catch (e) {
 		Logger.error(e);
 	}
@@ -1310,6 +1354,10 @@ function SettingComponent() {
 			{
 				settingKey: "activityIndicator",
 				description: "Show user's Spotify activity in chat."
+			},
+			{
+				settingKey: "playerCompactMode",
+				description: "Player compact mode"
 			},
 			{
 				settingKey: "playerBannerBackground",
@@ -1484,9 +1532,11 @@ const patchSpotifyActivity = () => {
 	else Logger.patch("SpotifyActivityComponent");
 };
 
-const SpotifyControls = ({ id, type, embed: { rawTitle, url } }) => {
+const SpotifyControls = ({ id, type, embed: { thumbnail, rawTitle, url } }) => {
 	const isActive = Store(Store.selectors.isActive);
 	if (!isActive) return null;
+
+	const banner = thumbnail?.proxyURL || thumbnail?.url;
 
 	const listenBtn = type !== "show" && (
 		React.createElement(ControlBtn, {
@@ -1503,9 +1553,12 @@ const SpotifyControls = ({ id, type, embed: { rawTitle, url } }) => {
 	);
 
 	return (
-		React.createElement('div', { className: "spotify-no-embed-controls", }, listenBtn, queueBtn, React.createElement(ControlBtn, {
+		React.createElement('div', { className: "spotify-no-embed-controls", }, isActive && listenBtn, isActive && queueBtn, React.createElement(ControlBtn, {
 			value: "copy link",
-			onClick: () => Store.copySpotifyLink(url),
+			onClick: () => Store.Utils.copySpotifyLink(url),
+		}), React.createElement(ControlBtn, {
+			value: "copy banner",
+			onClick: () => Store.Utils.copySpotifyLink(banner),
 		}))
 	);
 };
@@ -1543,8 +1596,24 @@ function SpotifyIcon(props) {
 	);
 }
 
+function ImageIcon() {
+	return (
+		React.createElement('svg', {
+			fill: "currentColor",
+			width: "24",
+			height: "24",
+			viewBox: "-50 -50 484 484",
+		}, React.createElement('path', { d: "M341.333,0H42.667C19.093,0,0,19.093,0,42.667v298.667C0,364.907,19.093,384,42.667,384h298.667 C364.907,384,384,364.907,384,341.333V42.667C384,19.093,364.907,0,341.333,0z M42.667,320l74.667-96l53.333,64.107L245.333,192l96,128H42.667z", }))
+	);
+}
+
+const AccessibilityStore = getModule(m => m._dispatchToken && m.getName() === "AccessibilityStore");
+
+const FluxHelpers = getModule(Filters.byProps("useStateFromStores"), { searchExports: false });
+
 const SpotifyEmbed$1 = ({ id, type, embed: { thumbnail, rawTitle, rawDescription, url } }) => {
 	const embedBannerBackground = Settings(Settings.selectors.embedBannerBackground);
+	const useReducedMotion = FluxHelpers.useStateFromStores([AccessibilityStore], () => AccessibilityStore.useReducedMotion);
 	const isPlaying = Store(Store.selectors.isPlaying);
 	const isActive = Store(Store.selectors.isActive);
 	const mediaId = Store(Store.selectors.mediaId, (n, o) => n === o || (n !== id && o !== id));
@@ -1565,13 +1634,15 @@ const SpotifyEmbed$1 = ({ id, type, embed: { thumbnail, rawTitle, rawDescription
 	);
 
 	let className = "spotifyEmbed-container";
-	if (isThis && isPlaying) className += " playing";
+	if (isThis && isPlaying && !useReducedMotion) className += " playing";
 	if (embedBannerBackground) className += " bannerBackground";
+
+	const banner = thumbnail?.proxyURL || thumbnail?.url;
 
 	return (
 		React.createElement('div', {
 				className: className,
-				style: { "--thumbnail": `url(${thumbnail?.proxyURL || thumbnail?.url})` },
+				style: { "--thumbnail": `url(${banner})` },
 			}, React.createElement(Tooltip$1, { note: "View", }, React.createElement('div', {
 				onClick: () => {
 					let { proxyURL, url, width, height } = thumbnail;
@@ -1586,7 +1657,10 @@ const SpotifyEmbed$1 = ({ id, type, embed: { thumbnail, rawTitle, rawDescription
 				React.createElement('div', { className: "spotifyEmbed-controls", }, !isThis && isActive && [listenBtn, queueBtn], React.createElement(Tooltip$1, { note: "Copy link", }, React.createElement('div', {
 					onClick: () => Store.Utils.copySpotifyLink(url),
 					className: "spotifyEmbed-btn spotifyEmbed-btn-copy",
-				}, React.createElement(CopyIcon, null))))
+				}, React.createElement(CopyIcon, null))), React.createElement(Tooltip$1, { note: "Copy banner", }, React.createElement('div', {
+					onClick: () => Store.Utils.copySpotifyLink(banner),
+					className: "spotifyEmbed-btn spotifyEmbed-btn-copy",
+				}, React.createElement(ImageIcon, null))))
 			), React.createElement(Tooltip$1, { note: "Play on Spotify", }, React.createElement('div', {
 				onClick: () => Store.Utils.openSpotifyLink(url),
 				className: "spotifyEmbed-spotifyIcon",
@@ -1595,8 +1669,11 @@ const SpotifyEmbed$1 = ({ id, type, embed: { thumbnail, rawTitle, rawDescription
 	);
 };
 
+/* eslint-disable no-unreachable */
+
 function SpotifyEmbedWrapper({ id, type, embedObject, embedComponent }) {
 	const spotifyEmbed = Settings(Settings.selectors.spotifyEmbed);
+
 	switch (spotifyEmbed) {
 		case EmbedStyleEnum.KEEP:
 			return [
@@ -1869,7 +1946,7 @@ const SpotifyPlayerControls = ({ banner, media }) => {
 						className: "spotify-player-share-menuitem",
 						id: "copy-song-link",
 						key: "copy-song-link",
-						icon: CopyIcon,
+						icon: ListenIcon,
 						action: copySongHandler,
 						label: "Copy song url",
 					}), React.createElement(MenuItem, {
@@ -1877,21 +1954,21 @@ const SpotifyPlayerControls = ({ banner, media }) => {
 						id: "copy-poster-link",
 						key: "copy-poster-link",
 						action: copyPosterHandler,
-						icon: CopyIcon,
+						icon: ImageIcon,
 						label: "Copy poster url",
 					}), React.createElement(MenuItem, {
 						className: "spotify-player-share-menuitem",
 						id: "share-song-link",
 						key: "share-song-link",
 						action: shareSongHandler,
-						icon: ShareIcon,
+						icon: ListenIcon,
 						label: "Share song in current channel",
 					}), React.createElement(MenuItem, {
 						className: "spotify-player-share-menuitem",
 						id: "share-poster-link",
 						key: "share-poster-link",
 						action: sharePosterHandler,
-						icon: ShareIcon,
+						icon: ImageIcon,
 						label: "Share poster in current channel",
 					}))
 				),
@@ -1904,7 +1981,8 @@ const SpotifyPlayerControls = ({ banner, media }) => {
 			}))
 		), [
 			playerButtons["Shuffle"] && { name: "Shuffle", value: React.createElement(ShuffleIcon, null), className: "spotify-player-controls-shuffle", disabled: toggling_shuffle, active: shuffle, onClick: shuffleHandler },
-			playerButtons["Previous"] && { name: "Previous", value: React.createElement(PlayIcon, null), className: "spotify-player-controls-previous", disabled: skipping_prev, onClick: previousHandler }, { name: playPauseTooltip, value: playPauseIcon, className: playPauseClassName, disabled: false, onClick: playPauseHandler },
+			playerButtons["Previous"] && { name: "Previous", value: React.createElement(PlayIcon, null), className: "spotify-player-controls-previous", disabled: skipping_prev, onClick: previousHandler },
+			{ name: playPauseTooltip, value: playPauseIcon, className: playPauseClassName, disabled: false, onClick: playPauseHandler },
 			playerButtons["Next"] && { name: "Next", value: React.createElement(NextIcon, null), className: "spotify-player-controls-next", disabled: skipping_next, onClick: nextHandler },
 			playerButtons["Repeat"] && { name: repeatTooltip, value: repeatIcon, className: "spotify-player-controls-repeat", disabled: toggling_repeat_track, active: repeatActive, onClick: repeatHandler }
 		].filter(Boolean).map(SpotifyPlayerButton), playerButtons["Volume"] && React.createElement(Volume, { volume: volume, }))
@@ -2105,6 +2183,7 @@ const TrackTimeLine = ({ mediaType }) => {
 
 const SpotifyPlayer = React.memo(function SpotifyPlayer() {
 	const player = Settings(Settings.selectors.player);
+	const playerCompactMode = Settings(Settings.selectors.playerCompactMode);
 	const playerBannerBackground = Settings(Settings.selectors.playerBannerBackground);
 
 	const isActive = Store(Store.selectors.isActive);
@@ -2119,6 +2198,10 @@ const SpotifyPlayer = React.memo(function SpotifyPlayer() {
 		bannerLg: media?.album?.images[0]
 	};
 
+	let className = "spotify-player-container";
+	if (playerCompactMode) className += " compact";
+	if (playerBannerBackground) className += " bannerBackground";
+
 	return (
 		React.createElement('div', {
 				style: {
@@ -2126,10 +2209,8 @@ const SpotifyPlayer = React.memo(function SpotifyPlayer() {
 					"--banner-md": `url(${bannerMd?.url})`,
 					"--banner-lg": `url(${bannerLg?.url})`
 				},
-				className: playerBannerBackground ? "spotify-player-container bannerBackground" : "spotify-player-container",
-			}
-
-			, React.createElement(TrackMediaDetails, {
+				className: className,
+			}, React.createElement(TrackMediaDetails, {
 				mediaType: mediaType,
 				media: media,
 			})
@@ -2140,7 +2221,7 @@ const SpotifyPlayer = React.memo(function SpotifyPlayer() {
 			})
 
 			, React.createElement(SpotifyPlayerControls, {
-				banner: bannerLg,
+				banner: bannerLg?.url,
 				media: media,
 			})
 		)
@@ -2214,8 +2295,6 @@ const MessageHeader = getModuleAndKey(Filters.byStrings("userOverride", "withMen
 
 const PresenceStore = getModule(m => m._dispatchToken && m.getName() === "PresenceStore");
 
-const FluxHelpers = getModule(Filters.byProps("useStateFromStores"), { searchExports: false });
-
 function spotifyActivityFilter(activity) {
 	return activity.name.toLowerCase() === "spotify";
 }
@@ -2253,7 +2332,53 @@ function SpotifyActivityIndicator({ userId }) {
 	);
 }
 
+const ChannelAttachMenu = getModule(Filters.byStrings("Plus Button"), { defaultExport: false });
+
+function MenuLabel({ label, icon }) {
+	return (
+		React.createElement(Flex$1, {
+			direction: Flex$1.Direction.HORIZONTAL,
+			align: Flex$1.Align.CENTER,
+			style: { gap: 8 },
+		}, icon, React.createElement('div', null, label))
+	);
+}
+
+const patchChannelAttach = () => {
+	if (ChannelAttachMenu)
+		Patcher.after(ChannelAttachMenu, "default", (_, args, ret) => {
+			if (Settings.getState().player) return;
+			if (!Store.getState().mediaId) return;
+			if (!Array.isArray(ret?.props?.children)) return;
+
+			ret.props.children.push(
+				React.createElement(TheBigBoyBundle.MenuItem, {
+					id: "spotify-share-song-menuitem",
+					label: React.createElement(MenuLabel, {
+						icon: React.createElement(ListenIcon, null),
+						label: "Share spotify song",
+					}),
+					action: () => {
+						Store.Utils.share(Store.getState().media?.external_urls?.spotify);
+					},
+				}),
+				React.createElement(TheBigBoyBundle.MenuItem, {
+					id: "spotify-share-banner-menuitem",
+					label: React.createElement(MenuLabel, {
+						icon: React.createElement(ImageIcon, null),
+						label: "Share spotify song banner",
+					}),
+					action: () => {
+						Store.Utils.share(Store.getState().media?.album?.images[0]?.url);
+					},
+				})
+			);
+		});
+	else Logger.patch("patchChannelAttach");
+};
+
 window.spotSettings = Settings;
+window.spotStore = Store;
 
 class SpotifyEnhance {
 	start() {
@@ -2266,6 +2391,7 @@ class SpotifyEnhance {
 			patchSpotifyActivity();
 			patchMessageHeader();
 			patchSpotifyPlayer();
+			patchChannelAttach();
 		} catch (e) {
 			Logger.error(e);
 		}
