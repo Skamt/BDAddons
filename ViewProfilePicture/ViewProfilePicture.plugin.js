@@ -24,9 +24,446 @@ const config = {
 	}
 }
 
+const Api = new BdApi(config.info.name);
+
+const UI = Api.UI;
+const DOM = Api.DOM;
+const Data = Api.Data;
+const React = Api.React;
+const Patcher = Api.Patcher;
+
+const getModule = Api.Webpack.getModule;
+const Filters = Api.Webpack.Filters;
+
+const Logger = {
+	error(...args) {
+		this.p(console.error, ...args);
+	},
+	patch(patchId) {
+		console.error(`%c[${config.info.name}] %c Error at %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
+	},
+	log(...args) {
+		this.p(console.log, ...args);
+	},
+	p(target, ...args) {
+		target(`%c[${config.info.name}]`, "color: #3a71c1;font-weight: bold;", ...args);
+	}
+};
+
+function getModuleAndKey(filter, options) {
+	let module;
+	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
+	module = module?.exports;
+	if (!module) return undefined;
+	const key = Object.keys(module).find(k => module[k] === target);
+	if (!key) return undefined;
+	return { module, key };
+}
+
+const zustand = getModule(Filters.byStrings("subscribeWithSelector", "useReducer"), { searchExports: false });
+
+const SettingsStoreSelectors = {};
+const persistMiddleware = config => (set, get, api) => config(args => (set(args), Data.save("settings", get().getRawState())), get, api);
+
+const Settings = Object.assign(
+	zustand(
+		persistMiddleware((set, get) => {
+			const settingsObj = Object.create(null);
+
+			for (const [key, value] of Object.entries({
+					...config.settings,
+					...Data.load("settings")
+				})) {
+				settingsObj[key] = value;
+				settingsObj[`set${key}`] = newValue => set({
+					[key]: newValue });
+				SettingsStoreSelectors[key] = state => state[key];
+			}
+			settingsObj.getRawState = () => {
+				return Object.entries(get())
+					.filter(([, val]) => typeof val !== "function")
+					.reduce((acc, [key, val]) => {
+						acc[key] = val;
+						return acc;
+					}, {});
+			};
+			return settingsObj;
+		})
+	), {
+		useSetting: function(key) {
+			return this(state => [state[key], state[`set${key}`]]);
+		},
+		selectors: SettingsStoreSelectors
+	}
+);
+
+const TheBigBoyBundle = getModule(Filters.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
+
+const Switch = TheBigBoyBundle.FormSwitch ||
+	function SwitchComponentFallback(props) {
+		return (
+			React.createElement('div', { style: { color: "#fff" }, }, props.children, React.createElement('input', {
+				type: "checkbox",
+				checked: props.value,
+				onChange: e => props.onChange(e.target.checked),
+			}))
+		);
+	};
+
+function SettingSwtich({ settingKey, note, hideBorder = false, description }) {
+	const [val, set] = Settings.useSetting(settingKey);
+	return (
+		React.createElement(Switch, {
+			value: val,
+			note: note,
+			hideBorder: hideBorder,
+			onChange: set,
+		}, description || settingKey)
+	);
+}
+
+const SettingComponent = () => [{
+		settingKey: "showOnHover",
+		note: "By default hide ViewProfilePicture button and show on hover.",
+		description: "Show on hover"
+	},
+
+	{
+		settingKey: "bannerColor",
+		note: "Always include banner color in carousel, even if a banner is present.",
+		description: "Include banner color."
+	}
+].map(SettingSwtich);
+
+class ErrorBoundary extends React.Component {
+	state = { hasError: false, error: null, info: null };
+
+	componentDidCatch(error, info) {
+		this.setState({ error, info, hasError: true });
+		const errorMessage = `\n\t${error?.message || ""}${(info?.componentStack || "").split("\n").slice(0, 20).join("\n")}`;
+		console.error(`%c[${this.props.plugin}] %cthrew an exception at %c[${this.props.id}]\n`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
+	}
+
+	renderErrorBoundary() {
+		return (
+			React.createElement('div', { style: { background: "#292c2c", padding: "20px", borderRadius: "10px" }, }, React.createElement('b', { style: { color: "#e0e1e5" }, }, "An error has occured while rendering ", React.createElement('span', { style: { color: "orange" }, }, this.props.id)))
+		);
+	}
+
+	renderFallback() {
+		if (React.isValidElement(this.props.fallback)) {
+			if (this.props.passMetaProps)
+				this.props.fallback.props = {
+					id: this.props.id,
+					plugin: this.props.plugin,
+					...this.props.fallback.props
+				};
+			return this.props.fallback;
+		}
+		return (
+			React.createElement(this.props.fallback, {
+				id: this.props.id,
+				plugin: this.props.plugin,
+			})
+		);
+	}
+
+	render() {
+		if (!this.state.hasError) return this.props.children;
+		return this.props.fallback ? this.renderFallback() : this.renderErrorBoundary();
+	}
+}
+
+const ErrorIcon = props => (
+	React.createElement('div', { ...props, }, React.createElement('svg', {
+		xmlns: "http://www.w3.org/2000/svg",
+		viewBox: "0 0 24 24",
+		fill: "red",
+		width: "18",
+		height: "18",
+	}, React.createElement('path', {
+		d: "M0 0h24v24H0z",
+		fill: "none",
+	}), React.createElement('path', { d: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z", })))
+);
+
+const ProfileTypeEnum = getModule(Filters.byProps("POPOUT", "SETTINGS"), { searchExports: true }) || {
+	"POPOUT": 0,
+	"MODAL": 1,
+	"SETTINGS": 2,
+	"PANEL": 3,
+	"CARD": 4
+};
+
+const UserStore = getModule(m => m._dispatchToken && m.getName() === "UserStore");
+
+function isSelf(user) {
+	const currentUser = UserStore.getCurrentUser();
+	return user?.id === currentUser?.id;
+}
+
+const { Tooltip } = TheBigBoyBundle;
+
+const Tooltip$1 = ({ note, position, children }) => {
+	return (
+		React.createElement(Tooltip, {
+			text: note,
+			position: position || "top",
+		}, props => {
+			children.props = {
+				...props,
+				...children.props
+			};
+			return children;
+		})
+	);
+};
+
+function ImageIcon() {
+	return (
+		React.createElement('svg', {
+			fill: "currentColor",
+			width: "24",
+			height: "24",
+			viewBox: "-50 -50 484 484",
+		}, React.createElement('path', { d: "M341.333,0H42.667C19.093,0,0,19.093,0,42.667v298.667C0,364.907,19.093,384,42.667,384h298.667 C364.907,384,384,364.907,384,341.333V42.667C384,19.093,364.907,0,341.333,0z M42.667,320l74.667-96l53.333,64.107L245.333,192l96,128H42.667z", }))
+	);
+}
+
+const RenderLinkComponent = getModule(m => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false });
+
+const ImageModalVideoModal = getModule(Filters.byProps("ImageModal"), { searchExports: false });
+
+const { ModalRoot, ModalSize } = TheBigBoyBundle;
+const ImageModal = ImageModalVideoModal.ImageModal;
+
+const openModal = (children, tag, className) => {
+	const id = `${tag ? `${tag}-` : ""}modal`;
+	TheBigBoyBundle.openModal(props => {
+		return (
+			React.createElement(ErrorBoundary, {
+				id: id,
+				plugin: config.info.name,
+			}, React.createElement(ModalRoot, {
+				...props,
+				className: className,
+				onClick: props.onClose,
+				size: ModalSize.DYNAMIC,
+			}, children))
+		);
+	});
+};
+
+const getImageModalComponent = (url, rest = {}) => (
+	React.createElement(ImageModal, {
+		...rest,
+		src: url,
+		original: url,
+		response: true,
+		renderLinkComponent: p => React.createElement(RenderLinkComponent, { ...p, }),
+	})
+);
+
+const promiseHandler = promise => promise.then(data => [undefined, data]).catch(err => [err]);
+
+function copy(data) {
+	DiscordNative.clipboard.copy(data);
+}
+
+function getImageDimensions(url) {
+	return new Promise((resolve, reject) => {
+		const img = new Image();
+		img.onload = () =>
+			resolve({
+				width: img.width,
+				height: img.height
+			});
+		img.onerror = reject;
+		img.src = url;
+	});
+}
+
+function showToast(content, type) {
+	UI.showToast(`[${config.info.name}] ${content}`, { timeout: 5000, type });
+}
+
+const Toast = {
+	success(content) { showToast(content, "success"); },
+	info(content) { showToast(content, "info"); },
+	warning(content) { showToast(content, "warning"); },
+	error(content) { showToast(content, "error"); }
+};
+
+const Color = getModule(Filters.byProps("Color", "hex", "hsl"), { searchExports: false });
+
+function copyColor(type, color) {
+	let c = color;
+	try {
+		switch (type) {
+			case "hex":
+				c = Color(color).hex();
+				break;
+			case "rgba":
+				c = Color(color).css("rgba");
+				break;
+			case "hsla":
+				c = Color(color).css("hsla");
+				break;
+		}
+	} finally {
+		copy(c);
+		Toast.success(`${c} Copied!`);
+	}
+}
+
+const ColorModalComponent = ({ color }) => (
+	React.createElement('div', {
+		className: "VPP-NoBanner",
+		style: { backgroundColor: Color(color).css() },
+	}, React.createElement('div', { className: "VPP-copy-color-container", }, React.createElement('a', { className: "VPP-copy-color-label", }, "Copy Color:"), React.createElement('a', {
+			className: "VPP-copy-color",
+			onClick: () => copyColor("hex", color),
+		}, "hex"
+
+	), React.createElement('span', { className: "VPP-separator", }, "|"), React.createElement('a', {
+			className: "VPP-copy-color",
+			onClick: () => copyColor("rgba", color),
+		}, "rgba"
+
+	), React.createElement('span', { className: "VPP-separator", }, "|"), React.createElement('a', {
+			className: "VPP-copy-color",
+			onClick: () => copyColor("hsla", color),
+		}, "hsla"
+
+	)))
+);
+
+const ModalCarousel$1 = getModule(Filters.byPrototypeFields("navigateTo", "preloadImage"), { searchExports: false });
+
+class ModalCarousel extends ModalCarousel$1 {
+	preloadNextImages() {}
+}
+
+const { Spinner } = TheBigBoyBundle;
+
+function fit({ width, height }) {
+	const ratio = Math.min(innerWidth / width, innerHeight / height);
+
+	return {
+		width: Math.round(width * ratio),
+		height: Math.round(height * ratio)
+	};
+}
+
+function Banner({ url, src }) {
+	const [loaded, setLoaded] = React.useState(false);
+	const dimsRef = React.useRef();
+
+	React.useEffect(() => {
+		(async () => {
+			const [err, dims] = await promiseHandler(getImageDimensions(src));
+			dimsRef.current = fit(err ? {} : dims);
+			setLoaded(true);
+		})();
+	}, []);
+
+	if (!loaded) return React.createElement(Spinner, { type: Spinner.Type.SPINNING_CIRCLE, });
+	return getImageModalComponent(url, dimsRef.current);
+}
+
+const ViewProfilePictureButtonComponent = ({ className, user, displayProfile, bannerObject }) => {
+	const showOnHover = Settings(Settings.selectors.showOnHover);
+	if (showOnHover) className += " VPP-hover";
+
+	const handler = () => {
+		const { backgroundColor } = bannerObject;
+		const avatarURL = user.getAvatarURL(displayProfile.guildId, 4096, true);
+		const bannerURL = displayProfile.getBannerURL({ canAnimate: true, size: 4096 });
+
+		const items = [
+				getImageModalComponent(avatarURL, { width: 4096, height: 4096 }),
+				bannerURL && (
+					React.createElement(Banner, {
+						url: bannerURL,
+						src: displayProfile.getBannerURL({ canAnimate: true, size: 20 }),
+					})
+				),
+				(!bannerURL || Settings.getState().bannerColor) && React.createElement(ColorModalComponent, { color: backgroundColor, })
+			]
+			.filter(Boolean)
+			.map(item => ({ component: item }));
+
+		openModal(
+			React.createElement(ModalCarousel, {
+				startWith: 0,
+				className: "VPP-carousel",
+				items: items,
+			}),
+			"VPP-carousel",
+			"VPP-carousel-modal"
+		);
+	};
+
+	return (
+		React.createElement(Tooltip$1, { note: "View profile picture", }, React.createElement('div', {
+			role: "button",
+			onClick: handler,
+			className: className,
+		}, React.createElement(ImageIcon, null)))
+	);
+};
+
+const UserBannerMask = getModuleAndKey(Filters.byStrings("bannerSrc", "showPremiumBadgeUpsell"), { searchExports: true });
+
+function getButtonClasses({ user, profileType }, isNotNitro, banner) {
+	let className = "VPP-Button";
+
+	if (profileType === ProfileTypeEnum.MODAL) className += " VPP-profile";
+
+	if (isSelf(user)) className += " VPP-self";
+	else {
+		if (banner && isNotNitro) className += " VPP-left";
+		else className += " VPP-right";
+	}
+
+	return className;
+}
+
+const patchUserBannerMask = () => {
+	if (!UserBannerMask) return Logger.patch("UserBannerMask");
+
+	const { module, key } = UserBannerMask;
+
+	Patcher.after(module, key, (_, [props], el) => {
+		if (props.profileType === ProfileTypeEnum.SETTINGS) return;
+
+		const bannerElement = el.props.children.props;
+
+		bannerElement.className += " VPP-container";
+		const bannerObject = bannerElement.style;
+		const children = bannerElement.children;
+
+		const className = getButtonClasses(props, children[0], bannerObject?.backgroundImage);
+
+		children.push(
+			React.createElement(ErrorBoundary, {
+				id: "ViewProfilePictureButtonComponent",
+				plugin: config.info.name,
+				fallback: React.createElement(ErrorIcon, { className: className, }),
+			}, React.createElement(ViewProfilePictureButtonComponent, {
+				className: className,
+				isHovering: props.isHovering,
+				user: props.user,
+				displayProfile: props.displayProfile,
+				bannerObject: bannerObject,
+			}))
+		);
+	});
+};
+
 const css = `
 /* Warning circle in popouts of users who left server overlaps VPP button */
-svg:has(path[d="M10 0C4.486 0 0 4.486 0 10C0 15.515 4.486 20 10 20C15.514 20 20 15.515 20 10C20 4.486 15.514 0 10 0ZM9 4H11V11H9V4ZM10 15.25C9.31 15.25 8.75 14.691 8.75 14C8.75 13.31 9.31 12.75 10 12.75C10.69 12.75 11.25 13.31 11.25 14C11.25 14.691 10.69 15.25 10 15.25Z"]) {
+svg:has(path[d="M12 23a11 11 0 1 0 0-22 11 11 0 0 0 0 22Zm1.44-15.94L13.06 14a1.06 1.06 0 0 1-2.12 0l-.38-6.94a1 1 0 0 1 1-1.06h.88a1 1 0 0 1 1 1.06Zm-.19 10.69a1.25 1.25 0 1 1-2.5 0 1.25 1.25 0 0 1 2.5 0Z"]) {
 	top: 75px;
 }
 
@@ -62,7 +499,7 @@ svg:has(path[d="M10 0C4.486 0 0 4.486 0 10C0 15.515 4.486 20 10 20C15.514 20 20 
 
 /* Profile */
 .VPP-profile {
-	top: 14px;
+	top: 10px;
 }
 
 .VPP-profile.VPP-right {
@@ -92,7 +529,7 @@ svg:has(path[d="M10 0C4.486 0 0 4.486 0 10C0 15.515 4.486 20 10 20C15.514 20 20 
 }
 
 /* Carousel Modal */
-div:has(> .VPP-carousel) {
+.VPP-carousel-modal {
 	background: #0000;
 	width: 100vw;
 	height: 100vh;
@@ -163,479 +600,11 @@ div:has(> .VPP-carousel) {
 }
 `;
 
-const Api = new BdApi(config.info.name);
-
-const UI = Api.UI;
-const DOM = Api.DOM;
-const Data = Api.Data;
-const React = Api.React;
-const Patcher = Api.Patcher;
-
-const getModule = Api.Webpack.getModule;
-const Filters = Api.Webpack.Filters;
-
-function getModuleAndKey(filter, options) {
-	let module;
-	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
-	module = module?.exports;
-	if (!module) return undefined;
-	const key = Object.keys(module).find(k => module[k] === target);
-	if (!key) return undefined;
-	return { module, key };
-}
-
-class ChangeEmitter {
-	constructor() {
-		this.listeners = new Set();
-	}
-
-	isInValid(handler) {
-		return !handler || typeof handler !== "function";
-	}
-
-	on(handler) {
-		if (this.isInValid(handler)) return;
-		this.listeners.add(handler);
-		return () => this.off(handler);
-	}
-
-	off(handler) {
-		if (this.isInValid(handler)) return;
-		this.listeners.delete(handler);
-	}
-
-	emit(...payload) {
-		for (const listener of this.listeners) {
-			try {
-				listener.apply(null, payload);
-			} catch (err) {
-				console.error("Could not run listener", err);
-			}
-		}
-	}
-}
-
-const Settings = new(class Settings extends ChangeEmitter {
-	init(defaultSettings) {
-		this.settings = {
-			...defaultSettings,
-			...Data.load("settings")
-		};
-	}
-
-	get(key) {
-		return this.settings[key];
-	}
-
-	set(key, val) {
-		this.settings[key] = val;
-		this.commit();
-	}
-
-	setMultiple(newSettings) {
-		this.settings = Object.assign(this.settings, newSettings);
-		this.commit();
-	}
-
-	commit() {
-		Data.save("settings", this.settings);
-		this.emit();
-	}
-})();
-
-const UserStore = getModule(m => m._dispatchToken && m.getName() === "UserStore");
-
-function isSelf(user) {
-	const currentUser = UserStore.getCurrentUser();
-	return user?.id === currentUser?.id;
-}
-
-class ErrorBoundary extends React.Component {
-	state = { hasError: false, error: null, info: null };
-
-	componentDidCatch(error, info) {
-		this.setState({ error, info, hasError: true });
-		const errorMessage = `\n\t${error?.message || ""}${(info?.componentStack || "").split("\n").slice(0, 20).join("\n")}`;
-		console.error(`%c[${this.props.plugin}] %cthrew an exception at %c[${this.props.id}]\n`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
-	}
-
-	renderErrorBoundary() {
-		return (
-			React.createElement('div', { style: { background: "#292c2c", padding: "20px", borderRadius: "10px" }, }, React.createElement('b', { style: { color: "#e0e1e5" }, }, "An error has occured while rendering ", React.createElement('span', { style: { color: "orange" }, }, this.props.id)))
-		);
-	}
-
-	renderFallback() {
-		if (React.isValidElement(this.props.fallback)) {
-			if (this.props.passMetaProps)
-				this.props.fallback.props = {
-					id: this.props.id,
-					plugin: this.props.plugin,
-					...this.props.fallback.props
-				};
-			return this.props.fallback;
-		}
-		return (
-			React.createElement(this.props.fallback, {
-				id: this.props.id,
-				plugin: this.props.plugin,
-			})
-		);
-	}
-
-	render() {
-		if (!this.state.hasError) return this.props.children;
-		return this.props.fallback ? this.renderFallback() : this.renderErrorBoundary();
-	}
-}
-
-const ImageModalVideoModal = getModule(Filters.byProps("ImageModal"), { searchExports: false });
-
-const RenderLinkComponent = getModule(m => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false });
-
-const TheBigBoyBundle = getModule(Filters.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
-
-const { ModalRoot, ModalSize } = TheBigBoyBundle;
-const ImageModal = ImageModalVideoModal.ImageModal;
-
-const openModal = (children, tag) => {
-	const id = `${tag ? `${tag}-` : ""}modal`;
-	TheBigBoyBundle.openModal(props => {
-		return (
-			React.createElement(ErrorBoundary, {
-				id: id,
-				plugin: config.info.name,
-			}, React.createElement(ModalRoot, {
-				...props,
-				onClick: props.onClose,
-				size: ModalSize.DYNAMIC,
-			}, children))
-		);
-	});
-};
-
-const getImageModalComponent = (url, rest = {}) => (
-	React.createElement(ImageModal, {
-		...rest,
-		src: url,
-		original: url,
-		response: true,
-		renderLinkComponent: p => React.createElement(RenderLinkComponent, { ...p, }),
-	})
-);
-
-function copy(data) {
-	DiscordNative.clipboard.copy(data);
-}
-
-function getImageDimensions(url) {
-	return new Promise((resolve, reject) => {
-		const img = new Image();
-		img.onload = () =>
-			resolve({
-				width: img.width,
-				height: img.height
-			});
-		img.onerror = reject;
-		img.src = url;
-	});
-}
-
-const Logger = {
-	error(...args) {
-		this.p(console.error, ...args);
-	},
-	patch(patchId) {
-		console.error(`%c[${config.info.name}] %c Error at %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
-	},
-	log(...args) {
-		this.p(console.log, ...args);
-	},
-	p(target, ...args) {
-		target(`%c[${config.info.name}]`, "color: #3a71c1;font-weight: bold;", ...args);
-	}
-};
-
-const ErrorIcon = props => (
-	React.createElement('div', { ...props, }, React.createElement('svg', {
-		xmlns: "http://www.w3.org/2000/svg",
-		viewBox: "0 0 24 24",
-		fill: "red",
-		width: "18",
-		height: "18",
-	}, React.createElement('path', {
-		d: "M0 0h24v24H0z",
-		fill: "none",
-	}), React.createElement('path', { d: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z", })))
-);
-
-const ProfileTypeEnum = getModule(Filters.byProps("POPOUT", "SETTINGS"), { searchExports: true }) || {
-	"POPOUT": 0,
-	"MODAL": 1,
-	"SETTINGS": 2,
-	"PANEL": 3,
-	"CARD": 4
-};
-
-function showToast(content, type) {
-	UI.showToast(`[${config.info.name}] ${content}`, { type });
-}
-
-const Toast = {
-	success(content) { showToast(content, "success"); },
-	info(content) { showToast(content, "info"); },
-	warning(content) { showToast(content, "warning"); },
-	error(content) { showToast(content, "error"); }
-};
-
-const Color = getModule(Filters.byProps("Color", "hex", "hsl"), { searchExports: false });
-
-function copyColor(type, color) {
-	let c = color;
-	try {
-		switch (type) {
-			case "hex":
-				c = Color(color).hex();
-				break;
-			case "rgba":
-				c = Color(color).css("rgba");
-				break;
-			case "hsla":
-				c = Color(color).css("hsla");
-				break;
-		}
-	} finally {
-		copy(c);
-		Toast.success(`${c} Copied!`);
-	}
-}
-
-const ColorModalComponent = ({ color }) => (
-	React.createElement('div', {
-		className: "VPP-NoBanner",
-		style: { backgroundColor: Color(color).css() },
-	}, React.createElement('div', { className: "VPP-copy-color-container", }, React.createElement('a', { className: "VPP-copy-color-label", }, "Copy Color:"), React.createElement('a', {
-			className: "VPP-copy-color",
-			onClick: () => copyColor("hex", color),
-		}, "hex"
-
-	), React.createElement('span', { className: "VPP-separator", }, "|"), React.createElement('a', {
-			className: "VPP-copy-color",
-			onClick: () => copyColor("rgba", color),
-		}, "rgba"
-
-	), React.createElement('span', { className: "VPP-separator", }, "|"), React.createElement('a', {
-			className: "VPP-copy-color",
-			onClick: () => copyColor("hsla", color),
-		}, "hsla"
-
-	)))
-);
-
-function useSettings(key) {
-	const target = Settings.get(key);
-	const [state, setState] = React.useState(target);
-	React.useEffect(() => {
-		function settingsChangeHandler() {
-			const newVal = Settings.get(key);
-			setState(newVal);
-		}
-		return Settings.on(settingsChangeHandler);
-	}, []);
-
-	return state;
-}
-
-const { Tooltip } = TheBigBoyBundle;
-
-const Tooltip$1 = ({ note, position, children }) => {
-	return (
-		React.createElement(Tooltip, {
-			text: note,
-			position: position || "top",
-		}, props => {
-			children.props = {
-				...props,
-				...children.props
-			};
-			return children;
-		})
-	);
-};
-
-function ImageIcon() {
-	return (
-		React.createElement('svg', {
-			fill: "currentColor",
-			width: "24",
-			height: "24",
-			viewBox: "-50 -50 484 484",
-		}, React.createElement('path', { d: "M341.333,0H42.667C19.093,0,0,19.093,0,42.667v298.667C0,364.907,19.093,384,42.667,384h298.667 C364.907,384,384,364.907,384,341.333V42.667C384,19.093,364.907,0,341.333,0z M42.667,320l74.667-96l53.333,64.107L245.333,192l96,128H42.667z", }))
-	);
-}
-
-const ViewProfilePictureButtonComponent = props => {
-	const showOnHover = useSettings("showOnHover");
-	if (showOnHover) props.className += " VPP-hover";
-	return (
-		React.createElement(Tooltip$1, { note: "View profile picture", }, React.createElement('div', {
-			...props,
-			className: props.className,
-		}, React.createElement(ImageIcon, null)))
-	);
-};
-
-const Switch = TheBigBoyBundle.FormSwitch ||
-	function SwitchComponentFallback(props) {
-		return (
-			React.createElement('div', { style: { color: "#fff" }, }, props.children, React.createElement('input', {
-				type: "checkbox",
-				checked: props.value,
-				onChange: e => props.onChange(e.target.checked),
-			}))
-		);
-	};
-
-function useSetting(setting) {
-	return {
-		get: React.useCallback(() => Settings.get(setting), []),
-		set: React.useCallback(e => Settings.set(setting, e), [])
-	};
-}
-
-function ShowOnHover() {
-	const { get, set } = useSetting("showOnHover");
-	const [enabled, setEnabled] = React.useState(get());
-
-	return (
-		React.createElement(Switch, {
-				value: enabled,
-				note: "By default hide ViewProfilePicture button and show on hover.",
-				hideBorder: false,
-				onChange: e => {
-					set(e);
-					setEnabled(e);
-				},
-			}, "Show on hover"
-
-		)
-	);
-}
-
-function IncludeBannerColor() {
-	const { get, set } = useSetting("bannerColor");
-	const [enabled, setEnabled] = React.useState(get());
-	return (
-		React.createElement(Switch, {
-				value: enabled,
-				note: "Always include banner color in carousel, even if a banner is present.",
-				hideBorder: true,
-				onChange: e => {
-					set(e);
-					setEnabled(e);
-				},
-			}, "Include banner color"
-
-		)
-	);
-}
-
-const SettingComponent = () => [React.createElement(ShowOnHover, null), React.createElement(IncludeBannerColor, null)];
-
-const ModalCarousel = getModule(Filters.byPrototypeFields("navigateTo", "preloadImage"), { searchExports: false });
-
-function getButtonClasses({ user, profileType }, isNotNitro, banner) {
-	let res = "VPP-Button";
-	if (profileType === ProfileTypeEnum.MODAL) res += " VPP-profile";
-
-	if (isSelf(user)) res += " VPP-self";
-	else {
-		if (banner && isNotNitro) res += " VPP-left";
-		else res += " VPP-right";
-	}
-	return res;
-}
-
-function stretchToFit({ width, height }) {
-	const ratio = Math.min(innerWidth / width, innerHeight / height);
-
-	return {
-		width: Math.round(width * ratio),
-		height: Math.round(height * ratio)
-	};
-}
-
-async function getBannerDimenions(src) {
-	src = src.replace("url(", "").replace(")");
-	try {
-		const dims = await getImageDimensions(src);
-		return stretchToFit(dims);
-	} catch {
-		return {};
-	}
-}
-
-const UserBannerMask = getModuleAndKey(Filters.byStrings("bannerSrc", "showPremiumBadgeUpsell"), { searchExports: true }) || {};
-
 class ViewProfilePicture {
-	async clickHandler({ user, displayProfile }, { backgroundColor, backgroundImage }) {
-		const avatarURL = user.getAvatarURL(displayProfile.guildId, 4096, true);
-		const bannerURL = backgroundImage && displayProfile.getBannerURL({ canAnimate: true, size: 4096 });
-
-		const items = [
-			getImageModalComponent(avatarURL, { width: 4096, height: 4096 }),
-			bannerURL && getImageModalComponent(bannerURL, await getBannerDimenions(backgroundImage)),
-			(!bannerURL || Settings.get("bannerColor")) && React.createElement(ColorModalComponent, { color: backgroundColor, })
-		].filter(Boolean).map(item => ({ component: item, ...item.props }));
-
-		openModal(
-			React.createElement(ModalCarousel, {
-				startWith: 0,
-				className: "VPP-carousel",
-				items: items,
-			}),
-			"VPP-carousel"
-		);
-	}
-
-	patchUserBannerMask() {
-		if (!UserBannerMask) return Logger.patch("UserBannerMask");
-
-		const { module, key } = UserBannerMask;
-
-		Patcher.after(module, key, (_, [props], el) => {
-			if (props.profileType === ProfileTypeEnum.SETTINGS) return;
-
-			const bannerElement = el.props.children.props;
-
-			bannerElement.className += " VPP-container";
-			const bannerObject = bannerElement.style;
-			const children = bannerElement.children;
-
-			const buttonClasses = getButtonClasses(props, children[0], bannerObject?.backgroundImage);
-
-			children.push(
-				React.createElement(ErrorBoundary, {
-						id: "ViewProfilePictureButtonComponent",
-						plugin: config.info.name,
-						fallback: React.createElement(ErrorIcon, { className: buttonClasses, }),
-					}
-
-					, React.createElement(ViewProfilePictureButtonComponent, {
-						className: buttonClasses,
-						isHovering: props.isHovering,
-						onClick: () => this.clickHandler(props, bannerObject),
-					})
-				)
-			);
-		});
-	}
-
 	start() {
 		try {
-			Settings.init(config.settings);
 			DOM.addStyle(css);
-			this.patchUserBannerMask();
+			patchUserBannerMask();
 		} catch (e) {
 			Logger.error(e);
 		}
