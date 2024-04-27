@@ -1,10 +1,10 @@
 import { ReactDOM, React, Api } from "@Api";
 import { Patcher } from "@Api";
 import ErrorBoundary from "@Components/ErrorBoundary";
-import ImageModalVideoModal from "@Modules/ImageModalVideoModal";
 import RenderLinkComponent from "@Modules/RenderLinkComponent";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 const { ModalRoot, ModalSize } = TheBigBoyBundle;
+import ImageModalVideoModal from "@Modules/ImageModalVideoModal";
 const ImageModal = ImageModalVideoModal.ImageModal;
 
 export const debounce = Api.Utils.debounce;
@@ -13,7 +13,7 @@ export const findInTree = Api.Utils.findInTree;
 export const getOwnerInstance = Api.ReactUtils.getOwnerInstance;
 export const getInternalInstance = Api.ReactUtils.getInternalInstance;
 
-export const openModal = (children, tag) => {
+export const openModal = (children, tag, className) => {
 	const id = `${tag ? `${tag}-` : ""}modal`;
 	TheBigBoyBundle.openModal(props => {
 		return (
@@ -22,6 +22,7 @@ export const openModal = (children, tag) => {
 				plugin={config.info.name}>
 				<ModalRoot
 					{...props}
+					className={className}
 					onClick={props.onClose}
 					size={ModalSize.DYNAMIC}>
 					{children}

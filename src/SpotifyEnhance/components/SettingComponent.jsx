@@ -1,10 +1,9 @@
 import { React } from "@Api";
-import Switch from "@Components/Switch";
-
+import Collapsible from "@Components/Collapsible";
+import SettingSwtich from "@Components/SettingSwtich";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 import Settings from "@Utils/Settings";
 import { EmbedStyleEnum } from "../consts.js";
-import Collapsible from "@Components/Collapsible";
 
 const { FormDivider, RadioGroup } = TheBigBoyBundle;
 
@@ -30,19 +29,6 @@ function SpotifyEmbedOptions() {
 			value={val}
 			onChange={e => set(e.value)}
 		/>
-	);
-}
-
-function SettingsToggle({ settingKey, note, hideBorder = false, description }) {
-	const [val, set] = Settings.useSetting(settingKey);
-	return (
-		<Switch
-			value={val}
-			note={note}
-			hideBorder={hideBorder}
-			onChange={set}>
-			{description || settingKey}
-		</Switch>
 	);
 }
 
@@ -79,12 +65,12 @@ export default function () {
 					{
 						settingKey: "embedBannerBackground",
 						description: "Use the banner as background for the embed.",
-						hideBorder:true
+						hideBorder: true
 					}
-				].map(SettingsToggle)}
+				].map(SettingSwtich)}
 			</Collapsible>
 			<FormDivider style={{ margin: "20px 0 20px 0" }} />
-			<Collapsible title="Show/Hide Player buttons">{[{ settingKey: "Share" }, { settingKey: "Shuffle" }, { settingKey: "Previous" }, { settingKey: "Play" }, { settingKey: "Next" }, { settingKey: "Repeat" }, { settingKey: "Volume", hideBorder: true }].map(SettingsToggle)}</Collapsible>
+			<Collapsible title="Show/Hide Player buttons">{[{ settingKey: "Share" }, { settingKey: "Shuffle" }, { settingKey: "Previous" }, { settingKey: "Play" }, { settingKey: "Next" }, { settingKey: "Repeat" }, { settingKey: "Volume", hideBorder: true }].map(SettingSwtich)}</Collapsible>
 			<FormDivider style={{ margin: "20px 0 20px 0" }} />
 			<Collapsible title="Spotify embed style">
 				<SpotifyEmbedOptions />
