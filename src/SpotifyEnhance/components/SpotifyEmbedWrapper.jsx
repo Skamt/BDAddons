@@ -1,5 +1,3 @@
-/* eslint-disable no-unreachable */
-/* eslint-disable react/jsx-key */
 import { React } from "@Api";
 import { EmbedStyleEnum } from "../consts.js";
 import Settings from "@Utils/Settings";

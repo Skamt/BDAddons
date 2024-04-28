@@ -13,6 +13,20 @@ export const findInTree = Api.Utils.findInTree;
 export const getOwnerInstance = Api.ReactUtils.getOwnerInstance;
 export const getInternalInstance = Api.ReactUtils.getInternalInstance;
 
+export function shallow(objA, objB) {
+	if (Object.is(objA, objB)) return true;
+
+	if (typeof objA !== "object" || objA === null || typeof objB !== "object" || objB === null) return false;
+
+	var keysA = Object.keys(objA);
+
+	if (keysA.length !== Object.keys(objB).length) return false;
+
+	for (var i = 0; i < keysA.length; i++) if (!Object.prototype.hasOwnProperty.call(objB, keysA[i]) || !Object.is(objA[keysA[i]], objB[keysA[i]])) return false;
+
+	return true;
+}
+
 export const openModal = (children, tag, className) => {
 	const id = `${tag ? `${tag}-` : ""}modal`;
 	TheBigBoyBundle.openModal(props => {

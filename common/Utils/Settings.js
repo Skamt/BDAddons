@@ -4,7 +4,7 @@ import { Data } from "@Api";
 const SettingsStoreSelectors = {};
 const persistMiddleware = config => (set, get, api) => config(args => (set(args), Data.save("settings", get().getRawState())), get, api);
 
-export default Object.assign(
+const SettingsStore = Object.assign(
 	zustand(
 		persistMiddleware((set, get) => {
 			const settingsObj = Object.create(null);
@@ -35,3 +35,13 @@ export default Object.assign(
 		selectors: SettingsStoreSelectors
 	}
 );
+
+Object.defineProperty(SettingsStore, "state", {
+	writeable: false,
+	configurable: false,
+	get() {
+		return this.getState();
+	}
+});
+
+export default SettingsStore;

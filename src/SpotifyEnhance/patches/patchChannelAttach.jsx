@@ -1,7 +1,6 @@
 import { React, Patcher } from "@Api";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 import Logger from "@Utils/Logger";
-import Settings from "@Utils/Settings";
 import { Filters, getModule } from "@Webpack";
 import { Store } from "../Store";
 import Flex from "@Components/Flex";
@@ -25,8 +24,7 @@ function MenuLabel({ label, icon }) {
 export default () => {
 	if (ChannelAttachMenu)
 		Patcher.after(ChannelAttachMenu, "default", (_, args, ret) => {
-			if (Settings.getState().player) return;
-			if (!Store.getState().mediaId) return;
+			if (!Store.state().mediaId) return;
 			if (!Array.isArray(ret?.props?.children)) return;
 
 			ret.props.children.push(
@@ -39,7 +37,8 @@ export default () => {
 						/>
 					}
 					action={() => {
-						Store.Utils.share(Store.getState().media?.external_urls?.spotify);
+						const songUrl = Store.state.getSongUrl();
+						Store.Utils.share(songUrl);
 					}}
 				/>,
 				<TheBigBoyBundle.MenuItem
@@ -51,7 +50,8 @@ export default () => {
 						/>
 					}
 					action={() => {
-						Store.Utils.share(Store.getState().media?.album?.images[0]?.url);
+						const songCover = Store.state.getSongCover();
+						Store.Utils.share(songCover);
 					}}
 				/>
 			);

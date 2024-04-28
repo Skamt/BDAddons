@@ -3,7 +3,7 @@ import Collapsible from "@Components/Collapsible";
 import SettingSwtich from "@Components/SettingSwtich";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 import Settings from "@Utils/Settings";
-import { EmbedStyleEnum } from "../consts.js";
+import { PlayerButtonsEnum, EmbedStyleEnum } from "../consts.js";
 
 const { FormDivider, RadioGroup } = TheBigBoyBundle;
 
@@ -70,7 +70,7 @@ export default function () {
 				].map(SettingSwtich)}
 			</Collapsible>
 			<FormDivider style={{ margin: "20px 0 20px 0" }} />
-			<Collapsible title="Show/Hide Player buttons">{[{ settingKey: "Share" }, { settingKey: "Shuffle" }, { settingKey: "Previous" }, { settingKey: "Play" }, { settingKey: "Next" }, { settingKey: "Repeat" }, { settingKey: "Volume", hideBorder: true }].map(SettingSwtich)}</Collapsible>
+			<Collapsible title="Show/Hide Player buttons">{[{ settingKey: PlayerButtonsEnum.SHARE }, { settingKey: PlayerButtonsEnum.SHUFFLE }, { settingKey: PlayerButtonsEnum.PREVIOUS }, { settingKey: PlayerButtonsEnum.PLAY }, { settingKey: PlayerButtonsEnum.NEXT }, { settingKey: PlayerButtonsEnum.REPEAT }, { settingKey: PlayerButtonsEnum.VOLUME, hideBorder: true }].map(SettingSwtich)}</Collapsible>
 			<FormDivider style={{ margin: "20px 0 20px 0" }} />
 			<Collapsible title="Spotify embed style">
 				<SpotifyEmbedOptions />

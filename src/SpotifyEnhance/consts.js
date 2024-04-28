@@ -3,3 +3,13 @@ export const EmbedStyleEnum = {
 	REPLACE: "REPLACE",
 	HIDE: "HIDE"
 };
+
+export const PlayerButtonsEnum = {
+	SHARE: "Share",
+	SHUFFLE: "Shuffle",
+	PREVIOUS: "Previous",
+	PLAY: "Play",
+	NEXT: "Next",
+	REPEAT: "Repeat",
+	VOLUME: "Volume"
+};

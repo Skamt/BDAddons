@@ -4,23 +4,15 @@ import TrackMediaDetails from "./TrackMediaDetails";
 import TrackTimeLine from "./TrackTimeLine";
 import { Store } from "../Store";
 import Settings from "@Utils/Settings";
+import { shallow } from "@Utils";
 
 export default React.memo(function SpotifyPlayer() {
-	const player = Settings(Settings.selectors.player);
-	const playerCompactMode = Settings(Settings.selectors.playerCompactMode);
-	const playerBannerBackground = Settings(Settings.selectors.playerBannerBackground);
-
-	const isActive = Store(Store.selectors.isActive);
-	const media = Store(Store.selectors.media);
-	const mediaType = Store(Store.selectors.mediaType);
+	const [player, playerCompactMode, playerBannerBackground] = Settings(_ => [_.player, _.playerCompactMode, _.playerBannerBackground], shallow);
+	const [isActive, media, mediaType] = Store(_ => [_.isActive, _.media, _.mediaType], shallow);
 
 	if (!player || !isActive || !mediaType) return;
 
-	const { bannerMd, bannerSm, bannerLg } = {
-		bannerSm: media?.album?.images[2],
-		bannerMd: media?.album?.images[1],
-		bannerLg: media?.album?.images[0]
-	};
+	const { bannerMd, bannerSm, bannerLg } = Store.state.getSongBanners();
 
 	let className = "spotify-player-container";
 	if (playerCompactMode) className += " compact";
@@ -36,18 +28,13 @@ export default React.memo(function SpotifyPlayer() {
 			className={className}>
 			<TrackMediaDetails
 				mediaType={mediaType}
-				media={media}
+				name={media?.name}
+				artists={media?.artists}
 			/>
 
-			<TrackTimeLine
-				mediaType={mediaType}
-				media={media}
-			/>
+			{mediaType === "track" && <TrackTimeLine />}
 
-			<SpotifyPlayerControls
-				banner={bannerLg?.url}
-				media={media}
-			/>
+			<SpotifyPlayerControls />
 		</div>
 	);
 });

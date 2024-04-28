@@ -14,24 +14,23 @@ import ShuffleIcon from "@Components/icons/ShuffleIcon";
 import VolumeIcon from "@Components/icons/VolumeIcon";
 import ImageIcon from "@Components/icons/ImageIcon";
 import ListenIcon from "@Components/icons/ListenIcon";
-
+import { PlayerButtonsEnum } from "../consts.js";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 import SpotifyApi from "../SpotifyAPIWrapper";
 import { Store } from "../Store";
 import Settings from "@Utils/Settings";
+import { shallow } from "@Utils";
 
 const { MenuItem, Menu } = TheBigBoyBundle;
 
-export default ({ banner, media }) => {
+export default () => {
 	const playerButtons = Settings(Settings.selectors.playerButtons);
-	
-	const isPlaying = Store(Store.selectors.isPlaying);
-	const shuffle = Store(Store.selectors.shuffle);
-	const repeat = Store(Store.selectors.repeat);
-	const volume = Store(Store.selectors.volume);
-	const actions = Store(Store.selectors.actions);
+	console.log("Spotify Controls");
+	const [isPlaying, shuffle, repeat, volume, actions] = Store(_ => [_.isPlaying, _.shuffle, _.repeat, _.volume, _.actions], shallow);
 
-	const url = media?.external_urls?.spotify;
+	const url = Store.state.getSongUrl();
+	const { bannerLg } = Store.state.getSongBanners();
+
 	const { toggling_shuffle, toggling_repeat_track, skipping_next, skipping_prev } = actions || {};
 
 	const { repeatTooltip, repeatActive, repeatIcon, repeatArg } = {
@@ -63,10 +62,10 @@ export default ({ banner, media }) => {
 	const playHandler = () => SpotifyApi.play();
 
 	const shareSongHandler = () => Store.Utils.share(url);
-	const sharePosterHandler = () => Store.Utils.share(banner);
+	const sharePosterHandler = () => Store.Utils.share(bannerLg);
 
 	const copySongHandler = () => Store.Utils.copySpotifyLink(url);
-	const copyPosterHandler = () => Store.Utils.copySpotifyLink(banner);
+	const copyPosterHandler = () => Store.Utils.copySpotifyLink(bannerLg);
 
 	const { playPauseTooltip, playPauseHandler, playPauseIcon, playPauseClassName } = {
 		true: {
@@ -85,7 +84,7 @@ export default ({ banner, media }) => {
 
 	return (
 		<div className="spotify-player-controls">
-			{playerButtons["Share"] && (
+			{playerButtons[PlayerButtonsEnum.SHARE] && (
 				<Popout
 					renderPopout={t => (
 						<Menu onClose={t.closePopout}>
@@ -132,14 +131,8 @@ export default ({ banner, media }) => {
 					/>
 				</Popout>
 			)}
-			{[
-				playerButtons["Shuffle"] && { name: "Shuffle", value: <ShuffleIcon />, className: "spotify-player-controls-shuffle", disabled: toggling_shuffle, active: shuffle, onClick: shuffleHandler }, 
-				playerButtons["Previous"] && { name: "Previous", value: <PreviousIcon />, className: "spotify-player-controls-previous", disabled: skipping_prev, onClick: previousHandler }, 
-				{ name: playPauseTooltip, value: playPauseIcon, className: playPauseClassName, disabled: false, onClick: playPauseHandler }, 
-				playerButtons["Next"] && { name: "Next", value: <NextIcon />, className: "spotify-player-controls-next", disabled: skipping_next, onClick: nextHandler }, 
-				playerButtons["Repeat"] && { name: repeatTooltip, value: repeatIcon, className: "spotify-player-controls-repeat", disabled: toggling_repeat_track, active: repeatActive, onClick: repeatHandler }
-			].filter(Boolean).map(SpotifyPlayerButton)}
-			{playerButtons["Volume"] && <Volume volume={volume} />}
+			{[playerButtons[PlayerButtonsEnum.SHUFFLE] && { name: "Shuffle", value: <ShuffleIcon />, className: "spotify-player-controls-shuffle", disabled: toggling_shuffle, active: shuffle, onClick: shuffleHandler }, playerButtons[PlayerButtonsEnum.PREVIOUS] && { name: "Previous", value: <PreviousIcon />, className: "spotify-player-controls-previous", disabled: skipping_prev, onClick: previousHandler }, { name: playPauseTooltip, value: playPauseIcon, className: playPauseClassName, disabled: false, onClick: playPauseHandler }, playerButtons[PlayerButtonsEnum.NEXT] && { name: "Next", value: <NextIcon />, className: "spotify-player-controls-next", disabled: skipping_next, onClick: nextHandler }, playerButtons[PlayerButtonsEnum.REPEAT] && { name: repeatTooltip, value: repeatIcon, className: "spotify-player-controls-repeat", disabled: toggling_repeat_track, active: repeatActive, onClick: repeatHandler }].filter(Boolean).map(SpotifyPlayerButton)}
+			{playerButtons[PlayerButtonsEnum.VOLUME] && <Volume volume={volume} />}
 		</div>
 	);
 };

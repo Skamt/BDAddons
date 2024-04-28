@@ -1,16 +1,13 @@
 import { React } from "@Api";
-import { Filters, getModule } from "@Webpack";
-
-// import SpotifyStore from "@Stores/SpotifyStore";
-import SpotifyApi from "../SpotifyAPIWrapper";
-import { Store } from "../Store";
 import Button from "@Components/Button";
+import Tooltip from "@Components/Tooltip";
 import AddToQueueIcon from "@Components/icons/AddToQueueIcon";
 import ListenAlongIcon from "@Components/icons/ListenAlongIcon";
 import ListenIcon from "@Components/icons/ListenIcon";
 import ShareIcon from "@Components/icons/ShareIcon";
-import Tooltip from "@Components/Tooltip";
-// import FluxHelpers from "@Modules/FluxHelpers";
+import { Filters, getModule } from "@Webpack";
+import SpotifyApi from "../SpotifyAPIWrapper";
+import { Store } from "../Store";
 
 const { useSpotifyPlayAction, useSpotifySyncAction } = getModule(Filters.byProps("useSpotifyPlayAction"));
 
@@ -28,7 +25,7 @@ export default ({ activity, user, source }) => {
 					className="activity-controls-queue"
 					value={<AddToQueueIcon />}
 					disabled={!isActive}
-					onClick={() => SpotifyApi.queue("track", activity.sync_id, activity.details)}
+					onClick={() => SpotifyApi.queue(activity?.metadata?.type, activity.sync_id, activity.details)}
 				/>
 			</Tooltip>
 			<Tooltip note="Share in current channel">
@@ -82,7 +79,7 @@ function ActivityControlButton({ grow, value, onClick, ...rest }) {
 			color={Button.Colors.PRIMARY}
 			look={Button.Colors.OUTLINED}
 			onClick={onClick}
-			grow={grow||false}
+			grow={grow || false}
 			{...rest}>
 			{value}
 		</Button>

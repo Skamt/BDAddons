@@ -2,16 +2,16 @@ import { React } from "@Api";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 import SpotifyApi from "../SpotifyAPIWrapper";
 import { Store } from "../Store";
+import { shallow } from "@Utils";
 
 function formatMsToTime(ms) {
 	const time = new Date(ms);
 	return [time.getUTCHours(), String(time.getUTCMinutes()), String(time.getUTCSeconds()).padStart(2, "0")].filter(Boolean).join(":");
 }
 
-export default ({ mediaType }) => {
-	const isPlaying = Store(Store.selectors.isPlaying);
-	const progress = Store(Store.selectors.progress);
-	const duration = Store(Store.selectors.duration);
+export default () => {
+	console.log("Spotify TimeLine");
+	const [isPlaying, progress, duration] = Store(_ => [_.isPlaying, _.progress, _.duration], shallow);
 
 	const [position, setPosition] = React.useState(progress);
 	const sliderRef = React.useRef();
@@ -41,12 +41,6 @@ export default ({ mediaType }) => {
 		SpotifyApi.seek(pos);
 	};
 
-	if (mediaType !== "track")
-		return (
-			<div className="spotify-player-timeline">
-				<div className="spotify-player-timeline-progress">{formatMsToTime(position)}</div>
-			</div>
-		);
 	return (
 		<div className="spotify-player-timeline">
 			<TheBigBoyBundle.Slider

@@ -83,8 +83,26 @@ export const Store = Object.assign(
 					media: media,
 					mediaId: media?.id,
 					mediaType: playerState?.currently_playing_type,
-					actions: playerState?.actions?.disallows
+					// actions: playerState?.actions?.disallows
 				});
+			},
+			getAlbum(){
+				const media = get().media;
+				return {
+					...media.album,
+					url: media.album.external_urls.spotify,
+				}
+			},
+			getSongUrl(){
+				return get().media?.external_urls?.spotify;
+			},
+			getSongBanners(){
+				const media = get().media;
+				return {
+					bannerSm: media?.album?.images[2],
+					bannerMd: media?.album?.images[1],
+					bannerLg: media?.album?.images[0]
+				};
 			}
 		};
 	}),
@@ -92,18 +110,17 @@ export const Store = Object.assign(
 		init() {
 			SpotifyStore.addChangeListener(onSpotifyStoreChange);
 			ConnectedAccountsStore.addChangeListener(onAccountsChanged);
-			const state = Store.getState();
 
 			const { socket } = SpotifyStore.getActiveSocketAndDevice() || {};
 			if (!socket) return;
-			state.setAccount(socket);
-			// state.fetchPlayerState();
+			Store.state.setAccount(socket);
+			// Store.state.fetchPlayerState();
 		},
 		dispose() {
 			SpotifyStore.removeChangeListener(onSpotifyStoreChange);
 			ConnectedAccountsStore.removeChangeListener(onAccountsChanged);
-			Store.getState().setAccount();
-			Store.getState().setPlayerState({});
+			Store.state.setAccount();
+			Store.state.setPlayerState({});
 			timer.stop();
 		},
 		Utils,
@@ -123,7 +140,14 @@ export const Store = Object.assign(
 	}
 );
 
-const timer = new Timer(() => Store.getState().setAccount(undefined), 10 * 60 * 1000);
+Object.defineProperty(Store, "state", {
+	writeable: false,
+	configurable: false,
+	get() {
+		return this.getState();
+	}
+});
+const timer = new Timer(() => Store.state.setAccount(undefined), 10 * 60 * 1000);
 
 Store.subscribe(isPlaying => {
 	if (isPlaying) return timer.stop();
@@ -132,12 +156,11 @@ Store.subscribe(isPlaying => {
 
 function onSpotifyStoreChange() {
 	try {
-		const state = Store.getState();
-		if (state.account?.accountId && state.account?.accessToken) return;
+		if (Store.state.account?.accountId && Store.state.account?.accessToken) return;
 		const { socket } = SpotifyStore.getActiveSocketAndDevice() || {};
 		if (!socket) return;
-		state.setAccount(socket);
-		state.fetchPlayerState();
+		Store.state.setAccount(socket);
+		Store.state.fetchPlayerState();
 	} catch (e) {
 		Logger.error(e);
 	}
@@ -149,15 +172,15 @@ function onAccountsChanged() {
 		 * This listener is used to make sure the current account is still connected
 		 * SpotifyStore doesn't notify us about this information
 		 */
-		const state = Store.getState();
+
 		// if we don't have an account set yet, get out.
-		if (!state.account) return;
+		if (!Store.state.account) return;
 		const connectedAccounts = ConnectedAccountsStore.getAccounts().filter(account => account.type === "spotify");
 		// if current account still connected, get out.
-		if (connectedAccounts.some(a => a.id === state.account.accountId)) return;
+		if (connectedAccounts.some(a => a.id === Store.state.account.accountId)) return;
 
 		// this means we don't have a set account or set account is not connected, remove it.
-		state.setAccount(undefined);
+		Store.state.setAccount(undefined);
 	} catch (e) {
 		Logger.error(e);
 	}

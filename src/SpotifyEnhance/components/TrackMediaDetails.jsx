@@ -4,11 +4,12 @@ import Tooltip from "@Components/Tooltip";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 import { getImageModalComponent, openModal } from "@Utils";
 import Toast from "@Utils/Toast";
+import { Store } from "../Store";
 
 const { Anchor } = TheBigBoyBundle;
 
-export default ({ media, mediaType }) => {
-	if (mediaType !== "track" || !media) {
+export default ({ name, artists, mediaType }) => {
+	if (mediaType !== "track") {
 		return (
 			<div className="spotify-player-media">
 				<div className="spotify-player-title">Playing {mediaType || "Unknown"}</div>
@@ -16,16 +17,9 @@ export default ({ media, mediaType }) => {
 		);
 	}
 
-	const albumName = media.album.name;
-	const albumUrl = media.album.external_urls.spotify;
-	const url = media.external_urls.spotify;
-	const name = media.name;
-	const artists = media.artists;
-
-	const { bannerSm, bannerLg } = {
-		bannerSm: media.album.images[2],
-		bannerLg: media.album.images[0]
-	};
+	const songUrl = Store.state.getSongUrl();
+	const { bannerSm, bannerLg } = Store.state.getSongBanners();
+	const { name: albumName, url: albumUrl } = Store.state.getAlbum();
 
 	return (
 		<div className="spotify-player-media">
@@ -35,7 +29,7 @@ export default ({ media, mediaType }) => {
 			/>
 			<Tooltip note={name}>
 				<Anchor
-					href={url}
+					href={songUrl}
 					className="spotify-player-title">
 					{name}
 				</Anchor>

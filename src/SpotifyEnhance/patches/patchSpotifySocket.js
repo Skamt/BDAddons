@@ -31,18 +31,18 @@ export default async function () {
 	const socket = await getSocket();
 	Patcher.after(socket.prototype, "handleEvent", function onSocketEvent(socket, [socketEvent]) {
 		Logger.log("Spotify Socket", socketEvent , Date.now());
-		const state = Store.getState();
+		
 
-		if (state.account?.accountId && socket.accountId !== state.account?.accountId) return;
+		if (Store.state.account?.accountId && socket.accountId !== Store.state.account?.accountId) return;
 		const { type, event } = socketEvent;
 
 		switch (type) {
 			case "PLAYER_STATE_CHANGED":
-				state.setPlayerState(event.state);
+				Store.state.setPlayerState(event.state);
 				break;
 			case "DEVICE_STATE_CHANGED": {
 				const devices = event.devices;
-				state.setDeviceState(!!(devices.find(d => d.is_active) || devices[0])?.is_active);
+				Store.state.setDeviceState(!!(devices.find(d => d.is_active) || devices[0])?.is_active);
 				break;
 			}
 		}

@@ -13,8 +13,10 @@ import patchSpotifySocket from "./patches/patchSpotifySocket";
 import patchMessageHeader from "./patches/patchMessageHeader";
 import patchChannelAttach from "./patches/patchChannelAttach";
 
+import SpotifyApi from "./SpotifyAPIWrapper";
 window.spotSettings = Settings;
 window.spotStore = Store;
+window.SpotifyApi = SpotifyApi;
 
 export default class SpotifyEnhance {
 	start() {
