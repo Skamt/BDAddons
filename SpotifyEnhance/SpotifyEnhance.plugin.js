@@ -554,7 +554,7 @@ const zustand = getModule(Filters.byStrings("subscribeWithSelector", "useReducer
 const SettingsStoreSelectors = {};
 const persistMiddleware = config => (set, get, api) => config(args => (set(args), Data.save("settings", get().getRawState())), get, api);
 
-const Settings = Object.assign(
+const SettingsStore = Object.assign(
 	zustand(
 		persistMiddleware((set, get) => {
 			const settingsObj = Object.create(null);
@@ -585,6 +585,16 @@ const Settings = Object.assign(
 		selectors: SettingsStoreSelectors
 	}
 );
+
+Object.defineProperty(SettingsStore, "state", {
+	writeable: false,
+	configurable: false,
+	get() {
+		return this.getState();
+	}
+});
+
+const Settings = SettingsStore;
 
 const ConnectedAccountsStore = getModule(m => m._dispatchToken && m.getName() === "ConnectedAccountsStore");
 
@@ -631,17 +641,32 @@ class ErrorBoundary extends React.Component {
 	}
 }
 
-const ImageModalVideoModal = getModule(Filters.byProps("ImageModal"), { searchExports: false });
-
 const RenderLinkComponent = getModule(m => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false });
 
 const TheBigBoyBundle = getModule(Filters.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
+
+const ImageModalVideoModal = getModule(Filters.byProps("ImageModal"), { searchExports: false });
 
 const { ModalRoot, ModalSize } = TheBigBoyBundle;
 const ImageModal = ImageModalVideoModal.ImageModal;
 const getInternalInstance = Api.ReactUtils.getInternalInstance;
 
-const openModal = (children, tag) => {
+function shallow(objA, objB) {
+	if (Object.is(objA, objB)) return true;
+
+	if (typeof objA !== "object" || objA === null || typeof objB !== "object" || objB === null) return false;
+
+	var keysA = Object.keys(objA);
+
+	if (keysA.length !== Object.keys(objB).length) return false;
+
+	for (var i = 0; i < keysA.length; i++)
+		if (!Object.prototype.hasOwnProperty.call(objB, keysA[i]) || !Object.is(objA[keysA[i]], objB[keysA[i]])) return false;
+
+	return true;
+}
+
+const openModal = (children, tag, className) => {
 	const id = `${tag ? `${tag}-` : ""}modal`;
 	TheBigBoyBundle.openModal(props => {
 		return (
@@ -650,6 +675,7 @@ const openModal = (children, tag) => {
 				plugin: config.info.name,
 			}, React.createElement(ModalRoot, {
 				...props,
+				className: className,
 				onClick: props.onClose,
 				size: ModalSize.DYNAMIC,
 			}, children))
@@ -1141,26 +1167,43 @@ const Store = Object.assign(
 					media: media,
 					mediaId: media?.id,
 					mediaType: playerState?.currently_playing_type,
-					actions: playerState?.actions?.disallows
+
 				});
+			},
+			getAlbum() {
+				const media = get().media;
+				return {
+					...media.album,
+					url: media.album.external_urls.spotify,
+				}
+			},
+			getSongUrl() {
+				return get().media?.external_urls?.spotify;
+			},
+			getSongBanners() {
+				const media = get().media;
+				return {
+					bannerSm: media?.album?.images[2],
+					bannerMd: media?.album?.images[1],
+					bannerLg: media?.album?.images[0]
+				};
 			}
 		};
 	}), {
 		init() {
 			SpotifyStore.addChangeListener(onSpotifyStoreChange);
 			ConnectedAccountsStore.addChangeListener(onAccountsChanged);
-			const state = Store.getState();
 
 			const { socket } = SpotifyStore.getActiveSocketAndDevice() || {};
 			if (!socket) return;
-			state.setAccount(socket);
+			Store.state.setAccount(socket);
 
 		},
 		dispose() {
 			SpotifyStore.removeChangeListener(onSpotifyStoreChange);
 			ConnectedAccountsStore.removeChangeListener(onAccountsChanged);
-			Store.getState().setAccount();
-			Store.getState().setPlayerState({});
+			Store.state.setAccount();
+			Store.state.setPlayerState({});
 			timer.stop();
 		},
 		Utils,
@@ -1180,7 +1223,14 @@ const Store = Object.assign(
 	}
 );
 
-const timer = new Timer(() => Store.getState().setAccount(undefined), 10 * 60 * 1000);
+Object.defineProperty(Store, "state", {
+	writeable: false,
+	configurable: false,
+	get() {
+		return this.getState();
+	}
+});
+const timer = new Timer(() => Store.state.setAccount(undefined), 10 * 60 * 1000);
 
 Store.subscribe(isPlaying => {
 	if (isPlaying) return timer.stop();
@@ -1189,12 +1239,11 @@ Store.subscribe(isPlaying => {
 
 function onSpotifyStoreChange() {
 	try {
-		const state = Store.getState();
-		if (state.account?.accountId && state.account?.accessToken) return;
+		if (Store.state.account?.accountId && Store.state.account?.accessToken) return;
 		const { socket } = SpotifyStore.getActiveSocketAndDevice() || {};
 		if (!socket) return;
-		state.setAccount(socket);
-		state.fetchPlayerState();
+		Store.state.setAccount(socket);
+		Store.state.fetchPlayerState();
 	} catch (e) {
 		Logger.error(e);
 	}
@@ -1206,35 +1255,17 @@ function onAccountsChanged() {
 		 * This listener is used to make sure the current account is still connected
 		 * SpotifyStore doesn't notify us about this information
 		 */
-		const state = Store.getState();
 
-		if (!state.account) return;
+		if (!Store.state.account) return;
 		const connectedAccounts = ConnectedAccountsStore.getAccounts().filter(account => account.type === "spotify");
 
-		if (connectedAccounts.some(a => a.id === state.account.accountId)) return;
+		if (connectedAccounts.some(a => a.id === Store.state.account.accountId)) return;
 
-		state.setAccount(undefined);
+		Store.state.setAccount(undefined);
 	} catch (e) {
 		Logger.error(e);
 	}
 }
-
-const Switch = TheBigBoyBundle.FormSwitch ||
-	function SwitchComponentFallback(props) {
-		return (
-			React.createElement('div', { style: { color: "#fff" }, }, props.children, React.createElement('input', {
-				type: "checkbox",
-				checked: props.value,
-				onChange: e => props.onChange(e.target.checked),
-			}))
-		);
-	};
-
-const EmbedStyleEnum = {
-	KEEP: "KEEP",
-	REPLACE: "REPLACE",
-	HIDE: "HIDE"
-};
 
 function Arrow() {
 	return (
@@ -1299,6 +1330,45 @@ function Collapsible({ title, children }) {
 	);
 }
 
+const Switch = TheBigBoyBundle.FormSwitch ||
+	function SwitchComponentFallback(props) {
+		return (
+			React.createElement('div', { style: { color: "#fff" }, }, props.children, React.createElement('input', {
+				type: "checkbox",
+				checked: props.value,
+				onChange: e => props.onChange(e.target.checked),
+			}))
+		);
+	};
+
+function SettingSwtich({ settingKey, note, hideBorder = false, description }) {
+	const [val, set] = Settings.useSetting(settingKey);
+	return (
+		React.createElement(Switch, {
+			value: val,
+			note: note,
+			hideBorder: hideBorder,
+			onChange: set,
+		}, description || settingKey)
+	);
+}
+
+const EmbedStyleEnum = {
+	KEEP: "KEEP",
+	REPLACE: "REPLACE",
+	HIDE: "HIDE"
+};
+
+const PlayerButtonsEnum = {
+	SHARE: "Share",
+	SHUFFLE: "Shuffle",
+	PREVIOUS: "Previous",
+	PLAY: "Play",
+	NEXT: "Next",
+	REPEAT: "Repeat",
+	VOLUME: "Volume"
+};
+
 const { FormDivider, RadioGroup } = TheBigBoyBundle;
 
 function SpotifyEmbedOptions() {
@@ -1322,18 +1392,6 @@ function SpotifyEmbedOptions() {
 			value: val,
 			onChange: e => set(e.value),
 		})
-	);
-}
-
-function SettingsToggle({ settingKey, note, hideBorder = false, description }) {
-	const [val, set] = Settings.useSetting(settingKey);
-	return (
-		React.createElement(Switch, {
-			value: val,
-			note: note,
-			hideBorder: hideBorder,
-			onChange: set,
-		}, description || settingKey)
 	);
 }
 
@@ -1368,7 +1426,7 @@ function SettingComponent() {
 				description: "Use the banner as background for the embed.",
 				hideBorder: true
 			}
-		].map(SettingsToggle)), React.createElement(FormDivider, { style: { margin: "20px 0 20px 0" }, }), React.createElement(Collapsible, { title: "Show/Hide Player buttons", }, [{ settingKey: "Share" }, { settingKey: "Shuffle" }, { settingKey: "Previous" }, { settingKey: "Play" }, { settingKey: "Next" }, { settingKey: "Repeat" }, { settingKey: "Volume", hideBorder: true }].map(SettingsToggle)), React.createElement(FormDivider, { style: { margin: "20px 0 20px 0" }, }), React.createElement(Collapsible, { title: "Spotify embed style", }, React.createElement(SpotifyEmbedOptions, null)))
+		].map(SettingSwtich)), React.createElement(FormDivider, { style: { margin: "20px 0 20px 0" }, }), React.createElement(Collapsible, { title: "Show/Hide Player buttons", }, [{ settingKey: PlayerButtonsEnum.SHARE }, { settingKey: PlayerButtonsEnum.SHUFFLE }, { settingKey: PlayerButtonsEnum.PREVIOUS }, { settingKey: PlayerButtonsEnum.PLAY }, { settingKey: PlayerButtonsEnum.NEXT }, { settingKey: PlayerButtonsEnum.REPEAT }, { settingKey: PlayerButtonsEnum.VOLUME, hideBorder: true }].map(SettingSwtich)), React.createElement(FormDivider, { style: { margin: "20px 0 20px 0" }, }), React.createElement(Collapsible, { title: "Spotify embed style", }, React.createElement(SpotifyEmbedOptions, null)))
 	);
 }
 
@@ -1386,6 +1444,23 @@ const Button = TheBigBoyBundle.Button ||
 	function ButtonComponentFallback(props) {
 		return React.createElement('button', { ...props, });
 	};
+
+const { Tooltip } = TheBigBoyBundle;
+
+const Tooltip$1 = ({ note, position, children }) => {
+	return (
+		React.createElement(Tooltip, {
+			text: note,
+			position: position || "top",
+		}, props => {
+			children.props = {
+				...props,
+				...children.props
+			};
+			return children;
+		})
+	);
+};
 
 function AddToQueueIcon() {
 	return (
@@ -1433,23 +1508,6 @@ const ShareIcon = () => {
 	);
 };
 
-const { Tooltip } = TheBigBoyBundle;
-
-const Tooltip$1 = ({ note, position, children }) => {
-	return (
-		React.createElement(Tooltip, {
-			text: note,
-			position: position || "top",
-		}, props => {
-			children.props = {
-				...props,
-				...children.props
-			};
-			return children;
-		})
-	);
-};
-
 const { useSpotifyPlayAction, useSpotifySyncAction } = getModule(Filters.byProps("useSpotifyPlayAction"));
 
 const SpotifyActivityControls = ({ activity, user, source }) => {
@@ -1463,7 +1521,7 @@ const SpotifyActivityControls = ({ activity, user, source }) => {
 			className: "activity-controls-queue",
 			value: React.createElement(AddToQueueIcon, null),
 			disabled: !isActive,
-			onClick: () => SpotifyApi.queue("track", activity.sync_id, activity.details),
+			onClick: () => SpotifyApi.queue(activity?.metadata?.type, activity.sync_id, activity.details),
 		})), React.createElement(Tooltip$1, { note: "Share in current channel", }, React.createElement(ActivityControlButton, {
 			className: "activity-controls-share",
 			onClick: () => Store.Utils.share(`https://open.spotify.com/track/${activity.sync_id}`),
@@ -1614,9 +1672,10 @@ const FluxHelpers = getModule(Filters.byProps("useStateFromStores"), { searchExp
 const SpotifyEmbed$1 = ({ id, type, embed: { thumbnail, rawTitle, rawDescription, url } }) => {
 	const embedBannerBackground = Settings(Settings.selectors.embedBannerBackground);
 	const useReducedMotion = FluxHelpers.useStateFromStores([AccessibilityStore], () => AccessibilityStore.useReducedMotion);
-	const isPlaying = Store(Store.selectors.isPlaying);
-	const isActive = Store(Store.selectors.isActive);
+
+	const [isPlaying, isActive] = Store(_ => [_.isPlaying, _.isActive], shallow);
 	const mediaId = Store(Store.selectors.mediaId, (n, o) => n === o || (n !== id && o !== id));
+
 	const isThis = mediaId === id;
 
 	const listenBtn = type !== "show" && (
@@ -1668,8 +1727,6 @@ const SpotifyEmbed$1 = ({ id, type, embed: { thumbnail, rawTitle, rawDescription
 		)
 	);
 };
-
-/* eslint-disable no-unreachable */
 
 function SpotifyEmbedWrapper({ id, type, embedObject, embedComponent }) {
 	const spotifyEmbed = Settings(Settings.selectors.spotifyEmbed);
@@ -1877,16 +1934,14 @@ function VolumeIcon() {
 
 const { MenuItem, Menu } = TheBigBoyBundle;
 
-const SpotifyPlayerControls = ({ banner, media }) => {
+const SpotifyPlayerControls = () => {
 	const playerButtons = Settings(Settings.selectors.playerButtons);
+	console.log("Spotify Controls");
+	const [isPlaying, shuffle, repeat, volume, actions] = Store(_ => [_.isPlaying, _.shuffle, _.repeat, _.volume, _.actions], shallow);
 
-	const isPlaying = Store(Store.selectors.isPlaying);
-	const shuffle = Store(Store.selectors.shuffle);
-	const repeat = Store(Store.selectors.repeat);
-	const volume = Store(Store.selectors.volume);
-	const actions = Store(Store.selectors.actions);
+	const url = Store.state.getSongUrl();
+	const { bannerLg } = Store.state.getSongBanners();
 
-	const url = media?.external_urls?.spotify;
 	const { toggling_shuffle, toggling_repeat_track, skipping_next, skipping_prev } = actions || {};
 
 	const { repeatTooltip, repeatActive, repeatIcon, repeatArg } = {
@@ -1918,10 +1973,10 @@ const SpotifyPlayerControls = ({ banner, media }) => {
 	const playHandler = () => SpotifyApi.play();
 
 	const shareSongHandler = () => Store.Utils.share(url);
-	const sharePosterHandler = () => Store.Utils.share(banner);
+	const sharePosterHandler = () => Store.Utils.share(bannerLg);
 
 	const copySongHandler = () => Store.Utils.copySpotifyLink(url);
-	const copyPosterHandler = () => Store.Utils.copySpotifyLink(banner);
+	const copyPosterHandler = () => Store.Utils.copySpotifyLink(bannerLg);
 
 	const { playPauseTooltip, playPauseHandler, playPauseIcon, playPauseClassName } = {
 		true: {
@@ -1939,7 +1994,7 @@ const SpotifyPlayerControls = ({ banner, media }) => {
 	} [isPlaying];
 
 	return (
-		React.createElement('div', { className: "spotify-player-controls", }, playerButtons["Share"] && (
+		React.createElement('div', { className: "spotify-player-controls", }, playerButtons[PlayerButtonsEnum.SHARE] && (
 			React.createElement(Popout$1, {
 				renderPopout: t => (
 					React.createElement(Menu, { onClose: t.closePopout, }, React.createElement(MenuItem, {
@@ -1979,13 +2034,7 @@ const SpotifyPlayerControls = ({ banner, media }) => {
 				className: "spotify-player-controls-share",
 				value: React.createElement(ShareIcon, null),
 			}))
-		), [
-			playerButtons["Shuffle"] && { name: "Shuffle", value: React.createElement(ShuffleIcon, null), className: "spotify-player-controls-shuffle", disabled: toggling_shuffle, active: shuffle, onClick: shuffleHandler },
-			playerButtons["Previous"] && { name: "Previous", value: React.createElement(PlayIcon, null), className: "spotify-player-controls-previous", disabled: skipping_prev, onClick: previousHandler },
-			{ name: playPauseTooltip, value: playPauseIcon, className: playPauseClassName, disabled: false, onClick: playPauseHandler },
-			playerButtons["Next"] && { name: "Next", value: React.createElement(NextIcon, null), className: "spotify-player-controls-next", disabled: skipping_next, onClick: nextHandler },
-			playerButtons["Repeat"] && { name: repeatTooltip, value: repeatIcon, className: "spotify-player-controls-repeat", disabled: toggling_repeat_track, active: repeatActive, onClick: repeatHandler }
-		].filter(Boolean).map(SpotifyPlayerButton), playerButtons["Volume"] && React.createElement(Volume, { volume: volume, }))
+		), [playerButtons[PlayerButtonsEnum.SHUFFLE] && { name: "Shuffle", value: React.createElement(ShuffleIcon, null), className: "spotify-player-controls-shuffle", disabled: toggling_shuffle, active: shuffle, onClick: shuffleHandler }, playerButtons[PlayerButtonsEnum.PREVIOUS] && { name: "Previous", value: React.createElement(PlayIcon, null), className: "spotify-player-controls-previous", disabled: skipping_prev, onClick: previousHandler }, { name: playPauseTooltip, value: playPauseIcon, className: playPauseClassName, disabled: false, onClick: playPauseHandler }, playerButtons[PlayerButtonsEnum.NEXT] && { name: "Next", value: React.createElement(NextIcon, null), className: "spotify-player-controls-next", disabled: skipping_next, onClick: nextHandler }, playerButtons[PlayerButtonsEnum.REPEAT] && { name: repeatTooltip, value: repeatIcon, className: "spotify-player-controls-repeat", disabled: toggling_repeat_track, active: repeatActive, onClick: repeatHandler }].filter(Boolean).map(SpotifyPlayerButton), playerButtons[PlayerButtonsEnum.VOLUME] && React.createElement(Volume, { volume: volume, }))
 	);
 };
 
@@ -2054,30 +2103,23 @@ function Volume({ volume }) {
 
 const { Anchor } = TheBigBoyBundle;
 
-const TrackMediaDetails = ({ media, mediaType }) => {
-	if (mediaType !== "track" || !media) {
+const TrackMediaDetails = ({ name, artists, mediaType }) => {
+	if (mediaType !== "track") {
 		return (
 			React.createElement('div', { className: "spotify-player-media", }, React.createElement('div', { className: "spotify-player-title", }, "Playing ", mediaType || "Unknown"))
 		);
 	}
 
-	const albumName = media.album.name;
-	const albumUrl = media.album.external_urls.spotify;
-	const url = media.external_urls.spotify;
-	const name = media.name;
-	const artists = media.artists;
-
-	const { bannerSm, bannerLg } = {
-		bannerSm: media.album.images[2],
-		bannerLg: media.album.images[0]
-	};
+	const songUrl = Store.state.getSongUrl();
+	const { bannerSm, bannerLg } = Store.state.getSongBanners();
+	const { name: albumName, url: albumUrl } = Store.state.getAlbum();
 
 	return (
 		React.createElement('div', { className: "spotify-player-media", }, React.createElement(TrackBanner, {
 			bannerSm: bannerSm,
 			bannerLg: bannerLg,
 		}), React.createElement(Tooltip$1, { note: name, }, React.createElement(Anchor, {
-			href: url,
+			href: songUrl,
 			className: "spotify-player-title",
 		}, name)), React.createElement(Artist, { artists: artists, }), React.createElement(Tooltip$1, { note: albumName, }, React.createElement('div', { className: "spotify-player-album", }, "on ", React.createElement(Anchor, { href: albumUrl, }, albumName))))
 	);
@@ -2128,10 +2170,9 @@ function formatMsToTime(ms) {
 	return [time.getUTCHours(), String(time.getUTCMinutes()), String(time.getUTCSeconds()).padStart(2, "0")].filter(Boolean).join(":");
 }
 
-const TrackTimeLine = ({ mediaType }) => {
-	const isPlaying = Store(Store.selectors.isPlaying);
-	const progress = Store(Store.selectors.progress);
-	const duration = Store(Store.selectors.duration);
+const TrackTimeLine = () => {
+	console.log("Spotify TimeLine");
+	const [isPlaying, progress, duration] = Store(_ => [_.isPlaying, _.progress, _.duration], shallow);
 
 	const [position, setPosition] = React.useState(progress);
 	const sliderRef = React.useRef();
@@ -2161,10 +2202,6 @@ const TrackTimeLine = ({ mediaType }) => {
 		SpotifyApi.seek(pos);
 	};
 
-	if (mediaType !== "track")
-		return (
-			React.createElement('div', { className: "spotify-player-timeline", }, React.createElement('div', { className: "spotify-player-timeline-progress", }, formatMsToTime(position)))
-		);
 	return (
 		React.createElement('div', { className: "spotify-player-timeline", }, React.createElement(TheBigBoyBundle.Slider, {
 			className: "spotify-player-timeline-trackbar",
@@ -2182,21 +2219,12 @@ const TrackTimeLine = ({ mediaType }) => {
 };
 
 const SpotifyPlayer = React.memo(function SpotifyPlayer() {
-	const player = Settings(Settings.selectors.player);
-	const playerCompactMode = Settings(Settings.selectors.playerCompactMode);
-	const playerBannerBackground = Settings(Settings.selectors.playerBannerBackground);
-
-	const isActive = Store(Store.selectors.isActive);
-	const media = Store(Store.selectors.media);
-	const mediaType = Store(Store.selectors.mediaType);
+	const [player, playerCompactMode, playerBannerBackground] = Settings(_ => [_.player, _.playerCompactMode, _.playerBannerBackground], shallow);
+	const [isActive, media, mediaType] = Store(_ => [_.isActive, _.media, _.mediaType], shallow);
 
 	if (!player || !isActive || !mediaType) return;
 
-	const { bannerMd, bannerSm, bannerLg } = {
-		bannerSm: media?.album?.images[2],
-		bannerMd: media?.album?.images[1],
-		bannerLg: media?.album?.images[0]
-	};
+	const { bannerMd, bannerSm, bannerLg } = Store.state.getSongBanners();
 
 	let className = "spotify-player-container";
 	if (playerCompactMode) className += " compact";
@@ -2212,18 +2240,13 @@ const SpotifyPlayer = React.memo(function SpotifyPlayer() {
 				className: className,
 			}, React.createElement(TrackMediaDetails, {
 				mediaType: mediaType,
-				media: media,
+				name: media?.name,
+				artists: media?.artists,
 			})
 
-			, React.createElement(TrackTimeLine, {
-				mediaType: mediaType,
-				media: media,
-			})
+			, mediaType === "track" && React.createElement(TrackTimeLine, null)
 
-			, React.createElement(SpotifyPlayerControls, {
-				banner: bannerLg?.url,
-				media: media,
-			})
+			, React.createElement(SpotifyPlayerControls, null)
 		)
 	);
 });
@@ -2273,18 +2296,17 @@ async function patchSpotifySocket() {
 	const socket = await getSocket();
 	Patcher.after(socket.prototype, "handleEvent", function onSocketEvent(socket, [socketEvent]) {
 		Logger.log("Spotify Socket", socketEvent, Date.now());
-		const state = Store.getState();
 
-		if (state.account?.accountId && socket.accountId !== state.account?.accountId) return;
+		if (Store.state.account?.accountId && socket.accountId !== Store.state.account?.accountId) return;
 		const { type, event } = socketEvent;
 
 		switch (type) {
 			case "PLAYER_STATE_CHANGED":
-				state.setPlayerState(event.state);
+				Store.state.setPlayerState(event.state);
 				break;
 			case "DEVICE_STATE_CHANGED": {
 				const devices = event.devices;
-				state.setDeviceState(!!(devices.find(d => d.is_active) || devices[0])?.is_active);
+				Store.state.setDeviceState(!!(devices.find(d => d.is_active) || devices[0])?.is_active);
 				break;
 			}
 		}
@@ -2347,8 +2369,7 @@ function MenuLabel({ label, icon }) {
 const patchChannelAttach = () => {
 	if (ChannelAttachMenu)
 		Patcher.after(ChannelAttachMenu, "default", (_, args, ret) => {
-			if (Settings.getState().player) return;
-			if (!Store.getState().mediaId) return;
+			if (!Store.state().mediaId) return;
 			if (!Array.isArray(ret?.props?.children)) return;
 
 			ret.props.children.push(
@@ -2359,7 +2380,8 @@ const patchChannelAttach = () => {
 						label: "Share spotify song",
 					}),
 					action: () => {
-						Store.Utils.share(Store.getState().media?.external_urls?.spotify);
+						const songUrl = Store.state.getSongUrl();
+						Store.Utils.share(songUrl);
 					},
 				}),
 				React.createElement(TheBigBoyBundle.MenuItem, {
@@ -2369,7 +2391,8 @@ const patchChannelAttach = () => {
 						label: "Share spotify song banner",
 					}),
 					action: () => {
-						Store.Utils.share(Store.getState().media?.album?.images[0]?.url);
+						const songCover = Store.state.getSongCover();
+						Store.Utils.share(songCover);
 					},
 				})
 			);
@@ -2379,6 +2402,7 @@ const patchChannelAttach = () => {
 
 window.spotSettings = Settings;
 window.spotStore = Store;
+window.SpotifyApi = SpotifyApi;
 
 class SpotifyEnhance {
 	start() {
