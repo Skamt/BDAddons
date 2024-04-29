@@ -2,9 +2,12 @@ import { React } from "@Api";
 import SpotifyPlayerControls from "./SpotifyPlayerControls";
 import TrackMediaDetails from "./TrackMediaDetails";
 import TrackTimeLine from "./TrackTimeLine";
+import Arrow from "@Components/Icons/Arrow";
 import { Store } from "../Store";
 import Settings from "@Utils/Settings";
 import { shallow } from "@Utils";
+import Tooltip from "@Components/Tooltip";
+import Button from "@Components/Button";
 
 export default React.memo(function SpotifyPlayer() {
 	const [player, playerCompactMode, playerBannerBackground] = Settings(_ => [_.player, _.playerCompactMode, _.playerBannerBackground], shallow);
@@ -33,8 +36,16 @@ export default React.memo(function SpotifyPlayer() {
 			/>
 
 			{mediaType === "track" && <TrackTimeLine />}
-
 			<SpotifyPlayerControls />
+			<Tooltip note="More info">
+				<Button
+					size={Button.Sizes.NONE}
+					look={Button.Looks.BLANK}
+					innerClassName="flexCenterCenter"
+					className="spotify-player-more-info">
+					<Arrow />
+				</Button>
+			</Tooltip>
 		</div>
 	);
 });

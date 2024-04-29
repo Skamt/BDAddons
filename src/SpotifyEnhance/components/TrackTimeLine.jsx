@@ -10,7 +10,6 @@ function formatMsToTime(ms) {
 }
 
 export default () => {
-	console.log("Spotify TimeLine");
 	const [isPlaying, progress, duration] = Store(_ => [_.isPlaying, _.progress, _.duration], shallow);
 
 	const [position, setPosition] = React.useState(progress);

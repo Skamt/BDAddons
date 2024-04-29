@@ -83,20 +83,20 @@ export const Store = Object.assign(
 					media: media,
 					mediaId: media?.id,
 					mediaType: playerState?.currently_playing_type,
-					// actions: playerState?.actions?.disallows
+					actions: playerState?.actions?.disallows
 				});
 			},
-			getAlbum(){
+			getAlbum() {
 				const media = get().media;
 				return {
 					...media.album,
-					url: media.album.external_urls.spotify,
-				}
+					url: media.album.external_urls.spotify
+				};
 			},
-			getSongUrl(){
+			getSongUrl() {
 				return get().media?.external_urls?.spotify;
 			},
-			getSongBanners(){
+			getSongBanners() {
 				const media = get().media;
 				return {
 					bannerSm: media?.album?.images[2],
@@ -110,6 +110,7 @@ export const Store = Object.assign(
 		init() {
 			SpotifyStore.addChangeListener(onSpotifyStoreChange);
 			ConnectedAccountsStore.addChangeListener(onAccountsChanged);
+			this.timer = new Timer(() => Store.state.setAccount(undefined), 10 * 60 * 1000);
 
 			const { socket } = SpotifyStore.getActiveSocketAndDevice() || {};
 			if (!socket) return;
@@ -121,7 +122,7 @@ export const Store = Object.assign(
 			ConnectedAccountsStore.removeChangeListener(onAccountsChanged);
 			Store.state.setAccount();
 			Store.state.setPlayerState({});
-			timer.stop();
+			this.timer.stop();
 		},
 		Utils,
 		selectors: {
@@ -147,11 +148,10 @@ Object.defineProperty(Store, "state", {
 		return this.getState();
 	}
 });
-const timer = new Timer(() => Store.state.setAccount(undefined), 10 * 60 * 1000);
 
 Store.subscribe(isPlaying => {
-	if (isPlaying) return timer.stop();
-	if (!isPlaying) return timer.start();
+	if (isPlaying) return Store.timer.stop();
+	if (!isPlaying) return Store.timer.start();
 }, Store.selectors.isPlaying);
 
 function onSpotifyStoreChange() {
@@ -173,10 +173,10 @@ function onAccountsChanged() {
 		 * SpotifyStore doesn't notify us about this information
 		 */
 
-		// if we don't have an account set yet, get out.
+		// if we don't have an account set yet, return.
 		if (!Store.state.account) return;
 		const connectedAccounts = ConnectedAccountsStore.getAccounts().filter(account => account.type === "spotify");
-		// if current account still connected, get out.
+		// if current account still connected, return.
 		if (connectedAccounts.some(a => a.id === Store.state.account.accountId)) return;
 
 		// this means we don't have a set account or set account is not connected, remove it.

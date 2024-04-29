@@ -25,17 +25,13 @@ export default ({ delay, spacing, forceShow, position, animation, align, classNa
 					leaveRef.current = null;
 					return;
 				}
-
 				enterRef.current = setTimeout(() => {
-					console.log("onMouseEnter delayed setShow setTimeout");
 					setShow(true);
 				}, delay || 150);
 			}}>
 			<Popout
 				renderPopout={renderPopout}
 				shouldShow={forceShow || show}
-				onRequestClose={() => console.log("onRequestClose")}
-				onRequestOpen={() => console.log("onRequestOpen")}
 				position={position ?? "top"}
 				align={align ?? "left"}
 				animation={animation ?? "1"}

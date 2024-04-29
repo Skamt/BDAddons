@@ -75,6 +75,7 @@ function ListenAlong({ userSyncActivityState }) {
 function ActivityControlButton({ grow, value, onClick, ...rest }) {
 	return (
 		<Button
+			innerClassName="flexCenterCenter"
 			size={Button.Sizes.NONE}
 			color={Button.Colors.PRIMARY}
 			look={Button.Colors.OUTLINED}

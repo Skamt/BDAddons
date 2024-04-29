@@ -23,64 +23,66 @@ import { shallow } from "@Utils";
 
 const { MenuItem, Menu } = TheBigBoyBundle;
 
-export default () => {
-	const playerButtons = Settings(Settings.selectors.playerButtons);
-	console.log("Spotify Controls");
-	const [isPlaying, shuffle, repeat, volume, actions] = Store(_ => [_.isPlaying, _.shuffle, _.repeat, _.volume, _.actions], shallow);
+const pauseHandler = () => SpotifyApi.pause();
+const playHandler = () => SpotifyApi.play();
+const previousHandler = () => SpotifyApi.previous();
+const nextHandler = () => SpotifyApi.next();
 
+const playpause = {
+	true: {
+		playPauseTooltip: "Pause",
+		playPauseClassName: "spotify-player-controls-pause",
+		playPauseHandler: pauseHandler,
+		playPauseIcon: <PauseIcon />
+	},
+	false: {
+		playPauseTooltip: "Play",
+		playPauseClassName: "spotify-player-controls-play",
+		playPauseHandler: playHandler,
+		playPauseIcon: <PlayIcon />
+	}
+};
+
+const repeatObj = {
+	off: {
+		repeatTooltip: "Repeat",
+		repeatArg: "context",
+		repeatIcon: <RepeatIcon />,
+		repeatActive: false
+	},
+	context: {
+		repeatTooltip: "Repeat track",
+		repeatArg: "track",
+		repeatIcon: <RepeatIcon />,
+		repeatActive: true
+	},
+	track: {
+		repeatTooltip: "Repeat off",
+		repeatArg: "off",
+		repeatIcon: <RepeatOneIcon />,
+		repeatActive: true
+	}
+};
+
+export default () => {
+	const playerButtons = Settings(Settings.selectors.playerButtons, shallow);
+	const [isPlaying, shuffle, repeat, volume] = Store(_ => [_.isPlaying, _.shuffle, _.repeat, _.volume], shallow);
+	const actions = Store(Store.selectors.actions, shallow);
 	const url = Store.state.getSongUrl();
 	const { bannerLg } = Store.state.getSongBanners();
 
 	const { toggling_shuffle, toggling_repeat_track, skipping_next, skipping_prev } = actions || {};
 
-	const { repeatTooltip, repeatActive, repeatIcon, repeatArg } = {
-		off: {
-			repeatTooltip: "Repeat",
-			repeatArg: "context",
-			repeatIcon: <RepeatIcon />,
-			repeatActive: false
-		},
-		context: {
-			repeatTooltip: "Repeat track",
-			repeatArg: "track",
-			repeatIcon: <RepeatIcon />,
-			repeatActive: true
-		},
-		track: {
-			repeatTooltip: "Repeat off",
-			repeatArg: "off",
-			repeatIcon: <RepeatOneIcon />,
-			repeatActive: true
-		}
-	}[repeat || "off"];
+	const { repeatTooltip, repeatActive, repeatIcon, repeatArg } = repeatObj[repeat || "off"];
 
 	const shuffleHandler = () => SpotifyApi.shuffle(!shuffle);
-	const previousHandler = () => SpotifyApi.previous();
-	const nextHandler = () => SpotifyApi.next();
 	const repeatHandler = () => SpotifyApi.repeat(repeatArg);
-	const pauseHandler = () => SpotifyApi.pause();
-	const playHandler = () => SpotifyApi.play();
-
 	const shareSongHandler = () => Store.Utils.share(url);
 	const sharePosterHandler = () => Store.Utils.share(bannerLg);
-
 	const copySongHandler = () => Store.Utils.copySpotifyLink(url);
 	const copyPosterHandler = () => Store.Utils.copySpotifyLink(bannerLg);
 
-	const { playPauseTooltip, playPauseHandler, playPauseIcon, playPauseClassName } = {
-		true: {
-			playPauseTooltip: "Pause",
-			playPauseClassName: "spotify-player-controls-pause",
-			playPauseHandler: pauseHandler,
-			playPauseIcon: <PauseIcon />
-		},
-		false: {
-			playPauseTooltip: "Play",
-			playPauseClassName: "spotify-player-controls-play",
-			playPauseHandler: playHandler,
-			playPauseIcon: <PlayIcon />
-		}
-	}[isPlaying];
+	const { playPauseTooltip, playPauseHandler, playPauseIcon, playPauseClassName } = playpause[isPlaying];
 
 	return (
 		<div className="spotify-player-controls">
@@ -124,11 +126,9 @@ export default () => {
 					)}
 					align="left"
 					position="top"
-					animation="1">
-					<SpotifyPlayerButton
-						className="spotify-player-controls-share"
-						value={<ShareIcon />}
-					/>
+					animation="1"
+					className="spotify-player-controls-share">
+					<SpotifyPlayerButton value={<ShareIcon />} />
 				</Popout>
 			)}
 			{[playerButtons[PlayerButtonsEnum.SHUFFLE] && { name: "Shuffle", value: <ShuffleIcon />, className: "spotify-player-controls-shuffle", disabled: toggling_shuffle, active: shuffle, onClick: shuffleHandler }, playerButtons[PlayerButtonsEnum.PREVIOUS] && { name: "Previous", value: <PreviousIcon />, className: "spotify-player-controls-previous", disabled: skipping_prev, onClick: previousHandler }, { name: playPauseTooltip, value: playPauseIcon, className: playPauseClassName, disabled: false, onClick: playPauseHandler }, playerButtons[PlayerButtonsEnum.NEXT] && { name: "Next", value: <NextIcon />, className: "spotify-player-controls-next", disabled: skipping_next, onClick: nextHandler }, playerButtons[PlayerButtonsEnum.REPEAT] && { name: repeatTooltip, value: repeatIcon, className: "spotify-player-controls-repeat", disabled: toggling_repeat_track, active: repeatActive, onClick: repeatHandler }].filter(Boolean).map(SpotifyPlayerButton)}
@@ -141,6 +141,7 @@ function SpotifyPlayerButton({ className, active, name, value, ...rest }) {
 	return (
 		<Tooltip note={name}>
 			<Button
+				innerClassName="flexCenterCenter"
 				className={`spotify-player-controls-btn ${className} ${active ? "enabled" : ""}`}
 				size={Button.Sizes.NONE}
 				color={Button.Colors.PRIMARY}
@@ -196,9 +197,9 @@ function Volume({ volume }) {
 			position="top"
 			align="center"
 			animation="1"
+			className="spotify-player-controls-volume"
 			spacing={8}>
 			<SpotifyPlayerButton
-				className="spotify-player-controls-volume"
 				onClick={volumeMuteHandler}
 				value={val ? <VolumeIcon /> : <MuteVolumeIcon />}
 			/>
