@@ -12,6 +12,7 @@ import RefreshChannel from "./mods/RefreshChannel";
 import NoReplyPing from "./mods/NoReplyPing";
 import NoLinkPreview from "./mods/NoLinkPreview";
 import SpotifyListenAlong from "./mods/SpotifyListenAlong";
+import GIFCommandPreviews from "./mods/GIFCommandPreviews";
 import Whois from "./mods/Whois";
 import Spotify from "./mods/Spotify";
 
@@ -29,7 +30,8 @@ const mods = [
 	new NoTrack(),
 	new FriendsSince(),
 	new ShowUserInfo(),
-	new SpotifyListenAlong()
+	new SpotifyListenAlong(),
+	new GIFCommandPreviews()
 ];
 
 if (console.context) console = console.context();

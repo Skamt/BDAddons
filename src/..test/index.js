@@ -1,65 +1,68 @@
-import { DOM, Patcher, React } from "@Api";
+import { DOM, Patcher, React, showConfirmationModal } from "@Api";
 // import Tooltip from "@Components/Tooltip";
 import Button from "@Components/Button";
 import ErrorBoundary from "@Components/ErrorBoundary";
+import Flex from "@Components/Flex";
+import Arrow from "@Components/Icons/Arrow";
+import Tooltip from "@Components/Tooltip";
 // import ShareIcon from "@Components/icons/ShareIcon";
 // import { getInternalInstance } from "@Api";
 import ModalRoot from "@Modules/ModalRoot";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 import { getImageModalComponent, openModal } from "@Utils";
+import { shallow } from "@Utils";
 import Logger from "@Utils/Logger";
+import Settings from "@Utils/Settings";
 import css from "./styles";
+import dummyMedia from "./test";
 
-// const { closeModal, Popout, MenuItem, Menu, MenuGroup } = TheBigBoyBundle;
+const { closeModal, Popout, MenuItem, Menu, MenuGroup } = TheBigBoyBundle;
 
-// const Collapsible = s(193544).exports.default;
+const { FormTitle, Anchor } = TheBigBoyBundle;
 
-// const b = BdApi.showConfirmationModal("", <T />);
+const album = {
+	...dummyMedia.album,
+	url:dummyMedia.album.external_urls.spotify
+};
 
-// function T() {
-// 	return (
-// 		<Collapsible
-// 			changeTitle="Change Verification Level"
-// 			value={0}
-// 			options={[
-// 				{
-// 					"title": "None",
-// 					"description": "Unrestricted",
-// 					"highlightColor": "transparent",
-// 					"value": 0,
-// 					"disabled": false
-// 				},
-// 				{
-// 					"title": "Low",
-// 					"description": "Must have a verified email on their Discord account.",
-// 					"highlightColor": "statusGreen",
-// 					"value": 1
-// 				},
-// 				{
-// 					"title": "Medium",
-// 					"description": "Must also be registered on Discord for longer than 5 minutes.",
-// 					"highlightColor": "statusYellow",
-// 					"value": 2
-// 				},
-// 				{
-// 					"title": "High",
-// 					"description": "Must also be a member of this server for longer than 10 minutes.",
-// 					"highlightColor": "statusOrange",
-// 					"value": 3
-// 				},
-// 				{
-// 					"title": "Highest",
-// 					"description": "Must have a verified phone on their Discord account.",
-// 					"highlightColor": "statusRed",
-// 					"value": 4
-// 				}
-// 			]}
-// 			disabled={false}>
-			
-// 		</Collapsible>
-// 	);
-// }
 
+const banner = dummyMedia?.album?.images[1];
+
+function MoreInfo() {
+	// const { bannerMd: banner } = Store.state.getSongBanners();
+	
+
+	return (
+		<Flex style={{ padding: 10 }}>
+			<FormTitle tag="h4">Album: {album.id}</FormTitle>
+			<Flex
+				direction={Flex.Direction.HORIZONTAL}
+				style={{ gap: 10 }}>
+				<Flex grow={0}>
+					<Anchor href={album.url}>
+						<div
+							style={{
+								background: `url("${banner.url}") center/cover no-repeat`,
+								width: 150,
+								height: 150
+							}}></div>
+					</Anchor>
+				</Flex>
+				<Flex grow={1}>
+					<Flex direction={Flex.Direction.VERTICAL}>
+						<Anchor href={album.url}>{album.name}</Anchor>
+						<FormTitle tag="h5">Release date: {album.release_date}</FormTitle>
+						<FormTitle tag="h5">Total tracks: {album.total_tracks}</FormTitle>
+					</Flex>
+				</Flex>
+			</Flex>
+		</Flex>
+	);
+}
+
+
+// window._sdwed && closeModal(window._sdwed);
+// window._sdwed = showConfirmationModal(dummyMedia?.name, <MoreInfo />)
 
 export default () => {
 	return {
@@ -67,7 +70,6 @@ export default () => {
 			DOM.addStyle(css);
 		},
 		stop() {
-			// closeModal(b);
 			DOM.removeStyle();
 			Patcher.unpatchAll();
 		}
