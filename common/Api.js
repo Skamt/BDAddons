@@ -13,8 +13,15 @@ export const getModule = Api.Webpack.getModule;
 export const Filters = Api.Webpack.Filters;
 export const waitForModule = Api.Webpack.waitForModule;
 
-
 // React
 export const useState = Api.React.useState;
 export const useEffect = Api.React.useEffect;
 
+// Modals
+export const showConfirmationModal = Api.showConfirmationModal;
+
+// Utils
+export const debounce = Api.Utils.debounce;
+export const findInTree = Api.Utils.findInTree;
+export const getOwnerInstance = Api.ReactUtils.getOwnerInstance;
+export const getInternalInstance = Api.ReactUtils.getInternalInstance;

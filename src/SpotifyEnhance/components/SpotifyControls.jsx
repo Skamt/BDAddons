@@ -8,7 +8,7 @@ export default ({ id, type, embed: { thumbnail, rawTitle, url } }) => {
 	const isActive = Store(Store.selectors.isActive);
 	if (!isActive) return null;
 
-	const banner = thumbnail?.proxyURL || thumbnail?.url;
+	const banner = thumbnail?.url || thumbnail?.proxyURL;
 
 	const listenBtn = type !== "show" && (
 		<ControlBtn

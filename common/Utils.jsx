@@ -1,5 +1,4 @@
-import { ReactDOM, React, Api } from "@Api";
-import { Patcher } from "@Api";
+import { Patcher, ReactDOM, React } from "@Api";
 import ErrorBoundary from "@Components/ErrorBoundary";
 import RenderLinkComponent from "@Modules/RenderLinkComponent";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
@@ -7,11 +6,7 @@ const { ModalRoot, ModalSize } = TheBigBoyBundle;
 import ImageModalVideoModal from "@Modules/ImageModalVideoModal";
 const ImageModal = ImageModalVideoModal.ImageModal;
 
-export const debounce = Api.Utils.debounce;
-export const findInTree = Api.Utils.findInTree;
 
-export const getOwnerInstance = Api.ReactUtils.getOwnerInstance;
-export const getInternalInstance = Api.ReactUtils.getInternalInstance;
 
 export function shallow(objA, objB) {
 	if (Object.is(objA, objB)) return true;

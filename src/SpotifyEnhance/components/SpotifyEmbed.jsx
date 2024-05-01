@@ -45,7 +45,7 @@ export default ({ id, type, embed: { thumbnail, rawTitle, rawDescription, url } 
 	if (isThis && isPlaying && !useReducedMotion) className += " playing";
 	if (embedBannerBackground) className += " bannerBackground";
 
-	const banner = thumbnail?.proxyURL || thumbnail?.url;
+	const banner = thumbnail?.url || thumbnail?.proxyURL ;
 
 	return (
 		<div
@@ -54,10 +54,10 @@ export default ({ id, type, embed: { thumbnail, rawTitle, rawDescription, url } 
 			<Tooltip note="View">
 				<div
 					onClick={() => {
-						let { proxyURL, url, width, height } = thumbnail;
+						let { width, height } = thumbnail;
 						width = width > 650 ? 650 : width;
 						height = height > 650 ? 650 : height;
-						openModal(<div className="spotify-banner-modal">{getImageModalComponent(proxyURL || url, { width, height })}</div>);
+						openModal(<div className="spotify-banner-modal">{getImageModalComponent(banner, { width, height })}</div>);
 					}}
 					className="spotifyEmbed-thumbnail"
 				/>
