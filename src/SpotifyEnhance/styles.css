@@ -447,34 +447,6 @@ div:has(> .spotify-banner-modal) {
 	margin-right: 5px;
 }
 
-.spotify-player-container:hover .spotify-player-more-info{
-	opacity:1;
-}
-
-.spotify-player-more-info {
-	position:absolute;
-	top:0;
-	right:0;
-	z-index:999;
-	display:flex;
-	opacity:0;
-	scale:.7;
-	transform-origin:top right;
-	cursor:pointer;
-	padding:4px;
-	border-radius:50%;
-	background:#000;
-	transition: opacity 200ms linear;
-}
-
-.spotify-player-more-info:hover{
-	background:#555;
-}
-
-.spotify-player-more-info:active{
-	background:#222;
-}
-
 /* End Player */
 
 /* Original Spotify Embed controls */
