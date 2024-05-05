@@ -1,9 +1,17 @@
+const { createFilter } = require("@rollup/pluginutils");
 module.exports = function css() {
+	const filter = createFilter(["**/*.css"]);
+	const styles = [];
+
 	return {
-		name: 'css',
+		name: "css",
 		transform(code, id) {
-			if (id.endsWith('.css'))
-				return `export default \`\n${code}\``
+			if (!filter(id)) return;
+			styles.push(code);
+			return "";
+		},
+		outro() {
+			return `const css = \`${styles.join("\n")}\`;`;
 		}
 	};
-}
+};

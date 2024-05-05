@@ -1,24 +1,16 @@
 import { DOM, Patcher, React, showConfirmationModal } from "@Api";
 // import Tooltip from "@Components/Tooltip";
-import Button from "@Components/Button";
-import ErrorBoundary from "@Components/ErrorBoundary";
-import Flex from "@Components/Flex";
-import Arrow from "@Components/Icons/Arrow";
-import Tooltip from "@Components/Tooltip";
-// import ShareIcon from "@Components/icons/ShareIcon";
-// import { getInternalInstance } from "@Api";
-import ModalRoot from "@Modules/ModalRoot";
-import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
-import { getImageModalComponent, openModal } from "@Utils";
-import { shallow } from "@Utils";
-import Logger from "@Utils/Logger";
-import Settings from "@Utils/Settings";
-import css from "./styles";
+import Collapsible from "@Components/Collapsible";
+import Settings from "./components/Settings";
+import "./styles";
 
 export default () => {
 	return {
 		start() {
 			DOM.addStyle(css);
+			let b = <Collapsible />;
+			let d = <Settings />;
+			console.log(b);
 		},
 		stop() {
 			DOM.removeStyle();

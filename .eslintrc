@@ -13,7 +13,7 @@
 		"react/display-name": [0],
 		"react/style-prop-object": [1],
 		"no-empty": [0],
-		"no-multiple-empty-lines": ["error"]
+		"no-multiple-empty-lines": [0]
 	},
 	"parserOptions": {
 		"ecmaVersion": "latest",

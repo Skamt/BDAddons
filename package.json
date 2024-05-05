@@ -51,5 +51,8 @@
 				]
 			}
 		}
+	},
+	"dependencies": {
+		"@rollup/pluginutils": "^5.1.0"
 	}
 }

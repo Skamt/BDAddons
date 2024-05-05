@@ -1,0 +1,33 @@
+.collapsible-container {
+	border-radius: 5;
+	border: 1px solid rgb(30, 31, 34);
+	gap: 20;
+}
+
+.collapsible-header {
+	background: rgba(30, 31, 34, 0.3);
+	padding: 10px 3px;
+	gap: 8;
+}
+
+.collapsible-open .collapsible-header {
+	border-bottom: 1px solid rgb(30, 31, 34);
+}
+
+.collapsible-icon {
+	flex-grow: 0;
+	rotate:0;
+	transition: rotate 150ms linear;
+}
+
+.collapsible-open .collapsible-icon {
+	rotate:90deg;
+}
+
+.collapsible-title {
+	text-transform: capitalize;
+}
+
+.collapsible-body {
+	margin: 0 10px;
+}

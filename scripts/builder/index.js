@@ -42,6 +42,7 @@ async function build(list) {
 
 		try {
 			const bundle = await rollup(input);
+
 			await bundle.write(output);
 			output.file = path.join(bdFolder, "plugins", `${config.info.name}.plugin.js`);
 			await bundle.write(output);

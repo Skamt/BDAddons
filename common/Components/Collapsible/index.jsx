@@ -1,4 +1,5 @@
 import { React } from "@Api";
+import "./styles";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 import Arrow from "@Components/Icons/Arrow";
 import Flex from "@Components/Flex";
@@ -9,46 +10,23 @@ export default function Collapsible({ title, children }) {
 
 	return (
 		<Flex
-			style={{
-				borderRadius: 5,
-				border: "1px solid rgb(30, 31, 34)",
-				gap: 20
-			}}
+			className={open ? "collapsible-container collapsible-open" : "collapsible-container"}
 			direction={Flex.Direction.VERTICAL}>
 			<Flex
+				className="collapsible-header"
 				onClick={() => setOpen(!open)}
-				style={{
-					borderBottom: open && "1px solid rgb(30, 31, 34)",
-					background: "rgba(30, 31, 34, 0.3)",
-					padding: "10px 3px",
-					gap: 8
-				}}
 				direction={Flex.Direction.HORIZONTAL}
 				align={Flex.Align.CENTER}>
-				<Flex
-					style={{
-						flexGrow: 0,
-						transition: "rotate 150ms linear",
-						rotate: open ? "90deg" : "0deg"
-					}}>
+				<Flex className="collapsible-icon">
 					<Arrow />
 				</Flex>
 				<Heading
-					style={{
-						textTransform: "capitalize"
-					}}
+					className="collapsible-title"
 					tag="h5">
 					{title}
 				</Heading>
 			</Flex>
-			{open && (
-				<div
-					style={{
-						margin: "0 10px"
-					}}>
-					{children}
-				</div>
-			)}
+			{open && <div className="collapsible-body">{children}</div>}
 		</Flex>
 	);
 }

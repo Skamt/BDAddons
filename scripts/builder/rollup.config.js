@@ -1,5 +1,4 @@
 const path = require("path");
-const buildMeta = require("./helpers/buildMeta.js");
 
 const json = require("@rollup/plugin-json");
 const alias = require("@rollup/plugin-alias");
@@ -13,6 +12,7 @@ const css = require("./rollup-plugins/css.js");
 const beautify = require("./rollup-plugins/beautify.js");
 const modulesAutoLoader = require("./rollup-plugins/modules-auto-loader.js");
 const componentsAutoLoader = require("./rollup-plugins/components-auto-loader.js");
+const meta = require("./rollup-plugins/meta.js");
 
 const sucraseConfig = {
 	transforms: ["jsx"],
@@ -33,20 +33,17 @@ const eslintBundleConfig = {
 
 const changelog = pluginConfig => {
 	let first = true;
-	return !pluginConfig.changelog ?
-		{} :
-		{
-			name: "Changelog",
-			transform(code) {
-				if (first) {
-					first = false;
-					if (pluginConfig.changelog) {
-						code += `import shouldChangelog from "@Utils/Changelog";shouldChangelog()?.();`;
-						return code;
+	return !pluginConfig.changelog
+		? {}
+		: {
+				name: "Changelog",
+				transform(code) {
+					if (first) {
+						first = false;
+						return `import shouldChangelog from "@Utils/Changelog";shouldChangelog()?.();${code}`;
 					}
 				}
-			}
-		};
+			};
 };
 
 const aliasesObj = {
@@ -72,10 +69,18 @@ module.exports = function getConfig(inputPath, outputPath, pluginConfig) {
 					preferConst: true
 				}),
 				changelog(pluginConfig),
-				css(),
+				css(pluginConfig),
 				sucrase(sucraseConfig),
 				cleanup(cleanupConfig),
-				eslintBundle(eslintBundleConfig)
+				eslintBundle(eslintBundleConfig),
+				meta(pluginConfig),
+				{
+					name: "file index",
+					transform(code, id) {
+						id = id.split("\\").splice(3).join("\\") || id;
+						return `/* [file] ${id} */\n${code}\n/* End ${id} */`;
+					}
+				}
 			]
 		},
 		output: {
@@ -86,7 +91,6 @@ module.exports = function getConfig(inputPath, outputPath, pluginConfig) {
 				objectShorthand: true
 			},
 			strict: false,
-			intro: `${buildMeta(pluginConfig)}\nconst config = ${beautify.b(JSON.stringify(pluginConfig))}`,
 			plugins: [beautify()]
 		}
 	};

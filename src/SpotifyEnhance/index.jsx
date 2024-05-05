@@ -1,4 +1,4 @@
-import css from "./styles";
+import "./styles";
 import { DOM, Patcher } from "@Api";
 import Logger from "@Utils/Logger";
 import Settings from "@Utils/Settings";
@@ -21,6 +21,7 @@ window.SpotifyApi = SpotifyApi;
 export default class SpotifyEnhance {
 	start() {
 		try {
+			// eslint-disable-next-line no-undef
 			DOM.addStyle(css);
 			Store.init();
 			patchListenAlong();
