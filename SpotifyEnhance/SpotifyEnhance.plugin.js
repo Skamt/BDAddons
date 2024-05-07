@@ -855,12 +855,12 @@ Store.subscribe(isPlaying => {
 }, Store.selectors.isPlaying);
 
 Store.subscribe(position => {
-	const { isPlaying, duration, setPosition } = Store.state;
+	const { isPlaying, progress, duration, setPosition } = Store.state;
 	if (position < duration && isPlaying) {
 		Store.positionInterval.start();
 	} else {
 		Store.positionInterval.stop();
-		setPosition(duration);
+		setPosition(progress, duration);
 	}
 }, Store.selectors.position);
 
