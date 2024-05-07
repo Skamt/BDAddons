@@ -11,6 +11,7 @@ import SpotifyApi from "../SpotifyAPIWrapper";
 import { Store } from "../Store";
 import AccessibilityStore from "@Stores/AccessibilityStore";
 import FluxHelpers from "@Modules/FluxHelpers";
+import TrackTimeLine from "./TrackTimeLine";
 
 export default ({ id, type, embed: { thumbnail, rawTitle, rawDescription, url } }) => {
 	const embedBannerBackground = Settings(Settings.selectors.embedBannerBackground);
@@ -67,7 +68,9 @@ export default ({ id, type, embed: { thumbnail, rawTitle, rawDescription, url } 
 
 			{type && id && (
 				<div className="spotifyEmbed-controls">
-					{!isThis && isActive && [listenBtn, queueBtn]}
+					
+					{(isThis && isActive && !isPlaying || !isThis && isActive) && [listenBtn, queueBtn]}
+					{isThis && isActive && isPlaying && <TrackTimeLine />}
 					<Tooltip note="Copy link">
 						<div
 							onClick={() => Store.Utils.copySpotifyLink(url)}

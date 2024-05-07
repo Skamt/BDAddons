@@ -78,9 +78,9 @@ export default () => {
 	const shuffleHandler = () => SpotifyApi.shuffle(!shuffle);
 	const repeatHandler = () => SpotifyApi.repeat(repeatArg);
 	const shareSongHandler = () => Store.Utils.share(url);
-	const sharePosterHandler = () => Store.Utils.share(bannerLg);
+	const sharePosterHandler = () => Store.Utils.share(bannerLg.url);
 	const copySongHandler = () => Store.Utils.copySpotifyLink(url);
-	const copyPosterHandler = () => Store.Utils.copySpotifyLink(bannerLg);
+	const copyPosterHandler = () => Store.Utils.copySpotifyLink(bannerLg.url);
 
 	const { playPauseTooltip, playPauseHandler, playPauseIcon, playPauseClassName } = playpause[isPlaying];
 

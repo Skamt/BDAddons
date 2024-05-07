@@ -10,33 +10,15 @@ function formatMsToTime(ms) {
 }
 
 export default () => {
-	const [isPlaying, progress, duration] = Store(_ => [_.isPlaying, _.progress, _.duration], shallow);
+	const [position, duration] = Store(_ => [_.position, _.duration], shallow);
 
-	const [position, setPosition] = React.useState(progress);
 	const sliderRef = React.useRef();
-	const intervalRef = React.useRef();
-
-	React.useEffect(() => {
-		if (!sliderRef.current?.state?.active) setPosition(progress);
-	}, [progress]);
-
-	React.useEffect(() => {
-		if (position < duration) return;
-		clearInterval(intervalRef.current);
-		setPosition(duration || progress);
-	}, [position]);
-
-	React.useEffect(() => {
-		if (!isPlaying) return;
-		intervalRef.current = setInterval(() => setPosition(p => p + 1000), 1000);
-		return () => clearInterval(intervalRef.current);
-	}, [progress, isPlaying]);
 
 	const rangeChangeHandler = e => {
 		if (!sliderRef.current?.state?.active) return;
-		clearInterval(intervalRef.current);
 		const pos = Math.floor(e);
-		setPosition(pos);
+		Store.positionInterval.stop();
+		Store.state.setPosition(pos);
 		SpotifyApi.seek(pos);
 	};
 

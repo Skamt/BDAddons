@@ -2,7 +2,7 @@ import ConnectedAccountsStore from "@Stores/ConnectedAccountsStore";
 import SelectedChannelStore from "@Stores/SelectedChannelStore";
 import SpotifyStore from "@Stores/SpotifyStore";
 import { promiseHandler } from "@Utils";
-import { copy } from "@Utils";
+import { shallow, copy } from "@Utils";
 import Logger from "@Utils/Logger";
 import { insertText, sendMessageDirectly } from "@Utils/Messages";
 import Timer from "@Utils/Timer";
@@ -69,7 +69,8 @@ export const Store = Object.assign(
 			shuffle: false,
 			actions: {},
 			setPlayerState: playerState => {
-				if (!playerState || playerState.currently_playing_type === "ad") return;
+				if (!playerState || playerState.currently_playing_type === "ad") return set({ isPlaying: false });
+
 				const state = get();
 				const media = playerState.item?.id === state.media?.id ? state.media : playerState.item;
 				set({
@@ -77,6 +78,7 @@ export const Store = Object.assign(
 					volume: playerState?.device?.volume_percent,
 					duration: playerState?.item?.duration_ms,
 					progress: playerState?.progress_ms,
+					position: playerState?.progress_ms,
 					isPlaying: playerState?.is_playing,
 					repeat: playerState?.repeat_state,
 					shuffle: playerState?.shuffle_state,
@@ -86,6 +88,17 @@ export const Store = Object.assign(
 					actions: playerState?.actions?.disallows
 				});
 			},
+
+			position: 0,
+			incrementPosition: () => {
+				const state = get();
+				set({
+					position: state.position + 1000
+				});
+			},
+			setPosition: position => set({ position }),
+			// setPosition: () => {},
+
 			getAlbum() {
 				const media = get().media;
 				return {
@@ -110,7 +123,8 @@ export const Store = Object.assign(
 		init() {
 			SpotifyStore.addChangeListener(onSpotifyStoreChange);
 			ConnectedAccountsStore.addChangeListener(onAccountsChanged);
-			this.timer = new Timer(() => Store.state.setAccount(undefined), 10 * 60 * 1000);
+			this.idleTimer = new Timer(() => Store.state.setAccount(undefined), 10 * 60 * 1000, Timer.TIMEOUT);
+			this.positionInterval = new Timer(Store.state.incrementPosition, 1000, Timer.INTERVAL);
 
 			const { socket } = SpotifyStore.getActiveSocketAndDevice() || {};
 			if (!socket) return;
@@ -122,7 +136,7 @@ export const Store = Object.assign(
 			ConnectedAccountsStore.removeChangeListener(onAccountsChanged);
 			Store.state.setAccount();
 			Store.state.setPlayerState({});
-			this.timer.stop();
+			this.idleTimer.stop();
 		},
 		Utils,
 		selectors: {
@@ -136,6 +150,7 @@ export const Store = Object.assign(
 			duration: state => state.duration,
 			repeat: state => state.repeat,
 			shuffle: state => state.shuffle,
+			position: state => state.position,
 			actions: state => state.actions
 		}
 	}
@@ -144,15 +159,30 @@ export const Store = Object.assign(
 Object.defineProperty(Store, "state", {
 	writeable: false,
 	configurable: false,
-	get() {
-		return this.getState();
-	}
+	get: () => Store.getState()
 });
 
 Store.subscribe(isPlaying => {
-	if (isPlaying) return Store.timer.stop();
-	if (!isPlaying) return Store.timer.start();
+	if (isPlaying) {
+		Store.idleTimer.stop();
+		Store.positionInterval.start();
+	} else {
+		Store.positionInterval.stop();
+		Store.idleTimer.start();
+	}
 }, Store.selectors.isPlaying);
+
+Store.subscribe(position => {
+	const { isPlaying, duration, setPosition } = Store.state;
+	if (position < duration && isPlaying) {
+		Store.positionInterval.start();
+	}
+	else {
+		Store.positionInterval.stop();
+		setPosition(duration);
+	}
+}, Store.selectors.position);
+
 
 function onSpotifyStoreChange() {
 	try {
