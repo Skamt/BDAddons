@@ -73,14 +73,7 @@ module.exports = function getConfig(inputPath, outputPath, pluginConfig) {
 				sucrase(sucraseConfig),
 				cleanup(cleanupConfig),
 				eslintBundle(eslintBundleConfig),
-				meta(pluginConfig),
-				{
-					name: "file index",
-					transform(code, id) {
-						id = id.split("\\").splice(3).join("\\") || id;
-						return `/* [file] ${id} */\n${code}\n/* End ${id} */`;
-					}
-				}
+				meta(pluginConfig)
 			]
 		},
 		output: {

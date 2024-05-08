@@ -331,6 +331,7 @@ div:has(> .spotify-banner-modal) {
 }
 
 .spotify-player-timeline {
+	user-select: none;
 	margin-bottom: 2px;
 	color: white;
 	display: flex;

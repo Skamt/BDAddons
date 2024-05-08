@@ -92,12 +92,11 @@ export const Store = Object.assign(
 			position: 0,
 			incrementPosition: () => {
 				const state = get();
-				set({
-					position: state.position + 1000
-				});
+				let sum = state.position + 1000;
+				if (sum > state.duration) sum = state.duration;
+				set({ position: sum });
 			},
 			setPosition: position => set({ position }),
-			// setPosition: () => {},
 
 			getAlbum() {
 				const media = get().media;
@@ -173,15 +172,19 @@ Store.subscribe(isPlaying => {
 }, Store.selectors.isPlaying);
 
 Store.subscribe(position => {
-	const { isPlaying, progress, duration, setPosition } = Store.state;
-	if (position < duration && isPlaying) {
-		Store.positionInterval.start();
-	}
-	else {
-		Store.positionInterval.stop();
-		setPosition(progress, duration);
-	}
+	const { duration, setPosition } = Store.state;
+
+	if (position < duration) return;
+	Store.positionInterval.stop();
+	setPosition(duration || 0);
+
 }, Store.selectors.position);
+
+Store.subscribe(([isPlaying]) => {
+	if (!isPlaying) Store.positionInterval.stop();
+	else Store.positionInterval.start();
+
+}, state => [state.isPlaying, state.progress], shallow);
 
 
 function onSpotifyStoreChange() {
