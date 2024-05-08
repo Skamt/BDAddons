@@ -37,7 +37,6 @@ const config = {
 	}
 }
 
-/* [file] BDAddons\common\Api.js */
 const Api = new BdApi(config.info.name);
 
 const UI = Api.UI;
@@ -49,9 +48,7 @@ const Patcher = Api.Patcher;
 const getModule = Api.Webpack.getModule;
 const Filters = Api.Webpack.Filters;
 const getInternalInstance = Api.ReactUtils.getInternalInstance;
-/* End BDAddons\common\Api.js */
 
-/* [file] BDAddons\common\Utils\Logger.js */
 const Logger = {
 	error(...args) {
 		this.p(console.error, ...args);
@@ -66,9 +63,6 @@ const Logger = {
 		target(`%c[${config.info.name}]`, "color: #3a71c1;font-weight: bold;", ...args);
 	}
 };
-/* End BDAddons\common\Utils\Logger.js */
-
-/* [file] BDAddons\common\Webpack.js */
 
 function getModuleAndKey(filter, options) {
 	let module;
@@ -79,13 +73,8 @@ function getModuleAndKey(filter, options) {
 	if (!key) return undefined;
 	return { module, key };
 }
-/* End BDAddons\common\Webpack.js */
 
-/* [file] @Modules/zustand */
 const zustand = getModule(Filters.byStrings("subscribeWithSelector", "useReducer"), { searchExports: false });
-/* End @Modules/zustand */
-
-/* [file] BDAddons\common\Utils\Settings.js */
 
 const SettingsStoreSelectors = {};
 const persistMiddleware = config => (set, get, api) => config(args => (set(args), Data.save("settings", get().getRawState())), get, api);
@@ -132,21 +121,11 @@ Object.defineProperty(SettingsStore, "state", {
 
 const Settings = SettingsStore;
 
-/* End BDAddons\common\Utils\Settings.js */
-
-/* [file] @Stores/ConnectedAccountsStore */
 const ConnectedAccountsStore = getModule(m => m._dispatchToken && m.getName() === "ConnectedAccountsStore");
-/* End @Stores/ConnectedAccountsStore */
 
-/* [file] @Stores/SelectedChannelStore */
 const SelectedChannelStore = getModule(m => m._dispatchToken && m.getName() === "SelectedChannelStore");
-/* End @Stores/SelectedChannelStore */
 
-/* [file] @Stores/SpotifyStore */
 const SpotifyStore = getModule(m => m._dispatchToken && m.getName() === "SpotifyStore");
-/* End @Stores/SpotifyStore */
-
-/* [file] BDAddons\common\Components\ErrorBoundary\index.jsx */
 
 class ErrorBoundary extends React.Component {
 	state = { hasError: false, error: null, info: null };
@@ -187,21 +166,12 @@ class ErrorBoundary extends React.Component {
 	}
 }
 
-/* End BDAddons\common\Components\ErrorBoundary\index.jsx */
-
-/* [file] @Modules/RenderLinkComponent */
 const RenderLinkComponent = getModule(m => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false });
-/* End @Modules/RenderLinkComponent */
 
-/* [file] @Modules/TheBigBoyBundle */
 const TheBigBoyBundle = getModule(Filters.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
-/* End @Modules/TheBigBoyBundle */
 
-/* [file] @Modules/ImageModalVideoModal */
 const ImageModalVideoModal = getModule(Filters.byProps("ImageModal"), { searchExports: false });
-/* End @Modules/ImageModalVideoModal */
 
-/* [file] BDAddons\common\Utils.jsx */
 const { ModalRoot, ModalSize } = TheBigBoyBundle;
 const ImageModal = ImageModalVideoModal.ImageModal;
 
@@ -270,21 +240,11 @@ function buildUrl(endpoint, path, params) {
 	return uri;
 }
 
-/* End BDAddons\common\Utils.jsx */
-
-/* [file] @Modules/MessageActions */
 const MessageActions = getModule(Filters.byProps('jumpToMessage', '_sendMessage'), { searchExports: false });
-/* End @Modules/MessageActions */
 
-/* [file] @Modules/Dispatcher */
 const Dispatcher = getModule(Filters.byProps("dispatch", "subscribe"), { searchExports: false });
-/* End @Modules/Dispatcher */
 
-/* [file] @Stores/PendingReplyStore */
 const PendingReplyStore = getModule(m => m._dispatchToken && m.getName() === "PendingReplyStore");
-/* End @Stores/PendingReplyStore */
-
-/* [file] BDAddons\common\Utils\Messages.js */
 
 function getReply(channelId) {
 	const reply = PendingReplyStore?.getPendingReply(channelId);
@@ -331,9 +291,6 @@ const insertText = (() => {
 	};
 })();
 
-/* End BDAddons\common\Utils\Messages.js */
-
-/* [file] BDAddons\common\Utils\Timer.js */
 class Timer {
 	static INTERVAL = "INTERVAL";
 	static TIMEOUT = "TIMEOUT";
@@ -372,10 +329,6 @@ class Timer {
 	}
 }
 
-/* End BDAddons\common\Utils\Timer.js */
-
-/* [file] BDAddons\common\Utils\Toast.js */
-
 function showToast(content, type) {
 	UI.showToast(`[${config.info.name}] ${content}`, { timeout: 5000, type });
 }
@@ -386,9 +339,7 @@ const Toast = {
 	warning(content) { showToast(content, "warning"); },
 	error(content) { showToast(content, "error"); }
 };
-/* End BDAddons\common\Utils\Toast.js */
 
-/* [file] BDAddons\common\Utils\SpotifyAPI.js */
 const API_ENDPOINT = "https://api.spotify.com/v1";
 
 async function responseToJson(response) {
@@ -566,13 +517,7 @@ class SpotifyClientAPI {
 
 const SpotifyAPI = new SpotifyClientAPI();
 
-/* End BDAddons\common\Utils\SpotifyAPI.js */
-
-/* [file] @Modules/RefreshToken */
 const RefreshToken = getModule(Filters.byStrings("CONNECTION_ACCESS_TOKEN"), { searchExports: true });
-/* End @Modules/RefreshToken */
-
-/* [file] BDAddons\src\SpotifyEnhance\SpotifyAPIWrapper.js */
 
 async function requestHandler(action) {
 	let repeat = 2;
@@ -653,10 +598,6 @@ const SpotifyApi = new Proxy({}, {
 	}
 });
 
-/* End BDAddons\src\SpotifyEnhance\SpotifyAPIWrapper.js */
-
-/* [file] BDAddons\src\SpotifyEnhance\Utils.js */
-
 function parseSpotifyUrl(url) {
 	if (typeof url !== "string") return undefined;
 	const [, type, id] = url.match(/https?:\/\/open\.spotify\.com\/(\w+)\/(\w+)/) || [];
@@ -696,10 +637,6 @@ function getFluxContainer() {
 		}, 20 * 1000);
 	});
 }
-
-/* End BDAddons\src\SpotifyEnhance\Utils.js */
-
-/* [file] BDAddons\src\SpotifyEnhance\Store.js */
 
 const Utils = {
 	copySpotifyLink(link) {
@@ -776,9 +713,9 @@ const Store = Object.assign(
 			position: 0,
 			incrementPosition: () => {
 				const state = get();
-				set({
-					position: state.position + 1000
-				});
+				let sum = state.position + 1000;
+				if (sum > state.duration) sum = state.duration;
+				set({ position: sum });
 			},
 			setPosition: position => set({ position }),
 
@@ -855,14 +792,19 @@ Store.subscribe(isPlaying => {
 }, Store.selectors.isPlaying);
 
 Store.subscribe(position => {
-	const { isPlaying, progress, duration, setPosition } = Store.state;
-	if (position < duration && isPlaying) {
-		Store.positionInterval.start();
-	} else {
-		Store.positionInterval.stop();
-		setPosition(progress, duration);
-	}
+	const { duration, setPosition } = Store.state;
+
+	if (position < duration) return;
+	Store.positionInterval.stop();
+	setPosition(duration || 0);
+
 }, Store.selectors.position);
+
+Store.subscribe(([isPlaying]) => {
+	if (!isPlaying) Store.positionInterval.stop();
+	else Store.positionInterval.start();
+
+}, state => [state.isPlaying, state.progress], shallow);
 
 function onSpotifyStoreChange() {
 	try {
@@ -894,9 +836,6 @@ function onAccountsChanged() {
 	}
 }
 
-/* End BDAddons\src\SpotifyEnhance\Store.js */
-
-/* [file] BDAddons\common\Components\Icons\Arrow\index.jsx */
 function Arrow() {
 	return (
 		React.createElement('svg', {
@@ -912,16 +851,10 @@ function Arrow() {
 	);
 }
 
-/* End BDAddons\common\Components\Icons\Arrow\index.jsx */
-
-/* [file] BDAddons\common\Components\Flex\index.jsx */
 const Flex = getModule(a => a.Flex).Flex;
 
 const Flex$1 = Flex;
 
-/* End BDAddons\common\Components\Flex\index.jsx */
-
-/* [file] BDAddons\common\Components\Collapsible\index.jsx */
 const { Heading } = TheBigBoyBundle;
 
 function Collapsible({ title, children }) {
@@ -943,10 +876,6 @@ function Collapsible({ title, children }) {
 	);
 }
 
-/* End BDAddons\common\Components\Collapsible\index.jsx */
-
-/* [file] BDAddons\common\Components\Switch\index.jsx */
-
 const Switch = TheBigBoyBundle.FormSwitch ||
 	function SwitchComponentFallback(props) {
 		return (
@@ -957,10 +886,6 @@ const Switch = TheBigBoyBundle.FormSwitch ||
 			}))
 		);
 	};
-
-/* End BDAddons\common\Components\Switch\index.jsx */
-
-/* [file] BDAddons\common\Components\SettingSwtich\index.jsx */
 
 function SettingSwtich({ settingKey, note, hideBorder = false, description }) {
 	const [val, set] = Settings.useSetting(settingKey);
@@ -973,9 +898,7 @@ function SettingSwtich({ settingKey, note, hideBorder = false, description }) {
 		}, description || settingKey)
 	);
 }
-/* End BDAddons\common\Components\SettingSwtich\index.jsx */
 
-/* [file] BDAddons\src\SpotifyEnhance\consts.js */
 const EmbedStyleEnum = {
 	KEEP: "KEEP",
 	REPLACE: "REPLACE",
@@ -991,10 +914,6 @@ const PlayerButtonsEnum = {
 	REPEAT: "Repeat",
 	VOLUME: "Volume"
 };
-
-/* End BDAddons\src\SpotifyEnhance\consts.js */
-
-/* [file] BDAddons\src\SpotifyEnhance\components\SettingComponent.jsx */
 
 const { FormDivider, RadioGroup } = TheBigBoyBundle;
 
@@ -1057,10 +976,6 @@ function SettingComponent() {
 	);
 }
 
-/* End BDAddons\src\SpotifyEnhance\components\SettingComponent.jsx */
-
-/* [file] BDAddons\src\SpotifyEnhance\patches\patchListenAlong.js */
-
 const patchListenAlong = () => {
 	if (SpotifyStore)
 		Patcher.after(SpotifyStore, "getActiveSocketAndDevice", (_, __, ret) => {
@@ -1071,18 +986,10 @@ const patchListenAlong = () => {
 	else Logger.patch("ListenAlong");
 };
 
-/* End BDAddons\src\SpotifyEnhance\patches\patchListenAlong.js */
-
-/* [file] BDAddons\common\Components\Button\index.jsx */
-
 const Button = TheBigBoyBundle.Button ||
 	function ButtonComponentFallback(props) {
 		return React.createElement('button', { ...props, });
 	};
-
-/* End BDAddons\common\Components\Button\index.jsx */
-
-/* [file] BDAddons\common\Components\Tooltip\index.jsx */
 
 const { Tooltip } = TheBigBoyBundle;
 
@@ -1101,9 +1008,6 @@ const Tooltip$1 = ({ note, position, children }) => {
 	);
 };
 
-/* End BDAddons\common\Components\Tooltip\index.jsx */
-
-/* [file] BDAddons\common\Components\icons\AddToQueueIcon\index.jsx */
 function AddToQueueIcon() {
 	return (
 		React.createElement('svg', {
@@ -1114,10 +1018,6 @@ function AddToQueueIcon() {
 		}, React.createElement('path', { d: "M16 15H2v-1.5h14V15zm0-4.5H2V9h14v1.5zm-8.034-6A5.484 5.484 0 0 1 7.187 6H13.5a2.5 2.5 0 0 0 0-5H7.966c.159.474.255.978.278 1.5H13.5a1 1 0 1 1 0 2H7.966zM2 2V0h1.5v2h2v1.5h-2v2H2v-2H0V2h2z", }))
 	);
 }
-
-/* End BDAddons\common\Components\icons\AddToQueueIcon\index.jsx */
-
-/* [file] BDAddons\common\Components\icons\ListenAlongIcon\index.jsx */
 
 function ListenAlongIcon() {
 	return (
@@ -1132,9 +1032,6 @@ function ListenAlongIcon() {
 	);
 }
 
-/* End BDAddons\common\Components\icons\ListenAlongIcon\index.jsx */
-
-/* [file] BDAddons\common\Components\icons\ListenIcon\index.jsx */
 function ListenIcon() {
 	return (
 		React.createElement('svg', {
@@ -1146,10 +1043,6 @@ function ListenIcon() {
 	);
 }
 
-/* End BDAddons\common\Components\icons\ListenIcon\index.jsx */
-
-/* [file] BDAddons\common\Components\icons\ShareIcon\index.jsx */
-
 const ShareIcon = () => {
 	return (
 		React.createElement('svg', {
@@ -1160,10 +1053,6 @@ const ShareIcon = () => {
 		}, React.createElement('path', { d: "M13.803 5.33333C13.803 3.49238 15.3022 2 17.1515 2C19.0008 2 20.5 3.49238 20.5 5.33333C20.5 7.17428 19.0008 8.66667 17.1515 8.66667C16.2177 8.66667 15.3738 8.28596 14.7671 7.67347L10.1317 10.8295C10.1745 11.0425 10.197 11.2625 10.197 11.4872C10.197 11.9322 10.109 12.3576 9.94959 12.7464L15.0323 16.0858C15.6092 15.6161 16.3473 15.3333 17.1515 15.3333C19.0008 15.3333 20.5 16.8257 20.5 18.6667C20.5 20.5076 19.0008 22 17.1515 22C15.3022 22 13.803 20.5076 13.803 18.6667C13.803 18.1845 13.9062 17.7255 14.0917 17.3111L9.05007 13.9987C8.46196 14.5098 7.6916 14.8205 6.84848 14.8205C4.99917 14.8205 3.5 13.3281 3.5 11.4872C3.5 9.64623 4.99917 8.15385 6.84848 8.15385C7.9119 8.15385 8.85853 8.64725 9.47145 9.41518L13.9639 6.35642C13.8594 6.03359 13.803 5.6896 13.803 5.33333Z", }))
 	);
 };
-
-/* End BDAddons\common\Components\icons\ShareIcon\index.jsx */
-
-/* [file] BDAddons\src\SpotifyEnhance\components\SpotifyActivityControls.jsx */
 
 const { useSpotifyPlayAction, useSpotifySyncAction } = getModule(Filters.byProps("useSpotifyPlayAction"));
 
@@ -1229,10 +1118,6 @@ function ActivityControlButton({ grow, value, onClick, ...rest }) {
 	);
 }
 
-/* End BDAddons\src\SpotifyEnhance\components\SpotifyActivityControls.jsx */
-
-/* [file] BDAddons\src\SpotifyEnhance\patches\patchSpotifyActivity.jsx */
-
 const ActivityComponent = getModule(a => a.prototype.isStreamerOnTypeActivityFeed);
 
 const patchSpotifyActivity = () => {
@@ -1251,10 +1136,6 @@ const patchSpotifyActivity = () => {
 		});
 	else Logger.patch("SpotifyActivityComponent");
 };
-
-/* End BDAddons\src\SpotifyEnhance\patches\patchSpotifyActivity.jsx */
-
-/* [file] BDAddons\src\SpotifyEnhance\components\SpotifyControls.jsx */
 
 const SpotifyControls = ({ id, type, embed: { thumbnail, rawTitle, url } }) => {
 	const isActive = Store(Store.selectors.isActive);
@@ -1297,9 +1178,6 @@ function ControlBtn({ value, onClick }) {
 	);
 }
 
-/* End BDAddons\src\SpotifyEnhance\components\SpotifyControls.jsx */
-
-/* [file] BDAddons\common\Components\icons\CopyIcon\index.jsx */
 function CopyIcon() {
 	return (
 		React.createElement('svg', {
@@ -1311,9 +1189,6 @@ function CopyIcon() {
 	);
 }
 
-/* End BDAddons\common\Components\icons\CopyIcon\index.jsx */
-
-/* [file] BDAddons\common\Components\icons\SpotifyIcon\index.jsx */
 function SpotifyIcon(props) {
 	return (
 		React.createElement('svg', {
@@ -1326,9 +1201,6 @@ function SpotifyIcon(props) {
 	);
 }
 
-/* End BDAddons\common\Components\icons\SpotifyIcon\index.jsx */
-
-/* [file] BDAddons\common\Components\icons\ImageIcon\index.jsx */
 function ImageIcon() {
 	return (
 		React.createElement('svg', {
@@ -1340,17 +1212,9 @@ function ImageIcon() {
 	);
 }
 
-/* End BDAddons\common\Components\icons\ImageIcon\index.jsx */
-
-/* [file] @Stores/AccessibilityStore */
 const AccessibilityStore = getModule(m => m._dispatchToken && m.getName() === "AccessibilityStore");
-/* End @Stores/AccessibilityStore */
 
-/* [file] @Modules/FluxHelpers */
 const FluxHelpers = getModule(Filters.byProps("useStateFromStores"), { searchExports: false });
-/* End @Modules/FluxHelpers */
-
-/* [file] BDAddons\src\SpotifyEnhance\components\TrackTimeLine.jsx */
 
 function formatMsToTime(ms) {
 	const time = new Date(ms);
@@ -1360,10 +1224,18 @@ function formatMsToTime(ms) {
 const TrackTimeLine = () => {
 	const [position, duration] = Store(_ => [_.position, _.duration], shallow);
 
+	const [localPosition, setLocalPosition] = React.useState(position);
+
+	React.useEffect(() => {
+		if (sliderRef.current?.state?.active) return;
+		setLocalPosition(position);
+	}, [position]);
+
 	const sliderRef = React.useRef();
 
 	const rangeChangeHandler = e => {
 		if (!sliderRef.current?.state?.active) return;
+
 		const pos = Math.floor(e);
 		Store.positionInterval.stop();
 		Store.state.setPosition(pos);
@@ -1376,19 +1248,30 @@ const TrackTimeLine = () => {
 			mini: true,
 			minValue: 0,
 			maxValue: duration,
-			initialValue: position < 1000 ? 0 : position,
+			initialValue: localPosition < 1000 ? 0 : localPosition,
 			onValueChange: rangeChangeHandler,
 			onValueRender: formatMsToTime,
 			ref: sliderRef,
 			grabberClassName: "spotify-player-timeline-trackbar-grabber",
 			barClassName: "spotify-player-timeline-trackbar-bar",
-		}), React.createElement('div', { className: "spotify-player-timeline-progress", }, formatMsToTime(position)), React.createElement('div', { className: "spotify-player-timeline-duration", }, formatMsToTime(duration)))
+		}), React.createElement('div', { className: "spotify-player-timeline-progress", }, formatMsToTime(localPosition)), React.createElement(Duration, {
+			duration: duration,
+			position: localPosition,
+		}))
 	);
 };
 
-/* End BDAddons\src\SpotifyEnhance\components\TrackTimeLine.jsx */
+function Duration({ duration, position }) {
+	const [toggle, setToggle] = React.useState(false);
+	const clickHandler = () => setToggle(!toggle);
 
-/* [file] BDAddons\src\SpotifyEnhance\components\SpotifyEmbed.jsx */
+	return (
+		React.createElement('div', {
+			onClick: clickHandler,
+			className: "spotify-player-timeline-duration",
+		}, toggle ? `-${formatMsToTime(duration - position)}` : formatMsToTime(duration))
+	);
+}
 
 const SpotifyEmbed$1 = ({ id, type, embed: { thumbnail, rawTitle, rawDescription, url } }) => {
 	const embedBannerBackground = Settings(Settings.selectors.embedBannerBackground);
@@ -1452,10 +1335,6 @@ const SpotifyEmbed$1 = ({ id, type, embed: { thumbnail, rawTitle, rawDescription
 	);
 };
 
-/* End BDAddons\src\SpotifyEnhance\components\SpotifyEmbed.jsx */
-
-/* [file] BDAddons\src\SpotifyEnhance\components\SpotifyEmbedWrapper.jsx */
-
 function SpotifyEmbedWrapper({ id, type, embedObject, embedComponent }) {
 	const spotifyEmbed = Settings(Settings.selectors.spotifyEmbed);
 
@@ -1490,10 +1369,6 @@ function SpotifyEmbedWrapper({ id, type, embedObject, embedComponent }) {
 	return embedComponent;
 }
 
-/* End BDAddons\src\SpotifyEnhance\components\SpotifyEmbedWrapper.jsx */
-
-/* [file] BDAddons\src\SpotifyEnhance\patches\patchSpotifyEmbed.jsx */
-
 const ALLOWD_TYPES = ["track", "playlist", "album", "show", "episode"];
 const SpotifyEmbed = getModule(Filters.byStrings("open.spotify.com", "/playlist/"), { defaultExport: false });
 
@@ -1521,10 +1396,6 @@ const patchSpotifyEmbed = () => {
 		});
 	else Logger.patch("SpotifyEmbed");
 };
-
-/* End BDAddons\src\SpotifyEnhance\patches\patchSpotifyEmbed.jsx */
-
-/* [file] BDAddons\common\Components\Popout\index.jsx */
 
 const { Popout } = TheBigBoyBundle;
 
@@ -1565,9 +1436,6 @@ const Popout$1 = ({ delay, spacing, forceShow, position, animation, align, class
 	);
 };
 
-/* End BDAddons\common\Components\Popout\index.jsx */
-
-/* [file] BDAddons\common\Components\icons\MuteVolumeIcon\index.jsx */
 function MuteVolumeIcon() {
 	return (
 		React.createElement('svg', {
@@ -1579,9 +1447,6 @@ function MuteVolumeIcon() {
 	);
 }
 
-/* End BDAddons\common\Components\icons\MuteVolumeIcon\index.jsx */
-
-/* [file] BDAddons\common\Components\icons\NextIcon\index.jsx */
 function NextIcon() {
 	return (
 		React.createElement('svg', {
@@ -1593,9 +1458,6 @@ function NextIcon() {
 	);
 }
 
-/* End BDAddons\common\Components\icons\NextIcon\index.jsx */
-
-/* [file] BDAddons\common\Components\icons\PauseIcon\index.jsx */
 function PauseIcon() {
 	return (
 		React.createElement('svg', {
@@ -1607,9 +1469,6 @@ function PauseIcon() {
 	);
 }
 
-/* End BDAddons\common\Components\icons\PauseIcon\index.jsx */
-
-/* [file] BDAddons\common\Components\icons\PlayIcon\index.jsx */
 function PlayIcon$1() {
 	return (
 		React.createElement('svg', {
@@ -1621,9 +1480,6 @@ function PlayIcon$1() {
 	);
 }
 
-/* End BDAddons\common\Components\icons\PlayIcon\index.jsx */
-
-/* [file] BDAddons\common\Components\icons\PreviousIcon\index.jsx */
 function PlayIcon() {
 	return (
 		React.createElement('svg', {
@@ -1635,9 +1491,6 @@ function PlayIcon() {
 	);
 }
 
-/* End BDAddons\common\Components\icons\PreviousIcon\index.jsx */
-
-/* [file] BDAddons\common\Components\icons\RepeatIcon\index.jsx */
 function RepeatIcon() {
 	return (
 		React.createElement('svg', {
@@ -1649,9 +1502,6 @@ function RepeatIcon() {
 	);
 }
 
-/* End BDAddons\common\Components\icons\RepeatIcon\index.jsx */
-
-/* [file] BDAddons\common\Components\icons\RepeatOneIcon\index.jsx */
 function RepeatOneIcon() {
 	return (
 		React.createElement('svg', {
@@ -1663,9 +1513,6 @@ function RepeatOneIcon() {
 	);
 }
 
-/* End BDAddons\common\Components\icons\RepeatOneIcon\index.jsx */
-
-/* [file] BDAddons\common\Components\icons\ShuffleIcon\index.jsx */
 function ShuffleIcon() {
 	return (
 		React.createElement('svg', {
@@ -1677,9 +1524,6 @@ function ShuffleIcon() {
 	);
 }
 
-/* End BDAddons\common\Components\icons\ShuffleIcon\index.jsx */
-
-/* [file] BDAddons\common\Components\icons\VolumeIcon\index.jsx */
 function VolumeIcon() {
 	return (
 		React.createElement('svg', {
@@ -1690,10 +1534,6 @@ function VolumeIcon() {
 		}, React.createElement('path', { d: "M9.741.85a.75.75 0 0 1 .375.65v13a.75.75 0 0 1-1.125.65l-6.925-4a3.642 3.642 0 0 1-1.33-4.967 3.639 3.639 0 0 1 1.33-1.332l6.925-4a.75.75 0 0 1 .75 0zm-6.924 5.3a2.139 2.139 0 0 0 0 3.7l5.8 3.35V2.8l-5.8 3.35zm8.683 4.29V5.56a2.75 2.75 0 0 1 0 4.88z", }), React.createElement('path', { d: "M11.5 13.614a5.752 5.752 0 0 0 0-11.228v1.55a4.252 4.252 0 0 1 0 8.127v1.55z", }))
 	);
 }
-
-/* End BDAddons\common\Components\icons\VolumeIcon\index.jsx */
-
-/* [file] BDAddons\src\SpotifyEnhance\components\SpotifyPlayerControls.jsx */
 
 const { MenuItem, Menu } = TheBigBoyBundle;
 
@@ -1865,10 +1705,6 @@ function Volume({ volume }) {
 	);
 }
 
-/* End BDAddons\src\SpotifyEnhance\components\SpotifyPlayerControls.jsx */
-
-/* [file] BDAddons\src\SpotifyEnhance\components\TrackMediaDetails.jsx */
-
 const { Anchor } = TheBigBoyBundle;
 
 const TrackMediaDetails = ({ name, artists, mediaType }) => {
@@ -1933,10 +1769,6 @@ function TrackBanner({ bannerLg }) {
 	);
 }
 
-/* End BDAddons\src\SpotifyEnhance\components\TrackMediaDetails.jsx */
-
-/* [file] BDAddons\src\SpotifyEnhance\components\SpotifyPlayer.jsx */
-
 const SpotifyPlayer = React.memo(function SpotifyPlayer() {
 	const [player, playerCompactMode, playerBannerBackground] = Settings(_ => [_.player, _.playerCompactMode, _.playerBannerBackground], shallow);
 	const [isActive, media, mediaType] = Store(_ => [_.isActive, _.media, _.mediaType], shallow);
@@ -1968,10 +1800,6 @@ const SpotifyPlayer = React.memo(function SpotifyPlayer() {
 	);
 });
 
-/* End BDAddons\src\SpotifyEnhance\components\SpotifyPlayer.jsx */
-
-/* [file] BDAddons\src\SpotifyEnhance\patches\patchSpotifyPlayer.jsx */
-
 const patchSpotifyPlayer = async () => {
 	const fluxContainer = await getFluxContainer();
 	if (!fluxContainer) return Logger.patch("SpotifyPlayer");
@@ -1988,10 +1816,6 @@ const patchSpotifyPlayer = async () => {
 	});
 	fluxContainer.stateNode.forceUpdate();
 };
-
-/* End BDAddons\src\SpotifyEnhance\patches\patchSpotifyPlayer.jsx */
-
-/* [file] BDAddons\src\SpotifyEnhance\patches\patchSpotifySocket.js */
 
 function getSocketConstructor() {
 	const playableComputerDevices = SpotifyStore.getPlayableComputerDevices() || [];
@@ -2038,17 +1862,9 @@ async function patchSpotifySocket() {
 	});
 }
 
-/* End BDAddons\src\SpotifyEnhance\patches\patchSpotifySocket.js */
-
-/* [file] @Patch/MessageHeader */
 const MessageHeader = getModuleAndKey(Filters.byStrings("userOverride", "withMentionPrefix"), { searchExports: false }) || {};
-/* End @Patch/MessageHeader */
 
-/* [file] @Stores/PresenceStore */
 const PresenceStore = getModule(m => m._dispatchToken && m.getName() === "PresenceStore");
-/* End @Stores/PresenceStore */
-
-/* [file] BDAddons\src\SpotifyEnhance\patches\patchMessageHeader.jsx */
 
 function spotifyActivityFilter(activity) {
 	return activity.name.toLowerCase() === "spotify";
@@ -2086,10 +1902,6 @@ function SpotifyActivityIndicator({ userId }) {
 		}))
 	);
 }
-
-/* End BDAddons\src\SpotifyEnhance\patches\patchMessageHeader.jsx */
-
-/* [file] BDAddons\src\SpotifyEnhance\patches\patchChannelAttach.jsx */
 
 const ChannelAttachMenu = getModule(Filters.byStrings("Plus Button"), { defaultExport: false });
 
@@ -2137,9 +1949,6 @@ const patchChannelAttach = () => {
 	else Logger.patch("patchChannelAttach");
 };
 
-/* End BDAddons\src\SpotifyEnhance\patches\patchChannelAttach.jsx */
-
-/* [file] BDAddons\src\SpotifyEnhance\index.jsx */
 window.spotSettings = Settings;
 window.spotStore = Store;
 window.SpotifyApi = SpotifyApi;
@@ -2179,8 +1988,6 @@ class SpotifyEnhance {
 		return SettingComponent;
 	}
 }
-
-/* End BDAddons\src\SpotifyEnhance\index.jsx */
 
 module.exports = SpotifyEnhance;
 
@@ -2517,6 +2324,7 @@ div:has(> .spotify-banner-modal) {
 }
 
 .spotify-player-timeline {
+	user-select: none;
 	margin-bottom: 2px;
 	color: white;
 	display: flex;
