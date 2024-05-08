@@ -1,7 +1,6 @@
 import "./styles";
 import { DOM, Patcher } from "@Api";
 import Logger from "@Utils/Logger";
-import Settings from "@Utils/Settings";
 import { Store } from "./Store";
 import { getFluxContainer } from "./Utils";
 import SettingComponent from "./components/SettingComponent";
@@ -13,10 +12,7 @@ import patchSpotifySocket from "./patches/patchSpotifySocket";
 import patchMessageHeader from "./patches/patchMessageHeader";
 import patchChannelAttach from "./patches/patchChannelAttach";
 
-import SpotifyApi from "./SpotifyAPIWrapper";
-window.spotSettings = Settings;
-window.spotStore = Store;
-window.SpotifyApi = SpotifyApi;
+
 
 export default class SpotifyEnhance {
 	start() {

@@ -74,6 +74,7 @@ export const Store = Object.assign(
 				const state = get();
 				const media = playerState.item?.id === state.media?.id ? state.media : playerState.item;
 				set({
+
 					isActive: !!playerState?.device?.is_active,
 					volume: playerState?.device?.volume_percent,
 					duration: playerState?.item?.duration_ms,
@@ -85,6 +86,7 @@ export const Store = Object.assign(
 					media: media,
 					mediaId: media?.id,
 					mediaType: playerState?.currently_playing_type,
+					context: playerState?.context,
 					actions: playerState?.actions?.disallows
 				});
 			},

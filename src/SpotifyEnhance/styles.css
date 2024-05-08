@@ -10,12 +10,18 @@
 	--accent: #1ed760;
 }
 
-.flexCenterCenter{
+.flexCenterCenter {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-
 }
+
+.ellipsis {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
 /* Spotify Indicator */
 .spotifyActivityIndicatorIcon {
 	color: var(--spotify-green);
@@ -204,7 +210,7 @@
 	content: "";
 	background:
 		linear-gradient(#000000b0 0 0),
-		var(--banner-sm) center/cover no-repeat;
+		var(--banner-md) center/cover no-repeat;
 	position: absolute;
 	inset: 0;
 	filter: blur(8px);
@@ -249,9 +255,6 @@ div:has(> .spotify-banner-modal) {
 	color: #fff;
 	font-size: 1.05rem;
 	max-width: 100%;
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
 }
 
 .spotify-player-title:first-child {
@@ -263,42 +266,23 @@ div:has(> .spotify-banner-modal) {
 .spotify-player-artist {
 	grid-area: artist;
 	font-size: 0.8rem;
-	--text-link: var(--text-sub);
 	max-width: 100%;
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
 }
 
-.spotify-player-multiple-artists {
-	display: contents;
-}
-
-.spotify-player-artists-popout {
-	background: var(--background-secondary-alt);
-	padding: 10px;
-	gap: 2px;
-	border-radius: 5px;
-	display: flex;
-	flex-direction: column;
-}
-
-.spotify-player-artists-popout .spotify-player-artist-link {
-	font-size: 0.9rem;
-	--text-link: var(--text-sub);
-	counter-increment: p;
-}
-
-.spotify-player-artists-popout .spotify-player-artist-link:before {
-	content: counter(p) ") ";
-}
 .spotify-player-album {
 	grid-area: album;
-	--text-link: var(--text-sub);
 	max-width: 100%;
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
+}
+
+.spotify-player-album > div,
+.spotify-player-artist > div {
+	display: flex;
+	gap: 5px;
+}
+
+.spotify-player-album span,
+.spotify-player-artist span {
+	color: var(--text-sub);
 }
 
 .spotify-player-controls {
@@ -397,7 +381,7 @@ div:has(> .spotify-banner-modal) {
 	appearance: slider-vertical;
 }
 
-.spotify-player-share-menuitem svg {
+.spotify-menuitem svg {
 	width: 16px;
 	height: 16px;
 }

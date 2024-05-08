@@ -1,10 +1,12 @@
 import { React } from "@Api";
-import Popout from "@Components/Popout";
 import Tooltip from "@Components/Tooltip";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 import { getImageModalComponent, openModal } from "@Utils";
 import Toast from "@Utils/Toast";
 import { Store } from "../Store";
+import ContextMenu from "@Components/ContextMenu";
+import VolumeIcon from "@Components/icons/VolumeIcon";
+import SpotifyApi from "../SpotifyAPIWrapper";
 
 const { Anchor } = TheBigBoyBundle;
 
@@ -19,7 +21,7 @@ export default ({ name, artists, mediaType }) => {
 
 	const songUrl = Store.state.getSongUrl();
 	const { bannerSm, bannerLg } = Store.state.getSongBanners();
-	const { name: albumName, url: albumUrl } = Store.state.getAlbum();
+	const { name: albumName, url: albumUrl, id: albumeId } = Store.state.getAlbum();
 
 	return (
 		<div className="spotify-player-media">
@@ -30,44 +32,67 @@ export default ({ name, artists, mediaType }) => {
 			<Tooltip note={name}>
 				<Anchor
 					href={songUrl}
-					className="spotify-player-title">
+					className="spotify-player-title ellipsis">
 					{name}
 				</Anchor>
 			</Tooltip>
 			<Artist artists={artists} />
-			<Tooltip note={albumName}>
-				<div className="spotify-player-album">
-					on <Anchor href={albumUrl}>{albumName}</Anchor>
+			<ContextMenu
+				menuItems={[
+					{
+						className: "spotify-menuitem",
+						id: "open-link",
+						action: () => Store.Utils.openSpotifyLink(albumUrl),
+						icon: VolumeIcon,
+						label: "Open externally"
+					},
+					{
+						className: "spotify-menuitem",
+						id: "album-play",
+						action: () => SpotifyApi.listen("album", albumeId, albumName),
+						icon: VolumeIcon,
+						label: "Play Album"
+					}
+				]}
+				className="spotify-player-album">
+				<div>
+					on<span className="ellipsis">{albumName}</span>
 				</div>
-			</Tooltip>
+			</ContextMenu>
 		</div>
 	);
 };
 
-function transformArtist(artist) {
-	return (
-		<Anchor
-			className="spotify-player-artist-link"
-			href={`https://open.spotify.com/artist/${artist.id}`}>
-			{artist.name}
-		</Anchor>
-	);
-}
-
 function Artist({ artists }) {
-	const first = <div className="spotify-player-artist">by {transformArtist(artists[0])}</div>;
-
-	if (artists.length === 1) return first;
 	return (
-		<Popout
-			renderPopout={() => <div className="spotify-player-artists-popout"> {artists.map(transformArtist)}</div>}
-			position="top"
-			align="center"
-			animation="1"
-			className="spotify-player-multiple-artists"
-			spacing={0}>
-			{first}
-		</Popout>
+		<ContextMenu
+			menuItems={artists.map(artist => {
+				return {
+					id: artist.id,
+					label: artist.name,
+					children: [
+						{
+							className: "spotify-menuitem",
+							id: "open-link",
+							action: () => Store.Utils.openSpotifyLink(`https://open.spotify.com/artist/${artist.id}`),
+							icon: VolumeIcon,
+							label: "Open externally"
+						},
+						{
+							className: "spotify-menuitem",
+							id: "artist-play",
+							action: () => SpotifyApi.listen("artist", artist.id, artist.name),
+							icon: VolumeIcon,
+							label: "Play Artist"
+						}
+					]
+				};
+			})}
+			className="spotify-player-artist">
+			<div>
+				by<span className="ellipsis">{artists[0].name}</span>
+			</div>
+		</ContextMenu>
 	);
 }
 
