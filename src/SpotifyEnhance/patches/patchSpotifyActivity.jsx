@@ -15,9 +15,7 @@ export default () => {
 			if (props.activity.name.toLowerCase() !== "spotify") return;
 
 			props.renderActions = () => (
-				<ErrorBoundary
-					id="SpotifyEmbed"
-					plugin={config.info.name}>
+				<ErrorBoundary id="SpotifyEmbed">
 					<SpotifyActivityControls {...props} />
 				</ErrorBoundary>
 			);

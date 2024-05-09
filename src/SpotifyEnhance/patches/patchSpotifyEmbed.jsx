@@ -20,7 +20,6 @@ export default () => {
 			return (
 				<ErrorBoundary
 					id="SpotifyEmbed"
-					plugin={config.info.name}
 					fallback={ret}>
 					<SpotifyEmbedWrapper
 						id={id}

@@ -1,3 +1,4 @@
+import "./styles";
 import { React } from "@Api";
 import Button from "@Components/Button";
 import Popout from "@Components/Popout";
@@ -15,9 +16,9 @@ import ShuffleIcon from "@Components/icons/ShuffleIcon";
 import VolumeIcon from "@Components/icons/VolumeIcon";
 import ImageIcon from "@Components/icons/ImageIcon";
 import ListenIcon from "@Components/icons/ListenIcon";
-import { PlayerButtonsEnum } from "../consts.js";
-import SpotifyApi from "../SpotifyAPIWrapper";
-import { Store } from "../Store";
+import { PlayerButtonsEnum } from "../../consts.js";
+import SpotifyApi from "../../SpotifyAPIWrapper";
+import { Store } from "../../Store";
 import Settings from "@Utils/Settings";
 import { shallow } from "@Utils";
 

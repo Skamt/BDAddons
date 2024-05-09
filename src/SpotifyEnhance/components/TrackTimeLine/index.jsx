@@ -1,7 +1,8 @@
+import "./styles";
 import { React } from "@Api";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
-import SpotifyApi from "../SpotifyAPIWrapper";
-import { Store } from "../Store";
+import SpotifyApi from "../../SpotifyAPIWrapper";
+import { Store } from "../../Store";
 import { shallow } from "@Utils";
 
 function formatMsToTime(ms) {
@@ -23,7 +24,6 @@ export default () => {
 
 	const rangeChangeHandler = e => {
 		if (!sliderRef.current?.state?.active) return;
-
 		const pos = Math.floor(e);
 		Store.positionInterval.stop();
 		Store.state.setPosition(pos);

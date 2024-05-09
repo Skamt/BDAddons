@@ -8,23 +8,13 @@ import Tooltip from "@Components/Tooltip";
 import FluxHelpers from "@Modules/FluxHelpers";
 import Settings from "@Utils/Settings";
 
-function spotifyActivityFilter(activity) {
-	return activity.name.toLowerCase() === "spotify";
-}
-
-function getUserActivity(userId, filter) {
-	return PresenceStore.getActivities(userId).find(filter);
-}
-
 export default () => {
 	const { module, key } = MessageHeader;
 	if (module && key)
 		Patcher.after(module, key, (_, [{ message }], ret) => {
 			const userId = message.author.id;
 			ret.props.children.push(
-				<ErrorBoundary
-					id="SpotifyActivityIndicator"
-					plugin={config.info.name}>
+				<ErrorBoundary id="SpotifyActivityIndicator">
 					<SpotifyActivityIndicator userId={userId} />
 				</ErrorBoundary>
 			);
@@ -34,7 +24,7 @@ export default () => {
 
 function SpotifyActivityIndicator({ userId }) {
 	const activityIndicator = Settings(Settings.selectors.activityIndicator);
-	const spotifyActivity = FluxHelpers.useStateFromStores([PresenceStore], () => getUserActivity(userId, spotifyActivityFilter));
+	const spotifyActivity = FluxHelpers.useStateFromStores([PresenceStore], () => PresenceStore.getActivities(userId).find(activity => activity?.name?.toLowerCase() === "spotify"));
 	if (!activityIndicator || !spotifyActivity) return null;
 
 	return (

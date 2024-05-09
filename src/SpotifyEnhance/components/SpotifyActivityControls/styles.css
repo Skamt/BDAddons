@@ -1,0 +1,17 @@
+.spotify-activity-controls {
+	display: flex;
+	margin-top: 12px;
+	gap: 8px;
+}
+
+.spotify-activity-btn {
+	padding: 0px;
+	height: 32px;
+	width: 32px;
+	flex: 0 0 32px;
+}
+
+.spotify-activity-controls .spotify-activity-btn-listen {
+	flex: 1 0 0;
+	width: 100%;
+}

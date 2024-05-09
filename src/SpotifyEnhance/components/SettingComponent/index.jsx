@@ -3,7 +3,7 @@ import Collapsible from "@Components/Collapsible";
 import SettingSwtich from "@Components/SettingSwtich";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 import Settings from "@Utils/Settings";
-import { PlayerButtonsEnum, EmbedStyleEnum } from "../consts.js";
+import { PlayerButtonsEnum, EmbedStyleEnum } from "../../consts.js";
 
 const { FormDivider, RadioGroup } = TheBigBoyBundle;
 

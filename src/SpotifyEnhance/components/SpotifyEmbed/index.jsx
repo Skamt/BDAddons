@@ -1,3 +1,4 @@
+import "./styles";
 import { React } from "@Api";
 import Tooltip from "@Components/Tooltip";
 import AddToQueueIcon from "@Components/icons/AddToQueueIcon";
@@ -7,11 +8,11 @@ import SpotifyIcon from "@Components/icons/SpotifyIcon";
 import ImageIcon from "@Components/icons/ImageIcon";
 import { getImageModalComponent, openModal, shallow } from "@Utils";
 import Settings from "@Utils/Settings";
-import SpotifyApi from "../SpotifyAPIWrapper";
-import { Store } from "../Store";
+import SpotifyApi from "../../SpotifyAPIWrapper";
+import { Store } from "../../Store";
 import AccessibilityStore from "@Stores/AccessibilityStore";
 import FluxHelpers from "@Modules/FluxHelpers";
-import TrackTimeLine from "./TrackTimeLine";
+import TrackTimeLine from "../TrackTimeLine";
 
 export default ({ id, type, embed: { thumbnail, rawTitle, rawDescription, url } }) => {
 	const embedBannerBackground = Settings(Settings.selectors.embedBannerBackground);
@@ -26,7 +27,7 @@ export default ({ id, type, embed: { thumbnail, rawTitle, rawDescription, url } 
 		<Tooltip note={`Play ${type}`}>
 			<div
 				onClick={() => SpotifyApi.listen(type, id, rawTitle)}
-				className="spotifyEmbed-btn spotifyEmbed-btn-listen">
+				className="spotify-embed-btn spotify-embed-btn-listen">
 				<ListenIcon />
 			</div>
 		</Tooltip>
@@ -36,13 +37,13 @@ export default ({ id, type, embed: { thumbnail, rawTitle, rawDescription, url } 
 		<Tooltip note={`Add ${type} to queue`}>
 			<div
 				onClick={() => SpotifyApi.queue(type, id, rawTitle)}
-				className="spotifyEmbed-btn spotifyEmbed-btn-addToQueue">
+				className="spotify-embed-btn spotify-embed-btn-addToQueue">
 				<AddToQueueIcon />
 			</div>
 		</Tooltip>
 	);
 
-	let className = "spotifyEmbed-container";
+	let className = "spotify-embed-container";
 	if (isThis && isPlaying && !useReducedMotion) className += " playing";
 	if (embedBannerBackground) className += " bannerBackground";
 
@@ -60,28 +61,28 @@ export default ({ id, type, embed: { thumbnail, rawTitle, rawDescription, url } 
 						height = height > 650 ? 650 : height;
 						openModal(<div className="spotify-banner-modal">{getImageModalComponent(banner, { width, height })}</div>);
 					}}
-					className="spotifyEmbed-thumbnail"
+					className="spotify-embed-thumbnail"
 				/>
 			</Tooltip>
-			<h2 className="spotifyEmbed-title">{rawTitle}</h2>
-			<p className="spotifyEmbed-description">{rawDescription}</p>
+			<h2 className="spotify-embed-title">{rawTitle}</h2>
+			<p className="spotify-embed-description">{rawDescription}</p>
 
 			{type && id && (
-				<div className="spotifyEmbed-controls">
+				<div className="spotify-embed-controls">
 					
 					{(isThis && isActive && !isPlaying || !isThis && isActive) && [listenBtn, queueBtn]}
 					{isThis && isActive && isPlaying && <TrackTimeLine />}
 					<Tooltip note="Copy link">
 						<div
 							onClick={() => Store.Utils.copySpotifyLink(url)}
-							className="spotifyEmbed-btn spotifyEmbed-btn-copy">
+							className="spotify-embed-btn spotify-embed-btn-copy">
 							<CopyIcon />
 						</div>
 					</Tooltip>
 					<Tooltip note="Copy banner">
 						<div
 							onClick={() => Store.Utils.copySpotifyLink(banner)}
-							className="spotifyEmbed-btn spotifyEmbed-btn-copy">
+							className="spotify-embed-btn spotify-embed-btn-copy">
 							<ImageIcon />
 						</div>
 					</Tooltip>
@@ -90,7 +91,7 @@ export default ({ id, type, embed: { thumbnail, rawTitle, rawDescription, url } 
 			<Tooltip note="Play on Spotify">
 				<div
 					onClick={() => Store.Utils.openSpotifyLink(url)}
-					className="spotifyEmbed-spotifyIcon">
+					className="spotify-embed-spotifyIcon">
 					<SpotifyIcon />
 				</div>
 			</Tooltip>
