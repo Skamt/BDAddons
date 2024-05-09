@@ -86,7 +86,7 @@ class ErrorBoundary extends React.Component {
 	componentDidCatch(error, info) {
 		this.setState({ error, info, hasError: true });
 		const errorMessage = `\n\t${error?.message || ""}${(info?.componentStack || "").split("\n").slice(0, 20).join("\n")}`;
-		console.error(`%c[${this.props.plugin}] %cthrew an exception at %c[${this.props.id}]\n`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
+		console.error(`%c[${config?.info?.name || "Unknown Plugin"}] %cthrew an exception at %c[${this.props.id}]\n`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
 	}
 
 	renderErrorBoundary() {
@@ -100,7 +100,7 @@ class ErrorBoundary extends React.Component {
 			if (this.props.passMetaProps)
 				this.props.fallback.props = {
 					id: this.props.id,
-					plugin: this.props.plugin,
+					plugin: config?.info?.name || "Unknown Plugin",
 					...this.props.fallback.props
 				};
 			return this.props.fallback;
@@ -108,7 +108,7 @@ class ErrorBoundary extends React.Component {
 		return (
 			React.createElement(this.props.fallback, {
 				id: this.props.id,
-				plugin: this.props.plugin,
+				plugin: config?.info?.name || "Unknown Plugin",
 			})
 		);
 	}
@@ -493,13 +493,6 @@ async function requestHandler(action) {
 	}
 }
 
-function playerActions(prop) {
-	return (...args) =>
-		requestHandler(() => SpotifyAPI[prop].apply(SpotifyAPI, args)).catch(reason => {
-			Toast.error(`Could not execute ${prop} command\n${reason.message}`);
-		});
-}
-
 function ressourceActions(prop) {
 	const { success, error } = {
 		queue: {
@@ -536,7 +529,11 @@ const SpotifyApi = new Proxy({}, {
 			case "next":
 			case "previous":
 			case "volume":
-				return playerActions(prop);
+				return (...args) =>
+					requestHandler(() => SpotifyAPI[prop].apply(SpotifyAPI, args))
+					.catch(reason => {
+						Toast.error(`Could not execute ${prop} command\n${reason.message}`);
+					});
 			case "getPlayerState":
 			case "getDevices":
 				return () => requestHandler(() => SpotifyAPI[prop]());
@@ -993,6 +990,34 @@ const Button = TheBigBoyBundle.Button ||
 		return React.createElement('button', { ...props, });
 	};
 
+function ActivityControlButton({ value, onClick, className, ...rest }) {
+	return (
+		React.createElement(Button, {
+			innerClassName: "flexCenterCenter",
+			className: "spotify-activity-btn " + className,
+			grow: false,
+			size: Button.Sizes.NONE,
+			color: Button.Colors.PRIMARY,
+			look: Button.Colors.OUTLINED,
+			onClick: onClick,
+			...rest,
+		}, value)
+	);
+}
+
+function ListenAlongIcon() {
+	return (
+		React.createElement('svg', {
+			width: "24",
+			height: "24",
+			viewBox: "0 0 24 24",
+		}, React.createElement('path', {
+			fill: "currentColor",
+			d: "M11.8 14a6.1 6.1 0 0 0 0 6H3v-2c0-2.7 5.3-4 8-4h.8zm-.8-2c-2.2 0-4-1.8-4-4s1.8-4 4-4 4 1.8 4 4-1.8 4-4 4zm6 1c2.2 0 4 1.8 4 4s-1.8 4-4 4-4-1.8-4-4 1.8-4 4-4zm-1 6.2l3-2.2-3-2.2v4.4z",
+		}))
+	);
+}
+
 const { Tooltip } = TheBigBoyBundle;
 
 const Tooltip$1 = ({ note, position, children }) => {
@@ -1010,26 +1035,15 @@ const Tooltip$1 = ({ note, position, children }) => {
 	);
 };
 
-function AddToQueueIcon() {
-	return (
-		React.createElement('svg', {
-			fill: "currentColor",
-			width: "24",
-			height: "24",
-			viewBox: "-1 -1 18 18",
-		}, React.createElement('path', { d: "M16 15H2v-1.5h14V15zm0-4.5H2V9h14v1.5zm-8.034-6A5.484 5.484 0 0 1 7.187 6H13.5a2.5 2.5 0 0 0 0-5H7.966c.159.474.255.978.278 1.5H13.5a1 1 0 1 1 0 2H7.966zM2 2V0h1.5v2h2v1.5h-2v2H2v-2H0V2h2z", }))
-	);
-}
+function ListenAlong({ userSyncActivityState }) {
+	const { disabled, onClick, tooltip } = userSyncActivityState;
 
-function ListenAlongIcon() {
 	return (
-		React.createElement('svg', {
-			width: "24",
-			height: "24",
-			viewBox: "0 0 24 24",
-		}, React.createElement('path', {
-			fill: "currentColor",
-			d: "M11.8 14a6.1 6.1 0 0 0 0 6H3v-2c0-2.7 5.3-4 8-4h.8zm-.8-2c-2.2 0-4-1.8-4-4s1.8-4 4-4 4 1.8 4 4-1.8 4-4 4zm6 1c2.2 0 4 1.8 4 4s-1.8 4-4 4-4-1.8-4-4 1.8-4 4-4zm-1 6.2l3-2.2-3-2.2v4.4z",
+		React.createElement(Tooltip$1, { note: tooltip, }, React.createElement(ActivityControlButton, {
+			className: "spotify-activity-btn-listenAlong",
+			disabled: disabled,
+			onClick: e => onClick(e),
+			value: React.createElement(ListenAlongIcon, null),
 		}))
 	);
 }
@@ -1042,6 +1056,31 @@ function ListenIcon() {
 			height: "24",
 			viewBox: "0 0 24 24",
 		}, React.createElement('path', { d: "M22 16.53C22 18.3282 20.2485 19.7837 18.089 19.7837C15.9285 19.7837 14.5396 18.3277 14.5396 16.53C14.5396 14.7319 15.9286 13.2746 18.089 13.2746C18.7169 13.2746 19.3089 13.4013 19.8353 13.6205V5.814L9.46075 7.32352V18.7449C9.46075 20.5424 7.70957 22 5.54941 22C3.38871 22 2 20.5443 2 18.7456C2 16.9481 3.3892 15.4898 5.54941 15.4898C6.17823 15.4898 6.76966 15.6162 7.29604 15.836C7.29604 11.3608 7.29604 8.5366 7.29604 4.1395L21.9996 2L22 16.53Z", }))
+	);
+}
+
+function Play({ userPlayActivityState }) {
+	const { label, disabled, onClick, tooltip } = userPlayActivityState;
+
+	return (
+		React.createElement(Tooltip$1, { note: tooltip || label, }, React.createElement(ActivityControlButton, {
+			disabled: disabled,
+			fullWidth: true,
+			className: "spotify-activity-btn-listen",
+			value: React.createElement(ListenIcon, null),
+			onClick: onClick,
+		}))
+	);
+}
+
+function AddToQueueIcon() {
+	return (
+		React.createElement('svg', {
+			fill: "currentColor",
+			width: "24",
+			height: "24",
+			viewBox: "-1 -1 18 18",
+		}, React.createElement('path', { d: "M16 15H2v-1.5h14V15zm0-4.5H2V9h14v1.5zm-8.034-6A5.484 5.484 0 0 1 7.187 6H13.5a2.5 2.5 0 0 0 0-5H7.966c.159.474.255.978.278 1.5H13.5a1 1 0 1 1 0 2H7.966zM2 2V0h1.5v2h2v1.5h-2v2H2v-2H0V2h2z", }))
 	);
 }
 
@@ -1066,59 +1105,17 @@ const SpotifyActivityControls = ({ activity, user, source }) => {
 
 	return (
 		React.createElement('div', { className: "spotify-activity-controls", }, React.createElement(Play, { userPlayActivityState: userPlayActivityState, }), React.createElement(Tooltip$1, { note: "Add to queue", }, React.createElement(ActivityControlButton, {
-			className: "activity-controls-queue",
+			className: "spotify-activity-btn-queue",
 			value: React.createElement(AddToQueueIcon, null),
 			disabled: !isActive,
 			onClick: () => SpotifyApi.queue(activity?.metadata?.type, activity.sync_id, activity.details),
 		})), React.createElement(Tooltip$1, { note: "Share in current channel", }, React.createElement(ActivityControlButton, {
-			className: "activity-controls-share",
+			className: "spotify-activity-btn-share",
 			onClick: () => Store.Utils.share(`https://open.spotify.com/track/${activity.sync_id}`),
 			value: React.createElement(ShareIcon, null),
 		})), React.createElement(ListenAlong, { userSyncActivityState: userSyncActivityState, }))
 	);
 };
-
-function Play({ userPlayActivityState }) {
-	const { label, disabled, onClick, tooltip } = userPlayActivityState;
-
-	return (
-		React.createElement(Tooltip$1, { note: tooltip || label, }, React.createElement(ActivityControlButton, {
-			disabled: disabled,
-			fullWidth: true,
-			grow: true,
-			className: "activity-controls-listen",
-			value: React.createElement(ListenIcon, null),
-			onClick: onClick,
-		}))
-	);
-}
-
-function ListenAlong({ userSyncActivityState }) {
-	const { disabled, onClick, tooltip } = userSyncActivityState;
-
-	return (
-		React.createElement(Tooltip$1, { note: tooltip, }, React.createElement(ActivityControlButton, {
-			className: "activity-controls-listenAlong",
-			disabled: disabled,
-			onClick: e => onClick(e),
-			value: React.createElement(ListenAlongIcon, null),
-		}))
-	);
-}
-
-function ActivityControlButton({ grow, value, onClick, ...rest }) {
-	return (
-		React.createElement(Button, {
-			innerClassName: "flexCenterCenter",
-			size: Button.Sizes.NONE,
-			color: Button.Colors.PRIMARY,
-			look: Button.Colors.OUTLINED,
-			onClick: onClick,
-			grow: grow || false,
-			...rest,
-		}, value)
-	);
-}
 
 const ActivityComponent = getModule(a => a.prototype.isStreamerOnTypeActivityFeed);
 
@@ -1130,23 +1127,29 @@ const patchSpotifyActivity = () => {
 			if (props.activity.name.toLowerCase() !== "spotify") return;
 
 			props.renderActions = () => (
-				React.createElement(ErrorBoundary, {
-					id: "SpotifyEmbed",
-					plugin: config.info.name,
-				}, React.createElement(SpotifyActivityControls, { ...props, }))
+				React.createElement(ErrorBoundary, { id: "SpotifyEmbed", }, React.createElement(SpotifyActivityControls, { ...props, }))
 			);
 		});
 	else Logger.patch("SpotifyActivityComponent");
 };
 
+function ControlBtn({ value, onClick, ...rest }) {
+	return (
+		React.createElement(Button, {
+			size: Button.Sizes.TINY,
+			color: Button.Colors.GREEN,
+			onClick: onClick,
+			...rest,
+		}, value)
+	);
+}
+
 const SpotifyControls = ({ id, type, embed: { thumbnail, rawTitle, url } }) => {
 	const isActive = Store(Store.selectors.isActive);
-	if (!isActive) return null;
-
-	const banner = thumbnail?.url || thumbnail?.proxyURL;
 
 	const listenBtn = type !== "show" && (
 		React.createElement(ControlBtn, {
+			disabled: !isActive,
 			value: "play on spotify",
 			onClick: () => SpotifyApi.listen(type, id, rawTitle),
 		})
@@ -1154,31 +1157,22 @@ const SpotifyControls = ({ id, type, embed: { thumbnail, rawTitle, url } }) => {
 
 	const queueBtn = (type === "track" || type === "episode") && (
 		React.createElement(ControlBtn, {
+			disabled: !isActive,
 			value: "add to queue",
 			onClick: () => SpotifyApi.queue(type, id, rawTitle),
 		})
 	);
 
 	return (
-		React.createElement('div', { className: "spotify-no-embed-controls", }, isActive && listenBtn, isActive && queueBtn, React.createElement(ControlBtn, {
+		React.createElement('div', { className: "spotify-embed-plus", }, listenBtn, queueBtn, React.createElement(ControlBtn, {
 			value: "copy link",
 			onClick: () => Store.Utils.copySpotifyLink(url),
 		}), React.createElement(ControlBtn, {
 			value: "copy banner",
-			onClick: () => Store.Utils.copySpotifyLink(banner),
+			onClick: () => Store.Utils.copySpotifyLink(thumbnail?.url || thumbnail?.proxyURL),
 		}))
 	);
 };
-
-function ControlBtn({ value, onClick }) {
-	return (
-		React.createElement(Button, {
-			size: Button.Sizes.TINY,
-			color: Button.Colors.GREEN,
-			onClick: onClick,
-		}, value)
-	);
-}
 
 function CopyIcon() {
 	return (
@@ -1237,7 +1231,6 @@ const TrackTimeLine = () => {
 
 	const rangeChangeHandler = e => {
 		if (!sliderRef.current?.state?.active) return;
-
 		const pos = Math.floor(e);
 		Store.positionInterval.stop();
 		Store.state.setPosition(pos);
@@ -1287,18 +1280,18 @@ const SpotifyEmbed$1 = ({ id, type, embed: { thumbnail, rawTitle, rawDescription
 	const listenBtn = type !== "show" && (
 		React.createElement(Tooltip$1, { note: `Play ${type}`, }, React.createElement('div', {
 			onClick: () => SpotifyApi.listen(type, id, rawTitle),
-			className: "spotifyEmbed-btn spotifyEmbed-btn-listen",
+			className: "spotify-embed-btn spotify-embed-btn-listen",
 		}, React.createElement(ListenIcon, null)))
 	);
 
 	const queueBtn = (type === "track" || type === "episode") && (
 		React.createElement(Tooltip$1, { note: `Add ${type} to queue`, }, React.createElement('div', {
 			onClick: () => SpotifyApi.queue(type, id, rawTitle),
-			className: "spotifyEmbed-btn spotifyEmbed-btn-addToQueue",
+			className: "spotify-embed-btn spotify-embed-btn-addToQueue",
 		}, React.createElement(AddToQueueIcon, null)))
 	);
 
-	let className = "spotifyEmbed-container";
+	let className = "spotify-embed-container";
 	if (isThis && isPlaying && !useReducedMotion) className += " playing";
 	if (embedBannerBackground) className += " bannerBackground";
 
@@ -1315,23 +1308,23 @@ const SpotifyEmbed$1 = ({ id, type, embed: { thumbnail, rawTitle, rawDescription
 					height = height > 650 ? 650 : height;
 					openModal(React.createElement('div', { className: "spotify-banner-modal", }, getImageModalComponent(banner, { width, height })));
 				},
-				className: "spotifyEmbed-thumbnail",
-			})), React.createElement('h2', { className: "spotifyEmbed-title", }, rawTitle), React.createElement('p', { className: "spotifyEmbed-description", }, rawDescription)
+				className: "spotify-embed-thumbnail",
+			})), React.createElement('h2', { className: "spotify-embed-title", }, rawTitle), React.createElement('p', { className: "spotify-embed-description", }, rawDescription)
 
 			, type && id && (
-				React.createElement('div', { className: "spotifyEmbed-controls", }
+				React.createElement('div', { className: "spotify-embed-controls", }
 
 					, (isThis && isActive && !isPlaying || !isThis && isActive) && [listenBtn, queueBtn], isThis && isActive && isPlaying && React.createElement(TrackTimeLine, null), React.createElement(Tooltip$1, { note: "Copy link", }, React.createElement('div', {
 						onClick: () => Store.Utils.copySpotifyLink(url),
-						className: "spotifyEmbed-btn spotifyEmbed-btn-copy",
+						className: "spotify-embed-btn spotify-embed-btn-copy",
 					}, React.createElement(CopyIcon, null))), React.createElement(Tooltip$1, { note: "Copy banner", }, React.createElement('div', {
 						onClick: () => Store.Utils.copySpotifyLink(banner),
-						className: "spotifyEmbed-btn spotifyEmbed-btn-copy",
+						className: "spotify-embed-btn spotify-embed-btn-copy",
 					}, React.createElement(ImageIcon, null)))
 				)
 			), React.createElement(Tooltip$1, { note: "Play on Spotify", }, React.createElement('div', {
 				onClick: () => Store.Utils.openSpotifyLink(url),
-				className: "spotifyEmbed-spotifyIcon",
+				className: "spotify-embed-spotifyIcon",
 			}, React.createElement(SpotifyIcon, null)))
 		)
 	);
@@ -1386,7 +1379,6 @@ const patchSpotifyEmbed = () => {
 			return (
 				React.createElement(ErrorBoundary, {
 					id: "SpotifyEmbed",
-					plugin: config.info.name,
 					fallback: ret,
 				}, React.createElement(SpotifyEmbedWrapper, {
 					id: id,
@@ -1876,13 +1868,9 @@ const patchSpotifyPlayer = async () => {
 	const fluxContainer = await getFluxContainer();
 	if (!fluxContainer) return Logger.patch("SpotifyPlayer");
 	Patcher.after(fluxContainer.type.prototype, "render", (_, __, ret) => {
-
 		return [
 
-			React.createElement(ErrorBoundary, {
-				id: "SpotifyPlayer",
-				plugin: config.info.name,
-			}, React.createElement(SpotifyPlayer, null)),
+			React.createElement(ErrorBoundary, { id: "SpotifyPlayer", }, React.createElement(SpotifyPlayer, null)),
 			ret
 		];
 	});
@@ -1938,24 +1926,13 @@ const MessageHeader = getModuleAndKey(Filters.byStrings("userOverride", "withMen
 
 const PresenceStore = getModule(m => m._dispatchToken && m.getName() === "PresenceStore");
 
-function spotifyActivityFilter(activity) {
-	return activity.name.toLowerCase() === "spotify";
-}
-
-function getUserActivity(userId, filter) {
-	return PresenceStore.getActivities(userId).find(filter);
-}
-
 const patchMessageHeader = () => {
 	const { module, key } = MessageHeader;
 	if (module && key)
 		Patcher.after(module, key, (_, [{ message }], ret) => {
 			const userId = message.author.id;
 			ret.props.children.push(
-				React.createElement(ErrorBoundary, {
-					id: "SpotifyActivityIndicator",
-					plugin: config.info.name,
-				}, React.createElement(SpotifyActivityIndicator, { userId: userId, }))
+				React.createElement(ErrorBoundary, { id: "SpotifyActivityIndicator", }, React.createElement(SpotifyActivityIndicator, { userId: userId, }))
 			);
 		});
 	else Logger.patch("MessageHeader");
@@ -1963,7 +1940,7 @@ const patchMessageHeader = () => {
 
 function SpotifyActivityIndicator({ userId }) {
 	const activityIndicator = Settings(Settings.selectors.activityIndicator);
-	const spotifyActivity = FluxHelpers.useStateFromStores([PresenceStore], () => getUserActivity(userId, spotifyActivityFilter));
+	const spotifyActivity = FluxHelpers.useStateFromStores([PresenceStore], () => PresenceStore.getActivities(userId).find(activity => activity?.name?.toLowerCase() === "spotify"));
 	if (!activityIndicator || !spotifyActivity) return null;
 
 	return (
@@ -2020,6 +1997,8 @@ const patchChannelAttach = () => {
 		});
 	else Logger.patch("patchChannelAttach");
 };
+
+window.spotsetting = Settings;
 
 class SpotifyEnhance {
 	start() {
@@ -2083,6 +2062,12 @@ const css = `:root {
 	text-overflow: ellipsis;
 }
 
+.spotify-menuitem svg {
+	width: 16px;
+	height: 16px;
+}
+
+
 /* Spotify Indicator */
 .spotifyActivityIndicatorIcon {
 	color: var(--spotify-green);
@@ -2094,168 +2079,60 @@ const css = `:root {
 	margin: 0 0.25rem 0 0;
 }
 
-/* Spotify Embed */
-.spotifyEmbed-container {
-	background:
-		linear-gradient(#00000090 0 0),
-		var(--thumbnail) top center/9999% no-repeat;
-	max-width: 350px;
-	min-width: 350px;
-	padding: var(--gutter);
-	border-radius: var(--radius);
-	font-family: var(--font);
-
-	display: grid;
-	column-gap: var(--gutter);
-	grid-template-columns: auto minmax(0, 1fr) auto;
-	grid-template-rows: auto auto minmax(0, 1fr);
-	grid-template-areas:
-		"thumbnail title icon"
-		"thumbnail description ."
-		"thumbnail controls .";
+.collapsible-container {
+	border-radius: 5;
+	border: 1px solid rgb(30, 31, 34);
+	gap: 20;
 }
 
-.spotifyEmbed-thumbnail {
-	grid-area: thumbnail;
-	cursor: pointer;
-	width: 80px;
-	height: 80px;
-	background: var(--thumbnail) center/cover no-repeat;
-	border-radius: var(--radius);
+.collapsible-header {
+	background: rgba(30, 31, 34, 0.3);
+	padding: 10px 3px;
+	gap: 8;
 }
 
-.spotifyEmbed-container.playing .spotifyEmbed-thumbnail {
-	border-radius: 50%;
-	position: relative;
-	box-shadow: 0 0 0 0 #0008;
-	animation:
-		r 10s linear infinite,
-		b 1.5s infinite linear;
-	position: relative;
+.collapsible-open .collapsible-header {
+	border-bottom: 1px solid rgb(30, 31, 34);
 }
 
-.spotifyEmbed-container.playing .spotifyEmbed-thumbnail:after {
-	content: "";
-	position: absolute;
-	inset: 0;
-	border-radius: inherit;
-	box-shadow: 0 0 0 0 #0004;
-	animation: inherit;
-	animation-delay: -0.5s;
+.collapsible-icon {
+	flex-grow: 0;
+	rotate:0;
+	transition: rotate 150ms linear;
 }
 
-@keyframes r {
-	to {
-		rotate: 360deg;
-	}
+.collapsible-open .collapsible-icon {
+	rotate:90deg;
 }
 
-@keyframes b {
-	100% {
-		box-shadow: 0 0 0 20px #0000;
-	}
+.collapsible-title {
+	text-transform: capitalize;
 }
 
-.spotifyEmbed-title {
-	grid-area: title;
-
-	font-weight: bold;
-	color: var(--text-normal);
-	margin: 0;
-	margin-top: 3px;
-	align-self: center;
-
-	overflow: hidden;
-	white-space: nowrap;
-	text-overflow: ellipsis;
+.collapsible-body {
+	margin: 0 10px;
 }
 
-.spotifyEmbed-description {
-	grid-area: description;
-
-	font-weight: 500;
-	margin: 0;
-	margin-top: 3px;
-	color: var(--text-sub);
-	font-size: 0.7rem;
-
-	overflow: hidden;
-	white-space: nowrap;
-	text-overflow: ellipsis;
-}
-
-.spotifyEmbed-controls {
-	grid-area: controls;
-	height: 30px;
-	display: flex;
-	align-self: center;
-	gap: var(--gutter);
-}
-
-.spotifyEmbed-btn {
-	background: #0000004d;
-	cursor: pointer;
-	display: flex;
-	align-items: center;
-	padding: 6px;
-	border-radius: 50%;
-	color: #fff;
-	box-sizing: border-box;
-}
-
-.spotifyEmbed-btn svg {
-	width: var(--icon-size);
-	height: var(--icon-size);
-}
-
-.spotifyEmbed-spotifyIcon {
-	grid-area: icon;
-	cursor: pointer;
-	display: flex;
-	color: var(--spotify-green);
-}
-
-.spotifyEmbed-container.bannerBackground {
-	position: relative;
-	border: 1px solid rgba(43, 45, 49, 0.9);
-	background: unset;
-	overflow: hidden;
-}
-.spotifyEmbed-container.bannerBackground:before {
-	content: "";
-	background:
-		linear-gradient(#000000a0 0 0),
-		var(--thumbnail) center/cover no-repeat;
-	position: absolute;
-	inset: 0px;
-	filter: blur(5px);
-	z-index: -1;
-}
-
-/* End Spotify Embed */
-
-/* spotify activity controls */
 .spotify-activity-controls {
 	display: flex;
 	margin-top: 12px;
 	gap: 8px;
 }
 
-.spotify-activity-controls button {
+.spotify-activity-btn {
 	padding: 0px;
 	height: 32px;
 	width: 32px;
 	flex: 0 0 32px;
 }
 
-.spotify-activity-controls .activity-controls-listen {
-	flex: 1;
+.spotify-activity-controls .spotify-activity-btn-listen {
+	flex: 1 0 0;
+	width: 100%;
 }
-
-/* End spotify activity controls */
-
-/* Spotify Player */
 .spotify-player-container {
+	background: hsl(228 8% 12%);
+	border-bottom: 1px solid hsl(228deg 6% 33% / 48%);
 	padding: 10px 10px;
 	color: white;
 	display: flex;
@@ -2276,175 +2153,6 @@ const css = `:root {
 	inset: 0;
 	filter: blur(8px);
 	z-index: -1;
-}
-
-.spotify-player-media {
-	color: white;
-	font-size: 0.9rem;
-	overflow: hidden;
-	display: grid;
-	column-gap: 10px;
-	z-index: 5;
-	grid-template-columns: 64px minmax(0, 1fr);
-	grid-template-rows: repeat(3, 1fr);
-	align-items: center;
-	justify-items: flex-start;
-	grid-template-areas:
-		"banner title"
-		"banner artist"
-		"banner album";
-}
-
-div:has(> .spotify-banner-modal) {
-	background: #0000;
-}
-
-.spotify-player-banner {
-	grid-area: banner;
-	cursor: pointer;
-	width: 64px;
-	height: 64px;
-	background:
-		var(--banner-sm) center/cover no-repeat,
-		lime;
-	border-radius: 5px;
-}
-
-.spotify-player-title {
-	grid-area: title;
-	font-weight: bold;
-	color: #fff;
-	font-size: 1.05rem;
-	max-width: 100%;
-}
-
-.spotify-player-title:first-child {
-	grid-column: 1/-1;
-	grid-row: 1/-1;
-	margin-bottom: 5px;
-}
-
-.spotify-player-artist {
-	grid-area: artist;
-	font-size: 0.8rem;
-	max-width: 100%;
-}
-
-.spotify-player-album {
-	grid-area: album;
-	max-width: 100%;
-}
-
-.spotify-player-album > div,
-.spotify-player-artist > div {
-	display: flex;
-	gap: 5px;
-}
-
-.spotify-player-album span,
-.spotify-player-artist span {
-	color: var(--text-sub);
-}
-
-.spotify-player-controls {
-	display: flex;
-	justify-content: space-between;
-	width: 100%;
-	overflow: hidden;
-}
-
-.spotify-player-controls svg {
-	width: 16px;
-	height: 16px;
-}
-
-.spotify-player-controls-btn {
-	padding: 3px !important;
-	color: #ccc;
-	transition: all 100ms linear;
-	border-radius: 5px;
-}
-
-.spotify-player-controls-btn:hover {
-	background: #ccc3;
-	color: fff;
-	scale: 1.1;
-}
-
-.spotify-player-controls-btn.enabled {
-	color: var(--spotify-green);
-}
-
-.spotify-player-timeline {
-	user-select: none;
-	margin-bottom: 2px;
-	color: white;
-	display: flex;
-	flex-wrap: wrap;
-	font-size: 0.8rem;
-	flex: 1;
-}
-
-.spotify-player-timeline-progress {
-	flex: 1;
-}
-
-.spotify-player-timeline-trackbar {
-	margin-top: -8px;
-	margin-bottom: 8px;
-	cursor: pointer;
-}
-
-.spotify-player-timeline:hover .spotify-player-timeline-trackbar-grabber {
-	opacity: 1;
-}
-
-.spotify-player-timeline .spotify-player-timeline-trackbar-grabber {
-	opacity: 0;
-	cursor: grab;
-	width: 10px;
-	height: 10px;
-	margin-top: 4px;
-}
-
-.spotify-player-timeline .spotify-player-timeline-trackbar-bar {
-	background: hsl(0deg 0% 100% / 30%);
-	height: 6px;
-}
-
-.spotify-player-timeline .spotify-player-timeline-trackbar-bar > div {
-	background: #fff;
-	border-radius: 4px;
-}
-
-.spotify-player-timeline:hover .spotify-player-timeline-trackbar-bar > div {
-	background: var(--spotify-green);
-}
-
-.spotify-player-container {
-	background: hsl(228 8% 12%);
-	border-bottom: 1px solid hsl(228deg 6% 33% / 48%);
-}
-
-.spotify-player-controls-volume-slider-wrapper {
-	height: 120px;
-	width: 20px;
-	background: var(--background-floating);
-	padding: 5px 1px;
-	border-radius: 99px;
-}
-
-.spotify-player-controls-volume-slider {
-	margin: 0;
-	width: 100%;
-	height: 100%;
-	accent-color: var(--spotify-green);
-	appearance: slider-vertical;
-}
-
-.spotify-menuitem svg {
-	width: 16px;
-	height: 16px;
 }
 
 .spotify-player-container.compact {
@@ -2492,11 +2200,7 @@ div:has(> .spotify-banner-modal) {
 	align-items: center;
 	margin-right: 5px;
 }
-
-/* End Player */
-
-/* Original Spotify Embed controls */
-.spotify-no-embed-controls {
+.spotify-embed-plus {
 	display: flex;
 	min-width: 400px;
 	max-width: 100%;
@@ -2504,44 +2208,306 @@ div:has(> .spotify-banner-modal) {
 	overflow: hidden;
 }
 
-.spotify-no-embed-controls > button {
+.spotify-embed-plus > button {
 	flex: 1 0 auto;
 	text-transform: capitalize;
 }
+.spotify-embed-container {
+	background:
+		linear-gradient(#00000090 0 0),
+		var(--thumbnail) top center/999% no-repeat;
+	max-width: 350px;
+	min-width: 350px;
+	padding: var(--gutter);
+	border-radius: var(--radius);
+	font-family: var(--font);
 
-/* End Original Spotify Embed controls */
-
-.collapsible-container {
-	border-radius: 5;
-	border: 1px solid rgb(30, 31, 34);
-	gap: 20;
+	display: grid;
+	column-gap: var(--gutter);
+	grid-template-columns: auto minmax(0, 1fr) auto;
+	grid-template-rows: auto auto minmax(0, 1fr);
+	grid-template-areas:
+		"thumbnail title icon"
+		"thumbnail description ."
+		"thumbnail controls .";
 }
 
-.collapsible-header {
-	background: rgba(30, 31, 34, 0.3);
-	padding: 10px 3px;
-	gap: 8;
+.spotify-embed-thumbnail {
+	grid-area: thumbnail;
+	cursor: pointer;
+	width: 80px;
+	height: 80px;
+	background: var(--thumbnail) center/cover no-repeat;
+	border-radius: var(--radius);
 }
 
-.collapsible-open .collapsible-header {
-	border-bottom: 1px solid rgb(30, 31, 34);
+.spotify-embed-container.playing .spotify-embed-thumbnail {
+	border-radius: 50%;
+	position: relative;
+	box-shadow: 0 0 0 0 #0008;
+	animation:
+		r 10s linear infinite,
+		b 1.5s infinite linear;
+	position: relative;
 }
 
-.collapsible-icon {
-	flex-grow: 0;
-	rotate:0;
-	transition: rotate 150ms linear;
+.spotify-embed-container.playing .spotify-embed-thumbnail:after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	border-radius: inherit;
+	box-shadow: 0 0 0 0 #0004;
+	animation: inherit;
+	animation-delay: -0.5s;
 }
 
-.collapsible-open .collapsible-icon {
-	rotate:90deg;
+
+.spotify-embed-container.bannerBackground {
+	position: relative;
+	border: 1px solid rgba(43, 45, 49, 0.9);
+	background: unset;
+	overflow: hidden;
 }
 
-.collapsible-title {
-	text-transform: capitalize;
+.spotify-embed-container.bannerBackground:before {
+	content: "";
+	background:
+		linear-gradient(#000000a0 0 0),
+		var(--thumbnail) center/cover no-repeat;
+	position: absolute;
+	inset: 0px;
+	filter: blur(5px);
+	z-index: -1;
 }
 
-.collapsible-body {
-	margin: 0 10px;
+.spotify-embed-title {
+	grid-area: title;
+
+	font-weight: bold;
+	color: var(--text-normal);
+	margin: 0;
+	margin-top: 3px;
+	align-self: center;
+
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
 }
-`;
+
+.spotify-embed-description {
+	grid-area: description;
+
+	font-weight: 500;
+	margin: 0;
+	margin-top: 3px;
+	color: var(--text-sub);
+	font-size: 0.7rem;
+
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+.spotify-embed-controls {
+	grid-area: controls;
+	height: 30px;
+	display: flex;
+	align-self: center;
+	gap: var(--gutter);
+}
+
+.spotify-embed-btn {
+	background: #0000004d;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	padding: 6px;
+	border-radius: 50%;
+	color: #fff;
+	box-sizing: border-box;
+}
+
+.spotify-embed-btn svg {
+	width: var(--icon-size);
+	height: var(--icon-size);
+}
+
+.spotify-embed-spotifyIcon {
+	grid-area: icon;
+	cursor: pointer;
+	display: flex;
+	color: var(--spotify-green);
+}
+
+
+@keyframes r {
+	to {
+		rotate: 360deg;
+	}
+}
+
+@keyframes b {
+	100% {
+		box-shadow: 0 0 0 20px #0000;
+	}
+}
+
+
+.spotify-player-controls {
+	display: flex;
+	justify-content: space-between;
+	width: 100%;
+	overflow: hidden;
+}
+
+.spotify-player-controls svg {
+	width: 16px;
+	height: 16px;
+}
+
+.spotify-player-controls-btn {
+	padding: 3px !important;
+	color: #ccc;
+	transition: all 100ms linear;
+	border-radius: 5px;
+}
+
+.spotify-player-controls-btn:hover {
+	background: #ccc3;
+	color: fff;
+	scale: 1.1;
+}
+
+.spotify-player-controls-btn.enabled {
+	color: var(--spotify-green);
+}
+
+.spotify-player-controls-volume-slider-wrapper {
+	height: 120px;
+	width: 20px;
+	background: var(--background-floating);
+	padding: 5px 1px;
+	border-radius: 99px;
+}
+
+.spotify-player-controls-volume-slider {
+	margin: 0;
+	width: 100%;
+	height: 100%;
+	accent-color: var(--spotify-green);
+	appearance: slider-vertical;
+}
+
+.spotify-player-media {
+	color: white;
+	font-size: 0.9rem;
+	overflow: hidden;
+	display: grid;
+	column-gap: 10px;
+	z-index: 5;
+	grid-template-columns: 64px minmax(0, 1fr);
+	grid-template-rows: repeat(3, 1fr);
+	align-items: center;
+	justify-items: flex-start;
+	grid-template-areas:
+		"banner title"
+		"banner artist"
+		"banner album";
+}
+
+.spotify-player-title {
+	grid-area: title;
+	font-weight: bold;
+	color: #fff;
+	font-size: 1.05rem;
+	max-width: 100%;
+}
+
+.spotify-player-title:first-child {
+	grid-column: 1/-1;
+	grid-row: 1/-1;
+	margin-bottom: 5px;
+}
+
+.spotify-player-artist {
+	grid-area: artist;
+	font-size: 0.8rem;
+	max-width: 100%;
+}
+
+.spotify-player-album {
+	grid-area: album;
+	max-width: 100%;
+}
+
+.spotify-player-album > div,
+.spotify-player-artist > div {
+	display: flex;
+	gap: 5px;
+}
+
+.spotify-player-album span,
+.spotify-player-artist span {
+	color: var(--text-sub);
+}
+
+div:has(> .spotify-banner-modal) {
+	background: #0000;
+}
+
+.spotify-player-banner {
+	grid-area: banner;
+	cursor: pointer;
+	width: 64px;
+	height: 64px;
+	background:
+		var(--banner-sm) center/cover no-repeat,
+		lime;
+	border-radius: 5px;
+}
+
+.spotify-player-timeline {
+	user-select: none;
+	margin-bottom: 2px;
+	color: white;
+	display: flex;
+	flex-wrap: wrap;
+	font-size: 0.8rem;
+	flex: 1;
+}
+
+.spotify-player-timeline-progress {
+	flex: 1;
+}
+
+.spotify-player-timeline-trackbar {
+	margin-top: -8px;
+	margin-bottom: 8px;
+	cursor: pointer;
+}
+
+.spotify-player-timeline:hover .spotify-player-timeline-trackbar-grabber {
+	opacity: 1;
+}
+
+.spotify-player-timeline .spotify-player-timeline-trackbar-grabber {
+	opacity: 0;
+	cursor: grab;
+	width: 10px;
+	height: 10px;
+	margin-top: 4px;
+}
+
+.spotify-player-timeline .spotify-player-timeline-trackbar-bar {
+	background: hsl(0deg 0% 100% / 30%);
+	height: 6px;
+}
+
+.spotify-player-timeline .spotify-player-timeline-trackbar-bar > div {
+	background: #fff;
+	border-radius: 4px;
+}
+
+.spotify-player-timeline:hover .spotify-player-timeline-trackbar-bar > div {
+	background: var(--spotify-green);
+}`;
