@@ -17,15 +17,15 @@ import VolumeIcon from "@Components/icons/VolumeIcon";
 import ImageIcon from "@Components/icons/ImageIcon";
 import ListenIcon from "@Components/icons/ListenIcon";
 import { PlayerButtonsEnum } from "../../consts.js";
-import SpotifyApi from "../../SpotifyAPIWrapper";
+
 import { Store } from "../../Store";
 import Settings from "@Utils/Settings";
 import { shallow } from "@Utils";
 
-const pauseHandler = () => SpotifyApi.pause();
-const playHandler = () => SpotifyApi.play();
-const previousHandler = () => SpotifyApi.previous();
-const nextHandler = () => SpotifyApi.next();
+const pauseHandler = () => Store.Api.pause();
+const playHandler = () => Store.Api.play();
+const previousHandler = () => Store.Api.previous();
+const nextHandler = () => Store.Api.next();
 
 const playpause = {
 	true: {
@@ -74,8 +74,8 @@ export default () => {
 
 	const { repeatTooltip, repeatActive, repeatIcon, repeatArg } = repeatObj[repeat || "off"];
 
-	const shuffleHandler = () => SpotifyApi.shuffle(!shuffle);
-	const repeatHandler = () => SpotifyApi.repeat(repeatArg);
+	const shuffleHandler = () => Store.Api.shuffle(!shuffle);
+	const repeatHandler = () => Store.Api.repeat(repeatArg);
 	const shareSongHandler = () => Store.Utils.share(url);
 	const sharePosterHandler = () => Store.Utils.share(bannerLg.url);
 	const copySongHandler = () => Store.Utils.copySpotifyLink(url);
@@ -169,7 +169,7 @@ function Volume({ volume }) {
 
 	const volumeMuteHandler = () => {
 		const target = val ? 0 : volumeRef.current;
-		SpotifyApi.volume(target).then(() => {
+		Store.Api.volume(target).then(() => {
 			setVal(target);
 		});
 	};
@@ -178,7 +178,7 @@ function Volume({ volume }) {
 	const volumeOnMouseDown = () => setActive(true);
 	const volumeOnMouseUp = () => {
 		setActive(false);
-		SpotifyApi.volume(val).then(() => (volumeRef.current = val));
+		Store.Api.volume(val).then(() => (volumeRef.current = val));
 	};
 
 	return (

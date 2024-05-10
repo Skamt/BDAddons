@@ -1,8 +1,6 @@
 import "./styles";
 import { React } from "@Api";
 import ControlBtn from "./ControlBtn";
-
-import SpotifyApi from "../../SpotifyAPIWrapper";
 import { Store } from "../../Store";
 
 export default ({ id, type, embed: { thumbnail, rawTitle, url } }) => {
@@ -12,7 +10,7 @@ export default ({ id, type, embed: { thumbnail, rawTitle, url } }) => {
 		<ControlBtn
 			disabled={!isActive}
 			value="play on spotify"
-			onClick={() => SpotifyApi.listen(type, id, rawTitle)}
+			onClick={() => Store.Api.listen(type, id, rawTitle)}
 		/>
 	);
 
@@ -20,7 +18,7 @@ export default ({ id, type, embed: { thumbnail, rawTitle, url } }) => {
 		<ControlBtn
 			disabled={!isActive}
 			value="add to queue"
-			onClick={() => SpotifyApi.queue(type, id, rawTitle)}
+			onClick={() => Store.Api.queue(type, id, rawTitle)}
 		/>
 	);
 

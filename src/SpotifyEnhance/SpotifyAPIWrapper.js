@@ -9,12 +9,9 @@ async function requestHandler(action) {
 	do {
 		const [actionError, actionResponse] = await promiseHandler(action());
 		if (!actionError) return actionResponse;
-		if (actionError.status !== 401) {
-			Logger.error(actionError);
-			throw new Error(actionError.message);
-		}
+		if (actionError.status !== 401) throw new Error(actionError.message);
 
-		if (SpotifyAPI.accountId) throw new Error("Can't refresh expired access token Unknown account ID");
+		if (!SpotifyAPI.accountId) throw new Error("Can't refresh expired access token Unknown account ID");
 
 		const [tokenRefreshError, tokenRefreshResponse] = await promiseHandler(RefreshToken(SpotifyAPI.accountId));
 		if (tokenRefreshError) {
@@ -73,9 +70,8 @@ export default new Proxy(
 				case "getPlayerState":
 				case "getDevices":
 					return () => requestHandler(() => SpotifyAPI[prop]());
-
-				default:
-					return SpotifyAPI[prop];
+				case "setAccount":
+					return (token, id) => SpotifyAPI.setAccount(token, id);
 			}
 		}
 	}

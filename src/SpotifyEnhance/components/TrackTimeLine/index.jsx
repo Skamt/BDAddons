@@ -1,7 +1,6 @@
 import "./styles";
 import { React } from "@Api";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
-import SpotifyApi from "../../SpotifyAPIWrapper";
 import { Store } from "../../Store";
 import { shallow } from "@Utils";
 
@@ -27,7 +26,7 @@ export default () => {
 		const pos = Math.floor(e);
 		Store.positionInterval.stop();
 		Store.state.setPosition(pos);
-		SpotifyApi.seek(pos);
+		Store.Api.seek(pos);
 	};
 
 	return (

@@ -7,7 +7,6 @@ import Toast from "@Utils/Toast";
 import { Store } from "../../Store";
 import ContextMenu from "@Components/ContextMenu";
 import VolumeIcon from "@Components/icons/VolumeIcon";
-import SpotifyApi from "../../SpotifyAPIWrapper";
 
 const { Anchor } = TheBigBoyBundle;
 
@@ -50,7 +49,7 @@ export default ({ name, artists, mediaType }) => {
 					{
 						className: "spotify-menuitem",
 						id: "album-play",
-						action: () => SpotifyApi.listen("album", albumeId, albumName),
+						action: () => Store.Api.listen("album", albumeId, albumName),
 						icon: VolumeIcon,
 						label: "Play Album"
 					}
@@ -82,7 +81,7 @@ function Artist({ artists }) {
 						{
 							className: "spotify-menuitem",
 							id: "artist-play",
-							action: () => SpotifyApi.listen("artist", artist.id, artist.name),
+							action: () => Store.Api.listen("artist", artist.id, artist.name),
 							icon: VolumeIcon,
 							label: "Play Artist"
 						}

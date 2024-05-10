@@ -8,7 +8,7 @@ import SpotifyIcon from "@Components/icons/SpotifyIcon";
 import ImageIcon from "@Components/icons/ImageIcon";
 import { getImageModalComponent, openModal, shallow } from "@Utils";
 import Settings from "@Utils/Settings";
-import SpotifyApi from "../../SpotifyAPIWrapper";
+
 import { Store } from "../../Store";
 import AccessibilityStore from "@Stores/AccessibilityStore";
 import FluxHelpers from "@Modules/FluxHelpers";
@@ -26,7 +26,7 @@ export default ({ id, type, embed: { thumbnail, rawTitle, rawDescription, url } 
 	const listenBtn = type !== "show" && (
 		<Tooltip note={`Play ${type}`}>
 			<div
-				onClick={() => SpotifyApi.listen(type, id, rawTitle)}
+				onClick={() => Store.Api.listen(type, id, rawTitle)}
 				className="spotify-embed-btn spotify-embed-btn-listen">
 				<ListenIcon />
 			</div>
@@ -36,7 +36,7 @@ export default ({ id, type, embed: { thumbnail, rawTitle, rawDescription, url } 
 	const queueBtn = (type === "track" || type === "episode") && (
 		<Tooltip note={`Add ${type} to queue`}>
 			<div
-				onClick={() => SpotifyApi.queue(type, id, rawTitle)}
+				onClick={() => Store.Api.queue(type, id, rawTitle)}
 				className="spotify-embed-btn spotify-embed-btn-addToQueue">
 				<AddToQueueIcon />
 			</div>

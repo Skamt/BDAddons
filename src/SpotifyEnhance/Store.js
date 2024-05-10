@@ -7,9 +7,9 @@ import Logger from "@Utils/Logger";
 import { insertText, sendMessageDirectly } from "@Utils/Messages";
 import Timer from "@Utils/Timer";
 import Toast from "@Utils/Toast";
-import SpotifyApi from "./SpotifyAPIWrapper";
 import { sanitizeSpotifyLink } from "./Utils";
 import zustand from "@Modules/zustand";
+import SpotifyAPIWrapper from "./SpotifyAPIWrapper"
 
 const Utils = {
 	copySpotifyLink(link) {
@@ -44,9 +44,9 @@ export const Store = Object.assign(
 
 		return {
 			account: undefined,
-			setAccount: socket => {
+			setAccount: (socket = {}) => {
 				if (socket === get().account) return;
-				SpotifyApi.setAccount(socket.accessToken, socket.accountId);
+				SpotifyAPIWrapper.setAccount(socket.accessToken, socket.accountId);
 				set({ account: socket, isActive: !!socket });
 			},
 
@@ -54,7 +54,7 @@ export const Store = Object.assign(
 			setDeviceState: isActive => set({ isActive }),
 
 			async fetchPlayerState() {
-				const [err, playerState] = await promiseHandler(SpotifyApi.getPlayerState());
+				const [err, playerState] = await promiseHandler(SpotifyAPIWrapper.getPlayerState());
 				if (err) return Logger.error("Could not fetch player state", err);
 				get().setPlayerState(playerState);
 			},
@@ -130,7 +130,7 @@ export const Store = Object.assign(
 			const { socket } = SpotifyStore.getActiveSocketAndDevice() || {};
 			if (!socket) return;
 			Store.state.setAccount(socket);
-			// Store.state.fetchPlayerState();
+			Store.state.fetchPlayerState();
 		},
 		dispose() {
 			SpotifyStore.removeChangeListener(onSpotifyStoreChange);
@@ -140,6 +140,7 @@ export const Store = Object.assign(
 			this.idleTimer.stop();
 		},
 		Utils,
+		Api:SpotifyAPIWrapper,
 		selectors: {
 			isActive: state => state.isActive,
 			media: state => state.media,

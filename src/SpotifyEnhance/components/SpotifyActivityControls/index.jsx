@@ -8,7 +8,7 @@ import Tooltip from "@Components/Tooltip";
 import AddToQueueIcon from "@Components/icons/AddToQueueIcon";
 import ShareIcon from "@Components/icons/ShareIcon";
 import { Filters, getModule } from "@Webpack";
-import SpotifyApi from "../../SpotifyAPIWrapper";
+
 import { Store } from "../../Store";
 
 const { useSpotifyPlayAction, useSpotifySyncAction } = getModule(Filters.byProps("useSpotifyPlayAction"));
@@ -27,7 +27,7 @@ export default ({ activity, user, source }) => {
 					className="spotify-activity-btn-queue"
 					value={<AddToQueueIcon />}
 					disabled={!isActive}
-					onClick={() => SpotifyApi.queue(activity?.metadata?.type, activity.sync_id, activity.details)}
+					onClick={() => Store.Api.queue(activity?.metadata?.type, activity.sync_id, activity.details)}
 				/>
 			</Tooltip>
 			<Tooltip note="Share in current channel">
