@@ -293,6 +293,48 @@ const Toast = {
 	error(content) { showToast(content, "error"); }
 };
 
+function parseSpotifyUrl(url) {
+	if (typeof url !== "string") return undefined;
+	const [, type, id] = url.match(/https?:\/\/open\.spotify\.com\/(\w+)\/(\w+)/) || [];
+	return [type, id];
+}
+
+function sanitizeSpotifyLink(link) {
+	try {
+		const url = new URL(link);
+		return url.origin + url.pathname;
+	} catch {
+		return link;
+	}
+}
+
+const activityPanelClasses = getModule(Filters.byProps("activityPanel", "panels"), { searchExports: false });
+
+function getFluxContainer() {
+	const el = document.querySelector(`.${activityPanelClasses.panels}`);
+	if (el) {
+		const instance = getInternalInstance(el);
+		if (instance) return Promise.resolve(instance.child.sibling);
+	}
+	return new Promise(resolve => {
+		const interval = setInterval(() => {
+			const el = document.querySelector(`.${activityPanelClasses.panels}`);
+			if (!el) return;
+			const instance = getInternalInstance(el);
+			if (!instance) return;
+			resolve(instance.child.sibling);
+			clearInterval(interval);
+		}, 500);
+
+		setTimeout(() => {
+			resolve(null);
+			clearInterval(interval);
+		}, 20 * 1000);
+	});
+}
+
+const zustand = getModule(Filters.byStrings("subscribeWithSelector", "useReducer"), { searchExports: false });
+
 const API_ENDPOINT = "https://api.spotify.com/v1";
 
 async function wrappedFetch(url, options) {
@@ -477,12 +519,9 @@ async function requestHandler(action) {
 	do {
 		const [actionError, actionResponse] = await promiseHandler(action());
 		if (!actionError) return actionResponse;
-		if (actionError.status !== 401) {
-			Logger.error(actionError);
-			throw new Error(actionError.message);
-		}
+		if (actionError.status !== 401) throw new Error(actionError.message);
 
-		if (SpotifyAPI.accountId) throw new Error("Can't refresh expired access token Unknown account ID");
+		if (!SpotifyAPI.accountId) throw new Error("Can't refresh expired access token Unknown account ID");
 
 		const [tokenRefreshError, tokenRefreshResponse] = await promiseHandler(RefreshToken(SpotifyAPI.accountId));
 		if (tokenRefreshError) {
@@ -518,7 +557,7 @@ function ressourceActions(prop) {
 		});
 }
 
-const SpotifyApi = new Proxy({}, {
+const SpotifyAPIWrapper = new Proxy({}, {
 	get(_, prop) {
 		switch (prop) {
 			case "queue":
@@ -539,54 +578,11 @@ const SpotifyApi = new Proxy({}, {
 			case "getPlayerState":
 			case "getDevices":
 				return () => requestHandler(() => SpotifyAPI[prop]());
-
-			default:
-				return SpotifyAPI[prop];
+			case "setAccount":
+				return (token, id) => SpotifyAPI.setAccount(token, id);
 		}
 	}
 });
-
-function parseSpotifyUrl(url) {
-	if (typeof url !== "string") return undefined;
-	const [, type, id] = url.match(/https?:\/\/open\.spotify\.com\/(\w+)\/(\w+)/) || [];
-	return [type, id];
-}
-
-function sanitizeSpotifyLink(link) {
-	try {
-		const url = new URL(link);
-		return url.origin + url.pathname;
-	} catch {
-		return link;
-	}
-}
-
-const activityPanelClasses = getModule(Filters.byProps("activityPanel", "panels"), { searchExports: false });
-
-function getFluxContainer() {
-	const el = document.querySelector(`.${activityPanelClasses.panels}`);
-	if (el) {
-		const instance = getInternalInstance(el);
-		if (instance) return Promise.resolve(instance.child.sibling);
-	}
-	return new Promise(resolve => {
-		const interval = setInterval(() => {
-			const el = document.querySelector(`.${activityPanelClasses.panels}`);
-			if (!el) return;
-			const instance = getInternalInstance(el);
-			if (!instance) return;
-			resolve(instance.child.sibling);
-			clearInterval(interval);
-		}, 500);
-
-		setTimeout(() => {
-			resolve(null);
-			clearInterval(interval);
-		}, 20 * 1000);
-	});
-}
-
-const zustand = getModule(Filters.byStrings("subscribeWithSelector", "useReducer"), { searchExports: false });
 
 const Utils = {
 	copySpotifyLink(link) {
@@ -615,9 +611,9 @@ const Store = Object.assign(
 
 		return {
 			account: undefined,
-			setAccount: socket => {
+			setAccount: (socket = {}) => {
 				if (socket === get().account) return;
-				SpotifyApi.setAccount(socket.accessToken, socket.accountId);
+				SpotifyAPIWrapper.setAccount(socket.accessToken, socket.accountId);
 				set({ account: socket, isActive: !!socket });
 			},
 
@@ -625,7 +621,7 @@ const Store = Object.assign(
 			setDeviceState: isActive => set({ isActive }),
 
 			async fetchPlayerState() {
-				const [err, playerState] = await promiseHandler(SpotifyApi.getPlayerState());
+				const [err, playerState] = await promiseHandler(SpotifyAPIWrapper.getPlayerState());
 				if (err) return Logger.error("Could not fetch player state", err);
 				get().setPlayerState(playerState);
 			},
@@ -700,7 +696,7 @@ const Store = Object.assign(
 			const { socket } = SpotifyStore.getActiveSocketAndDevice() || {};
 			if (!socket) return;
 			Store.state.setAccount(socket);
-
+			Store.state.fetchPlayerState();
 		},
 		dispose() {
 			SpotifyStore.removeChangeListener(onSpotifyStoreChange);
@@ -710,6 +706,7 @@ const Store = Object.assign(
 			this.idleTimer.stop();
 		},
 		Utils,
+		Api: SpotifyAPIWrapper,
 		selectors: {
 			isActive: state => state.isActive,
 			media: state => state.media,
@@ -1106,7 +1103,7 @@ const SpotifyActivityControls = ({ activity, user, source }) => {
 			className: "spotify-activity-btn-queue",
 			value: React.createElement(AddToQueueIcon, null),
 			disabled: !isActive,
-			onClick: () => SpotifyApi.queue(activity?.metadata?.type, activity.sync_id, activity.details),
+			onClick: () => Store.Api.queue(activity?.metadata?.type, activity.sync_id, activity.details),
 		})), React.createElement(Tooltip$1, { note: "Share in current channel", }, React.createElement(ActivityControlButton, {
 			className: "spotify-activity-btn-share",
 			onClick: () => Store.Utils.share(`https://open.spotify.com/track/${activity.sync_id}`),
@@ -1149,7 +1146,7 @@ const SpotifyControls = ({ id, type, embed: { thumbnail, rawTitle, url } }) => {
 		React.createElement(ControlBtn, {
 			disabled: !isActive,
 			value: "play on spotify",
-			onClick: () => SpotifyApi.listen(type, id, rawTitle),
+			onClick: () => Store.Api.listen(type, id, rawTitle),
 		})
 	);
 
@@ -1157,7 +1154,7 @@ const SpotifyControls = ({ id, type, embed: { thumbnail, rawTitle, url } }) => {
 		React.createElement(ControlBtn, {
 			disabled: !isActive,
 			value: "add to queue",
-			onClick: () => SpotifyApi.queue(type, id, rawTitle),
+			onClick: () => Store.Api.queue(type, id, rawTitle),
 		})
 	);
 
@@ -1232,7 +1229,7 @@ const TrackTimeLine = () => {
 		const pos = Math.floor(e);
 		Store.positionInterval.stop();
 		Store.state.setPosition(pos);
-		SpotifyApi.seek(pos);
+		Store.Api.seek(pos);
 	};
 
 	return (
@@ -1277,14 +1274,14 @@ const SpotifyEmbed$1 = ({ id, type, embed: { thumbnail, rawTitle, rawDescription
 
 	const listenBtn = type !== "show" && (
 		React.createElement(Tooltip$1, { note: `Play ${type}`, }, React.createElement('div', {
-			onClick: () => SpotifyApi.listen(type, id, rawTitle),
+			onClick: () => Store.Api.listen(type, id, rawTitle),
 			className: "spotify-embed-btn spotify-embed-btn-listen",
 		}, React.createElement(ListenIcon, null)))
 	);
 
 	const queueBtn = (type === "track" || type === "episode") && (
 		React.createElement(Tooltip$1, { note: `Add ${type} to queue`, }, React.createElement('div', {
-			onClick: () => SpotifyApi.queue(type, id, rawTitle),
+			onClick: () => Store.Api.queue(type, id, rawTitle),
 			className: "spotify-embed-btn spotify-embed-btn-addToQueue",
 		}, React.createElement(AddToQueueIcon, null)))
 	);
@@ -1571,10 +1568,10 @@ function VolumeIcon() {
 	);
 }
 
-const pauseHandler = () => SpotifyApi.pause();
-const playHandler = () => SpotifyApi.play();
-const previousHandler = () => SpotifyApi.previous();
-const nextHandler = () => SpotifyApi.next();
+const pauseHandler = () => Store.Api.pause();
+const playHandler = () => Store.Api.play();
+const previousHandler = () => Store.Api.previous();
+const nextHandler = () => Store.Api.next();
 
 const playpause = {
 	true: {
@@ -1623,8 +1620,8 @@ const SpotifyPlayerControls = () => {
 
 	const { repeatTooltip, repeatActive, repeatIcon, repeatArg } = repeatObj[repeat || "off"];
 
-	const shuffleHandler = () => SpotifyApi.shuffle(!shuffle);
-	const repeatHandler = () => SpotifyApi.repeat(repeatArg);
+	const shuffleHandler = () => Store.Api.shuffle(!shuffle);
+	const repeatHandler = () => Store.Api.repeat(repeatArg);
 	const shareSongHandler = () => Store.Utils.share(url);
 	const sharePosterHandler = () => Store.Utils.share(bannerLg.url);
 	const copySongHandler = () => Store.Utils.copySpotifyLink(url);
@@ -1707,7 +1704,7 @@ function Volume({ volume }) {
 
 	const volumeMuteHandler = () => {
 		const target = val ? 0 : volumeRef.current;
-		SpotifyApi.volume(target).then(() => {
+		Store.Api.volume(target).then(() => {
 			setVal(target);
 		});
 	};
@@ -1716,7 +1713,7 @@ function Volume({ volume }) {
 	const volumeOnMouseDown = () => setActive(true);
 	const volumeOnMouseUp = () => {
 		setActive(false);
-		SpotifyApi.volume(val).then(() => (volumeRef.current = val));
+		Store.Api.volume(val).then(() => (volumeRef.current = val));
 	};
 
 	return (
@@ -1777,7 +1774,7 @@ const TrackMediaDetails = ({ name, artists, mediaType }) => {
 				{
 					className: "spotify-menuitem",
 					id: "album-play",
-					action: () => SpotifyApi.listen("album", albumeId, albumName),
+					action: () => Store.Api.listen("album", albumeId, albumName),
 					icon: VolumeIcon,
 					label: "Play Album"
 				}
@@ -1804,7 +1801,7 @@ function Artist({ artists }) {
 						{
 							className: "spotify-menuitem",
 							id: "artist-play",
-							action: () => SpotifyApi.listen("artist", artist.id, artist.name),
+							action: () => Store.Api.listen("artist", artist.id, artist.name),
 							icon: VolumeIcon,
 							label: "Play Artist"
 						}
@@ -1995,8 +1992,6 @@ const patchChannelAttach = () => {
 		});
 	else Logger.patch("patchChannelAttach");
 };
-
-window.spotsetting = Settings;
 
 class SpotifyEnhance {
 	start() {
@@ -2351,6 +2346,51 @@ const css = `:root {
 }
 
 
+.spotify-player-timeline {
+	user-select: none;
+	margin-bottom: 2px;
+	color: white;
+	display: flex;
+	flex-wrap: wrap;
+	font-size: 0.8rem;
+	flex: 1;
+}
+
+.spotify-player-timeline-progress {
+	flex: 1;
+}
+
+.spotify-player-timeline-trackbar {
+	margin-top: -8px;
+	margin-bottom: 8px;
+	cursor: pointer;
+}
+
+.spotify-player-timeline:hover .spotify-player-timeline-trackbar-grabber {
+	opacity: 1;
+}
+
+.spotify-player-timeline .spotify-player-timeline-trackbar-grabber {
+	opacity: 0;
+	cursor: grab;
+	width: 10px;
+	height: 10px;
+	margin-top: 4px;
+}
+
+.spotify-player-timeline .spotify-player-timeline-trackbar-bar {
+	background: hsl(0deg 0% 100% / 30%);
+	height: 6px;
+}
+
+.spotify-player-timeline .spotify-player-timeline-trackbar-bar > div {
+	background: #fff;
+	border-radius: 4px;
+}
+
+.spotify-player-timeline:hover .spotify-player-timeline-trackbar-bar > div {
+	background: var(--spotify-green);
+}
 .spotify-player-controls {
 	display: flex;
 	justify-content: space-between;
@@ -2463,49 +2503,4 @@ div:has(> .spotify-banner-modal) {
 		lime;
 	border-radius: 5px;
 }
-
-.spotify-player-timeline {
-	user-select: none;
-	margin-bottom: 2px;
-	color: white;
-	display: flex;
-	flex-wrap: wrap;
-	font-size: 0.8rem;
-	flex: 1;
-}
-
-.spotify-player-timeline-progress {
-	flex: 1;
-}
-
-.spotify-player-timeline-trackbar {
-	margin-top: -8px;
-	margin-bottom: 8px;
-	cursor: pointer;
-}
-
-.spotify-player-timeline:hover .spotify-player-timeline-trackbar-grabber {
-	opacity: 1;
-}
-
-.spotify-player-timeline .spotify-player-timeline-trackbar-grabber {
-	opacity: 0;
-	cursor: grab;
-	width: 10px;
-	height: 10px;
-	margin-top: 4px;
-}
-
-.spotify-player-timeline .spotify-player-timeline-trackbar-bar {
-	background: hsl(0deg 0% 100% / 30%);
-	height: 6px;
-}
-
-.spotify-player-timeline .spotify-player-timeline-trackbar-bar > div {
-	background: #fff;
-	border-radius: 4px;
-}
-
-.spotify-player-timeline:hover .spotify-player-timeline-trackbar-bar > div {
-	background: var(--spotify-green);
-}`;
+`;
