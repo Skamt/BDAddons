@@ -295,30 +295,27 @@ const Toast = {
 
 const API_ENDPOINT = "https://api.spotify.com/v1";
 
-async function responseToJson(response) {
-	const [error, data] = await promiseHandler(response.json());
-	if (!error) return data;
-	return { invalidJson: true, error, response };
-}
-
 async function wrappedFetch(url, options) {
-	const [error, response] = await promiseHandler(fetch(url, options));
-	if (error) throw `Network error, ${error}`;
+	const [fetchError, response] = await promiseHandler(fetch(url, options));
+	if (fetchError) {
+		console.error("Fetch Error", fetchError);
+		throw new Error(`[Network error] ${fetchError}`);
+	}
 
 	if (!response.ok) {
-		const result = await responseToJson(response.clone());
+		const [, result] = await promiseHandler(response.json());
 		throw (
-			result.error || {
+			result?.error || {
 				message: "Unknown error",
-				status: response.status,
-				response
+				status: response.status
 			}
 		);
 	}
 
 	if (response.status === 204) return true;
 
-	return await responseToJson(response);
+	const [, data] = await promiseHandler(response.json());
+	return data;
 }
 
 function buildFetchRequestOptions(builderObj) {
@@ -338,6 +335,7 @@ class FetchRequestBuilder {
 
 	setToken(token) {
 		this.setHeaders({
+			"C ontent-Type": "text/xml",
 			Authorization: `Bearer ${token}`
 		});
 		return this;
@@ -402,6 +400,11 @@ class SpotifyClientAPI {
 
 	get accountId() {
 		return this.credentials.accountId || null;
+	}
+
+	setAccount(accessToken, accountId) {
+		this.token = accessToken;
+		this.accountId = accountId;
 	}
 
 	getRequestBuilder() {
@@ -473,35 +476,38 @@ const SpotifyAPI = new SpotifyClientAPI();
 const RefreshToken = getModule(Filters.byStrings("CONNECTION_ACCESS_TOKEN"), { searchExports: true });
 
 async function requestHandler(action) {
-	let repeat = 2;
-	while (repeat--) {
+	let repeat = 1;
+	do {
 		const [actionError, actionResponse] = await promiseHandler(action());
 		if (!actionError) return actionResponse;
 		if (actionError.status !== 401) {
 			Logger.error(actionError);
-			throw actionError;
+			throw new Error(actionError.message);
 		}
 
-		if (!SpotifyAPI.accountId) throw "Can't refresh expired access token Unknown account ID";
+		if (SpotifyAPI.accountId) throw new Error("Can't refresh expired access token Unknown account ID");
 
 		const [tokenRefreshError, tokenRefreshResponse] = await promiseHandler(RefreshToken(SpotifyAPI.accountId));
 		if (tokenRefreshError) {
 			Logger.error(tokenRefreshError);
 			throw "Could not refresh Spotify token";
 		}
+
 		SpotifyAPI.token = tokenRefreshResponse.body.access_token;
-	}
+	} while (repeat--);
+
+	throw new Error("Could not fulfill request");
 }
 
 function ressourceActions(prop) {
 	const { success, error } = {
 		queue: {
-			success: (type, name) => `Queued ${type} ${name}`,
-			error: (type, name, reason) => `Could not queue ${type} ${name}\n${reason}`
+			success: (type, name) => `Queued ${name}`,
+			error: (type, name, reason) => `Could not queue ${name}\n${reason}`
 		},
 		listen: {
-			success: (type, name) => `Playing ${type} ${name}`,
-			error: (type, name, reason) => `Could not play ${type} ${name}\n${reason}`
+			success: (type, name) => `Playing ${name}`,
+			error: (type, name, reason) => `Could not play ${name}\n${reason}`
 		}
 	} [prop];
 
@@ -511,7 +517,7 @@ function ressourceActions(prop) {
 			Toast.success(success(type, description));
 		})
 		.catch(reason => {
-			Toast.error(error(type, description, reason.message));
+			Toast.error(error(type, description, reason));
 		});
 }
 
@@ -530,20 +536,15 @@ const SpotifyApi = new Proxy({}, {
 			case "previous":
 			case "volume":
 				return (...args) =>
-					requestHandler(() => SpotifyAPI[prop].apply(SpotifyAPI, args))
-					.catch(reason => {
-						Toast.error(`Could not execute ${prop} command\n${reason.message}`);
+					requestHandler(() => SpotifyAPI[prop].apply(SpotifyAPI, args)).catch(reason => {
+						Toast.error(`Could not execute ${prop} command\n${reason}`);
 					});
 			case "getPlayerState":
 			case "getDevices":
 				return () => requestHandler(() => SpotifyAPI[prop]());
-			case "setToken":
-				return socket => {
-					SpotifyAPI.token = socket?.accessToken;
-					SpotifyAPI.accountId = socket?.accountId;
-				};
+
 			default:
-				return undefined;
+				return SpotifyAPI[prop];
 		}
 	}
 });
@@ -619,7 +620,7 @@ const Store = Object.assign(
 			account: undefined,
 			setAccount: socket => {
 				if (socket === get().account) return;
-				SpotifyApi.setToken(socket);
+				SpotifyApi.setAccount(socket.accessToken, socket.accountId);
 				set({ account: socket, isActive: !!socket });
 			},
 
@@ -2200,18 +2201,51 @@ const css = `:root {
 	align-items: center;
 	margin-right: 5px;
 }
-.spotify-embed-plus {
+.spotify-player-controls {
 	display: flex;
-	min-width: 400px;
-	max-width: 100%;
-	gap: 5px;
+	justify-content: space-between;
+	width: 100%;
 	overflow: hidden;
 }
 
-.spotify-embed-plus > button {
-	flex: 1 0 auto;
-	text-transform: capitalize;
+.spotify-player-controls svg {
+	width: 16px;
+	height: 16px;
 }
+
+.spotify-player-controls-btn {
+	padding: 3px !important;
+	color: #ccc;
+	transition: all 100ms linear;
+	border-radius: 5px;
+}
+
+.spotify-player-controls-btn:hover {
+	background: #ccc3;
+	color: fff;
+	scale: 1.1;
+}
+
+.spotify-player-controls-btn.enabled {
+	color: var(--spotify-green);
+}
+
+.spotify-player-controls-volume-slider-wrapper {
+	height: 120px;
+	width: 20px;
+	background: var(--background-floating);
+	padding: 5px 1px;
+	border-radius: 99px;
+}
+
+.spotify-player-controls-volume-slider {
+	margin: 0;
+	width: 100%;
+	height: 100%;
+	accent-color: var(--spotify-green);
+	appearance: slider-vertical;
+}
+
 .spotify-embed-container {
 	background:
 		linear-gradient(#00000090 0 0),
@@ -2353,51 +2387,6 @@ const css = `:root {
 }
 
 
-.spotify-player-controls {
-	display: flex;
-	justify-content: space-between;
-	width: 100%;
-	overflow: hidden;
-}
-
-.spotify-player-controls svg {
-	width: 16px;
-	height: 16px;
-}
-
-.spotify-player-controls-btn {
-	padding: 3px !important;
-	color: #ccc;
-	transition: all 100ms linear;
-	border-radius: 5px;
-}
-
-.spotify-player-controls-btn:hover {
-	background: #ccc3;
-	color: fff;
-	scale: 1.1;
-}
-
-.spotify-player-controls-btn.enabled {
-	color: var(--spotify-green);
-}
-
-.spotify-player-controls-volume-slider-wrapper {
-	height: 120px;
-	width: 20px;
-	background: var(--background-floating);
-	padding: 5px 1px;
-	border-radius: 99px;
-}
-
-.spotify-player-controls-volume-slider {
-	margin: 0;
-	width: 100%;
-	height: 100%;
-	accent-color: var(--spotify-green);
-	appearance: slider-vertical;
-}
-
 .spotify-player-media {
 	color: white;
 	font-size: 0.9rem;
@@ -2466,6 +2455,18 @@ div:has(> .spotify-banner-modal) {
 	border-radius: 5px;
 }
 
+.spotify-embed-plus {
+	display: flex;
+	min-width: 400px;
+	max-width: 100%;
+	gap: 5px;
+	overflow: hidden;
+}
+
+.spotify-embed-plus > button {
+	flex: 1 0 auto;
+	text-transform: capitalize;
+}
 .spotify-player-timeline {
 	user-select: none;
 	margin-bottom: 2px;
