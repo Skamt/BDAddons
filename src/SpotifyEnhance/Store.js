@@ -46,7 +46,7 @@ export const Store = Object.assign(
 			account: undefined,
 			setAccount: socket => {
 				if (socket === get().account) return;
-				SpotifyApi.setToken(socket);
+				SpotifyApi.setAccount(socket.accessToken, socket.accountId);
 				set({ account: socket, isActive: !!socket });
 			},
 
@@ -220,5 +220,3 @@ function onAccountsChanged() {
 		Logger.error(e);
 	}
 }
-
-// export default Store;

@@ -5,35 +5,38 @@ import Toast from "@Utils/Toast";
 import { promiseHandler } from "@Utils";
 
 async function requestHandler(action) {
-	let repeat = 2;
-	while (repeat--) {
+	let repeat = 1;
+	do {
 		const [actionError, actionResponse] = await promiseHandler(action());
 		if (!actionError) return actionResponse;
 		if (actionError.status !== 401) {
 			Logger.error(actionError);
-			throw actionError;
+			throw new Error(actionError.message);
 		}
 
-		if (!SpotifyAPI.accountId) throw "Can't refresh expired access token Unknown account ID";
+		if (SpotifyAPI.accountId) throw new Error("Can't refresh expired access token Unknown account ID");
 
 		const [tokenRefreshError, tokenRefreshResponse] = await promiseHandler(RefreshToken(SpotifyAPI.accountId));
 		if (tokenRefreshError) {
 			Logger.error(tokenRefreshError);
 			throw "Could not refresh Spotify token";
 		}
+
 		SpotifyAPI.token = tokenRefreshResponse.body.access_token;
-	}
+	} while (repeat--);
+
+	throw new Error("Could not fulfill request");
 }
 
 function ressourceActions(prop) {
 	const { success, error } = {
 		queue: {
-			success: (type, name) => `Queued ${type} ${name}`,
-			error: (type, name, reason) => `Could not queue ${type} ${name}\n${reason}`
+			success: (type, name) => `Queued ${name}`,
+			error: (type, name, reason) => `Could not queue ${name}\n${reason}`
 		},
 		listen: {
-			success: (type, name) => `Playing ${type} ${name}`,
-			error: (type, name, reason) => `Could not play ${type} ${name}\n${reason}`
+			success: (type, name) => `Playing ${name}`,
+			error: (type, name, reason) => `Could not play ${name}\n${reason}`
 		}
 	}[prop];
 
@@ -43,7 +46,7 @@ function ressourceActions(prop) {
 				Toast.success(success(type, description));
 			})
 			.catch(reason => {
-				Toast.error(error(type, description, reason.message));
+				Toast.error(error(type, description, reason));
 			});
 }
 
@@ -64,20 +67,15 @@ export default new Proxy(
 				case "previous":
 				case "volume":
 					return (...args) =>
-						requestHandler(() => SpotifyAPI[prop].apply(SpotifyAPI, args))
-						.catch(reason => {
-							Toast.error(`Could not execute ${prop} command\n${reason.message}`);
+						requestHandler(() => SpotifyAPI[prop].apply(SpotifyAPI, args)).catch(reason => {
+							Toast.error(`Could not execute ${prop} command\n${reason}`);
 						});
 				case "getPlayerState":
 				case "getDevices":
 					return () => requestHandler(() => SpotifyAPI[prop]());
-				case "setToken":
-					return socket => {
-						SpotifyAPI.token = socket?.accessToken;
-						SpotifyAPI.accountId = socket?.accountId;
-					};
+
 				default:
-					return undefined;
+					return SpotifyAPI[prop];
 			}
 		}
 	}

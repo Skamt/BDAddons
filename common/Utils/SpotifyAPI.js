@@ -1,30 +1,27 @@
 import { promiseHandler, buildUrl } from "@Utils";
 const API_ENDPOINT = "https://api.spotify.com/v1";
 
-async function responseToJson(response) {
-	const [error, data] = await promiseHandler(response.json());
-	if (!error) return data;
-	return { invalidJson: true, error, response };
-}
-
 async function wrappedFetch(url, options) {
-	const [error, response] = await promiseHandler(fetch(url, options));
-	if (error) throw `Network error, ${error}`;
+	const [fetchError, response] = await promiseHandler(fetch(url, options));
+	if (fetchError) {
+		console.error("Fetch Error", fetchError);
+		throw new Error(`[Network error] ${fetchError}`);
+	}
 
 	if (!response.ok) {
-		const result = await responseToJson(response.clone());
+		const [, result] = await promiseHandler(response.json());
 		throw (
-			result.error || {
+			result?.error || {
 				message: "Unknown error",
-				status: response.status,
-				response
+				status: response.status
 			}
 		);
 	}
 
 	if (response.status === 204) return true;
 
-	return await responseToJson(response);
+	const [, data] = await promiseHandler(response.json());
+	return data;
 }
 
 function buildFetchRequestOptions(builderObj) {
@@ -44,6 +41,7 @@ class FetchRequestBuilder {
 
 	setToken(token) {
 		this.setHeaders({
+			"C ontent-Type": "text/xml",
 			Authorization: `Bearer ${token}`
 		});
 		return this;
@@ -108,6 +106,11 @@ class SpotifyClientAPI {
 
 	get accountId() {
 		return this.credentials.accountId || null;
+	}
+
+	setAccount(accessToken, accountId) {
+		this.token = accessToken;
+		this.accountId = accountId;
 	}
 
 	getRequestBuilder() {
