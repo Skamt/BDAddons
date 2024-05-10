@@ -12,10 +12,6 @@ import patchSpotifySocket from "./patches/patchSpotifySocket";
 import patchMessageHeader from "./patches/patchMessageHeader";
 import patchChannelAttach from "./patches/patchChannelAttach";
 
-import Settings from "@Utils/Settings";
-
-window.spotsetting = Settings;
-
 export default class SpotifyEnhance {
 	start() {
 		try {

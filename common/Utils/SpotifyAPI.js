@@ -40,10 +40,7 @@ class FetchRequestBuilder {
 	}
 
 	setToken(token) {
-		this.setHeaders({
-			"C ontent-Type": "text/xml",
-			Authorization: `Bearer ${token}`
-		});
+		this.setHeaders({ Authorization: `Bearer ${token}` });
 		return this;
 	}
 
