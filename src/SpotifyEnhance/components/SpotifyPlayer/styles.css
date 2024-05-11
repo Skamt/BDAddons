@@ -16,7 +16,7 @@
 	content: "";
 	background:
 		linear-gradient(#000000b0 0 0),
-		var(--banner-md) center/cover no-repeat;
+		var(--banner-lg) center/cover no-repeat;
 	position: absolute;
 	inset: 0;
 	filter: blur(8px);

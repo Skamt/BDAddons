@@ -16,6 +16,7 @@ import ShuffleIcon from "@Components/icons/ShuffleIcon";
 import VolumeIcon from "@Components/icons/VolumeIcon";
 import ImageIcon from "@Components/icons/ImageIcon";
 import ListenIcon from "@Components/icons/ListenIcon";
+import AddToQueueIcon from "@Components/icons/AddToQueueIcon";
 import { PlayerButtonsEnum } from "../../consts.js";
 
 import { Store } from "../../Store";
@@ -67,6 +68,7 @@ export default () => {
 	const playerButtons = Settings(Settings.selectors.playerButtons, shallow);
 	const [isPlaying, shuffle, repeat, volume] = Store(_ => [_.isPlaying, _.shuffle, _.repeat, _.volume], shallow);
 	const actions = Store(Store.selectors.actions, shallow);
+	const context = Store(Store.selectors.context, (n,o)=> n?.uri === o?.uri);
 	const url = Store.state.getSongUrl();
 	const { bannerLg } = Store.state.getSongBanners();
 
@@ -78,6 +80,7 @@ export default () => {
 	const repeatHandler = () => Store.Api.repeat(repeatArg);
 	const shareSongHandler = () => Store.Utils.share(url);
 	const sharePosterHandler = () => Store.Utils.share(bannerLg.url);
+	const sharePlaylistHandler = () => Store.Utils.share(context?.external_urls?.spotify);
 	const copySongHandler = () => Store.Utils.copySpotifyLink(url);
 	const copyPosterHandler = () => Store.Utils.copySpotifyLink(bannerLg.url);
 
@@ -128,8 +131,15 @@ export default () => {
 									action: sharePosterHandler,
 									icon: ImageIcon,
 									label: "Share poster in current channel"
+								},
+								context.type === "playlist" && {
+									className: "spotify-menuitem",
+									id: "share-playlist-link",
+									action: sharePlaylistHandler,
+									icon: AddToQueueIcon,
+									label: "Share playlist in current channel"
 								}
-							]
+							].filter(Boolean)
 						}
 					]}>
 					<SpotifyPlayerButton value={<ShareIcon />} />
