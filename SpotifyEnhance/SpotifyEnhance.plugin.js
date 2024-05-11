@@ -1613,6 +1613,7 @@ const SpotifyPlayerControls = () => {
 	const playerButtons = Settings(Settings.selectors.playerButtons, shallow);
 	const [isPlaying, shuffle, repeat, volume] = Store(_ => [_.isPlaying, _.shuffle, _.repeat, _.volume], shallow);
 	const actions = Store(Store.selectors.actions, shallow);
+	const context = Store(Store.selectors.context, (n, o) => n?.uri === o?.uri);
 	const url = Store.state.getSongUrl();
 	const { bannerLg } = Store.state.getSongBanners();
 
@@ -1624,6 +1625,7 @@ const SpotifyPlayerControls = () => {
 	const repeatHandler = () => Store.Api.repeat(repeatArg);
 	const shareSongHandler = () => Store.Utils.share(url);
 	const sharePosterHandler = () => Store.Utils.share(bannerLg.url);
+	const sharePlaylistHandler = () => Store.Utils.share(context?.external_urls?.spotify);
 	const copySongHandler = () => Store.Utils.copySpotifyLink(url);
 	const copyPosterHandler = () => Store.Utils.copySpotifyLink(bannerLg.url);
 
@@ -1670,8 +1672,15 @@ const SpotifyPlayerControls = () => {
 								action: sharePosterHandler,
 								icon: ImageIcon,
 								label: "Share poster in current channel"
+							},
+							context.type === "playlist" && {
+								className: "spotify-menuitem",
+								id: "share-playlist-link",
+								action: sharePlaylistHandler,
+								icon: AddToQueueIcon,
+								label: "Share playlist in current channel"
 							}
-						]
+						].filter(Boolean)
 					}
 				],
 			}, React.createElement(SpotifyPlayerButton, { value: React.createElement(ShareIcon, null), }))
@@ -1743,80 +1752,58 @@ function Volume({ volume }) {
 	);
 }
 
-const { Anchor } = TheBigBoyBundle;
-
-const TrackMediaDetails = ({ name, artists, mediaType }) => {
-	if (mediaType !== "track") {
-		return (
-			React.createElement('div', { className: "spotify-player-media", }, React.createElement('div', { className: "spotify-player-title", }, "Playing ", mediaType || "Unknown"))
-		);
-	}
-
-	const songUrl = Store.state.getSongUrl();
-	const { bannerSm, bannerLg } = Store.state.getSongBanners();
-	const { name: albumName, url: albumUrl, id: albumeId } = Store.state.getAlbum();
-
+function ExternalLinkIcon() {
 	return (
-		React.createElement('div', { className: "spotify-player-media", }, React.createElement(TrackBanner, {
-			bannerSm: bannerSm,
-			bannerLg: bannerLg,
-		}), React.createElement(Tooltip$1, { note: name, }, React.createElement(Anchor, {
-			href: songUrl,
-			className: "spotify-player-title ellipsis",
-		}, name)), React.createElement(Artist, { artists: artists, }), React.createElement(ContextMenu, {
-			menuItems: [{
-					className: "spotify-menuitem",
-					id: "open-link",
-					action: () => Store.Utils.openSpotifyLink(albumUrl),
-					icon: VolumeIcon,
-					label: "Open externally"
-				},
-				{
-					className: "spotify-menuitem",
-					id: "album-play",
-					action: () => Store.Api.listen("album", albumeId, albumName),
-					icon: VolumeIcon,
-					label: "Play Album"
-				}
-			],
-			className: "spotify-player-album",
-		}, React.createElement('div', null, "on", React.createElement('span', { className: "ellipsis", }, albumName))))
+		React.createElement('svg', {
+			fill: "currentColor",
+			width: "24",
+			height: "24",
+			viewBox: "0 0 16 16",
+		}, React.createElement('path', { d: "M1 2.75A.75.75 0 0 1 1.75 2H7v1.5H2.5v11h10.219V9h1.5v6.25a.75.75 0 0 1-.75.75H1.75a.75.75 0 0 1-.75-.75V2.75z", }), React.createElement('path', { d: "M15 1v4.993a.75.75 0 1 1-1.5 0V3.56L8.78 8.28a.75.75 0 0 1-1.06-1.06l4.72-4.72h-2.433a.75.75 0 0 1 0-1.5H15z", }))
 	);
-};
+}
 
 function Artist({ artists }) {
 	return (
 		React.createElement(ContextMenu, {
-			menuItems: artists.map(artist => {
-				return {
-					id: artist.id,
-					label: artist.name,
-					children: [{
-							className: "spotify-menuitem",
-							id: "open-link",
-							action: () => Store.Utils.openSpotifyLink(`https://open.spotify.com/artist/${artist.id}`),
-							icon: VolumeIcon,
-							label: "Open externally"
-						},
-						{
-							className: "spotify-menuitem",
-							id: "artist-play",
-							action: () => Store.Api.listen("artist", artist.id, artist.name),
-							icon: VolumeIcon,
-							label: "Play Artist"
-						}
-					]
-				};
-			}),
+			menuItems: artists.length > 1 ?
+				artists.map(artist => {
+					return {
+						id: artist.id,
+						label: artist.name,
+						children: getArtistContextMenu(artist)
+					};
+				}) :
+				getArtistContextMenu(artists[0]),
 			className: "spotify-player-artist",
 		}, React.createElement('div', null, "by", React.createElement('span', { className: "ellipsis", }, artists[0].name)))
 	);
 }
 
-function TrackBanner({ bannerLg }) {
+function getArtistContextMenu(artist) {
+	return [{
+			className: "spotify-menuitem",
+			id: "open-link",
+			action: () => Store.Utils.openSpotifyLink(`https://open.spotify.com/artist/${artist.id}`),
+			icon: ExternalLinkIcon,
+			label: "Open externally"
+		},
+		{
+			className: "spotify-menuitem",
+			id: "artist-play",
+			action: () => Store.Api.listen("artist", artist.id, artist.name),
+			icon: ListenIcon,
+			label: "Play Artist"
+		}
+	];
+}
+
+function TrackBanner() {
+	const { bannerLg: bannerObj } = Store.state.getSongBanners();
+
 	const thumbnailClickHandler = () => {
-		if (!bannerLg.url) return Toast.error("Could not open banner");
-		const { url, ...rest } = bannerLg;
+		if (!bannerObj.url) return Toast.error("Could not open banner");
+		const { url, ...rest } = bannerObj;
 		openModal(React.createElement('div', { className: "spotify-banner-modal", }, getImageModalComponent(url, rest)));
 	};
 
@@ -1827,6 +1814,43 @@ function TrackBanner({ bannerLg }) {
 		}))
 	);
 }
+
+const { Anchor } = TheBigBoyBundle;
+
+const TrackMediaDetails = ({ name, artists, mediaType }) => {
+	if (mediaType !== "track") {
+		return (
+			React.createElement('div', { className: "spotify-player-media", }, React.createElement('div', { className: "spotify-player-title", }, "Playing ", mediaType || "Unknown"))
+		);
+	}
+
+	const songUrl = Store.state.getSongUrl();
+	const { name: albumName, url: albumUrl, id: albumeId } = Store.state.getAlbum();
+
+	return (
+		React.createElement('div', { className: "spotify-player-media", }, React.createElement(TrackBanner, null), React.createElement(Tooltip$1, { note: name, }, React.createElement(Anchor, {
+			href: songUrl,
+			className: "spotify-player-title ellipsis",
+		}, name)), React.createElement(Artist, { artists: artists, }), React.createElement(ContextMenu, {
+			menuItems: [{
+					className: "spotify-menuitem",
+					id: "open-link",
+					action: () => Store.Utils.openSpotifyLink(albumUrl),
+					icon: ExternalLinkIcon,
+					label: "Open externally"
+				},
+				{
+					className: "spotify-menuitem",
+					id: "album-play",
+					action: () => Store.Api.listen("album", albumeId, albumName),
+					icon: ListenIcon,
+					label: "Play Album"
+				}
+			],
+			className: "spotify-player-album",
+		}, React.createElement('div', null, "on", React.createElement('span', { className: "ellipsis", }, albumName))))
+	);
+};
 
 const SpotifyPlayer = React.memo(function SpotifyPlayer() {
 	const [player, playerCompactMode, playerBannerBackground] = Settings(_ => [_.player, _.playerCompactMode, _.playerBannerBackground], shallow);
@@ -1962,7 +1986,7 @@ function MenuLabel({ label, icon }) {
 const patchChannelAttach = () => {
 	if (ChannelAttachMenu)
 		Patcher.after(ChannelAttachMenu, "default", (_, args, ret) => {
-			if (!Store.state().mediaId) return;
+			if (!Store.state.mediaId) return;
 			if (!Array.isArray(ret?.props?.children)) return;
 
 			ret.props.children.push(
@@ -1992,6 +2016,8 @@ const patchChannelAttach = () => {
 		});
 	else Logger.patch("patchChannelAttach");
 };
+
+window.spotstore = Store;
 
 class SpotifyEnhance {
 	start() {
@@ -2141,7 +2167,7 @@ const css = `:root {
 	content: "";
 	background:
 		linear-gradient(#000000b0 0 0),
-		var(--banner-md) center/cover no-repeat;
+		var(--banner-lg) center/cover no-repeat;
 	position: absolute;
 	inset: 0;
 	filter: blur(8px);
@@ -2346,51 +2372,6 @@ const css = `:root {
 }
 
 
-.spotify-player-timeline {
-	user-select: none;
-	margin-bottom: 2px;
-	color: white;
-	display: flex;
-	flex-wrap: wrap;
-	font-size: 0.8rem;
-	flex: 1;
-}
-
-.spotify-player-timeline-progress {
-	flex: 1;
-}
-
-.spotify-player-timeline-trackbar {
-	margin-top: -8px;
-	margin-bottom: 8px;
-	cursor: pointer;
-}
-
-.spotify-player-timeline:hover .spotify-player-timeline-trackbar-grabber {
-	opacity: 1;
-}
-
-.spotify-player-timeline .spotify-player-timeline-trackbar-grabber {
-	opacity: 0;
-	cursor: grab;
-	width: 10px;
-	height: 10px;
-	margin-top: 4px;
-}
-
-.spotify-player-timeline .spotify-player-timeline-trackbar-bar {
-	background: hsl(0deg 0% 100% / 30%);
-	height: 6px;
-}
-
-.spotify-player-timeline .spotify-player-timeline-trackbar-bar > div {
-	background: #fff;
-	border-radius: 4px;
-}
-
-.spotify-player-timeline:hover .spotify-player-timeline-trackbar-bar > div {
-	background: var(--spotify-green);
-}
 .spotify-player-controls {
 	display: flex;
 	justify-content: space-between;
@@ -2499,8 +2480,53 @@ div:has(> .spotify-banner-modal) {
 	width: 64px;
 	height: 64px;
 	background:
-		var(--banner-sm) center/cover no-repeat,
+		var(--banner-lg) center/cover no-repeat,
 		lime;
 	border-radius: 5px;
 }
-`;
+
+.spotify-player-timeline {
+	user-select: none;
+	margin-bottom: 2px;
+	color: white;
+	display: flex;
+	flex-wrap: wrap;
+	font-size: 0.8rem;
+	flex: 1;
+}
+
+.spotify-player-timeline-progress {
+	flex: 1;
+}
+
+.spotify-player-timeline-trackbar {
+	margin-top: -8px;
+	margin-bottom: 8px;
+	cursor: pointer;
+}
+
+.spotify-player-timeline:hover .spotify-player-timeline-trackbar-grabber {
+	opacity: 1;
+}
+
+.spotify-player-timeline .spotify-player-timeline-trackbar-grabber {
+	opacity: 0;
+	cursor: grab;
+	width: 10px;
+	height: 10px;
+	margin-top: 4px;
+}
+
+.spotify-player-timeline .spotify-player-timeline-trackbar-bar {
+	background: hsl(0deg 0% 100% / 30%);
+	height: 6px;
+}
+
+.spotify-player-timeline .spotify-player-timeline-trackbar-bar > div {
+	background: #fff;
+	border-radius: 4px;
+}
+
+.spotify-player-timeline:hover .spotify-player-timeline-trackbar-bar > div {
+	background: var(--spotify-green);
+}`;

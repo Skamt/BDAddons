@@ -28,27 +28,6 @@ const config = {
 	}
 }
 
-const css = `
-.CHAT .premiumPromo-1eKAIB {
-	display: none;
-}
-.emojiItemDisabled-3VVnwp {
-	filter: unset;
-}
-
-.emojiControls {
-	display: flex;
-	justify-content: flex-end;
-	gap: 4px;
-	margin-top: 5px;
-}
-.emojiSizeSlider {
-	line-height: 1;
-}
-
-
-`;
-
 const Api = new BdApi(config.info.name);
 
 const UI = Api.UI;
@@ -70,6 +49,53 @@ function getModuleAndKey(filter, options) {
 	return { module, key };
 }
 
+const zustand = getModule(Filters.byStrings("subscribeWithSelector", "useReducer"), { searchExports: false });
+
+const SettingsStoreSelectors = {};
+const persistMiddleware = config => (set, get, api) => config(args => (set(args), Data.save("settings", get().getRawState())), get, api);
+
+const SettingsStore = Object.assign(
+	zustand(
+		persistMiddleware((set, get) => {
+			const settingsObj = Object.create(null);
+
+			for (const [key, value] of Object.entries({
+					...config.settings,
+					...Data.load("settings")
+				})) {
+				settingsObj[key] = value;
+				settingsObj[`set${key}`] = newValue => set({
+					[key]: newValue });
+				SettingsStoreSelectors[key] = state => state[key];
+			}
+			settingsObj.getRawState = () => {
+				return Object.entries(get())
+					.filter(([, val]) => typeof val !== "function")
+					.reduce((acc, [key, val]) => {
+						acc[key] = val;
+						return acc;
+					}, {});
+			};
+			return settingsObj;
+		})
+	), {
+		useSetting: function(key) {
+			return this(state => [state[key], state[`set${key}`]]);
+		},
+		selectors: SettingsStoreSelectors
+	}
+);
+
+Object.defineProperty(SettingsStore, "state", {
+	writeable: false,
+	configurable: false,
+	get() {
+		return this.getState();
+	}
+});
+
+const Settings = SettingsStore;
+
 const TheBigBoyBundle = getModule(Filters.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
 
 const Switch = TheBigBoyBundle.FormSwitch ||
@@ -83,110 +109,53 @@ const Switch = TheBigBoyBundle.FormSwitch ||
 		);
 	};
 
-class ChangeEmitter {
-	constructor() {
-		this.listeners = new Set();
-	}
-
-	isInValid(handler) {
-		return !handler || typeof handler !== "function";
-	}
-
-	on(handler) {
-		if (this.isInValid(handler)) return;
-		this.listeners.add(handler);
-		return () => this.off(handler);
-	}
-
-	off(handler) {
-		if (this.isInValid(handler)) return;
-		this.listeners.delete(handler);
-	}
-
-	emit(...payload) {
-		for (const listener of this.listeners) {
-			try {
-				listener.apply(null, payload);
-			} catch (err) {
-				console.error("Could not run listener", err);
-			}
-		}
-	}
+function SettingSwtich({ settingKey, note, hideBorder = false, description }) {
+	const [val, set] = Settings.useSetting(settingKey);
+	return (
+		React.createElement(Switch, {
+			value: val,
+			note: note,
+			hideBorder: hideBorder,
+			onChange: set,
+		}, description || settingKey)
+	);
 }
 
-const Settings = new(class Settings extends ChangeEmitter {
-	init(defaultSettings) {
-		this.settings = {
-			...defaultSettings,
-			...Data.load("settings")
-		};
-	}
-
-	get(key) {
-		return this.settings[key];
-	}
-
-	set(key, val) {
-		this.settings[key] = val;
-		this.commit();
-	}
-
-	setMultiple(newSettings) {
-		this.settings = Object.assign(this.settings, newSettings);
-		this.commit();
-	}
-
-	commit() {
-		Data.save("settings", this.settings);
-		this.emit();
-	}
-})();
-
-const { FormText, Slider, Heading } = TheBigBoyBundle.Heading;
+const { FormText, Slider, Heading } = TheBigBoyBundle;
 
 const SettingComponent = () => {
-	return [
-		...[{
-				hideBorder: false,
+	return (
+		React.createElement(React.Fragment, null, [{
 				description: "Send Directly",
 				note: "Send the emoji link in a message directly instead of putting it in the chat box.",
-				value: Settings.get("sendDirectly"),
-				onChange: e => Settings.set("sendDirectly", e)
+				settingKey: "sendDirectly"
 			},
 			{
-				hideBorder: false,
 				description: "Ignore Embed Permissions",
 				note: "Send emoji links regardless of embed permissions, meaning links will not turn into images.",
-				value: Settings.get("ignoreEmbedPermissions"),
-				onChange: e => Settings.set("ignoreEmbedPermissions", e)
+				settingKey: "ignoreEmbedPermissions"
 			},
 			{
-				hideBorder: false,
 				description: "Send animated stickers",
 				note: "Animated emojis are sent as GIFs, making most of them hidden by discord's GIF tag.",
-				value: Settings.get("shouldSendAnimatedEmojis"),
-				onChange: e => Settings.set("shouldSendAnimatedEmojis", e)
+				settingKey: "shouldSendAnimatedEmojis"
 			},
 			{
-				hideBorder: false,
 				description: "Send animated as webp",
 				note: "Meaning the emoji will show only the first frame, making them act as normal emoji, unless the first frame is empty.",
-				value: Settings.get("sendEmojiAsWebp"),
-				onChange: e => Settings.set("sendEmojiAsWebp", e)
+				settingKey: "sendEmojiAsWebp"
 			},
 			{
-				hideBorder: false,
 				description: "Highlight animated emoji",
-				value: Settings.get("shouldHihglightAnimatedEmojis"),
-				onChange: e => Settings.set("shouldHihglightAnimatedEmojis", e)
+				settingKey: "shouldHihglightAnimatedEmojis"
 			}
-		].map(Toggle),
-
-		React.createElement(StickerSize, null)
-	];
+		].map(SettingSwtich), React.createElement(StickerSize, null))
+	);
 };
 
 function StickerSize() {
+	const [val, set] = Settings.useSetting("emojiSize");
+
 	return (
 		React.createElement(React.Fragment, null, React.createElement(Heading, {
 				style: { marginBottom: 20 },
@@ -199,24 +168,9 @@ function StickerSize() {
 			markers: [40, 48, 60, 64, 80, 96],
 			minValue: 40,
 			maxValue: 96,
-			initialValue: Settings.get("emojiSize"),
-			onValueChange: e => Settings.set("emojiSize", e),
+			initialValue: val,
+			onValueChange: set,
 		}), React.createElement(FormText, { type: "description", }, "The size of the Emoji in pixels."))
-	);
-}
-
-function Toggle(props) {
-	const [enabled, setEnabled] = React.useState(props.value);
-	return (
-		React.createElement(Switch, {
-			value: enabled,
-			note: props.note,
-			hideBorder: props.hideBorder,
-			onChange: e => {
-				props.onChange(e);
-				setEnabled(e);
-			},
-		}, props.description)
 	);
 }
 
@@ -272,7 +226,7 @@ const patchIsEmojiFiltered = () => {
 };
 
 function showToast(content, type) {
-	UI.showToast(`[${config.info.name}] ${content}`, { type });
+	UI.showToast(`[${config.info.name}] ${content}`, { timeout: 5000, type });
 }
 
 const Toast = {
@@ -314,7 +268,8 @@ function getReply(channelId) {
 			message_id: reply.message.id
 		},
 		allowedMentions: reply.shouldMention ?
-			undefined : {
+			undefined :
+			{
 				parse: ["users", "roles", "everyone"],
 				replied_user: false
 			}
@@ -322,8 +277,7 @@ function getReply(channelId) {
 }
 
 async function sendMessageDirectly(channel, content) {
-	if (!MessageActions || !MessageActions.sendMessage || typeof MessageActions.sendMessage !== "function")
-		throw new Error("Can't send message directly.");
+	if (!MessageActions || !MessageActions.sendMessage || typeof MessageActions.sendMessage !== "function") throw new Error("Can't send message directly.");
 
 	return MessageActions.sendMessage(
 		channel.id, {
@@ -340,11 +294,11 @@ const insertText = (() => {
 	return content => {
 		if (!ComponentDispatch) ComponentDispatch = getModule(m => m.dispatchToLastSubscribed && m.emitter.listeners("INSERT_TEXT").length, { searchExports: true });
 		if (!ComponentDispatch) return;
-		setTimeout(() => {
+		setTimeout(() =>
 			ComponentDispatch.dispatchToLastSubscribed("INSERT_TEXT", {
 				plainText: content
-			});
-		});
+			})
+		);
 	};
 })();
 
@@ -597,7 +551,6 @@ const patchUnfavoriteEmoji = () => {
 class Emojis {
 	start() {
 		try {
-			Settings.init(config.settings);
 			DOM.addStyle(css);
 			patchIsEmojiFiltered();
 			patchGetEmojiUnavailableReason();
@@ -624,3 +577,23 @@ class Emojis {
 }
 
 module.exports = Emojis;
+
+const css = `.CHAT .premiumPromo-1eKAIB {
+	display: none;
+}
+.emojiItemDisabled-3VVnwp {
+	filter: unset;
+}
+
+.emojiControls {
+	display: flex;
+	justify-content: flex-end;
+	gap: 4px;
+	margin-top: 5px;
+}
+.emojiSizeSlider {
+	line-height: 1;
+}
+
+
+`;
