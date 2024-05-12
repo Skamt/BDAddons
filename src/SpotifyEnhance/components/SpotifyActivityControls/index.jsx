@@ -18,7 +18,7 @@ export default ({ activity, user, source }) => {
 
 	const userSyncActivityState = useSpotifySyncAction(activity, user, source);
 	const userPlayActivityState = useSpotifyPlayAction(activity, user, source);
-
+	
 	return (
 		<div className="spotify-activity-controls">
 			<Play userPlayActivityState={userPlayActivityState} />
@@ -27,7 +27,7 @@ export default ({ activity, user, source }) => {
 					className="spotify-activity-btn-queue"
 					value={<AddToQueueIcon />}
 					disabled={!isActive}
-					onClick={() => Store.Api.queue(activity?.metadata?.type, activity.sync_id, activity.details)}
+					onClick={() => Store.Api.queue("track", activity.sync_id, activity.details)}
 				/>
 			</Tooltip>
 			<Tooltip note="Share in current channel">

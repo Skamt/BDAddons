@@ -12,8 +12,6 @@ import patchSpotifySocket from "./patches/patchSpotifySocket";
 import patchMessageHeader from "./patches/patchMessageHeader";
 import patchChannelAttach from "./patches/patchChannelAttach";
 
-window.spotstore = Store;
-
 export default class SpotifyEnhance {
 	start() {
 		try {
