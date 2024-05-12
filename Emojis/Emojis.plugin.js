@@ -328,15 +328,15 @@ const STRINGS = {
 const ExpressionPicker = getModule(a => a?.type?.toString().includes("handleDrawerResizeHandleMouseDown"), { searchExports: false });
 
 function getEmojiUrl(emoji, size) {
-	if (Settings.get("sendEmojiAsWebp")) return getEmojiWebpUrl(emoji, size);
+	if (Settings.state.sendEmojiAsWebp) return getEmojiWebpUrl(emoji, size);
 	if (emoji.animated) return getEmojiGifUrl(emoji, 4096);
 
 	return parseEmojiUrl(emoji, size);
 }
 
 function sendEmojiAsLink(emoji, channel) {
-	const content = getEmojiUrl(emoji, Settings.get("emojiSize"));
-	if (Settings.get("sendDirectly")) {
+	const content = getEmojiUrl(emoji, Settings.state.emojiSize);
+	if (Settings.state.sendDirectly) {
 		try {
 			return sendMessageDirectly(channel, content);
 		} catch {
@@ -347,11 +347,11 @@ function sendEmojiAsLink(emoji, channel) {
 }
 
 function handleUnsendableEmoji(emoji, channel) {
-	if (emoji.animated && !Settings.get("shouldSendAnimatedEmojis"))
+	if (emoji.animated && !Settings.state.shouldSendAnimatedEmojis)
 		return Toast.info(STRINGS.disabledAnimatedEmojiErrorMessage);
 
 	const user = UserStore.getCurrentUser();
-	if (!hasEmbedPerms(channel, user) && !Settings.get("ignoreEmbedPermissions"))
+	if (!hasEmbedPerms(channel, user) && !Settings.state.ignoreEmbedPermissions)
 		return Toast.info(STRINGS.missingEmbedPermissionsErrorMessage);
 
 	sendEmojiAsLink(emoji, channel);
@@ -386,7 +386,7 @@ const patchHighlightAnimatedEmoji = () => {
 	const { module, key } = EmojiComponent;
 	if (module && key)
 		Patcher.after(module, key, (_, [{ descriptor }], ret) => {
-			if (descriptor.emoji.animated && Settings.get("shouldHihglightAnimatedEmojis")) ret.props.className += " animated";
+			if (descriptor.emoji.animated && Settings.state.shouldHihglightAnimatedEmojis) ret.props.className += " animated";
 		});
 	else Logger.patch("HighlightAnimatedEmoji");
 };
