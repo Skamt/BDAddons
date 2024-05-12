@@ -47,8 +47,6 @@ const Patcher = Api.Patcher;
 
 const getModule = Api.Webpack.getModule;
 const Filters = Api.Webpack.Filters;
-
-const debounce = Api.Utils.debounce;
 const getInternalInstance = Api.ReactUtils.getInternalInstance;
 
 const Logger = {
@@ -75,6 +73,8 @@ function getModuleAndKey(filter, options) {
 	if (!key) return undefined;
 	return { module, key };
 }
+
+const zustand = getModule(Filters.byStrings("subscribeWithSelector", "useReducer"), { searchExports: false });
 
 const ConnectedAccountsStore = getModule(m => m._dispatchToken && m.getName() === "ConnectedAccountsStore");
 
@@ -294,48 +294,6 @@ const Toast = {
 	warning(content) { showToast(content, "warning"); },
 	error(content) { showToast(content, "error"); }
 };
-
-function parseSpotifyUrl(url) {
-	if (typeof url !== "string") return undefined;
-	const [, type, id] = url.match(/https?:\/\/open\.spotify\.com\/(\w+)\/(\w+)/) || [];
-	return [type, id];
-}
-
-function sanitizeSpotifyLink(link) {
-	try {
-		const url = new URL(link);
-		return url.origin + url.pathname;
-	} catch {
-		return link;
-	}
-}
-
-const activityPanelClasses = getModule(Filters.byProps("activityPanel", "panels"), { searchExports: false });
-
-function getFluxContainer() {
-	const el = document.querySelector(`.${activityPanelClasses.panels}`);
-	if (el) {
-		const instance = getInternalInstance(el);
-		if (instance) return Promise.resolve(instance.child.sibling);
-	}
-	return new Promise(resolve => {
-		const interval = setInterval(() => {
-			const el = document.querySelector(`.${activityPanelClasses.panels}`);
-			if (!el) return;
-			const instance = getInternalInstance(el);
-			if (!instance) return;
-			resolve(instance.child.sibling);
-			clearInterval(interval);
-		}, 500);
-
-		setTimeout(() => {
-			resolve(null);
-			clearInterval(interval);
-		}, 20 * 1000);
-	});
-}
-
-const zustand = getModule(Filters.byStrings("subscribeWithSelector", "useReducer"), { searchExports: false });
 
 const API_ENDPOINT = "https://api.spotify.com/v1";
 
@@ -586,6 +544,46 @@ const SpotifyAPIWrapper = new Proxy({}, {
 	}
 });
 
+function parseSpotifyUrl(url) {
+	if (typeof url !== "string") return undefined;
+	const [, type, id] = url.match(/https?:\/\/open\.spotify\.com\/(\w+)\/(\w+)/) || [];
+	return [type, id];
+}
+
+function sanitizeSpotifyLink(link) {
+	try {
+		const url = new URL(link);
+		return url.origin + url.pathname;
+	} catch {
+		return link;
+	}
+}
+
+const activityPanelClasses = getModule(Filters.byProps("activityPanel", "panels"), { searchExports: false });
+
+function getFluxContainer() {
+	const el = document.querySelector(`.${activityPanelClasses.panels}`);
+	if (el) {
+		const instance = getInternalInstance(el);
+		if (instance) return Promise.resolve(instance.child.sibling);
+	}
+	return new Promise(resolve => {
+		const interval = setInterval(() => {
+			const el = document.querySelector(`.${activityPanelClasses.panels}`);
+			if (!el) return;
+			const instance = getInternalInstance(el);
+			if (!instance) return;
+			resolve(instance.child.sibling);
+			clearInterval(interval);
+		}, 500);
+
+		setTimeout(() => {
+			resolve(null);
+			clearInterval(interval);
+		}, 20 * 1000);
+	});
+}
+
 const Utils = {
 	copySpotifyLink(link) {
 		if (!link) return Toast.error("Could not resolve url");
@@ -629,21 +627,20 @@ const Store = Object.assign(
 			},
 
 			media: {},
-			mediaType: "",
-			volume: 50,
-			progress: 0,
-			isPlaying: false,
-			mediaId: "",
-			repeat: "",
-			shuffle: false,
-			actions: {},
+			mediaType: undefined,
+			volume: undefined,
+			progress: undefined,
+			isPlaying: undefined,
+			mediaId: undefined,
+			repeat: undefined,
+			shuffle: undefined,
+			actions: undefined,
 			setPlayerState: playerState => {
 				if (!playerState || playerState.currently_playing_type === "ad") return set({ isPlaying: false });
 
 				const state = get();
 				const media = playerState.item?.id === state.media?.id ? state.media : playerState.item;
 				set({
-
 					isActive: !!playerState?.device?.is_active,
 					volume: playerState?.device?.volume_percent,
 					duration: playerState?.item?.duration_ms,
@@ -748,14 +745,16 @@ Store.subscribe(position => {
 	if (position < duration) return;
 	Store.positionInterval.stop();
 	setPosition(duration || 0);
-
 }, Store.selectors.position);
 
-Store.subscribe(([isPlaying]) => {
-	if (!isPlaying) Store.positionInterval.stop();
-	else Store.positionInterval.start();
-
-}, state => [state.isPlaying, state.progress], shallow);
+Store.subscribe(
+	([isPlaying]) => {
+		if (!isPlaying) Store.positionInterval.stop();
+		else Store.positionInterval.start();
+	},
+	state => [state.isPlaying, state.progress],
+	shallow
+);
 
 function onSpotifyStoreChange() {
 	try {
@@ -1924,27 +1923,24 @@ function getSocket() {
 
 async function patchSpotifySocket() {
 	const socket = await getSocket();
-	Patcher.after(
-		socket.prototype,
-		"handleEvent",
-		debounce(function onSocketEvent(socket, [socketEvent]) {
-			if (Store.state.account?.accountId && socket.accountId !== Store.state.account?.accountId) return;
-			const { type, event } = socketEvent;
+	Patcher.after(socket.prototype, "handleEvent", function onSocketEvent(socket, [socketEvent]) {
 
-			switch (type) {
-				case "PLAYER_STATE_CHANGED":
-					Store.state.setPlayerState(event.state);
-					break;
-				case "DEVICE_STATE_CHANGED": {
-					const devices = event.devices;
-					const isActive = !!(devices.find(d => d.is_active) || devices[0])?.is_active;
-					Store.state.setDeviceState(isActive);
-					if (!isActive) Store.state.setPlayerState({});
-					break;
-				}
+		if (Store.state.account?.accountId && socket.accountId !== Store.state.account?.accountId) return;
+		const { type, event } = socketEvent;
+
+		switch (type) {
+			case "PLAYER_STATE_CHANGED":
+				Store.state.setPlayerState(event.state);
+				break;
+			case "DEVICE_STATE_CHANGED": {
+				const devices = event.devices;
+				const isActive = !!(devices.find(d => d.is_active) || devices[0])?.is_active;
+				Store.state.setDeviceState(isActive);
+				if (!isActive) Store.state.setPlayerState({});
+				break;
 			}
-		}, 250)
-	);
+		}
+	});
 }
 
 const MessageHeader = getModuleAndKey(Filters.byStrings("userOverride", "withMentionPrefix"), { searchExports: false }) || {};
@@ -2137,23 +2133,6 @@ const css = `:root {
 	margin: 0 10px;
 }
 
-.spotify-activity-controls {
-	display: flex;
-	margin-top: 12px;
-	gap: 8px;
-}
-
-.spotify-activity-btn {
-	padding: 0px;
-	height: 32px;
-	width: 32px;
-	flex: 0 0 32px;
-}
-
-.spotify-activity-controls .spotify-activity-btn-listen {
-	flex: 1 0 0;
-	width: 100%;
-}
 .spotify-player-container {
 	background: hsl(228 8% 12%);
 	border-bottom: 1px solid hsl(228deg 6% 33% / 48%);
@@ -2223,6 +2202,181 @@ const css = `:root {
 	justify-content: unset;
 	align-items: center;
 	margin-right: 5px;
+}
+.spotify-activity-controls {
+	display: flex;
+	margin-top: 12px;
+	gap: 8px;
+}
+
+.spotify-activity-btn {
+	padding: 0px;
+	height: 32px;
+	width: 32px;
+	flex: 0 0 32px;
+}
+
+.spotify-activity-controls .spotify-activity-btn-listen {
+	flex: 1 0 0;
+	width: 100%;
+}
+.spotify-player-controls {
+	display: flex;
+	justify-content: space-between;
+	width: 100%;
+	overflow: hidden;
+}
+
+.spotify-player-controls svg {
+	width: 16px;
+	height: 16px;
+}
+
+.spotify-player-controls-btn {
+	padding: 3px !important;
+	color: #ccc;
+	transition: all 100ms linear;
+	border-radius: 5px;
+}
+
+.spotify-player-controls-btn:hover {
+	background: #ccc3;
+	color: fff;
+	scale: 1.1;
+}
+
+.spotify-player-controls-btn.enabled {
+	color: var(--spotify-green);
+}
+
+.spotify-player-controls-volume-slider-wrapper {
+	height: 120px;
+	width: 20px;
+	background: var(--background-floating);
+	padding: 5px 1px;
+	border-radius: 99px;
+}
+
+.spotify-player-controls-volume-slider {
+	margin: 0;
+	width: 100%;
+	height: 100%;
+	accent-color: var(--spotify-green);
+	appearance: slider-vertical;
+}
+
+.spotify-player-media {
+	color: white;
+	font-size: 0.9rem;
+	overflow: hidden;
+	display: grid;
+	column-gap: 10px;
+	z-index: 5;
+	grid-template-columns: 64px minmax(0, 1fr);
+	grid-template-rows: repeat(3, 1fr);
+	align-items: center;
+	justify-items: flex-start;
+	grid-template-areas:
+		"banner title"
+		"banner artist"
+		"banner album";
+}
+
+.spotify-player-title {
+	grid-area: title;
+	font-weight: bold;
+	color: #fff;
+	font-size: 1.05rem;
+	max-width: 100%;
+}
+
+.spotify-player-title:first-child {
+	grid-column: 1/-1;
+	grid-row: 1/-1;
+	margin-bottom: 5px;
+}
+
+.spotify-player-artist {
+	grid-area: artist;
+	font-size: 0.8rem;
+	max-width: 100%;
+}
+
+.spotify-player-album {
+	grid-area: album;
+	max-width: 100%;
+}
+
+.spotify-player-album > div,
+.spotify-player-artist > div {
+	display: flex;
+	gap: 5px;
+}
+
+.spotify-player-album span,
+.spotify-player-artist span {
+	color: var(--text-sub);
+}
+
+div:has(> .spotify-banner-modal) {
+	background: #0000;
+}
+
+.spotify-player-banner {
+	grid-area: banner;
+	cursor: pointer;
+	width: 64px;
+	height: 64px;
+	background:
+		var(--banner-lg) center/cover no-repeat,
+		lime;
+	border-radius: 5px;
+}
+
+.spotify-player-timeline {
+	user-select: none;
+	margin-bottom: 2px;
+	color: white;
+	display: flex;
+	flex-wrap: wrap;
+	font-size: 0.8rem;
+	flex: 1;
+}
+
+.spotify-player-timeline-progress {
+	flex: 1;
+}
+
+.spotify-player-timeline-trackbar {
+	margin-top: -8px;
+	margin-bottom: 8px;
+	cursor: pointer;
+}
+
+.spotify-player-timeline:hover .spotify-player-timeline-trackbar-grabber {
+	opacity: 1;
+}
+
+.spotify-player-timeline .spotify-player-timeline-trackbar-grabber {
+	opacity: 0;
+	cursor: grab;
+	width: 10px;
+	height: 10px;
+	margin-top: 4px;
+}
+
+.spotify-player-timeline .spotify-player-timeline-trackbar-bar {
+	background: hsl(0deg 0% 100% / 30%);
+	height: 6px;
+}
+
+.spotify-player-timeline .spotify-player-timeline-trackbar-bar > div {
+	background: #fff;
+	border-radius: 4px;
+}
+
+.spotify-player-timeline:hover .spotify-player-timeline-trackbar-bar > div {
+	background: var(--spotify-green);
 }
 .spotify-embed-plus {
 	display: flex;
@@ -2376,162 +2530,4 @@ const css = `:root {
 	}
 }
 
-
-.spotify-player-media {
-	color: white;
-	font-size: 0.9rem;
-	overflow: hidden;
-	display: grid;
-	column-gap: 10px;
-	z-index: 5;
-	grid-template-columns: 64px minmax(0, 1fr);
-	grid-template-rows: repeat(3, 1fr);
-	align-items: center;
-	justify-items: flex-start;
-	grid-template-areas:
-		"banner title"
-		"banner artist"
-		"banner album";
-}
-
-.spotify-player-title {
-	grid-area: title;
-	font-weight: bold;
-	color: #fff;
-	font-size: 1.05rem;
-	max-width: 100%;
-}
-
-.spotify-player-title:first-child {
-	grid-column: 1/-1;
-	grid-row: 1/-1;
-	margin-bottom: 5px;
-}
-
-.spotify-player-artist {
-	grid-area: artist;
-	font-size: 0.8rem;
-	max-width: 100%;
-}
-
-.spotify-player-album {
-	grid-area: album;
-	max-width: 100%;
-}
-
-.spotify-player-album > div,
-.spotify-player-artist > div {
-	display: flex;
-	gap: 5px;
-}
-
-.spotify-player-album span,
-.spotify-player-artist span {
-	color: var(--text-sub);
-}
-
-div:has(> .spotify-banner-modal) {
-	background: #0000;
-}
-
-.spotify-player-banner {
-	grid-area: banner;
-	cursor: pointer;
-	width: 64px;
-	height: 64px;
-	background:
-		var(--banner-lg) center/cover no-repeat,
-		lime;
-	border-radius: 5px;
-}
-
-.spotify-player-timeline {
-	user-select: none;
-	margin-bottom: 2px;
-	color: white;
-	display: flex;
-	flex-wrap: wrap;
-	font-size: 0.8rem;
-	flex: 1;
-}
-
-.spotify-player-timeline-progress {
-	flex: 1;
-}
-
-.spotify-player-timeline-trackbar {
-	margin-top: -8px;
-	margin-bottom: 8px;
-	cursor: pointer;
-}
-
-.spotify-player-timeline:hover .spotify-player-timeline-trackbar-grabber {
-	opacity: 1;
-}
-
-.spotify-player-timeline .spotify-player-timeline-trackbar-grabber {
-	opacity: 0;
-	cursor: grab;
-	width: 10px;
-	height: 10px;
-	margin-top: 4px;
-}
-
-.spotify-player-timeline .spotify-player-timeline-trackbar-bar {
-	background: hsl(0deg 0% 100% / 30%);
-	height: 6px;
-}
-
-.spotify-player-timeline .spotify-player-timeline-trackbar-bar > div {
-	background: #fff;
-	border-radius: 4px;
-}
-
-.spotify-player-timeline:hover .spotify-player-timeline-trackbar-bar > div {
-	background: var(--spotify-green);
-}
-.spotify-player-controls {
-	display: flex;
-	justify-content: space-between;
-	width: 100%;
-	overflow: hidden;
-}
-
-.spotify-player-controls svg {
-	width: 16px;
-	height: 16px;
-}
-
-.spotify-player-controls-btn {
-	padding: 3px !important;
-	color: #ccc;
-	transition: all 100ms linear;
-	border-radius: 5px;
-}
-
-.spotify-player-controls-btn:hover {
-	background: #ccc3;
-	color: fff;
-	scale: 1.1;
-}
-
-.spotify-player-controls-btn.enabled {
-	color: var(--spotify-green);
-}
-
-.spotify-player-controls-volume-slider-wrapper {
-	height: 120px;
-	width: 20px;
-	background: var(--background-floating);
-	padding: 5px 1px;
-	border-radius: 99px;
-}
-
-.spotify-player-controls-volume-slider {
-	margin: 0;
-	width: 100%;
-	height: 100%;
-	accent-color: var(--spotify-green);
-	appearance: slider-vertical;
-}
 `;
