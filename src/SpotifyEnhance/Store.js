@@ -1,15 +1,15 @@
+import zustand from "@Modules/zustand";
 import ConnectedAccountsStore from "@Stores/ConnectedAccountsStore";
 import SelectedChannelStore from "@Stores/SelectedChannelStore";
 import SpotifyStore from "@Stores/SpotifyStore";
 import { promiseHandler } from "@Utils";
-import { shallow, copy } from "@Utils";
+import { copy, shallow } from "@Utils";
 import Logger from "@Utils/Logger";
 import { insertText, sendMessageDirectly } from "@Utils/Messages";
 import Timer from "@Utils/Timer";
 import Toast from "@Utils/Toast";
+import SpotifyAPIWrapper from "./SpotifyAPIWrapper";
 import { sanitizeSpotifyLink } from "./Utils";
-import zustand from "@Modules/zustand";
-import SpotifyAPIWrapper from "./SpotifyAPIWrapper"
 
 const Utils = {
 	copySpotifyLink(link) {
@@ -33,13 +33,28 @@ const Utils = {
 	}
 };
 
+
+function diffObj(o1, o2) {
+	return Object.keys(o2).reduce((diff, key) => {
+		if(typeof o1[key] === "object") return diff;
+		if (o1[key] === o2[key]) return diff;
+		return {
+			...diff,
+			[key]: o2[key]
+		};
+	}, {});
+}
+
 export const Store = Object.assign(
 	zustand((set, get) => {
 		// const set = args => {
 		// 	console.log("applying", args);
-		// 	console.log("old state", get());
+		// 	const oldState = get();
 		// 	setState(args);
-		// 	console.log("new state", get());
+		// 	const newState = get();
+		// 	// console.log("old state", oldState);
+		// 	// console.log("new state", newState);
+		// 	console.log("diff", diffObj(oldState, newState));
 		// };
 
 		return {
@@ -60,21 +75,20 @@ export const Store = Object.assign(
 			},
 
 			media: {},
-			mediaType: "",
-			volume: 50,
-			progress: 0,
-			isPlaying: false,
-			mediaId: "",
-			repeat: "",
-			shuffle: false,
-			actions: {},
+			mediaType: undefined,
+			volume: undefined,
+			progress: undefined,
+			isPlaying: undefined,
+			mediaId: undefined,
+			repeat: undefined,
+			shuffle: undefined,
+			actions: undefined,
 			setPlayerState: playerState => {
 				if (!playerState || playerState.currently_playing_type === "ad") return set({ isPlaying: false });
 
 				const state = get();
 				const media = playerState.item?.id === state.media?.id ? state.media : playerState.item;
 				set({
-
 					isActive: !!playerState?.device?.is_active,
 					volume: playerState?.device?.volume_percent,
 					duration: playerState?.item?.duration_ms,
@@ -140,7 +154,7 @@ export const Store = Object.assign(
 			this.idleTimer.stop();
 		},
 		Utils,
-		Api:SpotifyAPIWrapper,
+		Api: SpotifyAPIWrapper,
 		selectors: {
 			isActive: state => state.isActive,
 			media: state => state.media,
@@ -180,15 +194,16 @@ Store.subscribe(position => {
 	if (position < duration) return;
 	Store.positionInterval.stop();
 	setPosition(duration || 0);
-
 }, Store.selectors.position);
 
-Store.subscribe(([isPlaying]) => {
-	if (!isPlaying) Store.positionInterval.stop();
-	else Store.positionInterval.start();
-
-}, state => [state.isPlaying, state.progress], shallow);
-
+Store.subscribe(
+	([isPlaying]) => {
+		if (!isPlaying) Store.positionInterval.stop();
+		else Store.positionInterval.start();
+	},
+	state => [state.isPlaying, state.progress],
+	shallow
+);
 
 function onSpotifyStoreChange() {
 	try {
