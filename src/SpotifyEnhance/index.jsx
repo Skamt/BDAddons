@@ -12,7 +12,12 @@ import patchSpotifySocket from "./patches/patchSpotifySocket";
 import patchMessageHeader from "./patches/patchMessageHeader";
 import patchChannelAttach from "./patches/patchChannelAttach";
 
-// window.spotstore = Store;
+import SpotifyAPI from "@Utils/SpotifyAPI";
+import Settings from "@Utils/Settings";
+
+window.spotstore = Store;
+window.SpotifyAPI = SpotifyAPI;
+window.Settings = Settings;
 
 export default class SpotifyEnhance {
 	start() {

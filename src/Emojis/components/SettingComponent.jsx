@@ -19,14 +19,14 @@ export default () => {
 					settingKey: "ignoreEmbedPermissions"
 				},
 				{
-					description: "Send animated stickers",
-					note: "Animated emojis are sent as GIFs, making most of them hidden by discord's GIF tag.",
+					description: "Send animated emojis",
+					note: "Animated emojis are sent as GIFs.",
 					settingKey: "shouldSendAnimatedEmojis"
 				},
 				{
-					description: "Send animated as webp",
+					description: "Send animated as png",
 					note: "Meaning the emoji will show only the first frame, making them act as normal emoji, unless the first frame is empty.",
-					settingKey: "sendEmojiAsWebp"
+					settingKey: "sendEmojiAsPng"
 				},
 				{
 					description: "Highlight animated emoji",
@@ -37,6 +37,8 @@ export default () => {
 		</>
 	);
 };
+
+const emojiSizes = [48, 56, 60, 64, 80, 96, 100, 128, 160, 240, 256, 300];
 
 function StickerSize() {
 	const [val, set] = Settings.useSetting("emojiSize");
@@ -51,13 +53,15 @@ function StickerSize() {
 			<Slider
 				className="emojiSizeSlider"
 				stickToMarkers={true}
-				markers={[40, 48, 60, 64, 80, 96]}
-				minValue={40}
-				maxValue={96}
+				sortedMarkers={true}
+				equidistant={true}
+				markers={emojiSizes}
+				minValue={emojiSizes[0]}
+				maxValue={emojiSizes[emojiSizes.length - 1]}
 				initialValue={val}
-				onValueChange={set}
+				onValueChange={e => set(emojiSizes.find(s => e <= s) ?? emojiSizes[emojiSizes.length - 1])}
 			/>
-			<FormText type="description">The size of the Emoji in pixels.</FormText>
+			<FormText type="description">The size of the Emoji in pixels</FormText>
 		</>
 	);
 }

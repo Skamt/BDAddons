@@ -33,29 +33,19 @@ const Utils = {
 	}
 };
 
-
-function diffObj(o1, o2) {
-	return Object.keys(o2).reduce((diff, key) => {
-		if(typeof o1[key] === "object") return diff;
-		if (o1[key] === o2[key]) return diff;
-		return {
-			...diff,
-			[key]: o2[key]
-		};
-	}, {});
-}
+import { diff, addedDiff, deletedDiff, updatedDiff, detailedDiff } from 'deep-object-diff';
 
 export const Store = Object.assign(
-	zustand((set, get) => {
-		// const set = args => {
-		// 	console.log("applying", args);
-		// 	const oldState = get();
-		// 	setState(args);
-		// 	const newState = get();
-		// 	// console.log("old state", oldState);
-		// 	// console.log("new state", newState);
-		// 	console.log("diff", diffObj(oldState, newState));
-		// };
+	zustand((setState, get) => {
+		const set = args => {
+			console.log("applying", args);
+			const oldState = get();
+			setState(args);
+			const newState = get();
+			// console.log("old state", oldState);
+			// console.log("new state", newState);
+			console.log("diff", diff(oldState, newState));
+		};
 
 		return {
 			account: undefined,

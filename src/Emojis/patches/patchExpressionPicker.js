@@ -7,20 +7,13 @@ import { hasEmbedPerms } from "@Utils/Permissions";
 import { sendMessageDirectly, insertText } from "@Utils/Messages";
 import UserStore from "@Stores/UserStore";
 import EmojiIntentionEnum from "@Enums/EmojiIntentionEnum";
-import { getEmojiWebpUrl, getEmojiGifUrl, isEmojiSendable, parseEmojiUrl } from "../Utils";
+import { getEmojiUrl, isEmojiSendable } from "../Utils";
 import STRINGS from "../Constants";
 
 const ExpressionPicker = getModule(a => a?.type?.toString().includes("handleDrawerResizeHandleMouseDown"), { searchExports: false });
 
-function getEmojiUrl(emoji, size) {
-	if (Settings.state.sendEmojiAsWebp) return getEmojiWebpUrl(emoji, size);
-	if (emoji.animated) return getEmojiGifUrl(emoji, 4096);
-
-	return parseEmojiUrl(emoji, size);
-}
-
 function sendEmojiAsLink(emoji, channel) {
-	const content = getEmojiUrl(emoji, Settings.state.emojiSize);
+	const content = getEmojiUrl(emoji);
 	if (Settings.state.sendDirectly) {
 		try {
 			return sendMessageDirectly(channel, content);
