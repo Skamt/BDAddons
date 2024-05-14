@@ -136,14 +136,14 @@ const SettingComponent = () => {
 				settingKey: "ignoreEmbedPermissions"
 			},
 			{
-				description: "Send animated stickers",
-				note: "Animated emojis are sent as GIFs, making most of them hidden by discord's GIF tag.",
+				description: "Send animated emojis",
+				note: "Animated emojis are sent as GIFs.",
 				settingKey: "shouldSendAnimatedEmojis"
 			},
 			{
-				description: "Send animated as webp",
+				description: "Send animated as png",
 				note: "Meaning the emoji will show only the first frame, making them act as normal emoji, unless the first frame is empty.",
-				settingKey: "sendEmojiAsWebp"
+				settingKey: "sendEmojiAsPng"
 			},
 			{
 				description: "Highlight animated emoji",
@@ -152,6 +152,8 @@ const SettingComponent = () => {
 		].map(SettingSwtich), React.createElement(StickerSize, null))
 	);
 };
+
+const emojiSizes = [48, 56, 60, 64, 80, 96, 100, 128, 160, 240, 256, 300];
 
 function StickerSize() {
 	const [val, set] = Settings.useSetting("emojiSize");
@@ -165,12 +167,14 @@ function StickerSize() {
 		), React.createElement(Slider, {
 			className: "emojiSizeSlider",
 			stickToMarkers: true,
-			markers: [40, 48, 60, 64, 80, 96],
-			minValue: 40,
-			maxValue: 96,
+			sortedMarkers: true,
+			equidistant: true,
+			markers: emojiSizes,
+			minValue: emojiSizes[0],
+			maxValue: emojiSizes[emojiSizes.length - 1],
 			initialValue: val,
-			onValueChange: set,
-		}), React.createElement(FormText, { type: "description", }, "The size of the Emoji in pixels."))
+			onValueChange: e => set(emojiSizes.find(s => e <= s) ?? emojiSizes[emojiSizes.length - 1]),
+		}), React.createElement(FormText, { type: "description", }, "The size of the Emoji in pixels"))
 	);
 }
 
@@ -304,20 +308,15 @@ const insertText = (() => {
 
 const UserStore = getModule(m => m._dispatchToken && m.getName() === "UserStore");
 
+function getEmojiUrl({ id, animated }) {
+	const size = Settings.state.emojiSize;
+	const type = animated ? (Settings.state.sendEmojiAsPng ? "png" : "gif") : "png";
+
+	return `https://cdn.discordapp.com/emojis/${id}.${type}?size=${size}`;
+}
+
 function isEmojiSendable(e) {
 	return EmojiFunctions.getEmojiUnavailableReason?.__originalFunction?.(e) === null;
-}
-
-function parseEmojiUrl(emoji, size) {
-	return `${emoji.url.replace(/(size=)(\d+)[&]/, "")}&size=${size}`;
-}
-
-function getEmojiWebpUrl(emoji, size) {
-	return parseEmojiUrl(emoji, size).replace("gif", "webp");
-}
-
-function getEmojiGifUrl(emoji, size) {
-	return parseEmojiUrl(emoji, size).replace("webp", "gif");
 }
 
 const STRINGS = {
@@ -327,15 +326,8 @@ const STRINGS = {
 
 const ExpressionPicker = getModule(a => a?.type?.toString().includes("handleDrawerResizeHandleMouseDown"), { searchExports: false });
 
-function getEmojiUrl(emoji, size) {
-	if (Settings.state.sendEmojiAsWebp) return getEmojiWebpUrl(emoji, size);
-	if (emoji.animated) return getEmojiGifUrl(emoji, 4096);
-
-	return parseEmojiUrl(emoji, size);
-}
-
 function sendEmojiAsLink(emoji, channel) {
-	const content = getEmojiUrl(emoji, Settings.state.emojiSize);
+	const content = getEmojiUrl(emoji);
 	if (Settings.state.sendDirectly) {
 		try {
 			return sendMessageDirectly(channel, content);
