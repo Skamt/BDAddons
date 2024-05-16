@@ -10,8 +10,8 @@
 		"sendDirectly":false,
 		"ignoreEmbedPermissions":false,
 		"shouldSendAnimatedEmojis":false,
-		"sendEmojiAsWebp":false,
+		"sendEmojiAsPng":false,
 		"shouldHihglightAnimatedEmojis":true,
-		"emojiSize":160
+		"emojiSize":48
 	}
 }
