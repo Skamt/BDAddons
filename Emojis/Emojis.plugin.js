@@ -22,9 +22,9 @@ const config = {
 		"sendDirectly": false,
 		"ignoreEmbedPermissions": false,
 		"shouldSendAnimatedEmojis": false,
-		"sendEmojiAsWebp": false,
+		"sendEmojiAsPng": false,
 		"shouldHihglightAnimatedEmojis": true,
-		"emojiSize": 160
+		"emojiSize": 48
 	}
 }
 
@@ -455,22 +455,22 @@ const EmojiStore = getModule(m => m._dispatchToken && m.getName() === "EmojiStor
 const emojiContextConstructor = EmojiStore?.getDisambiguatedEmojiContext?.().constructor;
 
 const patchFavoriteEmojis = () => {
-	if (emojiContextConstructor)
-		Patcher.after(emojiContextConstructor.prototype, "rebuildFavoriteEmojisWithoutFetchingLatest", (_, args, ret) => {
-			const emojis = Data.load("emojis");
-			ret[0] = [...ret[0], ...emojis];
-		});
-	else Logger.patch("emojiContextConstructor");
+	if (!emojiContextConstructor) return Logger.patch("emojiContextConstructor");
+
+	Patcher.after(emojiContextConstructor.prototype, "rebuildFavoriteEmojisWithoutFetchingLatest", (_, args, ret) => {
+		const emojis = Data.load("emojis");
+		ret[0] = [...ret[0], ...emojis];
+	});
 
 	Patcher.after(emojiContextConstructor.prototype, "getDisambiguatedEmoji", (_, args, ret) => {
 		const emojis = Data.load("emojis");
 		let sum = [];
 		if (emojis.length > ret.length) {
 			sum = [...emojis];
-			ret.forEach(r => emojis.find(e => e.id === r.id) ? null : sum.push(r));
+			ret.forEach(r => (emojis.find(e => e.id === r.id) ? null : sum.push(r)));
 		} else {
 			sum = [...ret];
-			emojis.forEach(r => ret.find(e => e.id === r.id) ? null : sum.push(r));
+			emojis.forEach(r => (ret.find(e => e.id === r.id) ? null : sum.push(r)));
 		}
 
 		return sum;
