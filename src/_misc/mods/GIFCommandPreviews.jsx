@@ -14,7 +14,7 @@ export default class GIFCommandPreviews extends Disposable {
 				Patcher.after(GIFIntegration.prototype, "renderContent", (_, args, ret) => {
 					return (
 						<Popout
-							renderPopout={t => <img src={_.props.src} width={_.props.width * 3} height={_.props.height * 3}/>}
+							renderPopout={() => <img src={_.props.src} width={_.props.width * 3} height={_.props.height * 3}/>}
 							align="center"
 							position="top"
 							animation="1">

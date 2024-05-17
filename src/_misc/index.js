@@ -1,20 +1,20 @@
 import { DOM } from "@Api";
-import css from "./styles.css";
 import ChannelMuteButton from "./mods/ChannelMuteButton";
 import ConsoleToggleButton from "./mods/ConsoleToggleButton";
 import EmojiLetters from "./mods/EmojiLetters";
+import FriendsSince from "./mods/FriendsSince";
+import GIFCommandPreviews from "./mods/GIFCommandPreviews";
 import GuildInfo from "./mods/GuildInfo";
 import MemUsage from "./mods/MemUsage";
-import NoTrack from "./mods/NoTrack";
-import FriendsSince from "./mods/FriendsSince";
-import ShowUserInfo from "./mods/ShowUserInfo";
-import RefreshChannel from "./mods/RefreshChannel";
-import NoReplyPing from "./mods/NoReplyPing";
 import NoLinkPreview from "./mods/NoLinkPreview";
+import NoReplyPing from "./mods/NoReplyPing";
+import NoTrack from "./mods/NoTrack";
+import RefreshChannel from "./mods/RefreshChannel";
+import ShowChannelPerms from "./mods/ShowChannelPerms";
+import ShowUserInfo from "./mods/ShowUserInfo";
 import SpotifyListenAlong from "./mods/SpotifyListenAlong";
-import GIFCommandPreviews from "./mods/GIFCommandPreviews";
 import Whois from "./mods/Whois";
-import Spotify from "./mods/Spotify";
+import "./styles.css";
 
 const mods = [
 	new ChannelMuteButton(),
@@ -25,7 +25,7 @@ const mods = [
 	new NoReplyPing(),
 	// new MemUsage(),
 	// new Whois(),
-	// new Spotify(),
+	new ShowChannelPerms(),
 	new RefreshChannel(),
 	new NoTrack(),
 	new FriendsSince(),

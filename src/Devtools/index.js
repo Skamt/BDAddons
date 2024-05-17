@@ -4,7 +4,7 @@ import Dispatcher from "@Modules/Dispatcher";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 import * as Utils from "@Utils";
 import Logger from "@Utils/Logger";
-
+import DiscordPermissionsEnum from "@Enums/DiscordPermissionsEnum";
 import { getModuleAndKey } from "@Webpack";
 import { Modules } from "./Modules";
 import SettingComponent from "./SettingComponent";
@@ -62,7 +62,8 @@ function init() {
 		...Modules,
 		DiscordModules: {
 			Dispatcher,
-			TheBigBoyBundle
+			TheBigBoyBundle,
+			DiscordPermissionsEnum
 		}
 	});
 }

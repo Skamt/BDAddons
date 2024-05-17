@@ -8,3 +8,11 @@ export function hasEmbedPerms(channel, user) {
 		user
 	);
 }
+
+export function hasExternalEmojisPerms(channel, user) {
+	return !channel.guild_id || DiscordPermissions?.can(
+		DiscordPermissionsEnum.USE_EXTERNAL_EMOJIS,
+		channel,
+		user
+	);
+}
