@@ -34,7 +34,7 @@ class ErrorBoundary extends React.Component {
 	componentDidCatch(error, info) {
 		this.setState({ error, info, hasError: true });
 		const errorMessage = `\n\t${error?.message || ""}${(info?.componentStack || "").split("\n").slice(0, 20).join("\n")}`;
-		console.error(`%c[${this.props.plugin}] %cthrew an exception at %c[${this.props.id}]\n`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
+		console.error(`%c[${config?.info?.name || "Unknown Plugin"}] %cthrew an exception at %c[${this.props.id}]\n`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
 	}
 
 	renderErrorBoundary() {
@@ -48,7 +48,7 @@ class ErrorBoundary extends React.Component {
 			if (this.props.passMetaProps)
 				this.props.fallback.props = {
 					id: this.props.id,
-					plugin: this.props.plugin,
+					plugin: config?.info?.name || "Unknown Plugin",
 					...this.props.fallback.props
 				};
 			return this.props.fallback;
@@ -56,7 +56,7 @@ class ErrorBoundary extends React.Component {
 		return (
 			React.createElement(this.props.fallback, {
 				id: this.props.id,
-				plugin: this.props.plugin,
+				plugin: config?.info?.name || "Unknown Plugin",
 			})
 		);
 	}
@@ -81,20 +81,29 @@ const Dispatcher = getModule$1(Filters.byProps("dispatch", "subscribe"), { searc
 
 const TheBigBoyBundle = getModule$1(Filters.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
 
-const ImageModalVideoModal = getModule$1(Filters.byProps("ImageModal"), { searchExports: false });
-
 const RenderLinkComponent = getModule$1(m => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false });
+
+const ImageModalVideoModal = getModule$1(Filters.byProps("ImageModal"), { searchExports: false });
 
 const { ModalRoot, ModalSize } = TheBigBoyBundle;
 const ImageModal = ImageModalVideoModal.ImageModal;
 
-const debounce = Api.Utils.debounce;
-const findInTree = Api.Utils.findInTree;
+function shallow(objA, objB) {
+	if (Object.is(objA, objB)) return true;
 
-const getOwnerInstance = Api.ReactUtils.getOwnerInstance;
-const getInternalInstance = Api.ReactUtils.getInternalInstance;
+	if (typeof objA !== "object" || objA === null || typeof objB !== "object" || objB === null) return false;
 
-const openModal = (children, tag) => {
+	var keysA = Object.keys(objA);
+
+	if (keysA.length !== Object.keys(objB).length) return false;
+
+	for (var i = 0; i < keysA.length; i++)
+		if (!Object.prototype.hasOwnProperty.call(objB, keysA[i]) || !Object.is(objA[keysA[i]], objB[keysA[i]])) return false;
+
+	return true;
+}
+
+const openModal = (children, tag, className) => {
 	const id = `${tag ? `${tag}-` : ""}modal`;
 	TheBigBoyBundle.openModal(props => {
 		return (
@@ -103,6 +112,7 @@ const openModal = (children, tag) => {
 				plugin: config.info.name,
 			}, React.createElement(ModalRoot, {
 				...props,
+				className: className,
 				onClick: props.onClose,
 				size: ModalSize.DYNAMIC,
 			}, children))
@@ -309,14 +319,10 @@ const Utils = /*#__PURE__*/ Object.freeze({
 	buildUrl,
 	copy,
 	d,
-	debounce,
-	findInTree,
 	genUrlParamsFromArray,
 	getImageDimensions,
 	getImageModalComponent,
-	getInternalInstance,
 	getNestedProp,
-	getOwnerInstance,
 	hook,
 	nop,
 	openModal,
@@ -324,6 +330,7 @@ const Utils = /*#__PURE__*/ Object.freeze({
 	prettyfiyBytes,
 	promiseHandler,
 	reRender,
+	shallow,
 	sleep
 });
 
@@ -340,6 +347,11 @@ const Logger = {
 	p(target, ...args) {
 		target(`%c[${config.info.name}]`, "color: #3a71c1;font-weight: bold;", ...args);
 	}
+};
+
+const DiscordPermissionsEnum = getModule$1(Filters.byProps("ADD_REACTIONS"), { searchExports: true }) || {
+	"EMBED_LINKS": "16384n",
+	"USE_EXTERNAL_EMOJIS": "262144n"
 };
 
 const chunkName = Object.keys(window).find(key => key.startsWith("webpackChunk"));
@@ -720,7 +732,8 @@ function init() {
 		...Modules,
 		DiscordModules: {
 			Dispatcher,
-			TheBigBoyBundle
+			TheBigBoyBundle,
+			DiscordPermissionsEnum
 		}
 	});
 }
@@ -766,3 +779,5 @@ class Devtools {
 }
 
 module.exports = Devtools;
+
+const css = ``;

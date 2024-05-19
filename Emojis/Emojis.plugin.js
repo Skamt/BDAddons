@@ -402,7 +402,7 @@ const AssetURLUtils = getModule(Filters.byProps("getEmojiURL"));
 const patchEmojiUtils = () => {
 	if (MessageDecorations?.MessagePopoutContent)
 		Patcher.after(MessageDecorations, "MessagePopoutContent", (_, __, ret) => {
-			const { animated, emojiName, emojiId: id } = getNestedProp(ret, "props.children.0.props.children.0.props.children.0.props") || {};
+			const { animated, emojiName, guildId = "", emojiId: id } = getNestedProp(ret, "props.children.0.props.children.0.props.children.0.props") || {};
 			if (!id) return ret;
 
 			const children = getNestedProp(ret, "props.children.0.props.children");
@@ -429,6 +429,7 @@ const patchEmojiUtils = () => {
 								emojis.push({
 									animated,
 									id,
+									guildId,
 									name: emojiName.replace(/:/gi, ""),
 									allNamesString: emojiName,
 									available: true,
