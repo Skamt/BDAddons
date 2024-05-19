@@ -1,6 +1,9 @@
 import { Patcher, React } from "@Api";
 import ErrorBoundary from "@Components/ErrorBoundary";
+import Tooltip from "@Components/Tooltip";
 import Flex from "@Components/Flex";
+import EmbedIcon from "@Components/Icons/EmbedIcon";
+
 import UserStore from "@Stores/UserStore";
 import { Disposable } from "@Utils";
 import Logger from "@Utils/Logger";
@@ -10,13 +13,36 @@ import { Filters, getModuleAndKey } from "@Webpack";
 const ChannelTextArea = getModuleAndKey(Filters.byStrings("shouldShowLurkerModeSuccessPopout"));
 
 function Display({ user, channel }) {
+	
 	const canEmbed = hasEmbedPerms(channel, user);
 	const canExternalEmojis = hasExternalEmojisPerms(channel, user);
+
+	console.log("canEmbed", canEmbed);
+	console.log("canExternalEmojis", canExternalEmojis);
+
 	return (
 		<div className="perms-display">
-			<div grow={0}>Can embed: {canEmbed ? "Yes" : "No"} </div>
-			{"|"}
-			<div grow={0}>Can external emoji: {canExternalEmojis ? "Yes" : "No"}</div>
+			<Tooltip note={`${canEmbed ? "Can" : "Can't"} Embed links`}>
+				<div
+					style={{
+						width: 24,
+						height: 24,
+						filter: canEmbed ? "grayscale(0)" : "grayscale(1)",
+						background: "url(https://discord.com/assets/4af067a9e0a1fbf624e4.svg)"
+					}}
+				/>
+			</Tooltip>
+
+			<Tooltip note={`${canExternalEmojis ? "Can" : "Can't"} use external emojis`}>
+				<div
+					style={{
+						width: 24,
+						height: 24,
+						filter: canExternalEmojis ? "grayscale(0)" : "grayscale(1)",
+						background: "url(https://discord.com/assets/6cec8716b466d02f9703.svg)"
+					}}
+				/>
+			</Tooltip>
 		</div>
 	);
 }
@@ -30,10 +56,13 @@ export default class ShowChannelPerms extends Disposable {
 				const currentUser = UserStore.getCurrentUser();
 
 				return (ret.props.children = [
-					<Display
-						channel={channel}
-						user={currentUser}
-					/>,
+					// eslint-disable-next-line react/jsx-key
+					<ErrorBoundary id="ShowChannelPerms">
+						<Display
+							channel={channel}
+							user={currentUser}
+						/>
+					</ErrorBoundary>,
 					ret.props.children
 				]);
 			})

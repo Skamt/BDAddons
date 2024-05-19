@@ -26,7 +26,7 @@ const mods = [
 	// new MemUsage(),
 	// new Whois(),
 	new ShowChannelPerms(),
-	new RefreshChannel(),
+	// new RefreshChannel(),
 	new NoTrack(),
 	new FriendsSince(),
 	new ShowUserInfo(),
