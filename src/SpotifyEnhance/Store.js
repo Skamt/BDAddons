@@ -33,26 +33,25 @@ const Utils = {
 	}
 };
 
-import { diff, addedDiff, deletedDiff, updatedDiff, detailedDiff } from 'deep-object-diff';
+import { diff, addedDiff, deletedDiff, updatedDiff, detailedDiff } from "deep-object-diff";
 
 export const Store = Object.assign(
-	zustand((setState, get) => {
-		const set = args => {
-			console.log("applying", args);
-			const oldState = get();
-			setState(args);
-			const newState = get();
-			// console.log("old state", oldState);
-			// console.log("new state", newState);
-			console.log("diff", diff(oldState, newState));
-		};
+	zustand((set, get) => {
+		// const set = args => {
+		// 	consoleconsole.log("applying", args);
+		// 	const oldState = get();
+		// 	setState(args);
+		// 	const newState = get();
+		// 	// console.log("old state", oldState);
+		// 	// console.log("new state", newState);
+		// 	console.log("diff", diff(oldState, newState));
+		// };
 
 		return {
 			account: undefined,
-			setAccount: (socket = {}) => {
-				if (socket === get().account) return;
-				SpotifyAPIWrapper.setAccount(socket.accessToken, socket.accountId);
-				set({ account: socket, isActive: !!socket });
+			setAccount: account => {
+				if (account === get().account) return;
+				set({ account: account, isActive: !!account });
 			},
 
 			isActive: false,
@@ -147,6 +146,7 @@ export const Store = Object.assign(
 		Api: SpotifyAPIWrapper,
 		selectors: {
 			isActive: state => state.isActive,
+			account: state => state.account,
 			media: state => state.media,
 			mediaType: state => state.mediaType,
 			volume: state => state.volume,
@@ -167,6 +167,10 @@ Object.defineProperty(Store, "state", {
 	configurable: false,
 	get: () => Store.getState()
 });
+
+Store.subscribe((account = {}) => {
+	SpotifyAPIWrapper.setAccount(account.accessToken, account.accountId);
+}, Store.selectors.account);
 
 Store.subscribe(isPlaying => {
 	if (isPlaying) {
