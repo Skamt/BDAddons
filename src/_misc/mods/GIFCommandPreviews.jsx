@@ -32,9 +32,13 @@ export default class GIFCommandPreviews extends Disposable {
 					);
 				}),
 				Patcher.after(b, "default", (_, __, ret) => {
+					console.log(ret.props.data);
 					ret.props.data.forEach(a => {
+						const [,segment] = a.src.match(/\.tenor\.com(.+?)\.mp4/) || [];
+						if(!segment) return;
 						a.format = 1;
-						a.src = `https://media.tenor.com${a.src?.split("media.tenor.com")[1]?.replace("mp4", "gif").replace("AAAPo", "AAAAS")}`;
+						const url = `https://media.tenor.com${segment}.gif`;
+						a.src = url.replace("AAAPo", "AAAAS");
 					});
 				})
 			];
