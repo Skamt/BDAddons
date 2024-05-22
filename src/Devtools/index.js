@@ -1,4 +1,4 @@
-import { React } from "@Api";
+import { Patcher, React } from "@Api";
 import ErrorBoundary from "@Components/ErrorBoundary";
 import Dispatcher from "@Modules/Dispatcher";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
@@ -69,25 +69,39 @@ function init() {
 }
 
 const settings = {
-	expEnabled:false
+	expEnabled: false
 };
 
-function enableExp(b) {
-	const DeveloperExperimentStore = Stores.getStore("DeveloperExperimentStore");
-	const ExperimentStore = Stores.getStore("ExperimentStore");
-	const UserStore = Stores.getStore("UserStore").store;
-	const flag = !b ? 256 : 1;
+const DeveloperExperimentStore = Stores.getStore("DeveloperExperimentStore");
+const ExperimentStore = Stores.getStore("ExperimentStore");
+const UserStore = Stores.getStore("UserStore").store;
+
+function updateStores() {
 	try {
-		UserStore.getCurrentUser().flags = flag;
 		DeveloperExperimentStore.events.actionHandler.CONNECTION_OPEN();
 		ExperimentStore.events.actionHandler.OVERLAY_INITIALIZE({
-			user: {
-				flags: flag
-			}
+			user: UserStore.getCurrentUser()
 		});
 		ExperimentStore.events.storeDidChange();
 	} catch {}
 }
+
+const enableExp = (() => {
+	let unpatch = ()=>{};
+	return function enableExp(b) {
+		if (!b) {
+			unpatch?.();
+			UserStore.getCurrentUser().flags = 256;
+		} else {
+			unpatch = Patcher.after(UserStore, "getCurrentUser", (_, __, ret) => {
+				if (!ret) return;
+				ret.flags = 1;
+			});
+		}
+
+		updateStores();
+	};
+})();
 
 export default class Devtools {
 	start() {
@@ -100,10 +114,15 @@ export default class Devtools {
 
 	stop() {
 		"s" in window && delete window.s;
-		settings.expEnabled && enableExp(false);
+		enableExp(false);
 	}
 
 	getSettingsPanel() {
-		return <SettingComponent settings={settings} enableExp={enableExp} />;
+		return (
+			<SettingComponent
+				settings={settings}
+				enableExp={enableExp}
+			/>
+		);
 	}
 }

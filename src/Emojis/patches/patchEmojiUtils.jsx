@@ -38,7 +38,7 @@ export default () => {
 						onClick={() => {
 							try {
 								const emojis = Data.load("emojis") || [];
-								emojis.push({
+								emojis.unshift({
 									animated,
 									id,
 									guildId,
