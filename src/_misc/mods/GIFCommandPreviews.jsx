@@ -18,9 +18,9 @@ export default class GIFCommandPreviews extends Disposable {
 							<Popout
 								renderPopout={() => (
 									<img
-										src={_.props.src?.replace("AAAAS", "AAAPo")}
-										width={_.props.width * 3}
-										height={_.props.height * 3}
+										src={_.props.src}
+										width={_.props.width * 5}
+										height={_.props.height * 5}
 									/>
 								)}
 								align="center"

@@ -152,6 +152,7 @@ export const Store = Object.assign(
 			volume: state => state.volume,
 			progress: state => state.progress,
 			mediaId: state => state.mediaId,
+			context: state => state.context,
 			isPlaying: state => state.isPlaying,
 			duration: state => state.duration,
 			repeat: state => state.repeat,
