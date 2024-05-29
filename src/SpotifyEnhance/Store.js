@@ -89,7 +89,7 @@ export const Store = Object.assign(
 					media: media,
 					mediaId: media?.id,
 					mediaType: playerState?.currently_playing_type,
-					context: playerState?.context,
+					context: playerState?.context || {},
 					actions: playerState?.actions?.disallows
 				});
 			},

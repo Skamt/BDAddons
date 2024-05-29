@@ -16,23 +16,15 @@ const config = `{
 	}
 }`;
 
-const index = `import css from "./styles";
+const index = `import "./styles";
 import Logger from "@Utils/Logger";
-import { DOM, React, Patcher } from "@Api";
-import { getNestedProp } from "@Utils";
-import CopyButtonComponent from "./components/CopyButtonComponent";
-import ImageModal from "@Patch/ImageModal";
+import { DOM, Patcher } from "@Api";
 
 export default class ${pluginName} {
 	start() {
 		try {
 			DOM.addStyle(css);
-			const { module, key } = ImageModal;
-			if (module && key)
-				Patcher.after(module, key, (_, __, returnValue) => {
-					
-				});
-			else Logger.patch("patchImageModal");
+			
 		} catch (e) {
 			Logger.error(e);
 		}
@@ -42,10 +34,13 @@ export default class ${pluginName} {
 		DOM.removeStyle();
 		Patcher.unpatchAll();
 	}
-}`;
+}
+
+const css = "";`;
 
 if (!fs.existsSync(pluginsFolderPath))
 	fs.mkdirSync(pluginsFolderPath);
 
 fs.writeFileSync(path.join(pluginsFolderPath, "config.json"), config);
 fs.writeFileSync(path.join(pluginsFolderPath, "index.js"), index);
+fs.writeFileSync(path.join(pluginsFolderPath, "styles.css"), "");
