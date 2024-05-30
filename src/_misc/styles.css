@@ -87,3 +87,15 @@ ul[aria-label="Channels"] > li:hover .channelMuteButton {
 	color: orange;
 }
 
+.perms-display{
+	display: inline-flex;
+	padding:5px;
+	font-size:.8rem;
+	border-radius:5px 5px 0 0;
+	gap:5px;
+	position:absolute;
+	bottom:100%;
+	right:16px;
+	color:white;
+	background: var(--background-tertiary);
+}

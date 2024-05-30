@@ -2,8 +2,9 @@
 	background:
 		linear-gradient(#00000090 0 0),
 		var(--thumbnail) top center/999% no-repeat;
-	max-width: 350px;
-	min-width: 350px;
+	max-width: 100%;
+	width: 350px;
+	box-sizing: border-box;
 	padding: var(--gutter);
 	border-radius: var(--radius);
 	font-family: var(--font);
@@ -49,7 +50,7 @@
 
 
 .spotify-embed-container.bannerBackground {
-	position: relative;
+	transform: translate(0);
 	border: 1px solid rgba(43, 45, 49, 0.9);
 	background: unset;
 	overflow: hidden;

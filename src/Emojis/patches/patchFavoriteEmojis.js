@@ -8,8 +8,9 @@ export default () => {
 	if (!emojiContextConstructor) return Logger.patch("emojiContextConstructor");
 
 	Patcher.after(emojiContextConstructor.prototype, "rebuildFavoriteEmojisWithoutFetchingLatest", (_, args, ret) => {
+		if(!ret?.favorites)return;
 		const emojis = Data.load("emojis");
-		ret[0] = [...ret[0], ...emojis];
+		ret.favorites = [...ret.favorites, ...emojis];
 	});
 
 	Patcher.after(emojiContextConstructor.prototype, "getDisambiguatedEmoji", (_, args, ret) => {
