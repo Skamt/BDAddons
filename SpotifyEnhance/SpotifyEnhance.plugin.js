@@ -1170,11 +1170,11 @@ const SpotifyActivityControls = ({ activity, user, source }) => {
 	);
 };
 
-const ActivityComponent = getModule(a => a.prototype.isStreamerOnTypeActivityFeed);
+const ActivityComponent = getModule(Filters.byStrings("canSeeGameProfile", "useCanSeeGameProfile", "UserActivity"), { defaultExport: false });
 
 const patchSpotifyActivity = () => {
 	if (ActivityComponent)
-		Patcher.before(ActivityComponent.prototype, "render", ({ props }) => {
+		Patcher.before(ActivityComponent, "default", (_, [props]) => {
 			if (!Settings.getState().activity) return;
 			if (!props.activity) return;
 			if (props.activity.name.toLowerCase() !== "spotify") return;
@@ -1418,7 +1418,7 @@ function SpotifyEmbedWrapper({ id, type, embedObject, embedComponent }) {
 }
 
 const ALLOWD_TYPES = ["track", "artist", "playlist", "album", "show", "episode"];
-const SpotifyEmbed = getModule(Filters.byStrings("open.spotify.com", "/playlist/"), { defaultExport: false });
+const SpotifyEmbed = getModule(Filters.byStrings("iframe", "playlist", "track"), { defaultExport: false });
 
 const patchSpotifyEmbed = () => {
 	if (SpotifyEmbed)
@@ -2285,18 +2285,6 @@ const css = `:root {
 	align-items: center;
 	margin-right: 5px;
 }
-.spotify-embed-plus {
-	display: flex;
-	min-width: 400px;
-	max-width: 100%;
-	gap: 5px;
-	overflow: hidden;
-}
-
-.spotify-embed-plus > button {
-	flex: 1 0 auto;
-	text-transform: capitalize;
-}
 .spotify-embed-container {
 	background:
 		linear-gradient(#00000090 0 0),
@@ -2439,6 +2427,18 @@ const css = `:root {
 }
 
 
+.spotify-embed-plus {
+	display: flex;
+	min-width: 400px;
+	max-width: 100%;
+	gap: 5px;
+	overflow: hidden;
+}
+
+.spotify-embed-plus > button {
+	flex: 1 0 auto;
+	text-transform: capitalize;
+}
 .spotify-player-controls {
 	display: flex;
 	justify-content: space-between;
