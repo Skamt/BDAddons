@@ -36,16 +36,16 @@ const Utils = {
 import { diff, addedDiff, deletedDiff, updatedDiff, detailedDiff } from "deep-object-diff";
 
 export const Store = Object.assign(
-	zustand((setState, get) => {
-		const set = args => {
-			console.log("applying", args);
-			const oldState = get();
-			setState(args);
-			const newState = get();
-			// console.log("old state", oldState);
-			// console.log("new state", newState);
-			console.log("diff", diff(oldState, newState));
-		};
+	zustand((set, get) => {
+		// const set = args => {
+		// 	console.log("applying", args);
+		// 	const oldState = get();
+		// 	setState(args);
+		// 	const newState = get();
+		// 	// console.log("old state", oldState);
+		// 	// console.log("new state", newState);
+		// 	console.log("diff", diff(oldState, newState));
+		// };
 
 		return {
 			account: undefined,
