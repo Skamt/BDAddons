@@ -312,7 +312,7 @@ function getEmojiUrl({ id, animated }) {
 	const size = Settings.state.emojiSize;
 	const type = animated ? (Settings.state.sendEmojiAsPng ? "png" : "gif") : "png";
 
-	return `https://cdn.discordapp.com/emojis/${id}.${type}?size=${size}`;
+	return `https://cdn.discordapp.com/emojis/${id}.${type}${animated ? "" : `?size=${size}`}`;
 }
 
 function isEmojiSendable(e) {
