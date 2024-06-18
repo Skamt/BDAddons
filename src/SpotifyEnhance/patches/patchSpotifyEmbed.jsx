@@ -6,7 +6,7 @@ import SpotifyEmbedWrapper from "../components/SpotifyEmbedWrapper";
 import { parseSpotifyUrl } from "../Utils";
 
 const ALLOWD_TYPES = ["track", "artist", "playlist", "album", "show", "episode"];
-const SpotifyEmbed = getModule(Filters.byStrings("open.spotify.com", "/playlist/"), { defaultExport: false });
+const SpotifyEmbed = getModule(Filters.byStrings("iframe", "playlist", "track"), { defaultExport: false });
 
 export default () => {
 	if (SpotifyEmbed)

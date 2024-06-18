@@ -46,6 +46,81 @@ const Misc = {
 	})()
 };
 
+const d = (() => {
+	const cache = new WeakMap();
+	const emptyDoc = document.createDocumentFragment();
+
+	function isValidCSSSelector(selector) {
+		try {
+			emptyDoc.querySelector(selector);
+		} catch {
+			return false;
+		}
+		return true;
+	}
+
+	function getElement(target) {
+		if (typeof target === "string" && isValidCSSSelector(target)) return document.querySelector(target);
+
+		if (target instanceof HTMLElement) return target;
+
+		return undefined;
+	}
+
+	function getCssRules(el) {
+		const output = {};
+		for (let i = 0; i < document.styleSheets.length; i++) {
+			const stylesheet = document.styleSheets[i];
+			const { rules } = stylesheet;
+			const ID = stylesheet.href || stylesheet.ownerNode.id || i;
+			output[ID] = {};
+			// biome-ignore lint/complexity/noForEach: <explanation>
+			el.classList.forEach(c => {
+				output[ID][c] = [];
+				for (let j = 0; j < rules.length; j++) {
+					const rule = rules[j];
+					if (rule.cssText.includes(c)) output[ID][c].push(rule);
+				}
+				if (output[ID][c].length === 0) delete output[ID][c];
+			});
+			if (Object.keys(output[ID]).length === 0) delete output[ID];
+		}
+		return output;
+	}
+
+	function getCssRulesForElement(target, noCache) {
+		const el = getElement(target);
+
+		if (!el) return;
+
+		if (!noCache && cache.has(el)) return cache.get(el);
+
+		const data = getCssRules(el);
+		cache.set(el, data);
+		return data;
+	}
+
+	// get scroller styles for an element
+	function scrollerStylesForElement(el) {
+		const output = [];
+		const styles = getCssRulesForElement(el);
+		for (const cssStyleRules of Object.values(styles)) {
+			for (const rules of Object.values(cssStyleRules)) {
+				for (let i = 0; i < rules.length; i++) {
+					const rule = rules[i];
+					if (rule.selectorText?.includes("-webkit-scrollbar")) output.push(rule);
+				}
+			}
+		}
+		return output;
+	}
+
+	return {
+		getCssRulesForElement,
+		scrollerStylesForElement
+	};
+})();
+
 function init() {
 	["Filters", "getModule", "getModules"].forEach(a => (window[a] = BdApi.Webpack[a]));
 	window.getModuleAndKey = getModuleAndKey;
@@ -53,7 +128,8 @@ function init() {
 	window.s = Object.assign(id => Modules.moduleById(id), {
 		Utils: {
 			ErrorBoundary,
-			...Utils
+			...Utils,
+			...d
 		},
 		r: webpackRequire,
 		...Misc,
