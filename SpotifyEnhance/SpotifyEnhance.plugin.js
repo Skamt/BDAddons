@@ -544,10 +544,17 @@ const SpotifyAPIWrapper = new Proxy({}, {
 	}
 });
 
+function getPathName(url) {
+	try {
+		return new URL(url).pathname;
+	} catch {}
+}
+
 function parseSpotifyUrl(url) {
-	if (typeof url !== "string") return undefined;
-	const [, type, id] = url.match(/https?:\/\/open\.spotify\.com\/(\w+)\/(\w+)/) || [];
-	return [type, id];
+	const path = getPathName(url);
+	if (typeof url !== "string" || !path) return undefined;
+	const urlFrags = path.split("/");
+	return [urlFrags.pop(), urlFrags.pop()];
 }
 
 function sanitizeSpotifyLink(link) {
@@ -584,50 +591,6 @@ function getFluxContainer() {
 	});
 }
 
-const isDate = d => d instanceof Date;
-const isEmpty = o => Object.keys(o).length === 0;
-const isObject = o => o != null && typeof o === 'object';
-const hasOwnProperty = (o, ...args) => Object.prototype.hasOwnProperty.call(o, ...args);
-const isEmptyObject = (o) => isObject(o) && isEmpty(o);
-const makeObjectWithoutPrototype = () => Object.create(null);
-
-const diff = (lhs, rhs) => {
-	if (lhs === rhs) return {};
-
-	if (!isObject(lhs) || !isObject(rhs)) return rhs;
-
-	const deletedValues = Object.keys(lhs).reduce((acc, key) => {
-		if (!hasOwnProperty(rhs, key)) {
-			acc[key] = undefined;
-
-		}
-
-		return acc;
-	}, makeObjectWithoutPrototype());
-
-	if (isDate(lhs) || isDate(rhs)) {
-		if (lhs.valueOf() == rhs.valueOf()) return {};
-		return rhs;
-	}
-
-	return Object.keys(rhs).reduce((acc, key) => {
-		if (!hasOwnProperty(lhs, key)) {
-			acc[key] = rhs[key];
-			return acc;
-		}
-
-		const difference = diff(lhs[key], rhs[key]);
-
-		if (isEmptyObject(difference) && !isDate(difference) && (isEmptyObject(lhs[key]) || !isEmptyObject(rhs[key])))
-			return acc;
-
-		acc[key] = difference;
-		return acc;
-	}, deletedValues);
-};
-
-const diff$1 = diff;
-
 const Utils = {
 	copySpotifyLink(link) {
 		if (!link) return Toast.error("Could not resolve url");
@@ -651,15 +614,7 @@ const Utils = {
 };
 
 const Store = Object.assign(
-	zustand((setState, get) => {
-		const set = args => {
-			console.log("applying", args);
-			const oldState = get();
-			setState(args);
-			const newState = get();
-
-			console.log("diff", diff$1(oldState, newState));
-		};
+	zustand((set, get) => {
 
 		return {
 			account: undefined,
@@ -1423,7 +1378,7 @@ const SpotifyEmbed = getModule(Filters.byStrings("iframe", "playlist", "track"),
 const patchSpotifyEmbed = () => {
 	if (SpotifyEmbed)
 		Patcher.after(SpotifyEmbed, "default", (_, [{ embed }], ret) => {
-			const [type, id] = parseSpotifyUrl(embed.url) || [];
+			const [id, type] = parseSpotifyUrl(embed.url) || [];
 			if (!ALLOWD_TYPES.includes(type)) {
 				Logger.log(`Spotify ${type}`, embed.url);
 				return;
@@ -2078,10 +2033,6 @@ const patchChannelAttach = () => {
 	else Logger.patch("patchChannelAttach");
 };
 
-window.spotstore = Store;
-window.SpotifyAPI = SpotifyAPI;
-window.Settings = Settings;
-
 class SpotifyEnhance {
 	start() {
 		try {
@@ -2285,6 +2236,18 @@ const css = `:root {
 	align-items: center;
 	margin-right: 5px;
 }
+.spotify-embed-plus {
+	display: flex;
+	min-width: 400px;
+	max-width: 100%;
+	gap: 5px;
+	overflow: hidden;
+}
+
+.spotify-embed-plus > button {
+	flex: 1 0 auto;
+	text-transform: capitalize;
+}
 .spotify-embed-container {
 	background:
 		linear-gradient(#00000090 0 0),
@@ -2427,18 +2390,6 @@ const css = `:root {
 }
 
 
-.spotify-embed-plus {
-	display: flex;
-	min-width: 400px;
-	max-width: 100%;
-	gap: 5px;
-	overflow: hidden;
-}
-
-.spotify-embed-plus > button {
-	flex: 1 0 auto;
-	text-transform: capitalize;
-}
 .spotify-player-controls {
 	display: flex;
 	justify-content: space-between;
