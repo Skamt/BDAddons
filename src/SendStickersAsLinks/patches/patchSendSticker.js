@@ -12,8 +12,8 @@ import { isAnimatedSticker, sendStickerAsLink, handleSticker } from "../Utils";
 
 function handleUnsendableSticker({ user, sticker, channel }) {
 
-	if (isAnimatedSticker(sticker) && !Settings.get("shouldSendAnimatedStickers")) return Toast.info(STRINGS.disabledAnimatedStickersErrorMessage);
-	if (!hasEmbedPerms(channel, user) && !Settings.get("ignoreEmbedPermissions")) return Toast.info(STRINGS.missingEmbedPermissionsErrorMessage);
+	if (isAnimatedSticker(sticker) && !Settings.state.shouldSendAnimatedStickers) return Toast.info(STRINGS.disabledAnimatedStickersErrorMessage);
+	if (!hasEmbedPerms(channel, user) && !Settings.state.ignoreEmbedPermissions) return Toast.info(STRINGS.missingEmbedPermissionsErrorMessage);
 
 	sendStickerAsLink(sticker, channel);
 }

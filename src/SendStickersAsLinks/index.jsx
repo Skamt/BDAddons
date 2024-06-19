@@ -1,5 +1,4 @@
-import css from "./styles";
-import Settings from "@Utils/Settings";
+import "./styles";
 import Logger from "@Utils/Logger";
 import { React, DOM, Patcher } from "@Api";
 import SettingComponent from "./components/SettingComponent";
@@ -13,7 +12,6 @@ import patchChannelGuildPermissions from "./patches/patchChannelGuildPermissions
 export default class SendStickersAsLinks {
 	start() {
 		try {
-			Settings.init(config.settings);
 			DOM.addStyle(css);
 			patchStickerClickability();
 			patchSendSticker();

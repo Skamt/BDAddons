@@ -1,4 +1,3 @@
 import { getModule } from "@Webpack";
-const Flex = getModule(a => a.Flex).Flex;
+export default getModule(a => a.defaultProps?.direction, {searchExports:true});
 
-export default Flex;

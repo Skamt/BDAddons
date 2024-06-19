@@ -112,9 +112,9 @@
 			"filter": "Filters.byProps(\"dispatch\", \"subscribe\")",
 			"options": "{ searchExports: false }"
 		},
-		"ImageModalVideoModal": {
-			"filter": "Filters.byProps(\"ImageModal\")",
-			"options": "{ searchExports: false }"
+		"ImageModal": {
+			"filter": "Filters.byStrings(\"renderLinkComponent\", \"MEDIA_MODAL_CLOSE\")",
+			"options": "{ searchExports: true }"
 		},
 		"ModalCarousel": {
 			"filter": "Filters.byPrototypeFields(\"navigateTo\", \"preloadImage\")",

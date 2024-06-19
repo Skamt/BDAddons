@@ -1,3 +1,4 @@
+import "./styles.css";
 import { DOM } from "@Api";
 import ChannelMuteButton from "./mods/ChannelMuteButton";
 import ConsoleToggleButton from "./mods/ConsoleToggleButton";
@@ -5,16 +6,17 @@ import EmojiLetters from "./mods/EmojiLetters";
 import FriendsSince from "./mods/FriendsSince";
 import GIFCommandPreviews from "./mods/GIFCommandPreviews";
 import GuildInfo from "./mods/GuildInfo";
-import MemUsage from "./mods/MemUsage";
 import NoLinkPreview from "./mods/NoLinkPreview";
 import NoReplyPing from "./mods/NoReplyPing";
 import NoTrack from "./mods/NoTrack";
-import RefreshChannel from "./mods/RefreshChannel";
 import ShowChannelPerms from "./mods/ShowChannelPerms";
 import ShowUserInfo from "./mods/ShowUserInfo";
 import SpotifyListenAlong from "./mods/SpotifyListenAlong";
-import Whois from "./mods/Whois";
-import "./styles.css";
+import EnableModView from "./mods/EnableModView";
+
+// import MemUsage from "./mods/MemUsage";
+// import RefreshChannel from "./mods/RefreshChannel";
+// import Whois from "./mods/Whois";
 
 const mods = [
 	new ChannelMuteButton(),
@@ -23,15 +25,16 @@ const mods = [
 	new GuildInfo(),
 	new NoLinkPreview(),
 	new NoReplyPing(),
-	// new MemUsage(),
-	// new Whois(),
+	new EnableModView(),
 	new ShowChannelPerms(),
-	// new RefreshChannel(),
 	new NoTrack(),
 	new FriendsSince(),
 	new ShowUserInfo(),
 	new SpotifyListenAlong(),
 	new GIFCommandPreviews()
+	// new MemUsage(),
+	// new Whois(),
+	// new RefreshChannel(),
 ];
 
 if (console.context) console = console.context();

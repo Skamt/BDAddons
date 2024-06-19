@@ -1,4 +1,4 @@
-import css from "./styles";
+import "./styles";
 import { DOM, React, Patcher } from "@Api";
 import Settings from "@Utils/Settings";
 import ControlKeys from "@Utils/ControlKeys";
@@ -93,6 +93,7 @@ export default class LazyLoadChannels {
 	start() {
 		try {
 			ControlKeys.init();
+			// eslint-disable-next-line no-undef
 			DOM.addStyle(css);
 			this.setupHandlers();
 			patchChannel();

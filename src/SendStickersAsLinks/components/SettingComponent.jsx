@@ -1,78 +1,58 @@
 import { React } from "@Api";
-import Switch from "@Components/Switch";
 import Settings from "@Utils/Settings";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
-
-const Heading = TheBigBoyBundle.Heading;
-const Slider = TheBigBoyBundle.Slider;
-const FormText = TheBigBoyBundle.FormText;
+import SettingSwtich from "@Components/SettingSwtich";
+const { Heading, Slider, FormText } = TheBigBoyBundle;
 
 export default () => {
 	return [
 		...[
 			{
-				hideBorder: false,
+				settingKey: "sendDirectly",
 				description: "Send Directly",
-				note: "Send the sticker link in a message directly instead of putting it in the chat box.",
-				value: Settings.get("sendDirectly"),
-				onChange: e => Settings.set("sendDirectly", e)
+				note: "Send the sticker link in a message directly instead of putting it in the chat box."
 			},
 			{
-				hideBorder: false,
+				settingKey: "ignoreEmbedPermissions",
 				description: "Ignore Embed Permissions",
-				note: "Send sticker links regardless of embed permissions, meaning links will not turn into images.",
-				value: Settings.get("ignoreEmbedPermissions"),
-				onChange: e => Settings.set("ignoreEmbedPermissions", e)
+				note: "Send sticker links regardless of embed permissions, meaning links will not turn into images."
 			},
 			{
-				hideBorder: false,
+				settingKey: "shouldSendAnimatedStickers",
 				description: "Send animated stickers",
-				note: "Animated stickers do not animate, sending them will only send the first picture of the animation. (still useful)",
-				value: Settings.get("shouldSendAnimatedStickers"),
-				onChange: e => Settings.set("shouldSendAnimatedStickers", e)
+				note: "Animated stickers do not animate, sending them will only send the first picture of the animation. (still useful)"
 			},
 			{
-				hideBorder: false,
-				description: "Highlight animated stickers",
-				value: Settings.get("shouldHighlightAnimated"),
-				onChange: e => Settings.set("shouldHighlightAnimated", e)
+				settingKey: "shouldHighlightAnimated",
+				description: "Highlight animated stickers"
 			}
-		].map(Toggle),
+		].map(SettingSwtich),
 		// eslint-disable-next-line react/jsx-key
 		<StickerSize />
 	];
 };
 
 function StickerSize() {
+	const [val, set] = Settings.useSetting("stickerSize");
 	return (
 		<>
-			<Heading tag="h5">Sticker Size</Heading>
-			
+			<Heading
+				style={{ marginBottom: 20 }}
+				tag="h5">
+				Sticker Size
+			</Heading>
 			<Slider
+				className="stickerSizeSlider"
 				stickToMarkers={true}
+				sortedMarkers={true}
+				equidistant={true}
 				markers={[80, 100, 128, 160]}
 				minValue={80}
 				maxValue={160}
-				initialValue={Settings.get("stickerSize")}
-				onValueChange={e => Settings.set("stickerSize", e)}
+				initialValue={val}
+				onValueChange={set}
 			/>
 			<FormText type="description">The size of the sticker in pixels. 160 is recommended</FormText>
 		</>
-	);
-}
-
-function Toggle(props) {
-	const [enabled, setEnabled] = React.useState(props.value);
-	return (
-		<Switch
-			value={enabled}
-			note={props.note}
-			hideBorder={props.hideBorder}
-			onChange={e => {
-				props.onChange(e);
-				setEnabled(e);
-			}}>
-			{props.description}
-		</Switch>
 	);
 }

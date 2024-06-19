@@ -1,10 +1,17 @@
 import { getInternalInstance } from "@Api";
 import { Filters, getModule } from "@Webpack";
 
+function getPathName(url) {
+	try {
+		return new URL(url).pathname;
+	} catch {}
+}
+
 export function parseSpotifyUrl(url) {
-	if (typeof url !== "string") return undefined;
-	const [, type, id] = url.match(/https?:\/\/open\.spotify\.com\/(\w+)\/(\w+)/) || [];
-	return [type, id];
+	const path = getPathName(url);
+	if (typeof url !== "string" || !path) return undefined;
+	const urlFrags = path.split("/");
+	return [urlFrags.pop(), urlFrags.pop()];
 }
 
 export function sanitizeSpotifyLink(link) {

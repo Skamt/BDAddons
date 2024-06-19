@@ -5,9 +5,10 @@ import StickersStore from "@Stores/StickersStore";
 import ChannelStore from "@Stores/ChannelStore";
 import { sendMessageDirectly, insertText } from "@Utils/Messages";
 import Toast from "@Utils/Toast";
-import StickerSendability from "@Modules/StickerSendability";
+import {StickerSendability} from "./Modules";
 
-const StickerMethods = getModule(Filters.byProps("getStickerAssetUrl"));
+const getStickerAssetUrl = getModule(Filters.byStrings("&passthrough=false"), { searchExports: true });
+
 const { StickerSendability: StickersSendabilityEnum, getStickerSendability } = StickerSendability;
 const StickerFormatEnum = {
 	"1": "PNG",
@@ -23,7 +24,7 @@ const StickerFormatEnum = {
 export function sendStickerAsLink(sticker, channel) {
 	const content = getStickerUrl(sticker);
 
-	if (!Settings.get("sendDirectly")) return insertText(content);
+	if (!Settings.state.sendDirectly) return insertText(content);
 
 	try {
 		sendMessageDirectly(channel, content);
@@ -34,7 +35,7 @@ export function sendStickerAsLink(sticker, channel) {
 }
 
 export function getStickerUrl(sticker) {
-	return StickerMethods.getStickerAssetUrl(sticker, { size: Settings.get("stickerSize") || 160 });
+	return getStickerAssetUrl(sticker, { size: Settings.state.stickerSize || 160 });
 }
 
 export function isAnimatedSticker(sticker) {

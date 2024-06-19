@@ -13,3 +13,7 @@
     left:-2px;
     z-index:55;
 }
+
+.stickerSizeSlider {
+	line-height: 1;
+}

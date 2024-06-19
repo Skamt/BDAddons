@@ -1,11 +1,9 @@
-import { Patcher, ReactDOM, React } from "@Api";
+import { Patcher, getOwnerInstance, ReactDOM, React } from "@Api";
 import ErrorBoundary from "@Components/ErrorBoundary";
 import RenderLinkComponent from "@Modules/RenderLinkComponent";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 const { ModalRoot, ModalSize } = TheBigBoyBundle;
-import ImageModalVideoModal from "@Modules/ImageModalVideoModal";
-const ImageModal = ImageModalVideoModal.ImageModal;
-
+import ImageModal from "@Modules/ImageModal";
 
 
 export function shallow(objA, objB) {
@@ -47,6 +45,7 @@ export const getImageModalComponent = (url, rest = {}) => (
 		src={url}
 		original={url}
 		response={true}
+		renderForwardComponent={() => null}
 		renderLinkComponent={p => <RenderLinkComponent {...p} />}
 	/>
 );

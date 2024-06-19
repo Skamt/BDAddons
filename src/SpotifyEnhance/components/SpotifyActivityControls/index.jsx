@@ -7,18 +7,25 @@ import Play from "./Play";
 import Tooltip from "@Components/Tooltip";
 import AddToQueueIcon from "@Components/icons/AddToQueueIcon";
 import ShareIcon from "@Components/icons/ShareIcon";
-import { Filters, getModule } from "@Webpack";
+import { Filters, mapExports } from "@Webpack";
 
 import { Store } from "../../Store";
 
-const { useSpotifyPlayAction, useSpotifySyncAction } = getModule(Filters.byProps("useSpotifyPlayAction"));
+const { useSpotifyPlayAction, useSpotifySyncAction } = mapExports(
+	Filters.byStrings("USER_ACTIVITY_PLAY", "spotifyData", "tooltip"),
+	{
+		useSpotifyPlayAction: Filters.byStrings("USER_ACTIVITY_PLAY"),
+		useSpotifySyncAction: Filters.byStrings("USER_ACTIVITY_SYNC")
+	},
+	{ searchExports: true }
+);
 
 export default ({ activity, user, source }) => {
 	const isActive = Store(Store.selectors.isActive);
 
 	const userSyncActivityState = useSpotifySyncAction(activity, user, source);
 	const userPlayActivityState = useSpotifyPlayAction(activity, user, source);
-	
+
 	return (
 		<div className="spotify-activity-controls">
 			<Play userPlayActivityState={userPlayActivityState} />
@@ -41,9 +48,3 @@ export default ({ activity, user, source }) => {
 		</div>
 	);
 };
-
-
-
-
-
-

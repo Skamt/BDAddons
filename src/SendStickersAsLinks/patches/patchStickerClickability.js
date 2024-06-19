@@ -1,13 +1,13 @@
 import { Patcher } from "@Api";
 import Logger from "@Utils/Logger";
-import StickerSendability from "@Modules/StickerSendability";
+
+import { StickerSendability } from "../Modules";
 
 export default () => {
 	/**
 	 * Make stickers clickable.
 	 **/
 
-	if (StickerSendability) 
-		Patcher.after(StickerSendability, "isSendableSticker", () => true);
-	else Logger.patch("StickerClickability");
+	if (!StickerSendability) return Logger.patch("StickerClickability");
+	Patcher.after(StickerSendability.module,  StickerSendability.mangledKeys.isSendableSticker, () => true);
 };
