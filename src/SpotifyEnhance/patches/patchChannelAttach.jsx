@@ -23,7 +23,7 @@ function MenuLabel({ label, icon }) {
 
 export default () => {
 	if (ChannelAttachMenu)
-		Patcher.after(ChannelAttachMenu, "default", (_, args, ret) => {
+		Patcher.after(ChannelAttachMenu, "Z", (_, args, ret) => {
 			if (!Store.state.isActive) return;
 			if (!Store.state.mediaId) return;
 			if (!Array.isArray(ret?.props?.children)) return;

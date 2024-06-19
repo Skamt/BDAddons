@@ -1,14 +1,15 @@
 import { React, Patcher } from "@Api";
-import { getModule, Filters } from "@Webpack";
+
 import Logger from "@Utils/Logger";
 import ErrorBoundary from "@Components/ErrorBoundary";
 import MessageHeader from "@Patch/MessageHeader";
+import useStateFromStores from "@Modules/useStateFromStores";
 import PresenceStore from "@Stores/PresenceStore";
 import SpotifyIcon from "@Components/icons/SpotifyIcon";
 import Tooltip from "@Components/Tooltip";
 import Settings from "@Utils/Settings";
 
-const useStateFromStores = getModule(Filters.byStrings("useStateFromStores"), { searchExports: true });
+
 
 export default () => {
 	const { module, key } = MessageHeader;

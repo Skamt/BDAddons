@@ -11,12 +11,12 @@ import Settings from "@Utils/Settings";
 
 import { Store } from "../../Store";
 import AccessibilityStore from "@Stores/AccessibilityStore";
-import FluxHelpers from "@Modules/FluxHelpers";
+import useStateFromStores from "@Modules/useStateFromStores";
 import TrackTimeLine from "../TrackTimeLine";
 
 export default ({ id, type, embed: { thumbnail, rawTitle, rawDescription, url } }) => {
 	const embedBannerBackground = Settings(Settings.selectors.embedBannerBackground);
-	const useReducedMotion = FluxHelpers.useStateFromStores([AccessibilityStore], () => AccessibilityStore.useReducedMotion);
+	const useReducedMotion = useStateFromStores([AccessibilityStore], () => AccessibilityStore.useReducedMotion);
 
 	const [isPlaying, isActive] = Store(_ => [_.isPlaying, _.isActive], shallow);
 	const mediaId = Store(Store.selectors.mediaId, (n, o) => n === o || (n !== id && o !== id));
