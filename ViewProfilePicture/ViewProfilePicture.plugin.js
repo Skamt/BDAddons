@@ -54,9 +54,9 @@ function getModuleAndKey(filter, options) {
 	let module;
 	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
 	module = module?.exports;
-	if (!module) return undefined;
+	if (!module) return {};
 	const key = Object.keys(module).find(k => module[k] === target);
-	if (!key) return undefined;
+	if (!key) return {};
 	return { module, key };
 }
 
@@ -65,7 +65,7 @@ const zustand = getModule(Filters.byStrings("subscribeWithSelector", "useReducer
 const SettingsStoreSelectors = {};
 const persistMiddleware = config => (set, get, api) => config(args => (set(args), Data.save("settings", get().getRawState())), get, api);
 
-const Settings = Object.assign(
+const SettingsStore = Object.assign(
 	zustand(
 		persistMiddleware((set, get) => {
 			const settingsObj = Object.create(null);
@@ -96,6 +96,16 @@ const Settings = Object.assign(
 		selectors: SettingsStoreSelectors
 	}
 );
+
+Object.defineProperty(SettingsStore, "state", {
+	writeable: false,
+	configurable: false,
+	get() {
+		return this.getState();
+	}
+});
+
+const Settings = SettingsStore;
 
 const TheBigBoyBundle = getModule(Filters.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
 
@@ -141,7 +151,7 @@ class ErrorBoundary extends React.Component {
 	componentDidCatch(error, info) {
 		this.setState({ error, info, hasError: true });
 		const errorMessage = `\n\t${error?.message || ""}${(info?.componentStack || "").split("\n").slice(0, 20).join("\n")}`;
-		console.error(`%c[${this.props.plugin}] %cthrew an exception at %c[${this.props.id}]\n`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
+		console.error(`%c[${config?.info?.name || "Unknown Plugin"}] %cthrew an exception at %c[${this.props.id}]\n`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
 	}
 
 	renderErrorBoundary() {
@@ -155,7 +165,7 @@ class ErrorBoundary extends React.Component {
 			if (this.props.passMetaProps)
 				this.props.fallback.props = {
 					id: this.props.id,
-					plugin: this.props.plugin,
+					plugin: config?.info?.name || "Unknown Plugin",
 					...this.props.fallback.props
 				};
 			return this.props.fallback;
@@ -163,7 +173,7 @@ class ErrorBoundary extends React.Component {
 		return (
 			React.createElement(this.props.fallback, {
 				id: this.props.id,
-				plugin: this.props.plugin,
+				plugin: config?.info?.name || "Unknown Plugin",
 			})
 		);
 	}
@@ -232,10 +242,9 @@ function ImageIcon() {
 
 const RenderLinkComponent = getModule(m => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false });
 
-const ImageModalVideoModal = getModule(Filters.byProps("ImageModal"), { searchExports: false });
+const ImageModal = getModule(Filters.byStrings("renderLinkComponent", "MEDIA_MODAL_CLOSE"), { searchExports: true });
 
 const { ModalRoot, ModalSize } = TheBigBoyBundle;
-const ImageModal = ImageModalVideoModal.ImageModal;
 
 const openModal = (children, tag, className) => {
 	const id = `${tag ? `${tag}-` : ""}modal`;
@@ -260,6 +269,7 @@ const getImageModalComponent = (url, rest = {}) => (
 		src: url,
 		original: url,
 		response: true,
+		renderForwardComponent: p => null,
 		renderLinkComponent: p => React.createElement(RenderLinkComponent, { ...p, }),
 	})
 );
@@ -461,8 +471,30 @@ const patchUserBannerMask = () => {
 	});
 };
 
-const css = `
-/* Warning circle in popouts of users who left server overlaps VPP button */
+class ViewProfilePicture {
+	start() {
+		try {
+
+			DOM.addStyle(css);
+			patchUserBannerMask();
+		} catch (e) {
+			Logger.error(e);
+		}
+	}
+
+	stop() {
+		DOM.removeStyle();
+		Patcher.unpatchAll();
+	}
+
+	getSettingsPanel() {
+		return React.createElement(SettingComponent, null);
+	}
+}
+
+module.exports = ViewProfilePicture;
+
+const css = `/* Warning circle in popouts of users who left server overlaps VPP button */
 svg:has(path[d="M12 23a11 11 0 1 0 0-22 11 11 0 0 0 0 22Zm1.44-15.94L13.06 14a1.06 1.06 0 0 1-2.12 0l-.38-6.94a1 1 0 0 1 1-1.06h.88a1 1 0 0 1 1 1.06Zm-.19 10.69a1.25 1.25 0 1 1-2.5 0 1.25 1.25 0 0 1 2.5 0Z"]) {
 	top: 75px;
 }
@@ -599,25 +631,3 @@ svg:has(path[d="M12 23a11 11 0 1 0 0-22 11 11 0 0 0 0 22Zm1.44-15.94L13.06 14a1.
 	flex: 1;
 }
 `;
-
-class ViewProfilePicture {
-	start() {
-		try {
-			DOM.addStyle(css);
-			patchUserBannerMask();
-		} catch (e) {
-			Logger.error(e);
-		}
-	}
-
-	stop() {
-		DOM.removeStyle();
-		Patcher.unpatchAll();
-	}
-
-	getSettingsPanel() {
-		return React.createElement(SettingComponent, null);
-	}
-}
-
-module.exports = ViewProfilePicture;

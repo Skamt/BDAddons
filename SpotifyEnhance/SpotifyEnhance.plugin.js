@@ -68,9 +68,9 @@ function getModuleAndKey(filter, options) {
 	let module;
 	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
 	module = module?.exports;
-	if (!module) return undefined;
+	if (!module) return {};
 	const key = Object.keys(module).find(k => module[k] === target);
-	if (!key) return undefined;
+	if (!key) return {};
 	return { module, key };
 }
 
@@ -125,10 +125,9 @@ const RenderLinkComponent = getModule(m => m.type?.toString?.().includes("MASKED
 
 const TheBigBoyBundle = getModule(Filters.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
 
-const ImageModalVideoModal = getModule(Filters.byProps("ImageModal"), { searchExports: false });
+const ImageModal = getModule(Filters.byStrings("renderLinkComponent", "MEDIA_MODAL_CLOSE"), { searchExports: true });
 
 const { ModalRoot, ModalSize } = TheBigBoyBundle;
-const ImageModal = ImageModalVideoModal.ImageModal;
 
 function shallow(objA, objB) {
 	if (Object.is(objA, objB)) return true;
@@ -168,6 +167,7 @@ const getImageModalComponent = (url, rest = {}) => (
 		src: url,
 		original: url,
 		response: true,
+		renderForwardComponent: () => null,
 		renderLinkComponent: p => React.createElement(RenderLinkComponent, { ...p, }),
 	})
 );
@@ -813,9 +813,7 @@ function Arrow() {
 	);
 }
 
-const Flex = getModule(a => a.Flex).Flex;
-
-const Flex$1 = Flex;
+const Flex = getModule(a => a.defaultProps?.direction, { searchExports: true });
 
 const { Heading } = TheBigBoyBundle;
 
@@ -823,15 +821,15 @@ function Collapsible({ title, children }) {
 	const [open, setOpen] = React.useState(false);
 
 	return (
-		React.createElement(Flex$1, {
+		React.createElement(Flex, {
 			className: open ? "collapsible-container collapsible-open" : "collapsible-container",
-			direction: Flex$1.Direction.VERTICAL,
-		}, React.createElement(Flex$1, {
+			direction: Flex.Direction.VERTICAL,
+		}, React.createElement(Flex, {
 			className: "collapsible-header",
 			onClick: () => setOpen(!open),
-			direction: Flex$1.Direction.HORIZONTAL,
-			align: Flex$1.Align.CENTER,
-		}, React.createElement(Flex$1, { className: "collapsible-icon", }, React.createElement(Arrow, null)), React.createElement(Heading, {
+			direction: Flex.Direction.HORIZONTAL,
+			align: Flex.Align.CENTER,
+		}, React.createElement(Flex, { className: "collapsible-icon", }, React.createElement(Arrow, null)), React.createElement(Heading, {
 			className: "collapsible-title",
 			tag: "h5",
 		}, title)), open && React.createElement('div', { className: "collapsible-body", }, children))
@@ -1990,9 +1988,9 @@ const ChannelAttachMenu = getModule(Filters.byStrings("Plus Button"), { defaultE
 
 function MenuLabel({ label, icon }) {
 	return (
-		React.createElement(Flex$1, {
-			direction: Flex$1.Direction.HORIZONTAL,
-			align: Flex$1.Align.CENTER,
+		React.createElement(Flex, {
+			direction: Flex.Direction.HORIZONTAL,
+			align: Flex.Align.CENTER,
 			style: { gap: 8 },
 		}, icon, React.createElement('div', null, label))
 	);
@@ -2236,18 +2234,6 @@ const css = `:root {
 	align-items: center;
 	margin-right: 5px;
 }
-.spotify-embed-plus {
-	display: flex;
-	min-width: 400px;
-	max-width: 100%;
-	gap: 5px;
-	overflow: hidden;
-}
-
-.spotify-embed-plus > button {
-	flex: 1 0 auto;
-	text-transform: capitalize;
-}
 .spotify-embed-container {
 	background:
 		linear-gradient(#00000090 0 0),
@@ -2390,51 +2376,63 @@ const css = `:root {
 }
 
 
-.spotify-player-timeline {
-	user-select: none;
-	margin-bottom: 2px;
-	color: white;
+.spotify-embed-plus {
 	display: flex;
-	flex-wrap: wrap;
-	font-size: 0.8rem;
-	flex: 1;
+	min-width: 400px;
+	max-width: 100%;
+	gap: 5px;
+	overflow: hidden;
 }
 
-.spotify-player-timeline-progress {
-	flex: 1;
+.spotify-embed-plus > button {
+	flex: 1 0 auto;
+	text-transform: capitalize;
+}
+.spotify-player-controls {
+	display: flex;
+	justify-content: space-between;
+	width: 100%;
+	overflow: hidden;
 }
 
-.spotify-player-timeline-trackbar {
-	margin-top: -8px;
-	margin-bottom: 8px;
-	cursor: pointer;
+.spotify-player-controls svg {
+	width: 16px;
+	height: 16px;
 }
 
-.spotify-player-timeline:hover .spotify-player-timeline-trackbar-grabber {
-	opacity: 1;
+.spotify-player-controls-btn {
+	padding: 3px !important;
+	color: #ccc;
+	transition: all 100ms linear;
+	border-radius: 5px;
 }
 
-.spotify-player-timeline .spotify-player-timeline-trackbar-grabber {
-	opacity: 0;
-	cursor: grab;
-	width: 10px;
-	height: 10px;
-	margin-top: 4px;
+.spotify-player-controls-btn:hover {
+	background: #ccc3;
+	color: fff;
+	scale: 1.1;
 }
 
-.spotify-player-timeline .spotify-player-timeline-trackbar-bar {
-	background: hsl(0deg 0% 100% / 30%);
-	height: 6px;
+.spotify-player-controls-btn.enabled {
+	color: var(--spotify-green);
 }
 
-.spotify-player-timeline .spotify-player-timeline-trackbar-bar > div {
-	background: #fff;
-	border-radius: 4px;
+.spotify-player-controls-volume-slider-wrapper {
+	height: 120px;
+	width: 20px;
+	background: var(--background-floating);
+	padding: 5px 1px;
+	border-radius: 99px;
 }
 
-.spotify-player-timeline:hover .spotify-player-timeline-trackbar-bar > div {
-	background: var(--spotify-green);
+.spotify-player-controls-volume-slider {
+	margin: 0;
+	width: 100%;
+	height: 100%;
+	accent-color: var(--spotify-green);
+	appearance: slider-vertical;
 }
+
 .spotify-player-media {
 	color: white;
 	font-size: 0.9rem;
@@ -2503,48 +2501,48 @@ div:has(> .spotify-banner-modal) {
 	border-radius: 5px;
 }
 
-.spotify-player-controls {
+.spotify-player-timeline {
+	user-select: none;
+	margin-bottom: 2px;
+	color: white;
 	display: flex;
-	justify-content: space-between;
-	width: 100%;
-	overflow: hidden;
+	flex-wrap: wrap;
+	font-size: 0.8rem;
+	flex: 1;
 }
 
-.spotify-player-controls svg {
-	width: 16px;
-	height: 16px;
+.spotify-player-timeline-progress {
+	flex: 1;
 }
 
-.spotify-player-controls-btn {
-	padding: 3px !important;
-	color: #ccc;
-	transition: all 100ms linear;
-	border-radius: 5px;
+.spotify-player-timeline-trackbar {
+	margin-top: -8px;
+	margin-bottom: 8px;
+	cursor: pointer;
 }
 
-.spotify-player-controls-btn:hover {
-	background: #ccc3;
-	color: fff;
-	scale: 1.1;
+.spotify-player-timeline:hover .spotify-player-timeline-trackbar-grabber {
+	opacity: 1;
 }
 
-.spotify-player-controls-btn.enabled {
-	color: var(--spotify-green);
+.spotify-player-timeline .spotify-player-timeline-trackbar-grabber {
+	opacity: 0;
+	cursor: grab;
+	width: 10px;
+	height: 10px;
+	margin-top: 4px;
 }
 
-.spotify-player-controls-volume-slider-wrapper {
-	height: 120px;
-	width: 20px;
-	background: var(--background-floating);
-	padding: 5px 1px;
-	border-radius: 99px;
+.spotify-player-timeline .spotify-player-timeline-trackbar-bar {
+	background: hsl(0deg 0% 100% / 30%);
+	height: 6px;
 }
 
-.spotify-player-controls-volume-slider {
-	margin: 0;
-	width: 100%;
-	height: 100%;
-	accent-color: var(--spotify-green);
-	appearance: slider-vertical;
+.spotify-player-timeline .spotify-player-timeline-trackbar-bar > div {
+	background: #fff;
+	border-radius: 4px;
 }
-`;
+
+.spotify-player-timeline:hover .spotify-player-timeline-trackbar-bar > div {
+	background: var(--spotify-green);
+}`;

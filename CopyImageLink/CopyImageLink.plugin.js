@@ -20,34 +20,6 @@ const config = {
 	}
 }
 
-const css = `
-.copyBtn {
-	left: 115px;
-	white-space: nowrap;
-    position: absolute;
-    top: 100%;
-    font-size: 14px;
-    font-weight: 500;
-    color: #fff;
-    line-height: 30px;
-    transition: opacity .15s ease;
-    opacity: .5;
-}
-.copyBtn:hover{
-	opacity: 1;
-    text-decoration: underline;
-}
-
-.copyBtnSpan {
-	left: 105px;
-	position: absolute;
-	top: 100%;
-	font-weight: 500;
-	color: hsl(0, calc(var(--saturation-factor, 1) * 0%), 100%) !important;
-	line-height: 30px;
-	opacity: 0.5;
-}`;
-
 const Logger = {
 	error(...args) {
 		this.p(console.error, ...args);
@@ -73,20 +45,26 @@ const Patcher = Api.Patcher;
 const getModule = Api.Webpack.getModule;
 const Filters = Api.Webpack.Filters;
 
-const ImageModalVideoModal = getModule(Filters.byProps("ImageModal"), { searchExports: false });
+function getModuleAndKey(filter, options) {
+	let module;
+	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
+	module = module?.exports;
+	if (!module) return {};
+	const key = Object.keys(module).find(k => module[k] === target);
+	if (!key) return {};
+	return { module, key };
+}
 
 function copy(data) {
 	DiscordNative.clipboard.copy(data);
 }
 
 function getNestedProp(obj, path) {
-	return path.split(".").reduce(function(ob, prop) {
-		return ob && ob[prop];
-	}, obj);
+	return path.split(".").reduce((ob, prop) => ob?.[prop], obj);
 }
 
 function showToast(content, type) {
-	UI.showToast(`[${config.info.name}] ${content}`, { type });
+	UI.showToast(`[${config.info.name}] ${content}`, { timeout: 5000, type });
 }
 
 const Toast = {
@@ -110,18 +88,20 @@ const CopyButtonComponent = ({ href }) => {
 	);
 };
 
+const ImageModal = getModuleAndKey(Filters.byStrings("renderLinkComponent", "MEDIA_MODAL_CLOSE"), { searchExports: true }) || {};
+
 class CopyImageLink {
 	start() {
 		try {
 			DOM.addStyle(css);
-			if (ImageModalVideoModal)
-				Patcher.after(ImageModalVideoModal, "ImageModal", (_, __, returnValue) => {
-					const children = getNestedProp(returnValue, "props.children");
-					const { href } = getNestedProp(returnValue, "props.children.2.props");
-					if (!children || !href) return;
-					children.push(React.createElement(CopyButtonComponent, { href: href, }));
-				});
-			else Logger.patch("ImageModal");
+			const { module, key } = ImageModal;
+			if (!module || !key) return Logger.patch("ImageModal");
+			Patcher.after(module, key, (_, __, returnValue) => {
+				const children = getNestedProp(returnValue, "props.children");
+				const { src: href } = getNestedProp(returnValue, "props.children.2.props");
+				if (!children || !href) return;
+				children.push(React.createElement(CopyButtonComponent, { href: href, }));
+			});
 		} catch (e) {
 			Logger.error(e);
 		}
@@ -134,3 +114,30 @@ class CopyImageLink {
 }
 
 module.exports = CopyImageLink;
+
+const css = `.copyBtn {
+	left: 115px;
+	white-space: nowrap;
+    position: absolute;
+    top: 100%;
+    font-size: 14px;
+    font-weight: 500;
+    color: #fff;
+    line-height: 30px;
+    transition: opacity .15s ease;
+    opacity: .5;
+}
+.copyBtn:hover{
+	opacity: 1;
+    text-decoration: underline;
+}
+
+.copyBtnSpan {
+	left: 105px;
+	position: absolute;
+	top: 100%;
+	font-weight: 500;
+	color: hsl(0, calc(var(--saturation-factor, 1) * 0%), 100%) !important;
+	line-height: 30px;
+	opacity: 0.5;
+}`;

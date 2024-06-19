@@ -39,14 +39,28 @@ const Patcher = Api.Patcher;
 const getModule = Api.Webpack.getModule;
 const Filters = Api.Webpack.Filters;
 
+function getExports(filter, options) {
+	let module;
+	getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
+	return module?.exports;
+}
+
 function getModuleAndKey(filter, options) {
 	let module;
 	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
 	module = module?.exports;
-	if (!module) return undefined;
+	if (!module) return {};
 	const key = Object.keys(module).find(k => module[k] === target);
-	if (!key) return undefined;
+	if (!key) return {};
 	return { module, key };
+}
+
+function filterModuleAndExport(moduleFilter, exportFilter, options) {
+	const module = getExports(moduleFilter, options);
+	if (!module) return;
+	const key = Object.keys(module).find(k => exportFilter(module[k]));
+	if (!key) return {};
+	return { module, key, target: module[key] };
 }
 
 const zustand = getModule(Filters.byStrings("subscribeWithSelector", "useReducer"), { searchExports: false });
@@ -396,59 +410,59 @@ const Button = TheBigBoyBundle.Button ||
 		return React.createElement('button', { ...props, });
 	};
 
-const MessageDecorations = getModule(Filters.byProps("MessagePopoutContent"));
+const MessageDecorations = filterModuleAndExport(Filters.byProps("OLD_MESSAGES"), Filters.byStrings(".popoutContainer"), { searchExports: true });
 const AssetURLUtils = getModule(Filters.byProps("getEmojiURL"));
 
 const patchEmojiUtils = () => {
-	if (MessageDecorations?.MessagePopoutContent)
-		Patcher.after(MessageDecorations, "MessagePopoutContent", (_, __, ret) => {
-			const { animated, emojiName, guildId = "", emojiId: id } = getNestedProp(ret, "props.children.0.props.children.0.props.children.0.props") || {};
-			if (!id) return ret;
+	const { module, key } = MessageDecorations;
+	if (!module || !key) return Logger.patch("patchEmojiUtils");
+	Patcher.after(module, key, (_, __, ret) => {
+		const { animated, emojiName, guildId = "", emojiId: id } = getNestedProp(ret, "props.children.0.props.children.0.props.children.0.props") || {};
+		if (!id) return ret;
 
-			const children = getNestedProp(ret, "props.children.0.props.children");
+		const children = getNestedProp(ret, "props.children.0.props.children");
 
-			if (!children) return ret;
-			children.push(
-				React.createElement('div', { className: "emojiControls", }, React.createElement(Button, {
-						size: Button.Sizes.SMALL,
-						color: Button.Colors.GREEN,
-						onClick: () => {
-							const url = AssetURLUtils.getEmojiURL({ id });
-							if (!url) return Toast.error("no url found");
-							copy(url);
-							Toast.success("Copid");
-						},
-					}, "Copy url")
+		if (!children) return ret;
+		children.push(
+			React.createElement('div', { className: "emojiControls", }, React.createElement(Button, {
+					size: Button.Sizes.SMALL,
+					color: Button.Colors.GREEN,
+					onClick: () => {
+						const url = AssetURLUtils.getEmojiURL({ id });
+						if (!url) return Toast.error("no url found");
+						copy(url);
+						Toast.success("Copid");
+					},
+				}, "Copy url")
 
-					, React.createElement(Button, {
-						size: Button.Sizes.SMALL,
-						color: Button.Colors.GREEN,
-						onClick: () => {
-							try {
-								const emojis = Data.load("emojis") || [];
-								emojis.unshift({
-									animated,
-									id,
-									guildId,
-									name: emojiName.replace(/:/gi, ""),
-									allNamesString: emojiName,
-									available: true,
-									managed: false,
-									require_colons: true,
-									url: `https://cdn.discordapp.com/emojis/${id}.webp?size=4096&quality=lossless`,
-									type: "GUILD_EMOJI"
-								});
-								Data.save("emojis", emojis);
-								Toast.success("Saved.");
-							} catch {
-								Toast.error("Could not save.");
-							}
-						},
-					}, "Save")
-				)
-			);
-		});
-	else Logger.patch("EmojiUtils");
+				, React.createElement(Button, {
+					size: Button.Sizes.SMALL,
+					color: Button.Colors.GREEN,
+					onClick: () => {
+						try {
+							const emojis = Data.load("emojis") || [];
+							emojis.unshift({
+								animated,
+								id,
+								guildId,
+								name: emojiName.replace(/:/gi, ""),
+								allNamesString: emojiName,
+								available: true,
+								managed: false,
+								require_colons: true,
+								url: `https://cdn.discordapp.com/emojis/${id}.webp?size=4096&quality=lossless`,
+								type: "GUILD_EMOJI"
+							});
+							Data.save("emojis", emojis);
+							Toast.success("Saved.");
+						} catch {
+							Toast.error("Could not save.");
+						}
+					},
+				}, "Save")
+			)
+		);
+	});
 };
 
 const EmojiStore = getModule(m => m._dispatchToken && m.getName() === "EmojiStore");
@@ -479,16 +493,18 @@ const patchFavoriteEmojis = () => {
 	});
 };
 
-const emojiHooks = getModule(a => a.useEmojiGrid);
+const emojiHooks = getModuleAndKey(Filters.byStrings("gridWidth", "getDisambiguatedEmojiContext", "getFlattenedGuildIds"), { searchExports: true });
 const patchUseEmojiGrid = () => {
-	if (emojiHooks?.useEmojiGrid)
-		Patcher.after(emojiHooks, "useEmojiGrid", (_, [{ pickerIntention }], ret) => {
-			if (pickerIntention !== EmojiIntentionEnum.CHAT) return ret;
-			for (const a of ret.sectionDescriptors) {
-				a.isNitroLocked = false;
-			}
-		});
-	else Logger.patch("emojiHooks");
+	const { module, key } = emojiHooks;
+
+	if (!module || !key) return Logger.patch("patchUseEmojiGrid");
+
+	Patcher.after(module, key, (_, [{ pickerIntention }], ret) => {
+		if (pickerIntention !== EmojiIntentionEnum.CHAT) return ret;
+		for (const a of ret.sectionDescriptors) {
+			a.isNitroLocked = false;
+		}
+	});
 };
 
 const { MenuItem } = TheBigBoyBundle;
