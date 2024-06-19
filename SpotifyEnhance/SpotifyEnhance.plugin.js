@@ -847,11 +847,12 @@ function Collapsible({ title, children }) {
 			className: open ? "collapsible-container collapsible-open" : "collapsible-container",
 			direction: Flex.Direction.VERTICAL,
 		}, React.createElement(Flex, {
+
 			className: "collapsible-header",
 			onClick: () => setOpen(!open),
 			direction: Flex.Direction.HORIZONTAL,
 			align: Flex.Align.CENTER,
-		}, React.createElement(Flex, { className: "collapsible-icon", }, React.createElement(Arrow, null)), React.createElement(Heading, {
+		}, React.createElement(Flex, { grow: 0, className: "collapsible-icon", }, React.createElement(Arrow, null)), React.createElement(Heading, {
 			className: "collapsible-title",
 			tag: "h5",
 		}, title)), open && React.createElement('div', { className: "collapsible-body", }, children))
@@ -1244,7 +1245,7 @@ function ImageIcon() {
 
 const AccessibilityStore = getModule(m => m._dispatchToken && m.getName() === "AccessibilityStore");
 
-const FluxHelpers = getModule(Filters.byProps("useStateFromStores"), { searchExports: false });
+const useStateFromStores = getModule(Filters.byStrings("getStateFromStores"), { searchExports: true });
 
 function formatMsToTime(ms) {
 	const time = new Date(ms);
@@ -1304,7 +1305,7 @@ function Duration({ duration, position }) {
 
 const SpotifyEmbed$1 = ({ id, type, embed: { thumbnail, rawTitle, rawDescription, url } }) => {
 	const embedBannerBackground = Settings(Settings.selectors.embedBannerBackground);
-	const useReducedMotion = FluxHelpers.useStateFromStores([AccessibilityStore], () => AccessibilityStore.useReducedMotion);
+	const useReducedMotion = useStateFromStores([AccessibilityStore], () => AccessibilityStore.useReducedMotion);
 
 	const [isPlaying, isActive] = Store(_ => [_.isPlaying, _.isActive], shallow);
 	const mediaId = Store(Store.selectors.mediaId, (n, o) => n === o || (n !== id && o !== id));
@@ -1403,7 +1404,7 @@ const SpotifyEmbed = getModule(Filters.byStrings("iframe", "playlist", "track"),
 
 const patchSpotifyEmbed = () => {
 	if (SpotifyEmbed)
-		Patcher.after(SpotifyEmbed, "default", (_, [{ embed }], ret) => {
+		Patcher.after(SpotifyEmbed, "Z", (_, [{ embed }], ret) => {
 			const [id, type] = parseSpotifyUrl(embed.url) || [];
 			if (!ALLOWD_TYPES.includes(type)) {
 				Logger.log(`Spotify ${type}`, embed.url);
@@ -1986,8 +1987,6 @@ const MessageHeader = getModuleAndKey(Filters.byStrings("userOverride", "withMen
 
 const PresenceStore = getModule(m => m._dispatchToken && m.getName() === "PresenceStore");
 
-const useStateFromStores = getModule(Filters.byStrings("useStateFromStores"), { searchExports: true });
-
 const patchMessageHeader = () => {
 	const { module, key } = MessageHeader;
 	if (module && key)
@@ -2028,7 +2027,7 @@ function MenuLabel({ label, icon }) {
 
 const patchChannelAttach = () => {
 	if (ChannelAttachMenu)
-		Patcher.after(ChannelAttachMenu, "default", (_, args, ret) => {
+		Patcher.after(ChannelAttachMenu, "Z", (_, args, ret) => {
 			if (!Store.state.isActive) return;
 			if (!Store.state.mediaId) return;
 			if (!Array.isArray(ret?.props?.children)) return;
@@ -2144,15 +2143,15 @@ const css = `:root {
 	margin: 0 0.25rem 0 0.25rem;
 }
 .collapsible-container {
-	border-radius: 5;
+	border-radius: 5px;
 	border: 1px solid rgb(30, 31, 34);
-	gap: 20;
+	gap: 20px;
 }
 
 .collapsible-header {
 	background: rgba(30, 31, 34, 0.3);
 	padding: 10px 3px;
-	gap: 8;
+	gap: 8px;
 }
 
 .collapsible-open .collapsible-header {
@@ -2161,7 +2160,7 @@ const css = `:root {
 
 .collapsible-icon {
 	flex-grow: 0;
-	rotate:0;
+	rotate:0deg;
 	transition: rotate 150ms linear;
 }
 
@@ -2264,119 +2263,18 @@ const css = `:root {
 	align-items: center;
 	margin-right: 5px;
 }
-.spotify-player-controls {
+.spotify-embed-plus {
 	display: flex;
-	justify-content: space-between;
-	width: 100%;
-	overflow: hidden;
-}
-
-.spotify-player-controls svg {
-	width: 16px;
-	height: 16px;
-}
-
-.spotify-player-controls-btn {
-	padding: 3px !important;
-	color: #ccc;
-	transition: all 100ms linear;
-	border-radius: 5px;
-}
-
-.spotify-player-controls-btn:hover {
-	background: #ccc3;
-	color: fff;
-	scale: 1.1;
-}
-
-.spotify-player-controls-btn.enabled {
-	color: var(--spotify-green);
-}
-
-.spotify-player-controls-volume-slider-wrapper {
-	height: 120px;
-	width: 20px;
-	background: var(--background-floating);
-	padding: 5px 1px;
-	border-radius: 99px;
-}
-
-.spotify-player-controls-volume-slider {
-	margin: 0;
-	width: 100%;
-	height: 100%;
-	accent-color: var(--spotify-green);
-	appearance: slider-vertical;
-}
-
-.spotify-player-media {
-	color: white;
-	font-size: 0.9rem;
-	overflow: hidden;
-	display: grid;
-	column-gap: 10px;
-	z-index: 5;
-	grid-template-columns: 64px minmax(0, 1fr);
-	grid-template-rows: repeat(3, 1fr);
-	align-items: center;
-	justify-items: flex-start;
-	grid-template-areas:
-		"banner title"
-		"banner artist"
-		"banner album";
-}
-
-.spotify-player-title {
-	grid-area: title;
-	font-weight: bold;
-	color: #fff;
-	font-size: 1.05rem;
+	min-width: 400px;
 	max-width: 100%;
-}
-
-.spotify-player-title:first-child {
-	grid-column: 1/-1;
-	grid-row: 1/-1;
-	margin-bottom: 5px;
-}
-
-.spotify-player-artist {
-	grid-area: artist;
-	font-size: 0.8rem;
-	max-width: 100%;
-}
-
-.spotify-player-album {
-	grid-area: album;
-	max-width: 100%;
-}
-
-.spotify-player-album > div,
-.spotify-player-artist > div {
-	display: flex;
 	gap: 5px;
+	overflow: hidden;
 }
 
-.spotify-player-album span,
-.spotify-player-artist span {
-	color: var(--text-sub);
+.spotify-embed-plus > button {
+	flex: 1 0 auto;
+	text-transform: capitalize;
 }
-
-div:has(> .spotify-banner-modal) {
-	background: #0000;
-}
-
-.spotify-player-banner {
-	grid-area: banner;
-	cursor: pointer;
-	width: 64px;
-	height: 64px;
-	background:
-		var(--banner-lg) center/cover no-repeat,
-		lime;
-	border-radius: 5px;
-}
-
 .spotify-embed-container {
 	background:
 		linear-gradient(#00000090 0 0),
@@ -2519,6 +2417,119 @@ div:has(> .spotify-banner-modal) {
 }
 
 
+.spotify-player-controls {
+	display: flex;
+	justify-content: space-between;
+	width: 100%;
+	overflow: hidden;
+}
+
+.spotify-player-controls svg {
+	width: 16px;
+	height: 16px;
+}
+
+.spotify-player-controls-btn {
+	padding: 3px !important;
+	color: #ccc;
+	transition: all 100ms linear;
+	border-radius: 5px;
+}
+
+.spotify-player-controls-btn:hover {
+	background: #ccc3;
+	color: fff;
+	scale: 1.1;
+}
+
+.spotify-player-controls-btn.enabled {
+	color: var(--spotify-green);
+}
+
+.spotify-player-controls-volume-slider-wrapper {
+	height: 120px;
+	width: 20px;
+	background: var(--background-floating);
+	padding: 5px 1px;
+	border-radius: 99px;
+}
+
+.spotify-player-controls-volume-slider {
+	margin: 0;
+	width: 100%;
+	height: 100%;
+	accent-color: var(--spotify-green);
+	appearance: slider-vertical;
+}
+
+.spotify-player-media {
+	color: white;
+	font-size: 0.9rem;
+	overflow: hidden;
+	display: grid;
+	column-gap: 10px;
+	z-index: 5;
+	grid-template-columns: 64px minmax(0, 1fr);
+	grid-template-rows: repeat(3, 1fr);
+	align-items: center;
+	justify-items: flex-start;
+	grid-template-areas:
+		"banner title"
+		"banner artist"
+		"banner album";
+}
+
+.spotify-player-title {
+	grid-area: title;
+	font-weight: bold;
+	color: #fff;
+	font-size: 1.05rem;
+	max-width: 100%;
+}
+
+.spotify-player-title:first-child {
+	grid-column: 1/-1;
+	grid-row: 1/-1;
+	margin-bottom: 5px;
+}
+
+.spotify-player-artist {
+	grid-area: artist;
+	font-size: 0.8rem;
+	max-width: 100%;
+}
+
+.spotify-player-album {
+	grid-area: album;
+	max-width: 100%;
+}
+
+.spotify-player-album > div,
+.spotify-player-artist > div {
+	display: flex;
+	gap: 5px;
+}
+
+.spotify-player-album span,
+.spotify-player-artist span {
+	color: var(--text-sub);
+}
+
+div:has(> .spotify-banner-modal) {
+	background: #0000;
+}
+
+.spotify-player-banner {
+	grid-area: banner;
+	cursor: pointer;
+	width: 64px;
+	height: 64px;
+	background:
+		var(--banner-lg) center/cover no-repeat,
+		lime;
+	border-radius: 5px;
+}
+
 .spotify-player-timeline {
 	user-select: none;
 	margin-bottom: 2px;
@@ -2563,16 +2574,4 @@ div:has(> .spotify-banner-modal) {
 
 .spotify-player-timeline:hover .spotify-player-timeline-trackbar-bar > div {
 	background: var(--spotify-green);
-}
-.spotify-embed-plus {
-	display: flex;
-	min-width: 400px;
-	max-width: 100%;
-	gap: 5px;
-	overflow: hidden;
-}
-
-.spotify-embed-plus > button {
-	flex: 1 0 auto;
-	text-transform: capitalize;
 }`;
