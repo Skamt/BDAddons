@@ -1,7 +1,7 @@
 /**
  * @name LazyLoadChannels
  * @description Lets you choose whether to load a channel
- * @version 1.2.7
+ * @version 1.2.8
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "LazyLoadChannels",
-		"version": "1.2.7",
+		"version": "1.2.8",
 		"description": "Lets you choose whether to load a channel",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels",
@@ -24,159 +24,6 @@ const config = {
 	}
 }
 
-const css = `
-#lazyLoader {
-	width: 100%;
-	height: 100%;
-	margin: auto;
-	box-sizing: border-box;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	user-select: text;
-	visibility: visible !important;
-}
-
-#lazyLoader ~ * {
-	display: none;
-}
-
-#lazyLoader > .logo {
-	flex: 0 1 auto;
-	width: 376px;
-	height: 162px;
-	margin-bottom: 20px;
-	background-image: url("https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/assets/lazy-loader-logo.svg");
-	background-size: 100% 100%;
-}
-
-#lazyLoader > .DM,
-#lazyLoader > .channel {
-    background: #232527;
-    box-sizing: border-box;
-    min-width: 200px;
-    border-radius: 5px;
-    display: flex;
-    align-items: center;
-    font-weight: 500;
-    font-size: 1.3em;
-    margin-bottom: 20px;
-    max-width: 600px;
-}
-
-#lazyLoader > .DM > .DMName,
-#lazyLoader > .channel > .channelName {
-    color: #989aa2;
-    padding: 8px 25px 8px 5px;
-    text-overflow: ellipsis;
-    overflow: hidden;
-    white-space: nowrap;
-}
-#lazyLoader > .DM{
-	min-width: auto;
-}
-#lazyLoader > .DM > .DMName{
-	padding: 8px;
-}
-
-#lazyLoader > .channel > .channelIcon {
-	color: #989aa2;
-	margin: 5px;
-	font-size: 0;
-}
-
-#lazyLoader .stats {
-	padding: 10px 20px;
-	background: #2e3136;
-	color: #989aa2;
-	box-sizing: border-box;
-	display: flex;
-	gap: 5px;
-	border: 2px solid;
-	flex-direction: column;
-	min-width: 200px;
-	position: absolute;
-	bottom: 20px;
-	right: 20px;
-	text-transform: capitalize;
-}
-
-#lazyLoader .stats > div:before {
-	content: "- ";
-}
-
-#lazyLoader > .title {
-	color: #fff;
-	font-size: 24px;
-	line-height: 28px;
-	font-weight: 600;
-	max-width: 640px;
-	padding: 0 20px;
-	text-align: center;
-	margin-bottom: 8px;
-}
-
-#lazyLoader > .description {
-	color: #c7c8ce;
-	font-size: 16px;
-	line-height: 1.4;
-	max-width: 440px;
-	text-align: center;
-	margin-bottom: 20px;
-}
-
-#lazyLoader > .controls {
-	display: flex;
-	flex-direction: column;
-}
-
-#lazyLoader > .controls > .buttons-container {
-	display: flex;
-	gap: 10px;
-}
-
-#lazyLoader > .controls > .switch {
-	min-width: auto;
-	margin: 10px;
-	padding: 0 5px;
-}
-
-#lazyLoader > .controls > .switch.true > div > label {
-	color: #2dc771;
-}
-
-#lazyLoader .stats.blink {
-    animation: de-wobble 1s;
-}
-
-@keyframes de-wobble {
-
-  16.666666666666668% {    
-    transform: translateX(-30px) rotate(-6deg);
-  }
-  33.333333333333336% {    
-    transform: translateX(15px) rotate(6deg);
-  }
-  50% {    
-    transform: translateX(-15px) rotate(-3.6deg);
-  }
-  66.66666666666667% {    
-    transform: translateX(9px) rotate(2.4deg);
-  }
-  83.33333333333334% {    
-    transform: translateX(-6px) rotate(-1.2deg);
-  }
-  100% {    
-    transform: translateX(0px) rotate(0deg);
-  }
-}
-
-.autoload > div > div,
-.autoload a{
-	border-left:4px solid #2e7d46;
-}`;
-
 const Api = new BdApi(config.info.name);
 
 const UI = Api.UI;
@@ -188,68 +35,64 @@ const ContextMenu = Api.ContextMenu;
 
 const getModule = Api.Webpack.getModule;
 const Filters = Api.Webpack.Filters;
-
 const getOwnerInstance = Api.ReactUtils.getOwnerInstance;
 
-class ChangeEmitter {
-	constructor() {
-		this.listeners = new Set();
-	}
-
-	isInValid(handler) {
-		return !handler || typeof handler !== "function";
-	}
-
-	on(handler) {
-		if (this.isInValid(handler)) return;
-		this.listeners.add(handler);
-		return () => this.off(handler);
-	}
-
-	off(handler) {
-		if (this.isInValid(handler)) return;
-		this.listeners.delete(handler);
-	}
-
-	emit(payload) {
-		for (const listener of this.listeners) {
-			try {
-				listener(payload);
-			} catch (err) {
-				console.error(`Could not run listener`, err);
-			}
-		}
-	}
+function getModuleAndKey(filter, options) {
+	let module;
+	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
+	module = module?.exports;
+	if (!module) return {};
+	const key = Object.keys(module).find(k => module[k] === target);
+	if (!key) return {};
+	return { module, key };
 }
 
-const Settings = new(class Settings extends ChangeEmitter {
-	constructor() {
-		super();
-	}
+const zustand = getModule(Filters.byStrings("subscribeWithSelector", "useReducer"), { searchExports: false });
 
-	init(defaultSettings) {
-		this.settings = Data.load("settings") || defaultSettings;
-	}
+const SettingsStoreSelectors = {};
+const persistMiddleware = config => (set, get, api) => config(args => (set(args), Data.save("settings", get().getRawState())), get, api);
 
-	get(key) {
-		return this.settings[key];
-	}
+const SettingsStore = Object.assign(
+	zustand(
+		persistMiddleware((set, get) => {
+			const settingsObj = Object.create(null);
 
-	set(key, val) {
-		this.settings[key] = val;
-		this.commit();
+			for (const [key, value] of Object.entries({
+					...config.settings,
+					...Data.load("settings")
+				})) {
+				settingsObj[key] = value;
+				settingsObj[`set${key}`] = newValue => set({
+					[key]: newValue });
+				SettingsStoreSelectors[key] = state => state[key];
+			}
+			settingsObj.getRawState = () => {
+				return Object.entries(get())
+					.filter(([, val]) => typeof val !== "function")
+					.reduce((acc, [key, val]) => {
+						acc[key] = val;
+						return acc;
+					}, {});
+			};
+			return settingsObj;
+		})
+	), {
+		useSetting: function(key) {
+			return this(state => [state[key], state[`set${key}`]]);
+		},
+		selectors: SettingsStoreSelectors
 	}
+);
 
-	setMultiple(newSettings) {
-		this.settings = Object.assign(this.settings, newSettings);
-		this.commit();
+Object.defineProperty(SettingsStore, "state", {
+	writeable: false,
+	configurable: false,
+	get() {
+		return this.getState();
 	}
+});
 
-	commit() {
-		Data.save("settings", this.settings);
-		this.emit();
-	}
-})();
+const Settings = SettingsStore;
 
 const ControlKeys = {
 	init() {
@@ -341,49 +184,41 @@ const Switch = TheBigBoyBundle.FormSwitch ||
 		);
 	};
 
-const SettingComponent = () => {
-	return [{
-			hideBorder: false,
-			description: "Auto load indicator.",
-			note: "Whether or not to show an indicator for channels set to auto load",
-			value: Settings.get("autoloadedChannelIndicator"),
-			onChange: e => Settings.set("autoloadedChannelIndicator", e)
-		},
-		{
-			hideBorder: true,
-			description: "Lazy load DMs.",
-			note: "Whether or not to consider DMs for lazy loading",
-			value: Settings.get("lazyLoadDMs"),
-			onChange: e => Settings.set("lazyLoadDMs", e)
-		}
-	].map(Toggle);
-};
-
-function Toggle(props) {
-	const [enabled, setEnabled] = React.useState(props.value);
+function SettingSwtich({ settingKey, note, hideBorder = false, description }) {
+	const [val, set] = Settings.useSetting(settingKey);
 	return (
 		React.createElement(Switch, {
-			value: enabled,
-			note: props.note,
-			hideBorder: props.hideBorder,
-			onChange: e => {
-				props.onChange(e);
-				setEnabled(e);
-			},
-		}, props.description)
+			value: val,
+			note: note,
+			hideBorder: hideBorder,
+			onChange: set,
+		}, description || settingKey)
 	);
 }
 
-const ChannelComponent = getModule(Filters.byProps("ChannelItemIcon", "default"), { searchExports: false });
+const SettingComponent = () => {
+	return [{
+			settingKey: "autoloadedChannelIndicator",
+			description: "Auto load indicator.",
+			note: "Whether or not to show an indicator for channels set to auto load"
+		},
+		{
+			settingKey: "lazyLoadDMs",
+			description: "Lazy load DMs.",
+			note: "Whether or not to consider DMs for lazy loading"
+		}
+	].map(SettingSwtich);
+};
+
+const ChannelComponent = getModuleAndKey(Filters.byStrings("hasActiveThreads", "channelTypeOverride"), { searchExports: true }) || {};
 
 const patchChannel = () => {
-	if (ChannelComponent)
-		Patcher.after(ChannelComponent, "default", (_, [{ channel }], returnValue) => {
-			if (!Settings.get("autoloadedChannelIndicator")) return;
-			if (ChannelsStateManager.getChannelstate(channel.guild_id, channel.id))
-				returnValue.props.children.props.children[1].props.className += " autoload";
-		});
-	else Logger.patch("Channel");
+	const { module, key } = ChannelComponent;
+	if (!module || !key) return Logger.patch("Channel");
+	Patcher.after(module, key, (_, [{ channel }], returnValue) => {
+		if (!Settings.state.autoloadedChannelIndicator) return;
+		if (ChannelsStateManager.getChannelstate(channel.guild_id, channel.id)) returnValue.props.children.props.children[1].props.className += " autoload";
+	});
 };
 
 const TreadComponent = getModule(a => a?.type?.toString().includes("GUILD_SIDEBAR_THREAD_A11Y_LABEL_WITH_UNREADS"), { searchExports: false });
@@ -391,7 +226,7 @@ const TreadComponent = getModule(a => a?.type?.toString().includes("GUILD_SIDEBA
 const patchThread = () => {
 	if (TreadComponent)
 		Patcher.after(TreadComponent, "type", (_, [{ thread }], returnValue) => {
-			if (!Settings.get("autoloadedChannelIndicator")) return;
+			if (!Settings.state.autoloadedChannelIndicator) return;
 			if (ChannelsStateManager.getChannelstate(thread.guild_id, thread.id))
 				returnValue.props.className += " autoload";
 		});
@@ -422,7 +257,7 @@ class ErrorBoundary extends React.Component {
 	componentDidCatch(error, info) {
 		this.setState({ error, info, hasError: true });
 		const errorMessage = `\n\t${error?.message || ""}${(info?.componentStack || "").split("\n").slice(0, 20).join("\n")}`;
-		console.error(`%c[${this.props.plugin}] %cthrew an exception at %c[${this.props.id}]\n`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
+		console.error(`%c[${config?.info?.name || "Unknown Plugin"}] %cthrew an exception at %c[${this.props.id}]\n`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
 	}
 
 	renderErrorBoundary() {
@@ -436,7 +271,7 @@ class ErrorBoundary extends React.Component {
 			if (this.props.passMetaProps)
 				this.props.fallback.props = {
 					id: this.props.id,
-					plugin: this.props.plugin,
+					plugin: config?.info?.name || "Unknown Plugin",
 					...this.props.fallback.props
 				};
 			return this.props.fallback;
@@ -444,7 +279,7 @@ class ErrorBoundary extends React.Component {
 		return (
 			React.createElement(this.props.fallback, {
 				id: this.props.id,
-				plugin: this.props.plugin,
+				plugin: config?.info?.name || "Unknown Plugin",
 			})
 		);
 	}
@@ -486,7 +321,7 @@ function reRender(selector) {
 }
 
 function showToast(content, type) {
-	UI.showToast(`[${config.info.name}] ${content}`, { type });
+	UI.showToast(`[${config.info.name}] ${content}`, { timeout: 5000, type });
 }
 
 const Toast = {
@@ -640,27 +475,14 @@ const patchChannelContent = context => {
 };
 
 const ChannelTypeEnum = getModule(Filters.byProps("GUILD_TEXT", "DM"), { searchExports: true }) || {
-	"GUILD_TEXT": 0,
-	"DM": 1,
-	"GUILD_VOICE": 2,
-	"GROUP_DM": 3,
-	"GUILD_CATEGORY": 4,
-	"GUILD_ANNOUNCEMENT": 5,
-	"GUILD_STORE": 6,
-	"PUBLIC_THREAD": 11,
-	"PRIVATE_THREAD": 12,
-	"ANNOUNCEMENT_THREAD": 10,
-	"GUILD_STAGE_VOICE": 13,
-	"GUILD_DIRECTORY": 14,
-	"GUILD_FORUM": 15,
-	"UNKNOWN": 10000
+	"GUILD_CATEGORY": 4
 };
 
 const patchContextMenu = () => {
 	return [
 		ContextMenu.patch("user-context", (retVal, { channel, targetIsUser }) => {
 			if (targetIsUser) return;
-			if (!Settings.get("lazyLoadDMs")) return;
+			if (!Settings.state.lazyLoadDMs) return;
 			retVal.props.children.splice(1, 0, ContextMenu.buildItem({
 				type: "toggle",
 				label: "Auto load",
@@ -696,7 +518,6 @@ const patchContextMenu = () => {
 
 class LazyLoadChannels {
 	constructor() {
-		Settings.init(config.settings);
 		ChannelsStateManager.init();
 		this.autoLoad = false;
 		this.loadChannel = this.loadChannel.bind(this);
@@ -746,8 +567,7 @@ class LazyLoadChannels {
 		 * !guildId means it's DM
 		 * OR channel is autoloaded
 		 **/
-		if (ControlKeys.ctrlKey || messageId || (!guildId && !Settings.get("lazyLoadDMs")) || ChannelsStateManager.getChannelstate(guildId, channelId))
-			this.loadChannel({ id: channelId, guild_id: guildId }, messageId);
+		if (ControlKeys.ctrlKey || messageId || (!guildId && !Settings.state.lazyLoadDMs) || ChannelsStateManager.getChannelstate(guildId, channelId)) this.loadChannel({ id: channelId, guild_id: guildId }, messageId);
 		else this.autoLoad = false;
 	}
 
@@ -771,6 +591,7 @@ class LazyLoadChannels {
 	start() {
 		try {
 			ControlKeys.init();
+
 			DOM.addStyle(css);
 			this.setupHandlers();
 			patchChannel();
@@ -801,3 +622,155 @@ class LazyLoadChannels {
 }
 
 module.exports = LazyLoadChannels;
+
+const css = `#lazyLoader {
+	width: 100%;
+	height: 100%;
+	margin: auto;
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	user-select: text;
+	visibility: visible !important;
+}
+
+#lazyLoader ~ * {
+	display: none;
+}
+
+#lazyLoader > .logo {
+	flex: 0 1 auto;
+	width: 376px;
+	height: 162px;
+	margin-bottom: 20px;
+	background-image: url("https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/assets/lazy-loader-logo.svg");
+	background-size: 100% 100%;
+}
+
+#lazyLoader > .DM,
+#lazyLoader > .channel {
+    background: #232527;
+    box-sizing: border-box;
+    min-width: 200px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    font-weight: 500;
+    font-size: 1.3em;
+    margin-bottom: 20px;
+    max-width: 600px;
+}
+
+#lazyLoader > .DM > .DMName,
+#lazyLoader > .channel > .channelName {
+    color: #989aa2;
+    padding: 8px 25px 8px 5px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+}
+#lazyLoader > .DM{
+	min-width: auto;
+}
+#lazyLoader > .DM > .DMName{
+	padding: 8px;
+}
+
+#lazyLoader > .channel > .channelIcon {
+	color: #989aa2;
+	margin: 5px;
+	font-size: 0;
+}
+
+#lazyLoader .stats {
+	padding: 10px 20px;
+	background: #2e3136;
+	color: #989aa2;
+	box-sizing: border-box;
+	display: flex;
+	gap: 5px;
+	border: 2px solid;
+	flex-direction: column;
+	min-width: 200px;
+	position: absolute;
+	bottom: 20px;
+	right: 20px;
+	text-transform: capitalize;
+}
+
+#lazyLoader .stats > div:before {
+	content: "- ";
+}
+
+#lazyLoader > .title {
+	color: #fff;
+	font-size: 24px;
+	line-height: 28px;
+	font-weight: 600;
+	max-width: 640px;
+	padding: 0 20px;
+	text-align: center;
+	margin-bottom: 8px;
+}
+
+#lazyLoader > .description {
+	color: #c7c8ce;
+	font-size: 16px;
+	line-height: 1.4;
+	max-width: 440px;
+	text-align: center;
+	margin-bottom: 20px;
+}
+
+#lazyLoader > .controls {
+	display: flex;
+	flex-direction: column;
+}
+
+#lazyLoader > .controls > .buttons-container {
+	display: flex;
+	gap: 10px;
+}
+
+#lazyLoader > .controls > .switch {
+	min-width: auto;
+	margin: 10px;
+	padding: 0 5px;
+}
+
+#lazyLoader > .controls > .switch.true > div > label {
+	color: #2dc771;
+}
+
+#lazyLoader .stats.blink {
+    animation: de-wobble 1s;
+}
+
+@keyframes de-wobble {
+
+  16.666666666666668% {    
+    transform: translateX(-30px) rotate(-6deg);
+  }
+  33.333333333333336% {    
+    transform: translateX(15px) rotate(6deg);
+  }
+  50% {    
+    transform: translateX(-15px) rotate(-3.6deg);
+  }
+  66.66666666666667% {    
+    transform: translateX(9px) rotate(2.4deg);
+  }
+  83.33333333333334% {    
+    transform: translateX(-6px) rotate(-1.2deg);
+  }
+  100% {    
+    transform: translateX(0px) rotate(0deg);
+  }
+}
+
+.autoload > div > div,
+.autoload a{
+	border-left:4px solid #2e7d46;
+}`;
