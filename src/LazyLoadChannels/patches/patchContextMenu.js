@@ -7,7 +7,7 @@ export default () => {
 	return [
 		ContextMenu.patch("user-context", (retVal, { channel, targetIsUser }) => {
 			if (targetIsUser) return;
-			if (!Settings.get("lazyLoadDMs")) return;
+			if (!Settings.state.lazyLoadDMs) return;
 			retVal.props.children.splice(1, 0, ContextMenu.buildItem({
 				type: "toggle",
 				label: "Auto load",

@@ -13,12 +13,10 @@ import patchCreateChannel from "./patches/patchCreateChannel";
 import patchChannelContent from "./patches/patchChannelContent";
 import patchContextMenu from "./patches/patchContextMenu";
 
-import {  EVENTS } from "./Constants";
-
+import { EVENTS } from "./Constants";
 
 export default class LazyLoadChannels {
 	constructor() {
-		Settings.init(config.settings);
 		ChannelsStateManager.init();
 		this.autoLoad = false;
 		this.loadChannel = this.loadChannel.bind(this);
@@ -68,8 +66,7 @@ export default class LazyLoadChannels {
 		 * !guildId means it's DM
 		 * OR channel is autoloaded
 		 **/
-		if (ControlKeys.ctrlKey || messageId || (!guildId && !Settings.get("lazyLoadDMs")) || ChannelsStateManager.getChannelstate(guildId, channelId)) 
-			this.loadChannel({ id: channelId, guild_id: guildId }, messageId);
+		if (ControlKeys.ctrlKey || messageId || (!guildId && !Settings.state.lazyLoadDMs) || ChannelsStateManager.getChannelstate(guildId, channelId)) this.loadChannel({ id: channelId, guild_id: guildId }, messageId);
 		else this.autoLoad = false;
 	}
 

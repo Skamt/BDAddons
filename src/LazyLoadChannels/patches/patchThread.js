@@ -8,7 +8,7 @@ import TreadComponent from "@Modules/TreadComponent";
 export default () => {
 	if (TreadComponent)
 		Patcher.after(TreadComponent, "type", (_, [{ thread }], returnValue) => {
-			if (!Settings.get("autoloadedChannelIndicator")) return;
+			if (!Settings.state.autoloadedChannelIndicator) return;
 			if (ChannelsStateManager.getChannelstate(thread.guild_id, thread.id)) 
 				returnValue.props.className += " autoload";
 		});

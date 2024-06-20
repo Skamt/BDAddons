@@ -97,8 +97,8 @@
 			"options": "{ searchExports: false }"
 		},
 		"ChannelComponent": {
-			"filter": "Filters.byProps(\"ChannelItemIcon\", \"default\" )",
-			"options": "{ searchExports: false }"
+			"filter": "Filters.byStrings(\"hasActiveThreads\", \"channelTypeOverride\")",
+			"options": "{ searchExports: true }"
 		},
 		"ChannelActions": {
 			"filter": "Filters.byProps(\"actions\", \"fetchMessages\")",
