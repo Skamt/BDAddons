@@ -7,13 +7,13 @@ import FriendsSince from "./mods/FriendsSince";
 import GIFCommandPreviews from "./mods/GIFCommandPreviews";
 import GuildInfo from "./mods/GuildInfo";
 import NoLinkPreview from "./mods/NoLinkPreview";
-import NoReplyPing from "./mods/NoReplyPing";
 import NoTrack from "./mods/NoTrack";
-import ShowChannelPerms from "./mods/ShowChannelPerms";
 import ShowUserInfo from "./mods/ShowUserInfo";
 import SpotifyListenAlong from "./mods/SpotifyListenAlong";
 import EnableModView from "./mods/EnableModView";
 
+import ShowChannelPerms from "./mods/ShowChannelPerms";
+// import NoReplyPing from "./mods/NoReplyPing";
 // import MemUsage from "./mods/MemUsage";
 // import RefreshChannel from "./mods/RefreshChannel";
 // import Whois from "./mods/Whois";
@@ -24,7 +24,7 @@ const mods = [
 	new EmojiLetters(),
 	new GuildInfo(),
 	new NoLinkPreview(),
-	new NoReplyPing(),
+	// new NoReplyPing(),
 	new EnableModView(),
 	new ShowChannelPerms(),
 	new NoTrack(),

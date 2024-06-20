@@ -1,9 +1,6 @@
 import { Patcher, React } from "@Api";
 import ErrorBoundary from "@Components/ErrorBoundary";
 import Tooltip from "@Components/Tooltip";
-import Flex from "@Components/Flex";
-import EmbedIcon from "@Components/Icons/EmbedIcon";
-
 import UserStore from "@Stores/UserStore";
 import { Disposable } from "@Utils";
 import Logger from "@Utils/Logger";
@@ -16,10 +13,6 @@ function Display({ user, channel }) {
 	
 	const canEmbed = hasEmbedPerms(channel, user);
 	const canExternalEmojis = hasExternalEmojisPerms(channel, user);
-
-	console.log("canEmbed", canEmbed);
-	console.log("canExternalEmojis", canExternalEmojis);
-
 	return (
 		<div className="perms-display">
 			<Tooltip note={`${canEmbed ? "Can" : "Can't"} Embed links`}>

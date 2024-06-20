@@ -3,14 +3,14 @@ import { Disposable } from "@Utils";
 import { Patcher, React } from "@Api";
 import { waitForModule, Filters } from "@Webpack";
 import RelationshipStore from "@Stores/RelationshipStore";
-import FluxHelpers from "@Modules/FluxHelpers";
+import useStateFromStores from "@Modules/useStateFromStores";
 import ErrorBoundary from "@Components/ErrorBoundary";
 
 const UserPopout = waitForModule(Filters.byStrings(",showCopiableUsername:", ",showBorder:"), { defaultExport: false });
 const userProfileUtils = BdApi.Webpack.getByKeys("getCreatedAtDate");
 
 function D({ userId }) {
-	const since = FluxHelpers.useStateFromStores([RelationshipStore], () => {
+	const since = useStateFromStores([RelationshipStore], () => {
 		const since = RelationshipStore.getSince(userId);
 
 		if (since && RelationshipStore.isFriend(userId)) return userProfileUtils.getCreatedAtDate(since);
@@ -19,10 +19,9 @@ function D({ userId }) {
 	return since ? <p style={{color:"#fff"}}>Friends since: {since}</p> : null;
 }
 
-async function patchUserPopout() {
-	const m = await UserPopout;
+async function patchUserPopout(m) {
 	const filterForPopout = BdApi.Webpack.Filters.byStrings(",guildMember:", ".title", ".body");
-	return Patcher.after(m, "default", (_, [props], ret) => {
+	return Patcher.after(m, "Z", (_, [props], ret) => {
 		const children = ret?.props?.children?.[1]?.props?.children?.[2]?.props?.children;
 		if (!children) return;
 		const index = children.findIndex(m => filterForPopout(m?.type));
@@ -39,10 +38,11 @@ async function patchUserPopout() {
 	});
 }
 
-async function patchUserModal() {}
 
 export default class FriendsSince extends Disposable {
 	async Init() {
-		this.patches = [await patchUserPopout()];
+		const m = await UserPopout;
+		if(!m) return Logger.patch("FriendsSince");
+		this.patches = [await patchUserPopout(m)];
 	}
 }
