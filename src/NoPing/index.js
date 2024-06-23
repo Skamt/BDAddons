@@ -2,6 +2,7 @@ import "./styles";
 import Logger from "@Utils/Logger";
 import { DOM, Patcher } from "@Api";
 import patchCreatePendingReply from "./patches/patchCreatePendingReply";
+import patchSendMessage from "./patches/patchSendMessage";
 import patchContextMenus from "./patches/patchContextMenus";
 import blacklist from "./blacklist";
 import Dispatcher from "@Modules/Dispatcher";
@@ -13,14 +14,13 @@ function replyToggle({ channelId }) {
 	else blacklist.delete(message.author.id);
 }
 
-
 export default class NoPing {
 	start() {
 		try {
-			// eslint-disable-next-line no-undef
 			DOM.addStyle(css);
 			Dispatcher.subscribe("SET_PENDING_REPLY_SHOULD_MENTION", replyToggle);
 			patchCreatePendingReply();
+			patchSendMessage();
 			this.unpatchContextMenu = patchContextMenus();
 		} catch (e) {
 			Logger.error(e);

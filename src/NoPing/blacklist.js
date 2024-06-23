@@ -19,4 +19,4 @@ export default new (class extends Set {
 		if (this.has(id)) this.delete(id);
 		else this.add(id);
 	}
-})(Data.load("blacklist"));
+})(Data.load("blacklist") || []);
