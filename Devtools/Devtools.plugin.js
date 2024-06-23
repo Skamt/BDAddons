@@ -72,9 +72,9 @@ function getModuleAndKey(filter, options) {
 	let module;
 	const target = getModule$1((entry, m) => (filter(entry) ? (module = m) : false), options);
 	module = module?.exports;
-	if (!module) return undefined;
+	if (!module) return {};
 	const key = Object.keys(module).find(k => module[k] === target);
-	if (!key) return undefined;
+	if (!key) return {};
 	return { module, key };
 }
 
@@ -84,10 +84,9 @@ const TheBigBoyBundle = getModule$1(Filters.byProps("openModal", "FormSwitch", "
 
 const RenderLinkComponent = getModule$1(m => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false });
 
-const ImageModalVideoModal = getModule$1(Filters.byProps("ImageModal"), { searchExports: false });
+const ImageModal = getModule$1(Filters.byStrings("renderLinkComponent", "MEDIA_MODAL_CLOSE"), { searchExports: true });
 
 const { ModalRoot, ModalSize } = TheBigBoyBundle;
-const ImageModal = ImageModalVideoModal.ImageModal;
 
 function shallow(objA, objB) {
 	if (Object.is(objA, objB)) return true;
@@ -127,6 +126,7 @@ const getImageModalComponent = (url, rest = {}) => (
 		src: url,
 		original: url,
 		response: true,
+		renderForwardComponent: () => null,
 		renderLinkComponent: p => React.createElement(RenderLinkComponent, { ...p, }),
 	})
 );
@@ -564,7 +564,9 @@ class Store {
 	}
 
 	get store() {
-		return this.module.exports.default;
+
+		for (const key of ["Z", "ZP", "default"])
+			if (key in this.module.exports) return this.module.exports[key];
 	}
 
 	get events() {
@@ -576,13 +578,15 @@ const Zustand = Sources.getSource("/ServerSideRendering|^Deno\\//");
 
 const Stores = {
 	getStore(storeName) {
-		const storeFilter = exp => exp?.default?._dispatchToken && exp?.default?.getName() === storeName;
+
+		const storeFilter = exp => exp && ["Z", "ZP", "default"].some(k => exp[k]?._dispatchToken && exp[k]?.getName() === storeName);
 		const module = Modules.getModule(storeFilter);
 		if (!module) return undefined;
 		return new Store(module);
 	},
 	getStoreFuzzy(str = "") {
-		const storeFilter = exp => exp?.default?._dispatchToken && exp?.default?.getName().toLowerCase().includes(str.toLowerCase());
+
+		const storeFilter = exp => exp && ["Z", "ZP", "default"].some(k => exp[k]?._dispatchToken && exp[k]?.getName().toLowerCase().includes(str));
 		return Modules.getModules(storeFilter).map(module => new Store(module));
 	},
 	getStoreListeners(storeName) {
