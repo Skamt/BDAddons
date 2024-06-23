@@ -1,14 +1,13 @@
 import webpackRequire from "./webpackRequire";
 import { Sources } from "./Sources";
 
-function defineModuleGetter(obj, id) {
-	return Object.defineProperty(obj, id, {
+const defineModuleGetter = (obj, id) =>
+	Object.defineProperty(obj, id, {
 		enumerable: true,
 		get() {
 			return Modules.moduleById(id);
 		}
 	});
-}
 
 class Module {
 	constructor(id, module) {
@@ -133,10 +132,9 @@ function* moduleLookup(filter, options = {}) {
 		const module = modules[index];
 		const { exports } = module;
 		if (sanitizeExports(exports)) continue;
-		try {
-			const match = gauntlet(filter, module, exports);
-			if (match) yield match;
-		} catch {}
+
+		const match = gauntlet(filter, module, exports);
+		if (match) yield match;
 	}
 }
 

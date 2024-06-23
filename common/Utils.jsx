@@ -2,9 +2,9 @@ import { Patcher, getOwnerInstance, ReactDOM, React } from "@Api";
 import ErrorBoundary from "@Components/ErrorBoundary";
 import RenderLinkComponent from "@Modules/RenderLinkComponent";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
-const { ModalRoot, ModalSize } = TheBigBoyBundle;
 import ImageModal from "@Modules/ImageModal";
 
+const { ModalRoot, ModalSize } = TheBigBoyBundle;
 
 export function shallow(objA, objB) {
 	if (Object.is(objA, objB)) return true;
@@ -157,6 +157,6 @@ export function hook(hook, ...args) {
 		React.createElement(() => ((v = hook(...args)), null)),
 		b
 	);
-	BdApi.ReactDOM.unmountComponentAtNode(b);
+	ReactDOM.unmountComponentAtNode(b);
 	return v;
 }
