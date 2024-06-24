@@ -1,60 +1,19 @@
-/* Warning circle in popouts of users who left server overlaps VPP button */
-svg:has(path[d="M12 23a11 11 0 1 0 0-22 11 11 0 0 0 0 22Zm1.44-15.94L13.06 14a1.06 1.06 0 0 1-2.12 0l-.38-6.94a1 1 0 0 1 1-1.06h.88a1 1 0 0 1 1 1.06Zm-.19 10.69a1.25 1.25 0 1 1-2.5 0 1.25 1.25 0 0 1 2.5 0Z"]) {
-	top: 75px;
-}
-
 /* View Profile Button */
 .VPP-Button {
-	background-color: hsla(0, calc(var(--saturation-factor, 1) * 0%), 0%, 0.3);
+	background: hsl(var(--black-500-hsl)/.7);
 	cursor: pointer;
-	position: absolute;
 	display: flex;
-	padding: 5px;
 	border-radius: 50%;
 	top: 10px;
 	color: #fff;
+	width: 32px;
+	height: 32px;
+	justify-content: center;
+	align-items: center;
 }
 
-.VPP-Button svg {
-	height: 18px;
-	width: 18px;
-}
-
-/* Popout */
-.VPP-right {
-	right: 12px;
-}
-
-.VPP-left {
-	left: 12px;
-}
-
-.VPP-self {
-	right: 48px;
-}
-
-/* Profile */
-.VPP-profile {
-	top: 10px;
-}
-
-.VPP-profile.VPP-right {
-	right: 16px;
-}
-
-.VPP-profile.VPP-self {
-	right: 58px;
-}
-
-.VPP-profile.VPP-left {
-	left: 16px;
-}
-
-/* Bigger icon on profile */
-.VPP-settings svg,
-.VPP-profile svg {
-	height: 24px;
-	width: 24px;
+.VPP-Button:hover{
+	background: hsl(var(--black-500-hsl)/.85);
 }
 
 /* div replacement if No banner */

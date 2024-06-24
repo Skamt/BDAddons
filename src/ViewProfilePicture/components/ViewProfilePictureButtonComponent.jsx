@@ -35,12 +35,12 @@ function Banner({ url, src }) {
 	return getImageModalComponent(url, dimsRef.current);
 }
 
-export default ({ className, user, displayProfile, bannerObject }) => {
+export default ({ className, user, displayProfile }) => {
 	const showOnHover = Settings(Settings.selectors.showOnHover);
 	if (showOnHover) className += " VPP-hover";
 
 	const handler = () => {
-		const { backgroundColor } = bannerObject;
+		
 		const avatarURL = user.getAvatarURL(displayProfile.guildId, 4096, true);
 		const bannerURL = displayProfile.getBannerURL({ canAnimate: true, size: 4096 });
 
@@ -52,7 +52,7 @@ export default ({ className, user, displayProfile, bannerObject }) => {
 					src={displayProfile.getBannerURL({ canAnimate: true, size: 20 })}
 				/>
 			),
-			(!bannerURL || Settings.getState().bannerColor) && <ColorModalComponent color={backgroundColor} />
+			(!bannerURL || Settings.getState().bannerColor) && displayProfile.accentColor && <ColorModalComponent color={displayProfile.accentColor} />
 		]
 			.filter(Boolean)
 			.map(item => ({ component: item }));
@@ -74,7 +74,7 @@ export default ({ className, user, displayProfile, bannerObject }) => {
 				role="button"
 				onClick={handler}
 				className={className}>
-				<ImageIcon />
+				<ImageIcon height="18" width="18"/>
 			</div>
 		</Tooltip>
 	);
