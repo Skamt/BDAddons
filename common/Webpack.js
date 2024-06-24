@@ -23,9 +23,10 @@ export function getModuleAndKey(filter, options) {
 export function filterModuleAndExport(moduleFilter, exportFilter, options) {
 	const module = getRawModule(moduleFilter, options);
 	if (!module) return;
-	const key = Object.keys(module).find(k => exportFilter(module[k]));
+	const { exports } = module;
+	const key = Object.keys(exports).find(k => exportFilter(exports[k]));
 	if (!key) return {};
-	return { module, key, target: module[key] };
+	return { module:exports, key, target: exports[key] };
 }
 
 export function mapExports(moduleFilter, exportsMap, options) {

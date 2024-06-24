@@ -5,9 +5,8 @@ import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 import EmojiStore from "@Stores/EmojiStore";
 import Toast from "@Utils/Toast";
 
-
 const { MenuItem } = TheBigBoyBundle;
-const bbb = getModule(Filters.byStrings("useIsFavoriteEmoji"), { defaultExport: false });
+const bbb = getModule(Filters.byStrings("unfavorite"), { defaultExport: false });
 
 function unfavHandler(id) {
 	const emojis = Data.load("emojis");
@@ -26,33 +25,39 @@ function fav(id) {
 	if (!emoji) return Toast.error(`Could not find Emoji: ${id}`);
 
 	const emojis = Data.load("emojis");
-	emoji.push(emoji);
+	emojis.unshift(emoji);
 	Data.save("emojis", emojis);
 	Toast.success(`Emoji ${id} Saved.`);
 }
 
-export default () => {
-	if (bbb?.default)
-		Patcher.after(bbb, "default", (_, [{ type, id }], ret) => {
-			if (type !== "emoji") return;
-			if (id && ret?.props?.id === "favorite") {
-				return (
-					<MenuItem
-						action={() => fav(id)}
-						label="favorite"
-						id="favorite"
-					/>
-				);
-			}
+function has(id){
+	const emojis = Data.load("emojis");
+	return emojis.find(a => a.id === id)
+}
 
-			if (!ret)
-				return (
-					<MenuItem
-						action={() => unfavHandler(id)}
-						label="unfavorite"
-						id="unfavorite"
-					/>
-				);
-		});
-	else Logger.patch("patchUnfavoriteEmoji");
+export default () => {
+	if (!bbb?.Z) return Logger.patch("patchUnfavoriteEmoji");
+	Patcher.after(bbb, "Z", (_, [{ type, id }], ret) => {
+		console.log(ret);
+		if (type !== "emoji") return;
+
+		if (has(id))
+			return (
+				<MenuItem
+					action={() => unfavHandler(id)}
+					label="unfavorite"
+					id="unfavorite"
+				/>
+			);
+
+		if  (!has(id) && id && ret?.props?.id === "favorite" ) {
+			return (
+				<MenuItem
+					action={() => fav(id)}
+					label="favorite"
+					id="favorite"
+				/>
+			);
+		}
+	});
 };
