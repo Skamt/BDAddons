@@ -39,10 +39,10 @@ const Patcher = Api.Patcher;
 const getModule = Api.Webpack.getModule;
 const Filters = Api.Webpack.Filters;
 
-function getExports(filter, options) {
+function getRawModule(filter, options) {
 	let module;
 	getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
-	return module?.exports;
+	return module;
 }
 
 function getModuleAndKey(filter, options) {
@@ -56,11 +56,12 @@ function getModuleAndKey(filter, options) {
 }
 
 function filterModuleAndExport(moduleFilter, exportFilter, options) {
-	const module = getExports(moduleFilter, options);
+	const module = getRawModule(moduleFilter, options);
 	if (!module) return;
-	const key = Object.keys(module).find(k => exportFilter(module[k]));
+	const { exports } = module;
+	const key = Object.keys(exports).find(k => exportFilter(exports[k]));
 	if (!key) return {};
-	return { module, key, target: module[key] };
+	return { module: exports, key, target: exports[key] };
 }
 
 const zustand = getModule(Filters.byStrings("subscribeWithSelector", "useReducer"), { searchExports: false });
@@ -508,7 +509,7 @@ const patchUseEmojiGrid = () => {
 };
 
 const { MenuItem } = TheBigBoyBundle;
-const bbb = getModule(Filters.byStrings("useIsFavoriteEmoji"), { defaultExport: false });
+const bbb = getModule(Filters.byStrings("unfavorite"), { defaultExport: false });
 
 function unfavHandler(id) {
 	const emojis = Data.load("emojis");
@@ -527,35 +528,41 @@ function fav(id) {
 	if (!emoji) return Toast.error(`Could not find Emoji: ${id}`);
 
 	const emojis = Data.load("emojis");
-	emoji.push(emoji);
+	emojis.unshift(emoji);
 	Data.save("emojis", emojis);
 	Toast.success(`Emoji ${id} Saved.`);
 }
 
-const patchUnfavoriteEmoji = () => {
-	if (bbb?.default)
-		Patcher.after(bbb, "default", (_, [{ type, id }], ret) => {
-			if (type !== "emoji") return;
-			if (id && ret?.props?.id === "favorite") {
-				return (
-					React.createElement(MenuItem, {
-						action: () => fav(id),
-						label: "favorite",
-						id: "favorite",
-					})
-				);
-			}
+function has(id) {
+	const emojis = Data.load("emojis");
+	return emojis.find(a => a.id === id)
+}
 
-			if (!ret)
-				return (
-					React.createElement(MenuItem, {
-						action: () => unfavHandler(id),
-						label: "unfavorite",
-						id: "unfavorite",
-					})
-				);
-		});
-	else Logger.patch("patchUnfavoriteEmoji");
+const patchUnfavoriteEmoji = () => {
+	if (!bbb?.Z) return Logger.patch("patchUnfavoriteEmoji");
+	Patcher.after(bbb, "Z", (_, [{ type, id }], ret) => {
+		console.log(ret);
+		if (type !== "emoji") return;
+
+		if (has(id))
+			return (
+				React.createElement(MenuItem, {
+					action: () => unfavHandler(id),
+					label: "unfavorite",
+					id: "unfavorite",
+				})
+			);
+
+		if (!has(id) && id && ret?.props?.id === "favorite") {
+			return (
+				React.createElement(MenuItem, {
+					action: () => fav(id),
+					label: "favorite",
+					id: "favorite",
+				})
+			);
+		}
+	});
 };
 
 class Emojis {
