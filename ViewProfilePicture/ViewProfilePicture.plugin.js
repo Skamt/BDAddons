@@ -1,7 +1,7 @@
 /**
  * @name ViewProfilePicture
  * @description Adds a button to the user popout and profile that allows you to view the Avatar and banner.
- * @version 1.2.8
+ * @version 1.2.10
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "ViewProfilePicture",
-		"version": "1.2.8",
+		"version": "1.2.10",
 		"description": "Adds a button to the user popout and profile that allows you to view the Avatar and banner.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture",
@@ -34,6 +34,7 @@ const Patcher = Api.Patcher;
 
 const getModule = Api.Webpack.getModule;
 const Filters = Api.Webpack.Filters;
+const findInTree = Api.Utils.findInTree;
 
 const Logger = {
 	error(...args) {
@@ -49,16 +50,6 @@ const Logger = {
 		target(`%c[${config.info.name}]`, "color: #3a71c1;font-weight: bold;", ...args);
 	}
 };
-
-function getModuleAndKey(filter, options) {
-	let module;
-	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
-	module = module?.exports;
-	if (!module) return {};
-	const key = Object.keys(module).find(k => module[k] === target);
-	if (!key) return {};
-	return { module, key };
-}
 
 const zustand = getModule(Filters.byStrings("subscribeWithSelector", "useReducer"), { searchExports: false });
 
@@ -197,21 +188,6 @@ const ErrorIcon = props => (
 	}), React.createElement('path', { d: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z", })))
 );
 
-const ProfileTypeEnum = getModule(Filters.byProps("POPOUT", "SETTINGS"), { searchExports: true }) || {
-	"POPOUT": 0,
-	"MODAL": 1,
-	"SETTINGS": 2,
-	"PANEL": 3,
-	"CARD": 4
-};
-
-const UserStore = getModule(m => m._dispatchToken && m.getName() === "UserStore");
-
-function isSelf(user) {
-	const currentUser = UserStore.getCurrentUser();
-	return user?.id === currentUser?.id;
-}
-
 const { Tooltip } = TheBigBoyBundle;
 
 const Tooltip$1 = ({ note, position, children }) => {
@@ -229,13 +205,14 @@ const Tooltip$1 = ({ note, position, children }) => {
 	);
 };
 
-function ImageIcon() {
+function ImageIcon(props) {
 	return (
 		React.createElement('svg', {
 			fill: "currentColor",
 			width: "24",
 			height: "24",
 			viewBox: "-50 -50 484 484",
+			...props,
 		}, React.createElement('path', { d: "M341.333,0H42.667C19.093,0,0,19.093,0,42.667v298.667C0,364.907,19.093,384,42.667,384h298.667 C364.907,384,384,364.907,384,341.333V42.667C384,19.093,364.907,0,341.333,0z M42.667,320l74.667-96l53.333,64.107L245.333,192l96,128H42.667z", }))
 	);
 }
@@ -269,7 +246,7 @@ const getImageModalComponent = (url, rest = {}) => (
 		src: url,
 		original: url,
 		response: true,
-		renderForwardComponent: p => null,
+		renderForwardComponent: () => null,
 		renderLinkComponent: p => React.createElement(RenderLinkComponent, { ...p, }),
 	})
 );
@@ -381,12 +358,12 @@ function Banner({ url, src }) {
 	return getImageModalComponent(url, dimsRef.current);
 }
 
-const ViewProfilePictureButtonComponent = ({ className, user, displayProfile, bannerObject }) => {
+const ViewProfilePictureButtonComponent = ({ className, user, displayProfile }) => {
 	const showOnHover = Settings(Settings.selectors.showOnHover);
 	if (showOnHover) className += " VPP-hover";
 
 	const handler = () => {
-		const { backgroundColor } = bannerObject;
+
 		const avatarURL = user.getAvatarURL(displayProfile.guildId, 4096, true);
 		const bannerURL = displayProfile.getBannerURL({ canAnimate: true, size: 4096 });
 
@@ -398,7 +375,7 @@ const ViewProfilePictureButtonComponent = ({ className, user, displayProfile, ba
 						src: displayProfile.getBannerURL({ canAnimate: true, size: 20 }),
 					})
 				),
-				(!bannerURL || Settings.getState().bannerColor) && React.createElement(ColorModalComponent, { color: backgroundColor, })
+				(!bannerURL || Settings.getState().bannerColor) && displayProfile.accentColor && React.createElement(ColorModalComponent, { color: displayProfile.accentColor, })
 			]
 			.filter(Boolean)
 			.map(item => ({ component: item }));
@@ -419,55 +396,33 @@ const ViewProfilePictureButtonComponent = ({ className, user, displayProfile, ba
 			role: "button",
 			onClick: handler,
 			className: className,
-		}, React.createElement(ImageIcon, null)))
+		}, React.createElement(ImageIcon, { height: "18", width: "18", })))
 	);
 };
 
-const UserBannerMask = getModuleAndKey(Filters.byStrings("bannerSrc", "showPremiumBadgeUpsell"), { searchExports: true });
+const UserProfileModalforwardRef = getModule(Filters.byProps("Overlay", "render"));
+const typeFilter = Filters.byStrings("BITE_SIZE", "FULL_SIZE");
 
-function getButtonClasses({ user, profileType }, isNotNitro, banner) {
-	let className = "VPP-Button";
+const patchVPPButton = () => {
+	if (!UserProfileModalforwardRef) return Logger.patch("patchVPPButton");
 
-	if (profileType === ProfileTypeEnum.MODAL) className += " VPP-profile";
+	Patcher.after(UserProfileModalforwardRef, "render", (_, [props], ret) => {
+		const buttonsWrapper = findInTree(ret, a => typeFilter(a?.type), { walkable: ["props", "children"] });
+		if (!buttonsWrapper) return;
+		ret.props.className = `${ret.props.className} VPP-container`;
+		buttonsWrapper.props.children = [
 
-	if (isSelf(user)) className += " VPP-self";
-	else {
-		if (banner && isNotNitro) className += " VPP-left";
-		else className += " VPP-right";
-	}
-
-	return className;
-}
-
-const patchUserBannerMask = () => {
-	if (!UserBannerMask) return Logger.patch("UserBannerMask");
-
-	const { module, key } = UserBannerMask;
-
-	Patcher.after(module, key, (_, [props], el) => {
-		if (props.profileType === ProfileTypeEnum.SETTINGS) return;
-
-		const bannerElement = el.props.children.props;
-
-		bannerElement.className += " VPP-container";
-		const bannerObject = bannerElement.style;
-		const children = bannerElement.children;
-
-		const className = getButtonClasses(props, children[0], bannerObject?.backgroundImage);
-
-		children.push(
 			React.createElement(ErrorBoundary, {
 				id: "ViewProfilePictureButtonComponent",
 				plugin: config.info.name,
-				fallback: React.createElement(ErrorIcon, { className: className, }),
+				fallback: React.createElement(ErrorIcon, { className: "VPP-Button", }),
 			}, React.createElement(ViewProfilePictureButtonComponent, {
-				className: className,
-				isHovering: props.isHovering,
+				className: "VPP-Button",
 				user: props.user,
 				displayProfile: props.displayProfile,
-				bannerObject: bannerObject,
-			}))
-		);
+			})),
+			buttonsWrapper.props.children
+		];
 	});
 };
 
@@ -476,7 +431,7 @@ class ViewProfilePicture {
 		try {
 
 			DOM.addStyle(css);
-			patchUserBannerMask();
+			patchVPPButton();
 		} catch (e) {
 			Logger.error(e);
 		}
@@ -494,63 +449,22 @@ class ViewProfilePicture {
 
 module.exports = ViewProfilePicture;
 
-const css = `/* Warning circle in popouts of users who left server overlaps VPP button */
-svg:has(path[d="M12 23a11 11 0 1 0 0-22 11 11 0 0 0 0 22Zm1.44-15.94L13.06 14a1.06 1.06 0 0 1-2.12 0l-.38-6.94a1 1 0 0 1 1-1.06h.88a1 1 0 0 1 1 1.06Zm-.19 10.69a1.25 1.25 0 1 1-2.5 0 1.25 1.25 0 0 1 2.5 0Z"]) {
-	top: 75px;
-}
-
-/* View Profile Button */
+const css = `/* View Profile Button */
 .VPP-Button {
-	background-color: hsla(0, calc(var(--saturation-factor, 1) * 0%), 0%, 0.3);
+	background: hsl(var(--black-500-hsl)/.7);
 	cursor: pointer;
-	position: absolute;
 	display: flex;
-	padding: 5px;
 	border-radius: 50%;
 	top: 10px;
 	color: #fff;
+	width: 32px;
+	height: 32px;
+	justify-content: center;
+	align-items: center;
 }
 
-.VPP-Button svg {
-	height: 18px;
-	width: 18px;
-}
-
-/* Popout */
-.VPP-right {
-	right: 12px;
-}
-
-.VPP-left {
-	left: 12px;
-}
-
-.VPP-self {
-	right: 48px;
-}
-
-/* Profile */
-.VPP-profile {
-	top: 10px;
-}
-
-.VPP-profile.VPP-right {
-	right: 16px;
-}
-
-.VPP-profile.VPP-self {
-	right: 58px;
-}
-
-.VPP-profile.VPP-left {
-	left: 16px;
-}
-
-/* Bigger icon on profile */
-.VPP-settings svg,
-.VPP-profile svg {
-	height: 24px;
-	width: 24px;
+.VPP-Button:hover{
+	background: hsl(var(--black-500-hsl)/.85);
 }
 
 /* div replacement if No banner */
