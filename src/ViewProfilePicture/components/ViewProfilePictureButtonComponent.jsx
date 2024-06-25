@@ -35,12 +35,12 @@ function Banner({ url, src }) {
 	return getImageModalComponent(url, dimsRef.current);
 }
 
-export default ({ className, user, displayProfile }) => {
+export default ({ bannerObject, className, user, displayProfile }) => {
 	const showOnHover = Settings(Settings.selectors.showOnHover);
 	if (showOnHover) className += " VPP-hover";
 
+	const { backgroundColor } = bannerObject || {};
 	const handler = () => {
-		
 		const avatarURL = user.getAvatarURL(displayProfile.guildId, 4096, true);
 		const bannerURL = displayProfile.getBannerURL({ canAnimate: true, size: 4096 });
 
@@ -52,7 +52,7 @@ export default ({ className, user, displayProfile }) => {
 					src={displayProfile.getBannerURL({ canAnimate: true, size: 20 })}
 				/>
 			),
-			(!bannerURL || Settings.getState().bannerColor) && displayProfile.accentColor && <ColorModalComponent color={displayProfile.accentColor} />
+			(!bannerURL || Settings.getState().bannerColor) && (backgroundColor || displayProfile.accentColor) && <ColorModalComponent color={backgroundColor || displayProfile.accentColor} />
 		]
 			.filter(Boolean)
 			.map(item => ({ component: item }));
@@ -71,10 +71,13 @@ export default ({ className, user, displayProfile }) => {
 	return (
 		<Tooltip note="View profile picture">
 			<div
+				style={{
+					position: backgroundColor ? "absolute" :"static"
+				}}
 				role="button"
 				onClick={handler}
 				className={className}>
-				<ImageIcon height="18" width="18"/>
+				<ImageIcon />
 			</div>
 		</Tooltip>
 	);

@@ -12,6 +12,49 @@
 	align-items: center;
 }
 
+
+.VPP-Button svg {
+	height: 18px;
+	width: 18px;
+}
+
+/* Popout */
+.VPP-right {
+	right: 12px;
+}
+
+.VPP-left {
+	left: 12px;
+}
+
+.VPP-self {
+	right: 48px;
+}
+
+/* Profile */
+.VPP-profile {
+	top: 10px;
+}
+
+.VPP-profile.VPP-right {
+	right: 16px;
+}
+
+.VPP-profile.VPP-self {
+	right: 58px;
+}
+
+.VPP-profile.VPP-left {
+	left: 16px;
+}
+
+/* Bigger icon on profile */
+.VPP-settings svg,
+.VPP-profile svg {
+	height: 24px;
+	width: 24px;
+}
+
 .VPP-Button:hover{
 	background: hsl(var(--black-500-hsl)/.85);
 }
