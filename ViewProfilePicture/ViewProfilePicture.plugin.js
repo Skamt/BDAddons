@@ -1,7 +1,7 @@
 /**
  * @name ViewProfilePicture
  * @description Adds a button to the user popout and profile that allows you to view the Avatar and banner.
- * @version 1.2.10
+ * @version 1.2.9
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "ViewProfilePicture",
-		"version": "1.2.10",
+		"version": "1.2.9",
 		"description": "Adds a button to the user popout and profile that allows you to view the Avatar and banner.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture",
@@ -50,6 +50,16 @@ const Logger = {
 		target(`%c[${config.info.name}]`, "color: #3a71c1;font-weight: bold;", ...args);
 	}
 };
+
+function getModuleAndKey(filter, options) {
+	let module;
+	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
+	module = module?.exports;
+	if (!module) return {};
+	const key = Object.keys(module).find(k => module[k] === target);
+	if (!key) return {};
+	return { module, key };
+}
 
 const zustand = getModule(Filters.byStrings("subscribeWithSelector", "useReducer"), { searchExports: false });
 
@@ -358,12 +368,12 @@ function Banner({ url, src }) {
 	return getImageModalComponent(url, dimsRef.current);
 }
 
-const ViewProfilePictureButtonComponent = ({ className, user, displayProfile }) => {
+const ViewProfilePictureButtonComponent = ({ bannerObject, className, user, displayProfile }) => {
 	const showOnHover = Settings(Settings.selectors.showOnHover);
 	if (showOnHover) className += " VPP-hover";
 
+	const { backgroundColor } = bannerObject || {};
 	const handler = () => {
-
 		const avatarURL = user.getAvatarURL(displayProfile.guildId, 4096, true);
 		const bannerURL = displayProfile.getBannerURL({ canAnimate: true, size: 4096 });
 
@@ -375,7 +385,7 @@ const ViewProfilePictureButtonComponent = ({ className, user, displayProfile }) 
 						src: displayProfile.getBannerURL({ canAnimate: true, size: 20 }),
 					})
 				),
-				(!bannerURL || Settings.getState().bannerColor) && displayProfile.accentColor && React.createElement(ColorModalComponent, { color: displayProfile.accentColor, })
+				(!bannerURL || Settings.getState().bannerColor) && (backgroundColor || displayProfile.accentColor) && React.createElement(ColorModalComponent, { color: backgroundColor || displayProfile.accentColor, })
 			]
 			.filter(Boolean)
 			.map(item => ({ component: item }));
@@ -393,10 +403,13 @@ const ViewProfilePictureButtonComponent = ({ className, user, displayProfile }) 
 
 	return (
 		React.createElement(Tooltip$1, { note: "View profile picture", }, React.createElement('div', {
+			style: {
+				position: backgroundColor ? "absolute" : "static"
+			},
 			role: "button",
 			onClick: handler,
 			className: className,
-		}, React.createElement(ImageIcon, { height: "18", width: "18", })))
+		}, React.createElement(ImageIcon, null)))
 	);
 };
 
@@ -426,12 +439,66 @@ const patchVPPButton = () => {
 	});
 };
 
+const ProfileTypeEnum = getModule(Filters.byProps("POPOUT", "SETTINGS"), { searchExports: true }) || {
+	"POPOUT": 0,
+	"MODAL": 1,
+	"SETTINGS": 2,
+	"PANEL": 3,
+	"CARD": 4
+};
+
+const UserBannerMask = getModuleAndKey(Filters.byStrings("bannerSrc", "showPremiumBadgeUpsell"), { searchExports: true });
+
+function getButtonClasses({ profileType }, isNotNitro, banner) {
+	let className = "VPP-Button";
+
+	if (profileType === ProfileTypeEnum.MODAL) className += " VPP-profile";
+
+	if (banner && isNotNitro) className += " VPP-left";
+	else className += " VPP-right";
+
+	return className;
+}
+
+const patchUserBannerMask = () => {
+	if (!UserBannerMask) return Logger.patch("UserBannerMask");
+
+	const { module, key } = UserBannerMask;
+
+	Patcher.after(module, key, (_, [props], el) => {
+		if (props.profileType === ProfileTypeEnum.SETTINGS) return;
+
+		const bannerElement = el.props.children.props;
+
+		bannerElement.className += " VPP-container";
+		const bannerObject = bannerElement.style;
+		const children = bannerElement.children;
+
+		const className = getButtonClasses(props, children[0], bannerObject?.backgroundImage);
+
+		children.push(
+			React.createElement(ErrorBoundary, {
+				id: "ViewProfilePictureButtonComponent",
+				plugin: config.info.name,
+				fallback: React.createElement(ErrorIcon, { className: className, }),
+			}, React.createElement(ViewProfilePictureButtonComponent, {
+				className: className,
+				isHovering: props.isHovering,
+				user: props.user,
+				displayProfile: props.displayProfile,
+				bannerObject: bannerObject,
+			}))
+		);
+	});
+};
+
 class ViewProfilePicture {
 	start() {
 		try {
 
 			DOM.addStyle(css);
 			patchVPPButton();
+			patchUserBannerMask();
 		} catch (e) {
 			Logger.error(e);
 		}
@@ -461,6 +528,49 @@ const css = `/* View Profile Button */
 	height: 32px;
 	justify-content: center;
 	align-items: center;
+}
+
+
+.VPP-Button svg {
+	height: 18px;
+	width: 18px;
+}
+
+/* Popout */
+.VPP-right {
+	right: 12px;
+}
+
+.VPP-left {
+	left: 12px;
+}
+
+.VPP-self {
+	right: 48px;
+}
+
+/* Profile */
+.VPP-profile {
+	top: 10px;
+}
+
+.VPP-profile.VPP-right {
+	right: 16px;
+}
+
+.VPP-profile.VPP-self {
+	right: 58px;
+}
+
+.VPP-profile.VPP-left {
+	left: 16px;
+}
+
+/* Bigger icon on profile */
+.VPP-settings svg,
+.VPP-profile svg {
+	height: 24px;
+	width: 24px;
 }
 
 .VPP-Button:hover{
