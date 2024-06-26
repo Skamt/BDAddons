@@ -3,7 +3,7 @@ import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 
 const { Popout } = TheBigBoyBundle;
 
-export default ({ delay, spacing, forceShow, position, animation, align, className, renderPopout, children }) => {
+export default ({ delay, spacing, forceShow, position, animation, align, className, renderPopout, children, ...rest }) => {
 	const [show, setShow] = React.useState(false);
 	const leaveRef = React.useRef();
 	const enterRef = React.useRef();
@@ -35,7 +35,8 @@ export default ({ delay, spacing, forceShow, position, animation, align, classNa
 				position={position ?? "top"}
 				align={align ?? "left"}
 				animation={animation ?? "1"}
-				spacing={spacing ?? 8}>
+				spacing={spacing ?? 8}
+				{...rest}>
 				{() => children}
 			</Popout>
 		</div>

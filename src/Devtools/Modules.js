@@ -11,6 +11,7 @@ const defineModuleGetter = (obj, id) =>
 
 class Module {
 	constructor(id, module) {
+		module = module || webpackRequire(id);
 		this.id = id;
 		this.rawModule = module;
 		this.exports = module.exports;
