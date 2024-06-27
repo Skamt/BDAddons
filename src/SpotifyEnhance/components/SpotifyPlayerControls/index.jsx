@@ -83,6 +83,7 @@ export default () => {
 	const sharePlaylistHandler = () => Store.Utils.share(context?.external_urls?.spotify);
 	const copySongHandler = () => Store.Utils.copySpotifyLink(url);
 	const copyPosterHandler = () => Store.Utils.copySpotifyLink(bannerLg.url);
+	const copyNameHandler = () => Store.Utils.copy(Store.state.getFullSongName());
 
 	const { playPauseTooltip, playPauseHandler, playPauseIcon, playPauseClassName } = playpause[isPlaying];
 
@@ -110,6 +111,13 @@ export default () => {
 									action: copyPosterHandler,
 									icon: ImageIcon,
 									label: "Copy poster url"
+								},
+								{
+									className: "spotify-menuitem",
+									id: "copy-song-name",
+									action: copyNameHandler,
+									// icon: ImageIcon,
+									label: "Copy name"
 								}
 							]
 						},

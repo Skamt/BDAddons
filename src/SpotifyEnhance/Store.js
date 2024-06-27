@@ -12,6 +12,10 @@ import SpotifyAPIWrapper from "./SpotifyAPIWrapper";
 import { sanitizeSpotifyLink } from "./Utils";
 
 const Utils = {
+	copy(str) {
+		copy(str);
+		Toast.success("copied!");
+	},
 	copySpotifyLink(link) {
 		if (!link) return Toast.error("Could not resolve url");
 		copy(sanitizeSpotifyLink(link));
@@ -33,7 +37,7 @@ const Utils = {
 	}
 };
 
-import { diff, addedDiff, deletedDiff, updatedDiff, detailedDiff } from "deep-object-diff";
+import { addedDiff, deletedDiff, detailedDiff, diff, updatedDiff } from "deep-object-diff";
 
 export const Store = Object.assign(
 	zustand((setState, get) => {
@@ -109,6 +113,12 @@ export const Store = Object.assign(
 					...media.album,
 					url: media.album.external_urls.spotify
 				};
+			},
+			getFullSongName() {
+				const state = get();
+				if (!state.media) return "";
+				const { artists, album } = state.media;
+				return `Name: ${state.media.name}\nArtist${artists.length > 1 ? "s" : ""}: ${artists.map(a => a.name).join(" ,")}\nAlbum: ${album.name}`;
 			},
 			getSongUrl() {
 				return get().media?.external_urls?.spotify;
