@@ -363,6 +363,7 @@ const defineModuleGetter = (obj, id) =>
 
 class Module {
 	constructor(id, module) {
+		module = module || webpackRequire(id);
 		this.id = id;
 		this.rawModule = module;
 		this.exports = module.exports;
@@ -510,6 +511,54 @@ const Modules = {
 	getModule
 };
 
+const cssLinks = document.querySelectorAll("link");
+const cssModulesId = [];
+for (var i = cssLinks.length - 1; i >= 0; i--) {
+	const link = cssLinks[i];
+	if (!link.href.endsWith(".css")) continue;
+	const [, id] = link.href.match(/\/assets\/(\d+)\./) || [];
+	if (!id) continue;
+
+	cssModulesId.push(...Object.keys(webpackChunkdiscord_app.find(a => a[0][0] === id)[1]));
+}
+
+const Misc = {
+	getAllCssModules() {
+		return cssModulesId.map(Modules.moduleById);
+	},
+	getAllAssets() {
+		return Modules.getModules(a => typeof a.exports === "string" && a.exports.match(/\/assets\/.+/)).map(a => a.exports);
+	},
+	getEventListeners(eventName) {
+		const nodes = Dispatcher._actionHandlers._dependencyGraph.nodes;
+		const subs = Dispatcher._subscriptions;
+		return {
+			stores: Object.values(nodes)
+				.map(a => a.actionHandler[eventName] && a)
+				.filter(Boolean),
+			subs: [eventName, subs[eventName]]
+		};
+	},
+	getEventListenersFuzzy(str = "") {
+		str = str.toLowerCase();
+		const nodes = Dispatcher._actionHandlers._dependencyGraph.nodes;
+		const subs = Dispatcher._subscriptions;
+		return {
+			stores: Object.values(nodes).filter(a => Object.keys(a.actionHandler).some(key => key.toLowerCase().includes(str))),
+			subs: Object.entries(subs)
+				.filter(([key]) => key.toLowerCase().includes(str))
+				.map(a => a)
+		};
+	},
+	getGraph: (() => {
+		let graph = null;
+		return function getGraph(refresh = false) {
+			if (graph === null || refresh) graph = Object.keys(Modules.getWebpackModules()).map(a => ({ id: a, modules: Modules.modulesImportedInModuleById(a) }));
+			return graph;
+		};
+	})()
+};
+
 const Switch = TheBigBoyBundle.FormSwitch ||
 	function SwitchComponentFallback(props) {
 		return (
@@ -608,40 +657,6 @@ const Stores = {
 	getZustanStores() {
 		return Zustand.module.modulesUsingThisModule;
 	}
-};
-
-const Misc = {
-	getAllAssets() {
-		return Modules.getModules(a => typeof a.exports === "string" && a.exports.match(/\/assets\/.+/)).map(a => a.exports);
-	},
-	getEventListeners(eventName) {
-		const nodes = Dispatcher._actionHandlers._dependencyGraph.nodes;
-		const subs = Dispatcher._subscriptions;
-		return {
-			stores: Object.values(nodes)
-				.map(a => a.actionHandler[eventName] && a)
-				.filter(Boolean),
-			subs: [eventName, subs[eventName]]
-		};
-	},
-	getEventListenersFuzzy(str = "") {
-		str = str.toLowerCase();
-		const nodes = Dispatcher._actionHandlers._dependencyGraph.nodes;
-		const subs = Dispatcher._subscriptions;
-		return {
-			stores: Object.values(nodes).filter(a => Object.keys(a.actionHandler).some(key => key.toLowerCase().includes(str))),
-			subs: Object.entries(subs)
-				.filter(([key]) => key.toLowerCase().includes(str))
-				.map(a => a)
-		};
-	},
-	getGraph: (() => {
-		let graph = null;
-		return function getGraph(refresh = false) {
-			if (graph === null || refresh) graph = Object.keys(Modules.getWebpackModules()).map(a => ({ id: a, modules: Modules.modulesImportedInModuleById(a) }));
-			return graph;
-		};
-	})()
 };
 
 const d = (() => {

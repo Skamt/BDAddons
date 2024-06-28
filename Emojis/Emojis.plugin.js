@@ -38,6 +38,7 @@ const Patcher = Api.Patcher;
 
 const getModule = Api.Webpack.getModule;
 const Filters = Api.Webpack.Filters;
+const findInTree = Api.Utils.findInTree;
 
 function getRawModule(filter, options) {
 	let module;
@@ -411,6 +412,8 @@ const Button = TheBigBoyBundle.Button ||
 		return React.createElement('button', { ...props, });
 	};
 
+/* eslint-disable react/jsx-key */
+
 const MessageDecorations = filterModuleAndExport(Filters.byProps("OLD_MESSAGES"), Filters.byStrings(".popoutContainer"), { searchExports: true });
 const AssetURLUtils = getModule(Filters.byProps("getEmojiURL"));
 
@@ -422,47 +425,65 @@ const patchEmojiUtils = () => {
 		if (!id) return ret;
 
 		const children = getNestedProp(ret, "props.children.0.props.children");
-
 		if (!children) return ret;
-		children.push(
-			React.createElement('div', { className: "emojiControls", }, React.createElement(Button, {
-					size: Button.Sizes.SMALL,
-					color: Button.Colors.GREEN,
-					onClick: () => {
-						const url = AssetURLUtils.getEmojiURL({ id });
-						if (!url) return Toast.error("no url found");
-						copy(url);
-						Toast.success("Copid");
-					},
-				}, "Copy url")
-
-				, React.createElement(Button, {
+		const btns = [
+			React.createElement(Button, {
+				size: Button.Sizes.SMALL,
+				color: Button.Colors.GREEN,
+				onClick: () => {
+					const url = AssetURLUtils.getEmojiURL({ id });
+					if (!url) return Toast.error("no url found");
+					copy(url);
+					Toast.success("Copid");
+				},
+			}, "Copy"),
+			React.createElement(Button, {
+				size: Button.Sizes.SMALL,
+				color: Button.Colors.GREEN,
+				onClick: () => {
+					try {
+						const emojis = Data.load("emojis") || [];
+						emojis.unshift({
+							animated,
+							id,
+							guildId,
+							name: emojiName.replace(/:/gi, ""),
+							allNamesString: emojiName,
+							available: true,
+							managed: false,
+							require_colons: true,
+							url: `https://cdn.discordapp.com/emojis/${id}.webp?size=4096&quality=lossless`,
+							type: "GUILD_EMOJI"
+						});
+						Data.save("emojis", emojis);
+						Toast.success("Saved.");
+					} catch {
+						Toast.error("Could not save.");
+					}
+				},
+			}, "Save")
+		];
+		const d = findInTree(ret, a => a.expressionSourceGuild, { walkable: ["props", "children"] });
+		if (d)
+			btns.push(
+				React.createElement(Button, {
+					style: { flexGrow: 1 },
 					size: Button.Sizes.SMALL,
 					color: Button.Colors.GREEN,
 					onClick: () => {
 						try {
 							const emojis = Data.load("emojis") || [];
-							emojis.unshift({
-								animated,
-								id,
-								guildId,
-								name: emojiName.replace(/:/gi, ""),
-								allNamesString: emojiName,
-								available: true,
-								managed: false,
-								require_colons: true,
-								url: `https://cdn.discordapp.com/emojis/${id}.webp?size=4096&quality=lossless`,
-								type: "GUILD_EMOJI"
-							});
+							emojis.unshift(...d.expressionSourceGuild.emojis);
 							Data.save("emojis", emojis);
 							Toast.success("Saved.");
 						} catch {
 							Toast.error("Could not save.");
 						}
 					},
-				}, "Save")
-			)
-		);
+				}, "Save all emojis")
+			);
+
+		children.push(React.createElement('div', { className: "emojiControls", }, btns));
 	});
 };
 
@@ -570,6 +591,7 @@ class Emojis {
 		try {
 			DOM.addStyle(css);
 			patchIsEmojiFiltered();
+
 			patchGetEmojiUnavailableReason();
 			patchExpressionPicker();
 			patchIsEmojiDisabled();
