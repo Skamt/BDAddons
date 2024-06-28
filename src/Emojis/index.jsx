@@ -16,6 +16,7 @@ export default class Emojis {
 		try {
 			DOM.addStyle(css);
 			patchIsEmojiFiltered();
+			// patchEmojiGuildSourcePopout();
 			patchGetEmojiUnavailableReason();
 			patchExpressionPicker();
 			patchIsEmojiDisabled();

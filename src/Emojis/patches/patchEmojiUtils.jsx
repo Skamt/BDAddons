@@ -1,4 +1,5 @@
-import { React, Data, Patcher } from "@Api";
+/* eslint-disable react/jsx-key */
+import { React, Data, Patcher, findInTree } from "@Api";
 import { Filters, filterModuleAndExport, getModule } from "@Webpack";
 import Logger from "@Utils/Logger";
 import { getNestedProp, copy } from "@Utils";
@@ -18,49 +19,67 @@ export default () => {
 		if (!id) return ret;
 
 		const children = getNestedProp(ret, "props.children.0.props.children");
-
 		if (!children) return ret;
-		children.push(
-			<div className="emojiControls">
+		const btns = [
+			<Button
+				size={Button.Sizes.SMALL}
+				color={Button.Colors.GREEN}
+				onClick={() => {
+					const url = AssetURLUtils.getEmojiURL({ id });
+					if (!url) return Toast.error("no url found");
+					copy(url);
+					Toast.success("Copid");
+				}}>
+				{"Copy"}
+			</Button>,
+			<Button
+				size={Button.Sizes.SMALL}
+				color={Button.Colors.GREEN}
+				onClick={() => {
+					try {
+						const emojis = Data.load("emojis") || [];
+						emojis.unshift({
+							animated,
+							id,
+							guildId,
+							name: emojiName.replace(/:/gi, ""),
+							allNamesString: emojiName,
+							available: true,
+							managed: false,
+							require_colons: true,
+							url: `https://cdn.discordapp.com/emojis/${id}.webp?size=4096&quality=lossless`,
+							type: "GUILD_EMOJI"
+						});
+						Data.save("emojis", emojis);
+						Toast.success("Saved.");
+					} catch {
+						Toast.error("Could not save.");
+					}
+				}}>
+				{"Save"}
+			</Button>
+		];
+		const d = findInTree(ret, a => a.expressionSourceGuild, { walkable: ["props", "children"] });
+		if (d)
+			btns.push(
 				<Button
-					size={Button.Sizes.SMALL}
-					color={Button.Colors.GREEN}
-					onClick={() => {
-						const url = AssetURLUtils.getEmojiURL({ id });
-						if (!url) return Toast.error("no url found");
-						copy(url);
-						Toast.success("Copid");
-					}}>
-					{"Copy url"}
-				</Button>
-
-				<Button
+					style={{ flexGrow: 1 }}
 					size={Button.Sizes.SMALL}
 					color={Button.Colors.GREEN}
 					onClick={() => {
 						try {
 							const emojis = Data.load("emojis") || [];
-							emojis.unshift({
-								animated,
-								id,
-								guildId,
-								name: emojiName.replace(/:/gi, ""),
-								allNamesString: emojiName,
-								available: true,
-								managed: false,
-								require_colons: true,
-								url: `https://cdn.discordapp.com/emojis/${id}.webp?size=4096&quality=lossless`,
-								type: "GUILD_EMOJI"
-							});
+							emojis.unshift(...d.expressionSourceGuild.emojis);
 							Data.save("emojis", emojis);
 							Toast.success("Saved.");
 						} catch {
 							Toast.error("Could not save.");
 						}
 					}}>
-					{"Save"}
+					{"Save all emojis"}
 				</Button>
-			</div>
-		);
+			);
+
+		children.push(<div className="emojiControls">{btns}</div>);
 	});
 };
