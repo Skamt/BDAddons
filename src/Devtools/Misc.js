@@ -8,22 +8,25 @@ import Dispatcher from "@Modules/Dispatcher";
 // 	return acc;
 // },[]);
 
-const cssLinks = document.querySelectorAll("link");
-const cssModulesId = [];
-for (var i = cssLinks.length - 1; i >= 0; i--) {
-	const link = cssLinks[i];
-	if(!link.href.endsWith(".css")) continue;
-	const [,id] = link.href.match(/\/assets\/(\d+)\./) || [];
-	if(!id) continue;
-	// eslint-disable-next-line no-undef
-	cssModulesId.push(...Object.keys(webpackChunkdiscord_app.find(a => a[0][0] === id)[1]));
-}
+// const cssLinks = document.querySelectorAll("link");
+// const cssModulesId = [];
+// for (var i = cssLinks.length - 1; i >= 0; i--) {
+// 	const link = cssLinks[i];
+// 	if(!link.href.endsWith(".css")) continue;
+// 	let [,id] = link.href.match(/\/assets\/(\d+)\./) || [];
+// 	if(!id) {
+// 		id = link.getAttribute("data-webpack").split('-')[1];
+// 		if(!id) continue;
+// 	}
+// 	// eslint-disable-next-line no-undef
+// 	cssModulesId.push(...Object.keys(webpackChunkdiscord_app.find(a => a[0][0] === id)?.[1] || []));
+// }
 
 
 export const Misc = {
-	getAllCssModules(){
-		return cssModulesId.map(Modules.moduleById);
-	},
+	// getAllCssModules(){
+	// 	return cssModulesId.map(Modules.moduleById);
+	// },
 	getAllAssets() {
 		return Modules.getModules(a => typeof a.exports === "string" && a.exports.match(/\/assets\/.+/)).map(a => a.exports);
 	},
