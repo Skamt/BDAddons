@@ -473,14 +473,20 @@ const patchEmojiUtils = () => {
 					onClick: () => {
 						try {
 							const emojis = Data.load("emojis") || [];
-							emojis.unshift(...d.expressionSourceGuild.emojis);
+							emojis.unshift(...d.expressionSourceGuild.emojis.map(a => {
+								return {
+									...a,
+									guildId: "",
+									allNamesString: `:${a.name}:`
+								}
+							}));
 							Data.save("emojis", emojis);
 							Toast.success("Saved.");
 						} catch {
 							Toast.error("Could not save.");
 						}
 					},
-				}, "Save all emojis")
+				}, `Save all ${d?.expressionSourceGuild?.emojis?.length || 0} emojis`)
 			);
 
 		children.push(React.createElement('div', { className: "emojiControls", }, btns));
