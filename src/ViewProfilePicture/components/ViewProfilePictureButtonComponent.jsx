@@ -43,7 +43,7 @@ export default ({ bannerObject, className, user, displayProfile }) => {
 	const handler = () => {
 		const avatarURL = user.getAvatarURL(displayProfile.guildId, 4096, true);
 		const bannerURL = displayProfile.getBannerURL({ canAnimate: true, size: 4096 });
-
+		const color = backgroundColor || displayProfile.accentColor || displayProfile.primaryColor;
 		const items = [
 			getImageModalComponent(avatarURL, { width: 4096, height: 4096 }),
 			bannerURL && (
@@ -52,7 +52,15 @@ export default ({ bannerObject, className, user, displayProfile }) => {
 					src={displayProfile.getBannerURL({ canAnimate: true, size: 20 })}
 				/>
 			),
-			(!bannerURL || Settings.getState().bannerColor) && (backgroundColor || displayProfile.accentColor) && <ColorModalComponent color={backgroundColor || displayProfile.accentColor} />
+			(!bannerURL || Settings.getState().bannerColor) &&
+				(color ? (
+					<ColorModalComponent.SimpleColorModal color={color} />
+				) : (
+					<ColorModalComponent.ColorModal
+						user={user}
+						displayProfile={displayProfile}
+					/>
+				))
 		]
 			.filter(Boolean)
 			.map(item => ({ component: item }));
@@ -72,7 +80,7 @@ export default ({ bannerObject, className, user, displayProfile }) => {
 		<Tooltip note="View profile picture">
 			<div
 				style={{
-					position: backgroundColor ? "absolute" :"static"
+					position: backgroundColor ? "absolute" : "static"
 				}}
 				role="button"
 				onClick={handler}

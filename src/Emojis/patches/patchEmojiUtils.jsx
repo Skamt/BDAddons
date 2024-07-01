@@ -59,7 +59,7 @@ export default () => {
 				{"Save"}
 			</Button>
 		];
-		const d = findInTree(ret, a => a.expressionSourceGuild, { walkable: ["props", "children"] });
+		const d = findInTree(ret, a => a?.expressionSourceGuild, { walkable: ["props", "children"] });
 		if (d)
 			btns.push(
 				<Button
