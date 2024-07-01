@@ -293,6 +293,20 @@ const Toast = {
 
 const Color = getModule(Filters.byProps("Color", "hex", "hsl"), { searchExports: false });
 
+const ThemeStore = getModule(m => m._dispatchToken && m.getName() === "ThemeStore");
+
+const AccessibilityStore = getModule(m => m._dispatchToken && m.getName() === "AccessibilityStore");
+
+const DesignSystem = getModule(a => a?.unsafe_rawColors?.PRIMARY_800);
+
+function resolveColor() {
+	if (!DesignSystem?.unsafe_rawColors?.PRIMARY_800) return "#111214";
+	return DesignSystem.unsafe_rawColors?.PRIMARY_800.resolve({
+		theme: ThemeStore.theme,
+		saturation: AccessibilityStore.saturation
+	}).hex();
+}
+
 function copyColor(type, color) {
 	let c = color;
 	try {
@@ -313,27 +327,44 @@ function copyColor(type, color) {
 	}
 }
 
-const ColorModalComponent = ({ color }) => (
-	React.createElement('div', {
-		className: "VPP-NoBanner",
-		style: { backgroundColor: Color(color).css() },
-	}, React.createElement('div', { className: "VPP-copy-color-container", }, React.createElement('a', { className: "VPP-copy-color-label", }, "Copy Color:"), React.createElement('a', {
-			className: "VPP-copy-color",
-			onClick: () => copyColor("hex", color),
-		}, "hex"
+const {
+	module: { ZP: palletHook }
+} = getModuleAndKey(Filters.byStrings("palette", "getState", "&&await"), { searchExports: true }) || {};
 
-	), React.createElement('span', { className: "VPP-separator", }, "|"), React.createElement('a', {
-			className: "VPP-copy-color",
-			onClick: () => copyColor("rgba", color),
-		}, "rgba"
+function SimpleColorModal({ color }) {
+	return (
+		React.createElement('div', {
+			className: "VPP-NoBanner",
+			style: { backgroundColor: Color(color).css() },
+		}, React.createElement('div', { className: "VPP-copy-color-container", }, React.createElement('a', { className: "VPP-copy-color-label", }, "Copy Color:"), React.createElement('a', {
+				className: "VPP-copy-color",
+				onClick: () => copyColor("hex", color),
+			}, "hex"
 
-	), React.createElement('span', { className: "VPP-separator", }, "|"), React.createElement('a', {
-			className: "VPP-copy-color",
-			onClick: () => copyColor("hsla", color),
-		}, "hsla"
+		), React.createElement('span', { className: "VPP-separator", }, "|"), React.createElement('a', {
+				className: "VPP-copy-color",
+				onClick: () => copyColor("rgba", color),
+			}, "rgba"
 
-	)))
-);
+		), React.createElement('span', { className: "VPP-separator", }, "|"), React.createElement('a', {
+				className: "VPP-copy-color",
+				onClick: () => copyColor("hsla", color),
+			}, "hsla"
+
+		)))
+	);
+}
+
+function ColorModal({ displayProfile, user }) {
+	const color = palletHook(user.getAvatarURL(displayProfile.guildId, 80));
+
+	return React.createElement(SimpleColorModal, { color: color || resolveColor(), });
+}
+
+const ColorModalComponent = {
+	SimpleColorModal,
+	ColorModal
+};
 
 const ModalCarousel$1 = getModule(Filters.byPrototypeFields("navigateTo", "preloadImage"), { searchExports: false });
 
@@ -376,7 +407,7 @@ const ViewProfilePictureButtonComponent = ({ bannerObject, className, user, disp
 	const handler = () => {
 		const avatarURL = user.getAvatarURL(displayProfile.guildId, 4096, true);
 		const bannerURL = displayProfile.getBannerURL({ canAnimate: true, size: 4096 });
-
+		const color = backgroundColor || displayProfile.accentColor || displayProfile.primaryColor;
 		const items = [
 				getImageModalComponent(avatarURL, { width: 4096, height: 4096 }),
 				bannerURL && (
@@ -385,7 +416,15 @@ const ViewProfilePictureButtonComponent = ({ bannerObject, className, user, disp
 						src: displayProfile.getBannerURL({ canAnimate: true, size: 20 }),
 					})
 				),
-				(!bannerURL || Settings.getState().bannerColor) && (backgroundColor || displayProfile.accentColor) && React.createElement(ColorModalComponent, { color: backgroundColor || displayProfile.accentColor, })
+				(!bannerURL || Settings.getState().bannerColor) &&
+				(color ? (
+					React.createElement(ColorModalComponent.SimpleColorModal, { color: color, })
+				) : (
+					React.createElement(ColorModalComponent.ColorModal, {
+						user: user,
+						displayProfile: displayProfile,
+					})
+				))
 			]
 			.filter(Boolean)
 			.map(item => ({ component: item }));

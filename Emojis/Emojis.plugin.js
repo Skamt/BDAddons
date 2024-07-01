@@ -463,7 +463,7 @@ const patchEmojiUtils = () => {
 				},
 			}, "Save")
 		];
-		const d = findInTree(ret, a => a.expressionSourceGuild, { walkable: ["props", "children"] });
+		const d = findInTree(ret, a => a?.expressionSourceGuild, { walkable: ["props", "children"] });
 		if (d)
 			btns.push(
 				React.createElement(Button, {
