@@ -5,7 +5,7 @@ import Settings from "@Utils/Settings";
 import { Filters, getModuleAndKey } from "@Webpack";
 import SpotifyActivityControls from "../components/SpotifyActivityControls";
 
-const ActivityComponent = getModuleAndKey(Filters.byStrings("shouldOpenGameProfile","UserActivity"), { defaultExport: true });
+const ActivityComponent = getModuleAndKey(Filters.byStrings("onOpenGameProfileModal","activity"), { defaultExport: true });
 
 export default () => {
 	const {module, key} = ActivityComponent;
@@ -13,6 +13,7 @@ export default () => {
 		Patcher.before(module, key, (_, [props]) => {
 			if (!Settings.getState().activity) return;
 			if (!props.activity) return;
+			if (!props.renderActions) return;
 			if (props.activity.name.toLowerCase() !== "spotify") return;
 
 			props.renderActions = () => (
