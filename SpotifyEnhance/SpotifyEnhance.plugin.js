@@ -613,7 +613,55 @@ function getFluxContainer() {
 	});
 }
 
+const isDate = d => d instanceof Date;
+const isEmpty = o => Object.keys(o).length === 0;
+const isObject = o => o != null && typeof o === 'object';
+const hasOwnProperty = (o, ...args) => Object.prototype.hasOwnProperty.call(o, ...args);
+const isEmptyObject = (o) => isObject(o) && isEmpty(o);
+const makeObjectWithoutPrototype = () => Object.create(null);
+
+const diff = (lhs, rhs) => {
+	if (lhs === rhs) return {};
+
+	if (!isObject(lhs) || !isObject(rhs)) return rhs;
+
+	const deletedValues = Object.keys(lhs).reduce((acc, key) => {
+		if (!hasOwnProperty(rhs, key)) {
+			acc[key] = undefined;
+
+		}
+
+		return acc;
+	}, makeObjectWithoutPrototype());
+
+	if (isDate(lhs) || isDate(rhs)) {
+		if (lhs.valueOf() == rhs.valueOf()) return {};
+		return rhs;
+	}
+
+	return Object.keys(rhs).reduce((acc, key) => {
+		if (!hasOwnProperty(lhs, key)) {
+			acc[key] = rhs[key];
+			return acc;
+		}
+
+		const difference = diff(lhs[key], rhs[key]);
+
+		if (isEmptyObject(difference) && !isDate(difference) && (isEmptyObject(lhs[key]) || !isEmptyObject(rhs[key])))
+			return acc;
+
+		acc[key] = difference;
+		return acc;
+	}, deletedValues);
+};
+
+const diff$1 = diff;
+
 const Utils = {
+	copy(str) {
+		copy(str);
+		Toast.success("copied!");
+	},
 	copySpotifyLink(link) {
 		if (!link) return Toast.error("Could not resolve url");
 		copy(sanitizeSpotifyLink(link));
@@ -636,7 +684,15 @@ const Utils = {
 };
 
 const Store = Object.assign(
-	zustand((set, get) => {
+	zustand((setState, get) => {
+		const set = args => {
+			console.log("applying", args);
+			const oldState = get();
+			setState(args);
+			const newState = get();
+
+			console.log("diff", diff$1(oldState, newState));
+		};
 
 		return {
 			account: undefined,
@@ -700,6 +756,12 @@ const Store = Object.assign(
 					...media.album,
 					url: media.album.external_urls.spotify
 				};
+			},
+			getFullSongName() {
+				const state = get();
+				if (!state.media) return "";
+				const { artists, album } = state.media;
+				return `Name: ${state.media.name}\nArtist${artists.length > 1 ? "s" : ""}: ${artists.map(a => a.name).join(" ,")}\nAlbum: ${album.name}`;
 			},
 			getSongUrl() {
 				return get().media?.external_urls?.spotify;
@@ -1151,7 +1213,7 @@ const SpotifyActivityControls = ({ activity, user, source }) => {
 	);
 };
 
-const ActivityComponent = getModuleAndKey(Filters.byStrings("shouldOpenGameProfile", "UserActivity"), { defaultExport: true });
+const ActivityComponent = getModuleAndKey(Filters.byStrings("onOpenGameProfileModal", "activity"), { defaultExport: true });
 
 const patchSpotifyActivity = () => {
 	const { module, key } = ActivityComponent;
@@ -1159,6 +1221,7 @@ const patchSpotifyActivity = () => {
 	Patcher.before(module, key, (_, [props]) => {
 		if (!Settings.getState().activity) return;
 		if (!props.activity) return;
+		if (!props.renderActions) return;
 		if (props.activity.name.toLowerCase() !== "spotify") return;
 
 		props.renderActions = () => (
@@ -1232,13 +1295,14 @@ function SpotifyIcon(props) {
 	);
 }
 
-function ImageIcon() {
+function ImageIcon(props) {
 	return (
 		React.createElement('svg', {
 			fill: "currentColor",
 			width: "24",
 			height: "24",
 			viewBox: "-50 -50 484 484",
+			...props,
 		}, React.createElement('path', { d: "M341.333,0H42.667C19.093,0,0,19.093,0,42.667v298.667C0,364.907,19.093,384,42.667,384h298.667 C364.907,384,384,364.907,384,341.333V42.667C384,19.093,364.907,0,341.333,0z M42.667,320l74.667-96l53.333,64.107L245.333,192l96,128H42.667z", }))
 	);
 }
@@ -1428,7 +1492,7 @@ const patchSpotifyEmbed = () => {
 
 const { Popout } = TheBigBoyBundle;
 
-const Popout$1 = ({ delay, spacing, forceShow, position, animation, align, className, renderPopout, children }) => {
+const Popout$1 = ({ delay, spacing, forceShow, position, animation, align, className, renderPopout, children, ...rest }) => {
 	const [show, setShow] = React.useState(false);
 	const leaveRef = React.useRef();
 	const enterRef = React.useRef();
@@ -1461,6 +1525,7 @@ const Popout$1 = ({ delay, spacing, forceShow, position, animation, align, class
 			align: align ?? "left",
 			animation: animation ?? "1",
 			spacing: spacing ?? 8,
+			...rest,
 		}, () => children))
 	);
 };
@@ -1668,6 +1733,7 @@ const SpotifyPlayerControls = () => {
 	const sharePlaylistHandler = () => Store.Utils.share(context?.external_urls?.spotify);
 	const copySongHandler = () => Store.Utils.copySpotifyLink(url);
 	const copyPosterHandler = () => Store.Utils.copySpotifyLink(bannerLg.url);
+	const copyNameHandler = () => Store.Utils.copy(Store.state.getFullSongName());
 
 	const { playPauseTooltip, playPauseHandler, playPauseIcon, playPauseClassName } = playpause[isPlaying];
 
@@ -1692,6 +1758,13 @@ const SpotifyPlayerControls = () => {
 								action: copyPosterHandler,
 								icon: ImageIcon,
 								label: "Copy poster url"
+							},
+							{
+								className: "spotify-menuitem",
+								id: "copy-song-name",
+								action: copyNameHandler,
+
+								label: "Copy name"
 							}
 						]
 					},
@@ -2060,6 +2133,10 @@ const patchChannelAttach = () => {
 	else Logger.patch("patchChannelAttach");
 };
 
+window.spotstore = Store;
+window.SpotifyAPI = SpotifyAPI;
+window.Settings = Settings;
+
 class SpotifyEnhance {
 	start() {
 		try {
@@ -2263,18 +2340,6 @@ const css = `:root {
 	align-items: center;
 	margin-right: 5px;
 }
-.spotify-embed-plus {
-	display: flex;
-	min-width: 400px;
-	max-width: 100%;
-	gap: 5px;
-	overflow: hidden;
-}
-
-.spotify-embed-plus > button {
-	flex: 1 0 auto;
-	text-transform: capitalize;
-}
 .spotify-embed-container {
 	background:
 		linear-gradient(#00000090 0 0),
@@ -2462,6 +2527,18 @@ const css = `:root {
 	appearance: slider-vertical;
 }
 
+.spotify-embed-plus {
+	display: flex;
+	min-width: 400px;
+	max-width: 100%;
+	gap: 5px;
+	overflow: hidden;
+}
+
+.spotify-embed-plus > button {
+	flex: 1 0 auto;
+	text-transform: capitalize;
+}
 .spotify-player-media {
 	color: white;
 	font-size: 0.9rem;
