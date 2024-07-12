@@ -3,9 +3,10 @@ import Settings from "@Utils/Settings";
 
 export function getEmojiUrl({ id, animated }) {
 	const size = Settings.state.emojiSize;
-	const type = animated ? (Settings.state.sendEmojiAsPng ? "png" : "gif") : "png";
+	const asPng = Settings.state.sendEmojiAsPng;
+	const type = animated ? (asPng ? "png" : "gif") : "png";
 
-	return `https://cdn.discordapp.com/emojis/${id}.${type}${animated ? "" : `?size=${size}`}`;
+	return `https://cdn.discordapp.com/emojis/${id}.${type}${animated && !asPng ? "" : `?size=${size}`}`;
 }
 
 export function isEmojiSendable(e) {
