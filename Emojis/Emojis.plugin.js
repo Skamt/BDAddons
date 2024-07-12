@@ -324,11 +324,14 @@ const insertText = (() => {
 
 const UserStore = getModule(m => m._dispatchToken && m.getName() === "UserStore");
 
+const DraftStore = getModule(m => m._dispatchToken && m.getName() === "DraftStore");
+
 function getEmojiUrl({ id, animated }) {
 	const size = Settings.state.emojiSize;
-	const type = animated ? (Settings.state.sendEmojiAsPng ? "png" : "gif") : "png";
+	const asPng = Settings.state.sendEmojiAsPng;
+	const type = animated ? (asPng ? "png" : "gif") : "png";
 
-	return `https://cdn.discordapp.com/emojis/${id}.${type}${animated ? "" : `?size=${size}`}`;
+	return `https://cdn.discordapp.com/emojis/${id}.${type}${animated && !asPng ? "" : `?size=${size}`}`;
 }
 
 function isEmojiSendable(e) {
@@ -341,9 +344,13 @@ const STRINGS = {
 };
 
 const ExpressionPicker = getModule(a => a?.type?.toString().includes("handleDrawerResizeHandleMouseDown"), { searchExports: false });
+const d = getModule(Filters.byPrototypeKeys("onResultClick", "onHideAutocomplete"));
 
 function sendEmojiAsLink(emoji, channel) {
 	const content = getEmojiUrl(emoji);
+	const draft = DraftStore.getDraft(channel.id, 0);
+	if (draft) return insertText(`[󠇫](${content})`);
+
 	if (Settings.state.sendDirectly) {
 		try {
 			return sendMessageDirectly(channel, content);
@@ -355,12 +362,10 @@ function sendEmojiAsLink(emoji, channel) {
 }
 
 function handleUnsendableEmoji(emoji, channel) {
-	if (emoji.animated && !Settings.state.shouldSendAnimatedEmojis)
-		return Toast.info(STRINGS.disabledAnimatedEmojiErrorMessage);
+	if (emoji.animated && !Settings.state.shouldSendAnimatedEmojis) return Toast.info(STRINGS.disabledAnimatedEmojiErrorMessage);
 
 	const user = UserStore.getCurrentUser();
-	if (!hasEmbedPerms(channel, user) && !Settings.state.ignoreEmbedPermissions)
-		return Toast.info(STRINGS.missingEmbedPermissionsErrorMessage);
+	if (!hasEmbedPerms(channel, user) && !Settings.state.ignoreEmbedPermissions) return Toast.info(STRINGS.missingEmbedPermissionsErrorMessage);
 
 	sendEmojiAsLink(emoji, channel);
 }
@@ -377,6 +382,19 @@ const patchExpressionPicker = () => {
 			};
 		});
 	else Logger.patch("ExpressionPicker");
+
+	if (!d) return Logger.patch("dddd-ExpressionPicker");
+
+	Patcher.instead(d.prototype, "selectResult", (_this, args, orig) => {
+		if (_this.state.query.type !== "EMOJIS_AND_STICKERS") return orig.apply(null, args);
+		const emoji = _this.state.query.results.emojis[args[0]];
+		if (!isEmojiSendable({ emoji, channel: _this.props.channel, intention: EmojiIntentionEnum.CHAT })) {
+			_this.state.query.options.insertText("");
+			const content = getEmojiUrl(emoji);
+			insertText(`[󠇫](${content})`);
+			_this.clearQuery();
+		} else orig.apply(null, args);
+	});
 };
 
 const patchIsEmojiDisabled = () => {
