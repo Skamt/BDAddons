@@ -1,12 +1,12 @@
 import ErrorBoundary from "@Components/ErrorBoundary";
 import Popout from "@Components/Popout";
 import Logger from "@Utils/Logger";
-import { Disposable } from "@Utils";
+import { Disposable, nop } from "@Utils";
 import { Patcher, React } from "@Api";
-import { Filters, getModule } from "@Webpack";
+import { Filters, getModuleAndKey, getModule } from "@Webpack";
 
 const GIFIntegration = getModule(a => a.GIFIntegration).GIFIntegration;
-const b = getModule(Filters.byProps("useElementPools", "GIFPickerSearchItem"));
+const b = getModuleAndKey(Filters.byPrototypeKeys("renderGIF"), {searchExports:true});
 
 export default class GIFCommandPreviews extends Disposable {
 	Init() {
@@ -31,7 +31,7 @@ export default class GIFCommandPreviews extends Disposable {
 						</ErrorBoundary>
 					);
 				}),
-				Patcher.after(b, "default", (_, __, ret) => {
+				!b?.module ? nop : Patcher.after(b.module, "ZP", (_, __, ret) => {
 					console.log(ret.props.data);
 					ret.props.data.forEach(a => {
 						const [,segment] = a.src.match(/\.tenor\.com(.+?)\.mp4/) || [];

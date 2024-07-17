@@ -37,7 +37,7 @@ function copyColor(type, color) {
 
 const {
 	module: { ZP: palletHook }
-} = getModuleAndKey(Filters.byStrings("palette", "getState", "&&await"), { searchExports: true }) || {};
+} = getModuleAndKey(Filters.byStrings("palette", "getState", "await"), { searchExports: true }) || {};
 
 function SimpleColorModal({ color }) {
 	return (
