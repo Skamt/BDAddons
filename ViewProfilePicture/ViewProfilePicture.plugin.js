@@ -1,7 +1,7 @@
 /**
  * @name ViewProfilePicture
  * @description Adds a button to the user popout and profile that allows you to view the Avatar and banner.
- * @version 1.2.9
+ * @version 1.2.10
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "ViewProfilePicture",
-		"version": "1.2.9",
+		"version": "1.2.10",
 		"description": "Adds a button to the user popout and profile that allows you to view the Avatar and banner.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture",
@@ -329,7 +329,7 @@ function copyColor(type, color) {
 
 const {
 	module: { ZP: palletHook }
-} = getModuleAndKey(Filters.byStrings("palette", "getState", "&&await"), { searchExports: true }) || {};
+} = getModuleAndKey(Filters.byStrings("palette", "getState", "await"), { searchExports: true }) || {};
 
 function SimpleColorModal({ color }) {
 	return (
