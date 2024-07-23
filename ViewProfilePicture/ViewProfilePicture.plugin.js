@@ -229,7 +229,7 @@ function ImageIcon(props) {
 
 const RenderLinkComponent = getModule(m => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false });
 
-const ImageModal = getModule(Filters.byStrings("renderLinkComponent", "MEDIA_MODAL_CLOSE"), { searchExports: true });
+const ImageModal = getModuleAndKey(Filters.byStrings("renderLinkComponent", "MEDIA_MODAL_CLOSE"), { searchExports: true }) || {};
 
 const { ModalRoot, ModalSize } = TheBigBoyBundle;
 
@@ -250,17 +250,20 @@ const openModal = (children, tag, className) => {
 	});
 };
 
-const getImageModalComponent = (url, rest = {}) => (
-	React.createElement(ImageModal, {
-		...rest,
-		src: url,
-		original: url,
-		response: true,
-		renderForwardComponent: () => null,
-		renderLinkComponent: p => React.createElement(RenderLinkComponent, { ...p, }),
-	})
-);
-
+const getImageModalComponent = (url, rest = {}) => {
+	const { module, key } = ImageModal;
+	const IM = module[key];
+	return (
+		React.createElement(IM, {
+			...rest,
+			src: url,
+			original: url,
+			response: true,
+			renderForwardComponent: () => null,
+			renderLinkComponent: p => React.createElement(RenderLinkComponent, { ...p, }),
+		})
+	);
+};
 const promiseHandler = promise => promise.then(data => [undefined, data]).catch(err => [err]);
 
 function copy(data) {
