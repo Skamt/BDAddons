@@ -26,10 +26,10 @@ export default class GuildInfo extends Disposable {
 			this.patches = [
 				Patcher.after(module, key, (_, [{ guild }], ret) => {
 					// console.log(guild);
-
+					const owner = UserStore.getUser(guild.ownerId)
 					ret.props.text = [
 						ret.props.text,
-						el(`Owner: ${UserStore.getUser(guild.ownerId)?.tag || guild.ownerId}`),
+						el(`Owner: ${owner?.globalName || owner?.username || guild.ownerId}`),
 						el(`Created At: ${new Date(parseSnowflake(+guild.id)).toLocaleDateString()}`),
 						el(`Joined At: ${guild.joinedAt.toLocaleDateString()}`),
 						el("Clyde", { style: { color: guild.features.has(GuildFeaturesEnum.CLYDE_ENABLED) ? "lime" : "red" } }),

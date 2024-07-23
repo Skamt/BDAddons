@@ -5,7 +5,7 @@ import Color from "@Modules/Color";
 import ThemeStore from "@Stores/ThemeStore";
 import AccessibilityStore from "@Stores/AccessibilityStore";
 import { getModuleAndKey, getModule, Filters } from "@Webpack";
-const DesignSystem = getModule(a => a?.unsafe_rawColors?.PRIMARY_800);
+const DesignSystem = getModule(a => a?.unsafe_rawColors?.PRIMARY_800?.resolve);
 
 function resolveColor() {
 	if (!DesignSystem?.unsafe_rawColors?.PRIMARY_800) return "#111214";

@@ -32,7 +32,7 @@ export default class GIFCommandPreviews extends Disposable {
 					);
 				}),
 				!b?.module ? nop : Patcher.after(b.module, "ZP", (_, __, ret) => {
-					console.log(ret.props.data);
+					// console.log(ret.props.data);
 					ret.props.data.forEach(a => {
 						const [,segment] = a.src.match(/\.tenor\.com(.+?)\.mp4/) || [];
 						if(!segment) return;

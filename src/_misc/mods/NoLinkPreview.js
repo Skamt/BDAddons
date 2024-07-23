@@ -9,6 +9,7 @@ export default class NoLinkPreview extends Disposable {
 	Init() {
 		if (Parser?.defaultRules?.link) this.patches = [
 			Patcher.instead(Parser.defaultRules.link, "match", nop),
+			Patcher.instead(Parser.defaultRules.subtext, "match", nop),
 			Patcher.instead(subText, "match", nop),
 		];
 		else Logger.patch("NoLinkPreview");

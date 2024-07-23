@@ -9,22 +9,22 @@ import patchHighlightAnimatedEmoji from "./patches/patchHighlightAnimatedEmoji";
 import patchEmojiUtils from "./patches/patchEmojiUtils";
 import patchFavoriteEmojis from "./patches/patchFavoriteEmojis";
 import patchUseEmojiGrid from "./patches/patchUseEmojiGrid";
-import patchUnfavoriteEmoji from "./patches/patchUnfavoriteEmoji";
+import patchEmojiContextMenu from "./patches/patchEmojiContextMenu";
 
 export default class Emojis {
 	start() {
 		try {
 			DOM.addStyle(css);
-			patchIsEmojiFiltered();
+			// patchIsEmojiFiltered();
 			// patchEmojiGuildSourcePopout();
-			patchGetEmojiUnavailableReason();
-			patchExpressionPicker();
+			// patchGetEmojiUnavailableReason();
+			// patchExpressionPicker();
 			patchIsEmojiDisabled();
 			patchHighlightAnimatedEmoji();
 			patchEmojiUtils();
 			patchFavoriteEmojis();
-			patchUseEmojiGrid();
-			patchUnfavoriteEmoji();
+			// patchUseEmojiGrid();
+			patchEmojiContextMenu();
 		} catch (e) {
 			console.error(e);
 		}
