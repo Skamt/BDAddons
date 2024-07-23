@@ -215,61 +215,11 @@ const EmojiIntentionEnum = getModule(Filters.byProps("GUILD_ROLE_BENEFIT_EMOJI")
 	"CHAT": 3
 };
 
-const patchGetEmojiUnavailableReason = () => {
-	/**
-	 * This patch allows emojis to be added to the picker
-	 * if external emojis are disabled, they don't get added to the picker
-	 * PREMIUM_LOCKED is returned becaause that is what's returned normally
-	 */
-	if (EmojiFunctions?.getEmojiUnavailableReason)
-		Patcher.after(EmojiFunctions, "getEmojiUnavailableReason", (_, [{ intention }], ret) => {
-			if (intention !== EmojiIntentionEnum.CHAT) return ret;
-			return null;
+const EmojiStore = getModule(m => m._dispatchToken && m.getName() === "EmojiStore");
 
-		});
-	else
-		Logger.patch("GetEmojiUnavailableReason");
-};
+const SelectedChannelStore = getModule(m => m._dispatchToken && m.getName() === "SelectedChannelStore");
 
-const patchIsEmojiFiltered = () => {
-	/**
-	 * This patches allows server icons to show up on the left side of the picker
-	 * if external emojis are disabled, servers get filtered out
-	 * and it's handy to scroll through emojis easily
-	 */
-	if (EmojiFunctions && EmojiFunctions.isEmojiFiltered)
-		Patcher.after(EmojiFunctions, "isEmojiFiltered", (_, [, , intention], ret) => {
-			if (intention !== EmojiIntentionEnum.CHAT) return ret;
-			return false;
-		});
-	else Logger.patch("IsEmojiFiltered");
-};
-
-function showToast(content, type) {
-	UI.showToast(`[${config.info.name}] ${content}`, { timeout: 5000, type });
-}
-
-const Toast = {
-	success(content) { showToast(content, "success"); },
-	info(content) { showToast(content, "info"); },
-	warning(content) { showToast(content, "warning"); },
-	error(content) { showToast(content, "error"); }
-};
-
-const DiscordPermissions = getModule(Filters.byProps("computePermissions"), { searchExports: false });
-
-const DiscordPermissionsEnum = getModule(Filters.byProps("ADD_REACTIONS"), { searchExports: true }) || {
-	"EMBED_LINKS": "16384n",
-	"USE_EXTERNAL_EMOJIS": "262144n"
-};
-
-function hasEmbedPerms(channel, user) {
-	return !channel.guild_id || DiscordPermissions?.can(
-		DiscordPermissionsEnum.EMBED_LINKS,
-		channel,
-		user
-	);
-}
+const ChannelStore = getModule(m => m._dispatchToken && m.getName() === "ChannelStore");
 
 const MessageActions = getModule(Filters.byProps('jumpToMessage', '_sendMessage'), { searchExports: false });
 
@@ -322,11 +272,28 @@ const insertText = (() => {
 	};
 })();
 
-const UserStore = getModule(m => m._dispatchToken && m.getName() === "UserStore");
-
 const DraftStore = getModule(m => m._dispatchToken && m.getName() === "DraftStore");
 
-function getEmojiUrl({ id, animated }) {
+function showToast(content, type) {
+	UI.showToast(`[${config.info.name}] ${content}`, { timeout: 5000, type });
+}
+
+const Toast = {
+	success(content) { showToast(content, "success"); },
+	info(content) { showToast(content, "info"); },
+	warning(content) { showToast(content, "warning"); },
+	error(content) { showToast(content, "error"); }
+};
+
+function getCustomEmojiById(id) {
+	const emoji = EmojiStore.getCustomEmojiById(id);
+	if (emoji) return emoji;
+	const savedEmojis = Data.load("emojis");
+	return savedEmojis.find(a => a.id === id);
+}
+
+function getEmojiUrl(id) {
+	const { animated } = getCustomEmojiById(id) || { animated: false };
 	const size = Settings.state.emojiSize;
 	const asPng = Settings.state.sendEmojiAsPng;
 	const type = animated ? (asPng ? "png" : "gif") : "png";
@@ -334,20 +301,8 @@ function getEmojiUrl({ id, animated }) {
 	return `https://cdn.discordapp.com/emojis/${id}.${type}${animated && !asPng ? "" : `?size=${size}`}`;
 }
 
-function isEmojiSendable(e) {
-	return EmojiFunctions.getEmojiUnavailableReason?.__originalFunction?.(e) === null;
-}
-
-const STRINGS = {
-	missingEmbedPermissionsErrorMessage: "Missing Embed Permissions",
-	disabledAnimatedEmojiErrorMessage: "You have disabled animated emojis in settings."
-};
-
-const ExpressionPicker = getModule(a => a?.type?.toString().includes("handleDrawerResizeHandleMouseDown"), { searchExports: false });
-const d = getModule(Filters.byPrototypeKeys("onResultClick", "onHideAutocomplete"));
-
-function sendEmojiAsLink(emoji, channel) {
-	const content = getEmojiUrl(emoji);
+function sendEmojiAsLink(content, channel) {
+	if (!channel) channel = ChannelStore.getChannel(SelectedChannelStore.getChannelId());
 	const draft = DraftStore.getDraft(channel.id, 0);
 	if (draft) return insertText(`[󠇫](${content})`);
 
@@ -361,41 +316,15 @@ function sendEmojiAsLink(emoji, channel) {
 	insertText(content);
 }
 
-function handleUnsendableEmoji(emoji, channel) {
-	if (emoji.animated && !Settings.state.shouldSendAnimatedEmojis) return Toast.info(STRINGS.disabledAnimatedEmojiErrorMessage);
-
-	const user = UserStore.getCurrentUser();
-	if (!hasEmbedPerms(channel, user) && !Settings.state.ignoreEmbedPermissions) return Toast.info(STRINGS.missingEmbedPermissionsErrorMessage);
-
-	sendEmojiAsLink(emoji, channel);
+function sendEmojiDirectly(id) {
+	const content = getEmojiUrl(id);
+	sendEmojiAsLink(content);
 }
 
-const patchExpressionPicker = () => {
-	if (ExpressionPicker && ExpressionPicker.type)
-		Patcher.before(ExpressionPicker, "type", (_, [props]) => {
-			const orig = props.onSelectEmoji;
-			props.onSelectEmoji = (...args) => {
-				const [emoji] = args;
-				const channel = props.channel;
-				if (!isEmojiSendable({ emoji, channel, intention: EmojiIntentionEnum.CHAT })) handleUnsendableEmoji(emoji, channel);
-				else orig.apply(null, args);
-			};
-		});
-	else Logger.patch("ExpressionPicker");
-
-	if (!d) return Logger.patch("dddd-ExpressionPicker");
-
-	Patcher.instead(d.prototype, "selectResult", (_this, args, orig) => {
-		if (_this.state.query.type !== "EMOJIS_AND_STICKERS") return orig.apply(null, args);
-		const emoji = _this.state.query.results.emojis[args[0]];
-		if (!isEmojiSendable({ emoji, channel: _this.props.channel, intention: EmojiIntentionEnum.CHAT })) {
-			_this.state.query.options.insertText("");
-			const content = getEmojiUrl(emoji);
-			insertText(`[󠇫](${content})`);
-			_this.clearQuery();
-		} else orig.apply(null, args);
-	});
-};
+function insertEmoji(id) {
+	const content = getEmojiUrl(id);
+	insertText(content);
+}
 
 const patchIsEmojiDisabled = () => {
 	if (EmojiFunctions && EmojiFunctions.isEmojiDisabled)
@@ -511,8 +440,6 @@ const patchEmojiUtils = () => {
 	});
 };
 
-const EmojiStore = getModule(m => m._dispatchToken && m.getName() === "EmojiStore");
-
 const emojiContextConstructor = EmojiStore?.getDisambiguatedEmojiContext?.().constructor;
 
 const patchFavoriteEmojis = () => {
@@ -539,74 +466,31 @@ const patchFavoriteEmojis = () => {
 	});
 };
 
-const emojiHooks = getModuleAndKey(Filters.byStrings("gridWidth", "getDisambiguatedEmojiContext", "getFlattenedGuildIds"), { searchExports: true });
-const patchUseEmojiGrid = () => {
-	const { module, key } = emojiHooks;
-
-	if (!module || !key) return Logger.patch("patchUseEmojiGrid");
-
-	Patcher.after(module, key, (_, [{ pickerIntention }], ret) => {
-		if (pickerIntention !== EmojiIntentionEnum.CHAT) return ret;
-		for (const a of ret.sectionDescriptors) {
-			a.isNitroLocked = false;
-		}
-	});
-};
+/* eslint-disable react/jsx-key */
 
 const { MenuItem } = TheBigBoyBundle;
 const bbb = getModule(Filters.byStrings("unfavorite"), { defaultExport: false });
 
-function unfavHandler(id) {
-	const emojis = Data.load("emojis");
-	for (let i = emojis.length - 1; i >= 0; i--) {
-		const emoji = emojis[i];
-		if (emoji.id === id) {
-			emojis.splice(i, 1);
-			Data.save("emojis", emojis);
-			break;
-		}
-	}
-}
-
-function fav(id) {
-	const emoji = EmojiStore.getDisambiguatedEmojiContext().getById(id);
-	if (!emoji) return Toast.error(`Could not find Emoji: ${id}`);
-
-	const emojis = Data.load("emojis");
-	emojis.unshift(emoji);
-	Data.save("emojis", emojis);
-	Toast.success(`Emoji ${id} Saved.`);
-}
-
-function has(id) {
-	const emojis = Data.load("emojis");
-	return emojis.find(a => a.id === id)
-}
-
-const patchUnfavoriteEmoji = () => {
+const patchEmojiContextMenu = () => {
 	if (!bbb?.Z) return Logger.patch("patchUnfavoriteEmoji");
-	Patcher.after(bbb, "Z", (_, [{ type, id }], ret) => {
-		console.log(ret);
-		if (type !== "emoji") return;
+	Patcher.after(bbb, "Z", (_, args, ret) => {
+		const [{ type, isInExpressionPicker, id }] = args;
+		if (type !== "emoji" || !isInExpressionPicker || !id) return;
+		console.log(_, args, ret);
+		return [
+			React.createElement(MenuItem, {
+				action: () => sendEmojiDirectly(id),
+				id: "send-directly",
+				label: "send directly",
+			}),
+			React.createElement(MenuItem, {
+				action: () => insertEmoji(id),
+				id: "insert-url",
+				label: "insert url",
+			}),
+			ret
+		];
 
-		if (has(id))
-			return (
-				React.createElement(MenuItem, {
-					action: () => unfavHandler(id),
-					label: "unfavorite",
-					id: "unfavorite",
-				})
-			);
-
-		if (!has(id) && id && ret?.props?.id === "favorite") {
-			return (
-				React.createElement(MenuItem, {
-					action: () => fav(id),
-					label: "favorite",
-					id: "favorite",
-				})
-			);
-		}
 	});
 };
 
@@ -614,16 +498,13 @@ class Emojis {
 	start() {
 		try {
 			DOM.addStyle(css);
-			patchIsEmojiFiltered();
 
-			patchGetEmojiUnavailableReason();
-			patchExpressionPicker();
 			patchIsEmojiDisabled();
 			patchHighlightAnimatedEmoji();
 			patchEmojiUtils();
 			patchFavoriteEmojis();
-			patchUseEmojiGrid();
-			patchUnfavoriteEmoji();
+
+			patchEmojiContextMenu();
 		} catch (e) {
 			console.error(e);
 		}

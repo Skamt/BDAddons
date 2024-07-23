@@ -1,7 +1,7 @@
 /**
  * @name ViewProfilePicture
  * @description Adds a button to the user popout and profile that allows you to view the Avatar and banner.
- * @version 1.2.10
+ * @version 1.2.11
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "ViewProfilePicture",
-		"version": "1.2.10",
+		"version": "1.2.11",
 		"description": "Adds a button to the user popout and profile that allows you to view the Avatar and banner.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture",
@@ -297,7 +297,7 @@ const ThemeStore = getModule(m => m._dispatchToken && m.getName() === "ThemeStor
 
 const AccessibilityStore = getModule(m => m._dispatchToken && m.getName() === "AccessibilityStore");
 
-const DesignSystem = getModule(a => a?.unsafe_rawColors?.PRIMARY_800);
+const DesignSystem = getModule(a => a?.unsafe_rawColors?.PRIMARY_800?.resolve);
 
 function resolveColor() {
 	if (!DesignSystem?.unsafe_rawColors?.PRIMARY_800) return "#111214";
