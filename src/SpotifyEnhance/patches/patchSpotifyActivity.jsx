@@ -5,22 +5,22 @@ import Settings from "@Utils/Settings";
 import { Filters, getModuleAndKey } from "@Webpack";
 import SpotifyActivityControls from "../components/SpotifyActivityControls";
 
-const ActivityComponent = getModuleAndKey(Filters.byStrings("onOpenGameProfileModal","activity"), { defaultExport: true });
+const ActivityComponent = getModuleAndKey(Filters.byStrings("PRESS_LISTEN_ALONG_ON_SPOTIFY_BUTTON", "PRESS_PLAY_ON_SPOTIFY_BUTTON"));
 
 export default () => {
-	const {module, key} = ActivityComponent;
+	const { module, key } = ActivityComponent;
 	if (!module || !key) return Logger.patch("SpotifyActivityComponent");
-		Patcher.before(module, key, (_, [props]) => {
-			if (!Settings.getState().activity) return;
-			if (!props.activity) return;
-			if (!props.renderActions) return;
-			if (props.activity.name.toLowerCase() !== "spotify") return;
+	Patcher.after(module, key, (_, [{ user, activity }]) => {
+		if (!Settings.getState().activity) return;
+		if (activity?.name.toLowerCase() !== "spotify") return;
 
-			props.renderActions = () => (
-				<ErrorBoundary id="SpotifyEmbed">
-					<SpotifyActivityControls {...props} />
-				</ErrorBoundary>
-			);
-		});
-	
+		return (
+			<ErrorBoundary id="SpotifyEmbed">
+				<SpotifyActivityControls
+					user={user}
+					activity={activity}
+				/>
+			</ErrorBoundary>
+		);
+	});
 };

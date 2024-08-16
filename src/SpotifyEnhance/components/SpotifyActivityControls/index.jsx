@@ -20,11 +20,11 @@ const { useSpotifyPlayAction, useSpotifySyncAction } = mapExports(
 	{ searchExports: true }
 );
 
-export default ({ activity, user, source }) => {
+export default ({ activity, user }) => {
 	const isActive = Store(Store.selectors.isActive);
 
-	const userSyncActivityState = useSpotifySyncAction(activity, user, source);
-	const userPlayActivityState = useSpotifyPlayAction(activity, user, source);
+	const userSyncActivityState = useSpotifySyncAction(activity, user);
+	const userPlayActivityState = useSpotifyPlayAction(activity, user);
 
 	return (
 		<div className="spotify-activity-controls">
