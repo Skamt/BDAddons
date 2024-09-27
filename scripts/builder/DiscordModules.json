@@ -1,7 +1,7 @@
 {
 	"Modules": {
 		"zustand": {
-			"filter": "Filters.byStrings(\"subscribeWithSelector\", \"useReducer\")",
+			"filter": "Filters.byStrings(\"useStore, api\")",
 			"options": "{ searchExports: false }"
 		},
 		"TreadComponent": {

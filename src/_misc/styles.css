@@ -99,3 +99,20 @@ ul[aria-label="Channels"] > li:hover .channelMuteButton {
 	color:white;
 	background: var(--background-tertiary);
 }
+
+.messageRoleHeader {
+	display: inline-block;
+	padding:1px 4px;
+	border-radius: var(--radius-xs);
+	background: #0003;
+	border: 1px solid #fff1;
+	font-family: var(--font-primary);
+	font-size: 13px;
+	line-height: 1.3333333333333333;
+	font-weight: 500;
+	margin: 0 0rem 0 0.25rem;
+}
+
+[class^="repliedMessage"] .messageRoleHeader {
+	display: none;
+}

@@ -11,6 +11,7 @@ import NoTrack from "./mods/NoTrack";
 import ShowUserInfo from "./mods/ShowUserInfo";
 import SpotifyListenAlong from "./mods/SpotifyListenAlong";
 import EnableModView from "./mods/EnableModView";
+import PinRoles from "./mods/PinRoles";
 
 import ShowChannelPerms from "./mods/ShowChannelPerms";
 // import NoReplyPing from "./mods/NoReplyPing";
@@ -25,6 +26,7 @@ const mods = [
 	new GuildInfo(),
 	new NoLinkPreview(),
 	// new NoReplyPing(),
+	new PinRoles(),
 	new EnableModView(),
 	new ShowChannelPerms(),
 	new NoTrack(),
