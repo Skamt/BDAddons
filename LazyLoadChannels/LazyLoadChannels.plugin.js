@@ -1,7 +1,7 @@
 /**
  * @name LazyLoadChannels
  * @description Lets you choose whether to load a channel
- * @version 1.2.8
+ * @version 1.2.9
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "LazyLoadChannels",
-		"version": "1.2.8",
+		"version": "1.2.9",
 		"description": "Lets you choose whether to load a channel",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels",
@@ -47,7 +47,7 @@ function getModuleAndKey(filter, options) {
 	return { module, key };
 }
 
-const zustand = getModule(Filters.byStrings("subscribeWithSelector", "useReducer"), { searchExports: false });
+const zustand = getModule(Filters.byStrings("useStore, api"), { searchExports: false });
 
 const SettingsStoreSelectors = {};
 const persistMiddleware = config => (set, get, api) => config(args => (set(args), Data.save("settings", get().getRawState())), get, api);

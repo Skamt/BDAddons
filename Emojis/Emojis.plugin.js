@@ -1,7 +1,7 @@
 /**
  * @name Emojis
  * @description Send emoji as link if it can't be sent it normally.
- * @version 1.0.0
+ * @version 1.0.1
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/Emojis
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/Emojis/Emojis.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "Emojis",
-		"version": "1.0.0",
+		"version": "1.0.1",
 		"description": "Send emoji as link if it can't be sent it normally.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/Emojis/Emojis.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/Emojis",
@@ -65,7 +65,7 @@ function filterModuleAndExport(moduleFilter, exportFilter, options) {
 	return { module: exports, key, target: exports[key] };
 }
 
-const zustand = getModule(Filters.byStrings("subscribeWithSelector", "useReducer"), { searchExports: false });
+const zustand = getModule(Filters.byStrings("useStore, api"), { searchExports: false });
 
 const SettingsStoreSelectors = {};
 const persistMiddleware = config => (set, get, api) => config(args => (set(args), Data.save("settings", get().getRawState())), get, api);

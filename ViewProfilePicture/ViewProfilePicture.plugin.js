@@ -1,7 +1,7 @@
 /**
  * @name ViewProfilePicture
  * @description Adds a button to the user popout and profile that allows you to view the Avatar and banner.
- * @version 1.2.11
+ * @version 1.2.12
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "ViewProfilePicture",
-		"version": "1.2.11",
+		"version": "1.2.12",
 		"description": "Adds a button to the user popout and profile that allows you to view the Avatar and banner.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture",
@@ -61,7 +61,7 @@ function getModuleAndKey(filter, options) {
 	return { module, key };
 }
 
-const zustand = getModule(Filters.byStrings("subscribeWithSelector", "useReducer"), { searchExports: false });
+const zustand = getModule(Filters.byStrings("useStore, api"), { searchExports: false });
 
 const SettingsStoreSelectors = {};
 const persistMiddleware = config => (set, get, api) => config(args => (set(args), Data.save("settings", get().getRawState())), get, api);
@@ -332,7 +332,7 @@ function copyColor(type, color) {
 
 const {
 	module: { ZP: palletHook }
-} = getModuleAndKey(Filters.byStrings("palette", "getState", "await"), { searchExports: true }) || {};
+} = getModuleAndKey(Filters.byStrings("toHexString", "toHsl", "palette"), { searchExports: true }) || {};
 
 function SimpleColorModal({ color }) {
 	return (

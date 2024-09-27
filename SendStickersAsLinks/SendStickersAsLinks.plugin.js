@@ -1,7 +1,7 @@
 /**
  * @name SendStickersAsLinks
  * @description Enables you to send custom Stickers as links
- * @version 2.2.6
+ * @version 2.2.7
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/SendStickersAsLinks
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/SendStickersAsLinks/SendStickersAsLinks.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "SendStickersAsLinks",
-		"version": "2.2.6",
+		"version": "2.2.7",
 		"description": "Enables you to send custom Stickers as links",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SendStickersAsLinks/SendStickersAsLinks.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SendStickersAsLinks",
@@ -85,7 +85,7 @@ function mapExports(moduleFilter, exportsMap, options) {
 	return res;
 }
 
-const zustand = getModule(Filters.byStrings("subscribeWithSelector", "useReducer"), { searchExports: false });
+const zustand = getModule(Filters.byStrings("useStore, api"), { searchExports: false });
 
 const SettingsStoreSelectors = {};
 const persistMiddleware = config => (set, get, api) => config(args => (set(args), Data.save("settings", get().getRawState())), get, api);
