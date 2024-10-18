@@ -1,24 +1,20 @@
 .copyBtn {
 	left: 115px;
 	white-space: nowrap;
-    position: absolute;
-    top: 100%;
-    font-size: 14px;
-    font-weight: 500;
-    color: #fff;
-    line-height: 30px;
-    transition: opacity .15s ease;
-    opacity: .5;
+	margin-right: auto;
+	font-size: 14px;
+	font-weight: 500;
+	color: #fff;
+	line-height: 30px;
+	transition: opacity 0.15s ease;
+	opacity: 0.5;
 }
-.copyBtn:hover{
+.copyBtn:hover {
 	opacity: 1;
-    text-decoration: underline;
+	text-decoration: underline;
 }
 
 .copyBtnSpan {
-	left: 105px;
-	position: absolute;
-	top: 100%;
 	font-weight: 500;
 	color: hsl(0, calc(var(--saturation-factor, 1) * 0%), 100%) !important;
 	line-height: 30px;

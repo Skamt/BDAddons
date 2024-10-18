@@ -1,5 +1,5 @@
 import { DOM, Patcher, React } from "@Api";
-import ImageModal from "@Patch/ImageModal";
+import RenderLinkComponent from "@Modules/RenderLinkComponent";
 import { getNestedProp } from "@Utils";
 import Logger from "@Utils/Logger";
 import CopyButtonComponent from "./components/CopyButtonComponent";
@@ -10,13 +10,10 @@ export default class CopyImageLink {
 		try {
 			// eslint-disable-next-line no-undef
 			DOM.addStyle(css);
-			const { module, key } = ImageModal;
-			if (!module || !key) return Logger.patch("ImageModal");
-			Patcher.after(module, key, (_, __, returnValue) => {
-				const children = getNestedProp(returnValue, "props.children");
-				const { src:href } = getNestedProp(returnValue, "props.children.2.props");
-				if (!children || !href) return;
-				children.push(<CopyButtonComponent href={href} />);
+			if (!RenderLinkComponent) return Logger.patch("RenderLinkComponent");
+			Patcher.after(RenderLinkComponent, "type", (_, [{ href }], returnValue) => {
+				if (!returnValue || !href) return;
+				return [returnValue, <CopyButtonComponent href={href} />];
 			});
 		} catch (e) {
 			Logger.error(e);

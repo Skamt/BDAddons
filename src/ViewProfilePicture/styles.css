@@ -136,3 +136,28 @@
 .VPP-colorFormat-options > div {
 	flex: 1;
 }
+
+
+.downloadLink {
+	color: white !important;
+	font-size: 14px;
+	font-weight: 500;
+/*	line-height: 18px;*/
+	text-decoration: none;
+	transition: opacity.15s ease;
+	opacity: .5;
+}
+
+.imageModalwrapper{
+	display: flex;
+	flex-direction: column;
+}
+.imageModalOptions{
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 4px;
+
+}

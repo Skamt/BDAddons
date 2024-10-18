@@ -113,7 +113,7 @@
 			"options": "{ searchExports: false }"
 		},
 		"ImageModal": {
-			"filter": "Filters.byStrings(\"renderLinkComponent\", \"MEDIA_MODAL_CLOSE\")",
+			"filter": "Filters.byStrings(\"renderLinkComponent\", \"zoomThumbnailPlaceholder\")",
 			"options": "{ searchExports: true }"
 		},
 		"ModalCarousel": {

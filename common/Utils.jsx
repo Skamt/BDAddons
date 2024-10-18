@@ -1,8 +1,9 @@
+
 import { Patcher, getOwnerInstance, ReactDOM, React } from "@Api";
 import ErrorBoundary from "@Components/ErrorBoundary";
 import RenderLinkComponent from "@Modules/RenderLinkComponent";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
-import ImageModal from "@Patch/ImageModal";
+import ImageModal from "@Modules/ImageModal";
 
 const { ModalRoot, ModalSize } = TheBigBoyBundle;
 
@@ -40,17 +41,24 @@ export const openModal = (children, tag, className) => {
 };
 
 export const getImageModalComponent = (url, rest = {}) => {
-	const { module, key } = ImageModal;
-	const IM = module[key];
 	return (
-		<IM
-			{...rest}
-			src={url}
-			original={url}
-			response={true}
-			renderForwardComponent={() => null}
-			renderLinkComponent={p => <RenderLinkComponent {...p} />}
-		/>
+		<div className="imageModalwrapper">
+			<ImageModal
+				media={{
+					...rest,
+					type: "IMAGE",
+					url: url,
+					proxyUrl: url
+				}}
+			/>
+			<div className="imageModalOptions">
+				<RenderLinkComponent
+					className="downloadLink"
+					href={url}>
+					Open in Browser
+				</RenderLinkComponent>
+			</div>
+		</div>
 	);
 };
 export const promiseHandler = promise => promise.then(data => [undefined, data]).catch(err => [err]);
