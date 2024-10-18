@@ -1,7 +1,7 @@
 /**
  * @name ViewProfilePicture
  * @description Adds a button to the user popout and profile that allows you to view the Avatar and banner.
- * @version 1.2.12
+ * @version 1.2.13
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "ViewProfilePicture",
-		"version": "1.2.12",
+		"version": "1.2.13",
 		"description": "Adds a button to the user popout and profile that allows you to view the Avatar and banner.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture",
@@ -229,7 +229,7 @@ function ImageIcon(props) {
 
 const RenderLinkComponent = getModule(m => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false });
 
-const ImageModal = getModuleAndKey(Filters.byStrings("renderLinkComponent", "MEDIA_MODAL_CLOSE"), { searchExports: true }) || {};
+const ImageModal = getModule(Filters.byStrings("renderLinkComponent", "zoomThumbnailPlaceholder"), { searchExports: true });
 
 const { ModalRoot, ModalSize } = TheBigBoyBundle;
 
@@ -251,17 +251,20 @@ const openModal = (children, tag, className) => {
 };
 
 const getImageModalComponent = (url, rest = {}) => {
-	const { module, key } = ImageModal;
-	const IM = module[key];
 	return (
-		React.createElement(IM, {
-			...rest,
-			src: url,
-			original: url,
-			response: true,
-			renderForwardComponent: () => null,
-			renderLinkComponent: p => React.createElement(RenderLinkComponent, { ...p, }),
-		})
+		React.createElement('div', { className: "imageModalwrapper", }, React.createElement(ImageModal, {
+			media: {
+				...rest,
+				type: "IMAGE",
+				url: url,
+				proxyUrl: url
+			},
+		}), React.createElement('div', { className: "imageModalOptions", }, React.createElement(RenderLinkComponent, {
+				className: "downloadLink",
+				href: url,
+			}, "Open in Browser"
+
+		)))
 	);
 };
 const promiseHandler = promise => promise.then(data => [undefined, data]).catch(err => [err]);
@@ -696,4 +699,28 @@ const css = `/* View Profile Button */
 .VPP-colorFormat-options > div {
 	flex: 1;
 }
-`;
+
+
+.downloadLink {
+	color: white !important;
+	font-size: 14px;
+	font-weight: 500;
+/*	line-height: 18px;*/
+	text-decoration: none;
+	transition: opacity.15s ease;
+	opacity: .5;
+}
+
+.imageModalwrapper{
+	display: flex;
+	flex-direction: column;
+}
+.imageModalOptions{
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 4px;
+
+}`;

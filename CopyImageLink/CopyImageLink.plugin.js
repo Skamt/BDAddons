@@ -1,7 +1,7 @@
 /**
  * @name CopyImageLink
  * @description Adds (Copy Link) button next to (Open Original) under images
- * @version 1.2.1
+ * @version 1.2.3
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/CopyImageLink
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/CopyImageLink/CopyImageLink.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "CopyImageLink",
-		"version": "1.2.1",
+		"version": "1.2.3",
 		"description": "Adds (Copy Link) button next to (Open Original) under images",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/CopyImageLink/CopyImageLink.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/CopyImageLink",
@@ -18,6 +18,21 @@ const config = {
 			"name": "Skamt"
 		}]
 	}
+}
+
+const Api = new BdApi(config.info.name);
+
+const UI = Api.UI;
+const DOM = Api.DOM;
+const React = Api.React;
+const Patcher = Api.Patcher;
+
+const getModule = Api.Webpack.getModule;
+
+const RenderLinkComponent = getModule(m => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false });
+
+function copy(data) {
+	DiscordNative.clipboard.copy(data);
 }
 
 const Logger = {
@@ -34,34 +49,6 @@ const Logger = {
 		target(`%c[${config.info.name}]`, "color: #3a71c1;font-weight: bold;", ...args);
 	}
 };
-
-const Api = new BdApi(config.info.name);
-
-const UI = Api.UI;
-const DOM = Api.DOM;
-const React = Api.React;
-const Patcher = Api.Patcher;
-
-const getModule = Api.Webpack.getModule;
-const Filters = Api.Webpack.Filters;
-
-function getModuleAndKey(filter, options) {
-	let module;
-	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
-	module = module?.exports;
-	if (!module) return {};
-	const key = Object.keys(module).find(k => module[k] === target);
-	if (!key) return {};
-	return { module, key };
-}
-
-function copy(data) {
-	DiscordNative.clipboard.copy(data);
-}
-
-function getNestedProp(obj, path) {
-	return path.split(".").reduce((ob, prop) => ob?.[prop], obj);
-}
 
 function showToast(content, type) {
 	UI.showToast(`[${config.info.name}] ${content}`, { timeout: 5000, type });
@@ -88,19 +75,15 @@ const CopyButtonComponent = ({ href }) => {
 	);
 };
 
-const ImageModal = getModuleAndKey(Filters.byStrings("renderLinkComponent", "MEDIA_MODAL_CLOSE"), { searchExports: true }) || {};
-
 class CopyImageLink {
 	start() {
 		try {
+
 			DOM.addStyle(css);
-			const { module, key } = ImageModal;
-			if (!module || !key) return Logger.patch("ImageModal");
-			Patcher.after(module, key, (_, __, returnValue) => {
-				const children = getNestedProp(returnValue, "props.children");
-				const { src: href } = getNestedProp(returnValue, "props.children.2.props");
-				if (!children || !href) return;
-				children.push(React.createElement(CopyButtonComponent, { href: href, }));
+			if (!RenderLinkComponent) return Logger.patch("RenderLinkComponent");
+			Patcher.after(RenderLinkComponent, "type", (_, [{ href }], returnValue) => {
+				if (!returnValue || !href) return;
+				return [returnValue, React.createElement(CopyButtonComponent, { href: href, })];
 			});
 		} catch (e) {
 			Logger.error(e);
@@ -118,26 +101,23 @@ module.exports = CopyImageLink;
 const css = `.copyBtn {
 	left: 115px;
 	white-space: nowrap;
-    position: absolute;
-    top: 100%;
-    font-size: 14px;
-    font-weight: 500;
-    color: #fff;
-    line-height: 30px;
-    transition: opacity .15s ease;
-    opacity: .5;
+	margin-right: auto;
+	font-size: 14px;
+	font-weight: 500;
+	color: #fff;
+	line-height: 30px;
+	transition: opacity 0.15s ease;
+	opacity: 0.5;
 }
-.copyBtn:hover{
+.copyBtn:hover {
 	opacity: 1;
-    text-decoration: underline;
+	text-decoration: underline;
 }
 
 .copyBtnSpan {
-	left: 105px;
-	position: absolute;
-	top: 100%;
 	font-weight: 500;
 	color: hsl(0, calc(var(--saturation-factor, 1) * 0%), 100%) !important;
 	line-height: 30px;
 	opacity: 0.5;
-}`;
+}
+`;
