@@ -81,8 +81,8 @@ class CopyImageLink {
 
 			DOM.addStyle(css);
 			if (!RenderLinkComponent) return Logger.patch("RenderLinkComponent");
-			Patcher.after(RenderLinkComponent, "type", (_, [{ href }], returnValue) => {
-				if (!returnValue || !href) return;
+			Patcher.after(RenderLinkComponent, "type", (_, [{ channelId, href }], returnValue) => {
+				if (!returnValue || channelId || !href) return;
 				return [returnValue, React.createElement(CopyButtonComponent, { href: href, })];
 			});
 		} catch (e) {
