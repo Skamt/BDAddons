@@ -1,7 +1,7 @@
 {
 	"info": {
 		"name": "CopyImageLink",
-		"version": "1.2.3",
+		"version": "1.2.4",
 		"description": "Adds (Copy Link) button next to (Open Original) under images",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/CopyImageLink/CopyImageLink.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/CopyImageLink"
