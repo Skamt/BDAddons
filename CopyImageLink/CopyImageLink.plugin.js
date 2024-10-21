@@ -1,7 +1,7 @@
 /**
  * @name CopyImageLink
  * @description Adds (Copy Link) button next to (Open Original) under images
- * @version 1.2.3
+ * @version 1.2.4
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/CopyImageLink
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/CopyImageLink/CopyImageLink.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "CopyImageLink",
-		"version": "1.2.3",
+		"version": "1.2.4",
 		"description": "Adds (Copy Link) button next to (Open Original) under images",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/CopyImageLink/CopyImageLink.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/CopyImageLink",
@@ -81,8 +81,8 @@ class CopyImageLink {
 
 			DOM.addStyle(css);
 			if (!RenderLinkComponent) return Logger.patch("RenderLinkComponent");
-			Patcher.after(RenderLinkComponent, "type", (_, [{ channelId, href }], returnValue) => {
-				if (!returnValue || channelId || !href) return;
+			Patcher.after(RenderLinkComponent, "type", (_, [{ className, href }], returnValue) => {
+				if (!returnValue || !className?.startsWith("downloadLink") || !href) return;
 				return [returnValue, React.createElement(CopyButtonComponent, { href: href, })];
 			});
 		} catch (e) {
