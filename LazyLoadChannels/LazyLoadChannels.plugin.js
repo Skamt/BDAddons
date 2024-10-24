@@ -1,7 +1,7 @@
 /**
  * @name LazyLoadChannels
  * @description Lets you choose whether to load a channel
- * @version 1.2.9
+ * @version 1.2.10
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "LazyLoadChannels",
-		"version": "1.2.9",
+		"version": "1.2.10",
 		"description": "Lets you choose whether to load a channel",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels",
@@ -35,6 +35,7 @@ const ContextMenu = Api.ContextMenu;
 
 const getModule = Api.Webpack.getModule;
 const Filters = Api.Webpack.Filters;
+const findInTree = Api.Utils.findInTree;
 const getOwnerInstance = Api.ReactUtils.getOwnerInstance;
 
 function getModuleAndKey(filter, options) {
@@ -458,6 +459,7 @@ const patchChannelContent = context => {
 	if (ChannelContent)
 		Patcher.after(ChannelContent, "type", (_, [{ channel }], ret) => {
 			if (context.autoLoad) return;
+			const messages = findInTree(ret, a => a.messages, { walkable: ["props", "children"] }).messages || [];
 			return (
 				React.createElement(ErrorBoundary, {
 					id: "LazyLoaderComponent",
@@ -467,7 +469,7 @@ const patchChannelContent = context => {
 				}, React.createElement(LazyLoaderComponent, {
 					channel: channel,
 					loadChannel: context.loadChannel,
-					messages: ret.props.children.props.messages,
+					messages: messages,
 				}))
 			);
 		});
