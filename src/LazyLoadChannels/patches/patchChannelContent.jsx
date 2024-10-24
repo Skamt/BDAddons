@@ -1,4 +1,4 @@
-import { Patcher, React } from "@Api";
+import { Patcher, findInTree, React } from "@Api";
 import Logger from "@Utils/Logger";
 import ChannelContent from "@Modules/ChannelContent";
 import ErrorBoundary from "@Components/ErrorBoundary";
@@ -12,6 +12,7 @@ export default context => {
 	if (ChannelContent)
 		Patcher.after(ChannelContent, "type", (_, [{ channel }], ret) => {
 			if (context.autoLoad) return;
+			const messages = findInTree(ret, a => a.messages, { walkable: ["props", "children"] }).messages || [];
 			return (
 				<ErrorBoundary
 					id="LazyLoaderComponent"
@@ -21,7 +22,7 @@ export default context => {
 					<LazyLoaderComponent
 						channel={channel}
 						loadChannel={context.loadChannel}
-						messages={ret.props.children.props.messages}
+						messages={messages}
 					/>
 				</ErrorBoundary>
 			);
