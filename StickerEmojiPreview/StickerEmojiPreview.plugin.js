@@ -1,7 +1,7 @@
 /**
  * @name StickerEmojiPreview
  * @description Adds a zoomed preview to those tiny Stickers and Emojis
- * @version 1.2.0
+ * @version 1.2.1
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/StickerEmojiPreview
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/StickerEmojiPreview/StickerEmojiPreview.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "StickerEmojiPreview",
-		"version": "1.2.0",
+		"version": "1.2.1",
 		"description": "Adds a zoomed preview to those tiny Stickers and Emojis",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/StickerEmojiPreview/StickerEmojiPreview.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/StickerEmojiPreview",
@@ -23,96 +23,6 @@ const config = {
 		"previewDefaultState": false
 	}
 }
-
-const css = `
-.stickersPreview {
-	width:400px;
-	font-size: 14px;
-	background: var(--background-floating);
-	border-radius: 5px;
-	padding: .5em;
-	box-shadow: var(--elevation-high);
-}
-
-.stickersPreview img{
-	min-width:100%;
-	max-width:100%;
-}
-
-.animated img{
-	border:1px dashed #ff8f09;
-	padding:1px;
-	box-sizing:border-box;
-}`;
-
-const Api = new BdApi(config.info.name);
-const DOM = Api.DOM;
-const Data = Api.Data;
-const React = Api.React;
-const Patcher = Api.Patcher;
-
-const getModule = Api.Webpack.getModule;
-const Filters = Api.Webpack.Filters;
-
-class ChangeEmitter {
-	constructor() {
-		this.listeners = new Set();
-	}
-
-	isInValid(handler) {
-		return !handler || typeof handler !== "function";
-	}
-
-	on(handler) {
-		if (this.isInValid(handler)) return;
-		this.listeners.add(handler);
-		return () => this.off(handler);
-	}
-
-	off(handler) {
-		if (this.isInValid(handler)) return;
-		this.listeners.delete(handler);
-	}
-
-	emit(payload) {
-		for (const listener of this.listeners) {
-			try {
-				listener(payload);
-			} catch (err) {
-				console.error(`Could not run listener`, err);
-			}
-		}
-	}
-}
-
-const Settings = new(class Settings extends ChangeEmitter {
-	constructor() {
-		super();
-	}
-
-	init(defaultSettings) {
-		this.settings = Data.load("settings") || defaultSettings;
-	}
-
-	get(key) {
-		return this.settings[key];
-	}
-
-	set(key, val) {
-		this.settings[key] = val;
-		this.commit();
-	}
-
-	setMultiple(newSettings) {
-		this.settings = Object.assign(this.settings, newSettings);
-		this.commit();
-	}
-
-	commit() {
-		Data.save("settings", this.settings);
-		this.emit();
-	}
-})();
 
 const Logger = {
 	error(...args) {
@@ -129,17 +39,14 @@ const Logger = {
 	}
 };
 
-function getModuleAndKey(filter, options) {
-	let module;
-	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
-	module = module?.exports;
-	if (!module) return undefined;
-	const key = Object.keys(module).find(k => module[k] === target);
-	if (!key) return undefined;
-	return { module, key };
-}
+const Api = new BdApi(config.info.name);
+const DOM = Api.DOM;
+const Data = Api.Data;
+const React = Api.React;
+const Patcher = Api.Patcher;
 
-const TheBigBoyBundle = getModule(Filters.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
+const getModule = Api.Webpack.getModule;
+const Filters = Api.Webpack.Filters;
 
 class ErrorBoundary extends React.Component {
 	state = { hasError: false, error: null, info: null };
@@ -147,7 +54,7 @@ class ErrorBoundary extends React.Component {
 	componentDidCatch(error, info) {
 		this.setState({ error, info, hasError: true });
 		const errorMessage = `\n\t${error?.message || ""}${(info?.componentStack || "").split("\n").slice(0, 20).join("\n")}`;
-		console.error(`%c[${this.props.plugin}] %cthrew an exception at %c[${this.props.id}]\n`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
+		console.error(`%c[${config?.info?.name || "Unknown Plugin"}] %cthrew an exception at %c[${this.props.id}]\n`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
 	}
 
 	renderErrorBoundary() {
@@ -161,7 +68,7 @@ class ErrorBoundary extends React.Component {
 			if (this.props.passMetaProps)
 				this.props.fallback.props = {
 					id: this.props.id,
-					plugin: this.props.plugin,
+					plugin: config?.info?.name || "Unknown Plugin",
 					...this.props.fallback.props
 				};
 			return this.props.fallback;
@@ -169,7 +76,7 @@ class ErrorBoundary extends React.Component {
 		return (
 			React.createElement(this.props.fallback, {
 				id: this.props.id,
-				plugin: this.props.plugin,
+				plugin: config?.info?.name || "Unknown Plugin",
 			})
 		);
 	}
@@ -180,23 +87,80 @@ class ErrorBoundary extends React.Component {
 	}
 }
 
-const nop = () => {};
+function getModuleAndKey(filter, options) {
+	let module;
+	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
+	module = module?.exports;
+	if (!module) return {};
+	const key = Object.keys(module).find(k => module[k] === target);
+	if (!key) return {};
+	return { module, key };
+}
 
-const ExpressionPickerInspector = getModuleAndKey(Filters.byStrings("EMOJI_IS_FAVORITE_ARIA_LABEL"), { searchExports: false }) || {};
+const TheBigBoyBundle = getModule(Filters.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
+
+const ExpressionPickerInspector = getModuleAndKey(Filters.byStrings("graphicPrimary", "titlePrimary"), { searchExports: false }) || {};
 
 const CloseExpressionPicker = getModuleAndKey(Filters.byStrings("activeView:null,activeViewType:null"), { searchExports: true }) || {};
+
+const zustand = getModule(Filters.byStrings("useStore, api"), { searchExports: false });
+
+const SettingsStoreSelectors = {};
+const persistMiddleware = config => (set, get, api) => config(args => (set(args), Data.save("settings", get().getRawState())), get, api);
+
+const SettingsStore = Object.assign(
+	zustand(
+		persistMiddleware((set, get) => {
+			const settingsObj = Object.create(null);
+
+			for (const [key, value] of Object.entries({
+					...config.settings,
+					...Data.load("settings")
+				})) {
+				settingsObj[key] = value;
+				settingsObj[`set${key}`] = newValue => set({
+					[key]: newValue });
+				SettingsStoreSelectors[key] = state => state[key];
+			}
+			settingsObj.getRawState = () => {
+				return Object.entries(get())
+					.filter(([, val]) => typeof val !== "function")
+					.reduce((acc, [key, val]) => {
+						acc[key] = val;
+						return acc;
+					}, {});
+			};
+			return settingsObj;
+		})
+	), {
+		useSetting: function(key) {
+			return this(state => [state[key], state[`set${key}`]]);
+		},
+		selectors: SettingsStoreSelectors
+	}
+);
+
+Object.defineProperty(SettingsStore, "state", {
+	writeable: false,
+	configurable: false,
+	get() {
+		return this.getState();
+	}
+});
+
+const Settings = SettingsStore;
 
 const PREVIEW_SIZE = 300;
 const PREVIEW_UNAVAILABLE = `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="rgb(202 204 206)" d="M12 2C6.477 2 2 6.477 2 12C2 17.522 6.477 22 12 22C17.523 22 22 17.522 22 12C22 6.477 17.523 2 12 2ZM8 6C9.104 6 10 6.896 10 8C10 9.105 9.104 10 8 10C6.896 10 6 9.105 6 8C6 6.896 6.896 6 8 6ZM18 14C18 16.617 15.14 19 12 19C8.86 19 6 16.617 6 14V13H18V14ZM16 10C14.896 10 14 9.105 14 8C14 6.896 14.896 6 16 6C17.104 6 18 6.896 18 8C18 9.105 17.104 10 16 10Z"></path></svg>`;
 
 const { Popout } = TheBigBoyBundle;
 
-const PreviewComponent = ({ target, defaultState, setPreviewState, previewComponent }) => {
-	const [show, setShow] = React.useState(defaultState);
+const PreviewComponent = ({ target, previewComponent }) => {
+	const [show, setShow] = Settings.useSetting("previewState");
+
 	React.useEffect(() => {
 		function keyupHandler(e) {
 			if (e.key === "Control") {
-				setPreviewState(!show);
 				setShow(!show);
 			}
 		}
@@ -255,8 +219,6 @@ const patchPickerInspector = () => {
 					fallback: ret,
 				}, React.createElement(PreviewComponent, {
 					target: ret,
-					defaultState: CloseExpressionPicker ? Settings.get("previewState") : false,
-					setPreviewState: CloseExpressionPicker ? e => Settings.set("previewState", e) : nop,
 					previewComponent: getPreviewComponent(graphicPrimary),
 				}))
 			);
@@ -271,7 +233,7 @@ const patchCloseExpressionPicker = () => {
 	const { module, key } = CloseExpressionPicker;
 	if (module && key)
 		Patcher.after(module, key, () => {
-			Settings.set("previewState", Settings.get("previewDefaultState"));
+			Settings.state.setpreviewState(Settings.state.previewDefaultState);
 		});
 	else Logger.patch("CloseExpressionPicker");
 };
@@ -287,24 +249,30 @@ const Switch = TheBigBoyBundle.FormSwitch ||
 		);
 	};
 
-const SettingComponent = props => {
-	const [enabled, setEnabled] = React.useState(props.value);
+function SettingSwtich({ settingKey, note, onChange, hideBorder = false, description }) {
+	const [val, set] = Settings.useSetting(settingKey);
 	return (
 		React.createElement(Switch, {
-			value: enabled,
-			hideBorder: true,
-			onChange: e => {
-				props.onChange(e);
-				setEnabled(e);
+			value: val,
+			note: note,
+			hideBorder: hideBorder,
+			onChange: (e) => {
+				set(e);
+				onChange(e);
 			},
-		}, props.description)
+		}, description || settingKey)
 	);
-};
+}
+
+const SettingComponent = () => [{
+	settingKey: "previewDefaultState",
+	description: "Preview open by default.",
+	onChange() {
+		Settings.state.setpreviewState(Settings.state.previewDefaultState);
+	}
+}].map(SettingSwtich);
 
 class StickerEmojiPreview {
-	constructor() {
-		Settings.init(config.settings);
-	}
 
 	start() {
 		try {
@@ -322,18 +290,28 @@ class StickerEmojiPreview {
 	}
 
 	getSettingsPanel() {
-		return (
-			React.createElement(SettingComponent, {
-				description: "Preview open by default.",
-				value: Settings.get("previewDefaultState"),
-				onChange: e =>
-					Settings.setMultiple({
-						previewDefaultState: e,
-						previewState: e
-					}),
-			})
-		);
+		return React.createElement(SettingComponent, null);
 	}
 }
 
 module.exports = StickerEmojiPreview;
+
+const css = `.stickersPreview {
+	width:400px;
+	font-size: 14px;
+	background: var(--background-floating);
+	border-radius: 5px;
+	padding: .5em;
+	box-shadow: var(--elevation-high);
+}
+
+.stickersPreview img{
+	min-width:100%;
+	max-width:100%;
+}
+
+.animated img{
+	border:1px dashed #ff8f09;
+	padding:1px;
+	box-sizing:border-box;
+}`;
