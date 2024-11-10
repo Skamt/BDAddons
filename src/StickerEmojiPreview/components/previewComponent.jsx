@@ -1,15 +1,15 @@
 import { React } from "@Api";
+import Settings from "@Utils/Settings";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 import {PREVIEW_SIZE} from "../Constants";
-
 const { Popout } = TheBigBoyBundle;
 
-export default ({ target, defaultState, setPreviewState, previewComponent }) => {
-	const [show, setShow] = React.useState(defaultState);
+export default ({ target, previewComponent }) => {
+	const [show, setShow] = Settings.useSetting("previewState");
+
 	React.useEffect(() => {
 		function keyupHandler(e) {
 			if(e.key === "Control"){
-				setPreviewState(!show);
 				setShow(!show);
 			}
 		}

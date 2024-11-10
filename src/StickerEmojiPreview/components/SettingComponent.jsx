@@ -1,17 +1,28 @@
-import { React } from "@Api";
-import Switch from "@Components/Switch";
+import SettingSwtich from "@Components/SettingSwtich";
+import Settings from "@Utils/Settings";
+// eslint-disable-next-line react/jsx-key
+export default () =>
+	[
+		{
+			settingKey: "previewDefaultState",
+			description: "Preview open by default.",
+			onChange(){
+				Settings.state.setpreviewState(Settings.state.previewDefaultState);
+			}
+		}
+	].map(SettingSwtich);
 
-export default props => {
-	const [enabled, setEnabled] = React.useState(props.value);
-	return (
-		<Switch
-			value={enabled}
-			hideBorder={true}
-			onChange={e => {
-				props.onChange(e);
-				setEnabled(e);
-			}}>
-			{props.description}
-		</Switch>
-	);
-};
+// getSettingsPanel() {
+// 		return (
+// 			<SettingComponent
+// 				description="Preview open by default."
+// 				value={Settings.get("previewDefaultState")}
+// 				onChange={e =>
+// 					Settings.setMultiple({
+// 						previewDefaultState: e,
+// 						previewState: e
+// 					})
+// 				}
+// 			/>
+// 		);
+// 	}

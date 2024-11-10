@@ -1,5 +1,4 @@
 import { nop } from "@Utils";
-import Settings from "@Utils/Settings";
 import Logger from "@Utils/Logger";
 import { React, Patcher } from "@Api";
 
@@ -45,8 +44,6 @@ export default () => {
 					fallback={ret}>
 					<PreviewComponent
 						target={ret}
-						defaultState={CloseExpressionPicker ? Settings.get("previewState") : false}
-						setPreviewState={CloseExpressionPicker ? e => Settings.set("previewState", e) : nop}
 						previewComponent={getPreviewComponent(graphicPrimary)}
 					/>
 				</ErrorBoundary>

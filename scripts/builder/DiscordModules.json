@@ -81,7 +81,7 @@
 			"options": "{ searchExports: true }"
 		},
 		"ExpressionPickerInspector": {
-			"filter": "Filters.byStrings(\"EMOJI_IS_FAVORITE_ARIA_LABEL\")",
+			"filter": "Filters.byStrings(\"graphicPrimary\",\"titlePrimary\")",
 			"options": "{ searchExports: false }"
 		},
 		"MessageActions": {

@@ -9,7 +9,7 @@ export default () => {
 	const { module, key } = CloseExpressionPicker;
 	if (module && key)
 		Patcher.after(module, key, () => {
-			Settings.set("previewState", Settings.get("previewDefaultState"));
+			Settings.state.setpreviewState(Settings.state.previewDefaultState);
 		});
 	else Logger.patch("CloseExpressionPicker");
 };

@@ -1,19 +1,19 @@
 .stickersPreview {
-	width:400px;
+	width: 400px;
 	font-size: 14px;
 	background: var(--background-floating);
 	border-radius: 5px;
-	padding: .5em;
+	padding: 0.5em;
 	box-shadow: var(--elevation-high);
 }
 
-.stickersPreview img{
-	min-width:100%;
-	max-width:100%;
+.stickersPreview img {
+	min-width: 100%;
+	max-width: 100%;
 }
 
-.animated img{
-	border:1px dashed #ff8f09;
-	padding:1px;
-	box-sizing:border-box;
+.animated img {
+	border: 1px dashed #ff8f09;
+	padding: 1px;
+	box-sizing: border-box;
 }

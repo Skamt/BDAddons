@@ -1,5 +1,4 @@
-import css from "./styles";
-import Settings from "@Utils/Settings";
+import "./styles";
 import Logger from "@Utils/Logger";
 import { DOM, React, Patcher } from "@Api";
 
@@ -9,10 +8,7 @@ import patchCloseExpressionPicker from "./patches/patchCloseExpressionPicker";
 import SettingComponent from "./components/SettingComponent";
 
 export default class StickerEmojiPreview {
-	constructor() {
-		Settings.init(config.settings);
-	}
-
+	
 	start() {
 		try {
 			DOM.addStyle(css);
@@ -28,18 +24,9 @@ export default class StickerEmojiPreview {
 		Patcher.unpatchAll();
 	}
 
+	
+
 	getSettingsPanel() {
-		return (
-			<SettingComponent
-				description="Preview open by default."
-				value={Settings.get("previewDefaultState")}
-				onChange={e =>
-					Settings.setMultiple({
-						previewDefaultState: e,
-						previewState: e
-					})
-				}
-			/>
-		);
+		return <SettingComponent />;
 	}
 }
