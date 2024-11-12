@@ -5,7 +5,7 @@
 			"options": "{ searchExports: false }"
 		},
 		"TreadComponent": {
-			"filter": "a => a?.type?.toString().includes(\"GUILD_SIDEBAR_THREAD_A11Y_LABEL_WITH_UNREADS\")",
+			"filter": "a => a?.type?.toString().includes(\"GUILD_CHANNEL_LIST\")",
 			"options": "{ searchExports: false }"
 		},
 		"useStateFromStores": {

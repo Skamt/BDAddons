@@ -12,6 +12,7 @@ export const ContextMenu = Api.ContextMenu;
 export const getModule = Api.Webpack.getModule;
 export const Filters = Api.Webpack.Filters;
 export const waitForModule = Api.Webpack.waitForModule;
+export const modules = Api.Webpack.modules;
 
 // React
 export const useState = Api.React.useState;

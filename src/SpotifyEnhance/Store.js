@@ -1,4 +1,5 @@
-import zustand from "@Modules/zustand";
+import { getZustand } from "@Utils/../zustand";
+
 import ConnectedAccountsStore from "@Stores/ConnectedAccountsStore";
 import SelectedChannelStore from "@Stores/SelectedChannelStore";
 import SpotifyStore from "@Stores/SpotifyStore";
@@ -10,6 +11,8 @@ import Timer from "@Utils/Timer";
 import Toast from "@Utils/Toast";
 import SpotifyAPIWrapper from "./SpotifyAPIWrapper";
 import { sanitizeSpotifyLink } from "./Utils";
+
+const zustand = getZustand();
 
 const Utils = {
 	copy(str) {
@@ -48,7 +51,7 @@ export const Store = Object.assign(
 			const newState = get();
 			// console.log("old state", oldState);
 			// console.log("new state", newState);
-			console.log("diff", diff(oldState, newState));
+			// console.log("diff", diff(oldState, newState));
 		};
 
 		return {
