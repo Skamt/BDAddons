@@ -34,6 +34,7 @@ const Patcher = Api.Patcher;
 
 const getModule = Api.Webpack.getModule;
 const Filters = Api.Webpack.Filters;
+const modules = Api.Webpack.modules;
 const findInTree = Api.Utils.findInTree;
 
 const Logger = {
@@ -51,18 +52,26 @@ const Logger = {
 	}
 };
 
-function getModuleAndKey(filter, options) {
-	let module;
-	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
-	module = module?.exports;
-	if (!module) return {};
-	const key = Object.keys(module).find(k => module[k] === target);
-	if (!key) return {};
-	return { module, key };
-}
+const getZustand = (() => {
+	let zustand = null;
 
-const zustand = getModule(Filters.byStrings("useStore, api"), { searchExports: false });
+	return function getZustand() {
+		if (zustand !== null) return zustand;
 
+		const filter = Filters.byStrings("createWithEqualityFn");
+		let moduleId = null;
+		for (const [id, loader] of Object.entries(modules)) {
+			if (filter(loader.toString())) {
+				moduleId = id;
+				break;
+			}
+		}
+
+		return (zustand = Object.values(getModule((_, __, id) => id === moduleId) || {})[0]);
+	};
+})();
+
+const zustand = getZustand();
 const SettingsStoreSelectors = {};
 const persistMiddleware = config => (set, get, api) => config(args => (set(args), Data.save("settings", get().getRawState())), get, api);
 
@@ -108,6 +117,16 @@ Object.defineProperty(SettingsStore, "state", {
 
 const Settings = SettingsStore;
 
+function getModuleAndKey(filter, options) {
+	let module;
+	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
+	module = module?.exports;
+	if (!module) return {};
+	const key = Object.keys(module).find(k => module[k] === target);
+	if (!key) return {};
+	return { module, key };
+}
+
 const TheBigBoyBundle = getModule(Filters.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
 
 const Switch = TheBigBoyBundle.FormSwitch ||
@@ -121,14 +140,17 @@ const Switch = TheBigBoyBundle.FormSwitch ||
 		);
 	};
 
-function SettingSwtich({ settingKey, note, hideBorder = false, description }) {
+function SettingSwtich({ settingKey, note, onChange, hideBorder = false, description }) {
 	const [val, set] = Settings.useSetting(settingKey);
 	return (
 		React.createElement(Switch, {
 			value: val,
 			note: note,
 			hideBorder: hideBorder,
-			onChange: set,
+			onChange: (e) => {
+				set(e);
+				onChange(e);
+			},
 		}, description || settingKey)
 	);
 }

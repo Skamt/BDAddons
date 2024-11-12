@@ -1,7 +1,7 @@
 /**
  * @name LazyLoadChannels
  * @description Lets you choose whether to load a channel
- * @version 1.2.10
+ * @version 1.2.11
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "LazyLoadChannels",
-		"version": "1.2.10",
+		"version": "1.2.11",
 		"description": "Lets you choose whether to load a channel",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels",
@@ -35,21 +35,30 @@ const ContextMenu = Api.ContextMenu;
 
 const getModule = Api.Webpack.getModule;
 const Filters = Api.Webpack.Filters;
+const modules = Api.Webpack.modules;
 const findInTree = Api.Utils.findInTree;
 const getOwnerInstance = Api.ReactUtils.getOwnerInstance;
 
-function getModuleAndKey(filter, options) {
-	let module;
-	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
-	module = module?.exports;
-	if (!module) return {};
-	const key = Object.keys(module).find(k => module[k] === target);
-	if (!key) return {};
-	return { module, key };
-}
+const getZustand = (() => {
+	let zustand = null;
 
-const zustand = getModule(Filters.byStrings("useStore, api"), { searchExports: false });
+	return function getZustand() {
+		if (zustand !== null) return zustand;
 
+		const filter = Filters.byStrings("createWithEqualityFn");
+		let moduleId = null;
+		for (const [id, loader] of Object.entries(modules)) {
+			if (filter(loader.toString())) {
+				moduleId = id;
+				break;
+			}
+		}
+
+		return (zustand = Object.values(getModule((_, __, id) => id === moduleId) || {})[0]);
+	};
+})();
+
+const zustand = getZustand();
 const SettingsStoreSelectors = {};
 const persistMiddleware = config => (set, get, api) => config(args => (set(args), Data.save("settings", get().getRawState())), get, api);
 
@@ -168,6 +177,16 @@ const ChannelsStateManager = {
 	}
 };
 
+function getModuleAndKey(filter, options) {
+	let module;
+	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
+	module = module?.exports;
+	if (!module) return {};
+	const key = Object.keys(module).find(k => module[k] === target);
+	if (!key) return {};
+	return { module, key };
+}
+
 const Dispatcher = getModule(Filters.byProps("dispatch", "subscribe"), { searchExports: false });
 
 const ChannelActions = getModule(Filters.byProps("actions", "fetchMessages"), { searchExports: true });
@@ -185,14 +204,17 @@ const Switch = TheBigBoyBundle.FormSwitch ||
 		);
 	};
 
-function SettingSwtich({ settingKey, note, hideBorder = false, description }) {
+function SettingSwtich({ settingKey, note, onChange, hideBorder = false, description }) {
 	const [val, set] = Settings.useSetting(settingKey);
 	return (
 		React.createElement(Switch, {
 			value: val,
 			note: note,
 			hideBorder: hideBorder,
-			onChange: set,
+			onChange: (e) => {
+				set(e);
+				onChange(e);
+			},
 		}, description || settingKey)
 	);
 }
@@ -222,7 +244,7 @@ const patchChannel = () => {
 	});
 };
 
-const TreadComponent = getModule(a => a?.type?.toString().includes("GUILD_SIDEBAR_THREAD_A11Y_LABEL_WITH_UNREADS"), { searchExports: false });
+const TreadComponent = getModule(a => a?.type?.toString().includes("GUILD_CHANNEL_LIST"), { searchExports: false });
 
 const patchThread = () => {
 	if (TreadComponent)

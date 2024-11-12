@@ -1,7 +1,7 @@
 /**
  * @name SendStickersAsLinks
  * @description Enables you to send custom Stickers as links
- * @version 2.2.7
+ * @version 2.2.8
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/SendStickersAsLinks
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/SendStickersAsLinks/SendStickersAsLinks.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "SendStickersAsLinks",
-		"version": "2.2.7",
+		"version": "2.2.8",
 		"description": "Enables you to send custom Stickers as links",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SendStickersAsLinks/SendStickersAsLinks.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SendStickersAsLinks",
@@ -52,41 +52,28 @@ const Patcher = Api.Patcher;
 
 const getModule = Api.Webpack.getModule;
 const Filters = Api.Webpack.Filters;
+const modules = Api.Webpack.modules;
 
-function getRawModule(filter, options) {
-	let module;
-	getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
-	return module;
-}
+const getZustand = (() => {
+	let zustand = null;
 
-function getModuleAndKey(filter, options) {
-	let module;
-	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
-	module = module?.exports;
-	if (!module) return {};
-	const key = Object.keys(module).find(k => module[k] === target);
-	if (!key) return {};
-	return { module, key };
-}
+	return function getZustand() {
+		if (zustand !== null) return zustand;
 
-function mapExports(moduleFilter, exportsMap, options) {
-	const module = getRawModule(moduleFilter, options);
-	if (!module) return {};
-	const { exports } = module;
-	const res = { module: exports, mangledKeys: {} };
-	for (const [mapKey, filter] of Object.entries(exportsMap)) {
-		for (const [exportKey, val] of Object.entries(exports)) {
-			if (!filter(val)) continue;
-			res[mapKey] = val;
-			res.mangledKeys[mapKey] = exportKey;
-			break;
+		const filter = Filters.byStrings("createWithEqualityFn");
+		let moduleId = null;
+		for (const [id, loader] of Object.entries(modules)) {
+			if (filter(loader.toString())) {
+				moduleId = id;
+				break;
+			}
 		}
-	}
-	return res;
-}
 
-const zustand = getModule(Filters.byStrings("useStore, api"), { searchExports: false });
+		return (zustand = Object.values(getModule((_, __, id) => id === moduleId) || {})[0]);
+	};
+})();
 
+const zustand = getZustand();
 const SettingsStoreSelectors = {};
 const persistMiddleware = config => (set, get, api) => config(args => (set(args), Data.save("settings", get().getRawState())), get, api);
 
@@ -132,6 +119,38 @@ Object.defineProperty(SettingsStore, "state", {
 
 const Settings = SettingsStore;
 
+function getRawModule(filter, options) {
+	let module;
+	getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
+	return module;
+}
+
+function getModuleAndKey(filter, options) {
+	let module;
+	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
+	module = module?.exports;
+	if (!module) return {};
+	const key = Object.keys(module).find(k => module[k] === target);
+	if (!key) return {};
+	return { module, key };
+}
+
+function mapExports(moduleFilter, exportsMap, options) {
+	const module = getRawModule(moduleFilter, options);
+	if (!module) return {};
+	const { exports } = module;
+	const res = { module: exports, mangledKeys: {} };
+	for (const [mapKey, filter] of Object.entries(exportsMap)) {
+		for (const [exportKey, val] of Object.entries(exports)) {
+			if (!filter(val)) continue;
+			res[mapKey] = val;
+			res.mangledKeys[mapKey] = exportKey;
+			break;
+		}
+	}
+	return res;
+}
+
 const TheBigBoyBundle = getModule(Filters.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
 
 const Switch = TheBigBoyBundle.FormSwitch ||
@@ -145,14 +164,17 @@ const Switch = TheBigBoyBundle.FormSwitch ||
 		);
 	};
 
-function SettingSwtich({ settingKey, note, hideBorder = false, description }) {
+function SettingSwtich({ settingKey, note, onChange, hideBorder = false, description }) {
 	const [val, set] = Settings.useSetting(settingKey);
 	return (
 		React.createElement(Switch, {
 			value: val,
 			note: note,
 			hideBorder: hideBorder,
-			onChange: set,
+			onChange: (e) => {
+				set(e);
+				onChange(e);
+			},
 		}, description || settingKey)
 	);
 }

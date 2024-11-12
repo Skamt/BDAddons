@@ -1,7 +1,7 @@
 /**
  * @name StickerEmojiPreview
  * @description Adds a zoomed preview to those tiny Stickers and Emojis
- * @version 1.2.1
+ * @version 1.2.2
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/StickerEmojiPreview
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/StickerEmojiPreview/StickerEmojiPreview.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "StickerEmojiPreview",
-		"version": "1.2.1",
+		"version": "1.2.2",
 		"description": "Adds a zoomed preview to those tiny Stickers and Emojis",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/StickerEmojiPreview/StickerEmojiPreview.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/StickerEmojiPreview",
@@ -47,6 +47,7 @@ const Patcher = Api.Patcher;
 
 const getModule = Api.Webpack.getModule;
 const Filters = Api.Webpack.Filters;
+const modules = Api.Webpack.modules;
 
 class ErrorBoundary extends React.Component {
 	state = { hasError: false, error: null, info: null };
@@ -103,8 +104,26 @@ const ExpressionPickerInspector = getModuleAndKey(Filters.byStrings("graphicPrim
 
 const CloseExpressionPicker = getModuleAndKey(Filters.byStrings("activeView:null,activeViewType:null"), { searchExports: true }) || {};
 
-const zustand = getModule(Filters.byStrings("useStore, api"), { searchExports: false });
+const getZustand = (() => {
+	let zustand = null;
 
+	return function getZustand() {
+		if (zustand !== null) return zustand;
+
+		const filter = Filters.byStrings("createWithEqualityFn");
+		let moduleId = null;
+		for (const [id, loader] of Object.entries(modules)) {
+			if (filter(loader.toString())) {
+				moduleId = id;
+				break;
+			}
+		}
+
+		return (zustand = Object.values(getModule((_, __, id) => id === moduleId) || {})[0]);
+	};
+})();
+
+const zustand = getZustand();
 const SettingsStoreSelectors = {};
 const persistMiddleware = config => (set, get, api) => config(args => (set(args), Data.save("settings", get().getRawState())), get, api);
 
@@ -223,7 +242,7 @@ const patchPickerInspector = () => {
 				}))
 			);
 		});
-	else Logger.patch("UserBannerMask");
+	else Logger.patch("ExpressionPickerInspector");
 };
 
 const patchCloseExpressionPicker = () => {
@@ -297,21 +316,22 @@ class StickerEmojiPreview {
 module.exports = StickerEmojiPreview;
 
 const css = `.stickersPreview {
-	width:400px;
+	width: 400px;
 	font-size: 14px;
 	background: var(--background-floating);
 	border-radius: 5px;
-	padding: .5em;
+	padding: 0.5em;
 	box-shadow: var(--elevation-high);
 }
 
-.stickersPreview img{
-	min-width:100%;
-	max-width:100%;
+.stickersPreview img {
+	min-width: 100%;
+	max-width: 100%;
 }
 
-.animated img{
-	border:1px dashed #ff8f09;
-	padding:1px;
-	box-sizing:border-box;
-}`;
+.animated img {
+	border: 1px dashed #ff8f09;
+	padding: 1px;
+	box-sizing: border-box;
+}
+`;
