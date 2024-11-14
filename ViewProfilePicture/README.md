@@ -10,12 +10,10 @@ The view button will show you what you are already seeing, **Which means:**
     - **In the userpopout:** you will see the guild specific avatar and banner image.
     - **In the profile:** you will see the user's avatar and banner image.
 
-**Note:** Pairs well with *CopyImageLink* Plugin.
 ## Features
 
 - View **Avatar/Banner**.
 - Copy Banner color.
-- Copy Image Link *(soon)*
 
 ## Preview
 
