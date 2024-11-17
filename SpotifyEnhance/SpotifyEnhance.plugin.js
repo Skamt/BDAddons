@@ -1,7 +1,7 @@
 /**
  * @name SpotifyEnhance
  * @description All in one better spotify-discord experience.
- * @version 1.0.1
+ * @version 1.0.2
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "SpotifyEnhance",
-		"version": "1.0.1",
+		"version": "1.0.2",
 		"description": "All in one better spotify-discord experience.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance",
@@ -2118,10 +2118,6 @@ const patchChannelAttach = () => {
 	else Logger.patch("patchChannelAttach");
 };
 
-window.spotstore = Store;
-window.SpotifyAPI = SpotifyAPI;
-window.Settings = Settings;
-
 class SpotifyEnhance {
 	start() {
 		try {
@@ -2325,18 +2321,6 @@ const css = `:root {
 	align-items: center;
 	margin-right: 5px;
 }
-.spotify-embed-plus {
-	display: flex;
-	min-width: 400px;
-	max-width: 100%;
-	gap: 5px;
-	overflow: hidden;
-}
-
-.spotify-embed-plus > button {
-	flex: 1 0 auto;
-	text-transform: capitalize;
-}
 .spotify-embed-container {
 	background:
 		linear-gradient(#00000090 0 0),
@@ -2479,6 +2463,18 @@ const css = `:root {
 }
 
 
+.spotify-embed-plus {
+	display: flex;
+	min-width: 400px;
+	max-width: 100%;
+	gap: 5px;
+	overflow: hidden;
+}
+
+.spotify-embed-plus > button {
+	flex: 1 0 auto;
+	text-transform: capitalize;
+}
 .spotify-player-controls {
 	display: flex;
 	justify-content: space-between;
@@ -2524,6 +2520,51 @@ const css = `:root {
 	appearance: slider-vertical;
 }
 
+.spotify-player-timeline {
+	user-select: none;
+	margin-bottom: 2px;
+	color: white;
+	display: flex;
+	flex-wrap: wrap;
+	font-size: 0.8rem;
+	flex: 1;
+}
+
+.spotify-player-timeline-progress {
+	flex: 1;
+}
+
+.spotify-player-timeline-trackbar {
+	margin-top: -8px;
+	margin-bottom: 8px;
+	cursor: pointer;
+}
+
+.spotify-player-timeline:hover .spotify-player-timeline-trackbar-grabber {
+	opacity: 1;
+}
+
+.spotify-player-timeline .spotify-player-timeline-trackbar-grabber {
+	opacity: 0;
+	cursor: grab;
+	width: 10px;
+	height: 10px;
+	margin-top: 4px;
+}
+
+.spotify-player-timeline .spotify-player-timeline-trackbar-bar {
+	background: hsl(0deg 0% 100% / 30%);
+	height: 6px;
+}
+
+.spotify-player-timeline .spotify-player-timeline-trackbar-bar > div {
+	background: #fff;
+	border-radius: 4px;
+}
+
+.spotify-player-timeline:hover .spotify-player-timeline-trackbar-bar > div {
+	background: var(--spotify-green);
+}
 .spotify-player-media {
 	color: white;
 	font-size: 0.9rem;
@@ -2591,49 +2632,4 @@ div:has(> .spotify-banner-modal) {
 		lime;
 	border-radius: 5px;
 }
-
-.spotify-player-timeline {
-	user-select: none;
-	margin-bottom: 2px;
-	color: white;
-	display: flex;
-	flex-wrap: wrap;
-	font-size: 0.8rem;
-	flex: 1;
-}
-
-.spotify-player-timeline-progress {
-	flex: 1;
-}
-
-.spotify-player-timeline-trackbar {
-	margin-top: -8px;
-	margin-bottom: 8px;
-	cursor: pointer;
-}
-
-.spotify-player-timeline:hover .spotify-player-timeline-trackbar-grabber {
-	opacity: 1;
-}
-
-.spotify-player-timeline .spotify-player-timeline-trackbar-grabber {
-	opacity: 0;
-	cursor: grab;
-	width: 10px;
-	height: 10px;
-	margin-top: 4px;
-}
-
-.spotify-player-timeline .spotify-player-timeline-trackbar-bar {
-	background: hsl(0deg 0% 100% / 30%);
-	height: 6px;
-}
-
-.spotify-player-timeline .spotify-player-timeline-trackbar-bar > div {
-	background: #fff;
-	border-radius: 4px;
-}
-
-.spotify-player-timeline:hover .spotify-player-timeline-trackbar-bar > div {
-	background: var(--spotify-green);
-}`;
+`;
