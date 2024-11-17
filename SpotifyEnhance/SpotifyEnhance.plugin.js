@@ -1,7 +1,7 @@
 /**
  * @name SpotifyEnhance
  * @description All in one better spotify-discord experience.
- * @version 1.0.2
+ * @version 1.0.3
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "SpotifyEnhance",
-		"version": "1.0.2",
+		"version": "1.0.3",
 		"description": "All in one better spotify-discord experience.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance",
@@ -638,7 +638,7 @@ function getFluxContainer() {
 }
 
 const zustand$1 = getZustand();
-
+const subscribeWithSelector = getModule(Filters.byStrings("equalityFn", "fireImmediately"), { searchExports: true });
 const Utils = {
 	copy(str) {
 		copy(str);
@@ -666,97 +666,92 @@ const Utils = {
 };
 
 const Store = Object.assign(
-	zustand$1((setState, get) => {
-		const set = args => {
-			console.log("applying", args);
-			get();
-			setState(args);
-			get();
+	zustand$1(
+		subscribeWithSelector((set, get) => {
 
-		};
+			return {
+				account: undefined,
+				setAccount: account => {
+					if (account === get().account) return;
+					set({ account: account, isActive: !!account });
+				},
 
-		return {
-			account: undefined,
-			setAccount: account => {
-				if (account === get().account) return;
-				set({ account: account, isActive: !!account });
-			},
+				isActive: false,
+				setDeviceState: isActive => set({ isActive }),
 
-			isActive: false,
-			setDeviceState: isActive => set({ isActive }),
+				async fetchPlayerState() {
+					const [err, playerState] = await promiseHandler(SpotifyAPIWrapper.getPlayerState());
+					if (err) return Logger.error("Could not fetch player state", err);
+					get().setPlayerState(playerState);
+				},
 
-			async fetchPlayerState() {
-				const [err, playerState] = await promiseHandler(SpotifyAPIWrapper.getPlayerState());
-				if (err) return Logger.error("Could not fetch player state", err);
-				get().setPlayerState(playerState);
-			},
+				media: {},
+				mediaType: undefined,
+				volume: undefined,
+				progress: undefined,
+				isPlaying: undefined,
+				mediaId: undefined,
+				repeat: undefined,
+				shuffle: undefined,
+				actions: undefined,
+				setPlayerState: playerState => {
+					if (!playerState || playerState.currently_playing_type === "ad") return set({ isPlaying: false });
 
-			media: {},
-			mediaType: undefined,
-			volume: undefined,
-			progress: undefined,
-			isPlaying: undefined,
-			mediaId: undefined,
-			repeat: undefined,
-			shuffle: undefined,
-			actions: undefined,
-			setPlayerState: playerState => {
-				if (!playerState || playerState.currently_playing_type === "ad") return set({ isPlaying: false });
+					const state = get();
+					const media = playerState.item?.id === state.media?.id ? state.media : playerState.item;
+					set({
+						isActive: !!playerState?.device?.is_active,
+						volume: playerState?.device?.volume_percent,
+						duration: playerState?.item?.duration_ms,
+						progress: playerState?.progress_ms,
+						position: playerState?.progress_ms,
+						isPlaying: playerState?.is_playing,
+						repeat: playerState?.repeat_state,
+						shuffle: playerState?.shuffle_state,
+						media: media,
+						mediaId: media?.id,
+						mediaType: playerState?.currently_playing_type,
+						context: playerState?.context || {},
+						actions: playerState?.actions?.disallows
+					});
+				},
 
-				const state = get();
-				const media = playerState.item?.id === state.media?.id ? state.media : playerState.item;
-				set({
-					isActive: !!playerState?.device?.is_active,
-					volume: playerState?.device?.volume_percent,
-					duration: playerState?.item?.duration_ms,
-					progress: playerState?.progress_ms,
-					position: playerState?.progress_ms,
-					isPlaying: playerState?.is_playing,
-					repeat: playerState?.repeat_state,
-					shuffle: playerState?.shuffle_state,
-					media: media,
-					mediaId: media?.id,
-					mediaType: playerState?.currently_playing_type,
-					context: playerState?.context || {},
-					actions: playerState?.actions?.disallows
-				});
-			},
+				position: 0,
+				incrementPosition: () => {
+					const state = get();
+					let sum = state.position + 1000;
+					if (sum > state.duration) sum = state.duration;
+					set({ position: sum });
+				},
+				setPosition: position => set({ position }),
 
-			position: 0,
-			incrementPosition: () => {
-				const state = get();
-				let sum = state.position + 1000;
-				if (sum > state.duration) sum = state.duration;
-				set({ position: sum });
-			},
-			setPosition: position => set({ position }),
-
-			getAlbum() {
-				const media = get().media;
-				return {
-					...media.album,
-					url: media.album.external_urls.spotify
-				};
-			},
-			getFullSongName() {
-				const state = get();
-				if (!state.media) return "";
-				const { artists, album } = state.media;
-				return `Name: ${state.media.name}\nArtist${artists.length > 1 ? "s" : ""}: ${artists.map(a => a.name).join(" ,")}\nAlbum: ${album.name}`;
-			},
-			getSongUrl() {
-				return get().media?.external_urls?.spotify;
-			},
-			getSongBanners() {
-				const media = get().media;
-				return {
-					bannerSm: media?.album?.images[2],
-					bannerMd: media?.album?.images[1],
-					bannerLg: media?.album?.images[0]
-				};
-			}
-		};
-	}), {
+				getAlbum() {
+					const media = get().media;
+					return {
+						...media.album,
+						url: media.album.external_urls.spotify
+					};
+				},
+				getFullSongName() {
+					const state = get();
+					if (!state.media) return "";
+					const { artists, album } = state.media;
+					return `Name: ${state.media.name}\nArtist${artists.length > 1 ? "s" : ""}: ${artists.map(a => a.name).join(" ,")}\nAlbum: ${album.name}`;
+				},
+				getSongUrl() {
+					return get().media?.external_urls?.spotify;
+				},
+				getSongBanners() {
+					const media = get().media;
+					return {
+						bannerSm: media?.album?.images[2],
+						bannerMd: media?.album?.images[1],
+						bannerLg: media?.album?.images[0]
+					};
+				}
+			};
+		})
+	), {
 		init() {
 			SpotifyStore.addChangeListener(onSpotifyStoreChange);
 			ConnectedAccountsStore.addChangeListener(onAccountsChanged);
@@ -802,11 +797,11 @@ Object.defineProperty(Store, "state", {
 	get: () => Store.getState()
 });
 
-Store.subscribe((account = {}) => {
+Store.subscribe(Store.selectors.account, (account = {}) => {
 	SpotifyAPIWrapper.setAccount(account.accessToken, account.accountId);
-}, Store.selectors.account);
+});
 
-Store.subscribe(isPlaying => {
+Store.subscribe(Store.selectors.isPlaying, isPlaying => {
 	if (isPlaying) {
 		Store.idleTimer.stop();
 		Store.positionInterval.start();
@@ -814,23 +809,23 @@ Store.subscribe(isPlaying => {
 		Store.positionInterval.stop();
 		Store.idleTimer.start();
 	}
-}, Store.selectors.isPlaying);
+});
 
-Store.subscribe(position => {
+Store.subscribe(Store.selectors.position, position => {
 	const { duration, setPosition } = Store.state;
 
 	if (position < duration) return;
 	Store.positionInterval.stop();
 	setPosition(duration || 0);
-}, Store.selectors.position);
+});
 
 Store.subscribe(
+	state => [state.isPlaying, state.progress],
+
 	([isPlaying]) => {
 		if (!isPlaying) Store.positionInterval.stop();
 		else Store.positionInterval.start();
-	},
-	state => [state.isPlaying, state.progress],
-	shallow
+	}, { equalityFn: shallow }
 );
 
 function onSpotifyStoreChange() {
@@ -2475,6 +2470,74 @@ const css = `:root {
 	flex: 1 0 auto;
 	text-transform: capitalize;
 }
+.spotify-player-media {
+	color: white;
+	font-size: 0.9rem;
+	overflow: hidden;
+	display: grid;
+	column-gap: 10px;
+	z-index: 5;
+	grid-template-columns: 64px minmax(0, 1fr);
+	grid-template-rows: repeat(3, 1fr);
+	align-items: center;
+	justify-items: flex-start;
+	grid-template-areas:
+		"banner title"
+		"banner artist"
+		"banner album";
+}
+
+.spotify-player-title {
+	grid-area: title;
+	font-weight: bold;
+	color: #fff;
+	font-size: 1.05rem;
+	max-width: 100%;
+}
+
+.spotify-player-title:first-child {
+	grid-column: 1/-1;
+	grid-row: 1/-1;
+	margin-bottom: 5px;
+}
+
+.spotify-player-artist {
+	grid-area: artist;
+	font-size: 0.8rem;
+	max-width: 100%;
+}
+
+.spotify-player-album {
+	grid-area: album;
+	max-width: 100%;
+}
+
+.spotify-player-album > div,
+.spotify-player-artist > div {
+	display: flex;
+	gap: 5px;
+}
+
+.spotify-player-album span,
+.spotify-player-artist span {
+	color: var(--text-sub);
+}
+
+div:has(> .spotify-banner-modal) {
+	background: #0000;
+}
+
+.spotify-player-banner {
+	grid-area: banner;
+	cursor: pointer;
+	width: 64px;
+	height: 64px;
+	background:
+		var(--banner-lg) center/cover no-repeat,
+		lime;
+	border-radius: 5px;
+}
+
 .spotify-player-controls {
 	display: flex;
 	justify-content: space-between;
@@ -2564,72 +2627,4 @@ const css = `:root {
 
 .spotify-player-timeline:hover .spotify-player-timeline-trackbar-bar > div {
 	background: var(--spotify-green);
-}
-.spotify-player-media {
-	color: white;
-	font-size: 0.9rem;
-	overflow: hidden;
-	display: grid;
-	column-gap: 10px;
-	z-index: 5;
-	grid-template-columns: 64px minmax(0, 1fr);
-	grid-template-rows: repeat(3, 1fr);
-	align-items: center;
-	justify-items: flex-start;
-	grid-template-areas:
-		"banner title"
-		"banner artist"
-		"banner album";
-}
-
-.spotify-player-title {
-	grid-area: title;
-	font-weight: bold;
-	color: #fff;
-	font-size: 1.05rem;
-	max-width: 100%;
-}
-
-.spotify-player-title:first-child {
-	grid-column: 1/-1;
-	grid-row: 1/-1;
-	margin-bottom: 5px;
-}
-
-.spotify-player-artist {
-	grid-area: artist;
-	font-size: 0.8rem;
-	max-width: 100%;
-}
-
-.spotify-player-album {
-	grid-area: album;
-	max-width: 100%;
-}
-
-.spotify-player-album > div,
-.spotify-player-artist > div {
-	display: flex;
-	gap: 5px;
-}
-
-.spotify-player-album span,
-.spotify-player-artist span {
-	color: var(--text-sub);
-}
-
-div:has(> .spotify-banner-modal) {
-	background: #0000;
-}
-
-.spotify-player-banner {
-	grid-area: banner;
-	cursor: pointer;
-	width: 64px;
-	height: 64px;
-	background:
-		var(--banner-lg) center/cover no-repeat,
-		lime;
-	border-radius: 5px;
-}
-`;
+}`;
