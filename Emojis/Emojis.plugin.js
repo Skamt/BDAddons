@@ -1,7 +1,7 @@
 /**
  * @name Emojis
  * @description Send emoji as link if it can't be sent it normally.
- * @version 1.0.2
+ * @version 1.0.3
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/Emojis
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/Emojis/Emojis.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "Emojis",
-		"version": "1.0.2",
+		"version": "1.0.3",
 		"description": "Send emoji as link if it can't be sent it normally.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/Emojis/Emojis.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/Emojis",
@@ -41,13 +41,50 @@ const Filters = Api.Webpack.Filters;
 const modules = Api.Webpack.modules;
 const findInTree = Api.Utils.findInTree;
 
+function getRawModule(filter, options) {
+	let module;
+	getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
+	return module;
+}
+
+function getModuleAndKey(filter, options) {
+	let module;
+	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
+	module = module?.exports;
+	if (!module) return {};
+	const key = Object.keys(module).find(k => module[k] === target);
+	if (!key) return {};
+	return { module, key };
+}
+
+function filterModuleAndExport(moduleFilter, exportFilter, options) {
+	const module = getRawModule(moduleFilter, options);
+	if (!module) return;
+	const { exports } = module;
+	const key = Object.keys(exports).find(k => exportFilter(exports[k]));
+	if (!key) return {};
+	return { module: exports, key, target: exports[key] };
+}
+
+const TheBigBoyBundle = getModule(Filters.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
+
+function copy(data) {
+	DiscordNative.clipboard.copy(data);
+}
+
+function getNestedProp(obj, path) {
+	return path.split(".").reduce((ob, prop) => ob?.[prop], obj);
+}
+
+const nop = () => {};
+
 const getZustand = (() => {
 	let zustand = null;
 
 	return function getZustand() {
 		if (zustand !== null) return zustand;
 
-		const filter = Filters.byStrings("createWithEqualityFn");
+		const filter = Filters.byStrings("useSyncExternalStore", "useDebugValue", "subscribe");
 		let moduleId = null;
 		for (const [id, loader] of Object.entries(modules)) {
 			if (filter(loader.toString())) {
@@ -106,33 +143,6 @@ Object.defineProperty(SettingsStore, "state", {
 
 const Settings = SettingsStore;
 
-function getRawModule(filter, options) {
-	let module;
-	getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
-	return module;
-}
-
-function getModuleAndKey(filter, options) {
-	let module;
-	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
-	module = module?.exports;
-	if (!module) return {};
-	const key = Object.keys(module).find(k => module[k] === target);
-	if (!key) return {};
-	return { module, key };
-}
-
-function filterModuleAndExport(moduleFilter, exportFilter, options) {
-	const module = getRawModule(moduleFilter, options);
-	if (!module) return;
-	const { exports } = module;
-	const key = Object.keys(exports).find(k => exportFilter(exports[k]));
-	if (!key) return {};
-	return { module: exports, key, target: exports[key] };
-}
-
-const TheBigBoyBundle = getModule(Filters.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
-
 const Switch = TheBigBoyBundle.FormSwitch ||
 	function SwitchComponentFallback(props) {
 		return (
@@ -144,14 +154,14 @@ const Switch = TheBigBoyBundle.FormSwitch ||
 		);
 	};
 
-function SettingSwtich({ settingKey, note, onChange, hideBorder = false, description }) {
+function SettingSwtich({ settingKey, note, onChange = nop, hideBorder = false, description }) {
 	const [val, set] = Settings.useSetting(settingKey);
 	return (
 		React.createElement(Switch, {
 			value: val,
 			note: note,
 			hideBorder: hideBorder,
-			onChange: (e) => {
+			onChange: e => {
 				set(e);
 				onChange(e);
 			},
@@ -367,14 +377,6 @@ const patchHighlightAnimatedEmoji = () => {
 		});
 	else Logger.patch("HighlightAnimatedEmoji");
 };
-
-function copy(data) {
-	DiscordNative.clipboard.copy(data);
-}
-
-function getNestedProp(obj, path) {
-	return path.split(".").reduce((ob, prop) => ob?.[prop], obj);
-}
 
 const Button = TheBigBoyBundle.Button ||
 	function ButtonComponentFallback(props) {

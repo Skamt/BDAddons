@@ -1,7 +1,7 @@
 /**
  * @name LazyLoadChannels
  * @description Lets you choose whether to load a channel
- * @version 1.2.11
+ * @version 1.2.12
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "LazyLoadChannels",
-		"version": "1.2.11",
+		"version": "1.2.12",
 		"description": "Lets you choose whether to load a channel",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels",
@@ -45,7 +45,7 @@ const getZustand = (() => {
 	return function getZustand() {
 		if (zustand !== null) return zustand;
 
-		const filter = Filters.byStrings("createWithEqualityFn");
+		const filter = Filters.byStrings("useSyncExternalStore", "useDebugValue", "subscribe");
 		let moduleId = null;
 		for (const [id, loader] of Object.entries(modules)) {
 			if (filter(loader.toString())) {
@@ -191,7 +191,56 @@ const Dispatcher = getModule(Filters.byProps("dispatch", "subscribe"), { searchE
 
 const ChannelActions = getModule(Filters.byProps("actions", "fetchMessages"), { searchExports: true });
 
+class ErrorBoundary extends React.Component {
+	state = { hasError: false, error: null, info: null };
+
+	componentDidCatch(error, info) {
+		this.setState({ error, info, hasError: true });
+		const errorMessage = `\n\t${error?.message || ""}${(info?.componentStack || "").split("\n").slice(0, 20).join("\n")}`;
+		console.error(`%c[${config?.info?.name || "Unknown Plugin"}] %cthrew an exception at %c[${this.props.id}]\n`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
+	}
+
+	renderErrorBoundary() {
+		return (
+			React.createElement('div', { style: { background: "#292c2c", padding: "20px", borderRadius: "10px" }, }, React.createElement('b', { style: { color: "#e0e1e5" }, }, "An error has occured while rendering ", React.createElement('span', { style: { color: "orange" }, }, this.props.id)))
+		);
+	}
+
+	renderFallback() {
+		if (React.isValidElement(this.props.fallback)) {
+			if (this.props.passMetaProps)
+				this.props.fallback.props = {
+					id: this.props.id,
+					plugin: config?.info?.name || "Unknown Plugin",
+					...this.props.fallback.props
+				};
+			return this.props.fallback;
+		}
+		return (
+			React.createElement(this.props.fallback, {
+				id: this.props.id,
+				plugin: config?.info?.name || "Unknown Plugin",
+			})
+		);
+	}
+
+	render() {
+		if (!this.state.hasError) return this.props.children;
+		return this.props.fallback ? this.renderFallback() : this.renderErrorBoundary();
+	}
+}
+
 const TheBigBoyBundle = getModule(Filters.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
+
+function reRender(selector) {
+	const target = document.querySelector(selector)?.parentElement;
+	if (!target) return;
+	const instance = getOwnerInstance(target);
+	const unpatch = Patcher.instead(instance, "render", () => unpatch());
+	instance.forceUpdate(() => instance.forceUpdate());
+}
+
+const nop = () => {};
 
 const Switch = TheBigBoyBundle.FormSwitch ||
 	function SwitchComponentFallback(props) {
@@ -204,14 +253,14 @@ const Switch = TheBigBoyBundle.FormSwitch ||
 		);
 	};
 
-function SettingSwtich({ settingKey, note, onChange, hideBorder = false, description }) {
+function SettingSwtich({ settingKey, note, onChange = nop, hideBorder = false, description }) {
 	const [val, set] = Settings.useSetting(settingKey);
 	return (
 		React.createElement(Switch, {
 			value: val,
 			note: note,
 			hideBorder: hideBorder,
-			onChange: (e) => {
+			onChange: e => {
 				set(e);
 				onChange(e);
 			},
@@ -274,45 +323,6 @@ const patchCreateChannel = () => {
 
 const ChannelContent = getModule(m => m.type && m.type.toString?.().includes("messageGroupSpacing"), { searchExports: false });
 
-class ErrorBoundary extends React.Component {
-	state = { hasError: false, error: null, info: null };
-
-	componentDidCatch(error, info) {
-		this.setState({ error, info, hasError: true });
-		const errorMessage = `\n\t${error?.message || ""}${(info?.componentStack || "").split("\n").slice(0, 20).join("\n")}`;
-		console.error(`%c[${config?.info?.name || "Unknown Plugin"}] %cthrew an exception at %c[${this.props.id}]\n`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
-	}
-
-	renderErrorBoundary() {
-		return (
-			React.createElement('div', { style: { background: "#292c2c", padding: "20px", borderRadius: "10px" }, }, React.createElement('b', { style: { color: "#e0e1e5" }, }, "An error has occured while rendering ", React.createElement('span', { style: { color: "orange" }, }, this.props.id)))
-		);
-	}
-
-	renderFallback() {
-		if (React.isValidElement(this.props.fallback)) {
-			if (this.props.passMetaProps)
-				this.props.fallback.props = {
-					id: this.props.id,
-					plugin: config?.info?.name || "Unknown Plugin",
-					...this.props.fallback.props
-				};
-			return this.props.fallback;
-		}
-		return (
-			React.createElement(this.props.fallback, {
-				id: this.props.id,
-				plugin: config?.info?.name || "Unknown Plugin",
-			})
-		);
-	}
-
-	render() {
-		if (!this.state.hasError) return this.props.children;
-		return this.props.fallback ? this.renderFallback() : this.renderErrorBoundary();
-	}
-}
-
 const EVENTS = [
 	"THREAD_CREATE_LOCAL",
 	"THREAD_LIST_SYNC",
@@ -334,14 +344,6 @@ const ErrorFallbackComponent = props => {
 		React.createElement('div', { id: COMPONENT_ID, }, React.createElement('div', { className: "logo", }), React.createElement('div', { className: "title", }, "An error has occured while rendering ", React.createElement('span', { style: { fontWeight: "bold", color: "orange" }, }, props.id)), React.createElement('div', { className: "description", }, "Open console for more information"))
 	);
 };
-
-function reRender(selector) {
-	const target = document.querySelector(selector)?.parentElement;
-	if (!target) return;
-	const instance = getOwnerInstance(target);
-	const unpatch = Patcher.instead(instance, "render", () => unpatch());
-	instance.forceUpdate(() => instance.forceUpdate());
-}
 
 function showToast(content, type) {
 	UI.showToast(`[${config.info.name}] ${content}`, { timeout: 5000, type });

@@ -1,6 +1,6 @@
 /**
  * @name NoPing
- * @description Empty description
+ * @description Let's you pick who not to ping
  * @version 1.0.0
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/NoPing
@@ -11,7 +11,7 @@ const config = {
 	"info": {
 		"name": "NoPing",
 		"version": "1.0.0",
-		"description": "Empty description",
+		"description": "Let's you pick who not to ping",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/NoPing/NoPing.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/NoPing",
 		"authors": [{

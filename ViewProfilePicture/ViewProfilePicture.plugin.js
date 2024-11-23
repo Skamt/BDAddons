@@ -1,7 +1,7 @@
 /**
  * @name ViewProfilePicture
  * @description Adds a button to the user popout and profile that allows you to view the Avatar and banner.
- * @version 1.2.14
+ * @version 1.2.15
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "ViewProfilePicture",
-		"version": "1.2.14",
+		"version": "1.2.15",
 		"description": "Adds a button to the user popout and profile that allows you to view the Avatar and banner.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture",
@@ -52,13 +52,125 @@ const Logger = {
 	}
 };
 
+class ErrorBoundary extends React.Component {
+	state = { hasError: false, error: null, info: null };
+
+	componentDidCatch(error, info) {
+		this.setState({ error, info, hasError: true });
+		const errorMessage = `\n\t${error?.message || ""}${(info?.componentStack || "").split("\n").slice(0, 20).join("\n")}`;
+		console.error(`%c[${config?.info?.name || "Unknown Plugin"}] %cthrew an exception at %c[${this.props.id}]\n`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
+	}
+
+	renderErrorBoundary() {
+		return (
+			React.createElement('div', { style: { background: "#292c2c", padding: "20px", borderRadius: "10px" }, }, React.createElement('b', { style: { color: "#e0e1e5" }, }, "An error has occured while rendering ", React.createElement('span', { style: { color: "orange" }, }, this.props.id)))
+		);
+	}
+
+	renderFallback() {
+		if (React.isValidElement(this.props.fallback)) {
+			if (this.props.passMetaProps)
+				this.props.fallback.props = {
+					id: this.props.id,
+					plugin: config?.info?.name || "Unknown Plugin",
+					...this.props.fallback.props
+				};
+			return this.props.fallback;
+		}
+		return (
+			React.createElement(this.props.fallback, {
+				id: this.props.id,
+				plugin: config?.info?.name || "Unknown Plugin",
+			})
+		);
+	}
+
+	render() {
+		if (!this.state.hasError) return this.props.children;
+		return this.props.fallback ? this.renderFallback() : this.renderErrorBoundary();
+	}
+}
+
+function getModuleAndKey(filter, options) {
+	let module;
+	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
+	module = module?.exports;
+	if (!module) return {};
+	const key = Object.keys(module).find(k => module[k] === target);
+	if (!key) return {};
+	return { module, key };
+}
+
+const RenderLinkComponent = getModule(m => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false });
+
+const TheBigBoyBundle = getModule(Filters.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
+
+const ImageModal = getModule(Filters.byStrings("renderLinkComponent", "zoomThumbnailPlaceholder"), { searchExports: true });
+
+const { ModalRoot, ModalSize } = TheBigBoyBundle;
+
+const openModal = (children, tag, className) => {
+	const id = `${tag ? `${tag}-` : ""}modal`;
+	TheBigBoyBundle.openModal(props => {
+		return (
+			React.createElement(ErrorBoundary, {
+				id: id,
+				plugin: config.info.name,
+			}, React.createElement(ModalRoot, {
+				...props,
+				className: className,
+				onClick: props.onClose,
+				size: ModalSize.DYNAMIC,
+			}, children))
+		);
+	});
+};
+
+const getImageModalComponent = (url, rest = {}) => {
+	return (
+		React.createElement('div', { className: "imageModalwrapper", }, React.createElement(ImageModal, {
+			media: {
+				...rest,
+				type: "IMAGE",
+				url: url,
+				proxyUrl: url
+			},
+		}), React.createElement('div', { className: "imageModalOptions", }, React.createElement(RenderLinkComponent, {
+				className: "downloadLink",
+				href: url,
+			}, "Open in Browser"
+
+		)))
+	);
+};
+const promiseHandler = promise => promise.then(data => [undefined, data]).catch(err => [err]);
+
+function copy(data) {
+	DiscordNative.clipboard.copy(data);
+}
+
+const nop = () => {};
+
+function getImageDimensions(url) {
+	return new Promise((resolve, reject) => {
+		const img = new Image();
+		img.onload = () =>
+			resolve({
+				width: img.width,
+				height: img.height
+			});
+		img.onerror = reject;
+		img.src = url;
+	});
+}
+
 const getZustand = (() => {
 	let zustand = null;
 
 	return function getZustand() {
 		if (zustand !== null) return zustand;
 
-		const filter = Filters.byStrings("createWithEqualityFn");
+		const filter = Filters.byStrings("useSyncExternalStore", "useDebugValue", "subscribe");
 		let moduleId = null;
 		for (const [id, loader] of Object.entries(modules)) {
 			if (filter(loader.toString())) {
@@ -117,18 +229,6 @@ Object.defineProperty(SettingsStore, "state", {
 
 const Settings = SettingsStore;
 
-function getModuleAndKey(filter, options) {
-	let module;
-	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
-	module = module?.exports;
-	if (!module) return {};
-	const key = Object.keys(module).find(k => module[k] === target);
-	if (!key) return {};
-	return { module, key };
-}
-
-const TheBigBoyBundle = getModule(Filters.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
-
 const Switch = TheBigBoyBundle.FormSwitch ||
 	function SwitchComponentFallback(props) {
 		return (
@@ -140,14 +240,14 @@ const Switch = TheBigBoyBundle.FormSwitch ||
 		);
 	};
 
-function SettingSwtich({ settingKey, note, onChange, hideBorder = false, description }) {
+function SettingSwtich({ settingKey, note, onChange = nop, hideBorder = false, description }) {
 	const [val, set] = Settings.useSetting(settingKey);
 	return (
 		React.createElement(Switch, {
 			value: val,
 			note: note,
 			hideBorder: hideBorder,
-			onChange: (e) => {
+			onChange: e => {
 				set(e);
 				onChange(e);
 			},
@@ -167,45 +267,6 @@ const SettingComponent = () => [{
 		description: "Include banner color."
 	}
 ].map(SettingSwtich);
-
-class ErrorBoundary extends React.Component {
-	state = { hasError: false, error: null, info: null };
-
-	componentDidCatch(error, info) {
-		this.setState({ error, info, hasError: true });
-		const errorMessage = `\n\t${error?.message || ""}${(info?.componentStack || "").split("\n").slice(0, 20).join("\n")}`;
-		console.error(`%c[${config?.info?.name || "Unknown Plugin"}] %cthrew an exception at %c[${this.props.id}]\n`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
-	}
-
-	renderErrorBoundary() {
-		return (
-			React.createElement('div', { style: { background: "#292c2c", padding: "20px", borderRadius: "10px" }, }, React.createElement('b', { style: { color: "#e0e1e5" }, }, "An error has occured while rendering ", React.createElement('span', { style: { color: "orange" }, }, this.props.id)))
-		);
-	}
-
-	renderFallback() {
-		if (React.isValidElement(this.props.fallback)) {
-			if (this.props.passMetaProps)
-				this.props.fallback.props = {
-					id: this.props.id,
-					plugin: config?.info?.name || "Unknown Plugin",
-					...this.props.fallback.props
-				};
-			return this.props.fallback;
-		}
-		return (
-			React.createElement(this.props.fallback, {
-				id: this.props.id,
-				plugin: config?.info?.name || "Unknown Plugin",
-			})
-		);
-	}
-
-	render() {
-		if (!this.state.hasError) return this.props.children;
-		return this.props.fallback ? this.renderFallback() : this.renderErrorBoundary();
-	}
-}
 
 const ErrorIcon = props => (
 	React.createElement('div', { ...props, }, React.createElement('svg', {
@@ -247,65 +308,6 @@ function ImageIcon(props) {
 			...props,
 		}, React.createElement('path', { d: "M341.333,0H42.667C19.093,0,0,19.093,0,42.667v298.667C0,364.907,19.093,384,42.667,384h298.667 C364.907,384,384,364.907,384,341.333V42.667C384,19.093,364.907,0,341.333,0z M42.667,320l74.667-96l53.333,64.107L245.333,192l96,128H42.667z", }))
 	);
-}
-
-const RenderLinkComponent = getModule(m => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false });
-
-const ImageModal = getModule(Filters.byStrings("renderLinkComponent", "zoomThumbnailPlaceholder"), { searchExports: true });
-
-const { ModalRoot, ModalSize } = TheBigBoyBundle;
-
-const openModal = (children, tag, className) => {
-	const id = `${tag ? `${tag}-` : ""}modal`;
-	TheBigBoyBundle.openModal(props => {
-		return (
-			React.createElement(ErrorBoundary, {
-				id: id,
-				plugin: config.info.name,
-			}, React.createElement(ModalRoot, {
-				...props,
-				className: className,
-				onClick: props.onClose,
-				size: ModalSize.DYNAMIC,
-			}, children))
-		);
-	});
-};
-
-const getImageModalComponent = (url, rest = {}) => {
-	return (
-		React.createElement('div', { className: "imageModalwrapper", }, React.createElement(ImageModal, {
-			media: {
-				...rest,
-				type: "IMAGE",
-				url: url,
-				proxyUrl: url
-			},
-		}), React.createElement('div', { className: "imageModalOptions", }, React.createElement(RenderLinkComponent, {
-				className: "downloadLink",
-				href: url,
-			}, "Open in Browser"
-
-		)))
-	);
-};
-const promiseHandler = promise => promise.then(data => [undefined, data]).catch(err => [err]);
-
-function copy(data) {
-	DiscordNative.clipboard.copy(data);
-}
-
-function getImageDimensions(url) {
-	return new Promise((resolve, reject) => {
-		const img = new Image();
-		img.onload = () =>
-			resolve({
-				width: img.width,
-				height: img.height
-			});
-		img.onerror = reject;
-		img.src = url;
-	});
 }
 
 function showToast(content, type) {

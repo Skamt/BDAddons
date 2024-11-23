@@ -84,7 +84,7 @@ const TheBigBoyBundle = getModule$1(Filters.byProps("openModal", "FormSwitch", "
 
 const RenderLinkComponent = getModule$1(m => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false });
 
-const ImageModal = getModule$1(Filters.byStrings("renderLinkComponent", "MEDIA_MODAL_CLOSE"), { searchExports: true });
+const ImageModal = getModule$1(Filters.byStrings("renderLinkComponent", "zoomThumbnailPlaceholder"), { searchExports: true });
 
 const { ModalRoot, ModalSize } = TheBigBoyBundle;
 
@@ -120,17 +120,23 @@ const openModal = (children, tag, className) => {
 	});
 };
 
-const getImageModalComponent = (url, rest = {}) => (
-	React.createElement(ImageModal, {
-		...rest,
-		src: url,
-		original: url,
-		response: true,
-		renderForwardComponent: () => null,
-		renderLinkComponent: p => React.createElement(RenderLinkComponent, { ...p, }),
-	})
-);
+const getImageModalComponent = (url, rest = {}) => {
+	return (
+		React.createElement('div', { className: "imageModalwrapper", }, React.createElement(ImageModal, {
+			media: {
+				...rest,
+				type: "IMAGE",
+				url: url,
+				proxyUrl: url
+			},
+		}), React.createElement('div', { className: "imageModalOptions", }, React.createElement(RenderLinkComponent, {
+				className: "downloadLink",
+				href: url,
+			}, "Open in Browser"
 
+		)))
+	);
+};
 const promiseHandler = promise => promise.then(data => [undefined, data]).catch(err => [err]);
 
 function copy(data) {
