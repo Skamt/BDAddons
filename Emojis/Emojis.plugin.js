@@ -84,7 +84,7 @@ const getZustand = (() => {
 	return function getZustand() {
 		if (zustand !== null) return zustand;
 
-		const filter = Filters.byStrings("useSyncExternalStore", "useDebugValue", "subscribe");
+		const filter = Filters.byStrings("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe");
 		let moduleId = null;
 		for (const [id, loader] of Object.entries(modules)) {
 			if (filter(loader.toString())) {
