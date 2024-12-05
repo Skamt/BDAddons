@@ -1,4 +1,4 @@
-require('dotenv').config();
+require("dotenv").config();
 const fs = require("fs");
 const path = require("path");
 const { rollup, watch } = require("rollup");
@@ -34,18 +34,21 @@ async function build(list) {
 		}
 
 		const config = mergeDeep(require(pluginConfig), baseConfig);
-		const buildFile = path.join(releaseFolder, config.info.name, `${config.info.name}.plugin.js`);
-
-		const { input, output } = getConfig(pluginFolder, buildFile, config);
+		const releaseFile = path.join(releaseFolder, config.info.name, `${config.info.name}.plugin.js`);
+		const devFile = path.join(bdFolder, "plugins", `${config.info.name}.plugin.js`);
+		const { dev, release } = getConfig(pluginFolder, releaseFile, devFile, config);
 
 		console.log(`\n===== ${config.info.name} =====\n`);
 
 		try {
-			const bundle = await rollup(input);
+			// release write
+			const bundle = await rollup(release.input);
+			await bundle.write(release.output);
 
-			await bundle.write(output);
-			output.file = path.join(bdFolder, "plugins", `${config.info.name}.plugin.js`);
-			await bundle.write(output);
+			// dev write
+			const releaseBundle = await rollup(dev.input);
+			await releaseBundle.write(dev.output);
+
 			console.log(`${config.info.name} built successfully`);
 		} catch (e) {
 			console.log(`☺ Error: ${e}`);
@@ -90,7 +93,7 @@ function dev() {
 		}
 	});
 
-	watcher.on("change", (file) => {
+	watcher.on("change", file => {
 		console.log(`[===] Changed: ${file.replace(pluginsDir, "")}`);
 	});
 

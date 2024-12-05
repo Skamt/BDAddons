@@ -1,5 +1,5 @@
+import { Filters, getModule } from "@Api";
 import { getZustand } from "@Utils/../zustand";
-
 import ConnectedAccountsStore from "@Stores/ConnectedAccountsStore";
 import SelectedChannelStore from "@Stores/SelectedChannelStore";
 import SpotifyStore from "@Stores/SpotifyStore";
@@ -13,7 +13,7 @@ import SpotifyAPIWrapper from "./SpotifyAPIWrapper";
 import { sanitizeSpotifyLink } from "./Utils";
 
 const zustand = getZustand();
-
+const subscribeWithSelector = getModule(Filters.byStrings("equalityFn", "fireImmediately"), { searchExports: true });
 const Utils = {
 	copy(str) {
 		copy(str);
@@ -43,99 +43,101 @@ const Utils = {
 import { addedDiff, deletedDiff, detailedDiff, diff, updatedDiff } from "deep-object-diff";
 
 export const Store = Object.assign(
-	zustand((setState, get) => {
-		const set = args => {
-			console.log("applying", args);
-			const oldState = get();
-			setState(args);
-			const newState = get();
-			// console.log("old state", oldState);
-			// console.log("new state", newState);
-			// console.log("diff", diff(oldState, newState));
-		};
+	zustand(
+		subscribeWithSelector((set, get) => {
+			// const set = args => {
+			// 	console.log("applying", args);
+			// 	const oldState = get();
+			// 	setState(args);
+			// 	const newState = get();
+			// 	console.log("old state", oldState);
+			// 	console.log("new state", newState);
+			// 	console.log("diff", diff(oldState, newState));
+			// };
 
-		return {
-			account: undefined,
-			setAccount: account => {
-				if (account === get().account) return;
-				set({ account: account, isActive: !!account });
-			},
+			return {
+				account: undefined,
+				setAccount: account => {
+					if (account === get().account) return;
+					set({ account: account, isActive: !!account });
+				},
 
-			isActive: false,
-			setDeviceState: isActive => set({ isActive }),
+				isActive: false,
+				setDeviceState: isActive => set({ isActive }),
 
-			async fetchPlayerState() {
-				const [err, playerState] = await promiseHandler(SpotifyAPIWrapper.getPlayerState());
-				if (err) return Logger.error("Could not fetch player state", err);
-				get().setPlayerState(playerState);
-			},
+				async fetchPlayerState() {
+					const [err, playerState] = await promiseHandler(SpotifyAPIWrapper.getPlayerState());
+					if (err) return Logger.error("Could not fetch player state", err);
+					get().setPlayerState(playerState);
+				},
 
-			media: {},
-			mediaType: undefined,
-			volume: undefined,
-			progress: undefined,
-			isPlaying: undefined,
-			mediaId: undefined,
-			repeat: undefined,
-			shuffle: undefined,
-			actions: undefined,
-			setPlayerState: playerState => {
-				if (!playerState || playerState.currently_playing_type === "ad") return set({ isPlaying: false });
+				media: {},
+				mediaType: undefined,
+				volume: undefined,
+				progress: undefined,
+				isPlaying: undefined,
+				mediaId: undefined,
+				repeat: undefined,
+				shuffle: undefined,
+				actions: undefined,
+				setPlayerState: playerState => {
+					if (!playerState || playerState.currently_playing_type === "ad") return set({ isPlaying: false });
 
-				const state = get();
-				const media = playerState.item?.id === state.media?.id ? state.media : playerState.item;
-				set({
-					isActive: !!playerState?.device?.is_active,
-					volume: playerState?.device?.volume_percent,
-					duration: playerState?.item?.duration_ms,
-					progress: playerState?.progress_ms,
-					position: playerState?.progress_ms,
-					isPlaying: playerState?.is_playing,
-					repeat: playerState?.repeat_state,
-					shuffle: playerState?.shuffle_state,
-					media: media,
-					mediaId: media?.id,
-					mediaType: playerState?.currently_playing_type,
-					context: playerState?.context || {},
-					actions: playerState?.actions?.disallows
-				});
-			},
+					const state = get();
+					const media = playerState.item?.id === state.media?.id ? state.media : playerState.item;
+					set({
+						isActive: !!playerState?.device?.is_active,
+						volume: playerState?.device?.volume_percent,
+						duration: playerState?.item?.duration_ms,
+						progress: playerState?.progress_ms,
+						position: playerState?.progress_ms,
+						isPlaying: playerState?.is_playing,
+						repeat: playerState?.repeat_state,
+						shuffle: playerState?.shuffle_state,
+						media: media,
+						mediaId: media?.id,
+						mediaType: playerState?.currently_playing_type,
+						context: playerState?.context || {},
+						actions: playerState?.actions?.disallows
+					});
+				},
 
-			position: 0,
-			incrementPosition: () => {
-				const state = get();
-				let sum = state.position + 1000;
-				if (sum > state.duration) sum = state.duration;
-				set({ position: sum });
-			},
-			setPosition: position => set({ position }),
+				position: 0,
+				incrementPosition: () => {
+					const state = get();
+					let sum = state.position + 1000;
+					if (sum > state.duration) sum = state.duration;
+					set({ position: sum });
+				},
+				setPosition: position => set({ position }),
 
-			getAlbum() {
-				const media = get().media;
-				return {
-					...media.album,
-					url: media.album.external_urls.spotify
-				};
-			},
-			getFullSongName() {
-				const state = get();
-				if (!state.media) return "";
-				const { artists, album } = state.media;
-				return `Name: ${state.media.name}\nArtist${artists.length > 1 ? "s" : ""}: ${artists.map(a => a.name).join(" ,")}\nAlbum: ${album.name}`;
-			},
-			getSongUrl() {
-				return get().media?.external_urls?.spotify;
-			},
-			getSongBanners() {
-				const media = get().media;
-				return {
-					bannerSm: media?.album?.images[2],
-					bannerMd: media?.album?.images[1],
-					bannerLg: media?.album?.images[0]
-				};
-			}
-		};
-	}),
+				getAlbum() {
+					const media = get().media;
+					return {
+						...media.album,
+						url: media.album.external_urls.spotify
+					};
+				},
+				getFullSongName() {
+					const state = get();
+					if (!state.media) return "";
+					const { artists, album } = state.media;
+					return `Name: ${state.media.name}\nArtist${artists.length > 1 ? "s" : ""}: ${artists.map(a => a.name).join(" ,")}\nAlbum: ${album.name}`;
+				},
+				getSongUrl() {
+					return get().media?.external_urls?.spotify;
+				},
+				getSongBanners() {
+					const media = get().media;
+					return {
+						bannerSm: media?.album?.images[2],
+						bannerMd: media?.album?.images[1],
+						bannerLg: media?.album?.images[0]
+					};
+				}
+			};
+		})
+	),
 	{
 		init() {
 			SpotifyStore.addChangeListener(onSpotifyStoreChange);
@@ -182,11 +184,11 @@ Object.defineProperty(Store, "state", {
 	get: () => Store.getState()
 });
 
-Store.subscribe((account = {}) => {
+Store.subscribe(Store.selectors.account, (account = {}) => {
 	SpotifyAPIWrapper.setAccount(account.accessToken, account.accountId);
-}, Store.selectors.account);
+});
 
-Store.subscribe(isPlaying => {
+Store.subscribe(Store.selectors.isPlaying, isPlaying => {
 	if (isPlaying) {
 		Store.idleTimer.stop();
 		Store.positionInterval.start();
@@ -194,23 +196,24 @@ Store.subscribe(isPlaying => {
 		Store.positionInterval.stop();
 		Store.idleTimer.start();
 	}
-}, Store.selectors.isPlaying);
+});
 
-Store.subscribe(position => {
+Store.subscribe(Store.selectors.position, position => {
 	const { duration, setPosition } = Store.state;
 
 	if (position < duration) return;
 	Store.positionInterval.stop();
 	setPosition(duration || 0);
-}, Store.selectors.position);
+});
 
 Store.subscribe(
+	state => [state.isPlaying, state.progress],
+
 	([isPlaying]) => {
 		if (!isPlaying) Store.positionInterval.stop();
 		else Store.positionInterval.start();
 	},
-	state => [state.isPlaying, state.progress],
-	shallow
+	{ equalityFn: shallow }
 );
 
 function onSpotifyStoreChange() {

@@ -15,9 +15,9 @@ import patchChannelAttach from "./patches/patchChannelAttach";
 import SpotifyAPI from "@Utils/SpotifyAPI";
 import Settings from "@Utils/Settings";
 
-window.spotstore = Store;
-window.SpotifyAPI = SpotifyAPI;
-window.Settings = Settings;
+// window.spotstore = Store;
+// window.SpotifyAPI = SpotifyAPI;
+// window.Settings = Settings;
 
 export default class SpotifyEnhance {
 	start() {

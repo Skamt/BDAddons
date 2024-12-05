@@ -46,4 +46,9 @@ Object.defineProperty(SettingsStore, "state", {
 	}
 });
 
+/*DEBUG*/
+window.BDPluginSettings = window.BDPluginSettings || {};
+window.BDPluginSettings[config.info.name] = SettingsStore;
+/*DEBUG*/
+
 export default SettingsStore;

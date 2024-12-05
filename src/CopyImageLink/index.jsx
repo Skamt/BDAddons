@@ -1,6 +1,5 @@
 import { DOM, Patcher, React } from "@Api";
 import RenderLinkComponent from "@Modules/RenderLinkComponent";
-import { getNestedProp } from "@Utils";
 import Logger from "@Utils/Logger";
 import CopyButtonComponent from "./components/CopyButtonComponent";
 import "./styles";
