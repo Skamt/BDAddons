@@ -1,7 +1,7 @@
 /**
  * @name SpotifyEnhance
  * @description All in one better spotify-discord experience.
- * @version 1.0.4
+ * @version 1.0.5
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "SpotifyEnhance",
-		"version": "1.0.4",
+		"version": "1.0.5",
 		"description": "All in one better spotify-discord experience.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance",
@@ -2301,14 +2301,18 @@ const css = `:root {
 	margin-right: auto;
 	grid-template-columns: 48px minmax(0, 1fr);
 	grid-template-rows: repeat(2, auto);
+	grid-template-areas:
+		"banner title"
+		"banner artist";
 	justify-content: center;
 	gap: 5px 10px;
+
 }
 
 .spotify-player-container.compact .spotify-player-banner {
 	height: 48px;
 	width: 48px;
-	grid-row: 1 /3;
+	grid-row: 1 / -1;
 	border-radius: 0;
 }
 
@@ -2317,18 +2321,7 @@ const css = `:root {
 	justify-content: unset;
 	align-items: center;
 	margin-right: 5px;
-}
-.spotify-embed-plus {
-	display: flex;
-	min-width: 400px;
-	max-width: 100%;
-	gap: 5px;
-	overflow: hidden;
-}
-
-.spotify-embed-plus > button {
-	flex: 1 0 auto;
-	text-transform: capitalize;
+	flex:0 0 auto;
 }
 .spotify-embed-container {
 	background:
@@ -2472,6 +2465,18 @@ const css = `:root {
 }
 
 
+.spotify-embed-plus {
+	display: flex;
+	min-width: 400px;
+	max-width: 100%;
+	gap: 5px;
+	overflow: hidden;
+}
+
+.spotify-embed-plus > button {
+	flex: 1 0 auto;
+	text-transform: capitalize;
+}
 .spotify-player-media {
 	color: white;
 	font-size: 0.9rem;
