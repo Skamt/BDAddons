@@ -30,7 +30,9 @@ function getSocket() {
 export default async function () {
 	const socket = await getSocket();
 	Patcher.after(socket.prototype, "handleEvent", function onSocketEvent(socket, [socketEvent]) {
+		/*DEBUG*/
 		Logger.log("Spotify Socket", socketEvent , Date.now());
+		/*DEBUG*/
 		
 
 		if (Store.state.account?.accountId && socket.accountId !== Store.state.account?.accountId) return;

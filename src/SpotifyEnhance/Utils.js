@@ -25,25 +25,33 @@ export function sanitizeSpotifyLink(link) {
 
 const activityPanelClasses = getModule(Filters.byProps("activityPanel", "panels"), { searchExports: false });
 
-export function getFluxContainer() {
-	const el = document.querySelector(`.${activityPanelClasses.panels}`);
-	if (el) {
-		const instance = getInternalInstance(el);
-		if (instance) return Promise.resolve(instance.child.sibling);
-	}
-	return new Promise(resolve => {
-		const interval = setInterval(() => {
-			const el = document.querySelector(`.${activityPanelClasses.panels}`);
-			if (!el) return;
-			const instance = getInternalInstance(el);
-			if (!instance) return;
-			resolve(instance.child.sibling);
-			clearInterval(interval);
-		}, 500);
+// export function getFluxContainer() {}
 
-		setTimeout(() => {
-			resolve(null);
-			clearInterval(interval);
-		}, 20 * 1000);
-	});
-}
+export const getFluxContainer = (() => {
+	let target = null;
+	return () => {
+		if (target) return Promise.resolve(target);
+		const el = document.querySelector(`.${activityPanelClasses.panels}`);
+		if (el) {
+			const instance = getInternalInstance(el);
+			target = instance.child.sibling;
+			if (instance) return Promise.resolve(target);
+		}
+		return new Promise(resolve => {
+			const interval = setInterval(() => {
+				const el = document.querySelector(`.${activityPanelClasses.panels}`);
+				if (!el) return;
+				const instance = getInternalInstance(el);
+				if (!instance) return;
+				target = instance.child.sibling;
+				resolve(target);
+				clearInterval(interval);
+			}, 500);
+
+			setTimeout(() => {
+				resolve(null);
+				clearInterval(interval);
+			}, 20 * 1000);
+		});
+	};
+})();

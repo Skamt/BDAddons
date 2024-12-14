@@ -13,3 +13,8 @@ export const PlayerButtonsEnum = {
 	REPEAT: "Repeat",
 	VOLUME: "Volume"
 };
+
+export const PlayerPlaceEnum = {
+	PIP: "PIP",
+	USERAREA: "USERAREA",
+};

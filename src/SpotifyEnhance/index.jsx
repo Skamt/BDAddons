@@ -2,22 +2,24 @@ import "./styles";
 import { DOM, Patcher } from "@Api";
 import Logger from "@Utils/Logger";
 import { Store } from "./Store";
-import { getFluxContainer } from "./Utils";
+
 import SettingComponent from "./components/SettingComponent";
 import patchListenAlong from "./patches/patchListenAlong";
 import patchSpotifyActivity from "./patches/patchSpotifyActivity";
 import patchSpotifyEmbed from "./patches/patchSpotifyEmbed";
-import patchSpotifyPlayer from "./patches/patchSpotifyPlayer";
+import patchSpotifyPlayer, {cleanFluxContainer} from "./patches/patchSpotifyPlayer";
 import patchSpotifySocket from "./patches/patchSpotifySocket";
 import patchMessageHeader from "./patches/patchMessageHeader";
 import patchChannelAttach from "./patches/patchChannelAttach";
+import Pip from "./pip";
 
 import SpotifyAPI from "@Utils/SpotifyAPI";
-import Settings from "@Utils/Settings";
 
-// window.spotstore = Store;
-// window.SpotifyAPI = SpotifyAPI;
-// window.Settings = Settings;
+/*DEBUG*/
+window.cleanFluxContainer = cleanFluxContainer;
+window.spotstore = Store;
+window.SpotifyAPI = SpotifyAPI;
+/*DEBUG*/
 
 export default class SpotifyEnhance {
 	start() {
@@ -25,6 +27,7 @@ export default class SpotifyEnhance {
 			// eslint-disable-next-line no-undef
 			DOM.addStyle(css);
 			Store.init();
+			Pip.init();
 			patchListenAlong();
 			patchSpotifyEmbed();
 			patchSpotifySocket();
@@ -37,14 +40,15 @@ export default class SpotifyEnhance {
 		}
 	}
 
+
 	async stop() {
 		try {
 			Store.dispose();
+			Pip.dispose();
 			DOM.removeStyle();
 			Patcher.unpatchAll();
 
-			const fluxContainer = await getFluxContainer();
-			if (fluxContainer) fluxContainer.stateNode.forceUpdate();
+			cleanFluxContainer();			
 		} catch (e) {
 			Logger.error(e);
 		}

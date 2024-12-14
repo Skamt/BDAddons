@@ -1,7 +1,7 @@
 import { React } from "@Api";
 import "./styles";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
-import Arrow from "@Components/Icons/Arrow";
+import Arrow from "@Components/Icons/ArrowIcon";
 import Flex from "@Components/Flex";
 const { Heading } = TheBigBoyBundle;
 

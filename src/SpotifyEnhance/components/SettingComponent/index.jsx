@@ -3,7 +3,8 @@ import Collapsible from "@Components/Collapsible";
 import SettingSwtich from "@Components/SettingSwtich";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 import Settings from "@Utils/Settings";
-import { PlayerButtonsEnum, EmbedStyleEnum } from "../../consts.js";
+import { PlayerButtonsEnum, PlayerPlaceEnum, EmbedStyleEnum } from "../../consts.js";
+import {cleanFluxContainer} from "../../patches/patchSpotifyPlayer";
 
 const { FormDivider, RadioGroup } = TheBigBoyBundle;
 
@@ -32,10 +33,33 @@ function SpotifyEmbedOptions() {
 	);
 }
 
+function SpotifyPLayerOptions() {
+	const [val, set] = Settings.useSetting("spotifyPlayerPlace");
+	return (
+		<RadioGroup
+			options={[
+				{
+					value: PlayerPlaceEnum.PIP,
+					name: "PIP: place the player in a draggable picture-in-picture"
+				},
+				{
+					value: PlayerPlaceEnum.USERAREA,
+					name: "USERAREA: place the player in the user area (bottom left)"
+				},
+			]}
+			orientation={"horizontal"}
+			value={val}
+			onChange={e => {
+				cleanFluxContainer();
+				set(e.value);
+			}}
+		/>
+	);
+}
+
 export default function () {
 	return (
 		<div className={`${config.info.name}-settings`}>
-			<FormDivider style={{ margin: "20px 0 20px 0" }} />
 			<Collapsible title="miscellaneous">
 				{[
 					{
@@ -74,6 +98,10 @@ export default function () {
 			<FormDivider style={{ margin: "20px 0 20px 0" }} />
 			<Collapsible title="Spotify embed style">
 				<SpotifyEmbedOptions />
+			</Collapsible>
+			<FormDivider style={{ margin: "20px 0 20px 0" }} />
+			<Collapsible title="Spotify player placement">
+				<SpotifyPLayerOptions />
 			</Collapsible>
 		</div>
 	);

@@ -42,3 +42,14 @@
 [class^="threadMessageAccessory"] .spotifyActivityIndicatorIcon {
 	margin: 0 0.25rem 0 0.25rem;
 }
+
+.pipContainer{
+	position: absolute;
+	inset:0;
+	pointer-events:none;
+}
+
+.pipContainer .spotify-player-container {
+	width: 240px;
+	box-sizing: border-box;
+}

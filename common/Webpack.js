@@ -1,4 +1,4 @@
-import { waitForModule, Filters, getModule } from "@Api";
+import { waitForModule, modules, Filters, getModule } from "@Api";
 
 export { getModule };
 export { Filters };
@@ -6,7 +6,7 @@ export { waitForModule };
 
 export function getRawModule(filter, options) {
 	let module;
-	getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
+	getModule((entry, m, id) => (filter(entry, m, id) ? (module = m) : false), options);
 	return module;
 }
 
@@ -26,14 +26,14 @@ export function filterModuleAndExport(moduleFilter, exportFilter, options) {
 	const { exports } = module;
 	const key = Object.keys(exports).find(k => exportFilter(exports[k]));
 	if (!key) return {};
-	return { module:exports, key, target: exports[key] };
+	return { module: exports, key, target: exports[key] };
 }
 
 export function mapExports(moduleFilter, exportsMap, options) {
 	const module = getRawModule(moduleFilter, options);
 	if (!module) return {};
 	const { exports } = module;
-	const res = { module: exports, mangledKeys:{} };
+	const res = { module: exports, mangledKeys: {} };
 	for (const [mapKey, filter] of Object.entries(exportsMap)) {
 		for (const [exportKey, val] of Object.entries(exports)) {
 			if (!filter(val)) continue;
@@ -43,4 +43,16 @@ export function mapExports(moduleFilter, exportsMap, options) {
 		}
 	}
 	return res;
+}
+
+export function getBySource(filter) {
+	let moduleId = null;
+	for (const [id, loader] of Object.entries(modules)) {
+		if (filter(loader.toString())) {
+			moduleId = id;
+			break;
+		}
+	}
+
+	return getModule((_, __, id) => id === moduleId);
 }

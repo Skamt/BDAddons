@@ -73,7 +73,7 @@ function dev() {
 	const config = mergeDeep(require(pluginConfig), baseConfig);
 	const buildFile = path.join(bdFolder, "plugins", `${config.info.name}.plugin.js`);
 
-	const { input, output } = getConfig(pluginFolder, buildFile, config);
+	const { dev: {input, output} } = getConfig(pluginFolder, "", buildFile,config);
 
 	console.log(`\nWatching ${config.info.name} Plugin\n`);
 

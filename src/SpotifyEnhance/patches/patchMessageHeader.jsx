@@ -9,20 +9,17 @@ import SpotifyIcon from "@Components/icons/SpotifyIcon";
 import Tooltip from "@Components/Tooltip";
 import Settings from "@Utils/Settings";
 
-
-
 export default () => {
 	const { module, key } = MessageHeader;
-	if (module && key)
-		Patcher.after(module, key, (_, [{ message }], ret) => {
-			const userId = message.author.id;
-			ret.props.children.push(
-				<ErrorBoundary id="SpotifyActivityIndicator">
-					<SpotifyActivityIndicator userId={userId} />
-				</ErrorBoundary>
-			);
-		});
-	else Logger.patch("MessageHeader");
+	if (!module || !key) return Logger.patch("MessageHeader");
+	Patcher.after(module, key, (_, [{ message }], ret) => {
+		const userId = message.author.id;
+		ret.props.children.push(
+			<ErrorBoundary id="SpotifyActivityIndicator">
+				<SpotifyActivityIndicator userId={userId} />
+			</ErrorBoundary>
+		);
+	});
 };
 
 function SpotifyActivityIndicator({ userId }) {
