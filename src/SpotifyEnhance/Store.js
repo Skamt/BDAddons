@@ -40,7 +40,7 @@ const Utils = {
 	}
 };
 
-import { addedDiff, deletedDiff, detailedDiff, diff, updatedDiff } from "deep-object-diff";
+// import { addedDiff, deletedDiff, detailedDiff, diff, updatedDiff } from "deep-object-diff";
 
 export const Store = Object.assign(
 	zustand(
@@ -142,7 +142,7 @@ export const Store = Object.assign(
 		init() {
 			SpotifyStore.addChangeListener(onSpotifyStoreChange);
 			ConnectedAccountsStore.addChangeListener(onAccountsChanged);
-			this.idleTimer = new Timer(() => Store.state.setAccount(undefined), 10 * 60 * 1000, Timer.TIMEOUT);
+			this.idleTimer = new Timer(() => Store.state.setAccount(undefined), 5 * 60 * 1000, Timer.TIMEOUT);
 			this.positionInterval = new Timer(Store.state.incrementPosition, 1000, Timer.INTERVAL);
 
 			const { socket } = SpotifyStore.getActiveSocketAndDevice() || {};

@@ -25,8 +25,6 @@ export function sanitizeSpotifyLink(link) {
 
 const activityPanelClasses = getModule(Filters.byProps("activityPanel", "panels"), { searchExports: false });
 
-// export function getFluxContainer() {}
-
 export const getFluxContainer = (() => {
 	let target = null;
 	return () => {
