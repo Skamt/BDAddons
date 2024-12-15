@@ -873,7 +873,7 @@ function onAccountsChanged() {
 	}
 }
 
-function Arrow$1() {
+function Arrow() {
 	return (
 		React.createElement('svg', {
 			width: 24,
@@ -905,7 +905,7 @@ function Collapsible({ title, children }) {
 			onClick: () => setOpen(!open),
 			direction: Flex.Direction.HORIZONTAL,
 			align: Flex.Align.CENTER,
-		}, React.createElement(Flex, { grow: 0, className: "collapsible-icon", }, React.createElement(Arrow$1, null)), React.createElement(Heading, {
+		}, React.createElement(Flex, { grow: 0, className: "collapsible-icon", }, React.createElement(Arrow, null)), React.createElement(Heading, {
 			className: "collapsible-title",
 			tag: "h5",
 		}, title)), open && React.createElement('div', { className: "collapsible-body", }, children))
@@ -1600,21 +1600,6 @@ function Duration({ duration, position }) {
 			onClick: clickHandler,
 			className: "spotify-player-timeline-duration",
 		}, toggle ? `-${formatMsToTime(duration - position)}` : formatMsToTime(duration))
-	);
-}
-
-function Arrow() {
-	return (
-		React.createElement('svg', {
-			width: 24,
-			height: 24,
-			viewBox: "0 0 24 24",
-			fill: "none",
-			xmlns: "http://www.w3.org/2000/svg",
-		}, React.createElement('path', {
-			d: "M9.71069 18.2929C10.1012 18.6834 10.7344 18.6834 11.1249 18.2929L16.0123 13.4006C16.7927 12.6195 16.7924 11.3537 16.0117 10.5729L11.1213 5.68254C10.7308 5.29202 10.0976 5.29202 9.70708 5.68254C9.31655 6.07307 9.31655 6.70623 9.70708 7.09676L13.8927 11.2824C14.2833 11.6729 14.2833 12.3061 13.8927 12.6966L9.71069 16.8787C9.32016 17.2692 9.32016 17.9023 9.71069 18.2929Z",
-			fill: "#ccc",
-		}))
 	);
 }
 
@@ -2612,18 +2597,6 @@ div:has(> .spotify-banner-modal) {
 	border-radius: 5px;
 }
 
-.spotify-embed-plus {
-	display: flex;
-	min-width: 400px;
-	max-width: 100%;
-	gap: 5px;
-	overflow: hidden;
-}
-
-.spotify-embed-plus > button {
-	flex: 1 0 auto;
-	text-transform: capitalize;
-}
 .spotify-embed-container {
 	background:
 		linear-gradient(#00000090 0 0),
@@ -2765,4 +2738,16 @@ div:has(> .spotify-banner-modal) {
 	}
 }
 
-`;
+
+.spotify-embed-plus {
+	display: flex;
+	min-width: 400px;
+	max-width: 100%;
+	gap: 5px;
+	overflow: hidden;
+}
+
+.spotify-embed-plus > button {
+	flex: 1 0 auto;
+	text-transform: capitalize;
+}`;
