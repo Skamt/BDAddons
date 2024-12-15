@@ -1,7 +1,7 @@
 /**
  * @name SpotifyEnhance
  * @description All in one better spotify-discord experience.
- * @version 1.0.6
+ * @version 1.0.7
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "SpotifyEnhance",
-		"version": "1.0.6",
+		"version": "1.0.7",
 		"description": "All in one better spotify-discord experience.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance",
@@ -873,7 +873,7 @@ function onAccountsChanged() {
 	}
 }
 
-function Arrow() {
+function Arrow$1() {
 	return (
 		React.createElement('svg', {
 			width: 24,
@@ -905,7 +905,7 @@ function Collapsible({ title, children }) {
 			onClick: () => setOpen(!open),
 			direction: Flex.Direction.HORIZONTAL,
 			align: Flex.Align.CENTER,
-		}, React.createElement(Flex, { grow: 0, className: "collapsible-icon", }, React.createElement(Arrow, null)), React.createElement(Heading, {
+		}, React.createElement(Flex, { grow: 0, className: "collapsible-icon", }, React.createElement(Arrow$1, null)), React.createElement(Heading, {
 			className: "collapsible-title",
 			tag: "h5",
 		}, title)), open && React.createElement('div', { className: "collapsible-body", }, children))
@@ -1603,9 +1603,25 @@ function Duration({ duration, position }) {
 	);
 }
 
+function Arrow() {
+	return (
+		React.createElement('svg', {
+			width: 24,
+			height: 24,
+			viewBox: "0 0 24 24",
+			fill: "none",
+			xmlns: "http://www.w3.org/2000/svg",
+		}, React.createElement('path', {
+			d: "M9.71069 18.2929C10.1012 18.6834 10.7344 18.6834 11.1249 18.2929L16.0123 13.4006C16.7927 12.6195 16.7924 11.3537 16.0117 10.5729L11.1213 5.68254C10.7308 5.29202 10.0976 5.29202 9.70708 5.68254C9.31655 6.07307 9.31655 6.70623 9.70708 7.09676L13.8927 11.2824C14.2833 11.6729 14.2833 12.3061 13.8927 12.6966L9.71069 16.8787C9.32016 17.2692 9.32016 17.9023 9.71069 18.2929Z",
+			fill: "#ccc",
+		}))
+	);
+}
+
 const SpotifyPlayer = React.memo(function SpotifyPlayer() {
-	const [player, playerCompactMode, playerBannerBackground] = Settings(_ => [_.player, _.playerCompactMode, _.playerBannerBackground], shallow);
 	const [isActive, media, mediaType] = Store(_ => [_.isActive, _.media, _.mediaType], shallow);
+	const [player, playerBannerBackground] = Settings(_ => [_.player, _.playerBannerBackground], shallow);
+	const [playerCompactMode, setplayerCompactMode] = Settings.useSetting("playerCompactMode");
 
 	if (!player || !isActive || !mediaType) return;
 
@@ -1615,21 +1631,26 @@ const SpotifyPlayer = React.memo(function SpotifyPlayer() {
 	if (playerCompactMode) className += " compact";
 	if (playerBannerBackground) className += " bannerBackground";
 
+	const minmaxClickHandler = () => setplayerCompactMode(!playerCompactMode);
+
 	return (
 		React.createElement('div', {
+				className: className,
 				style: {
 					"--banner-sm": `url(${bannerSm?.url})`,
 					"--banner-md": `url(${bannerMd?.url})`,
 					"--banner-lg": `url(${bannerLg?.url})`
 				},
-				className: className,
 			}, React.createElement(TrackMediaDetails, {
 				mediaType: mediaType,
 				name: media?.name,
 				artists: media?.artists,
 			})
 
-			, mediaType === "track" && React.createElement(TrackTimeLine, null), React.createElement(SpotifyPlayerControls, null)
+			, mediaType === "track" && React.createElement(TrackTimeLine, null), React.createElement(SpotifyPlayerControls, null), React.createElement(Tooltip$1, { note: playerCompactMode ? "Maximize" : "Minimize", }, React.createElement('div', {
+				onClick: minmaxClickHandler,
+				className: "spotify-player-minmax",
+			}, React.createElement(Arrow, null)))
 		)
 	);
 });
@@ -2252,7 +2273,6 @@ const css = `:root {
 	height: 16px;
 }
 
-
 /* Spotify Indicator */
 .spotifyActivityIndicatorIcon {
 	color: var(--spotify-green);
@@ -2387,6 +2407,36 @@ const css = `:root {
 	margin-right: 5px;
 	flex:0 0 auto;
 }
+
+.spotify-player-minmax{
+	position:absolute;
+	top:10px;
+	left:10px;
+	z-index:10;
+	rotate:90deg;
+	box-sizing:bordr-box;
+	width:15px;
+	height:15px;
+	cursor:pointer;
+	display:none;
+	background:#000a;
+	border-radius:50%;
+}
+
+.spotify-player-container:hover .spotify-player-minmax{
+	display:flex;
+}
+
+.spotify-player-minmax svg{
+	width:100%;
+	height:100%;
+}
+
+.spotify-player-container.compact .spotify-player-minmax{
+	top:0px;
+	left:0px;
+	rotate:-90deg;
+}
 .spotify-activity-controls {
 	display: flex;
 	gap: 8px;
@@ -2449,6 +2499,51 @@ const css = `:root {
 	appearance: slider-vertical;
 }
 
+.spotify-player-timeline {
+	user-select: none;
+	margin-bottom: 2px;
+	color: white;
+	display: flex;
+	flex-wrap: wrap;
+	font-size: 0.8rem;
+	flex: 1;
+}
+
+.spotify-player-timeline-progress {
+	flex: 1;
+}
+
+.spotify-player-timeline-trackbar {
+	margin-top: -8px;
+	margin-bottom: 8px;
+	cursor: pointer;
+}
+
+.spotify-player-timeline:hover .spotify-player-timeline-trackbar-grabber {
+	opacity: 1;
+}
+
+.spotify-player-timeline .spotify-player-timeline-trackbar-grabber {
+	opacity: 0;
+	cursor: grab;
+	width: 10px;
+	height: 10px;
+	margin-top: 4px;
+}
+
+.spotify-player-timeline .spotify-player-timeline-trackbar-bar {
+	background: hsl(0deg 0% 100% / 30%);
+	height: 6px;
+}
+
+.spotify-player-timeline .spotify-player-timeline-trackbar-bar > div {
+	background: #fff;
+	border-radius: 4px;
+}
+
+.spotify-player-timeline:hover .spotify-player-timeline-trackbar-bar > div {
+	background: var(--spotify-green);
+}
 .spotify-player-media {
 	color: white;
 	font-size: 0.9rem;
@@ -2517,50 +2612,17 @@ div:has(> .spotify-banner-modal) {
 	border-radius: 5px;
 }
 
-.spotify-player-timeline {
-	user-select: none;
-	margin-bottom: 2px;
-	color: white;
+.spotify-embed-plus {
 	display: flex;
-	flex-wrap: wrap;
-	font-size: 0.8rem;
-	flex: 1;
+	min-width: 400px;
+	max-width: 100%;
+	gap: 5px;
+	overflow: hidden;
 }
 
-.spotify-player-timeline-progress {
-	flex: 1;
-}
-
-.spotify-player-timeline-trackbar {
-	margin-top: -8px;
-	margin-bottom: 8px;
-	cursor: pointer;
-}
-
-.spotify-player-timeline:hover .spotify-player-timeline-trackbar-grabber {
-	opacity: 1;
-}
-
-.spotify-player-timeline .spotify-player-timeline-trackbar-grabber {
-	opacity: 0;
-	cursor: grab;
-	width: 10px;
-	height: 10px;
-	margin-top: 4px;
-}
-
-.spotify-player-timeline .spotify-player-timeline-trackbar-bar {
-	background: hsl(0deg 0% 100% / 30%);
-	height: 6px;
-}
-
-.spotify-player-timeline .spotify-player-timeline-trackbar-bar > div {
-	background: #fff;
-	border-radius: 4px;
-}
-
-.spotify-player-timeline:hover .spotify-player-timeline-trackbar-bar > div {
-	background: var(--spotify-green);
+.spotify-embed-plus > button {
+	flex: 1 0 auto;
+	text-transform: capitalize;
 }
 .spotify-embed-container {
 	background:
@@ -2703,16 +2765,4 @@ div:has(> .spotify-banner-modal) {
 	}
 }
 
-
-.spotify-embed-plus {
-	display: flex;
-	min-width: 400px;
-	max-width: 100%;
-	gap: 5px;
-	overflow: hidden;
-}
-
-.spotify-embed-plus > button {
-	flex: 1 0 auto;
-	text-transform: capitalize;
-}`;
+`;
