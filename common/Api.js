@@ -8,6 +8,9 @@ export const ReactDOM = Api.ReactDOM;
 export const Patcher = Api.Patcher;
 export const ContextMenu = Api.ContextMenu;
 
+// Components
+export const ErrorBoundary = Api.Components.ErrorBoundary;
+
 // Webpack
 export const getModule = Api.Webpack.getModule;
 export const Filters = Api.Webpack.Filters;

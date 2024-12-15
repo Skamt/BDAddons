@@ -73,3 +73,33 @@
 	margin-right: 5px;
 	flex:0 0 auto;
 }
+
+.spotify-player-minmax{
+	position:absolute;
+	top:10px;
+	left:10px;
+	z-index:10;
+	rotate:90deg;
+	box-sizing:bordr-box;
+	width:15px;
+	height:15px;
+	cursor:pointer;
+	display:none;
+	background:#000a;
+	border-radius:50%;
+}
+
+.spotify-player-container:hover .spotify-player-minmax{
+	display:flex;
+}
+
+.spotify-player-minmax svg{
+	width:100%;
+	height:100%;
+}
+
+.spotify-player-container.compact .spotify-player-minmax{
+	top:0px;
+	left:0px;
+	rotate:-90deg;
+}
