@@ -638,7 +638,7 @@ const Stores = {
 		let stores = null;
 		return function getSortedStores(force) {
 			if (!stores || force) {
-				stores = Modules.getModule(a => a?.Store).exports.Store.getAll()
+				stores = Modules.getModule(a => a?.Store, { searchExports: true }).target.Store.getAll()
 					.map(store => [store.getName(), store])
 					.sort((a, b) => a[0].localeCompare(b[0]))
 					.map(([a, b]) => ({
