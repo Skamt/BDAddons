@@ -51,8 +51,8 @@ export default () => {
 					/>
 				}
 				action={() => {
-					const songCover = Store.state.getSongCover();
-					Store.Utils.share(songCover);
+					const { bannerLg: {url} } = Store.state.getSongBanners();
+					Store.Utils.share(url);
 				}}
 			/>
 		);
