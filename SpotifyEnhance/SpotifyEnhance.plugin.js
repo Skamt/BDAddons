@@ -1,7 +1,7 @@
 /**
  * @name SpotifyEnhance
  * @description All in one better spotify-discord experience.
- * @version 1.0.7
+ * @version 1.0.8
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "SpotifyEnhance",
-		"version": "1.0.7",
+		"version": "1.0.8",
 		"description": "All in one better spotify-discord experience.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance",
@@ -888,27 +888,19 @@ function Arrow() {
 	);
 }
 
-const Flex = getModule(a => a.defaultProps?.direction, { searchExports: true });
-
 const { Heading } = TheBigBoyBundle;
 
 function Collapsible({ title, children }) {
 	const [open, setOpen] = React.useState(false);
 
 	return (
-		React.createElement(Flex, {
-			className: open ? "collapsible-container collapsible-open" : "collapsible-container",
-			direction: Flex.Direction.VERTICAL,
-		}, React.createElement(Flex, {
-
+		React.createElement('div', { className: open ? "collapsible-container collapsible-open" : "collapsible-container", }, React.createElement('div', {
 			className: "collapsible-header",
 			onClick: () => setOpen(!open),
-			direction: Flex.Direction.HORIZONTAL,
-			align: Flex.Align.CENTER,
-		}, React.createElement(Flex, { grow: 0, className: "collapsible-icon", }, React.createElement(Arrow, null)), React.createElement(Heading, {
+		}, React.createElement('div', { className: "collapsible-icon", }, React.createElement(Arrow, null)), React.createElement(Heading, {
 			className: "collapsible-title",
 			tag: "h5",
-		}, title)), open && React.createElement('div', { className: "collapsible-body", }, children))
+		}, title)), React.createElement('div', { className: "collapsible-body", }, children))
 	);
 }
 
@@ -2119,6 +2111,8 @@ function SpotifyActivityIndicator({ userId }) {
 	);
 }
 
+const Flex = getModule(a => a.defaultProps?.direction, { searchExports: true });
+
 const ChannelAttachMenu = getModule(Filters.byStrings("Plus Button"), { defaultExport: false });
 
 function MenuLabel({ label, icon }) {
@@ -2157,8 +2151,8 @@ const patchChannelAttach = () => {
 					label: "Share spotify song banner",
 				}),
 				action: () => {
-					const songCover = Store.state.getSongCover();
-					Store.Utils.share(songCover);
+					const { bannerLg: { url } } = Store.state.getSongBanners();
+					Store.Utils.share(url);
 				},
 			})
 		);
@@ -2286,27 +2280,24 @@ const css = `:root {
 .collapsible-container {
 	border-radius: 5px;
 	border: 1px solid rgb(30, 31, 34);
-	gap: 20px;
+	gap: 0px 20px;
+	display: grid;
+	grid-template-rows: min-content 0fr;
+	transition: grid-template-rows 200ms linear;
 }
 
 .collapsible-header {
 	background: rgba(30, 31, 34, 0.3);
 	padding: 10px 3px;
 	gap: 8px;
-}
-
-.collapsible-open .collapsible-header {
-	border-bottom: 1px solid rgb(30, 31, 34);
+	display: flex;
 }
 
 .collapsible-icon {
+	display: flex;
 	flex-grow: 0;
-	rotate:0deg;
+	rotate: 0deg;
 	transition: rotate 150ms linear;
-}
-
-.collapsible-open .collapsible-icon {
-	rotate:90deg;
 }
 
 .collapsible-title {
@@ -2315,8 +2306,26 @@ const css = `:root {
 
 .collapsible-body {
 	margin: 0 10px;
+	transition: margin 0ms 200ms;
+	overflow: hidden;
 }
 
+.collapsible-container.collapsible-open .collapsible-body{
+	margin: 10px;
+	transition: none;
+}
+
+.collapsible-container.collapsible-open {
+	grid-template-rows: min-content 1fr;
+}
+
+.collapsible-container.collapsible-open .collapsible-header {
+	border-bottom: 1px solid rgb(30, 31, 34);
+}
+
+.collapsible-container.collapsible-open .collapsible-icon {
+	rotate: 90deg;
+}
 .spotify-player-container {
 	background: hsl(228 8% 12%);
 	border-bottom: 1px solid hsl(228deg 6% 33% / 48%);
@@ -2439,51 +2448,6 @@ const css = `:root {
 	flex: 1 0 0;
 	width: 100%;
 }
-.spotify-player-controls {
-	display: flex;
-	justify-content: space-between;
-	width: 100%;
-	overflow: hidden;
-}
-
-.spotify-player-controls svg {
-	width: 16px;
-	height: 16px;
-}
-
-.spotify-player-controls-btn {
-	padding: 3px !important;
-	color: #ccc;
-	transition: all 100ms linear;
-	border-radius: 5px;
-}
-
-.spotify-player-controls-btn:hover {
-	background: #ccc3;
-	color: fff;
-	scale: 1.1;
-}
-
-.spotify-player-controls-btn.enabled {
-	color: var(--spotify-green);
-}
-
-.spotify-player-controls-volume-slider-wrapper {
-	height: 120px;
-	width: 20px;
-	background: var(--background-floating);
-	padding: 5px 1px;
-	border-radius: 99px;
-}
-
-.spotify-player-controls-volume-slider {
-	margin: 0;
-	width: 100%;
-	height: 100%;
-	accent-color: var(--spotify-green);
-	appearance: slider-vertical;
-}
-
 .spotify-player-timeline {
 	user-select: none;
 	margin-bottom: 2px;
@@ -2529,6 +2493,51 @@ const css = `:root {
 .spotify-player-timeline:hover .spotify-player-timeline-trackbar-bar > div {
 	background: var(--spotify-green);
 }
+.spotify-player-controls {
+	display: flex;
+	justify-content: space-between;
+	width: 100%;
+	overflow: hidden;
+}
+
+.spotify-player-controls svg {
+	width: 16px;
+	height: 16px;
+}
+
+.spotify-player-controls-btn {
+	padding: 3px !important;
+	color: #ccc;
+	transition: all 100ms linear;
+	border-radius: 5px;
+}
+
+.spotify-player-controls-btn:hover {
+	background: #ccc3;
+	color: fff;
+	scale: 1.1;
+}
+
+.spotify-player-controls-btn.enabled {
+	color: var(--spotify-green);
+}
+
+.spotify-player-controls-volume-slider-wrapper {
+	height: 120px;
+	width: 20px;
+	background: var(--background-floating);
+	padding: 5px 1px;
+	border-radius: 99px;
+}
+
+.spotify-player-controls-volume-slider {
+	margin: 0;
+	width: 100%;
+	height: 100%;
+	accent-color: var(--spotify-green);
+	appearance: slider-vertical;
+}
+
 .spotify-player-media {
 	color: white;
 	font-size: 0.9rem;
@@ -2597,6 +2606,18 @@ div:has(> .spotify-banner-modal) {
 	border-radius: 5px;
 }
 
+.spotify-embed-plus {
+	display: flex;
+	min-width: 400px;
+	max-width: 100%;
+	gap: 5px;
+	overflow: hidden;
+}
+
+.spotify-embed-plus > button {
+	flex: 1 0 auto;
+	text-transform: capitalize;
+}
 .spotify-embed-container {
 	background:
 		linear-gradient(#00000090 0 0),
@@ -2738,16 +2759,4 @@ div:has(> .spotify-banner-modal) {
 	}
 }
 
-
-.spotify-embed-plus {
-	display: flex;
-	min-width: 400px;
-	max-width: 100%;
-	gap: 5px;
-	overflow: hidden;
-}
-
-.spotify-embed-plus > button {
-	flex: 1 0 auto;
-	text-transform: capitalize;
-}`;
+`;
