@@ -41,5 +41,5 @@
 }
 
 .spotify-player-timeline:hover .spotify-player-timeline-trackbar-bar > div {
-	background: var(--spotify-green);
+	background: var(--SpotifyEnhance-spotify-green);
 }

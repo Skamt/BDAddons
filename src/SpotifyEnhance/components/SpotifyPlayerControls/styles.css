@@ -24,7 +24,7 @@
 }
 
 .spotify-player-controls-btn.enabled {
-	color: var(--spotify-green);
+	color: var(--SpotifyEnhance-spotify-green);
 }
 
 .spotify-player-controls-volume-slider-wrapper {
@@ -39,6 +39,6 @@
 	margin: 0;
 	width: 100%;
 	height: 100%;
-	accent-color: var(--spotify-green);
+	accent-color: var(--SpotifyEnhance-spotify-green);
 	appearance: slider-vertical;
 }

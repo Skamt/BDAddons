@@ -5,12 +5,12 @@
 	max-width: 100%;
 	width: 350px;
 	box-sizing: border-box;
-	padding: var(--gutter);
-	border-radius: var(--radius);
-	font-family: var(--font);
+	padding: var(--SpotifyEnhance-gutter);
+	border-radius: var(--SpotifyEnhance-radius);
+	font-family: var(--SpotifyEnhance-font);
 
 	display: grid;
-	column-gap: var(--gutter);
+	column-gap: var(--SpotifyEnhance-gutter);
 	grid-template-columns: auto minmax(0, 1fr) auto;
 	grid-template-rows: auto auto minmax(0, 1fr);
 	grid-template-areas:
@@ -25,7 +25,7 @@
 	width: 80px;
 	height: 80px;
 	background: var(--thumbnail) center/cover no-repeat;
-	border-radius: var(--radius);
+	border-radius: var(--SpotifyEnhance-radius);
 }
 
 .spotify-embed-container.playing .spotify-embed-thumbnail {
@@ -71,7 +71,7 @@
 	grid-area: title;
 
 	font-weight: bold;
-	color: var(--text-normal);
+	color: #fff;
 	margin: 0;
 	margin-top: 3px;
 	align-self: center;
@@ -87,7 +87,7 @@
 	font-weight: 500;
 	margin: 0;
 	margin-top: 3px;
-	color: var(--text-sub);
+	color: var(--SpotifyEnhance-text-sub);
 	font-size: 0.7rem;
 
 	overflow: hidden;
@@ -100,7 +100,7 @@
 	height: 30px;
 	display: flex;
 	align-self: center;
-	gap: var(--gutter);
+	gap: var(--SpotifyEnhance-gutter);
 }
 
 .spotify-embed-btn {
@@ -115,15 +115,15 @@
 }
 
 .spotify-embed-btn svg {
-	width: var(--icon-size);
-	height: var(--icon-size);
+	width: 18px;
+	height: 18px;
 }
 
 .spotify-embed-spotifyIcon {
 	grid-area: icon;
 	cursor: pointer;
 	display: flex;
-	color: var(--spotify-green);
+	color: var(--SpotifyEnhance-spotify-green);
 }
 
 

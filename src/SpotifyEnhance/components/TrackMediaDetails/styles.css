@@ -48,7 +48,7 @@
 
 .spotify-player-album span,
 .spotify-player-artist span {
-	color: var(--text-sub);
+	color: var(--SpotifyEnhance-text-sub);
 }
 
 div:has(> .spotify-banner-modal) {

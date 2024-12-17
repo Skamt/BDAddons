@@ -1,13 +1,9 @@
 :root {
-	--spotify-green: #1ed760;
-	--button-disabled: #a7a7a7;
-	--text-normal: #fff;
-	--text-sub: #a7a7a7;
-	--radius: 8px;
-	--icon-size: 18px;
-	--gutter: 10px;
-	--font: gg sans, Helvetica Neue, helvetica, arial, Hiragino Kaku Gothic Pro, Meiryo, MS Gothic;
-	--accent: #1ed760;
+	--SpotifyEnhance-spotify-green: #1ed760;
+	--SpotifyEnhance-text-sub: #a7a7a7;
+	--SpotifyEnhance-radius: 8px;
+	--SpotifyEnhance-gutter: 10px;
+	--SpotifyEnhance-font: gg sans, Helvetica Neue, helvetica, arial, Hiragino Kaku Gothic Pro, Meiryo, MS Gothic;
 }
 
 .flexCenterCenter {
@@ -29,7 +25,7 @@
 
 /* Spotify Indicator */
 .spotifyActivityIndicatorIcon {
-	color: var(--spotify-green);
+	color: var(--SpotifyEnhance-spotify-green);
 	vertical-align: text-bottom;
 	margin: 0 0 0 0.5rem;
 }
