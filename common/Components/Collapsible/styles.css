@@ -12,6 +12,7 @@
 	padding: 10px 3px;
 	gap: 8px;
 	display: flex;
+	align-items: center;
 }
 
 .collapsible-icon {
