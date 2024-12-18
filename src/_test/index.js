@@ -1,4 +1,4 @@
-import { DOM, React, Patcher } from "@Api";
+import { showConfirmationModal, DOM, React, Patcher } from "@Api";
 
 
 export default () => {

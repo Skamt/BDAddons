@@ -214,6 +214,7 @@ function Volume({ volume }) {
 						max="100"
 						className="spotify-player-controls-volume-slider"
 					/>
+					<div className="spotify-player-controls-volume-label">{val}</div>
 				</div>
 			)}
 			position="top"
