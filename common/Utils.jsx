@@ -1,4 +1,4 @@
-
+import "./styles";
 import { Patcher, getOwnerInstance, ReactDOM, React } from "@Api";
 import ErrorBoundary from "@Components/ErrorBoundary";
 import RenderLinkComponent from "@Modules/RenderLinkComponent";
@@ -21,7 +21,7 @@ export function shallow(objA, objB) {
 	return true;
 }
 
-export const openModal = (children, tag, className) => {
+export const openModal = (children, tag) => {
 	const id = `${tag ? `${tag}-` : ""}modal`;
 	TheBigBoyBundle.openModal(props => {
 		return (
@@ -30,7 +30,7 @@ export const openModal = (children, tag, className) => {
 				plugin={config.info.name}>
 				<ModalRoot
 					{...props}
-					className={className}
+					className="transparentBackground"
 					onClick={props.onClose}
 					size={ModalSize.DYNAMIC}>
 					{children}
