@@ -11,7 +11,7 @@ import Settings from "@Utils/Settings";
 
 export default () => {
 	const { module, key } = MessageHeader;
-	if (!module || !key) return Logger.patch("MessageHeader");
+	if (!module || !key) return Logger.patchError("MessageHeader");
 	Patcher.after(module, key, (_, [{ message }], ret) => {
 		const userId = message.author.id;
 		ret.props.children.push(

@@ -21,9 +21,9 @@ export default () => {
 				else orig.apply(null, args);
 			};
 		});
-	else Logger.patch("ExpressionPicker");
+	else Logger.patchError("ExpressionPicker");
 
-	// if (!d) return Logger.patch("dddd-ExpressionPicker");
+	// if (!d) return Logger.patchError("dddd-ExpressionPicker");
 
 	// Patcher.instead(d.prototype, "selectResult", (_this, args, orig) => {
 	// 	if (_this.state.query.type !== "EMOJIS_AND_STICKERS") return orig.apply(null, args);

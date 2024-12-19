@@ -13,7 +13,7 @@ const AssetURLUtils = getModule(Filters.byProps("getEmojiURL"));
 
 export default () => {
 	const { module, key } = MessageDecorations;
-	if (!module || !key) return Logger.patch("patchEmojiUtils");
+	if (!module || !key) return Logger.patchError("patchEmojiUtils");
 	Patcher.after(module, key, (_, __, ret) => {
 		const { animated, emojiName, guildId = "", emojiId: id } = getNestedProp(ret, "props.children.0.props.children.0.props.children.0.props") || {};
 		if (!id) return ret;

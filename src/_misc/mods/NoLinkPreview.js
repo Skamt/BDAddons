@@ -12,6 +12,6 @@ export default class NoLinkPreview extends Disposable {
 			Patcher.instead(Parser.defaultRules.subtext, "match", nop),
 			Patcher.instead(subText, "match", nop),
 		];
-		else Logger.patch("NoLinkPreview");
+		else Logger.patchError("NoLinkPreview");
 	}
 }

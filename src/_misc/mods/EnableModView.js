@@ -18,7 +18,7 @@ export default class EnableModView extends Disposable {
 		);
 
 		const a = s.getSource("checkElevated", "autoTrackExposure")?.module?.exports;
-		if (!a) return Logger.patch("EnableModView");
+		if (!a) return Logger.patchError("EnableModView");
 
 		for (const key in a) {
 			this.patches.push(Patcher.after(a, key, () => true));

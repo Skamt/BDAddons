@@ -9,7 +9,7 @@ const ALLOWD_TYPES = ["track", "artist", "playlist", "album", "show", "episode"]
 const SpotifyEmbed = getModule(Filters.byStrings("iframe", "playlist", "track"), { defaultExport: false });
 
 export default () => {
-	if (!SpotifyEmbed) return Logger.patch("SpotifyEmbed");
+	if (!SpotifyEmbed) return Logger.patchError("SpotifyEmbed");
 	Patcher.after(SpotifyEmbed, "Z", (_, [{ embed }], ret) => {
 		const [id, type] = parseSpotifyUrl(embed.url) || [];
 		if (!ALLOWD_TYPES.includes(type)) {

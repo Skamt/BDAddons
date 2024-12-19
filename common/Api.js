@@ -7,6 +7,7 @@ export const React = Api.React;
 export const ReactDOM = Api.ReactDOM;
 export const Patcher = Api.Patcher;
 export const ContextMenu = Api.ContextMenu;
+export const Logger = Api.Logger;
 
 // Components
 export const ErrorBoundary = Api.Components.ErrorBoundary;

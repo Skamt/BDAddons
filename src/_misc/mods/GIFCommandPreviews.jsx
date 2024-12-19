@@ -42,6 +42,6 @@ export default class GIFCommandPreviews extends Disposable {
 					});
 				})
 			];
-		else Logger.patch("GIFIntegration");
+		else Logger.patchError("GIFIntegration");
 	}
 }

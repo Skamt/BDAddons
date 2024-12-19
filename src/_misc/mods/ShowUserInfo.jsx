@@ -32,6 +32,6 @@ export default class ShowUserInfo extends Disposable {
 					);
 				})
 			];
-		else Logger.patch("ShowUserId");
+		else Logger.patchError("ShowUserId");
 	}
 }

@@ -24,5 +24,5 @@ export default () => {
 				}
 			}
 		});
-	else Logger.patch("StickerAttachement");
+	else Logger.patchError("StickerAttachement");
 };

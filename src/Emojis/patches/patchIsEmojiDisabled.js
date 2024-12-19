@@ -9,5 +9,5 @@ export default () => {
 			if (intention !== EmojiIntentionEnum.CHAT) return ret;
 			return false;
 		});
-	else Logger.patch("IsEmojiDisabled");
+	else Logger.patchError("IsEmojiDisabled");
 };

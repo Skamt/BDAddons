@@ -7,7 +7,7 @@ const ReplyFunctions = getModuleAndKey(Filters.byStrings("CREATE_PENDING_REPLY",
 
 export default () => {
 	const {module, key} = ReplyFunctions;
-	if (!module || !key) return Logger.patch("patchCreatePendingReply");
+	if (!module || !key) return Logger.patchError("patchCreatePendingReply");
 
 	Patcher.before(module, key, (_, [args]) => {
 		if (blacklist.has(args.message.author.id)) {

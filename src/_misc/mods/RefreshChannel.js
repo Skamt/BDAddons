@@ -92,6 +92,6 @@ export default class RefreshChannel extends Disposable {
 					});
 				})
 			];
-		else Logger.patch("RefreshChannel");
+		else Logger.patchError("RefreshChannel");
 	}
 }

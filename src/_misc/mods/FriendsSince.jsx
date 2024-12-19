@@ -41,7 +41,7 @@ async function patchUserPopout(m) {
 export default class FriendsSince extends Disposable {
 	async Init() {
 		const m = await UserPopout;
-		if (!m) return Logger.patch("FriendsSince");
+		if (!m) return Logger.patchError("FriendsSince");
 		this.patches = [await patchUserPopout(m)];
 	}
 }

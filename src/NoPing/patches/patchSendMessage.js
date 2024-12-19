@@ -4,7 +4,7 @@ import blacklist from "../blacklist.js";
 import MessageActions from "@Modules/MessageActions";
 
 export default () => {
-	if (!MessageActions) return Logger.patch("patchSendMessage");
+	if (!MessageActions) return Logger.patchError("patchSendMessage");
 	Patcher.before(MessageActions, "_sendMessage", (_, args) => {
 		const [, id] = args[1].content.match(/<@(\d+)>/) || [];
 		if (!id) return;

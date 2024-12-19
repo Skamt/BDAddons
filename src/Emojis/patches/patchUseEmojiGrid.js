@@ -7,7 +7,7 @@ const emojiHooks = getModuleAndKey(Filters.byStrings("gridWidth", "getDisambigua
 export default () => {
 	const { module, key } = emojiHooks;
 	
-	if (!module || !key) return Logger.patch("patchUseEmojiGrid");
+	if (!module || !key) return Logger.patchError("patchUseEmojiGrid");
 
 	Patcher.after(module, key, (_, [{ pickerIntention }], ret) => {
 		if (pickerIntention !== EmojiIntentionEnum.CHAT) return ret;

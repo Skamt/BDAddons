@@ -7,7 +7,7 @@ import ChannelComponent from "@Patch/ChannelComponent";
 
 export default () => {
 	const { module, key } = ChannelComponent;
-	if (!module || !key) return Logger.patch("Channel");
+	if (!module || !key) return Logger.patchError("Channel");
 	Patcher.after(module, key, (_, [{ channel }], returnValue) => {
 		if (!Settings.state.autoloadedChannelIndicator) return;
 		if (ChannelsStateManager.getChannelstate(channel.guild_id, channel.id)) returnValue.props.children.props.children[1].props.className += " autoload";

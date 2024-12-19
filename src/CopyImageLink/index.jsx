@@ -9,7 +9,7 @@ export default class CopyImageLink {
 		try {
 			// eslint-disable-next-line no-undef
 			DOM.addStyle(css);
-			if (!RenderLinkComponent) return Logger.patch("RenderLinkComponent");
+			if (!RenderLinkComponent) return Logger.patchError("RenderLinkComponent");
 			Patcher.after(RenderLinkComponent, "type", (_, [{ className, href }], returnValue) => {
 				if (!returnValue || !className?.startsWith("downloadLink") || !href) return;
 				return [returnValue, <CopyButtonComponent href={href} />];

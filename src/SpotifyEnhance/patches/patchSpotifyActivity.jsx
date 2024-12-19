@@ -9,7 +9,7 @@ const ActivityComponent = getModuleAndKey(Filters.byStrings("PRESS_LISTEN_ALONG_
 
 export default () => {
 	const { module, key } = ActivityComponent;
-	if (!module || !key) return Logger.patch("SpotifyActivityComponent");
+	if (!module || !key) return Logger.patchError("SpotifyActivityComponent");
 	Patcher.after(module, key, (_, [{ user, activity }]) => {
 		if (!Settings.getState().activity) return;
 		if (activity?.name.toLowerCase() !== "spotify") return;

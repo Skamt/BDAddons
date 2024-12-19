@@ -5,7 +5,7 @@ import EmojiStore from "@Stores/EmojiStore";
 const emojiContextConstructor = EmojiStore?.getDisambiguatedEmojiContext?.().constructor;
 
 export default () => {
-	if (!emojiContextConstructor) return Logger.patch("emojiContextConstructor");
+	if (!emojiContextConstructor) return Logger.patchError("emojiContextConstructor");
 
 	Patcher.after(emojiContextConstructor.prototype, "rebuildFavoriteEmojisWithoutFetchingLatest", (_, args, ret) => {
 		if(!ret?.favorites)return;

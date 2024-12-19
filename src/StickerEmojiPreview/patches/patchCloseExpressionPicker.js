@@ -11,5 +11,5 @@ export default () => {
 		Patcher.after(module, key, () => {
 			Settings.state.setpreviewState(Settings.state.previewDefaultState);
 		});
-	else Logger.patch("CloseExpressionPicker");
+	else Logger.patchError("CloseExpressionPicker");
 };

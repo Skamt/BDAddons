@@ -40,7 +40,7 @@ function has(id) {
 
 
 export default () => {
-	if (!bbb?.Z) return Logger.patch("patchUnfavoriteEmoji");
+	if (!bbb?.Z) return Logger.patchError("patchUnfavoriteEmoji");
 	Patcher.after(bbb, "Z", (_, args, ret) => {
 		const [{ type, isInExpressionPicker, id }] = args;
 		if (type !== "emoji" || !isInExpressionPicker || !id) return;

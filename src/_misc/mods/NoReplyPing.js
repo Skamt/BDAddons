@@ -13,6 +13,6 @@ export default class NoReplyPing extends Disposable {
 					args.showMentionToggle = true;
 				})
 			];
-		else Logger.patch("NoReplyPing");
+		else Logger.patchError("NoReplyPing");
 	}
 }

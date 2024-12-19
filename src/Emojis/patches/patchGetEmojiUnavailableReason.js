@@ -16,5 +16,5 @@ export default () => {
 			// ret === EmojiSendAvailabilityEnum.DISALLOW_EXTERNAL ? EmojiSendAvailabilityEnum.PREMIUM_LOCKED : ret;
 		});
 	else
-		Logger.patch("GetEmojiUnavailableReason");
+		Logger.patchError("GetEmojiUnavailableReason");
 };

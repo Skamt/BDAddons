@@ -12,7 +12,7 @@ const UserProfileModalforwardRef = getModule(Filters.byProps("Overlay","render")
 const typeFilter = Filters.byStrings("BITE_SIZE", "FULL_SIZE");
 
 export default () => {
-	if (!UserProfileModalforwardRef) return Logger.patch("patchVPPButton");
+	if (!UserProfileModalforwardRef) return Logger.patchError("patchVPPButton");
 
 	Patcher.after(UserProfileModalforwardRef, "render", (_, [props], ret) => {
 		const buttonsWrapper = findInTree(ret, a => typeFilter(a?.type), { walkable: ["props", "children"] });

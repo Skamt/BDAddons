@@ -9,8 +9,12 @@ const getConfig = require("./rollup.config.js");
 const { pluginsFolder, releaseFolder, baseConfig } = pkg.buildConfig;
 
 const pluginsDir = path.resolve(pluginsFolder);
-const bdFolder = process.env.BDFOLDER;
-// const bdFolder = `${process.env.APPDATA}/BetterDiscord/`;
+const bdFolder = process.env.BDFOLDER || `${process.env.APPDATA}/BetterDiscord/`;
+
+if(!bdFolder) {
+	console.error("Can't find BD Folder");
+	process.exit(0);
+}
 
 function buildAll() {
 	const list = fs

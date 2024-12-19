@@ -8,6 +8,6 @@ export default () => {
 	 * Make stickers clickable.
 	 **/
 
-	if (!StickerSendability) return Logger.patch("StickerClickability");
+	if (!StickerSendability) return Logger.patchError("StickerClickability");
 	Patcher.after(StickerSendability.module,  StickerSendability.mangledKeys.isSendableSticker, () => true);
 };

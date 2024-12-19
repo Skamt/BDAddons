@@ -87,6 +87,6 @@ export default class PinRoles extends Disposable {
 					);
 				})
 			];
-		else Logger.patch("ShowUserId");
+		else Logger.patchError("ShowUserId");
 	}
 }

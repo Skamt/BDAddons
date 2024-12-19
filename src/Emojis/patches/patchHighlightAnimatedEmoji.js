@@ -11,5 +11,5 @@ export default () => {
 		Patcher.after(module, key, (_, [{ descriptor }], ret) => {
 			if (descriptor.emoji.animated && Settings.state.shouldHihglightAnimatedEmojis) ret.props.className += " animated";
 		});
-	else Logger.patch("HighlightAnimatedEmoji");
+	else Logger.patchError("HighlightAnimatedEmoji");
 };

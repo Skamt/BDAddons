@@ -14,5 +14,5 @@ export default () => {
 			if (intention !== EmojiIntentionEnum.CHAT) return ret;
 			return false;
 		});
-	else Logger.patch("IsEmojiFiltered");
+	else Logger.patchError("IsEmojiFiltered");
 };

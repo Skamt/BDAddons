@@ -49,5 +49,5 @@ export default () => {
 				</ErrorBoundary>
 			);
 		});
-	else Logger.patch("ExpressionPickerInspector");
+	else Logger.patchError("ExpressionPickerInspector");
 };

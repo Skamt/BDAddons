@@ -75,7 +75,7 @@ export default class EmojiLetters extends Disposable {
 						}
 				})
 			];
-		else Logger.patch("EmojiLetters");
+		else Logger.patchError("EmojiLetters");
 	}
 
 	Dispose() {

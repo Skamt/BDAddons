@@ -43,7 +43,7 @@ function Display({ user, channel }) {
 export default class ShowChannelPerms extends Disposable {
 	Init() {
 		const { module, key } = ChannelTextArea;
-		if (!module || !key) return Logger.patch("ChannelTextArea");
+		if (!module || !key) return Logger.patchError("ChannelTextArea");
 		this.patches = [
 			Patcher.after(module, key, (_, [{ channel }], ret) => {
 				const currentUser = UserStore.getCurrentUser();

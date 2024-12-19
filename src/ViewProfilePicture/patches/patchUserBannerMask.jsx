@@ -21,7 +21,7 @@ function getButtonClasses({  profileType }, isNotNitro, banner) {
 }
 
 export default () => {
-	if (!UserBannerMask) return Logger.patch("UserBannerMask");
+	if (!UserBannerMask) return Logger.patchError("UserBannerMask");
 
 	const { module, key } = UserBannerMask;
 

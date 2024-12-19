@@ -10,7 +10,7 @@ export default () => {
 	 * Enables suggestions
 	 * */
 
-	if (!StickerSendability) return Logger.patch("StickerSuggestion");
+	if (!StickerSendability) return Logger.patchError("StickerSuggestion");
 
 	Patcher.after(StickerSendability.module, StickerSendability.mangledKeys.getStickerSendability, (_, args, returnValue) => {
 		if (args[0].type === StickerTypeEnum.GUILD) {

@@ -29,5 +29,5 @@ export default () => {
 			if (stickerObj.isSendable) originalFunc.apply(_, args);
 			else handleUnsendableSticker(stickerObj);
 		});
-	else Logger.patch("SendSticker");
+	else Logger.patchError("SendSticker");
 };

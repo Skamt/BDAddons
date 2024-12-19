@@ -7,7 +7,7 @@ import { isLottieSticker, isAnimatedSticker } from "../Utils";
 
 export default () => {
 	const { module, key } = StickerModule;
-	if (!module || !key) return Logger.patch("GetStickerById");
+	if (!module || !key) return Logger.patchError("GetStickerById");
 	Patcher.after(module, key, (_, args, returnValue) => {
 		const { size, sticker } = returnValue.props.children[0].props;
 		if (size === 96) {

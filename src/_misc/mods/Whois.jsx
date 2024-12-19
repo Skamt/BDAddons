@@ -36,6 +36,6 @@ export default class Whois extends Disposable {
 					);
 				})
 			];
-		else Logger.patch("ChannelMuteButton");
+		else Logger.patchError("ChannelMuteButton");
 	}
 }

@@ -8,7 +8,7 @@ import { PlayerPlaceEnum } from "./../consts.js";
 
 export default async () => {
 	const fluxContainer = await getFluxContainer();
-	if (!fluxContainer) return Logger.patch("SpotifyPlayer");
+	if (!fluxContainer) return Logger.patchError("SpotifyPlayer");
 
 	Patcher.after(fluxContainer.type.prototype, "render", (_, __, ret) => {
 		/*DEBUG*/

@@ -42,6 +42,6 @@ export default class GuildInfo extends Disposable {
 					);
 				})
 			];
-		else Logger.patch("GuildInfo");
+		else Logger.patchError("GuildInfo");
 	}
 }
