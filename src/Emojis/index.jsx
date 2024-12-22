@@ -19,12 +19,12 @@ export default class Emojis {
 			// patchEmojiGuildSourcePopout();
 			// patchGetEmojiUnavailableReason();
 			// patchExpressionPicker();
-			patchIsEmojiDisabled();
-			patchHighlightAnimatedEmoji();
-			patchEmojiUtils();
-			patchFavoriteEmojis();
+			// patchIsEmojiDisabled();
+			// patchHighlightAnimatedEmoji();
+			// patchEmojiUtils();
+			// patchFavoriteEmojis();
 			// patchUseEmojiGrid();
-			patchEmojiContextMenu();
+			// patchEmojiContextMenu();
 		} catch (e) {
 			console.error(e);
 		}
