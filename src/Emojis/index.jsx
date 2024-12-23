@@ -9,28 +9,37 @@ import patchHighlightAnimatedEmoji from "./patches/patchHighlightAnimatedEmoji";
 import patchEmojiUtils from "./patches/patchEmojiUtils";
 import patchFavoriteEmojis from "./patches/patchFavoriteEmojis";
 import patchUseEmojiGrid from "./patches/patchUseEmojiGrid";
-import patchEmojiContextMenu from "./patches/patchEmojiContextMenu";
+import patchExpressionPickerEmojiContextMenu from "./patches/patchExpressionPickerEmojiContextMenu";
 
+import EmojisManager from "./EmojisManager";
+window.t = EmojisManager;
+// import Dispatcher from "@Modules/Dispatcher";
 export default class Emojis {
 	start() {
 		try {
 			DOM.addStyle(css);
+			// EmojisManager.init();
 			// patchIsEmojiFiltered();
 			// patchEmojiGuildSourcePopout();
 			// patchGetEmojiUnavailableReason();
 			// patchExpressionPicker();
-			// patchIsEmojiDisabled();
+			patchIsEmojiDisabled();
 			// patchHighlightAnimatedEmoji();
 			// patchEmojiUtils();
-			// patchFavoriteEmojis();
+			patchFavoriteEmojis();
 			// patchUseEmojiGrid();
-			// patchEmojiContextMenu();
+			patchExpressionPickerEmojiContextMenu();
+
+			// Patcher.before(Dispatcher, "dispatch", (_, [e]) => {
+			// 	console.log(e.type,e);
+			// });
 		} catch (e) {
 			console.error(e);
 		}
 	}
 
 	stop() {
+		// EmojisManager.dispose();
 		DOM.removeStyle();
 		Patcher.unpatchAll();
 	}

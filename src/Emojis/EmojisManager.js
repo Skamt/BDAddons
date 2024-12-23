@@ -1,5 +1,4 @@
 import { Data } from "@Api";
-import EmojiStore from "@Stores/EmojiSotre";
 
 function buildEmojiObj({ animated, name, id }) {
 	return {
@@ -17,45 +16,40 @@ function serializeEmoji({ animated, name, id }) {
 }
 
 export default (() => {
+	const Emojis = Object.create(null);
+
 	const savedEmojis = Data.load("emojis") || [];
-	const parsedEmojis = savedEmojis.map(emoji => {
+	Emojis.emojis = savedEmojis.map(emoji => {
 		const [animated, name, id] = emoji.split(":");
 		return buildEmojiObj({ animated, name, id });
 	});
 
-	const defaultFavoriteEmojis = EmojiStore?.getDisambiguatedEmojiContext?.().rebuildFavoriteEmojisWithoutFetchingLatest?.()?.favorites || [];
-	const emojis = [...defaultFavoriteEmojis, ...parsedEmojis];
-
 	function commit() {
-		// Data.save("emojis", savedEmojis);
+		Data.save("emojis", savedEmojis);
 	}
 
-	function addEmoji({ animated, name, id }) {
-		const index = emojis.findIndex(a => a.id === id);
+	Emojis.add = function ({ animated, name, id }) {
+		const index = Emojis.emojis.findIndex(e => e.id === id);
 		if (index !== -1) return;
-		emojis.push(buildEmojiObj({ animated, name, id }));
+		Emojis.emojis.push(buildEmojiObj({ animated, name, id }));
 		savedEmojis.push(serializeEmoji({ animated, name, id }));
-	}
-
-	function removeEmoji(id) {
-		const parsedEmojisIndex = emojis.findIndex(a => a.id === id);
-		if (parsedEmojisIndex === -1) return;
-		emojis.splice(parsedEmojisIndex, 1);
-
-		const savedEmojisIndex = savedEmojis.findIndex(a => a.id.includes(id));
-		if (savedEmojisIndex === -1) return;
-		savedEmojis.splice(savedEmojisIndex, 1);
-	}
-
-	return {
-		emojis,
-		add({ animated, name, id }) {
-			addEmoji({ animated, name, id });
-			commit();
-		},
-		remove(id) {
-			removeEmoji(id);
-			commit();
-		}
+		commit();
 	};
+
+	Emojis.remove = function (id) {
+		const emojiIndex = Emojis.emojis.findIndex(e => e.id === id);
+		const savedEmojisIndex = savedEmojis.findIndex(e => e.id.includes(id));
+		if (emojiIndex === -1) return;
+		if (savedEmojisIndex === -1) return;
+
+		Emojis.emojis.splice(emojiIndex, 1);
+		savedEmojis.splice(savedEmojisIndex, 1);
+		commit();
+	};
+
+	Emojis.has = function (id){
+		return -1 !== Emojis.emojis.findIndex(e => e.id === id);
+	}
+
+	return Emojis;
 })();

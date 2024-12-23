@@ -1,6 +1,7 @@
-import { Data, Patcher } from "@Api";
+import {  Patcher } from "@Api";
 import Logger from "@Utils/Logger";
 import EmojiStore from "@Stores/EmojiStore";
+import EmojisManager from "../EmojisManager";
 
 const emojiContextConstructor = EmojiStore?.getDisambiguatedEmojiContext?.().constructor;
 
@@ -8,22 +9,12 @@ export default () => {
 	if (!emojiContextConstructor) return Logger.patchError("emojiContextConstructor");
 
 	Patcher.after(emojiContextConstructor.prototype, "rebuildFavoriteEmojisWithoutFetchingLatest", (_, args, ret) => {
-		if(!ret?.favorites)return;
-		const emojis = Data.load("emojis");
-		ret.favorites = [...ret.favorites, ...emojis];
+		if(!ret?.favorites) return;
+		ret.favorites = [...ret.favorites, ...EmojisManager.emojis];
 	});
 
 	Patcher.after(emojiContextConstructor.prototype, "getDisambiguatedEmoji", (_, args, ret) => {
-		const emojis = Data.load("emojis");
-		let sum = [];
-		if (emojis.length > ret.length) {
-			sum = [...emojis];
-			ret.forEach(r => (emojis.find(e => e.id === r.id) ? null : sum.push(r)));
-		} else {
-			sum = [...ret];
-			emojis.forEach(r => (ret.find(e => e.id === r.id) ? null : sum.push(r)));
-		}
-
-		return sum;
+		return [...ret, ...EmojisManager.emojis];
 	});
 };
+
