@@ -1,7 +1,7 @@
 /**
  * @name SpotifyEnhance
  * @description All in one better spotify-discord experience.
- * @version 1.0.10
+ * @version 1.0.11
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "SpotifyEnhance",
-		"version": "1.0.10",
+		"version": "1.0.11",
 		"description": "All in one better spotify-discord experience.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance",
@@ -1458,7 +1458,7 @@ function Volume({ volume }) {
 	);
 }
 
-const Anchor = getModule(a => a.Anchor, { searchExports: true });
+const Anchor = getModule(Filters.byStrings("anchor", "noreferrer noopener"), { searchExports: true });
 
 function ExternalLinkIcon() {
 	return (
@@ -2665,6 +2665,18 @@ div:has(> .spotify-banner-modal) {
 .spotify-player-timeline:hover .spotify-player-timeline-trackbar-bar > div {
 	background: var(--SpotifyEnhance-spotify-green);
 }
+.spotify-embed-plus {
+	display: flex;
+	min-width: 400px;
+	max-width: 100%;
+	gap: 5px;
+	overflow: hidden;
+}
+
+.spotify-embed-plus > button {
+	flex: 1 0 auto;
+	text-transform: capitalize;
+}
 .spotify-embed-container {
 	background:
 		linear-gradient(#00000090 0 0),
@@ -2806,16 +2818,4 @@ div:has(> .spotify-banner-modal) {
 	}
 }
 
-
-.spotify-embed-plus {
-	display: flex;
-	min-width: 400px;
-	max-width: 100%;
-	gap: 5px;
-	overflow: hidden;
-}
-
-.spotify-embed-plus > button {
-	flex: 1 0 auto;
-	text-transform: capitalize;
-}`;
+`;
