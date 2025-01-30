@@ -4,8 +4,8 @@ import { getModule, Filters } from "@Webpack";
 import ErrorBoundary from "@Components/ErrorBoundary";
 import SpotifyEmbedWrapper from "../components/SpotifyEmbedWrapper";
 import { parseSpotifyUrl } from "../Utils";
+import {ALLOWD_TYPES} from "../consts"
 
-const ALLOWD_TYPES = ["track", "artist", "playlist", "album", "show", "episode"];
 const SpotifyEmbed = getModule(Filters.byStrings("iframe", "playlist", "track"), { defaultExport: false });
 
 export default () => {

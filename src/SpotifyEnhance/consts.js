@@ -18,3 +18,5 @@ export const PlayerPlaceEnum = {
 	PIP: "PIP",
 	USERAREA: "USERAREA",
 };
+
+export const ALLOWD_TYPES = ["track", "artist", "playlist", "album", "show", "episode"];

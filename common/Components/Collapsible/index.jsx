@@ -1,9 +1,7 @@
 import "./styles";
 import { React } from "@Api";
-import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
+import Heading from "@Modules/Heading";
 import ArrowIcon from "@Components/icons/ArrowIcon";
-
-const { Heading } = TheBigBoyBundle;
 
 export default function Collapsible({ title, children }) {
 	const [open, setOpen] = React.useState(false);

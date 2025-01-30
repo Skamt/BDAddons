@@ -1,8 +1,9 @@
 import { React } from "@Api";
 import SettingSwtich from "@Components/SettingSwtich";
 import Settings from "@Utils/Settings";
-import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
-const { FormText, Slider, Heading } = TheBigBoyBundle;
+import Heading from "@Modules/Heading";
+import Slider from "@Modules/Slider";
+import FormText from "@Modules/FormText";
 
 export default () => {
 	return (

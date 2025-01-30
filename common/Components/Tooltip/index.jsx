@@ -1,7 +1,5 @@
 import { React } from "@Api";
-import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
-
-const { Tooltip } = TheBigBoyBundle;
+import Tooltip from "@Modules/Tooltip";
 
 export default ({ note, position, children }) => {
 	return (

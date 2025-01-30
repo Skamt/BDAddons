@@ -1,7 +1,5 @@
 import { React } from "@Api";
-import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
-
-const { Popout } = TheBigBoyBundle;
+import Popout from "@Modules/Popout";
 
 export default ({ delay, spacing, forceShow, position, animation, align, className, renderPopout, children, ...rest }) => {
 	const [show, setShow] = React.useState(false);

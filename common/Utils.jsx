@@ -2,10 +2,13 @@ import "./styles";
 import { Patcher, getOwnerInstance, ReactDOM, React } from "@Api";
 import ErrorBoundary from "@Components/ErrorBoundary";
 import RenderLinkComponent from "@Modules/RenderLinkComponent";
-import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
-import ImageModal from "@Modules/ImageModal";
 
-const { ModalRoot, ModalSize } = TheBigBoyBundle;
+import ImageModal from "@Modules/ImageModal";
+import ModalRoot from "@Modules/ModalRoot";
+import ModalSize from "@Modules/ModalSize";
+import _openModal from "@Modules/openModal";
+
+// const { ModalRoot, ModalSize } = TheBigBoyBundle;
 
 export function shallow(objA, objB) {
 	if (Object.is(objA, objB)) return true;
@@ -21,16 +24,17 @@ export function shallow(objA, objB) {
 	return true;
 }
 
-export const openModal = (children, tag) => {
+export const openModal = (children, tag, modalClassName = "") => {
 	const id = `${tag ? `${tag}-` : ""}modal`;
-	TheBigBoyBundle.openModal(props => {
+
+	_openModal(props => {
 		return (
 			<ErrorBoundary
 				id={id}
 				plugin={config.info.name}>
 				<ModalRoot
 					{...props}
-					className="transparentBackground"
+					className={`${modalClassName} transparentBackground`}
 					onClick={props.onClose}
 					size={ModalSize.DYNAMIC}>
 					{children}

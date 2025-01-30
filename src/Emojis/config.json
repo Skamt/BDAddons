@@ -1,7 +1,7 @@
 {
 	"info": {
 		"name": "Emojis",
-		"version": "1.0.3",
+		"version": "1.0.4",
 		"description": "Send emoji as link if it can't be sent it normally.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/Emojis/Emojis.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/Emojis"

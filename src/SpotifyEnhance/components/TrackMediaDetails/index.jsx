@@ -1,7 +1,7 @@
 import "./styles";
 import { React } from "@Api";
 import Tooltip from "@Components/Tooltip";
-import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
+import Anchor from "@Modules/Anchor";
 
 import { Store } from "../../Store";
 import ContextMenu from "@Components/ContextMenu";
@@ -10,8 +10,6 @@ import TrackBanner from "./TrackBanner";
 
 import ListenIcon from "@Components/icons/ListenIcon";
 import ExternalLinkIcon from "@Components/icons/ExternalLinkIcon";
-
-const { Anchor } = TheBigBoyBundle;
 
 export default ({ name, artists, mediaType }) => {
 	if (mediaType !== "track") {

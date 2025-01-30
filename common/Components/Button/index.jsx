@@ -1,7 +1,7 @@
 import { React } from "@Api";
-import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
+import Button from "@Modules/Button";
 
-export default TheBigBoyBundle.Button ||
+export default Button ||
 	function ButtonComponentFallback(props) {
 		return <button {...props}></button>;
 	};

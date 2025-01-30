@@ -1,7 +1,7 @@
 import {  mapExports, Filters } from "@Webpack";
 
 export const StickerSendability = mapExports(
-	a => "SENDABLE" in a,
+	a => typeof a === "object" && "SENDABLE" in a,
 	{
 		StickerSendability: Filters.byProps("SENDABLE_WITH_PREMIUM"),
 		getStickerSendability: Filters.byStrings("canUseCustomStickersEverywhere"),

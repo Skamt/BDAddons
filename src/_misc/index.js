@@ -9,8 +9,8 @@ import GuildInfo from "./mods/GuildInfo";
 import NoLinkPreview from "./mods/NoLinkPreview";
 import NoTrack from "./mods/NoTrack";
 import ShowUserInfo from "./mods/ShowUserInfo";
-import SpotifyListenAlong from "./mods/SpotifyListenAlong";
-import EnableModView from "./mods/EnableModView";
+// import SpotifyListenAlong from "./mods/SpotifyListenAlong";
+// import EnableModView from "./mods/EnableModView";
 import PinRoles from "./mods/PinRoles";
 
 import ShowChannelPerms from "./mods/ShowChannelPerms";
@@ -27,12 +27,12 @@ const mods = [
 	new NoLinkPreview(),
 	// new NoReplyPing(),
 	new PinRoles(),
-	new EnableModView(),
+	// new EnableModView(),
 	new ShowChannelPerms(),
 	new NoTrack(),
 	new FriendsSince(),
 	new ShowUserInfo(),
-	new SpotifyListenAlong(),
+	// new SpotifyListenAlong(),
 	new GIFCommandPreviews()
 	// new MemUsage(),
 	// new Whois(),

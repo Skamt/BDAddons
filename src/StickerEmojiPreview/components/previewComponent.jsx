@@ -1,8 +1,8 @@
 import { React } from "@Api";
 import Settings from "@Utils/Settings";
-import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
+import Popout from "@Modules/Popout";
 import {PREVIEW_SIZE} from "../Constants";
-const { Popout } = TheBigBoyBundle;
+
 
 export default ({ target, previewComponent }) => {
 	const [show, setShow] = Settings.useSetting("previewState");

@@ -1,6 +1,6 @@
 import "./styles";
 import { React } from "@Api";
-import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
+import Slider from "@Modules/Slider";
 import { Store } from "../../Store";
 import { shallow } from "@Utils";
 
@@ -31,7 +31,7 @@ export default () => {
 
 	return (
 		<div className="spotify-player-timeline">
-			<TheBigBoyBundle.Slider
+			<Slider
 				className="spotify-player-timeline-trackbar"
 				mini={true}
 				minValue={0}

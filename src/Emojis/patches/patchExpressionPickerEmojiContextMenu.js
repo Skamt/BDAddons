@@ -7,7 +7,7 @@ import EmojiStore from "@Stores/EmojiStore";
 import Toast from "@Utils/Toast";
 import { sendEmojiDirectly, insertEmoji } from "../Utils";
 
-const { MenuItem } = TheBigBoyBundle;
+const { Item: MenuItem } = BdApi.ContextMenu;
 const bbb = getModule(Filters.byStrings("unfavorite"), { defaultExport: false });
 
 // function unfavHandler(id) {

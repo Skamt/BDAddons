@@ -6,9 +6,7 @@ import { getImageDimensions, getImageModalComponent, promiseHandler, openModal }
 import ColorModalComponent from "./ColorModalComponent";
 import ModalCarousel from "./ModalCarousel";
 
-import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
-
-const { Spinner } = TheBigBoyBundle;
+import Spinner from "@Modules/Spinner";
 
 function fit({ width, height }) {
 	const ratio = Math.min(innerWidth / width, innerHeight / height);

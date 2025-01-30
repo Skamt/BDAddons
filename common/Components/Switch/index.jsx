@@ -1,7 +1,7 @@
 import { React } from "@Api";
-import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
+import FormSwitch from "@Modules/FormSwitch";
 
-export default TheBigBoyBundle.FormSwitch ||
+export default FormSwitch ||
 	function SwitchComponentFallback(props) {
 		return (
 			<div style={{ color: "#fff" }}>

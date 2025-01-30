@@ -2,12 +2,10 @@ import { React } from "@Api";
 import Collapsible from "@Components/Collapsible";
 import Gap from "@Components/Gap";
 import SettingSwtich from "@Components/SettingSwtich";
-import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
+import RadioGroup from "@Modules/RadioGroup";
 import Settings from "@Utils/Settings";
 import { PlayerButtonsEnum, PlayerPlaceEnum, EmbedStyleEnum } from "../../consts.js";
 import { cleanFluxContainer } from "../../patches/patchSpotifyPlayer";
-
-const { RadioGroup } = TheBigBoyBundle;
 
 function SpotifyEmbedOptions() {
 	const [val, set] = Settings.useSetting("spotifyEmbed");

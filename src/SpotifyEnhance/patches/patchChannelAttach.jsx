@@ -1,11 +1,12 @@
-import { React, Patcher } from "@Api";
-import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
+import { React, Patcher, ContextMenu } from "@Api";
 import Logger from "@Utils/Logger";
 import { Filters, getModule } from "@Webpack";
 import { Store } from "../Store";
 import Flex from "@Components/Flex";
 import ImageIcon from "@Components/icons/ImageIcon";
 import ListenIcon from "@Components/icons/ListenIcon";
+
+const { Item: MenuItem } = ContextMenu;
 
 const ChannelAttachMenu = getModule(Filters.byStrings("Plus Button"), { defaultExport: false });
 
@@ -29,7 +30,7 @@ export default () => {
 		if (!Array.isArray(ret?.props?.children)) return;
 
 		ret.props.children.push(
-			<TheBigBoyBundle.MenuItem
+			<MenuItem
 				id="spotify-share-song-menuitem"
 				label={
 					<MenuLabel
@@ -42,7 +43,7 @@ export default () => {
 					Store.Utils.share(songUrl);
 				}}
 			/>,
-			<TheBigBoyBundle.MenuItem
+			<MenuItem
 				id="spotify-share-banner-menuitem"
 				label={
 					<MenuLabel
@@ -51,7 +52,9 @@ export default () => {
 					/>
 				}
 				action={() => {
-					const { bannerLg: {url} } = Store.state.getSongBanners();
+					const {
+						bannerLg: { url }
+					} = Store.state.getSongBanners();
 					Store.Utils.share(url);
 				}}
 			/>

@@ -1,5 +1,49 @@
 {
 	"Modules": {
+		"Anchor": {
+			"filter": "a => a.Anchor",
+			"options": "{ searchExports: true }"
+		},
+		"RadioGroup": {
+			"filter": "a => a?.Sizes?.NOT_SET === \"\"",
+			"options": "{ searchExports: true }"
+		},
+		"FormText": {
+			"filter": "a => a?.Types?.LABEL_DESCRIPTOR",
+			"options": "{ searchExports: true }"
+		},
+		"Slider": {
+			"filter": "Filters.byPrototypeKeys(\"renderMark\")",
+			"options": "{ searchExports: true }"
+		},
+		"Spinner": {
+			"filter": "a => a?.Type?.CHASING_DOTS",
+			"options": "{ searchExports: true }"
+		},
+		"FormSwitch": {
+			"filter": "Filters.byStrings(\"note\",\"tooltipNote\")",
+			"options": "{ searchExports: true }"
+		},
+		"Button": {
+			"filter": "a => a && a.Link && a.Colors",
+			"options": "{ searchExports: true }"
+		},
+		"Heading": {
+			"filter": "a => a?.render?.toString().includes(\"data-excessive-heading-level\")",
+			"options": "{ searchExports: true }"
+		},
+		"Popout": {
+			"filter": "Filters.byProps(\"Animation\",\"defaultProps\")",
+			"options": "{ searchExports: true }"
+		},
+		"Tooltip": {
+			"filter": "Filters.byPrototypeKeys(\"renderTooltip\")",
+			"options": "{ searchExports: true }"
+		},
+		"openModal": {
+			"filter": "Filters.byStrings(\"onCloseCallback\",\"onCloseRequest\",\"modalKey\",\"backdropStyle\")",
+			"options": "{ searchExports: true }"
+		},
 		"zustand": {
 			"filter": "Filters.byStrings(\"useStore, api\")",
 			"options": "{ searchExports: false }"
@@ -42,10 +86,6 @@
 		},
 		"MessageHeader": {
 			"filter": "Filters.byStrings(\"userOverride\", \"withMentionPrefix\")",
-			"options": "{ searchExports: false }"
-		},
-		"Anchor": {
-			"filter": "m => m && m.type && Filters.byStrings(\"trusted\", \"title\", \"href\", \"MASKED_LINK\")(m.type)",
 			"options": "{ searchExports: false }"
 		},
 		"Analytics": {
@@ -109,7 +149,7 @@
 			"options": "{ searchExports: false }"
 		},
 		"Dispatcher": {
-			"filter": "Filters.byProps(\"dispatch\", \"subscribe\")",
+			"filter": "Filters.byProps(\"dispatch\", \"_dispatch\")",
 			"options": "{ searchExports: false }"
 		},
 		"ImageModal": {
@@ -121,7 +161,11 @@
 			"options": "{ searchExports: false }"
 		},
 		"ModalRoot": {
-			"filter": "Filters.byStrings(\"onAnimationEnd\")",
+			"filter": "Filters.byStrings(\"rootWithShadow\",\"MODAL\")",
+			"options": "{ searchExports: true }"
+		},
+		"ModalSize": {
+			"filter": "Filters.byProps(\"DYNAMIC\",\"SMALL\",\"LARGE\")",
 			"options": "{ searchExports: true }"
 		},
 		"RenderLinkComponent": {

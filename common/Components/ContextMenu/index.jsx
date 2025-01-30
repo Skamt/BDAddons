@@ -1,9 +1,7 @@
-import { React } from "@Api";
+import { ContextMenu as CM, React } from "@Api";
 import Popout from "@Components/Popout";
 
-import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
-
-const { MenuItem, Menu, MenuSeparator } = TheBigBoyBundle;
+const { Item: MenuItem, Menu, Separator: MenuSeparator } = CM;
 
 function parseMenuItems(items) {
 	return items.map(({ type, children, ...rest }) => {
@@ -43,7 +41,6 @@ export default function ContextMenu({ children, menuItems, position = "top", ali
 			position={position}
 			animation="1"
 			className={className}>
-			
 			{children}
 		</Popout>
 	);
