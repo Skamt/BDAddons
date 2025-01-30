@@ -1,7 +1,7 @@
 /**
  * @name ViewProfilePicture
  * @description Adds a button to the user popout and profile that allows you to view the Avatar and banner.
- * @version 1.2.15
+ * @version 1.2.16
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "ViewProfilePicture",
-		"version": "1.2.15",
+		"version": "1.2.16",
 		"description": "Adds a button to the user popout and profile that allows you to view the Avatar and banner.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture",
@@ -31,25 +31,15 @@ const DOM = Api.DOM;
 const Data = Api.Data;
 const React = Api.React;
 const Patcher = Api.Patcher;
+const Logger = Api.Logger;
 
 const getModule = Api.Webpack.getModule;
 const Filters = Api.Webpack.Filters;
 const modules = Api.Webpack.modules;
 const findInTree = Api.Utils.findInTree;
 
-const Logger = {
-	error(...args) {
-		this.p(console.error, ...args);
-	},
-	patch(patchId) {
-		console.error(`%c[${config.info.name}] %c Error at %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
-	},
-	log(...args) {
-		this.p(console.log, ...args);
-	},
-	p(target, ...args) {
-		target(`%c[${config.info.name}]`, "color: #3a71c1;font-weight: bold;", ...args);
-	}
+Logger.patchError = patchId => {
+	console.error(`%c[${config.info.name}] %cCould not find module for %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
 };
 
 class ErrorBoundary extends React.Component {
@@ -101,24 +91,39 @@ function getModuleAndKey(filter, options) {
 	return { module, key };
 }
 
-const RenderLinkComponent = getModule(m => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false });
+function getBySource(filter) {
+	let moduleId = null;
+	for (const [id, loader] of Object.entries(modules)) {
+		if (filter(loader.toString())) {
+			moduleId = id;
+			break;
+		}
+	}
 
-const TheBigBoyBundle = getModule(Filters.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
+	return getModule((_, __, id) => id === moduleId);
+}
+
+const RenderLinkComponent = getModule(m => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false });
 
 const ImageModal = getModule(Filters.byStrings("renderLinkComponent", "zoomThumbnailPlaceholder"), { searchExports: true });
 
-const { ModalRoot, ModalSize } = TheBigBoyBundle;
+const ModalRoot = getModule(Filters.byStrings("rootWithShadow", "MODAL"), { searchExports: true });
 
-const openModal = (children, tag, className) => {
+const ModalSize = getModule(Filters.byProps("DYNAMIC", "SMALL", "LARGE"), { searchExports: true });
+
+const _openModal = getModule(Filters.byStrings("onCloseCallback", "onCloseRequest", "modalKey", "backdropStyle"), { searchExports: true });
+
+const openModal = (children, tag, modalClassName = "") => {
 	const id = `${tag ? `${tag}-` : ""}modal`;
-	TheBigBoyBundle.openModal(props => {
+
+	_openModal(props => {
 		return (
 			React.createElement(ErrorBoundary, {
 				id: id,
 				plugin: config.info.name,
 			}, React.createElement(ModalRoot, {
 				...props,
-				className: className,
+				className: `${modalClassName} transparentBackground`,
 				onClick: props.onClose,
 				size: ModalSize.DYNAMIC,
 			}, children))
@@ -170,16 +175,9 @@ const getZustand = (() => {
 	return function getZustand() {
 		if (zustand !== null) return zustand;
 
-		const filter = Filters.byStrings("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe");
-		let moduleId = null;
-		for (const [id, loader] of Object.entries(modules)) {
-			if (filter(loader.toString())) {
-				moduleId = id;
-				break;
-			}
-		}
+		const module = getBySource(Filters.byStrings("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"));
 
-		return (zustand = Object.values(getModule((_, __, id) => id === moduleId) || {})[0]);
+		return (zustand = Object.values(module || {})[0]);
 	};
 })();
 
@@ -229,7 +227,9 @@ Object.defineProperty(SettingsStore, "state", {
 
 const Settings = SettingsStore;
 
-const Switch = TheBigBoyBundle.FormSwitch ||
+const FormSwitch = getModule(Filters.byStrings("note", "tooltipNote"), { searchExports: true });
+
+const Switch = FormSwitch ||
 	function SwitchComponentFallback(props) {
 		return (
 			React.createElement('div', { style: { color: "#fff" }, }, props.children, React.createElement('input', {
@@ -240,10 +240,11 @@ const Switch = TheBigBoyBundle.FormSwitch ||
 		);
 	};
 
-function SettingSwtich({ settingKey, note, onChange = nop, hideBorder = false, description }) {
+function SettingSwtich({ settingKey, note, onChange = nop, hideBorder = false, description, ...rest }) {
 	const [val, set] = Settings.useSetting(settingKey);
 	return (
 		React.createElement(Switch, {
+			...rest,
 			value: val,
 			note: note,
 			hideBorder: hideBorder,
@@ -281,11 +282,11 @@ const ErrorIcon = props => (
 	}), React.createElement('path', { d: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z", })))
 );
 
-const { Tooltip } = TheBigBoyBundle;
+const Tooltip$1 = getModule(Filters.byPrototypeKeys("renderTooltip"), { searchExports: true });
 
-const Tooltip$1 = ({ note, position, children }) => {
+const Tooltip = ({ note, position, children }) => {
 	return (
-		React.createElement(Tooltip, {
+		React.createElement(Tooltip$1, {
 			text: note,
 			position: position || "top",
 		}, props => {
@@ -402,7 +403,7 @@ class ModalCarousel extends ModalCarousel$1 {
 	preloadNextImages() {}
 }
 
-const { Spinner } = TheBigBoyBundle;
+const Spinner = getModule(a => a?.Type?.CHASING_DOTS, { searchExports: true });
 
 function fit({ width, height }) {
 	const ratio = Math.min(innerWidth / width, innerHeight / height);
@@ -471,7 +472,7 @@ const ViewProfilePictureButtonComponent = ({ bannerObject, className, user, disp
 	};
 
 	return (
-		React.createElement(Tooltip$1, { note: "View profile picture", }, React.createElement('div', {
+		React.createElement(Tooltip, { note: "View profile picture", }, React.createElement('div', {
 			style: {
 				position: backgroundColor ? "absolute" : "static"
 			},
@@ -486,7 +487,7 @@ const UserProfileModalforwardRef = getModule(Filters.byProps("Overlay", "render"
 const typeFilter = Filters.byStrings("BITE_SIZE", "FULL_SIZE");
 
 const patchVPPButton = () => {
-	if (!UserProfileModalforwardRef) return Logger.patch("patchVPPButton");
+	if (!UserProfileModalforwardRef) return Logger.patchError("patchVPPButton");
 
 	Patcher.after(UserProfileModalforwardRef, "render", (_, [props], ret) => {
 		const buttonsWrapper = findInTree(ret, a => typeFilter(a?.type), { walkable: ["props", "children"] });
@@ -530,7 +531,7 @@ function getButtonClasses({ profileType }, isNotNitro, banner) {
 }
 
 const patchUserBannerMask = () => {
-	if (!UserBannerMask) return Logger.patch("UserBannerMask");
+	if (!UserBannerMask) return Logger.patchError("UserBannerMask");
 
 	const { module, key } = UserBannerMask;
 
@@ -747,4 +748,7 @@ const css = `/* View Profile Button */
 	flex-wrap: wrap;
 	gap: 4px;
 
+}
+.transparentBackground{
+	background: transparent;
 }`;

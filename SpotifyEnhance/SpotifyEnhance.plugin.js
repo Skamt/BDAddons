@@ -1,7 +1,7 @@
 /**
  * @name SpotifyEnhance
  * @description All in one better spotify-discord experience.
- * @version 1.0.9
+ * @version 1.0.10
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "SpotifyEnhance",
-		"version": "1.0.9",
+		"version": "1.0.10",
 		"description": "All in one better spotify-discord experience.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance",
@@ -46,6 +46,7 @@ const Data = Api.Data;
 const React = Api.React;
 const ReactDOM = Api.ReactDOM;
 const Patcher = Api.Patcher;
+const ContextMenu$1 = Api.ContextMenu;
 const Logger = Api.Logger;
 
 const getModule = Api.Webpack.getModule;
@@ -160,11 +161,13 @@ class ErrorBoundary extends React.Component {
 
 const RenderLinkComponent = getModule(m => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false });
 
-const TheBigBoyBundle = getModule(Filters.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
-
 const ImageModal = getModule(Filters.byStrings("renderLinkComponent", "zoomThumbnailPlaceholder"), { searchExports: true });
 
-const { ModalRoot, ModalSize } = TheBigBoyBundle;
+const ModalRoot = getModule(Filters.byStrings("rootWithShadow", "MODAL"), { searchExports: true });
+
+const ModalSize = getModule(Filters.byProps("DYNAMIC", "SMALL", "LARGE"), { searchExports: true });
+
+const _openModal = getModule(Filters.byStrings("onCloseCallback", "onCloseRequest", "modalKey", "backdropStyle"), { searchExports: true });
 
 function shallow(objA, objB) {
 	if (Object.is(objA, objB)) return true;
@@ -181,16 +184,17 @@ function shallow(objA, objB) {
 	return true;
 }
 
-const openModal = (children, tag, className) => {
+const openModal = (children, tag, modalClassName = "") => {
 	const id = `${tag ? `${tag}-` : ""}modal`;
-	TheBigBoyBundle.openModal(props => {
+
+	_openModal(props => {
 		return (
 			React.createElement(ErrorBoundary, {
 				id: id,
 				plugin: config.info.name,
 			}, React.createElement(ModalRoot, {
 				...props,
-				className: className,
+				className: `${modalClassName} transparentBackground`,
 				onClick: props.onClose,
 				size: ModalSize.DYNAMIC,
 			}, children))
@@ -242,7 +246,7 @@ function buildUrl(endpoint, path, params) {
 
 const MessageActions = getModule(Filters.byProps('jumpToMessage', '_sendMessage'), { searchExports: false });
 
-const Dispatcher = getModule(Filters.byProps("dispatch", "subscribe"), { searchExports: false });
+const Dispatcher = getModule(Filters.byProps("dispatch", "_dispatch"), { searchExports: false });
 
 const PendingReplyStore = getModule(m => m._dispatchToken && m.getName() === "PendingReplyStore");
 
@@ -863,6 +867,8 @@ function onAccountsChanged() {
 	}
 }
 
+const Heading = getModule(a => a?.render?.toString().includes("data-excessive-heading-level"), { searchExports: true });
+
 function Arrow() {
 	return (
 		React.createElement('svg', {
@@ -877,8 +883,6 @@ function Arrow() {
 		}))
 	);
 }
-
-const { Heading } = TheBigBoyBundle;
 
 function Collapsible({ title, children }) {
 	const [open, setOpen] = React.useState(false);
@@ -959,7 +963,9 @@ Object.defineProperty(SettingsStore, "state", {
 
 const Settings = SettingsStore;
 
-const Switch = TheBigBoyBundle.FormSwitch ||
+const FormSwitch = getModule(Filters.byStrings("note", "tooltipNote"), { searchExports: true });
+
+const Switch = FormSwitch ||
 	function SwitchComponentFallback(props) {
 		return (
 			React.createElement('div', { style: { color: "#fff" }, }, props.children, React.createElement('input', {
@@ -986,6 +992,8 @@ function SettingSwtich({ settingKey, note, onChange = nop, hideBorder = false, d
 	);
 }
 
+const RadioGroup = getModule(a => a?.Sizes?.NOT_SET === "", { searchExports: true });
+
 const EmbedStyleEnum = {
 	KEEP: "KEEP",
 	REPLACE: "REPLACE",
@@ -1007,14 +1015,18 @@ const PlayerPlaceEnum = {
 	USERAREA: "USERAREA",
 };
 
-const Button = TheBigBoyBundle.Button ||
+const ALLOWD_TYPES = ["track", "artist", "playlist", "album", "show", "episode"];
+
+const Button$1 = getModule(a => a && a.Link && a.Colors, { searchExports: true });
+
+const Button = Button$1 ||
 	function ButtonComponentFallback(props) {
 		return React.createElement('button', { ...props, });
 	};
 
-const { Popout } = TheBigBoyBundle;
+const Popout$1 = getModule(Filters.byProps("Animation", "defaultProps"), { searchExports: true });
 
-const Popout$1 = ({ delay, spacing, forceShow, position, animation, align, className, renderPopout, children, ...rest }) => {
+const Popout = ({ delay, spacing, forceShow, position, animation, align, className, renderPopout, children, ...rest }) => {
 	const [show, setShow] = React.useState(false);
 	const leaveRef = React.useRef();
 	const enterRef = React.useRef();
@@ -1040,7 +1052,7 @@ const Popout$1 = ({ delay, spacing, forceShow, position, animation, align, class
 					setShow(true);
 				}, delay || 150);
 			},
-		}, React.createElement(Popout, {
+		}, React.createElement(Popout$1, {
 			renderPopout: renderPopout,
 			shouldShow: forceShow || show,
 			position: position ?? "top",
@@ -1052,7 +1064,7 @@ const Popout$1 = ({ delay, spacing, forceShow, position, animation, align, class
 	);
 };
 
-const { MenuItem, Menu, MenuSeparator } = TheBigBoyBundle;
+const { Item: MenuItem$1, Menu, Separator: MenuSeparator } = ContextMenu$1;
 
 function parseMenuItems(items) {
 	return items.map(({ type, children, ...rest }) => {
@@ -1061,14 +1073,14 @@ function parseMenuItems(items) {
 			children = Array.isArray(children) ? (
 				parseMenuItems(children)
 			) : (
-				React.createElement(MenuItem, {
+				React.createElement(MenuItem$1, {
 					key: rest.id,
 					...rest,
 				}, children)
 			);
 
 		return (
-			React.createElement(MenuItem, {
+			React.createElement(MenuItem$1, {
 				key: rest.id,
 				...rest,
 			}, children)
@@ -1078,29 +1090,26 @@ function parseMenuItems(items) {
 
 function ContextMenu({ children, menuItems, position = "top", align = "left", className, menuClassName }) {
 	return (
-		React.createElement(Popout$1, {
-				renderPopout: t => (
-					React.createElement(Menu, {
-						className: menuClassName,
-						onClose: t.closePopout,
-					}, parseMenuItems(menuItems))
-				),
-				align: align,
-				position: position,
-				animation: "1",
-				className: className,
-			}
-
-			, children
-		)
+		React.createElement(Popout, {
+			renderPopout: t => (
+				React.createElement(Menu, {
+					className: menuClassName,
+					onClose: t.closePopout,
+				}, parseMenuItems(menuItems))
+			),
+			align: align,
+			position: position,
+			animation: "1",
+			className: className,
+		}, children)
 	);
 }
 
-const { Tooltip } = TheBigBoyBundle;
+const Tooltip$1 = getModule(Filters.byPrototypeKeys("renderTooltip"), { searchExports: true });
 
-const Tooltip$1 = ({ note, position, children }) => {
+const Tooltip = ({ note, position, children }) => {
 	return (
-		React.createElement(Tooltip, {
+		React.createElement(Tooltip$1, {
 			text: note,
 			position: position || "top",
 		}, props => {
@@ -1387,7 +1396,7 @@ const SpotifyPlayerControls = () => {
 
 function SpotifyPlayerButton({ className, active, name, value, ...rest }) {
 	return (
-		React.createElement(Tooltip$1, { note: name, }, React.createElement(Button, {
+		React.createElement(Tooltip, { note: name, }, React.createElement(Button, {
 			innerClassName: "flexCenterCenter",
 			className: `spotify-player-controls-btn ${className} ${active ? "enabled" : ""}`,
 			size: Button.Sizes.NONE,
@@ -1423,7 +1432,7 @@ function Volume({ volume }) {
 	};
 
 	return (
-		React.createElement(Popout$1, {
+		React.createElement(Popout, {
 			renderPopout: () => (
 				React.createElement('div', { className: "spotify-player-controls-volume-slider-wrapper", }, React.createElement('input', {
 					value: val,
@@ -1448,6 +1457,8 @@ function Volume({ volume }) {
 		}))
 	);
 }
+
+const Anchor = getModule(a => a.Anchor, { searchExports: true });
 
 function ExternalLinkIcon() {
 	return (
@@ -1505,14 +1516,12 @@ function TrackBanner() {
 	};
 
 	return (
-		React.createElement(Tooltip$1, { note: "View", }, React.createElement('div', {
+		React.createElement(Tooltip, { note: "View", }, React.createElement('div', {
 			onClick: thumbnailClickHandler,
 			className: "spotify-player-banner",
 		}))
 	);
 }
-
-const { Anchor } = TheBigBoyBundle;
 
 const TrackMediaDetails = ({ name, artists, mediaType }) => {
 	if (mediaType !== "track") {
@@ -1525,7 +1534,7 @@ const TrackMediaDetails = ({ name, artists, mediaType }) => {
 	const { name: albumName, url: albumUrl, id: albumeId } = Store.state.getAlbum();
 
 	return (
-		React.createElement('div', { className: "spotify-player-media", }, React.createElement(TrackBanner, null), React.createElement(Tooltip$1, { note: name, }, React.createElement(Anchor, {
+		React.createElement('div', { className: "spotify-player-media", }, React.createElement(TrackBanner, null), React.createElement(Tooltip, { note: name, }, React.createElement(Anchor, {
 			href: songUrl,
 			className: "spotify-player-title ellipsis",
 		}, name)), React.createElement(Artist, { artists: artists, }), React.createElement(ContextMenu, {
@@ -1548,6 +1557,8 @@ const TrackMediaDetails = ({ name, artists, mediaType }) => {
 		}, React.createElement('div', null, "on", React.createElement('span', { className: "ellipsis", }, albumName))))
 	);
 };
+
+const Slider = getModule(Filters.byPrototypeKeys("renderMark"), { searchExports: true });
 
 function formatMsToTime(ms) {
 	const time = new Date(ms);
@@ -1575,7 +1586,7 @@ const TrackTimeLine = () => {
 	};
 
 	return (
-		React.createElement('div', { className: "spotify-player-timeline", }, React.createElement(TheBigBoyBundle.Slider, {
+		React.createElement('div', { className: "spotify-player-timeline", }, React.createElement(Slider, {
 			className: "spotify-player-timeline-trackbar",
 			mini: true,
 			minValue: 0,
@@ -1634,7 +1645,7 @@ const SpotifyPlayer = React.memo(function SpotifyPlayer() {
 				artists: media?.artists,
 			})
 
-			, mediaType === "track" && React.createElement(TrackTimeLine, null), React.createElement(SpotifyPlayerControls, null), React.createElement(Tooltip$1, { note: playerCompactMode ? "Maximize" : "Minimize", }, React.createElement('div', {
+			, mediaType === "track" && React.createElement(TrackTimeLine, null), React.createElement(SpotifyPlayerControls, null), React.createElement(Tooltip, { note: playerCompactMode ? "Maximize" : "Minimize", }, React.createElement('div', {
 				onClick: minmaxClickHandler,
 				className: "spotify-player-minmax",
 			}, React.createElement(Arrow, null)))
@@ -1662,8 +1673,6 @@ async function cleanFluxContainer() {
 	const fluxContainer = await getFluxContainer();
 	if (fluxContainer) fluxContainer.stateNode.forceUpdate();
 }
-
-const { RadioGroup } = TheBigBoyBundle;
 
 function SpotifyEmbedOptions() {
 	const [val, set] = Settings.useSetting("spotifyEmbed");
@@ -1812,7 +1821,7 @@ function ListenAlong({ userSyncActivityState }) {
 	const { disabled, onClick, tooltip } = userSyncActivityState;
 
 	return (
-		React.createElement(Tooltip$1, { note: tooltip, }, React.createElement(ActivityControlButton, {
+		React.createElement(Tooltip, { note: tooltip, }, React.createElement(ActivityControlButton, {
 			className: "spotify-activity-btn-listenAlong",
 			disabled: disabled,
 			onClick: e => onClick(e),
@@ -1825,7 +1834,7 @@ function Play({ userPlayActivityState }) {
 	const { label, disabled, onClick, tooltip } = userPlayActivityState;
 
 	return (
-		React.createElement(Tooltip$1, { note: tooltip || label, }, React.createElement(ActivityControlButton, {
+		React.createElement(Tooltip, { note: tooltip || label, }, React.createElement(ActivityControlButton, {
 			disabled: disabled,
 			fullWidth: true,
 			className: "spotify-activity-btn-listen",
@@ -1849,12 +1858,12 @@ const SpotifyActivityControls = ({ activity, user }) => {
 	const userPlayActivityState = useSpotifyPlayAction(activity, user);
 
 	return (
-		React.createElement('div', { className: "spotify-activity-controls", }, React.createElement(Play, { userPlayActivityState: userPlayActivityState, }), React.createElement(Tooltip$1, { note: "Add to queue", }, React.createElement(ActivityControlButton, {
+		React.createElement('div', { className: "spotify-activity-controls", }, React.createElement(Play, { userPlayActivityState: userPlayActivityState, }), React.createElement(Tooltip, { note: "Add to queue", }, React.createElement(ActivityControlButton, {
 			className: "spotify-activity-btn-queue",
 			value: React.createElement(AddToQueueIcon, null),
 			disabled: !isActive,
 			onClick: () => Store.Api.queue("track", activity.sync_id, activity.details),
-		})), React.createElement(Tooltip$1, { note: "Share in current channel", }, React.createElement(ActivityControlButton, {
+		})), React.createElement(Tooltip, { note: "Share in current channel", }, React.createElement(ActivityControlButton, {
 			className: "spotify-activity-btn-share",
 			onClick: () => Store.Utils.share(`https://open.spotify.com/track/${activity.sync_id}`),
 			value: React.createElement(ShareIcon, null),
@@ -1958,14 +1967,14 @@ const SpotifyEmbed$1 = ({ id, type, embed: { thumbnail, rawTitle, rawDescription
 	const isThis = mediaId === id;
 
 	const listenBtn = type !== "show" && (
-		React.createElement(Tooltip$1, { note: `Play ${type}`, }, React.createElement('div', {
+		React.createElement(Tooltip, { note: `Play ${type}`, }, React.createElement('div', {
 			onClick: () => Store.Api.listen(type, id, rawTitle),
 			className: "spotify-embed-btn spotify-embed-btn-listen",
 		}, React.createElement(ListenIcon, null)))
 	);
 
 	const queueBtn = (type === "track" || type === "episode") && (
-		React.createElement(Tooltip$1, { note: `Add ${type} to queue`, }, React.createElement('div', {
+		React.createElement(Tooltip, { note: `Add ${type} to queue`, }, React.createElement('div', {
 			onClick: () => Store.Api.queue(type, id, rawTitle),
 			className: "spotify-embed-btn spotify-embed-btn-addToQueue",
 		}, React.createElement(AddToQueueIcon, null)))
@@ -1981,7 +1990,7 @@ const SpotifyEmbed$1 = ({ id, type, embed: { thumbnail, rawTitle, rawDescription
 		React.createElement('div', {
 				className: className,
 				style: { "--thumbnail": `url(${banner})` },
-			}, React.createElement(Tooltip$1, { note: "View", }, React.createElement('div', {
+			}, React.createElement(Tooltip, { note: "View", }, React.createElement('div', {
 				onClick: () => {
 					let { width, height } = thumbnail;
 					width = width > 650 ? 650 : width;
@@ -1994,15 +2003,15 @@ const SpotifyEmbed$1 = ({ id, type, embed: { thumbnail, rawTitle, rawDescription
 			, type && id && (
 				React.createElement('div', { className: "spotify-embed-controls", }
 
-					, (isThis && isActive && !isPlaying || !isThis && isActive) && [listenBtn, queueBtn], isThis && isActive && isPlaying && React.createElement(TrackTimeLine, null), React.createElement(Tooltip$1, { note: "Copy link", }, React.createElement('div', {
+					, (isThis && isActive && !isPlaying || !isThis && isActive) && [listenBtn, queueBtn], isThis && isActive && isPlaying && React.createElement(TrackTimeLine, null), React.createElement(Tooltip, { note: "Copy link", }, React.createElement('div', {
 						onClick: () => Store.Utils.copySpotifyLink(url),
 						className: "spotify-embed-btn spotify-embed-btn-copy",
-					}, React.createElement(CopyIcon, null))), React.createElement(Tooltip$1, { note: "Copy banner", }, React.createElement('div', {
+					}, React.createElement(CopyIcon, null))), React.createElement(Tooltip, { note: "Copy banner", }, React.createElement('div', {
 						onClick: () => Store.Utils.copySpotifyLink(banner),
 						className: "spotify-embed-btn spotify-embed-btn-copy",
 					}, React.createElement(ImageIcon, null)))
 				)
-			), React.createElement(Tooltip$1, { note: "Play on Spotify", }, React.createElement('div', {
+			), React.createElement(Tooltip, { note: "Play on Spotify", }, React.createElement('div', {
 				onClick: () => Store.Utils.openSpotifyLink(url),
 				className: "spotify-embed-spotifyIcon",
 			}, React.createElement(SpotifyIcon, null)))
@@ -2044,7 +2053,6 @@ function SpotifyEmbedWrapper({ id, type, embedObject, embedComponent }) {
 	return embedComponent;
 }
 
-const ALLOWD_TYPES = ["track", "artist", "playlist", "album", "show", "episode"];
 const SpotifyEmbed = getModule(Filters.byStrings("iframe", "playlist", "track"), { defaultExport: false });
 
 const patchSpotifyEmbed = () => {
@@ -2137,7 +2145,7 @@ function SpotifyActivityIndicator({ userId }) {
 	if (!activityIndicator || !spotifyActivity) return null;
 
 	return (
-		React.createElement(Tooltip$1, { note: `${spotifyActivity.details} - ${spotifyActivity.state}`, }, React.createElement(SpotifyIcon, {
+		React.createElement(Tooltip, { note: `${spotifyActivity.details} - ${spotifyActivity.state}`, }, React.createElement(SpotifyIcon, {
 			width: "20",
 			height: "20",
 			class: "spotifyActivityIndicatorIcon",
@@ -2146,6 +2154,8 @@ function SpotifyActivityIndicator({ userId }) {
 }
 
 const Flex = getModule(a => a.defaultProps?.direction, { searchExports: true });
+
+const { Item: MenuItem } = ContextMenu$1;
 
 const ChannelAttachMenu = getModule(Filters.byStrings("Plus Button"), { defaultExport: false });
 
@@ -2167,7 +2177,7 @@ const patchChannelAttach = () => {
 		if (!Array.isArray(ret?.props?.children)) return;
 
 		ret.props.children.push(
-			React.createElement(TheBigBoyBundle.MenuItem, {
+			React.createElement(MenuItem, {
 				id: "spotify-share-song-menuitem",
 				label: React.createElement(MenuLabel, {
 					icon: React.createElement(ListenIcon, null),
@@ -2178,14 +2188,16 @@ const patchChannelAttach = () => {
 					Store.Utils.share(songUrl);
 				},
 			}),
-			React.createElement(TheBigBoyBundle.MenuItem, {
+			React.createElement(MenuItem, {
 				id: "spotify-share-banner-menuitem",
 				label: React.createElement(MenuLabel, {
 					icon: React.createElement(ImageIcon, null),
 					label: "Share spotify song banner",
 				}),
 				action: () => {
-					const { bannerLg: { url } } = Store.state.getSongBanners();
+					const {
+						bannerLg: { url }
+					} = Store.state.getSongBanners();
 					Store.Utils.share(url);
 				},
 			})
@@ -2306,6 +2318,9 @@ const css = `:root {
 .pipContainer .spotify-player-container {
 	width: 240px;
 	box-sizing: border-box;
+}
+.transparentBackground{
+	background: transparent;
 }
 .collapsible-container {
 	border-radius: 5px;
@@ -2537,51 +2552,6 @@ const css = `:root {
 	padding-top:5px;
 	text-align:center;
 }
-.spotify-player-timeline {
-	user-select: none;
-	margin-bottom: 2px;
-	color: white;
-	display: flex;
-	flex-wrap: wrap;
-	font-size: 0.8rem;
-	flex: 1;
-}
-
-.spotify-player-timeline-progress {
-	flex: 1;
-}
-
-.spotify-player-timeline-trackbar {
-	margin-top: -8px;
-	margin-bottom: 8px;
-	cursor: pointer;
-}
-
-.spotify-player-timeline:hover .spotify-player-timeline-trackbar-grabber {
-	opacity: 1;
-}
-
-.spotify-player-timeline .spotify-player-timeline-trackbar-grabber {
-	opacity: 0;
-	cursor: grab;
-	width: 10px;
-	height: 10px;
-	margin-top: 4px;
-}
-
-.spotify-player-timeline .spotify-player-timeline-trackbar-bar {
-	background: hsl(0deg 0% 100% / 30%);
-	height: 6px;
-}
-
-.spotify-player-timeline .spotify-player-timeline-trackbar-bar > div {
-	background: #fff;
-	border-radius: 4px;
-}
-
-.spotify-player-timeline:hover .spotify-player-timeline-trackbar-bar > div {
-	background: var(--SpotifyEnhance-spotify-green);
-}
 .spotify-player-media {
 	color: white;
 	font-size: 0.9rem;
@@ -2650,17 +2620,50 @@ div:has(> .spotify-banner-modal) {
 	border-radius: 5px;
 }
 
-.spotify-embed-plus {
+.spotify-player-timeline {
+	user-select: none;
+	margin-bottom: 2px;
+	color: white;
 	display: flex;
-	min-width: 400px;
-	max-width: 100%;
-	gap: 5px;
-	overflow: hidden;
+	flex-wrap: wrap;
+	font-size: 0.8rem;
+	flex: 1;
 }
 
-.spotify-embed-plus > button {
-	flex: 1 0 auto;
-	text-transform: capitalize;
+.spotify-player-timeline-progress {
+	flex: 1;
+}
+
+.spotify-player-timeline-trackbar {
+	margin-top: -8px;
+	margin-bottom: 8px;
+	cursor: pointer;
+}
+
+.spotify-player-timeline:hover .spotify-player-timeline-trackbar-grabber {
+	opacity: 1;
+}
+
+.spotify-player-timeline .spotify-player-timeline-trackbar-grabber {
+	opacity: 0;
+	cursor: grab;
+	width: 10px;
+	height: 10px;
+	margin-top: 4px;
+}
+
+.spotify-player-timeline .spotify-player-timeline-trackbar-bar {
+	background: hsl(0deg 0% 100% / 30%);
+	height: 6px;
+}
+
+.spotify-player-timeline .spotify-player-timeline-trackbar-bar > div {
+	background: #fff;
+	border-radius: 4px;
+}
+
+.spotify-player-timeline:hover .spotify-player-timeline-trackbar-bar > div {
+	background: var(--SpotifyEnhance-spotify-green);
 }
 .spotify-embed-container {
 	background:
@@ -2803,4 +2806,16 @@ div:has(> .spotify-banner-modal) {
 	}
 }
 
-`;
+
+.spotify-embed-plus {
+	display: flex;
+	min-width: 400px;
+	max-width: 100%;
+	gap: 5px;
+	overflow: hidden;
+}
+
+.spotify-embed-plus > button {
+	flex: 1 0 auto;
+	text-transform: capitalize;
+}`;

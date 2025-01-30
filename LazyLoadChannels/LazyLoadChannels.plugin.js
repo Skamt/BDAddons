@@ -1,7 +1,7 @@
 /**
  * @name LazyLoadChannels
  * @description Lets you choose whether to load a channel
- * @version 1.2.12
+ * @version 1.2.13
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "LazyLoadChannels",
-		"version": "1.2.12",
+		"version": "1.2.13",
 		"description": "Lets you choose whether to load a channel",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels",
@@ -32,6 +32,7 @@ const Data = Api.Data;
 const React = Api.React;
 const Patcher = Api.Patcher;
 const ContextMenu = Api.ContextMenu;
+const Logger = Api.Logger;
 
 const getModule = Api.Webpack.getModule;
 const Filters = Api.Webpack.Filters;
@@ -39,22 +40,37 @@ const modules = Api.Webpack.modules;
 const findInTree = Api.Utils.findInTree;
 const getOwnerInstance = Api.ReactUtils.getOwnerInstance;
 
+function getModuleAndKey(filter, options) {
+	let module;
+	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
+	module = module?.exports;
+	if (!module) return {};
+	const key = Object.keys(module).find(k => module[k] === target);
+	if (!key) return {};
+	return { module, key };
+}
+
+function getBySource(filter) {
+	let moduleId = null;
+	for (const [id, loader] of Object.entries(modules)) {
+		if (filter(loader.toString())) {
+			moduleId = id;
+			break;
+		}
+	}
+
+	return getModule((_, __, id) => id === moduleId);
+}
+
 const getZustand = (() => {
 	let zustand = null;
 
 	return function getZustand() {
 		if (zustand !== null) return zustand;
 
-		const filter = Filters.byStrings("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe");
-		let moduleId = null;
-		for (const [id, loader] of Object.entries(modules)) {
-			if (filter(loader.toString())) {
-				moduleId = id;
-				break;
-			}
-		}
+		const module = getBySource(Filters.byStrings("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"));
 
-		return (zustand = Object.values(getModule((_, __, id) => id === moduleId) || {})[0]);
+		return (zustand = Object.values(module || {})[0]);
 	};
 })();
 
@@ -126,19 +142,8 @@ const ControlKeys = {
 	}
 };
 
-const Logger = {
-	error(...args) {
-		this.p(console.error, ...args);
-	},
-	patch(patchId) {
-		console.error(`%c[${config.info.name}] %c Error at %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
-	},
-	log(...args) {
-		this.p(console.log, ...args);
-	},
-	p(target, ...args) {
-		target(`%c[${config.info.name}]`, "color: #3a71c1;font-weight: bold;", ...args);
-	}
+Logger.patchError = patchId => {
+	console.error(`%c[${config.info.name}] %cCould not find module for %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
 };
 
 const ChannelsStateManager = {
@@ -177,17 +182,7 @@ const ChannelsStateManager = {
 	}
 };
 
-function getModuleAndKey(filter, options) {
-	let module;
-	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
-	module = module?.exports;
-	if (!module) return {};
-	const key = Object.keys(module).find(k => module[k] === target);
-	if (!key) return {};
-	return { module, key };
-}
-
-const Dispatcher = getModule(Filters.byProps("dispatch", "subscribe"), { searchExports: false });
+const Dispatcher = getModule(Filters.byProps("dispatch", "_dispatch"), { searchExports: false });
 
 const ChannelActions = getModule(Filters.byProps("actions", "fetchMessages"), { searchExports: true });
 
@@ -230,8 +225,6 @@ class ErrorBoundary extends React.Component {
 	}
 }
 
-const TheBigBoyBundle = getModule(Filters.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
-
 function reRender(selector) {
 	const target = document.querySelector(selector)?.parentElement;
 	if (!target) return;
@@ -242,7 +235,9 @@ function reRender(selector) {
 
 const nop = () => {};
 
-const Switch = TheBigBoyBundle.FormSwitch ||
+const FormSwitch = getModule(Filters.byStrings("note", "tooltipNote"), { searchExports: true });
+
+const Switch = FormSwitch ||
 	function SwitchComponentFallback(props) {
 		return (
 			React.createElement('div', { style: { color: "#fff" }, }, props.children, React.createElement('input', {
@@ -253,10 +248,11 @@ const Switch = TheBigBoyBundle.FormSwitch ||
 		);
 	};
 
-function SettingSwtich({ settingKey, note, onChange = nop, hideBorder = false, description }) {
+function SettingSwtich({ settingKey, note, onChange = nop, hideBorder = false, description, ...rest }) {
 	const [val, set] = Settings.useSetting(settingKey);
 	return (
 		React.createElement(Switch, {
+			...rest,
 			value: val,
 			note: note,
 			hideBorder: hideBorder,
@@ -286,7 +282,7 @@ const ChannelComponent = getModuleAndKey(Filters.byStrings("hasActiveThreads", "
 
 const patchChannel = () => {
 	const { module, key } = ChannelComponent;
-	if (!module || !key) return Logger.patch("Channel");
+	if (!module || !key) return Logger.patchError("Channel");
 	Patcher.after(module, key, (_, [{ channel }], returnValue) => {
 		if (!Settings.state.autoloadedChannelIndicator) return;
 		if (ChannelsStateManager.getChannelstate(channel.guild_id, channel.id)) returnValue.props.children.props.children[1].props.className += " autoload";
@@ -302,7 +298,7 @@ const patchThread = () => {
 			if (ChannelsStateManager.getChannelstate(thread.guild_id, thread.id))
 				returnValue.props.className += " autoload";
 		});
-	else Logger.patch("Tread");
+	else Logger.patchError("Tread");
 };
 
 const CreateChannel = getModule(m => m.createChannel, { searchExports: false });
@@ -318,7 +314,7 @@ const patchCreateChannel = () => {
 					ChannelsStateManager.add("channels", body.id);
 				});
 		});
-	else Logger.patch("CreateChannel");
+	else Logger.patchError("CreateChannel");
 };
 
 const ChannelContent = getModule(m => m.type && m.type.toString?.().includes("messageGroupSpacing"), { searchExports: false });
@@ -358,7 +354,9 @@ const Toast = {
 
 const MessageActions = getModule(Filters.byProps('jumpToMessage', '_sendMessage'), { searchExports: false });
 
-const Button = TheBigBoyBundle.Button ||
+const Button$1 = getModule(a => a && a.Link && a.Colors, { searchExports: true });
+
+const Button = Button$1 ||
 	function ButtonComponentFallback(props) {
 		return React.createElement('button', { ...props, });
 	};
@@ -497,7 +495,7 @@ const patchChannelContent = context => {
 				}))
 			);
 		});
-	else Logger.patch("ChannelContent");
+	else Logger.patchError("ChannelContent");
 };
 
 const ChannelTypeEnum = getModule(Filters.byProps("GUILD_TEXT", "DM"), { searchExports: true }) || {
@@ -799,4 +797,7 @@ const css = `#lazyLoader {
 .autoload > div > div,
 .autoload a{
 	border-left:4px solid #2e7d46;
+}
+.transparentBackground{
+	background: transparent;
 }`;

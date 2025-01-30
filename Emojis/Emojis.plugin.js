@@ -1,7 +1,7 @@
 /**
  * @name Emojis
  * @description Send emoji as link if it can't be sent it normally.
- * @version 1.0.3
+ * @version 1.0.4
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/Emojis
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/Emojis/Emojis.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "Emojis",
-		"version": "1.0.3",
+		"version": "1.0.4",
 		"description": "Send emoji as link if it can't be sent it normally.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/Emojis/Emojis.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/Emojis",
@@ -35,45 +35,22 @@ const DOM = Api.DOM;
 const Data = Api.Data;
 const React = Api.React;
 const Patcher = Api.Patcher;
+const Logger = Api.Logger;
 
 const getModule = Api.Webpack.getModule;
 const Filters = Api.Webpack.Filters;
 const modules = Api.Webpack.modules;
-const findInTree = Api.Utils.findInTree;
 
-function getRawModule(filter, options) {
-	let module;
-	getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
-	return module;
-}
+function getBySource(filter) {
+	let moduleId = null;
+	for (const [id, loader] of Object.entries(modules)) {
+		if (filter(loader.toString())) {
+			moduleId = id;
+			break;
+		}
+	}
 
-function getModuleAndKey(filter, options) {
-	let module;
-	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
-	module = module?.exports;
-	if (!module) return {};
-	const key = Object.keys(module).find(k => module[k] === target);
-	if (!key) return {};
-	return { module, key };
-}
-
-function filterModuleAndExport(moduleFilter, exportFilter, options) {
-	const module = getRawModule(moduleFilter, options);
-	if (!module) return;
-	const { exports } = module;
-	const key = Object.keys(exports).find(k => exportFilter(exports[k]));
-	if (!key) return {};
-	return { module: exports, key, target: exports[key] };
-}
-
-const TheBigBoyBundle = getModule(Filters.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
-
-function copy(data) {
-	DiscordNative.clipboard.copy(data);
-}
-
-function getNestedProp(obj, path) {
-	return path.split(".").reduce((ob, prop) => ob?.[prop], obj);
+	return getModule((_, __, id) => id === moduleId);
 }
 
 const nop = () => {};
@@ -84,16 +61,9 @@ const getZustand = (() => {
 	return function getZustand() {
 		if (zustand !== null) return zustand;
 
-		const filter = Filters.byStrings("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe");
-		let moduleId = null;
-		for (const [id, loader] of Object.entries(modules)) {
-			if (filter(loader.toString())) {
-				moduleId = id;
-				break;
-			}
-		}
+		const module = getBySource(Filters.byStrings("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"));
 
-		return (zustand = Object.values(getModule((_, __, id) => id === moduleId) || {})[0]);
+		return (zustand = Object.values(module || {})[0]);
 	};
 })();
 
@@ -143,7 +113,9 @@ Object.defineProperty(SettingsStore, "state", {
 
 const Settings = SettingsStore;
 
-const Switch = TheBigBoyBundle.FormSwitch ||
+const FormSwitch = getModule(Filters.byStrings("note", "tooltipNote"), { searchExports: true });
+
+const Switch = FormSwitch ||
 	function SwitchComponentFallback(props) {
 		return (
 			React.createElement('div', { style: { color: "#fff" }, }, props.children, React.createElement('input', {
@@ -154,10 +126,11 @@ const Switch = TheBigBoyBundle.FormSwitch ||
 		);
 	};
 
-function SettingSwtich({ settingKey, note, onChange = nop, hideBorder = false, description }) {
+function SettingSwtich({ settingKey, note, onChange = nop, hideBorder = false, description, ...rest }) {
 	const [val, set] = Settings.useSetting(settingKey);
 	return (
 		React.createElement(Switch, {
+			...rest,
 			value: val,
 			note: note,
 			hideBorder: hideBorder,
@@ -169,7 +142,11 @@ function SettingSwtich({ settingKey, note, onChange = nop, hideBorder = false, d
 	);
 }
 
-const { FormText, Slider, Heading } = TheBigBoyBundle;
+const Heading = getModule(a => a?.render?.toString().includes("data-excessive-heading-level"), { searchExports: true });
+
+const Slider = getModule(Filters.byPrototypeKeys("renderMark"), { searchExports: true });
+
+const FormText = getModule(a => a?.Types?.LABEL_DESCRIPTOR, { searchExports: true });
 
 const SettingComponent = () => {
 	return (
@@ -226,19 +203,8 @@ function StickerSize() {
 	);
 }
 
-const Logger = {
-	error(...args) {
-		this.p(console.error, ...args);
-	},
-	patch(patchId) {
-		console.error(`%c[${config.info.name}] %c Error at %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
-	},
-	log(...args) {
-		this.p(console.log, ...args);
-	},
-	p(target, ...args) {
-		target(`%c[${config.info.name}]`, "color: #3a71c1;font-weight: bold;", ...args);
-	}
+Logger.patchError = patchId => {
+	console.error(`%c[${config.info.name}] %cCould not find module for %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
 };
 
 const EmojiFunctions = getModule(Filters.byProps("getEmojiUnavailableReason"), { searchExports: true });
@@ -255,7 +221,7 @@ const ChannelStore = getModule(m => m._dispatchToken && m.getName() === "Channel
 
 const MessageActions = getModule(Filters.byProps('jumpToMessage', '_sendMessage'), { searchExports: false });
 
-const Dispatcher = getModule(Filters.byProps("dispatch", "subscribe"), { searchExports: false });
+const Dispatcher = getModule(Filters.byProps("dispatch", "_dispatch"), { searchExports: false });
 
 const PendingReplyStore = getModule(m => m._dispatchToken && m.getName() === "PendingReplyStore");
 
@@ -359,148 +325,94 @@ function insertEmoji(id) {
 }
 
 const patchIsEmojiDisabled = () => {
-	if (EmojiFunctions && EmojiFunctions.isEmojiDisabled)
-		Patcher.after(EmojiFunctions, "isEmojiDisabled", (_, [{ intention }], ret) => {
-			if (intention !== EmojiIntentionEnum.CHAT) return ret;
-			return false;
-		});
-	else Logger.patch("IsEmojiDisabled");
-};
-
-const EmojiComponent = getModuleAndKey(Filters.byStrings("getDisambiguatedEmojiContext", "isFavoriteEmojiWithoutFetchingLatest", "allowAnimatedEmoji"));
-
-const patchHighlightAnimatedEmoji = () => {
-	const { module, key } = EmojiComponent;
-	if (module && key)
-		Patcher.after(module, key, (_, [{ descriptor }], ret) => {
-			if (descriptor.emoji.animated && Settings.state.shouldHihglightAnimatedEmojis) ret.props.className += " animated";
-		});
-	else Logger.patch("HighlightAnimatedEmoji");
-};
-
-const Button = TheBigBoyBundle.Button ||
-	function ButtonComponentFallback(props) {
-		return React.createElement('button', { ...props, });
-	};
-
-/* eslint-disable react/jsx-key */
-
-const MessageDecorations = filterModuleAndExport(Filters.byProps("OLD_MESSAGES"), Filters.byStrings(".popoutContainer"), { searchExports: true });
-const AssetURLUtils = getModule(Filters.byProps("getEmojiURL"));
-
-const patchEmojiUtils = () => {
-	const { module, key } = MessageDecorations;
-	if (!module || !key) return Logger.patch("patchEmojiUtils");
-	Patcher.after(module, key, (_, __, ret) => {
-		const { animated, emojiName, guildId = "", emojiId: id } = getNestedProp(ret, "props.children.0.props.children.0.props.children.0.props") || {};
-		if (!id) return ret;
-
-		const children = getNestedProp(ret, "props.children.0.props.children");
-		if (!children) return ret;
-		const btns = [
-			React.createElement(Button, {
-				size: Button.Sizes.SMALL,
-				color: Button.Colors.GREEN,
-				onClick: () => {
-					const url = AssetURLUtils.getEmojiURL({ id });
-					if (!url) return Toast.error("no url found");
-					copy(url);
-					Toast.success("Copid");
-				},
-			}, "Copy"),
-			React.createElement(Button, {
-				size: Button.Sizes.SMALL,
-				color: Button.Colors.GREEN,
-				onClick: () => {
-					try {
-						const emojis = Data.load("emojis") || [];
-						emojis.unshift({
-							animated,
-							id,
-							guildId,
-							name: emojiName.replace(/:/gi, ""),
-							allNamesString: emojiName,
-							available: true,
-							managed: false,
-							require_colons: true,
-							url: `https://cdn.discordapp.com/emojis/${id}.webp?size=4096&quality=lossless`,
-							type: "GUILD_EMOJI"
-						});
-						Data.save("emojis", emojis);
-						Toast.success("Saved.");
-					} catch {
-						Toast.error("Could not save.");
-					}
-				},
-			}, "Save")
-		];
-		const d = findInTree(ret, a => a?.expressionSourceGuild, { walkable: ["props", "children"] });
-		if (d)
-			btns.push(
-				React.createElement(Button, {
-					style: { flexGrow: 1 },
-					size: Button.Sizes.SMALL,
-					color: Button.Colors.GREEN,
-					onClick: () => {
-						try {
-							const emojis = Data.load("emojis") || [];
-							emojis.unshift(...d.expressionSourceGuild.emojis.map(a => {
-								return {
-									...a,
-									guildId: "",
-									allNamesString: `:${a.name}:`
-								}
-							}));
-							Data.save("emojis", emojis);
-							Toast.success("Saved.");
-						} catch {
-							Toast.error("Could not save.");
-						}
-					},
-				}, `Save all ${d?.expressionSourceGuild?.emojis?.length || 0} emojis`)
-			);
-
-		children.push(React.createElement('div', { className: "emojiControls", }, btns));
+	if (!EmojiFunctions?.isEmojiDisabled) return Logger.patchError("IsEmojiDisabled");
+	Patcher.after(EmojiFunctions, "isEmojiDisabled", (_, [{ intention }], ret) => {
+		if (intention !== EmojiIntentionEnum.CHAT) return ret;
+		return false;
 	});
 };
+
+function buildEmojiObj({ animated, name, id }) {
+	return {
+		"animated": animated ? true : false,
+		"available": true,
+		"id": id,
+		"name": name,
+		"allNamesString": `:${name}:`,
+		"guildId": ""
+	};
+}
+
+function serializeEmoji({ animated, name, id }) {
+	return `${animated ? "a" : ""}:${name}:${id}`;
+}
+
+const EmojisManager = (() => {
+	const Emojis = Object.create(null);
+
+	const savedEmojis = Data.load("emojis") || [];
+	Emojis.emojis = savedEmojis.map(emoji => {
+		const [animated, name, id] = emoji.split(":");
+		return buildEmojiObj({ animated, name, id });
+	});
+
+	function commit() {
+		Data.save("emojis", savedEmojis);
+	}
+
+	Emojis.add = function({ animated, name, id }) {
+		const index = Emojis.emojis.findIndex(e => e.id === id);
+		if (index !== -1) return;
+		Emojis.emojis.push(buildEmojiObj({ animated, name, id }));
+		savedEmojis.push(serializeEmoji({ animated, name, id }));
+		commit();
+	};
+
+	Emojis.remove = function(id) {
+		const emojiIndex = Emojis.emojis.findIndex(e => e.id === id);
+		const savedEmojisIndex = savedEmojis.findIndex(e => e.id.includes(id));
+		if (emojiIndex === -1) return;
+		if (savedEmojisIndex === -1) return;
+
+		Emojis.emojis.splice(emojiIndex, 1);
+		savedEmojis.splice(savedEmojisIndex, 1);
+		commit();
+	};
+
+	Emojis.has = function(id) {
+		return -1 !== Emojis.emojis.findIndex(e => e.id === id);
+	};
+
+	return Emojis;
+})();
 
 const emojiContextConstructor = EmojiStore?.getDisambiguatedEmojiContext?.().constructor;
 
 const patchFavoriteEmojis = () => {
-	if (!emojiContextConstructor) return Logger.patch("emojiContextConstructor");
+	if (!emojiContextConstructor) return Logger.patchError("emojiContextConstructor");
 
 	Patcher.after(emojiContextConstructor.prototype, "rebuildFavoriteEmojisWithoutFetchingLatest", (_, args, ret) => {
 		if (!ret?.favorites) return;
-		const emojis = Data.load("emojis");
-		ret.favorites = [...ret.favorites, ...emojis];
+		ret.favorites = [...ret.favorites, ...EmojisManager.emojis];
 	});
 
 	Patcher.after(emojiContextConstructor.prototype, "getDisambiguatedEmoji", (_, args, ret) => {
-		const emojis = Data.load("emojis");
-		let sum = [];
-		if (emojis.length > ret.length) {
-			sum = [...emojis];
-			ret.forEach(r => (emojis.find(e => e.id === r.id) ? null : sum.push(r)));
-		} else {
-			sum = [...ret];
-			emojis.forEach(r => (ret.find(e => e.id === r.id) ? null : sum.push(r)));
-		}
-
-		return sum;
+		return [...ret, ...EmojisManager.emojis];
 	});
 };
 
 /* eslint-disable react/jsx-key */
 
-const { MenuItem } = TheBigBoyBundle;
+const { Item: MenuItem } = BdApi.ContextMenu;
 const bbb = getModule(Filters.byStrings("unfavorite"), { defaultExport: false });
 
-const patchEmojiContextMenu = () => {
-	if (!bbb?.Z) return Logger.patch("patchUnfavoriteEmoji");
+const patchExpressionPickerEmojiContextMenu = () => {
+	if (!bbb?.Z) return Logger.patchError("patchUnfavoriteEmoji");
 	Patcher.after(bbb, "Z", (_, args, ret) => {
+
 		const [{ type, isInExpressionPicker, id }] = args;
 		if (type !== "emoji" || !isInExpressionPicker || !id) return;
-		console.log(_, args, ret);
+
 		return [
 			React.createElement(MenuItem, {
 				action: () => sendEmojiDirectly(id),
@@ -518,23 +430,26 @@ const patchEmojiContextMenu = () => {
 	});
 };
 
+window.t = EmojisManager;
+
 class Emojis {
 	start() {
 		try {
 			DOM.addStyle(css);
 
 			patchIsEmojiDisabled();
-			patchHighlightAnimatedEmoji();
-			patchEmojiUtils();
+
 			patchFavoriteEmojis();
 
-			patchEmojiContextMenu();
+			patchExpressionPickerEmojiContextMenu();
+
 		} catch (e) {
 			console.error(e);
 		}
 	}
 
 	stop() {
+
 		DOM.removeStyle();
 		Patcher.unpatchAll();
 	}
@@ -564,4 +479,7 @@ const css = `.CHAT .premiumPromo-1eKAIB {
 }
 
 
-`;
+
+.transparentBackground{
+	background: transparent;
+}`;

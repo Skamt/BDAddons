@@ -24,6 +24,7 @@ const Api = new BdApi(config.info.name);
 const React = Api.React;
 const ReactDOM = Api.ReactDOM;
 const Patcher = Api.Patcher;
+const Logger = Api.Logger;
 
 const getModule$1 = Api.Webpack.getModule;
 const Filters = Api.Webpack.Filters;
@@ -78,7 +79,7 @@ function getModuleAndKey(filter, options) {
 	return { module, key };
 }
 
-const Dispatcher = getModule$1(Filters.byProps("dispatch", "subscribe"), { searchExports: false });
+const Dispatcher = getModule$1(Filters.byProps("dispatch", "_dispatch"), { searchExports: false });
 
 const TheBigBoyBundle = getModule$1(Filters.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
 
@@ -86,7 +87,11 @@ const RenderLinkComponent = getModule$1(m => m.type?.toString?.().includes("MASK
 
 const ImageModal = getModule$1(Filters.byStrings("renderLinkComponent", "zoomThumbnailPlaceholder"), { searchExports: true });
 
-const { ModalRoot, ModalSize } = TheBigBoyBundle;
+const ModalRoot = getModule$1(Filters.byStrings("rootWithShadow", "MODAL"), { searchExports: true });
+
+const ModalSize = getModule$1(Filters.byProps("DYNAMIC", "SMALL", "LARGE"), { searchExports: true });
+
+const _openModal = getModule$1(Filters.byStrings("onCloseCallback", "onCloseRequest", "modalKey", "backdropStyle"), { searchExports: true });
 
 function shallow(objA, objB) {
 	if (Object.is(objA, objB)) return true;
@@ -103,16 +108,17 @@ function shallow(objA, objB) {
 	return true;
 }
 
-const openModal = (children, tag, className) => {
+const openModal = (children, tag, modalClassName = "") => {
 	const id = `${tag ? `${tag}-` : ""}modal`;
-	TheBigBoyBundle.openModal(props => {
+
+	_openModal(props => {
 		return (
 			React.createElement(ErrorBoundary, {
 				id: id,
 				plugin: config.info.name,
 			}, React.createElement(ModalRoot, {
 				...props,
-				className: className,
+				className: `${modalClassName} transparentBackground`,
 				onClick: props.onClose,
 				size: ModalSize.DYNAMIC,
 			}, children))
@@ -266,19 +272,8 @@ const Utils = /*#__PURE__*/ Object.freeze({
 	sleep
 });
 
-const Logger = {
-	error(...args) {
-		this.p(console.error, ...args);
-	},
-	patch(patchId) {
-		console.error(`%c[${config.info.name}] %c Error at %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
-	},
-	log(...args) {
-		this.p(console.log, ...args);
-	},
-	p(target, ...args) {
-		target(`%c[${config.info.name}]`, "color: #3a71c1;font-weight: bold;", ...args);
-	}
+Logger.patchError = patchId => {
+	console.error(`%c[${config.info.name}] %cCould not find module for %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
 };
 
 const DiscordPermissionsEnum = getModule$1(Filters.byProps("ADD_REACTIONS"), { searchExports: true }) || {
@@ -552,7 +547,9 @@ const Misc = {
 	})()
 };
 
-const Switch = TheBigBoyBundle.FormSwitch ||
+const FormSwitch = getModule$1(Filters.byStrings("note", "tooltipNote"), { searchExports: true });
+
+const Switch = FormSwitch ||
 	function SwitchComponentFallback(props) {
 		return (
 			React.createElement('div', { style: { color: "#fff" }, }, props.children, React.createElement('input', {
@@ -810,4 +807,6 @@ class Devtools {
 
 module.exports = Devtools;
 
-const css = ``;
+const css = `.transparentBackground{
+	background: transparent;
+}`;

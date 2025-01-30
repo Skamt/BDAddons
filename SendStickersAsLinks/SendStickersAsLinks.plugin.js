@@ -1,7 +1,7 @@
 /**
  * @name SendStickersAsLinks
  * @description Enables you to send custom Stickers as links
- * @version 2.2.9
+ * @version 2.2.10
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/SendStickersAsLinks
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/SendStickersAsLinks/SendStickersAsLinks.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "SendStickersAsLinks",
-		"version": "2.2.9",
+		"version": "2.2.10",
 		"description": "Enables you to send custom Stickers as links",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SendStickersAsLinks/SendStickersAsLinks.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SendStickersAsLinks",
@@ -27,21 +27,6 @@ const config = {
 	}
 }
 
-const Logger = {
-	error(...args) {
-		this.p(console.error, ...args);
-	},
-	patch(patchId) {
-		console.error(`%c[${config.info.name}] %c Error at %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
-	},
-	log(...args) {
-		this.p(console.log, ...args);
-	},
-	p(target, ...args) {
-		target(`%c[${config.info.name}]`, "color: #3a71c1;font-weight: bold;", ...args);
-	}
-};
-
 const Api = new BdApi(config.info.name);
 
 const UI = Api.UI;
@@ -49,10 +34,59 @@ const DOM = Api.DOM;
 const Data = Api.Data;
 const React = Api.React;
 const Patcher = Api.Patcher;
+const Logger = Api.Logger;
 
 const getModule = Api.Webpack.getModule;
 const Filters = Api.Webpack.Filters;
 const modules = Api.Webpack.modules;
+
+Logger.patchError = patchId => {
+	console.error(`%c[${config.info.name}] %cCould not find module for %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
+};
+
+function getRawModule(filter, options) {
+	let module;
+	getModule((entry, m, id) => (filter(entry, m, id) ? (module = m) : false), options);
+	return module;
+}
+
+function getModuleAndKey(filter, options) {
+	let module;
+	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
+	module = module?.exports;
+	if (!module) return {};
+	const key = Object.keys(module).find(k => module[k] === target);
+	if (!key) return {};
+	return { module, key };
+}
+
+function mapExports(moduleFilter, exportsMap, options) {
+	const module = getRawModule(moduleFilter, options);
+	if (!module) return {};
+	const { exports } = module;
+	const res = { module: exports, mangledKeys: {} };
+	for (const [mapKey, filter] of Object.entries(exportsMap)) {
+		for (const [exportKey, val] of Object.entries(exports)) {
+			if (!filter(val)) continue;
+			res[mapKey] = val;
+			res.mangledKeys[mapKey] = exportKey;
+			break;
+		}
+	}
+	return res;
+}
+
+function getBySource(filter) {
+	let moduleId = null;
+	for (const [id, loader] of Object.entries(modules)) {
+		if (filter(loader.toString())) {
+			moduleId = id;
+			break;
+		}
+	}
+
+	return getModule((_, __, id) => id === moduleId);
+}
 
 const getZustand = (() => {
 	let zustand = null;
@@ -60,16 +94,9 @@ const getZustand = (() => {
 	return function getZustand() {
 		if (zustand !== null) return zustand;
 
-		const filter = Filters.byStrings("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe");
-		let moduleId = null;
-		for (const [id, loader] of Object.entries(modules)) {
-			if (filter(loader.toString())) {
-				moduleId = id;
-				break;
-			}
-		}
+		const module = getBySource(Filters.byStrings("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"));
 
-		return (zustand = Object.values(getModule((_, __, id) => id === moduleId) || {})[0]);
+		return (zustand = Object.values(module || {})[0]);
 	};
 })();
 
@@ -119,43 +146,17 @@ Object.defineProperty(SettingsStore, "state", {
 
 const Settings = SettingsStore;
 
-function getRawModule(filter, options) {
-	let module;
-	getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
-	return module;
-}
+const Heading = getModule(a => a?.render?.toString().includes("data-excessive-heading-level"), { searchExports: true });
 
-function getModuleAndKey(filter, options) {
-	let module;
-	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
-	module = module?.exports;
-	if (!module) return {};
-	const key = Object.keys(module).find(k => module[k] === target);
-	if (!key) return {};
-	return { module, key };
-}
+const Slider = getModule(Filters.byPrototypeKeys("renderMark"), { searchExports: true });
 
-function mapExports(moduleFilter, exportsMap, options) {
-	const module = getRawModule(moduleFilter, options);
-	if (!module) return {};
-	const { exports } = module;
-	const res = { module: exports, mangledKeys: {} };
-	for (const [mapKey, filter] of Object.entries(exportsMap)) {
-		for (const [exportKey, val] of Object.entries(exports)) {
-			if (!filter(val)) continue;
-			res[mapKey] = val;
-			res.mangledKeys[mapKey] = exportKey;
-			break;
-		}
-	}
-	return res;
-}
-
-const TheBigBoyBundle = getModule(Filters.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
+const FormText = getModule(a => a?.Types?.LABEL_DESCRIPTOR, { searchExports: true });
 
 const nop = () => {};
 
-const Switch = TheBigBoyBundle.FormSwitch ||
+const FormSwitch = getModule(Filters.byStrings("note", "tooltipNote"), { searchExports: true });
+
+const Switch = FormSwitch ||
 	function SwitchComponentFallback(props) {
 		return (
 			React.createElement('div', { style: { color: "#fff" }, }, props.children, React.createElement('input', {
@@ -166,10 +167,11 @@ const Switch = TheBigBoyBundle.FormSwitch ||
 		);
 	};
 
-function SettingSwtich({ settingKey, note, onChange = nop, hideBorder = false, description }) {
+function SettingSwtich({ settingKey, note, onChange = nop, hideBorder = false, description, ...rest }) {
 	const [val, set] = Settings.useSetting(settingKey);
 	return (
 		React.createElement(Switch, {
+			...rest,
 			value: val,
 			note: note,
 			hideBorder: hideBorder,
@@ -180,8 +182,6 @@ function SettingSwtich({ settingKey, note, onChange = nop, hideBorder = false, d
 		}, description || settingKey)
 	);
 }
-
-const { Heading, Slider, FormText } = TheBigBoyBundle;
 
 const SettingComponent = () => {
 	return [
@@ -233,7 +233,7 @@ function StickerSize() {
 }
 
 const StickerSendability = mapExports(
-	a => "SENDABLE" in a, {
+	a => typeof a === "object" && "SENDABLE" in a, {
 		StickerSendability: Filters.byProps("SENDABLE_WITH_PREMIUM"),
 		getStickerSendability: Filters.byStrings("canUseCustomStickersEverywhere"),
 		isSendableSticker: Filters.byStrings("0===")
@@ -245,7 +245,7 @@ const patchStickerClickability = () => {
 	 * Make stickers clickable.
 	 **/
 
-	if (!StickerSendability) return Logger.patch("StickerClickability");
+	if (!StickerSendability) return Logger.patchError("StickerClickability");
 	Patcher.after(StickerSendability.module, StickerSendability.mangledKeys.isSendableSticker, () => true);
 };
 
@@ -289,7 +289,7 @@ const StickersStore = getModule(m => m._dispatchToken && m.getName() === "Sticke
 
 const ChannelStore = getModule(m => m._dispatchToken && m.getName() === "ChannelStore");
 
-const Dispatcher = getModule(Filters.byProps("dispatch", "subscribe"), { searchExports: false });
+const Dispatcher = getModule(Filters.byProps("dispatch", "_dispatch"), { searchExports: false });
 
 const PendingReplyStore = getModule(m => m._dispatchToken && m.getName() === "PendingReplyStore");
 
@@ -412,14 +412,14 @@ const patchSendSticker = () => {
 			if (stickerObj.isSendable) originalFunc.apply(_, args);
 			else handleUnsendableSticker(stickerObj);
 		});
-	else Logger.patch("SendSticker");
+	else Logger.patchError("SendSticker");
 };
 
 const StickerModule = getModuleAndKey(Filters.byStrings("sticker", "withLoadingIndicator"), { searchExports: false }) || {};
 
 const patchStickerComponent = () => {
 	const { module, key } = StickerModule;
-	if (!module || !key) return Logger.patch("GetStickerById");
+	if (!module || !key) return Logger.patchError("GetStickerById");
 	Patcher.after(module, key, (_, args, returnValue) => {
 		const { size, sticker } = returnValue.props.children[0].props;
 		if (size === 96) {
@@ -449,7 +449,7 @@ const patchStickerAttachement = () => {
 				}
 			}
 		});
-	else Logger.patch("StickerAttachement");
+	else Logger.patchError("StickerAttachement");
 };
 
 const StickerTypeEnum = getModule(Filters.byProps("GUILD", "STANDARD"), { searchExports: true }) || {
@@ -462,7 +462,7 @@ const patchStickerSuggestion = () => {
 	 * Enables suggestions
 	 * */
 
-	if (!StickerSendability) return Logger.patch("StickerSuggestion");
+	if (!StickerSendability) return Logger.patchError("StickerSuggestion");
 
 	Patcher.after(StickerSendability.module, StickerSendability.mangledKeys.getStickerSendability, (_, args, returnValue) => {
 		if (args[0].type === StickerTypeEnum.GUILD) {
@@ -473,7 +473,7 @@ const patchStickerSuggestion = () => {
 };
 
 const patchChannelGuildPermissions = () => {
-	if (!DiscordPermissions) return Logger.patch("ChannelGuildPermissions");
+	if (!DiscordPermissions) return Logger.patchError("ChannelGuildPermissions");
 	Patcher.after(DiscordPermissions, "can", (_, [permission], ret) => ret || DiscordPermissionsEnum.USE_EXTERNAL_EMOJIS === permission);
 };
 
@@ -523,4 +523,7 @@ const css = `.animatedSticker{
 
 .stickerSizeSlider {
 	line-height: 1;
+}
+.transparentBackground{
+	background: transparent;
 }`;

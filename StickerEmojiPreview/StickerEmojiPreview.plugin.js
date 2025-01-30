@@ -1,7 +1,7 @@
 /**
  * @name StickerEmojiPreview
  * @description Adds a zoomed preview to those tiny Stickers and Emojis
- * @version 1.2.3
+ * @version 1.2.4
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/StickerEmojiPreview
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/StickerEmojiPreview/StickerEmojiPreview.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "StickerEmojiPreview",
-		"version": "1.2.3",
+		"version": "1.2.4",
 		"description": "Adds a zoomed preview to those tiny Stickers and Emojis",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/StickerEmojiPreview/StickerEmojiPreview.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/StickerEmojiPreview",
@@ -24,30 +24,20 @@ const config = {
 	}
 }
 
-const Logger = {
-	error(...args) {
-		this.p(console.error, ...args);
-	},
-	patch(patchId) {
-		console.error(`%c[${config.info.name}] %c Error at %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
-	},
-	log(...args) {
-		this.p(console.log, ...args);
-	},
-	p(target, ...args) {
-		target(`%c[${config.info.name}]`, "color: #3a71c1;font-weight: bold;", ...args);
-	}
-};
-
 const Api = new BdApi(config.info.name);
 const DOM = Api.DOM;
 const Data = Api.Data;
 const React = Api.React;
 const Patcher = Api.Patcher;
+const Logger = Api.Logger;
 
 const getModule = Api.Webpack.getModule;
 const Filters = Api.Webpack.Filters;
 const modules = Api.Webpack.modules;
+
+Logger.patchError = patchId => {
+	console.error(`%c[${config.info.name}] %cCould not find module for %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
+};
 
 class ErrorBoundary extends React.Component {
 	state = { hasError: false, error: null, info: null };
@@ -98,7 +88,17 @@ function getModuleAndKey(filter, options) {
 	return { module, key };
 }
 
-const TheBigBoyBundle = getModule(Filters.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
+function getBySource(filter) {
+	let moduleId = null;
+	for (const [id, loader] of Object.entries(modules)) {
+		if (filter(loader.toString())) {
+			moduleId = id;
+			break;
+		}
+	}
+
+	return getModule((_, __, id) => id === moduleId);
+}
 
 const nop = () => {};
 
@@ -112,16 +112,9 @@ const getZustand = (() => {
 	return function getZustand() {
 		if (zustand !== null) return zustand;
 
-		const filter = Filters.byStrings("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe");
-		let moduleId = null;
-		for (const [id, loader] of Object.entries(modules)) {
-			if (filter(loader.toString())) {
-				moduleId = id;
-				break;
-			}
-		}
+		const module = getBySource(Filters.byStrings("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"));
 
-		return (zustand = Object.values(getModule((_, __, id) => id === moduleId) || {})[0]);
+		return (zustand = Object.values(module || {})[0]);
 	};
 })();
 
@@ -171,10 +164,10 @@ Object.defineProperty(SettingsStore, "state", {
 
 const Settings = SettingsStore;
 
+const Popout = getModule(Filters.byProps("Animation", "defaultProps"), { searchExports: true });
+
 const PREVIEW_SIZE = 300;
 const PREVIEW_UNAVAILABLE = `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="rgb(202 204 206)" d="M12 2C6.477 2 2 6.477 2 12C2 17.522 6.477 22 12 22C17.523 22 22 17.522 22 12C22 6.477 17.523 2 12 2ZM8 6C9.104 6 10 6.896 10 8C10 9.105 9.104 10 8 10C6.896 10 6 9.105 6 8C6 6.896 6.896 6 8 6ZM18 14C18 16.617 15.14 19 12 19C8.86 19 6 16.617 6 14V13H18V14ZM16 10C14.896 10 14 9.105 14 8C14 6.896 14.896 6 16 6C17.104 6 18 6.896 18 8C18 9.105 17.104 10 16 10Z"></path></svg>`;
-
-const { Popout } = TheBigBoyBundle;
 
 const PreviewComponent = ({ target, previewComponent }) => {
 	const [show, setShow] = Settings.useSetting("previewState");
@@ -244,7 +237,7 @@ const patchPickerInspector = () => {
 				}))
 			);
 		});
-	else Logger.patch("ExpressionPickerInspector");
+	else Logger.patchError("ExpressionPickerInspector");
 };
 
 const patchCloseExpressionPicker = () => {
@@ -256,10 +249,12 @@ const patchCloseExpressionPicker = () => {
 		Patcher.after(module, key, () => {
 			Settings.state.setpreviewState(Settings.state.previewDefaultState);
 		});
-	else Logger.patch("CloseExpressionPicker");
+	else Logger.patchError("CloseExpressionPicker");
 };
 
-const Switch = TheBigBoyBundle.FormSwitch ||
+const FormSwitch = getModule(Filters.byStrings("note", "tooltipNote"), { searchExports: true });
+
+const Switch = FormSwitch ||
 	function SwitchComponentFallback(props) {
 		return (
 			React.createElement('div', { style: { color: "#fff" }, }, props.children, React.createElement('input', {
@@ -270,10 +265,11 @@ const Switch = TheBigBoyBundle.FormSwitch ||
 		);
 	};
 
-function SettingSwtich({ settingKey, note, onChange = nop, hideBorder = false, description }) {
+function SettingSwtich({ settingKey, note, onChange = nop, hideBorder = false, description, ...rest }) {
 	const [val, set] = Settings.useSetting(settingKey);
 	return (
 		React.createElement(Switch, {
+			...rest,
 			value: val,
 			note: note,
 			hideBorder: hideBorder,
@@ -336,4 +332,7 @@ const css = `.stickersPreview {
 	padding: 1px;
 	box-sizing: border-box;
 }
-`;
+
+.transparentBackground{
+	background: transparent;
+}`;
