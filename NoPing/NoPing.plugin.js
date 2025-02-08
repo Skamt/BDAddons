@@ -20,29 +20,21 @@ const config = {
 	}
 }
 
-const Logger = {
-	error(...args) {
-		this.p(console.error, ...args);
-	},
-	patch(patchId) {
-		console.error(`%c[${config.info.name}] %c Error at %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
-	},
-	log(...args) {
-		this.p(console.log, ...args);
-	},
-	p(target, ...args) {
-		target(`%c[${config.info.name}]`, "color: #3a71c1;font-weight: bold;", ...args);
-	}
-};
-
 const Api = new BdApi(config.info.name);
 const DOM = Api.DOM;
 const Data = Api.Data;
 const Patcher = Api.Patcher;
 const ContextMenu = Api.ContextMenu;
+const Logger = Api.Logger;
 
-const getModule = Api.Webpack.getModule;
-const Filters = Api.Webpack.Filters;
+const Webpack = Api.Webpack;
+
+Logger.patchError = patchId => {
+	console.error(`%c[${config.info.name}] %cCould not find module for %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
+};
+
+const getModule = Webpack.getModule;
+const Filters = Webpack.Filters;
 
 function getModuleAndKey(filter, options) {
 	let module;
@@ -79,7 +71,7 @@ const ReplyFunctions = getModuleAndKey(Filters.byStrings("CREATE_PENDING_REPLY",
 
 const patchCreatePendingReply = () => {
 	const { module, key } = ReplyFunctions;
-	if (!module || !key) return Logger.patch("patchCreatePendingReply");
+	if (!module || !key) return Logger.patchError("patchCreatePendingReply");
 
 	Patcher.before(module, key, (_, [args]) => {
 		if (blacklist.has(args.message.author.id)) {
@@ -89,10 +81,10 @@ const patchCreatePendingReply = () => {
 	});
 };
 
-const MessageActions = getModule(Filters.byProps('jumpToMessage', '_sendMessage'), { searchExports: false });
+const MessageActions = getModule(Filters.byKeys('jumpToMessage', '_sendMessage'), { searchExports: false });
 
 const patchSendMessage = () => {
-	if (!MessageActions) return Logger.patch("patchSendMessage");
+	if (!MessageActions) return Logger.patchError("patchSendMessage");
 	Patcher.before(MessageActions, "_sendMessage", (_, args) => {
 		const [, id] = args[1].content.match(/<@(\d+)>/) || [];
 		if (!id) return;
@@ -121,7 +113,7 @@ const patchContextMenus = () => {
 	];
 };
 
-const Dispatcher = getModule(Filters.byProps("dispatch", "subscribe"), { searchExports: false });
+const Dispatcher = getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: false });
 
 const PendingReplyStore = getModule(m => m._dispatchToken && m.getName() === "PendingReplyStore");
 

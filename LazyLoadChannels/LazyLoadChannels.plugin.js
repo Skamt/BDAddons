@@ -34,11 +34,13 @@ const Patcher = Api.Patcher;
 const ContextMenu = Api.ContextMenu;
 const Logger = Api.Logger;
 
-const getModule = Api.Webpack.getModule;
-const Filters = Api.Webpack.Filters;
-const modules = Api.Webpack.modules;
+const Webpack = Api.Webpack;
 const findInTree = Api.Utils.findInTree;
 const getOwnerInstance = Api.ReactUtils.getOwnerInstance;
+
+const getModule = Webpack.getModule;
+const Filters = Webpack.Filters;
+const getMangled = Webpack.getMangled;
 
 function getModuleAndKey(filter, options) {
 	let module;
@@ -50,31 +52,11 @@ function getModuleAndKey(filter, options) {
 	return { module, key };
 }
 
-function getBySource(filter) {
-	let moduleId = null;
-	for (const [id, loader] of Object.entries(modules)) {
-		if (filter(loader.toString())) {
-			moduleId = id;
-			break;
-		}
-	}
+const { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
+	_: Filters.byStrings("subscribe"),
+	zustand: () => true
+});
 
-	return getModule((_, __, id) => id === moduleId);
-}
-
-const getZustand = (() => {
-	let zustand = null;
-
-	return function getZustand() {
-		if (zustand !== null) return zustand;
-
-		const module = getBySource(Filters.byStrings("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"));
-
-		return (zustand = Object.values(module || {})[0]);
-	};
-})();
-
-const zustand = getZustand();
 const SettingsStoreSelectors = {};
 const persistMiddleware = config => (set, get, api) => config(args => (set(args), Data.save("settings", get().getRawState())), get, api);
 
@@ -182,9 +164,9 @@ const ChannelsStateManager = {
 	}
 };
 
-const Dispatcher = getModule(Filters.byProps("dispatch", "_dispatch"), { searchExports: false });
+const Dispatcher = getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: false });
 
-const ChannelActions = getModule(Filters.byProps("actions", "fetchMessages"), { searchExports: true });
+const ChannelActions = getModule(Filters.byKeys("actions", "fetchMessages"), { searchExports: true });
 
 class ErrorBoundary extends React.Component {
 	state = { hasError: false, error: null, info: null };
@@ -352,7 +334,7 @@ const Toast = {
 	error(content) { showToast(content, "error"); }
 };
 
-const MessageActions = getModule(Filters.byProps('jumpToMessage', '_sendMessage'), { searchExports: false });
+const MessageActions = getModule(Filters.byKeys('jumpToMessage', '_sendMessage'), { searchExports: false });
 
 const Button$1 = getModule(a => a && a.Link && a.Colors, { searchExports: true });
 
@@ -498,7 +480,7 @@ const patchChannelContent = context => {
 	else Logger.patchError("ChannelContent");
 };
 
-const ChannelTypeEnum = getModule(Filters.byProps("GUILD_TEXT", "DM"), { searchExports: true }) || {
+const ChannelTypeEnum = getModule(Filters.byKeys("GUILD_TEXT", "DM"), { searchExports: true }) || {
 	"GUILD_CATEGORY": 4
 };
 

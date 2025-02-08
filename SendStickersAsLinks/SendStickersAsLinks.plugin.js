@@ -36,19 +36,15 @@ const React = Api.React;
 const Patcher = Api.Patcher;
 const Logger = Api.Logger;
 
-const getModule = Api.Webpack.getModule;
-const Filters = Api.Webpack.Filters;
-const modules = Api.Webpack.modules;
+const Webpack = Api.Webpack;
 
 Logger.patchError = patchId => {
 	console.error(`%c[${config.info.name}] %cCould not find module for %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
 };
 
-function getRawModule(filter, options) {
-	let module;
-	getModule((entry, m, id) => (filter(entry, m, id) ? (module = m) : false), options);
-	return module;
-}
+const getModule = Webpack.getModule;
+const Filters = Webpack.Filters;
+const getMangled = Webpack.getMangled;
 
 function getModuleAndKey(filter, options) {
 	let module;
@@ -61,7 +57,7 @@ function getModuleAndKey(filter, options) {
 }
 
 function mapExports(moduleFilter, exportsMap, options) {
-	const module = getRawModule(moduleFilter, options);
+	const module = getModule(moduleFilter, { ...options, raw: true });
 	if (!module) return {};
 	const { exports } = module;
 	const res = { module: exports, mangledKeys: {} };
@@ -76,31 +72,11 @@ function mapExports(moduleFilter, exportsMap, options) {
 	return res;
 }
 
-function getBySource(filter) {
-	let moduleId = null;
-	for (const [id, loader] of Object.entries(modules)) {
-		if (filter(loader.toString())) {
-			moduleId = id;
-			break;
-		}
-	}
+const { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
+	_: Filters.byStrings("subscribe"),
+	zustand: () => true
+});
 
-	return getModule((_, __, id) => id === moduleId);
-}
-
-const getZustand = (() => {
-	let zustand = null;
-
-	return function getZustand() {
-		if (zustand !== null) return zustand;
-
-		const module = getBySource(Filters.byStrings("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"));
-
-		return (zustand = Object.values(module || {})[0]);
-	};
-})();
-
-const zustand = getZustand();
 const SettingsStoreSelectors = {};
 const persistMiddleware = config => (set, get, api) => config(args => (set(args), Data.save("settings", get().getRawState())), get, api);
 
@@ -260,9 +236,9 @@ const Toast = {
 	error(content) { showToast(content, "error"); }
 };
 
-const DiscordPermissions = getModule(Filters.byProps("computePermissions"), { searchExports: false });
+const DiscordPermissions = getModule(Filters.byKeys("computePermissions"), { searchExports: false });
 
-const DiscordPermissionsEnum = getModule(Filters.byProps("ADD_REACTIONS"), { searchExports: true }) || {
+const DiscordPermissionsEnum = getModule(Filters.byKeys("ADD_REACTIONS"), { searchExports: true }) || {
 	"EMBED_LINKS": "16384n",
 	"USE_EXTERNAL_EMOJIS": "262144n"
 };
@@ -275,7 +251,7 @@ function hasEmbedPerms(channel, user) {
 	);
 }
 
-const MessageActions = getModule(Filters.byProps('jumpToMessage', '_sendMessage'), { searchExports: false });
+const MessageActions = getModule(Filters.byKeys('jumpToMessage', '_sendMessage'), { searchExports: false });
 
 const STRINGS = {
 	sendLottieStickerErrorMessage: "Official Discord Stickers are not supported.",
@@ -289,7 +265,7 @@ const StickersStore = getModule(m => m._dispatchToken && m.getName() === "Sticke
 
 const ChannelStore = getModule(m => m._dispatchToken && m.getName() === "ChannelStore");
 
-const Dispatcher = getModule(Filters.byProps("dispatch", "_dispatch"), { searchExports: false });
+const Dispatcher = getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: false });
 
 const PendingReplyStore = getModule(m => m._dispatchToken && m.getName() === "PendingReplyStore");
 
@@ -452,7 +428,7 @@ const patchStickerAttachement = () => {
 	else Logger.patchError("StickerAttachement");
 };
 
-const StickerTypeEnum = getModule(Filters.byProps("GUILD", "STANDARD"), { searchExports: true }) || {
+const StickerTypeEnum = getModule(Filters.byKeys("GUILD", "STANDARD"), { searchExports: true }) || {
 	"STANDARD": 1,
 	"GUILD": 2
 };

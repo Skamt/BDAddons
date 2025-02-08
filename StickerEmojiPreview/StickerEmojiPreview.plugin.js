@@ -31,9 +31,7 @@ const React = Api.React;
 const Patcher = Api.Patcher;
 const Logger = Api.Logger;
 
-const getModule = Api.Webpack.getModule;
-const Filters = Api.Webpack.Filters;
-const modules = Api.Webpack.modules;
+const Webpack = Api.Webpack;
 
 Logger.patchError = patchId => {
 	console.error(`%c[${config.info.name}] %cCould not find module for %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
@@ -78,6 +76,10 @@ class ErrorBoundary extends React.Component {
 	}
 }
 
+const getModule = Webpack.getModule;
+const Filters = Webpack.Filters;
+const getMangled = Webpack.getMangled;
+
 function getModuleAndKey(filter, options) {
 	let module;
 	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
@@ -88,37 +90,17 @@ function getModuleAndKey(filter, options) {
 	return { module, key };
 }
 
-function getBySource(filter) {
-	let moduleId = null;
-	for (const [id, loader] of Object.entries(modules)) {
-		if (filter(loader.toString())) {
-			moduleId = id;
-			break;
-		}
-	}
-
-	return getModule((_, __, id) => id === moduleId);
-}
-
 const nop = () => {};
 
 const ExpressionPickerInspector = getModuleAndKey(Filters.byStrings("graphicPrimary", "titlePrimary"), { searchExports: false }) || {};
 
 const CloseExpressionPicker = getModuleAndKey(Filters.byStrings("activeView:null,activeViewType:null"), { searchExports: true }) || {};
 
-const getZustand = (() => {
-	let zustand = null;
+const { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
+	_: Filters.byStrings("subscribe"),
+	zustand: () => true
+});
 
-	return function getZustand() {
-		if (zustand !== null) return zustand;
-
-		const module = getBySource(Filters.byStrings("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"));
-
-		return (zustand = Object.values(module || {})[0]);
-	};
-})();
-
-const zustand = getZustand();
 const SettingsStoreSelectors = {};
 const persistMiddleware = config => (set, get, api) => config(args => (set(args), Data.save("settings", get().getRawState())), get, api);
 
@@ -164,7 +146,7 @@ Object.defineProperty(SettingsStore, "state", {
 
 const Settings = SettingsStore;
 
-const Popout = getModule(Filters.byProps("Animation", "defaultProps"), { searchExports: true });
+const Popout = getModule(Filters.byKeys("Animation", "defaultProps"), { searchExports: true });
 
 const PREVIEW_SIZE = 300;
 const PREVIEW_UNAVAILABLE = `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="rgb(202 204 206)" d="M12 2C6.477 2 2 6.477 2 12C2 17.522 6.477 22 12 22C17.523 22 22 17.522 22 12C22 6.477 17.523 2 12 2ZM8 6C9.104 6 10 6.896 10 8C10 9.105 9.104 10 8 10C6.896 10 6 9.105 6 8C6 6.896 6.896 6 8 6ZM18 14C18 16.617 15.14 19 12 19C8.86 19 6 16.617 6 14V13H18V14ZM16 10C14.896 10 14 9.105 14 8C14 6.896 14.896 6 16 6C17.104 6 18 6.896 18 8C18 9.105 17.104 10 16 10Z"></path></svg>`;

@@ -37,37 +37,19 @@ const React = Api.React;
 const Patcher = Api.Patcher;
 const Logger = Api.Logger;
 
-const getModule = Api.Webpack.getModule;
-const Filters = Api.Webpack.Filters;
-const modules = Api.Webpack.modules;
+const Webpack = Api.Webpack;
 
-function getBySource(filter) {
-	let moduleId = null;
-	for (const [id, loader] of Object.entries(modules)) {
-		if (filter(loader.toString())) {
-			moduleId = id;
-			break;
-		}
-	}
-
-	return getModule((_, __, id) => id === moduleId);
-}
+const getModule = Webpack.getModule;
+const Filters = Webpack.Filters;
+const getMangled = Webpack.getMangled;
 
 const nop = () => {};
 
-const getZustand = (() => {
-	let zustand = null;
+const { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
+	_: Filters.byStrings("subscribe"),
+	zustand: () => true
+});
 
-	return function getZustand() {
-		if (zustand !== null) return zustand;
-
-		const module = getBySource(Filters.byStrings("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"));
-
-		return (zustand = Object.values(module || {})[0]);
-	};
-})();
-
-const zustand = getZustand();
 const SettingsStoreSelectors = {};
 const persistMiddleware = config => (set, get, api) => config(args => (set(args), Data.save("settings", get().getRawState())), get, api);
 
@@ -207,9 +189,9 @@ Logger.patchError = patchId => {
 	console.error(`%c[${config.info.name}] %cCould not find module for %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
 };
 
-const EmojiFunctions = getModule(Filters.byProps("getEmojiUnavailableReason"), { searchExports: true });
+const EmojiFunctions = getModule(Filters.byKeys("getEmojiUnavailableReason"), { searchExports: true });
 
-const EmojiIntentionEnum = getModule(Filters.byProps("GUILD_ROLE_BENEFIT_EMOJI"), { searchExports: true }) || {
+const EmojiIntentionEnum = getModule(Filters.byKeys("GUILD_ROLE_BENEFIT_EMOJI"), { searchExports: true }) || {
 	"CHAT": 3
 };
 
@@ -219,9 +201,9 @@ const SelectedChannelStore = getModule(m => m._dispatchToken && m.getName() === 
 
 const ChannelStore = getModule(m => m._dispatchToken && m.getName() === "ChannelStore");
 
-const MessageActions = getModule(Filters.byProps('jumpToMessage', '_sendMessage'), { searchExports: false });
+const MessageActions = getModule(Filters.byKeys('jumpToMessage', '_sendMessage'), { searchExports: false });
 
-const Dispatcher = getModule(Filters.byProps("dispatch", "_dispatch"), { searchExports: false });
+const Dispatcher = getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: false });
 
 const PendingReplyStore = getModule(m => m._dispatchToken && m.getName() === "PendingReplyStore");
 

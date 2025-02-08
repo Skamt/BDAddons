@@ -26,8 +26,7 @@ const ReactDOM = Api.ReactDOM;
 const Patcher = Api.Patcher;
 const Logger = Api.Logger;
 
-const getModule$1 = Api.Webpack.getModule;
-const Filters = Api.Webpack.Filters;
+const Webpack = Api.Webpack;
 const getOwnerInstance = Api.ReactUtils.getOwnerInstance;
 
 class ErrorBoundary extends React.Component {
@@ -69,6 +68,9 @@ class ErrorBoundary extends React.Component {
 	}
 }
 
+const getModule$1 = Webpack.getModule;
+const Filters = Webpack.Filters;
+
 function getModuleAndKey(filter, options) {
 	let module;
 	const target = getModule$1((entry, m) => (filter(entry) ? (module = m) : false), options);
@@ -79,9 +81,9 @@ function getModuleAndKey(filter, options) {
 	return { module, key };
 }
 
-const Dispatcher = getModule$1(Filters.byProps("dispatch", "_dispatch"), { searchExports: false });
+const Dispatcher = getModule$1(Filters.byKeys("dispatch", "_dispatch"), { searchExports: false });
 
-const TheBigBoyBundle = getModule$1(Filters.byProps("openModal", "FormSwitch", "Anchor"), { searchExports: false });
+const TheBigBoyBundle = getModule$1(Filters.byKeys("openModal", "FormSwitch", "Anchor"), { searchExports: false });
 
 const RenderLinkComponent = getModule$1(m => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false });
 
@@ -89,7 +91,7 @@ const ImageModal = getModule$1(Filters.byStrings("renderLinkComponent", "zoomThu
 
 const ModalRoot = getModule$1(Filters.byStrings("rootWithShadow", "MODAL"), { searchExports: true });
 
-const ModalSize = getModule$1(Filters.byProps("DYNAMIC", "SMALL", "LARGE"), { searchExports: true });
+const ModalSize = getModule$1(Filters.byKeys("DYNAMIC", "SMALL", "LARGE"), { searchExports: true });
 
 const _openModal = getModule$1(Filters.byStrings("onCloseCallback", "onCloseRequest", "modalKey", "backdropStyle"), { searchExports: true });
 
@@ -276,7 +278,7 @@ Logger.patchError = patchId => {
 	console.error(`%c[${config.info.name}] %cCould not find module for %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
 };
 
-const DiscordPermissionsEnum = getModule$1(Filters.byProps("ADD_REACTIONS"), { searchExports: true }) || {
+const DiscordPermissionsEnum = getModule$1(Filters.byKeys("ADD_REACTIONS"), { searchExports: true }) || {
 	"EMBED_LINKS": "16384n",
 	"USE_EXTERNAL_EMOJIS": "262144n"
 };

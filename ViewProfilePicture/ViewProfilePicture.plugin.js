@@ -33,9 +33,7 @@ const React = Api.React;
 const Patcher = Api.Patcher;
 const Logger = Api.Logger;
 
-const getModule = Api.Webpack.getModule;
-const Filters = Api.Webpack.Filters;
-const modules = Api.Webpack.modules;
+const Webpack = Api.Webpack;
 const findInTree = Api.Utils.findInTree;
 
 Logger.patchError = patchId => {
@@ -81,6 +79,10 @@ class ErrorBoundary extends React.Component {
 	}
 }
 
+const getModule = Webpack.getModule;
+const Filters = Webpack.Filters;
+const getMangled = Webpack.getMangled;
+
 function getModuleAndKey(filter, options) {
 	let module;
 	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
@@ -91,25 +93,13 @@ function getModuleAndKey(filter, options) {
 	return { module, key };
 }
 
-function getBySource(filter) {
-	let moduleId = null;
-	for (const [id, loader] of Object.entries(modules)) {
-		if (filter(loader.toString())) {
-			moduleId = id;
-			break;
-		}
-	}
-
-	return getModule((_, __, id) => id === moduleId);
-}
-
 const RenderLinkComponent = getModule(m => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false });
 
 const ImageModal = getModule(Filters.byStrings("renderLinkComponent", "zoomThumbnailPlaceholder"), { searchExports: true });
 
 const ModalRoot = getModule(Filters.byStrings("rootWithShadow", "MODAL"), { searchExports: true });
 
-const ModalSize = getModule(Filters.byProps("DYNAMIC", "SMALL", "LARGE"), { searchExports: true });
+const ModalSize = getModule(Filters.byKeys("DYNAMIC", "SMALL", "LARGE"), { searchExports: true });
 
 const _openModal = getModule(Filters.byStrings("onCloseCallback", "onCloseRequest", "modalKey", "backdropStyle"), { searchExports: true });
 
@@ -169,19 +159,11 @@ function getImageDimensions(url) {
 	});
 }
 
-const getZustand = (() => {
-	let zustand = null;
+const { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
+	_: Filters.byStrings("subscribe"),
+	zustand: () => true
+});
 
-	return function getZustand() {
-		if (zustand !== null) return zustand;
-
-		const module = getBySource(Filters.byStrings("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"));
-
-		return (zustand = Object.values(module || {})[0]);
-	};
-})();
-
-const zustand = getZustand();
 const SettingsStoreSelectors = {};
 const persistMiddleware = config => (set, get, api) => config(args => (set(args), Data.save("settings", get().getRawState())), get, api);
 
@@ -322,7 +304,7 @@ const Toast = {
 	error(content) { showToast(content, "error"); }
 };
 
-const Color = getModule(Filters.byProps("Color", "hex", "hsl"), { searchExports: false });
+const Color = getModule(Filters.byKeys("Color", "hex", "hsl"), { searchExports: false });
 
 const ThemeStore = getModule(m => m._dispatchToken && m.getName() === "ThemeStore");
 
@@ -397,7 +379,7 @@ const ColorModalComponent = {
 	ColorModal
 };
 
-const ModalCarousel$1 = getModule(Filters.byPrototypeFields("navigateTo", "preloadImage"), { searchExports: false });
+const ModalCarousel$1 = getModule(Filters.byPrototypeKeys("navigateTo", "preloadImage"), { searchExports: false });
 
 class ModalCarousel extends ModalCarousel$1 {
 	preloadNextImages() {}
@@ -509,7 +491,7 @@ const patchVPPButton = () => {
 	});
 };
 
-const ProfileTypeEnum = getModule(Filters.byProps("POPOUT", "SETTINGS"), { searchExports: true }) || {
+const ProfileTypeEnum = getModule(Filters.byKeys("POPOUT", "SETTINGS"), { searchExports: true }) || {
 	"POPOUT": 0,
 	"MODAL": 1,
 	"SETTINGS": 2,

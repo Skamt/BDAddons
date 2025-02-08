@@ -1,7 +1,7 @@
 /**
  * @name SpotifyEnhance
  * @description All in one better spotify-discord experience.
- * @version 1.0.11
+ * @version 1.0.12
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "SpotifyEnhance",
-		"version": "1.0.11",
+		"version": "1.0.12",
 		"description": "All in one better spotify-discord experience.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance",
@@ -49,20 +49,17 @@ const Patcher = Api.Patcher;
 const ContextMenu$1 = Api.ContextMenu;
 const Logger = Api.Logger;
 
-const getModule = Api.Webpack.getModule;
-const Filters = Api.Webpack.Filters;
-const modules = Api.Webpack.modules;
+const Webpack = Api.Webpack;
 const getInternalInstance = Api.ReactUtils.getInternalInstance;
 
 Logger.patchError = patchId => {
 	console.error(`%c[${config.info.name}] %cCould not find module for %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
 };
 
-function getRawModule(filter, options) {
-	let module;
-	getModule((entry, m, id) => (filter(entry, m, id) ? (module = m) : false), options);
-	return module;
-}
+const getModule = Webpack.getModule;
+const Filters = Webpack.Filters;
+const getBySource = Webpack.getBySource;
+const getMangled = Webpack.getMangled;
 
 function getModuleAndKey(filter, options) {
 	let module;
@@ -74,45 +71,10 @@ function getModuleAndKey(filter, options) {
 	return { module, key };
 }
 
-function mapExports(moduleFilter, exportsMap, options) {
-	const module = getRawModule(moduleFilter, options);
-	if (!module) return {};
-	const { exports } = module;
-	const res = { module: exports, mangledKeys: {} };
-	for (const [mapKey, filter] of Object.entries(exportsMap)) {
-		for (const [exportKey, val] of Object.entries(exports)) {
-			if (!filter(val)) continue;
-			res[mapKey] = val;
-			res.mangledKeys[mapKey] = exportKey;
-			break;
-		}
-	}
-	return res;
-}
-
-function getBySource(filter) {
-	let moduleId = null;
-	for (const [id, loader] of Object.entries(modules)) {
-		if (filter(loader.toString())) {
-			moduleId = id;
-			break;
-		}
-	}
-
-	return getModule((_, __, id) => id === moduleId);
-}
-
-const getZustand = (() => {
-	let zustand = null;
-
-	return function getZustand() {
-		if (zustand !== null) return zustand;
-
-		const module = getBySource(Filters.byStrings("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"));
-
-		return (zustand = Object.values(module || {})[0]);
-	};
-})();
+const { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
+	_: Filters.byStrings("subscribe"),
+	zustand: () => true
+});
 
 const ConnectedAccountsStore = getModule(m => m._dispatchToken && m.getName() === "ConnectedAccountsStore");
 
@@ -165,7 +127,7 @@ const ImageModal = getModule(Filters.byStrings("renderLinkComponent", "zoomThumb
 
 const ModalRoot = getModule(Filters.byStrings("rootWithShadow", "MODAL"), { searchExports: true });
 
-const ModalSize = getModule(Filters.byProps("DYNAMIC", "SMALL", "LARGE"), { searchExports: true });
+const ModalSize = getModule(Filters.byKeys("DYNAMIC", "SMALL", "LARGE"), { searchExports: true });
 
 const _openModal = getModule(Filters.byStrings("onCloseCallback", "onCloseRequest", "modalKey", "backdropStyle"), { searchExports: true });
 
@@ -244,9 +206,9 @@ function buildUrl(endpoint, path, params) {
 	return uri;
 }
 
-const MessageActions = getModule(Filters.byProps('jumpToMessage', '_sendMessage'), { searchExports: false });
+const MessageActions = getModule(Filters.byKeys('jumpToMessage', '_sendMessage'), { searchExports: false });
 
-const Dispatcher = getModule(Filters.byProps("dispatch", "_dispatch"), { searchExports: false });
+const Dispatcher = getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: false });
 
 const PendingReplyStore = getModule(m => m._dispatchToken && m.getName() === "PendingReplyStore");
 
@@ -646,7 +608,6 @@ const getFluxContainer = (() => {
 	};
 })();
 
-const zustand$1 = getZustand();
 const subscribeWithSelector = getModule(Filters.byStrings("equalityFn", "fireImmediately"), { searchExports: true });
 const Utils = {
 	copy(str) {
@@ -675,7 +636,7 @@ const Utils = {
 };
 
 const Store = Object.assign(
-	zustand$1(
+	zustand(
 		subscribeWithSelector((set, get) => {
 
 			return {
@@ -917,7 +878,6 @@ Gap.direction = {
 	VERTICAL: "VERTICAL",
 };
 
-const zustand = getZustand();
 const SettingsStoreSelectors = {};
 const persistMiddleware = config => (set, get, api) => config(args => (set(args), Data.save("settings", get().getRawState())), get, api);
 
@@ -1024,7 +984,7 @@ const Button = Button$1 ||
 		return React.createElement('button', { ...props, });
 	};
 
-const Popout$1 = getModule(Filters.byProps("Animation", "defaultProps"), { searchExports: true });
+const Popout$1 = getModule(Filters.byKeys("Animation", "defaultProps"), { searchExports: true });
 
 const Popout = ({ delay, spacing, forceShow, position, animation, align, className, renderPopout, children, ...rest }) => {
 	const [show, setShow] = React.useState(false);
@@ -1844,11 +1804,11 @@ function Play({ userPlayActivityState }) {
 	);
 }
 
-const { useSpotifyPlayAction, useSpotifySyncAction } = mapExports(
+const { useSpotifyPlayAction, useSpotifySyncAction } = getMangled(
 	Filters.byStrings("USER_ACTIVITY_PLAY", "spotifyData", "tooltip"), {
 		useSpotifyPlayAction: Filters.byStrings("USER_ACTIVITY_PLAY"),
 		useSpotifySyncAction: Filters.byStrings("USER_ACTIVITY_SYNC")
-	}, { searchExports: true }
+	}, { searchExports: true, raw: true }
 );
 
 const SpotifyActivityControls = ({ activity, user }) => {
@@ -2205,21 +2165,23 @@ const patchChannelAttach = () => {
 	});
 };
 
-const Pip = new(class {
-	pipContainer = Object.assign(document.createElement("div"), { className: "pipContainer" });
+const pipContainer = Object.assign(document.createElement("div"), { className: "pipContainer" });
 
+const Pip = {
 	init() {
-		document.body.appendChild(this.pipContainer);
-		ReactDOM.render(React.createElement(PipContainer, null), this.pipContainer);
-	}
-
+		document.body.appendChild(pipContainer);
+		this.root = ReactDOM.createRoot(pipContainer);
+		this.root.render(
+			React.createElement(ErrorBoundary, null, React.createElement(PipContainer, null))
+		);
+	},
 	dispose() {
-		ReactDOM.unmountComponentAtNode(this.pipContainer);
-		this.pipContainer.remove();
+		this.root.unmount();
+		pipContainer.remove();
 	}
-})();
+};
 
-const Draggable = getBySource(Filters.byStrings("edgeOffsetBottom", "defaultPosition"))?.Z;
+const Draggable = getBySource("edgeOffsetBottom", "defaultPosition")?.Z;
 
 function PipContainer() {
 	const [player, spotifyPlayerPlace] = Settings(_ => [_.player, _.spotifyPlayerPlace], shallow);
@@ -2665,18 +2627,6 @@ div:has(> .spotify-banner-modal) {
 .spotify-player-timeline:hover .spotify-player-timeline-trackbar-bar > div {
 	background: var(--SpotifyEnhance-spotify-green);
 }
-.spotify-embed-plus {
-	display: flex;
-	min-width: 400px;
-	max-width: 100%;
-	gap: 5px;
-	overflow: hidden;
-}
-
-.spotify-embed-plus > button {
-	flex: 1 0 auto;
-	text-transform: capitalize;
-}
 .spotify-embed-container {
 	background:
 		linear-gradient(#00000090 0 0),
@@ -2818,4 +2768,16 @@ div:has(> .spotify-banner-modal) {
 	}
 }
 
-`;
+
+.spotify-embed-plus {
+	display: flex;
+	min-width: 400px;
+	max-width: 100%;
+	gap: 5px;
+	overflow: hidden;
+}
+
+.spotify-embed-plus > button {
+	flex: 1 0 auto;
+	text-transform: capitalize;
+}`;
