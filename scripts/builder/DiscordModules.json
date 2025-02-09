@@ -1,7 +1,7 @@
 {
 	"Modules": {
 		"Anchor": {
-			"filter": "a => a.Anchor",
+			"filter": "Filters.byStrings(\"anchor\",\"noreferrer noopener\")",
 			"options": "{ searchExports: true }"
 		},
 		"RadioGroup": {
@@ -33,7 +33,7 @@
 			"options": "{ searchExports: true }"
 		},
 		"Popout": {
-			"filter": "Filters.byProps(\"Animation\",\"defaultProps\")",
+			"filter": "Filters.byKeys(\"Animation\",\"defaultProps\")",
 			"options": "{ searchExports: true }"
 		},
 		"Tooltip": {
@@ -81,7 +81,7 @@
 			"options": "{ searchExports: false }"
 		},
 		"EmojiFunctions": {
-			"filter": "Filters.byProps(\"getEmojiUnavailableReason\")",
+			"filter": "Filters.byKeys(\"getEmojiUnavailableReason\")",
 			"options": "{ searchExports: true }"
 		},
 		"MessageHeader": {
@@ -89,11 +89,11 @@
 			"options": "{ searchExports: false }"
 		},
 		"Analytics": {
-			"filter": "Filters.byProps(\"AnalyticEventConfigs\")",
+			"filter": "Filters.byKeys(\"AnalyticEventConfigs\")",
 			"options": "{ searchExports: false }"
 		},
 		"DiscordUtils": {
-			"filter": "Filters.byProps(\"getDiscordUtils\")",
+			"filter": "Filters.byKeys(\"getDiscordUtils\")",
 			"options": "{ searchExports: false }"
 		},
 		"GuildTooltip": {
@@ -101,7 +101,7 @@
 			"options": "{ searchExports: false }"
 		},
 		"ChannelSettings": {
-			"filter": "Filters.byProps(\"updateChannelOverrideSettings\")",
+			"filter": "Filters.byKeys(\"updateChannelOverrideSettings\")",
 			"options": "{ searchExports: false }"
 		},
 		"StickerModule": {
@@ -109,11 +109,11 @@
 			"options": "{ searchExports: false }"
 		},
 		"DiscordPermissions": {
-			"filter": "Filters.byProps(\"computePermissions\")",
+			"filter": "Filters.byKeys(\"computePermissions\")",
 			"options": "{ searchExports: false }"
 		},
 		"StickerSendability": {
-			"filter": "Filters.byProps(\"StickerSendability\", \"getStickerSendability\")",
+			"filter": "Filters.byKeys(\"StickerSendability\", \"getStickerSendability\")",
 			"options": "{ searchExports: false }"
 		},
 		"CloseExpressionPicker": {
@@ -125,7 +125,7 @@
 			"options": "{ searchExports: false }"
 		},
 		"MessageActions": {
-			"filter": "Filters.byProps('jumpToMessage', '_sendMessage')",
+			"filter": "Filters.byKeys('jumpToMessage', '_sendMessage')",
 			"options": "{ searchExports: false }"
 		},
 		"CreateChannel": {
@@ -141,15 +141,15 @@
 			"options": "{ searchExports: true }"
 		},
 		"ChannelActions": {
-			"filter": "Filters.byProps(\"actions\", \"fetchMessages\")",
+			"filter": "Filters.byKeys(\"actions\", \"fetchMessages\")",
 			"options": "{ searchExports: true }"
 		},
 		"Color": {
-			"filter": "Filters.byProps(\"Color\", \"hex\", \"hsl\")",
+			"filter": "Filters.byKeys(\"Color\", \"hex\", \"hsl\")",
 			"options": "{ searchExports: false }"
 		},
 		"Dispatcher": {
-			"filter": "Filters.byProps(\"dispatch\", \"_dispatch\")",
+			"filter": "Filters.byKeys(\"dispatch\", \"_dispatch\")",
 			"options": "{ searchExports: false }"
 		},
 		"ImageModal": {
@@ -157,7 +157,7 @@
 			"options": "{ searchExports: true }"
 		},
 		"ModalCarousel": {
-			"filter": "Filters.byPrototypeFields(\"navigateTo\", \"preloadImage\")",
+			"filter": "Filters.byPrototypeKeys(\"navigateTo\", \"preloadImage\")",
 			"options": "{ searchExports: false }"
 		},
 		"ModalRoot": {
@@ -165,7 +165,7 @@
 			"options": "{ searchExports: true }"
 		},
 		"ModalSize": {
-			"filter": "Filters.byProps(\"DYNAMIC\",\"SMALL\",\"LARGE\")",
+			"filter": "Filters.byKeys(\"DYNAMIC\",\"SMALL\",\"LARGE\")",
 			"options": "{ searchExports: true }"
 		},
 		"RenderLinkComponent": {
@@ -173,34 +173,34 @@
 			"options": "{ searchExports: false }"
 		},
 		"TheBigBoyBundle": {
-			"filter": "Filters.byProps(\"openModal\", \"FormSwitch\", \"Anchor\")",
+			"filter": "Filters.byKeys(\"openModal\", \"FormSwitch\", \"Anchor\")",
 			"options": "{ searchExports: false }"
 		}
 	},
 	"Enums": {
 		"GuildFeaturesEnum": {
-			"filter": "Filters.byProps(\"CLYDE_ENABLED\")",
+			"filter": "Filters.byKeys(\"CLYDE_ENABLED\")",
 			"options": "{ searchExports: true }",
 			"fallback": {
 				"CLYDE_ENABLED": "CLYDE_ENABLED"
 			}
 		},
 		"EmojiSendAvailabilityEnum": {
-			"filter": "Filters.byProps(\"GUILD_SUBSCRIPTION_UNAVAILABLE\")",
+			"filter": "Filters.byKeys(\"GUILD_SUBSCRIPTION_UNAVAILABLE\")",
 			"options": "{ searchExports: true }",
 			"fallback": {
 				"PREMIUM_LOCKED": 2
 			}
 		},
 		"EmojiIntentionEnum": {
-			"filter": "Filters.byProps(\"GUILD_ROLE_BENEFIT_EMOJI\")",
+			"filter": "Filters.byKeys(\"GUILD_ROLE_BENEFIT_EMOJI\")",
 			"options": "{ searchExports: true }",
 			"fallback": {
 				"CHAT": 3
 			}
 		},
 		"DiscordPermissionsEnum": {
-			"filter": "Filters.byProps(\"ADD_REACTIONS\")",
+			"filter": "Filters.byKeys(\"ADD_REACTIONS\")",
 			"options": "{ searchExports: true }",
 			"fallback": {
 				"EMBED_LINKS": "16384n",
@@ -208,7 +208,7 @@
 			}
 		},
 		"StickerTypeEnum": {
-			"filter": "Filters.byProps(\"GUILD\", \"STANDARD\")",
+			"filter": "Filters.byKeys(\"GUILD\", \"STANDARD\")",
 			"options": "{ searchExports: true }",
 			"fallback": {
 				"STANDARD": 1,
@@ -216,7 +216,7 @@
 			}
 		},
 		"ProfileTypeEnum": {
-			"filter": "Filters.byProps(\"POPOUT\", \"SETTINGS\")",
+			"filter": "Filters.byKeys(\"POPOUT\", \"SETTINGS\")",
 			"options": "{ searchExports: true }",
 			"fallback": {
 				"POPOUT": 0,
@@ -227,7 +227,7 @@
 			}
 		},
 		"ChannelTypeEnum": {
-			"filter": "Filters.byProps(\"GUILD_TEXT\", \"DM\")",
+			"filter": "Filters.byKeys(\"GUILD_TEXT\", \"DM\")",
 			"options": "{ searchExports: true }",
 			"fallback": {
 				"GUILD_CATEGORY": 4

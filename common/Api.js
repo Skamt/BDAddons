@@ -13,10 +13,7 @@ export const Logger = Api.Logger;
 export const ErrorBoundary = Api.Components.ErrorBoundary;
 
 // Webpack
-export const getModule = Api.Webpack.getModule;
-export const Filters = Api.Webpack.Filters;
-export const waitForModule = Api.Webpack.waitForModule;
-export const modules = Api.Webpack.modules;
+export const Webpack = Api.Webpack;
 
 // React
 export const useState = Api.React.useState;

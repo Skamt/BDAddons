@@ -1,14 +1,12 @@
-import { waitForModule, modules, Filters, getModule } from "@Api";
+import { Webpack } from "@Api";
 
-export { getModule };
-export { Filters };
-export { waitForModule };
+export const getModule = Webpack.getModule;
+export const Filters = Webpack.Filters;
+export const waitForModule = Webpack.waitForModule;
+export const modules = Webpack.modules;
+export const getBySource = Webpack.getBySource;
+export const getMangled = Webpack.getMangled;
 
-export function getRawModule(filter, options) {
-	let module;
-	getModule((entry, m, id) => (filter(entry, m, id) ? (module = m) : false), options);
-	return module;
-}
 
 export function getModuleAndKey(filter, options) {
 	let module;
@@ -21,7 +19,7 @@ export function getModuleAndKey(filter, options) {
 }
 
 export function filterModuleAndExport(moduleFilter, exportFilter, options) {
-	const module = getRawModule(moduleFilter, options);
+	const module = getModule(moduleFilter, {...options, raw:true});
 	if (!module) return;
 	const { exports } = module;
 	const key = Object.keys(exports).find(k => exportFilter(exports[k]));
@@ -30,7 +28,7 @@ export function filterModuleAndExport(moduleFilter, exportFilter, options) {
 }
 
 export function mapExports(moduleFilter, exportsMap, options) {
-	const module = getRawModule(moduleFilter, options);
+	const module = getModule(moduleFilter , {...options, raw:true});
 	if (!module) return {};
 	const { exports } = module;
 	const res = { module: exports, mangledKeys: {} };
@@ -45,7 +43,7 @@ export function mapExports(moduleFilter, exportsMap, options) {
 	return res;
 }
 
-export function getBySource(filter) {
+export function _getBySource(filter) {
 	let moduleId = null;
 	for (const [id, loader] of Object.entries(modules)) {
 		if (filter(loader.toString())) {

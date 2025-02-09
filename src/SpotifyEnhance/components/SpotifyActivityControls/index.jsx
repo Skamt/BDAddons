@@ -7,17 +7,17 @@ import Play from "./Play";
 import Tooltip from "@Components/Tooltip";
 import AddToQueueIcon from "@Components/icons/AddToQueueIcon";
 import ShareIcon from "@Components/icons/ShareIcon";
-import { Filters, mapExports } from "@Webpack";
+import { Filters, getMangled } from "@Webpack";
 
 import { Store } from "../../Store";
 
-const { useSpotifyPlayAction, useSpotifySyncAction } = mapExports(
+const { useSpotifyPlayAction, useSpotifySyncAction } = getMangled(
 	Filters.byStrings("USER_ACTIVITY_PLAY", "spotifyData", "tooltip"),
 	{
 		useSpotifyPlayAction: Filters.byStrings("USER_ACTIVITY_PLAY"),
 		useSpotifySyncAction: Filters.byStrings("USER_ACTIVITY_SYNC")
 	},
-	{ searchExports: true }
+	{ searchExports: true, raw: true }
 );
 
 export default ({ activity, user }) => {

@@ -1,8 +1,7 @@
 // import zustand from "@Modules/zustand";
-import { getZustand } from "../zustand";
+import { zustand } from "@Discord/Modules";
 import { Data } from "@Api";
 
-const zustand = getZustand();
 const SettingsStoreSelectors = {};
 const persistMiddleware = config => (set, get, api) => config(args => (set(args), Data.save("settings", get().getRawState())), get, api);
 

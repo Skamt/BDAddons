@@ -3,6 +3,7 @@ const path = require("path");
 const json = require("@rollup/plugin-json");
 const alias = require("@rollup/plugin-alias");
 const cleanup = require("rollup-plugin-cleanup");
+const re = require("rollup-plugin-re");
 const sucrase = require("@rollup/plugin-sucrase");
 const nodeResolve = require("@rollup/plugin-node-resolve");
 const stripCode = require("rollup-plugin-strip-code");
@@ -10,6 +11,7 @@ const { eslintBundle } = require("rollup-plugin-eslint-bundle");
 
 const css = require("./rollup-plugins/css.js");
 const beautify = require("./rollup-plugins/beautify.js");
+const cleanupPureComments = require("./rollup-plugins/cleanupPureComments.js");
 const modulesAutoLoader = require("./rollup-plugins/modules-auto-loader.js");
 const componentsAutoLoader = require("./rollup-plugins/components-auto-loader.js");
 const meta = require("./rollup-plugins/meta.js");
@@ -53,17 +55,33 @@ const aliasesObj = {
 	entries: {
 		"@Api": path.resolve("common", "Api"),
 		"@Utils": path.resolve("common", "Utils"),
-		"@Webpack": path.resolve("common", "Webpack")
+		"@Webpack": path.resolve("common", "Webpack"),
+		"@Discord": path.resolve("common", "DiscordModules")
 	}
 };
 
 module.exports = function getConfig(inputPath, releasePath, devPath, config) {
 	const inputConfig = {
 		input: path.resolve(inputPath, "index"),
-		treeshake: "smallest",
+		treeshake: {
+			preset: "smallest"
+		},
 		plugins: [
 			nodeResolve({ extensions: [".json", ".js", ".jsx", ".css"] }),
 			alias(aliasesObj),
+			re({
+				include: "**/DiscordModules/**",
+				patterns: [
+					{
+						test: "getModule(",
+						replace: "/*@__PURE__*/ getModule("
+					},
+					{
+						test: /(Filters\..+?\()/gi,
+						replace: "/*@__PURE__*/ $1"
+					}
+				]
+			}),
 			componentsAutoLoader(),
 			modulesAutoLoader(),
 			json({
@@ -86,7 +104,10 @@ module.exports = function getConfig(inputPath, releasePath, devPath, config) {
 			objectShorthand: true
 		},
 		strict: false,
-		plugins: [beautify()]
+		plugins: [
+			cleanupPureComments(),
+			beautify(),
+		]
 	};
 	return {
 		release: {
