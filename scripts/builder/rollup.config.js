@@ -10,6 +10,7 @@ const stripCode = require("rollup-plugin-strip-code");
 const { eslintBundle } = require("rollup-plugin-eslint-bundle");
 
 const css = require("./rollup-plugins/css.js");
+const codeRegions = require("./rollup-plugins/codeRegions.js");
 const beautify = require("./rollup-plugins/beautify.js");
 const cleanupPureComments = require("./rollup-plugins/cleanupPureComments.js");
 const modulesAutoLoader = require("./rollup-plugins/modules-auto-loader.js");
@@ -24,7 +25,7 @@ const sucraseConfig = {
 
 const cleanupConfig = {
 	comments: ["some", /\*/],
-	maxEmptyLines: 1,
+	maxEmptyLines: 0,
 	extensions: [".js", ".jsx", ".css"],
 	sourcemap: false
 };
@@ -93,7 +94,8 @@ module.exports = function getConfig(inputPath, releasePath, devPath, config) {
 			sucrase(sucraseConfig),
 			cleanup(cleanupConfig),
 			eslintBundle(eslintBundleConfig),
-			meta(config)
+			meta(config),
+			codeRegions(),
 		]
 	};
 

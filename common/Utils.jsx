@@ -1,14 +1,7 @@
-import "./styles";
 import { Patcher, getOwnerInstance, ReactDOM, React } from "@Api";
-import ErrorBoundary from "@Components/ErrorBoundary";
 import RenderLinkComponent from "@Modules/RenderLinkComponent";
 
 import ImageModal from "@Modules/ImageModal";
-import ModalRoot from "@Modules/ModalRoot";
-import ModalSize from "@Modules/ModalSize";
-import _openModal from "@Modules/openModal";
-
-// const { ModalRoot, ModalSize } = TheBigBoyBundle;
 
 export function shallow(objA, objB) {
 	if (Object.is(objA, objB)) return true;

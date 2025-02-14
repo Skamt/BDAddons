@@ -47,7 +47,7 @@ export default ({ id, type, embed: { thumbnail, rawTitle, rawDescription, url } 
 	if (isThis && isPlaying && !useReducedMotion) className += " playing";
 	if (embedBannerBackground) className += " bannerBackground";
 
-	const banner = thumbnail?.url || thumbnail?.proxyURL ;
+	const banner = thumbnail?.proxyURL || thumbnail?.url ;
 
 	return (
 		<div

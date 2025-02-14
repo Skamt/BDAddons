@@ -1,11 +1,11 @@
 import { React } from "@Api";
 import Settings from "@Utils/Settings";
+import {openModal} from "@Utils/Modals"
 import Tooltip from "@Components/Tooltip";
 import ImageIcon from "@Components/icons/ImageIcon";
-import { getImageDimensions, getImageModalComponent, promiseHandler, openModal } from "@Utils";
+import { getImageDimensions, getImageModalComponent, promiseHandler } from "@Utils";
 import ColorModalComponent from "./ColorModalComponent";
 import ModalCarousel from "./ModalCarousel";
-
 import Spinner from "@Modules/Spinner";
 
 function fit({ width, height }) {

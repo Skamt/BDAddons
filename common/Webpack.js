@@ -6,6 +6,7 @@ export const waitForModule = Webpack.waitForModule;
 export const modules = Webpack.modules;
 export const getBySource = Webpack.getBySource;
 export const getMangled = Webpack.getMangled;
+export const getStore = Webpack.getStore;
 
 
 export function getModuleAndKey(filter, options) {
