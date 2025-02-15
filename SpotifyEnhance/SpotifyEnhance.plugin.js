@@ -1,7 +1,7 @@
 /**
  * @name SpotifyEnhance
  * @description All in one better spotify-discord experience.
- * @version 1.0.12
+ * @version 1.0.13
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "SpotifyEnhance",
-		"version": "1.0.12",
+		"version": "1.0.13",
 		"description": "All in one better spotify-discord experience.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance",
@@ -38,8 +38,8 @@ const config = {
 	}
 }
 
+// common\Api.js
 const Api = new BdApi(config.info.name);
-
 const UI = Api.UI;
 const DOM = Api.DOM;
 const Data = Api.Data;
@@ -48,14 +48,16 @@ const ReactDOM = Api.ReactDOM;
 const Patcher = Api.Patcher;
 const ContextMenu$1 = Api.ContextMenu;
 const Logger = Api.Logger;
-
 const Webpack = Api.Webpack;
+const findInTree = Api.Utils.findInTree;
 const getInternalInstance = Api.ReactUtils.getInternalInstance;
 
+// common\Utils\Logger.js
 Logger.patchError = patchId => {
 	console.error(`%c[${config.info.name}] %cCould not find module for %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
 };
 
+// common\Webpack.js
 const getModule = Webpack.getModule;
 const Filters = Webpack.Filters;
 const getBySource = Webpack.getBySource;
@@ -71,122 +73,36 @@ function getModuleAndKey(filter, options) {
 	return { module, key };
 }
 
+// common\DiscordModules\Modules.js
 const { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
 	_: Filters.byStrings("subscribe"),
 	zustand: () => true
 });
 
+// @Stores\ConnectedAccountsStore
 const ConnectedAccountsStore = getModule(m => m._dispatchToken && m.getName() === "ConnectedAccountsStore");
 
+// @Stores\SelectedChannelStore
 const SelectedChannelStore = getModule(m => m._dispatchToken && m.getName() === "SelectedChannelStore");
 
+// @Stores\SpotifyStore
 const SpotifyStore = getModule(m => m._dispatchToken && m.getName() === "SpotifyStore");
 
-class ErrorBoundary extends React.Component {
-	state = { hasError: false, error: null, info: null };
-
-	componentDidCatch(error, info) {
-		this.setState({ error, info, hasError: true });
-		const errorMessage = `\n\t${error?.message || ""}${(info?.componentStack || "").split("\n").slice(0, 20).join("\n")}`;
-		console.error(`%c[${config?.info?.name || "Unknown Plugin"}] %cthrew an exception at %c[${this.props.id}]\n`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
-	}
-
-	renderErrorBoundary() {
-		return (
-			React.createElement('div', { style: { background: "#292c2c", padding: "20px", borderRadius: "10px" }, }, React.createElement('b', { style: { color: "#e0e1e5" }, }, "An error has occured while rendering ", React.createElement('span', { style: { color: "orange" }, }, this.props.id)))
-		);
-	}
-
-	renderFallback() {
-		if (React.isValidElement(this.props.fallback)) {
-			if (this.props.passMetaProps)
-				this.props.fallback.props = {
-					id: this.props.id,
-					plugin: config?.info?.name || "Unknown Plugin",
-					...this.props.fallback.props
-				};
-			return this.props.fallback;
-		}
-		return (
-			React.createElement(this.props.fallback, {
-				id: this.props.id,
-				plugin: config?.info?.name || "Unknown Plugin",
-			})
-		);
-	}
-
-	render() {
-		if (!this.state.hasError) return this.props.children;
-		return this.props.fallback ? this.renderFallback() : this.renderErrorBoundary();
-	}
-}
-
-const RenderLinkComponent = getModule(m => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false });
-
-const ImageModal = getModule(Filters.byStrings("renderLinkComponent", "zoomThumbnailPlaceholder"), { searchExports: true });
-
-const ModalRoot = getModule(Filters.byStrings("rootWithShadow", "MODAL"), { searchExports: true });
-
-const ModalSize = getModule(Filters.byKeys("DYNAMIC", "SMALL", "LARGE"), { searchExports: true });
-
-const _openModal = getModule(Filters.byStrings("onCloseCallback", "onCloseRequest", "modalKey", "backdropStyle"), { searchExports: true });
-
+// common\Utils.jsx
 function shallow(objA, objB) {
 	if (Object.is(objA, objB)) return true;
-
 	if (typeof objA !== "object" || objA === null || typeof objB !== "object" || objB === null) return false;
-
 	var keysA = Object.keys(objA);
-
 	if (keysA.length !== Object.keys(objB).length) return false;
-
 	for (var i = 0; i < keysA.length; i++)
 		if (!Object.prototype.hasOwnProperty.call(objB, keysA[i]) || !Object.is(objA[keysA[i]], objB[keysA[i]])) return false;
-
 	return true;
 }
-
-const openModal = (children, tag, modalClassName = "") => {
-	const id = `${tag ? `${tag}-` : ""}modal`;
-
-	_openModal(props => {
-		return (
-			React.createElement(ErrorBoundary, {
-				id: id,
-				plugin: config.info.name,
-			}, React.createElement(ModalRoot, {
-				...props,
-				className: `${modalClassName} transparentBackground`,
-				onClick: props.onClose,
-				size: ModalSize.DYNAMIC,
-			}, children))
-		);
-	});
-};
-
-const getImageModalComponent = (url, rest = {}) => {
-	return (
-		React.createElement('div', { className: "imageModalwrapper", }, React.createElement(ImageModal, {
-			media: {
-				...rest,
-				type: "IMAGE",
-				url: url,
-				proxyUrl: url
-			},
-		}), React.createElement('div', { className: "imageModalOptions", }, React.createElement(RenderLinkComponent, {
-				className: "downloadLink",
-				href: url,
-			}, "Open in Browser"
-
-		)))
-	);
-};
 const promiseHandler = promise => promise.then(data => [undefined, data]).catch(err => [err]);
 
 function copy(data) {
 	DiscordNative.clipboard.copy(data);
 }
-
 const nop = () => {};
 
 function genUrlParamsFromArray(params) {
@@ -206,12 +122,16 @@ function buildUrl(endpoint, path, params) {
 	return uri;
 }
 
+// @Modules\MessageActions
 const MessageActions = getModule(Filters.byKeys('jumpToMessage', '_sendMessage'), { searchExports: false });
 
+// @Modules\Dispatcher
 const Dispatcher = getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: false });
 
+// @Stores\PendingReplyStore
 const PendingReplyStore = getModule(m => m._dispatchToken && m.getName() === "PendingReplyStore");
 
+// common\Utils\Messages.js
 function getReply(channelId) {
 	const reply = PendingReplyStore?.getPendingReply(channelId);
 	if (!reply) return {};
@@ -230,10 +150,8 @@ function getReply(channelId) {
 			}
 	};
 }
-
 async function sendMessageDirectly(channel, content) {
 	if (!MessageActions || !MessageActions.sendMessage || typeof MessageActions.sendMessage !== "function") throw new Error("Can't send message directly.");
-
 	return MessageActions.sendMessage(
 		channel.id, {
 			validNonShortcutEmojis: [],
@@ -243,7 +161,6 @@ async function sendMessageDirectly(channel, content) {
 		getReply(channel.id)
 	);
 }
-
 const insertText = (() => {
 	let ComponentDispatch;
 	return content => {
@@ -257,16 +174,15 @@ const insertText = (() => {
 	};
 })();
 
+// common\Utils\Timer.js
 class Timer {
 	static INTERVAL = "INTERVAL";
 	static TIMEOUT = "TIMEOUT";
-
 	constructor(fn, delay, type) {
 		this.type = type;
 		this.delay = delay;
 		this.fn = fn;
 		this.running = false;
-
 		if (type === Timer.INTERVAL) {
 			this.counter = setInterval;
 			this.clear = clearInterval;
@@ -275,19 +191,16 @@ class Timer {
 			this.clear = clearTimeout;
 		}
 	}
-
 	start() {
 		if (this.running) return;
 		this.running = true;
 		this.timerId = this.counter.call(window, () => {
 			if (this.type === "TIMEOUT") this.running = false;
-
 			try {
 				this.fn.apply(null);
 			} catch {}
 		}, this.delay);
 	}
-
 	stop() {
 		if (!this.running) return;
 		this.clear.call(window, this.timerId);
@@ -295,10 +208,10 @@ class Timer {
 	}
 }
 
+// common\Utils\Toast.js
 function showToast(content, type) {
 	UI.showToast(`[${config.info.name}] ${content}`, { timeout: 5000, type });
 }
-
 const Toast = {
 	success(content) { showToast(content, "success"); },
 	info(content) { showToast(content, "info"); },
@@ -306,15 +219,14 @@ const Toast = {
 	error(content) { showToast(content, "error"); }
 };
 
+// common\Utils\SpotifyAPI.js
 const API_ENDPOINT = "https://api.spotify.com/v1";
-
 async function wrappedFetch(url, options) {
 	const [fetchError, response] = await promiseHandler(fetch(url, options));
 	if (fetchError) {
 		console.error("Fetch Error", fetchError);
 		throw new Error(`[Network error] ${fetchError}`);
 	}
-
 	if (!response.ok) {
 		const [, result] = await promiseHandler(response.json());
 		throw (
@@ -324,9 +236,7 @@ async function wrappedFetch(url, options) {
 			}
 		);
 	}
-
 	if (response.status === 204) return true;
-
 	const [, data] = await promiseHandler(response.json());
 	return data;
 }
@@ -336,132 +246,102 @@ function buildFetchRequestOptions(builderObj) {
 		method: builderObj.method,
 		headers: builderObj.headers
 	};
-
 	if (builderObj.body) options.body = JSON.stringify(builderObj.body);
 	return options;
 }
-
 class FetchRequestBuilder {
 	constructor(endpoint) {
 		this.endpoint = endpoint;
 	}
-
 	setToken(token) {
 		this.setHeaders({ Authorization: `Bearer ${token}` });
 		return this;
 	}
-
 	setPath(path) {
 		this.path = path;
 		return this;
 	}
-
 	setMethod(method) {
 		this.method = method;
 		return this;
 	}
-
 	setParams(params) {
 		this.params = params;
 		return this;
 	}
-
 	setBody(body) {
 		this.body = body;
 		return this;
 	}
-
 	setHeaders(headers) {
 		this.headers = Object.assign(this.headers || {}, headers);
 		return this;
 	}
-
 	getURL() {
 		return buildUrl(this.endpoint, this.path, this.params);
 	}
-
 	build() {
 		this.url = this.getURL();
 		this.options = buildFetchRequestOptions(this);
 		return this;
 	}
-
 	run() {
 		return wrappedFetch(this.url, this.options);
 	}
 }
-
 class SpotifyClientAPI {
 	constructor(credentials = {}) {
 		this.credentials = credentials;
 	}
-
 	set token(value) {
 		this.credentials.token = value;
 	}
-
 	get token() {
 		return this.credentials.token || null;
 	}
-
 	set accountId(value) {
 		this.credentials.accountId = value;
 	}
-
 	get accountId() {
 		return this.credentials.accountId || null;
 	}
-
 	setAccount(accessToken, accountId) {
 		this.token = accessToken;
 		this.accountId = accountId;
 	}
-
 	getRequestBuilder() {
 		return new FetchRequestBuilder(API_ENDPOINT).setToken(this.token);
 	}
-
 	next() {
 		return this.getRequestBuilder().setPath("/me/player/next").setMethod("POST").build().run();
 	}
-
 	previous() {
 		return this.getRequestBuilder().setPath("/me/player/previous").setMethod("POST").build().run();
 	}
-
 	play() {
 		return this.getRequestBuilder().setPath("/me/player/play").setMethod("PUT").build().run();
 	}
-
 	pause() {
 		return this.getRequestBuilder().setPath("/me/player/pause").setMethod("PUT").build().run();
 	}
-
 	seek(ms) {
 		return this.getRequestBuilder().setPath("/me/player/seek").setMethod("PUT").setParams({ position_ms: ms }).build().run();
 	}
-
 	shuffle(state) {
 		return this.getRequestBuilder().setPath("/me/player/shuffle").setMethod("PUT").setParams({ state }).build().run();
 	}
-
 	volume(volume_percent) {
 		return this.getRequestBuilder().setPath("/me/player/volume").setMethod("PUT").setParams({ volume_percent }).build().run();
 	}
-
 	repeat(state) {
 		return this.getRequestBuilder().setPath("/me/player/repeat").setMethod("PUT").setParams({ state }).build().run();
 	}
-
 	listen(type, id) {
 		let body = {};
-
 		if (type === "track" || type === "episode") body = { uris: [`spotify:${type}:${id}`] };
 		else body = { context_uri: `spotify:${type}:${id}` };
-
 		return this.getRequestBuilder().setPath("/me/player/play").setMethod("PUT").setBody(body).build().run();
 	}
-
 	queue(type, id) {
 		return this.getRequestBuilder()
 			.setPath("/me/player/queue")
@@ -470,39 +350,33 @@ class SpotifyClientAPI {
 			.build()
 			.run();
 	}
-
 	getPlayerState() {
 		return this.getRequestBuilder().setPath("/me/player").setMethod("GET").build().run();
 	}
-
 	getDevices() {
 		return this.getRequestBuilder().setPath("/me/player/devices").setMethod("GET").build().run();
 	}
-
 }
-
 const SpotifyAPI = new SpotifyClientAPI();
 
+// @Modules\RefreshToken
 const RefreshToken = getModule(Filters.byStrings("CONNECTION_ACCESS_TOKEN"), { searchExports: true });
 
+// src\SpotifyEnhance\SpotifyAPIWrapper.js
 async function requestHandler(action) {
 	let repeat = 1;
 	do {
 		const [actionError, actionResponse] = await promiseHandler(action());
 		if (!actionError) return actionResponse;
 		if (actionError.status !== 401) throw new Error(actionError.message);
-
 		if (!SpotifyAPI.accountId) throw new Error("Can't refresh expired access token Unknown account ID");
-
 		const [tokenRefreshError, tokenRefreshResponse] = await promiseHandler(RefreshToken(SpotifyAPI.accountId));
 		if (tokenRefreshError) {
 			Logger.error(tokenRefreshError);
 			throw "Could not refresh Spotify token";
 		}
-
 		SpotifyAPI.token = tokenRefreshResponse.body.access_token;
 	} while (repeat--);
-
 	throw new Error("Could not fulfill request");
 }
 
@@ -517,7 +391,6 @@ function ressourceActions(prop) {
 			error: (type, name, reason) => `Could not play ${name}\n${reason}`
 		}
 	} [prop];
-
 	return (type, id, description) =>
 		requestHandler(() => SpotifyAPI[prop](type, id))
 		.then(() => {
@@ -527,7 +400,6 @@ function ressourceActions(prop) {
 			Toast.error(error(type, description, reason));
 		});
 }
-
 const SpotifyAPIWrapper = new Proxy({}, {
 	get(_, prop) {
 		switch (prop) {
@@ -555,6 +427,7 @@ const SpotifyAPIWrapper = new Proxy({}, {
 	}
 });
 
+// src\SpotifyEnhance\Utils.js
 function getPathName(url) {
 	try {
 		return new URL(url).pathname;
@@ -576,30 +449,31 @@ function sanitizeSpotifyLink(link) {
 		return link;
 	}
 }
-
 const activityPanelClasses = getModule(Filters.byProps("activityPanel", "panels"), { searchExports: false });
-
 const getFluxContainer = (() => {
-	let target = null;
-	return () => {
-		if (target) return Promise.resolve(target);
+	let userAreaFluxContainer = undefined;
+
+	function tryGetFluxContainer() {
 		const el = document.querySelector(`.${activityPanelClasses.panels}`);
-		if (el) {
-			const instance = getInternalInstance(el);
-			target = instance.child.sibling;
-			if (instance) return Promise.resolve(target);
-		}
+		if (!el) return;
+		const instance = getInternalInstance(el);
+		if (!instance) return;
+		const res = findInTree(instance, a => a?.type?.prototype?.hasParty, { walkable: ["child", "sibling"] });
+		if (!res) return;
+		return res;
+	}
+	return () => {
+		if (userAreaFluxContainer) return Promise.resolve(userAreaFluxContainer);
+		userAreaFluxContainer = tryGetFluxContainer();
+		if (userAreaFluxContainer) Promise.resolve(userAreaFluxContainer);
 		return new Promise(resolve => {
 			const interval = setInterval(() => {
-				const el = document.querySelector(`.${activityPanelClasses.panels}`);
-				if (!el) return;
-				const instance = getInternalInstance(el);
-				if (!instance) return;
-				target = instance.child.sibling;
-				resolve(target);
+				userAreaFluxContainer = tryGetFluxContainer();
+				if (!userAreaFluxContainer) return;
+				resolve(userAreaFluxContainer);
 				clearInterval(interval);
 			}, 500);
-
+			/* Fail safe */
 			setTimeout(() => {
 				resolve(null);
 				clearInterval(interval);
@@ -608,6 +482,7 @@ const getFluxContainer = (() => {
 	};
 })();
 
+// src\SpotifyEnhance\Store.js
 const subscribeWithSelector = getModule(Filters.byStrings("equalityFn", "fireImmediately"), { searchExports: true });
 const Utils = {
 	copy(str) {
@@ -634,27 +509,22 @@ const Utils = {
 		});
 	}
 };
-
 const Store = Object.assign(
 	zustand(
 		subscribeWithSelector((set, get) => {
-
 			return {
 				account: undefined,
 				setAccount: account => {
 					if (account === get().account) return;
 					set({ account: account, isActive: !!account });
 				},
-
 				isActive: false,
 				setDeviceState: isActive => set({ isActive }),
-
 				async fetchPlayerState() {
 					const [err, playerState] = await promiseHandler(SpotifyAPIWrapper.getPlayerState());
 					if (err) return Logger.error("Could not fetch player state", err);
 					get().setPlayerState(playerState);
 				},
-
 				media: {},
 				mediaType: undefined,
 				volume: undefined,
@@ -666,7 +536,6 @@ const Store = Object.assign(
 				actions: undefined,
 				setPlayerState: playerState => {
 					if (!playerState || playerState.currently_playing_type === "ad") return set({ isPlaying: false });
-
 					const state = get();
 					const media = playerState.item?.id === state.media?.id ? state.media : playerState.item;
 					set({
@@ -685,7 +554,6 @@ const Store = Object.assign(
 						actions: playerState?.actions?.disallows
 					});
 				},
-
 				position: 0,
 				incrementPosition: () => {
 					const state = get();
@@ -694,7 +562,6 @@ const Store = Object.assign(
 					set({ position: sum });
 				},
 				setPosition: position => set({ position }),
-
 				getAlbum() {
 					const media = get().media;
 					return {
@@ -727,7 +594,6 @@ const Store = Object.assign(
 			ConnectedAccountsStore.addChangeListener(onAccountsChanged);
 			this.idleTimer = new Timer(() => Store.state.setAccount(undefined), 5 * 60 * 1000, Timer.TIMEOUT);
 			this.positionInterval = new Timer(Store.state.incrementPosition, 1000, Timer.INTERVAL);
-
 			const { socket } = SpotifyStore.getActiveSocketAndDevice() || {};
 			if (!socket) return;
 			Store.state.setAccount(socket);
@@ -760,17 +626,14 @@ const Store = Object.assign(
 		}
 	}
 );
-
 Object.defineProperty(Store, "state", {
 	writeable: false,
 	configurable: false,
 	get: () => Store.getState()
 });
-
 Store.subscribe(Store.selectors.account, (account = {}) => {
 	SpotifyAPIWrapper.setAccount(account.accessToken, account.accountId);
 });
-
 Store.subscribe(Store.selectors.isPlaying, isPlaying => {
 	if (isPlaying) {
 		Store.idleTimer.stop();
@@ -780,18 +643,14 @@ Store.subscribe(Store.selectors.isPlaying, isPlaying => {
 		Store.idleTimer.start();
 	}
 });
-
 Store.subscribe(Store.selectors.position, position => {
 	const { duration, setPosition } = Store.state;
-
 	if (position < duration) return;
 	Store.positionInterval.stop();
 	setPosition(duration || 0);
 });
-
 Store.subscribe(
 	state => [state.isPlaying, state.progress],
-
 	([isPlaying]) => {
 		if (!isPlaying) Store.positionInterval.stop();
 		else Store.positionInterval.start();
@@ -816,20 +675,19 @@ function onAccountsChanged() {
 		 * This listener is used to make sure the current account is still connected
 		 * SpotifyStore doesn't notify us about this information
 		 */
-
 		if (!Store.state.account) return;
 		const connectedAccounts = ConnectedAccountsStore.getAccounts().filter(account => account.type === "spotify");
-
 		if (connectedAccounts.some(a => a.id === Store.state.account.accountId)) return;
-
 		Store.state.setAccount(undefined);
 	} catch (e) {
 		Logger.error(e);
 	}
 }
 
+// @Modules\Heading
 const Heading = getModule(a => a?.render?.toString().includes("data-excessive-heading-level"), { searchExports: true });
 
+// common\Components\icons\ArrowIcon\index.jsx
 function Arrow() {
 	return (
 		React.createElement('svg', {
@@ -845,9 +703,9 @@ function Arrow() {
 	);
 }
 
+// common\Components\Collapsible\index.jsx
 function Collapsible({ title, children }) {
 	const [open, setOpen] = React.useState(false);
-
 	return (
 		React.createElement('div', { className: open ? "collapsible-container collapsible-open" : "collapsible-container", }, React.createElement('div', {
 			className: "collapsible-header",
@@ -859,6 +717,7 @@ function Collapsible({ title, children }) {
 	);
 }
 
+// common\Components\Gap\index.jsx
 function Gap({ direction, gap }) {
 	const style = {
 		VERTICAL: {
@@ -872,20 +731,18 @@ function Gap({ direction, gap }) {
 	} [direction];
 	return React.createElement('div', { style: style, });
 }
-
 Gap.direction = {
 	HORIZONTAL: "HORIZONTAL",
 	VERTICAL: "VERTICAL",
 };
 
+// common\Utils\Settings.js
 const SettingsStoreSelectors = {};
 const persistMiddleware = config => (set, get, api) => config(args => (set(args), Data.save("settings", get().getRawState())), get, api);
-
 const SettingsStore = Object.assign(
 	zustand(
 		persistMiddleware((set, get) => {
 			const settingsObj = Object.create(null);
-
 			for (const [key, value] of Object.entries({
 					...config.settings,
 					...Data.load("settings")
@@ -912,7 +769,6 @@ const SettingsStore = Object.assign(
 		selectors: SettingsStoreSelectors
 	}
 );
-
 Object.defineProperty(SettingsStore, "state", {
 	writeable: false,
 	configurable: false,
@@ -920,11 +776,12 @@ Object.defineProperty(SettingsStore, "state", {
 		return this.getState();
 	}
 });
-
 const Settings = SettingsStore;
 
+// @Modules\FormSwitch
 const FormSwitch = getModule(Filters.byStrings("note", "tooltipNote"), { searchExports: true });
 
+// common\Components\Switch\index.jsx
 const Switch = FormSwitch ||
 	function SwitchComponentFallback(props) {
 		return (
@@ -936,6 +793,7 @@ const Switch = FormSwitch ||
 		);
 	};
 
+// common\Components\SettingSwtich\index.jsx
 function SettingSwtich({ settingKey, note, onChange = nop, hideBorder = false, description, ...rest }) {
 	const [val, set] = Settings.useSetting(settingKey);
 	return (
@@ -952,14 +810,15 @@ function SettingSwtich({ settingKey, note, onChange = nop, hideBorder = false, d
 	);
 }
 
+// @Modules\RadioGroup
 const RadioGroup = getModule(a => a?.Sizes?.NOT_SET === "", { searchExports: true });
 
+// src\SpotifyEnhance\consts.js
 const EmbedStyleEnum = {
 	KEEP: "KEEP",
 	REPLACE: "REPLACE",
 	HIDE: "HIDE"
 };
-
 const PlayerButtonsEnum = {
 	SHARE: "Share",
 	SHUFFLE: "Shuffle",
@@ -969,28 +828,29 @@ const PlayerButtonsEnum = {
 	REPEAT: "Repeat",
 	VOLUME: "Volume"
 };
-
 const PlayerPlaceEnum = {
 	PIP: "PIP",
 	USERAREA: "USERAREA",
 };
-
 const ALLOWD_TYPES = ["track", "artist", "playlist", "album", "show", "episode"];
 
+// @Modules\Button
 const Button$1 = getModule(a => a && a.Link && a.Colors, { searchExports: true });
 
+// common\Components\Button\index.jsx
 const Button = Button$1 ||
 	function ButtonComponentFallback(props) {
 		return React.createElement('button', { ...props, });
 	};
 
+// @Modules\Popout
 const Popout$1 = getModule(Filters.byKeys("Animation", "defaultProps"), { searchExports: true });
 
+// common\Components\Popout\index.jsx
 const Popout = ({ delay, spacing, forceShow, position, animation, align, className, renderPopout, children, ...rest }) => {
 	const [show, setShow] = React.useState(false);
 	const leaveRef = React.useRef();
 	const enterRef = React.useRef();
-
 	return (
 		React.createElement('div', {
 			className: `${config.info.name}-popout-container ${className ? className : ""}`,
@@ -1024,6 +884,7 @@ const Popout = ({ delay, spacing, forceShow, position, animation, align, classNa
 	);
 };
 
+// common\Components\ContextMenu\index.jsx
 const { Item: MenuItem$1, Menu, Separator: MenuSeparator } = ContextMenu$1;
 
 function parseMenuItems(items) {
@@ -1038,7 +899,6 @@ function parseMenuItems(items) {
 					...rest,
 				}, children)
 			);
-
 		return (
 			React.createElement(MenuItem$1, {
 				key: rest.id,
@@ -1065,8 +925,10 @@ function ContextMenu({ children, menuItems, position = "top", align = "left", cl
 	);
 }
 
+// @Modules\Tooltip
 const Tooltip$1 = getModule(Filters.byPrototypeKeys("renderTooltip"), { searchExports: true });
 
+// common\Components\Tooltip\index.jsx
 const Tooltip = ({ note, position, children }) => {
 	return (
 		React.createElement(Tooltip$1, {
@@ -1082,6 +944,7 @@ const Tooltip = ({ note, position, children }) => {
 	);
 };
 
+// common\Components\icons\MuteVolumeIcon\index.jsx
 function MuteVolumeIcon() {
 	return (
 		React.createElement('svg', {
@@ -1093,6 +956,7 @@ function MuteVolumeIcon() {
 	);
 }
 
+// common\Components\icons\NextIcon\index.jsx
 function NextIcon() {
 	return (
 		React.createElement('svg', {
@@ -1104,6 +968,7 @@ function NextIcon() {
 	);
 }
 
+// common\Components\icons\PauseIcon\index.jsx
 function PauseIcon() {
 	return (
 		React.createElement('svg', {
@@ -1115,6 +980,7 @@ function PauseIcon() {
 	);
 }
 
+// common\Components\icons\PlayIcon\index.jsx
 function PlayIcon$1() {
 	return (
 		React.createElement('svg', {
@@ -1126,6 +992,7 @@ function PlayIcon$1() {
 	);
 }
 
+// common\Components\icons\PreviousIcon\index.jsx
 function PlayIcon() {
 	return (
 		React.createElement('svg', {
@@ -1137,6 +1004,7 @@ function PlayIcon() {
 	);
 }
 
+// common\Components\icons\RepeatIcon\index.jsx
 function RepeatIcon() {
 	return (
 		React.createElement('svg', {
@@ -1148,6 +1016,7 @@ function RepeatIcon() {
 	);
 }
 
+// common\Components\icons\RepeatOneIcon\index.jsx
 function RepeatOneIcon() {
 	return (
 		React.createElement('svg', {
@@ -1159,6 +1028,7 @@ function RepeatOneIcon() {
 	);
 }
 
+// common\Components\icons\ShareIcon\index.jsx
 const ShareIcon = () => {
 	return (
 		React.createElement('svg', {
@@ -1170,6 +1040,7 @@ const ShareIcon = () => {
 	);
 };
 
+// common\Components\icons\ShuffleIcon\index.jsx
 function ShuffleIcon() {
 	return (
 		React.createElement('svg', {
@@ -1181,6 +1052,7 @@ function ShuffleIcon() {
 	);
 }
 
+// common\Components\icons\VolumeIcon\index.jsx
 function VolumeIcon() {
 	return (
 		React.createElement('svg', {
@@ -1192,6 +1064,7 @@ function VolumeIcon() {
 	);
 }
 
+// common\Components\icons\ImageIcon\index.jsx
 function ImageIcon(props) {
 	return (
 		React.createElement('svg', {
@@ -1204,6 +1077,7 @@ function ImageIcon(props) {
 	);
 }
 
+// common\Components\icons\ListenIcon\index.jsx
 function ListenIcon() {
 	return (
 		React.createElement('svg', {
@@ -1215,6 +1089,7 @@ function ListenIcon() {
 	);
 }
 
+// common\Components\icons\AddToQueueIcon\index.jsx
 function AddToQueueIcon() {
 	return (
 		React.createElement('svg', {
@@ -1226,11 +1101,11 @@ function AddToQueueIcon() {
 	);
 }
 
+// src\SpotifyEnhance\components\SpotifyPlayerControls\index.jsx
 const pauseHandler = () => Store.Api.pause();
 const playHandler = () => Store.Api.play();
 const previousHandler = () => Store.Api.previous();
 const nextHandler = () => Store.Api.next();
-
 const playpause = {
 	true: {
 		playPauseTooltip: "Pause",
@@ -1245,7 +1120,6 @@ const playpause = {
 		playPauseIcon: React.createElement(PlayIcon$1, null)
 	}
 };
-
 const repeatObj = {
 	off: {
 		repeatTooltip: "Repeat",
@@ -1266,7 +1140,6 @@ const repeatObj = {
 		repeatActive: true
 	}
 };
-
 const SpotifyPlayerControls = () => {
 	const playerButtons = Settings(Settings.selectors.playerButtons, shallow);
 	const [isPlaying, shuffle, repeat, volume] = Store(_ => [_.isPlaying, _.shuffle, _.repeat, _.volume], shallow);
@@ -1274,11 +1147,8 @@ const SpotifyPlayerControls = () => {
 	const context = Store(Store.selectors.context, (n, o) => n?.uri === o?.uri);
 	const url = Store.state.getSongUrl();
 	const { bannerLg } = Store.state.getSongBanners();
-
 	const { toggling_shuffle, toggling_repeat_track, skipping_next, skipping_prev } = actions || {};
-
 	const { repeatTooltip, repeatActive, repeatIcon, repeatArg } = repeatObj[repeat || "off"];
-
 	const shuffleHandler = () => Store.Api.shuffle(!shuffle);
 	const repeatHandler = () => Store.Api.repeat(repeatArg);
 	const shareSongHandler = () => Store.Utils.share(url);
@@ -1287,9 +1157,7 @@ const SpotifyPlayerControls = () => {
 	const copySongHandler = () => Store.Utils.copySpotifyLink(url);
 	const copyPosterHandler = () => Store.Utils.copySpotifyLink(bannerLg.url);
 	const copyNameHandler = () => Store.Utils.copy(Store.state.getFullSongName());
-
 	const { playPauseTooltip, playPauseHandler, playPauseIcon, playPauseClassName } = playpause[isPlaying];
-
 	return (
 		React.createElement('div', { className: "spotify-player-controls", }, playerButtons[PlayerButtonsEnum.SHARE] && (
 			React.createElement(ContextMenu, {
@@ -1316,7 +1184,6 @@ const SpotifyPlayerControls = () => {
 								className: "spotify-menuitem",
 								id: "copy-song-name",
 								action: copyNameHandler,
-
 								label: "Copy name"
 							}
 						]
@@ -1371,26 +1238,22 @@ function Volume({ volume }) {
 	const [val, setVal] = React.useState(volume);
 	const [active, setActive] = React.useState(false);
 	const volumeRef = React.useRef(volume || 25);
-
 	React.useEffect(() => {
 		if (volume) volumeRef.current = volume;
 		if (!active) setVal(volume);
 	}, [volume]);
-
 	const volumeMuteHandler = () => {
 		const target = val ? 0 : volumeRef.current;
 		Store.Api.volume(target).then(() => {
 			setVal(target);
 		});
 	};
-
 	const volumeOnChange = e => setVal(Math.round(e.target.value));
 	const volumeOnMouseDown = () => setActive(true);
 	const volumeOnMouseUp = () => {
 		setActive(false);
 		Store.Api.volume(val).then(() => (volumeRef.current = val));
 	};
-
 	return (
 		React.createElement(Popout, {
 			renderPopout: () => (
@@ -1418,8 +1281,10 @@ function Volume({ volume }) {
 	);
 }
 
+// @Modules\Anchor
 const Anchor = getModule(Filters.byStrings("anchor", "noreferrer noopener"), { searchExports: true });
 
+// common\Components\icons\ExternalLinkIcon\index.jsx
 function ExternalLinkIcon() {
 	return (
 		React.createElement('svg', {
@@ -1431,6 +1296,7 @@ function ExternalLinkIcon() {
 	);
 }
 
+// src\SpotifyEnhance\components\TrackMediaDetails\Artist.jsx
 function Artist({ artists }) {
 	return (
 		React.createElement(ContextMenu, {
@@ -1466,15 +1332,94 @@ function getArtistContextMenu(artist) {
 	];
 }
 
+// common\Utils\ImageModal\index.jsx
+const RenderLinkComponent = getModule(m => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false });
+const ImageModal = getModule(Filters.byStrings("renderLinkComponent", "zoomThumbnailPlaceholder"), { searchExports: true });
+const getImageComponent = (url, rest = {}) => {
+	return (
+		React.createElement('div', { className: "imageModalwrapper", }, React.createElement(ImageModal, {
+			media: {
+				...rest,
+				type: "IMAGE",
+				url: url,
+				proxyUrl: url
+			},
+		}), React.createElement('div', { className: "imageModalOptions", }, React.createElement(RenderLinkComponent, {
+			className: "downloadLink",
+			href: url,
+		}, "Open in Browser")))
+	);
+};
+
+// common\Components\ErrorBoundary\index.jsx
+class ErrorBoundary extends React.Component {
+	state = { hasError: false, error: null, info: null };
+	componentDidCatch(error, info) {
+		this.setState({ error, info, hasError: true });
+		const errorMessage = `\n\t${error?.message || ""}${(info?.componentStack || "").split("\n").slice(0, 20).join("\n")}`;
+		console.error(`%c[${config?.info?.name || "Unknown Plugin"}] %cthrew an exception at %c[${this.props.id}]\n`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
+	}
+	renderErrorBoundary() {
+		return (
+			React.createElement('div', { style: { background: "#292c2c", padding: "20px", borderRadius: "10px" }, }, React.createElement('b', { style: { color: "#e0e1e5" }, }, "An error has occured while rendering ", React.createElement('span', { style: { color: "orange" }, }, this.props.id)))
+		);
+	}
+	renderFallback() {
+		if (React.isValidElement(this.props.fallback)) {
+			if (this.props.passMetaProps)
+				this.props.fallback.props = {
+					id: this.props.id,
+					plugin: config?.info?.name || "Unknown Plugin",
+					...this.props.fallback.props
+				};
+			return this.props.fallback;
+		}
+		return (
+			React.createElement(this.props.fallback, {
+				id: this.props.id,
+				plugin: config?.info?.name || "Unknown Plugin",
+			})
+		);
+	}
+	render() {
+		if (!this.state.hasError) return this.props.children;
+		return this.props.fallback ? this.renderFallback() : this.renderErrorBoundary();
+	}
+}
+
+// @Modules\ModalRoot
+const ModalRoot = getModule(Filters.byStrings("rootWithShadow", "MODAL"), { searchExports: true });
+
+// @Modules\ModalSize
+const ModalSize = getModule(Filters.byKeys("DYNAMIC", "SMALL", "LARGE"), { searchExports: true });
+
+// common\Utils\Modals\index.jsx
+const _openModal = getModule(Filters.byStrings("onCloseCallback", "onCloseRequest", "modalKey", "backdropStyle"), { searchExports: true });
+const openModal = (children, tag, modalClassName = "") => {
+	const id = `${tag ? `${tag}-` : ""}modal`;
+	_openModal(props => {
+		return (
+			React.createElement(ErrorBoundary, {
+				id: id,
+				plugin: config.info.name,
+			}, React.createElement(ModalRoot, {
+				...props,
+				className: `${modalClassName} transparent-background`,
+				onClick: props.onClose,
+				size: ModalSize.DYNAMIC,
+			}, children))
+		);
+	});
+};
+
+// src\SpotifyEnhance\components\TrackMediaDetails\TrackBanner.jsx
 function TrackBanner() {
 	const { bannerLg: bannerObj } = Store.state.getSongBanners();
-
 	const thumbnailClickHandler = () => {
 		if (!bannerObj.url) return Toast.error("Could not open banner");
 		const { url, ...rest } = bannerObj;
-		openModal(React.createElement('div', { className: "spotify-banner-modal", }, getImageModalComponent(url, rest)));
+		openModal(React.createElement('div', { className: "spotify-banner-modal", }, getImageComponent(url, rest)));
 	};
-
 	return (
 		React.createElement(Tooltip, { note: "View", }, React.createElement('div', {
 			onClick: thumbnailClickHandler,
@@ -1483,16 +1428,15 @@ function TrackBanner() {
 	);
 }
 
+// src\SpotifyEnhance\components\TrackMediaDetails\index.jsx
 const TrackMediaDetails = ({ name, artists, mediaType }) => {
 	if (mediaType !== "track") {
 		return (
 			React.createElement('div', { className: "spotify-player-media", }, React.createElement('div', { className: "spotify-player-title", }, "Playing ", mediaType || "Unknown"))
 		);
 	}
-
 	const songUrl = Store.state.getSongUrl();
 	const { name: albumName, url: albumUrl, id: albumeId } = Store.state.getAlbum();
-
 	return (
 		React.createElement('div', { className: "spotify-player-media", }, React.createElement(TrackBanner, null), React.createElement(Tooltip, { note: name, }, React.createElement(Anchor, {
 			href: songUrl,
@@ -1518,25 +1462,22 @@ const TrackMediaDetails = ({ name, artists, mediaType }) => {
 	);
 };
 
+// @Modules\Slider
 const Slider = getModule(Filters.byPrototypeKeys("renderMark"), { searchExports: true });
 
+// src\SpotifyEnhance\components\TrackTimeLine\index.jsx
 function formatMsToTime(ms) {
 	const time = new Date(ms);
 	return [time.getUTCHours(), String(time.getUTCMinutes()), String(time.getUTCSeconds()).padStart(2, "0")].filter(Boolean).join(":");
 }
-
 const TrackTimeLine = () => {
 	const [position, duration] = Store(_ => [_.position, _.duration], shallow);
-
 	const [localPosition, setLocalPosition] = React.useState(position);
-
 	React.useEffect(() => {
 		if (sliderRef.current?.state?.active) return;
 		setLocalPosition(position);
 	}, [position]);
-
 	const sliderRef = React.useRef();
-
 	const rangeChangeHandler = e => {
 		if (!sliderRef.current?.state?.active) return;
 		const pos = Math.floor(e);
@@ -1544,7 +1485,6 @@ const TrackTimeLine = () => {
 		Store.state.setPosition(pos);
 		Store.Api.seek(pos);
 	};
-
 	return (
 		React.createElement('div', { className: "spotify-player-timeline", }, React.createElement(Slider, {
 			className: "spotify-player-timeline-trackbar",
@@ -1567,7 +1507,6 @@ const TrackTimeLine = () => {
 function Duration({ duration, position }) {
 	const [toggle, setToggle] = React.useState(false);
 	const clickHandler = () => setToggle(!toggle);
-
 	return (
 		React.createElement('div', {
 			onClick: clickHandler,
@@ -1576,64 +1515,56 @@ function Duration({ duration, position }) {
 	);
 }
 
+// src\SpotifyEnhance\components\SpotifyPlayer\index.jsx
 const SpotifyPlayer = React.memo(function SpotifyPlayer() {
 	const [isActive, media, mediaType] = Store(_ => [_.isActive, _.media, _.mediaType], shallow);
 	const [player, playerBannerBackground] = Settings(_ => [_.player, _.playerBannerBackground], shallow);
 	const [playerCompactMode, setplayerCompactMode] = Settings.useSetting("playerCompactMode");
-
 	if (!player || !isActive || !mediaType) return;
-
 	const { bannerMd, bannerSm, bannerLg } = Store.state.getSongBanners();
-
 	let className = "spotify-player-container";
 	if (playerCompactMode) className += " compact";
 	if (playerBannerBackground) className += " bannerBackground";
-
 	const minmaxClickHandler = () => setplayerCompactMode(!playerCompactMode);
-
 	return (
 		React.createElement('div', {
-				className: className,
-				style: {
-					"--banner-sm": `url(${bannerSm?.url})`,
-					"--banner-md": `url(${bannerMd?.url})`,
-					"--banner-lg": `url(${bannerLg?.url})`
-				},
-			}, React.createElement(TrackMediaDetails, {
-				mediaType: mediaType,
-				name: media?.name,
-				artists: media?.artists,
-			})
-
-			, mediaType === "track" && React.createElement(TrackTimeLine, null), React.createElement(SpotifyPlayerControls, null), React.createElement(Tooltip, { note: playerCompactMode ? "Maximize" : "Minimize", }, React.createElement('div', {
-				onClick: minmaxClickHandler,
-				className: "spotify-player-minmax",
-			}, React.createElement(Arrow, null)))
-		)
+			className: className,
+			style: {
+				"--banner-sm": `url(${bannerSm?.url})`,
+				"--banner-md": `url(${bannerMd?.url})`,
+				"--banner-lg": `url(${bannerLg?.url})`
+			},
+		}, React.createElement(TrackMediaDetails, {
+			mediaType: mediaType,
+			name: media?.name,
+			artists: media?.artists,
+		}), mediaType === "track" && React.createElement(TrackTimeLine, null), React.createElement(SpotifyPlayerControls, null), React.createElement(Tooltip, { note: playerCompactMode ? "Maximize" : "Minimize", }, React.createElement('div', {
+			onClick: minmaxClickHandler,
+			className: "spotify-player-minmax",
+		}, React.createElement(Arrow, null))))
 	);
 });
 
+// src\SpotifyEnhance\patches\patchSpotifyPlayer.jsx
 const patchSpotifyPlayer = async () => {
 	const fluxContainer = await getFluxContainer();
 	if (!fluxContainer) return Logger.patchError("SpotifyPlayer");
-
 	Patcher.after(fluxContainer.type.prototype, "render", (_, __, ret) => {
 		if (Settings.state.spotifyPlayerPlace !== PlayerPlaceEnum.USERAREA) return ret;
 		if (Array.isArray(ret)) return;
 		return [
-
 			React.createElement(ErrorBoundary, { id: "SpotifyPlayer", }, React.createElement(SpotifyPlayer, null)),
 			ret
 		];
 	});
 	fluxContainer.stateNode.forceUpdate();
 };
-
 async function cleanFluxContainer() {
 	const fluxContainer = await getFluxContainer();
 	if (fluxContainer) fluxContainer.stateNode.forceUpdate();
 }
 
+// src\SpotifyEnhance\components\SettingComponent\index.jsx
 function SpotifyEmbedOptions() {
 	const [val, set] = Settings.useSetting("spotifyEmbed");
 	return (
@@ -1740,6 +1671,7 @@ function SettingComponent() {
 	);
 }
 
+// src\SpotifyEnhance\patches\patchListenAlong.js
 const patchListenAlong = () => {
 	if (!SpotifyStore) return Logger.patchError("ListenAlong");
 	Patcher.after(SpotifyStore, "getActiveSocketAndDevice", (_, __, ret) => {
@@ -1749,6 +1681,7 @@ const patchListenAlong = () => {
 	});
 };
 
+// src\SpotifyEnhance\components\SpotifyActivityControls\ActivityControlButton.jsx
 function ActivityControlButton({ value, onClick, className, ...rest }) {
 	return (
 		React.createElement(Button, {
@@ -1764,6 +1697,7 @@ function ActivityControlButton({ value, onClick, className, ...rest }) {
 	);
 }
 
+// common\Components\icons\ListenAlongIcon\index.jsx
 function ListenAlongIcon() {
 	return (
 		React.createElement('svg', {
@@ -1777,9 +1711,9 @@ function ListenAlongIcon() {
 	);
 }
 
+// src\SpotifyEnhance\components\SpotifyActivityControls\ListenAlong.jsx
 function ListenAlong({ userSyncActivityState }) {
 	const { disabled, onClick, tooltip } = userSyncActivityState;
-
 	return (
 		React.createElement(Tooltip, { note: tooltip, }, React.createElement(ActivityControlButton, {
 			className: "spotify-activity-btn-listenAlong",
@@ -1790,9 +1724,9 @@ function ListenAlong({ userSyncActivityState }) {
 	);
 }
 
+// src\SpotifyEnhance\components\SpotifyActivityControls\Play.jsx
 function Play({ userPlayActivityState }) {
 	const { label, disabled, onClick, tooltip } = userPlayActivityState;
-
 	return (
 		React.createElement(Tooltip, { note: tooltip || label, }, React.createElement(ActivityControlButton, {
 			disabled: disabled,
@@ -1804,19 +1738,17 @@ function Play({ userPlayActivityState }) {
 	);
 }
 
+// src\SpotifyEnhance\components\SpotifyActivityControls\index.jsx
 const { useSpotifyPlayAction, useSpotifySyncAction } = getMangled(
 	Filters.byStrings("USER_ACTIVITY_PLAY", "spotifyData", "tooltip"), {
 		useSpotifyPlayAction: Filters.byStrings("USER_ACTIVITY_PLAY"),
 		useSpotifySyncAction: Filters.byStrings("USER_ACTIVITY_SYNC")
 	}, { searchExports: true, raw: true }
 );
-
 const SpotifyActivityControls = ({ activity, user }) => {
 	const isActive = Store(Store.selectors.isActive);
-
 	const userSyncActivityState = useSpotifySyncAction(activity, user);
 	const userPlayActivityState = useSpotifyPlayAction(activity, user);
-
 	return (
 		React.createElement('div', { className: "spotify-activity-controls", }, React.createElement(Play, { userPlayActivityState: userPlayActivityState, }), React.createElement(Tooltip, { note: "Add to queue", }, React.createElement(ActivityControlButton, {
 			className: "spotify-activity-btn-queue",
@@ -1831,15 +1763,14 @@ const SpotifyActivityControls = ({ activity, user }) => {
 	);
 };
 
+// src\SpotifyEnhance\patches\patchSpotifyActivity.jsx
 const ActivityComponent = getModuleAndKey(Filters.byStrings("PRESS_LISTEN_ALONG_ON_SPOTIFY_BUTTON", "PRESS_PLAY_ON_SPOTIFY_BUTTON"));
-
 const patchSpotifyActivity = () => {
 	const { module, key } = ActivityComponent;
 	if (!module || !key) return Logger.patchError("SpotifyActivityComponent");
 	Patcher.after(module, key, (_, [{ user, activity }]) => {
 		if (!Settings.getState().activity) return;
 		if (activity?.name.toLowerCase() !== "spotify") return;
-
 		return (
 			React.createElement(ErrorBoundary, { id: "SpotifyEmbed", }, React.createElement(SpotifyActivityControls, {
 				user: user,
@@ -1849,6 +1780,7 @@ const patchSpotifyActivity = () => {
 	});
 };
 
+// src\SpotifyEnhance\components\SpotifyControls\ControlBtn.jsx
 function ControlBtn({ value, onClick, ...rest }) {
 	return (
 		React.createElement(Button, {
@@ -1860,9 +1792,9 @@ function ControlBtn({ value, onClick, ...rest }) {
 	);
 }
 
+// src\SpotifyEnhance\components\SpotifyControls\index.jsx
 const SpotifyControls = ({ id, type, embed: { thumbnail, rawTitle, url } }) => {
 	const isActive = Store(Store.selectors.isActive);
-
 	const listenBtn = type !== "show" && (
 		React.createElement(ControlBtn, {
 			disabled: !isActive,
@@ -1870,7 +1802,6 @@ const SpotifyControls = ({ id, type, embed: { thumbnail, rawTitle, url } }) => {
 			onClick: () => Store.Api.listen(type, id, rawTitle),
 		})
 	);
-
 	const queueBtn = (type === "track" || type === "episode") && (
 		React.createElement(ControlBtn, {
 			disabled: !isActive,
@@ -1878,7 +1809,6 @@ const SpotifyControls = ({ id, type, embed: { thumbnail, rawTitle, url } }) => {
 			onClick: () => Store.Api.queue(type, id, rawTitle),
 		})
 	);
-
 	return (
 		React.createElement('div', { className: "spotify-embed-plus", }, listenBtn, queueBtn, React.createElement(ControlBtn, {
 			value: "copy link",
@@ -1890,6 +1820,7 @@ const SpotifyControls = ({ id, type, embed: { thumbnail, rawTitle, url } }) => {
 	);
 };
 
+// common\Components\icons\CopyIcon\index.jsx
 function CopyIcon() {
 	return (
 		React.createElement('svg', {
@@ -1901,6 +1832,7 @@ function CopyIcon() {
 	);
 }
 
+// common\Components\icons\SpotifyIcon\index.jsx
 function SpotifyIcon(props) {
 	return (
 		React.createElement('svg', {
@@ -1913,80 +1845,69 @@ function SpotifyIcon(props) {
 	);
 }
 
+// @Stores\AccessibilityStore
 const AccessibilityStore = getModule(m => m._dispatchToken && m.getName() === "AccessibilityStore");
 
+// @Modules\useStateFromStores
 const useStateFromStores = getModule(Filters.byStrings("getStateFromStores"), { searchExports: true });
 
+// src\SpotifyEnhance\components\SpotifyEmbed\index.jsx
 const SpotifyEmbed$1 = ({ id, type, embed: { thumbnail, rawTitle, rawDescription, url } }) => {
 	const embedBannerBackground = Settings(Settings.selectors.embedBannerBackground);
 	const useReducedMotion = useStateFromStores([AccessibilityStore], () => AccessibilityStore.useReducedMotion);
-
 	const [isPlaying, isActive] = Store(_ => [_.isPlaying, _.isActive], shallow);
 	const mediaId = Store(Store.selectors.mediaId, (n, o) => n === o || (n !== id && o !== id));
-
 	const isThis = mediaId === id;
-
 	const listenBtn = type !== "show" && (
 		React.createElement(Tooltip, { note: `Play ${type}`, }, React.createElement('div', {
 			onClick: () => Store.Api.listen(type, id, rawTitle),
 			className: "spotify-embed-btn spotify-embed-btn-listen",
 		}, React.createElement(ListenIcon, null)))
 	);
-
 	const queueBtn = (type === "track" || type === "episode") && (
 		React.createElement(Tooltip, { note: `Add ${type} to queue`, }, React.createElement('div', {
 			onClick: () => Store.Api.queue(type, id, rawTitle),
 			className: "spotify-embed-btn spotify-embed-btn-addToQueue",
 		}, React.createElement(AddToQueueIcon, null)))
 	);
-
 	let className = "spotify-embed-container";
 	if (isThis && isPlaying && !useReducedMotion) className += " playing";
 	if (embedBannerBackground) className += " bannerBackground";
-
-	const banner = thumbnail?.url || thumbnail?.proxyURL;
-
+	const banner = thumbnail?.proxyURL || thumbnail?.url;
 	return (
 		React.createElement('div', {
-				className: className,
-				style: { "--thumbnail": `url(${banner})` },
-			}, React.createElement(Tooltip, { note: "View", }, React.createElement('div', {
-				onClick: () => {
-					let { width, height } = thumbnail;
-					width = width > 650 ? 650 : width;
-					height = height > 650 ? 650 : height;
-					openModal(React.createElement('div', { className: "spotify-banner-modal", }, getImageModalComponent(banner, { width, height })));
-				},
-				className: "spotify-embed-thumbnail",
-			})), React.createElement('h2', { className: "spotify-embed-title", }, rawTitle), React.createElement('p', { className: "spotify-embed-description", }, rawDescription)
-
-			, type && id && (
-				React.createElement('div', { className: "spotify-embed-controls", }
-
-					, (isThis && isActive && !isPlaying || !isThis && isActive) && [listenBtn, queueBtn], isThis && isActive && isPlaying && React.createElement(TrackTimeLine, null), React.createElement(Tooltip, { note: "Copy link", }, React.createElement('div', {
-						onClick: () => Store.Utils.copySpotifyLink(url),
-						className: "spotify-embed-btn spotify-embed-btn-copy",
-					}, React.createElement(CopyIcon, null))), React.createElement(Tooltip, { note: "Copy banner", }, React.createElement('div', {
-						onClick: () => Store.Utils.copySpotifyLink(banner),
-						className: "spotify-embed-btn spotify-embed-btn-copy",
-					}, React.createElement(ImageIcon, null)))
-				)
-			), React.createElement(Tooltip, { note: "Play on Spotify", }, React.createElement('div', {
-				onClick: () => Store.Utils.openSpotifyLink(url),
-				className: "spotify-embed-spotifyIcon",
-			}, React.createElement(SpotifyIcon, null)))
-		)
+			className: className,
+			style: { "--thumbnail": `url(${banner})` },
+		}, React.createElement(Tooltip, { note: "View", }, React.createElement('div', {
+			onClick: () => {
+				let { width, height } = thumbnail;
+				width = width > 650 ? 650 : width;
+				height = height > 650 ? 650 : height;
+				openModal(React.createElement('div', { className: "spotify-banner-modal", }, getImageComponent(banner, { width, height })));
+			},
+			className: "spotify-embed-thumbnail",
+		})), React.createElement('h2', { className: "spotify-embed-title", }, rawTitle), React.createElement('p', { className: "spotify-embed-description", }, rawDescription), type && id && (
+			React.createElement('div', { className: "spotify-embed-controls", }, ((isThis && isActive && !isPlaying) || (!isThis && isActive)) && [listenBtn, queueBtn], isThis && isActive && isPlaying && React.createElement(TrackTimeLine, null), React.createElement(Tooltip, { note: "Copy link", }, React.createElement('div', {
+				onClick: () => Store.Utils.copySpotifyLink(url),
+				className: "spotify-embed-btn spotify-embed-btn-copy",
+			}, React.createElement(CopyIcon, null))), React.createElement(Tooltip, { note: "Copy banner", }, React.createElement('div', {
+				onClick: () => Store.Utils.copySpotifyLink(banner),
+				className: "spotify-embed-btn spotify-embed-btn-copy",
+			}, React.createElement(ImageIcon, null))))
+		), React.createElement(Tooltip, { note: "Play on Spotify", }, React.createElement('div', {
+			onClick: () => Store.Utils.openSpotifyLink(url),
+			className: "spotify-embed-spotifyIcon",
+		}, React.createElement(SpotifyIcon, null))))
 	);
 };
 
+// src\SpotifyEnhance\components\SpotifyEmbedWrapper\index.jsx
 function SpotifyEmbedWrapper({ id, type, embedObject, embedComponent }) {
 	const spotifyEmbed = Settings(Settings.selectors.spotifyEmbed);
-
 	switch (spotifyEmbed) {
 		case EmbedStyleEnum.KEEP:
 			return [
 				embedComponent,
-
 				React.createElement(SpotifyControls, {
 					id: id,
 					type: type,
@@ -2013,8 +1934,8 @@ function SpotifyEmbedWrapper({ id, type, embedObject, embedComponent }) {
 	return embedComponent;
 }
 
+// src\SpotifyEnhance\patches\patchSpotifyEmbed.jsx
 const SpotifyEmbed = getModule(Filters.byStrings("iframe", "playlist", "track"), { defaultExport: false });
-
 const patchSpotifyEmbed = () => {
 	if (!SpotifyEmbed) return Logger.patchError("SpotifyEmbed");
 	Patcher.after(SpotifyEmbed, "Z", (_, [{ embed }], ret) => {
@@ -2023,7 +1944,6 @@ const patchSpotifyEmbed = () => {
 			Logger.log(`Spotify ${type}`, embed.url);
 			return;
 		}
-
 		return (
 			React.createElement(ErrorBoundary, {
 				id: "SpotifyEmbed",
@@ -2038,6 +1958,7 @@ const patchSpotifyEmbed = () => {
 	});
 };
 
+// src\SpotifyEnhance\patches\patchSpotifySocket.js
 function getSocketConstructor() {
 	const playableComputerDevices = SpotifyStore.getPlayableComputerDevices() || [];
 	return playableComputerDevices[0]?.socket?.constructor;
@@ -2046,7 +1967,6 @@ function getSocketConstructor() {
 function getSocket() {
 	const socket = getSocketConstructor();
 	if (socket) return Promise.resolve(socket);
-
 	return new Promise(resolve => {
 		function listener() {
 			try {
@@ -2061,14 +1981,11 @@ function getSocket() {
 		SpotifyStore.addChangeListener(listener);
 	});
 }
-
 async function patchSpotifySocket() {
 	const socket = await getSocket();
 	Patcher.after(socket.prototype, "handleEvent", function onSocketEvent(socket, [socketEvent]) {
-
 		if (Store.state.account?.accountId && socket.accountId !== Store.state.account?.accountId) return;
 		const { type, event } = socketEvent;
-
 		switch (type) {
 			case "PLAYER_STATE_CHANGED":
 				Store.state.setPlayerState(event.state);
@@ -2084,10 +2001,13 @@ async function patchSpotifySocket() {
 	});
 }
 
+// @Patch\MessageHeader
 const MessageHeader = getModuleAndKey(Filters.byStrings("userOverride", "withMentionPrefix"), { searchExports: false }) || {};
 
+// @Stores\PresenceStore
 const PresenceStore = getModule(m => m._dispatchToken && m.getName() === "PresenceStore");
 
+// src\SpotifyEnhance\patches\patchMessageHeader.jsx
 const patchMessageHeader = () => {
 	const { module, key } = MessageHeader;
 	if (!module || !key) return Logger.patchError("MessageHeader");
@@ -2103,7 +2023,6 @@ function SpotifyActivityIndicator({ userId }) {
 	const activityIndicator = Settings(Settings.selectors.activityIndicator);
 	const spotifyActivity = useStateFromStores([PresenceStore], () => PresenceStore.getActivities(userId).find(activity => activity?.name?.toLowerCase() === "spotify"));
 	if (!activityIndicator || !spotifyActivity) return null;
-
 	return (
 		React.createElement(Tooltip, { note: `${spotifyActivity.details} - ${spotifyActivity.state}`, }, React.createElement(SpotifyIcon, {
 			width: "20",
@@ -2113,10 +2032,11 @@ function SpotifyActivityIndicator({ userId }) {
 	);
 }
 
+// common\Components\Flex\index.jsx
 const Flex = getModule(a => a.defaultProps?.direction, { searchExports: true });
 
+// src\SpotifyEnhance\patches\patchChannelAttach.jsx
 const { Item: MenuItem } = ContextMenu$1;
-
 const ChannelAttachMenu = getModule(Filters.byStrings("Plus Button"), { defaultExport: false });
 
 function MenuLabel({ label, icon }) {
@@ -2128,14 +2048,12 @@ function MenuLabel({ label, icon }) {
 		}, icon, React.createElement('div', null, label))
 	);
 }
-
 const patchChannelAttach = () => {
 	if (!ChannelAttachMenu) return Logger.patchError("patchChannelAttach");
 	Patcher.after(ChannelAttachMenu, "Z", (_, args, ret) => {
 		if (!Store.state.isActive) return;
 		if (!Store.state.mediaId) return;
 		if (!Array.isArray(ret?.props?.children)) return;
-
 		ret.props.children.push(
 			React.createElement(MenuItem, {
 				id: "spotify-share-song-menuitem",
@@ -2165,8 +2083,8 @@ const patchChannelAttach = () => {
 	});
 };
 
+// src\SpotifyEnhance\pip.jsx
 const pipContainer = Object.assign(document.createElement("div"), { className: "pipContainer" });
-
 const Pip = {
 	init() {
 		document.body.appendChild(pipContainer);
@@ -2180,7 +2098,6 @@ const Pip = {
 		pipContainer.remove();
 	}
 };
-
 const Draggable = getBySource("edgeOffsetBottom", "defaultPosition")?.Z;
 
 function PipContainer() {
@@ -2192,10 +2109,10 @@ function PipContainer() {
 	);
 }
 
+// src\SpotifyEnhance\index.jsx
 class SpotifyEnhance {
 	start() {
 		try {
-
 			DOM.addStyle(css);
 			Store.init();
 			Pip.init();
@@ -2210,20 +2127,17 @@ class SpotifyEnhance {
 			Logger.error(e);
 		}
 	}
-
 	async stop() {
 		try {
 			Store.dispose();
 			Pip.dispose();
 			DOM.removeStyle();
 			Patcher.unpatchAll();
-
 			cleanFluxContainer();
 		} catch (e) {
 			Logger.error(e);
 		}
 	}
-
 	getSettingsPanel() {
 		return SettingComponent;
 	}
@@ -2280,9 +2194,6 @@ const css = `:root {
 .pipContainer .spotify-player-container {
 	width: 240px;
 	box-sizing: border-box;
-}
-.transparentBackground{
-	background: transparent;
 }
 .collapsible-container {
 	border-radius: 5px;
@@ -2627,6 +2538,18 @@ div:has(> .spotify-banner-modal) {
 .spotify-player-timeline:hover .spotify-player-timeline-trackbar-bar > div {
 	background: var(--SpotifyEnhance-spotify-green);
 }
+.spotify-embed-plus {
+	display: flex;
+	min-width: 400px;
+	max-width: 100%;
+	gap: 5px;
+	overflow: hidden;
+}
+
+.spotify-embed-plus > button {
+	flex: 1 0 auto;
+	text-transform: capitalize;
+}
 .spotify-embed-container {
 	background:
 		linear-gradient(#00000090 0 0),
@@ -2769,15 +2692,30 @@ div:has(> .spotify-banner-modal) {
 }
 
 
-.spotify-embed-plus {
-	display: flex;
-	min-width: 400px;
-	max-width: 100%;
-	gap: 5px;
-	overflow: hidden;
+.downloadLink {
+	color: white !important;
+	font-size: 14px;
+	font-weight: 500;
+	/*	line-height: 18px;*/
+	text-decoration: none;
+	transition: opacity.15s ease;
+	opacity: 0.5;
 }
 
-.spotify-embed-plus > button {
-	flex: 1 0 auto;
-	text-transform: capitalize;
+.imageModalwrapper {
+	display: flex;
+	flex-direction: column;
+}
+
+.imageModalOptions {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 4px;
+}
+
+.transparent-background{
+	background: transparent;
 }`;

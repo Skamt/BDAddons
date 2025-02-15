@@ -35,6 +35,7 @@ Logger.patchError = patchId => {
 
 const getModule = Webpack.getModule;
 const Filters = Webpack.Filters;
+const getStore = Webpack.getStore;
 
 function getModuleAndKey(filter, options) {
 	let module;
@@ -115,7 +116,7 @@ const patchContextMenus = () => {
 
 const Dispatcher = getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: false });
 
-const PendingReplyStore = getModule(m => m._dispatchToken && m.getName() === "PendingReplyStore");
+const PendingReplyStore = getStore("PendingReplyStore");
 
 function replyToggle({ channelId }) {
 	const { message, shouldMention } = PendingReplyStore.getPendingReply(channelId);

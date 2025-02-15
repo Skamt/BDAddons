@@ -42,6 +42,7 @@ const Webpack = Api.Webpack;
 const getModule = Webpack.getModule;
 const Filters = Webpack.Filters;
 const getMangled = Webpack.getMangled;
+const getStore = Webpack.getStore;
 
 const nop = () => {};
 
@@ -195,17 +196,17 @@ const EmojiIntentionEnum = getModule(Filters.byKeys("GUILD_ROLE_BENEFIT_EMOJI"),
 	"CHAT": 3
 };
 
-const EmojiStore = getModule(m => m._dispatchToken && m.getName() === "EmojiStore");
+const EmojiStore = getStore("EmojiStore");
 
-const SelectedChannelStore = getModule(m => m._dispatchToken && m.getName() === "SelectedChannelStore");
+const SelectedChannelStore = getStore("SelectedChannelStore");
 
-const ChannelStore = getModule(m => m._dispatchToken && m.getName() === "ChannelStore");
+const ChannelStore = getStore("ChannelStore");
 
 const MessageActions = getModule(Filters.byKeys('jumpToMessage', '_sendMessage'), { searchExports: false });
 
 const Dispatcher = getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: false });
 
-const PendingReplyStore = getModule(m => m._dispatchToken && m.getName() === "PendingReplyStore");
+const PendingReplyStore = getStore("PendingReplyStore");
 
 function getReply(channelId) {
 	const reply = PendingReplyStore?.getPendingReply(channelId);
@@ -252,7 +253,7 @@ const insertText = (() => {
 	};
 })();
 
-const DraftStore = getModule(m => m._dispatchToken && m.getName() === "DraftStore");
+const DraftStore = getStore("DraftStore");
 
 function showToast(content, type) {
 	UI.showToast(`[${config.info.name}] ${content}`, { timeout: 5000, type });
