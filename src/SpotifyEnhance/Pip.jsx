@@ -1,4 +1,4 @@
-import { Filters, getBySource } from "@Webpack";
+import { getBySource } from "@Webpack";
 import { React, ReactDOM } from "@Api";
 import SpotifyPlayer from "./components/SpotifyPlayer";
 import ErrorBoundary from "@Components/ErrorBoundary";

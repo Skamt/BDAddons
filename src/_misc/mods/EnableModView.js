@@ -17,7 +17,7 @@ export default class EnableModView extends Disposable {
 			Patcher.after(PermissionStore, "can", (_, args, ret) => (args[0] === 268435456n ? true : ret))
 		);
 
-		const a = s.getSource("checkElevated", "autoTrackExposure")?.module?.exports;
+		const a = s.getSource("checkElevated","user:","context:","getGuild","getCurrentUser","default")?.module?.exports;
 		if (!a) return Logger.patchError("EnableModView");
 
 		for (const key in a) {

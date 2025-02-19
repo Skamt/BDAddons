@@ -1,7 +1,5 @@
 import { Patcher, getOwnerInstance, ReactDOM, React } from "@Api";
-import RenderLinkComponent from "@Modules/RenderLinkComponent";
 
-import ImageModal from "@Modules/ImageModal";
 
 export function shallow(objA, objB) {
 	if (Object.is(objA, objB)) return true;
@@ -17,47 +15,8 @@ export function shallow(objA, objB) {
 	return true;
 }
 
-export const openModal = (children, tag, modalClassName = "") => {
-	const id = `${tag ? `${tag}-` : ""}modal`;
 
-	_openModal(props => {
-		return (
-			<ErrorBoundary
-				id={id}
-				plugin={config.info.name}>
-				<ModalRoot
-					{...props}
-					className={`${modalClassName} transparentBackground`}
-					onClick={props.onClose}
-					size={ModalSize.DYNAMIC}>
-					{children}
-				</ModalRoot>
-			</ErrorBoundary>
-		);
-	});
-};
 
-export const getImageModalComponent = (url, rest = {}) => {
-	return (
-		<div className="imageModalwrapper">
-			<ImageModal
-				media={{
-					...rest,
-					type: "IMAGE",
-					url: url,
-					proxyUrl: url
-				}}
-			/>
-			<div className="imageModalOptions">
-				<RenderLinkComponent
-					className="downloadLink"
-					href={url}>
-					Open in Browser
-				</RenderLinkComponent>
-			</div>
-		</div>
-	);
-};
 export const promiseHandler = promise => promise.then(data => [undefined, data]).catch(err => [err]);
 
 export function copy(data) {

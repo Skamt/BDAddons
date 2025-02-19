@@ -1,5 +1,7 @@
 import Logger from "@Utils/Logger";
-import { getImageModalComponent, openModal, Disposable, parseSnowflake } from "@Utils";
+import { Disposable, parseSnowflake } from "@Utils";
+import { getImageComponent} from "@Utils/ImageModal";
+import {  openModal } from "@Utils/Modals";
 import { ContextMenu, Patcher, React } from "@Api";
 
 import GuildTooltip from "@Patch/GuildTooltip";
@@ -36,7 +38,7 @@ export default class GuildInfo extends Disposable {
 					retVal.props.children.splice(1,0,
 						ContextMenu.buildItem({
 							label: "View logo",
-							action: () => openModal(<div>{getImageModalComponent(banner, { width:4096, height:4096 })}</div>)
+							action: () => openModal(<div>{getImageComponent(banner, { width:4096, height:4096 })}</div>)
 							
 						})
 					);

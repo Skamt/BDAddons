@@ -1,4 +1,4 @@
-import { getInternalInstance } from "@Api";
+import { findInTree, getInternalInstance } from "@Api";
 import { Filters, getModule } from "@Webpack";
 
 function getPathName(url) {
@@ -26,26 +26,32 @@ export function sanitizeSpotifyLink(link) {
 const activityPanelClasses = getModule(Filters.byProps("activityPanel", "panels"), { searchExports: false });
 
 export const getFluxContainer = (() => {
-	let target = null;
-	return () => {
-		if (target) return Promise.resolve(target);
+	let userAreaFluxContainer = undefined;
+
+	function tryGetFluxContainer() {
 		const el = document.querySelector(`.${activityPanelClasses.panels}`);
-		if (el) {
-			const instance = getInternalInstance(el);
-			target = instance.child.sibling;
-			if (instance) return Promise.resolve(target);
-		}
+		if (!el) return;
+		const instance = getInternalInstance(el);
+		if (!instance) return;
+		const res = findInTree(instance, a => a?.type?.prototype?.hasParty, { walkable: ["child", "sibling"] });
+		if (!res) return;
+		return res;
+	}
+
+	return () => {
+		if (userAreaFluxContainer) return Promise.resolve(userAreaFluxContainer);
+		userAreaFluxContainer = tryGetFluxContainer();
+		if(userAreaFluxContainer) Promise.resolve(userAreaFluxContainer);
+		
 		return new Promise(resolve => {
 			const interval = setInterval(() => {
-				const el = document.querySelector(`.${activityPanelClasses.panels}`);
-				if (!el) return;
-				const instance = getInternalInstance(el);
-				if (!instance) return;
-				target = instance.child.sibling;
-				resolve(target);
+				userAreaFluxContainer = tryGetFluxContainer();
+				if(!userAreaFluxContainer) return;
+				resolve(userAreaFluxContainer);
 				clearInterval(interval);
 			}, 500);
 
+			/* Fail safe */
 			setTimeout(() => {
 				resolve(null);
 				clearInterval(interval);

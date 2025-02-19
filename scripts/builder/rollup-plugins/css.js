@@ -7,8 +7,7 @@ module.exports = function css() {
 		name: "css",
 		transform(code, id) {
 			if (!filter(id)) return;
-			if(styles[id] !== code)
-				styles[id] = code;
+			if (styles[id] !== code) styles[id] = code;
 			return "";
 		},
 		outro() {

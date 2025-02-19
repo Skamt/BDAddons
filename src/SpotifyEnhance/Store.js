@@ -83,7 +83,8 @@ export const Store = Object.assign(
 					if (!playerState || playerState.currently_playing_type === "ad") return set({ isPlaying: false });
 
 					const state = get();
-					const media = playerState.item?.id === state.media?.id ? state.media : playerState.item;
+					const newId = playerState.item?.linked_from?.id || playerState.item?.id;
+					const media = newId === state.media?.id ? state.media : playerState.item;
 					set({
 						isActive: !!playerState?.device?.is_active,
 						volume: playerState?.device?.volume_percent,

@@ -1,5 +1,6 @@
 import { React } from "@Api";
-import { getImageModalComponent, openModal } from "@Utils";
+import { getImageComponent } from "@Utils/ImageModal";
+import {  openModal } from "@Utils/Modals";
 import Toast from "@Utils/Toast";
 import Tooltip from "@Components/Tooltip";
 import { Store } from "../../Store";
@@ -10,7 +11,7 @@ export default function TrackBanner() {
 	const thumbnailClickHandler = () => {
 		if (!bannerObj.url) return Toast.error("Could not open banner");
 		const { url, ...rest } = bannerObj;
-		openModal(<div className="spotify-banner-modal">{getImageModalComponent(url, rest)}</div>);
+		openModal(<div className="spotify-banner-modal">{getImageComponent(url, rest)}</div>);
 	};
 
 	return (

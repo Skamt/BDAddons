@@ -6,7 +6,11 @@ import CopyIcon from "@Components/icons/CopyIcon";
 import ListenIcon from "@Components/icons/ListenIcon";
 import SpotifyIcon from "@Components/icons/SpotifyIcon";
 import ImageIcon from "@Components/icons/ImageIcon";
-import { getImageModalComponent, openModal, shallow } from "@Utils";
+import { shallow } from "@Utils";
+
+import { getImageComponent } from "@Utils/ImageModal";
+import { openModal } from "@Utils/Modals";
+
 import Settings from "@Utils/Settings";
 
 import { Store } from "../../Store";
@@ -47,7 +51,7 @@ export default ({ id, type, embed: { thumbnail, rawTitle, rawDescription, url } 
 	if (isThis && isPlaying && !useReducedMotion) className += " playing";
 	if (embedBannerBackground) className += " bannerBackground";
 
-	const banner = thumbnail?.proxyURL || thumbnail?.url ;
+	const banner = thumbnail?.proxyURL || thumbnail?.url;
 
 	return (
 		<div
@@ -59,7 +63,7 @@ export default ({ id, type, embed: { thumbnail, rawTitle, rawDescription, url } 
 						let { width, height } = thumbnail;
 						width = width > 650 ? 650 : width;
 						height = height > 650 ? 650 : height;
-						openModal(<div className="spotify-banner-modal">{getImageModalComponent(banner, { width, height })}</div>);
+						openModal(<div className="spotify-banner-modal">{getImageComponent(banner, { width, height })}</div>);
 					}}
 					className="spotify-embed-thumbnail"
 				/>
@@ -69,8 +73,7 @@ export default ({ id, type, embed: { thumbnail, rawTitle, rawDescription, url } 
 
 			{type && id && (
 				<div className="spotify-embed-controls">
-					
-					{(isThis && isActive && !isPlaying || !isThis && isActive) && [listenBtn, queueBtn]}
+					{((isThis && isActive && !isPlaying) || (!isThis && isActive)) && [listenBtn, queueBtn]}
 					{isThis && isActive && isPlaying && <TrackTimeLine />}
 					<Tooltip note="Copy link">
 						<div
