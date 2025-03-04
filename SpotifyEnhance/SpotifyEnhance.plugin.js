@@ -449,7 +449,7 @@ function sanitizeSpotifyLink(link) {
 		return link;
 	}
 }
-const activityPanelClasses = getModule(Filters.byProps("activityPanel", "panels"), { searchExports: false });
+const activityPanelClasses = getModule(Filters.byKeys("activityPanel", "panels"), { searchExports: false });
 const getFluxContainer = (() => {
 	let userAreaFluxContainer = undefined;
 
