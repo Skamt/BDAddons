@@ -20,22 +20,23 @@ const config = {
 	}
 }
 
+// common\Api.js
 const Api = new BdApi(config.info.name);
 const DOM = Api.DOM;
 const Data = Api.Data;
 const Patcher = Api.Patcher;
 const ContextMenu = Api.ContextMenu;
 const Logger = Api.Logger;
-
 const Webpack = Api.Webpack;
 
+// common\Utils\Logger.js
 Logger.patchError = patchId => {
 	console.error(`%c[${config.info.name}] %cCould not find module for %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
 };
 
+// common\Webpack.js
 const getModule = Webpack.getModule;
 const Filters = Webpack.Filters;
-const getStore = Webpack.getStore;
 
 function getModuleAndKey(filter, options) {
 	let module;
@@ -47,33 +48,30 @@ function getModuleAndKey(filter, options) {
 	return { module, key };
 }
 
+// src\NoPing\blacklist.js
 const blacklist = new(class extends Set {
 	commit() {
 		Data.save("blacklist", Array.from(this));
 	}
-
 	add(...args) {
 		super.add.apply(this, args);
 		this.commit();
 	}
-
 	delete(...args) {
 		super.delete.apply(this, args);
 		this.commit();
 	}
-
 	toggle(id) {
 		if (this.has(id)) this.delete(id);
 		else this.add(id);
 	}
 })(Data.load("blacklist") || []);
 
+// src\NoPing\patches\patchCreatePendingReply.js
 const ReplyFunctions = getModuleAndKey(Filters.byStrings("CREATE_PENDING_REPLY", "dispatch"), { searchExports: true });
-
 const patchCreatePendingReply = () => {
 	const { module, key } = ReplyFunctions;
 	if (!module || !key) return Logger.patchError("patchCreatePendingReply");
-
 	Patcher.before(module, key, (_, [args]) => {
 		if (blacklist.has(args.message.author.id)) {
 			args.shouldMention = false;
@@ -82,8 +80,10 @@ const patchCreatePendingReply = () => {
 	});
 };
 
+// @Modules\MessageActions
 const MessageActions = getModule(Filters.byKeys('jumpToMessage', '_sendMessage'), { searchExports: false });
 
+// src\NoPing\patches\patchSendMessage.js
 const patchSendMessage = () => {
 	if (!MessageActions) return Logger.patchError("patchSendMessage");
 	Patcher.before(MessageActions, "_sendMessage", (_, args) => {
@@ -94,12 +94,11 @@ const patchSendMessage = () => {
 	});
 };
 
+// src\NoPing\patches\patchContextMenus.js
 const patchContextMenus = () => {
 	return [
 		ContextMenu.patch("user-context", function(retVal, { user }) {
-
 			if (!user.id) return;
-
 			retVal.props.children.splice(
 				1,
 				0,
@@ -114,16 +113,18 @@ const patchContextMenus = () => {
 	];
 };
 
+// @Modules\Dispatcher
 const Dispatcher = getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: false });
 
-const PendingReplyStore = getStore("PendingReplyStore");
+// @Stores\PendingReplyStore
+const PendingReplyStore = getModule(m => m._dispatchToken && m.getName() === "PendingReplyStore");
 
+// src\NoPing\index.js
 function replyToggle({ channelId }) {
 	const { message, shouldMention } = PendingReplyStore.getPendingReply(channelId);
 	if (!shouldMention) blacklist.add(message.author.id);
 	else blacklist.delete(message.author.id);
 }
-
 class NoPing {
 	start() {
 		try {
@@ -136,12 +137,10 @@ class NoPing {
 			Logger.error(e);
 		}
 	}
-
 	stop() {
 		this.unpatchContextMenu?.forEach?.(p => p());
 		this.unpatchContextMenu = null;
 		Dispatcher.unsubscribe("SET_PENDING_REPLY_SHOULD_MENTION", replyToggle);
-
 		DOM.removeStyle();
 		Patcher.unpatchAll();
 	}

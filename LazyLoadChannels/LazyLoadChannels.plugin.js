@@ -1,7 +1,7 @@
 /**
  * @name LazyLoadChannels
  * @description Lets you choose whether to load a channel
- * @version 1.2.13
+ * @version 1.2.14
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "LazyLoadChannels",
-		"version": "1.2.13",
+		"version": "1.2.14",
 		"description": "Lets you choose whether to load a channel",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels",
@@ -24,8 +24,8 @@ const config = {
 	}
 }
 
+// common\Api.js
 const Api = new BdApi(config.info.name);
-
 const UI = Api.UI;
 const DOM = Api.DOM;
 const Data = Api.Data;
@@ -33,11 +33,12 @@ const React = Api.React;
 const Patcher = Api.Patcher;
 const ContextMenu = Api.ContextMenu;
 const Logger = Api.Logger;
-
 const Webpack = Api.Webpack;
 const findInTree = Api.Utils.findInTree;
-const getOwnerInstance = Api.ReactUtils.getOwnerInstance;
+/* annoying */
+const getOwnerInstance = Api.ReactUtils.getOwnerInstance.bind(Api.ReactUtils);
 
+// common\Webpack.js
 const getModule = Webpack.getModule;
 const Filters = Webpack.Filters;
 const getMangled = Webpack.getMangled;
@@ -52,19 +53,19 @@ function getModuleAndKey(filter, options) {
 	return { module, key };
 }
 
+// common\DiscordModules\Modules.js
 const { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
 	_: Filters.byStrings("subscribe"),
 	zustand: () => true
 });
 
+// common\Utils\Settings.js
 const SettingsStoreSelectors = {};
 const persistMiddleware = config => (set, get, api) => config(args => (set(args), Data.save("settings", get().getRawState())), get, api);
-
 const SettingsStore = Object.assign(
 	zustand(
 		persistMiddleware((set, get) => {
 			const settingsObj = Object.create(null);
-
 			for (const [key, value] of Object.entries({
 					...config.settings,
 					...Data.load("settings")
@@ -91,7 +92,6 @@ const SettingsStore = Object.assign(
 		selectors: SettingsStoreSelectors
 	}
 );
-
 Object.defineProperty(SettingsStore, "state", {
 	writeable: false,
 	configurable: false,
@@ -99,9 +99,9 @@ Object.defineProperty(SettingsStore, "state", {
 		return this.getState();
 	}
 });
-
 const Settings = SettingsStore;
 
+// common\Utils\ControlKeys.js
 const ControlKeys = {
 	init() {
 		this.subs = ["keydown", "keyup"].map(event => {
@@ -124,10 +124,12 @@ const ControlKeys = {
 	}
 };
 
+// common\Utils\Logger.js
 Logger.patchError = patchId => {
 	console.error(`%c[${config.info.name}] %cCould not find module for %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
 };
 
+// src\LazyLoadChannels\ChannelsStateManager.js
 const ChannelsStateManager = {
 	init() {
 		this.channels = new Set(Data.load("channels") || []);
@@ -164,25 +166,130 @@ const ChannelsStateManager = {
 	}
 };
 
+// @Modules\Dispatcher
 const Dispatcher = getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: false });
 
+// @Modules\ChannelActions
 const ChannelActions = getModule(Filters.byKeys("actions", "fetchMessages"), { searchExports: true });
 
+// common\Utils.jsx
+function reRender(selector) {
+	const target = document.querySelector(selector)?.parentElement;
+	if (!target) return;
+	const instance = getOwnerInstance(target);
+	const unpatch = Patcher.instead(instance, "render", () => unpatch());
+	instance.forceUpdate(() => instance.forceUpdate());
+}
+const nop = () => {};
+
+// @Modules\FormSwitch
+const FormSwitch = getModule(Filters.byStrings("note", "tooltipNote"), { searchExports: true });
+
+// common\Components\Switch\index.jsx
+const Switch = FormSwitch ||
+	function SwitchComponentFallback(props) {
+		return (
+			React.createElement('div', { style: { color: "#fff" }, }, props.children, React.createElement('input', {
+				type: "checkbox",
+				checked: props.value,
+				onChange: e => props.onChange(e.target.checked),
+			}))
+		);
+	};
+
+// common\Components\SettingSwtich\index.jsx
+function SettingSwtich({ settingKey, note, onChange = nop, hideBorder = false, description, ...rest }) {
+	const [val, set] = Settings.useSetting(settingKey);
+	return (
+		React.createElement(Switch, {
+			...rest,
+			value: val,
+			note: note,
+			hideBorder: hideBorder,
+			onChange: e => {
+				set(e);
+				onChange(e);
+			},
+		}, description || settingKey)
+	);
+}
+
+// src\LazyLoadChannels\components\SettingComponent.jsx
+const SettingComponent = () => {
+	return [{
+			settingKey: "autoloadedChannelIndicator",
+			description: "Auto load indicator.",
+			note: "Whether or not to show an indicator for channels set to auto load"
+		},
+		{
+			settingKey: "lazyLoadDMs",
+			description: "Lazy load DMs.",
+			note: "Whether or not to consider DMs for lazy loading"
+		}
+	].map(SettingSwtich);
+};
+
+// @Patch\ChannelComponent
+const ChannelComponent = getModuleAndKey(Filters.byStrings("hasActiveThreads", "channelTypeOverride"), { searchExports: true }) || {};
+
+// src\LazyLoadChannels\patches\patchChannel.js
+const patchChannel = () => {
+	const { module, key } = ChannelComponent;
+	if (!module || !key) return Logger.patchError("Channel");
+	Patcher.after(module, key, (_, [{ channel }], returnValue) => {
+		if (!Settings.state.autoloadedChannelIndicator) return;
+		if (ChannelsStateManager.getChannelstate(channel.guild_id, channel.id)) returnValue.props.children.props.children[1].props.className += " autoload";
+	});
+};
+
+// @Modules\TreadComponent
+const TreadComponent = getModule(a => a?.type?.toString().includes("GUILD_CHANNEL_LIST"), { searchExports: false });
+
+// src\LazyLoadChannels\patches\patchThread.js
+const patchThread = () => {
+	if (TreadComponent)
+		Patcher.after(TreadComponent, "type", (_, [{ thread }], returnValue) => {
+			if (!Settings.state.autoloadedChannelIndicator) return;
+			if (ChannelsStateManager.getChannelstate(thread.guild_id, thread.id))
+				returnValue.props.className += " autoload";
+		});
+	else Logger.patchError("Tread");
+};
+
+// @Modules\CreateChannel
+const CreateChannel = getModule(m => m.createChannel, { searchExports: false });
+
+// src\LazyLoadChannels\patches\patchCreateChannel.js
+const patchCreateChannel = () => {
+	/**
+	 * Listening for channels created by current user
+	 **/
+	if (CreateChannel)
+		Patcher.after(CreateChannel, "createChannel", (_, [{ guildId }], ret) => {
+			if (!ChannelsStateManager.has("guilds", guildId))
+				ret.then(({ body }) => {
+					ChannelsStateManager.add("channels", body.id);
+				});
+		});
+	else Logger.patchError("CreateChannel");
+};
+
+// @Modules\ChannelContent
+const ChannelContent = getModule(m => m.type && m.type.toString?.().includes("messageGroupSpacing"), { searchExports: false });
+
+// common\Components\ErrorBoundary\index.jsx
 class ErrorBoundary extends React.Component {
 	state = { hasError: false, error: null, info: null };
-
 	componentDidCatch(error, info) {
 		this.setState({ error, info, hasError: true });
 		const errorMessage = `\n\t${error?.message || ""}${(info?.componentStack || "").split("\n").slice(0, 20).join("\n")}`;
 		console.error(`%c[${config?.info?.name || "Unknown Plugin"}] %cthrew an exception at %c[${this.props.id}]\n`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
 	}
-
 	renderErrorBoundary() {
 		return (
 			React.createElement('div', { style: { background: "#292c2c", padding: "20px", borderRadius: "10px" }, }, React.createElement('b', { style: { color: "#e0e1e5" }, }, "An error has occured while rendering ", React.createElement('span', { style: { color: "orange" }, }, this.props.id)))
 		);
 	}
-
 	renderFallback() {
 		if (React.isValidElement(this.props.fallback)) {
 			if (this.props.passMetaProps)
@@ -200,107 +307,13 @@ class ErrorBoundary extends React.Component {
 			})
 		);
 	}
-
 	render() {
 		if (!this.state.hasError) return this.props.children;
 		return this.props.fallback ? this.renderFallback() : this.renderErrorBoundary();
 	}
 }
 
-function reRender(selector) {
-	const target = document.querySelector(selector)?.parentElement;
-	if (!target) return;
-	const instance = getOwnerInstance(target);
-	const unpatch = Patcher.instead(instance, "render", () => unpatch());
-	instance.forceUpdate(() => instance.forceUpdate());
-}
-
-const nop = () => {};
-
-const FormSwitch = getModule(Filters.byStrings("note", "tooltipNote"), { searchExports: true });
-
-const Switch = FormSwitch ||
-	function SwitchComponentFallback(props) {
-		return (
-			React.createElement('div', { style: { color: "#fff" }, }, props.children, React.createElement('input', {
-				type: "checkbox",
-				checked: props.value,
-				onChange: e => props.onChange(e.target.checked),
-			}))
-		);
-	};
-
-function SettingSwtich({ settingKey, note, onChange = nop, hideBorder = false, description, ...rest }) {
-	const [val, set] = Settings.useSetting(settingKey);
-	return (
-		React.createElement(Switch, {
-			...rest,
-			value: val,
-			note: note,
-			hideBorder: hideBorder,
-			onChange: e => {
-				set(e);
-				onChange(e);
-			},
-		}, description || settingKey)
-	);
-}
-
-const SettingComponent = () => {
-	return [{
-			settingKey: "autoloadedChannelIndicator",
-			description: "Auto load indicator.",
-			note: "Whether or not to show an indicator for channels set to auto load"
-		},
-		{
-			settingKey: "lazyLoadDMs",
-			description: "Lazy load DMs.",
-			note: "Whether or not to consider DMs for lazy loading"
-		}
-	].map(SettingSwtich);
-};
-
-const ChannelComponent = getModuleAndKey(Filters.byStrings("hasActiveThreads", "channelTypeOverride"), { searchExports: true }) || {};
-
-const patchChannel = () => {
-	const { module, key } = ChannelComponent;
-	if (!module || !key) return Logger.patchError("Channel");
-	Patcher.after(module, key, (_, [{ channel }], returnValue) => {
-		if (!Settings.state.autoloadedChannelIndicator) return;
-		if (ChannelsStateManager.getChannelstate(channel.guild_id, channel.id)) returnValue.props.children.props.children[1].props.className += " autoload";
-	});
-};
-
-const TreadComponent = getModule(a => a?.type?.toString().includes("GUILD_CHANNEL_LIST"), { searchExports: false });
-
-const patchThread = () => {
-	if (TreadComponent)
-		Patcher.after(TreadComponent, "type", (_, [{ thread }], returnValue) => {
-			if (!Settings.state.autoloadedChannelIndicator) return;
-			if (ChannelsStateManager.getChannelstate(thread.guild_id, thread.id))
-				returnValue.props.className += " autoload";
-		});
-	else Logger.patchError("Tread");
-};
-
-const CreateChannel = getModule(m => m.createChannel, { searchExports: false });
-
-const patchCreateChannel = () => {
-	/**
-	 * Listening for channels created by current user
-	 **/
-	if (CreateChannel)
-		Patcher.after(CreateChannel, "createChannel", (_, [{ guildId }], ret) => {
-			if (!ChannelsStateManager.has("guilds", guildId))
-				ret.then(({ body }) => {
-					ChannelsStateManager.add("channels", body.id);
-				});
-		});
-	else Logger.patchError("CreateChannel");
-};
-
-const ChannelContent = getModule(m => m.type && m.type.toString?.().includes("messageGroupSpacing"), { searchExports: false });
-
+// src\LazyLoadChannels\Constants.js
 const EVENTS = [
 	"THREAD_CREATE_LOCAL",
 	"THREAD_LIST_SYNC",
@@ -309,24 +322,23 @@ const EVENTS = [
 	"CHANNEL_PRELOAD",
 	"GUILD_CREATE"
 ];
-
 const COMPONENT_ID = "lazyLoader";
-
 const REGEX = {
 	image: /(jpg|jpeg|png|bmp|tiff|psd|raw|cr2|nef|orf|sr2)/i,
 	video: /(mp4|avi|wmv|mov|flv|mkv|webm|vob|ogv|m4v|3gp|3g2|mpeg|mpg|m2v|m4v|svi|3gpp|3gpp2|mxf|roq|nsv|flv|f4v|f4p|f4a|f4b)/i
 };
 
+// src\LazyLoadChannels\components\ErrorFallbackComponent.jsx
 const ErrorFallbackComponent = props => {
 	return (
 		React.createElement('div', { id: COMPONENT_ID, }, React.createElement('div', { className: "logo", }), React.createElement('div', { className: "title", }, "An error has occured while rendering ", React.createElement('span', { style: { fontWeight: "bold", color: "orange" }, }, props.id)), React.createElement('div', { className: "description", }, "Open console for more information"))
 	);
 };
 
+// common\Utils\Toast.js
 function showToast(content, type) {
 	UI.showToast(`[${config.info.name}] ${content}`, { timeout: 5000, type });
 }
-
 const Toast = {
 	success(content) { showToast(content, "success"); },
 	info(content) { showToast(content, "info"); },
@@ -334,15 +346,19 @@ const Toast = {
 	error(content) { showToast(content, "error"); }
 };
 
+// @Modules\MessageActions
 const MessageActions = getModule(Filters.byKeys('jumpToMessage', '_sendMessage'), { searchExports: false });
 
+// @Modules\Button
 const Button$1 = getModule(a => a && a.Link && a.Colors, { searchExports: true });
 
+// common\Components\Button\index.jsx
 const Button = Button$1 ||
 	function ButtonComponentFallback(props) {
 		return React.createElement('button', { ...props, });
 	};
 
+// src\LazyLoadChannels\components\LazyLoaderComponent.jsx
 function loadChannelMessages(channel) {
 	/**
 	 * This method of fetching messages makes API request without checking the cache
@@ -352,7 +368,6 @@ function loadChannelMessages(channel) {
 	 */
 	return MessageActions.fetchMessages({ channelId: channel.id });
 }
-
 const filters = {
 	attachments: type => a => a.content_type?.includes("type") || REGEX[type].test(a.filename),
 	embeds: type => e => e.type === type
@@ -370,12 +385,10 @@ function getChannelStats(messages) {
 		}, { messages: messages.length, reactions: 0, embeds: 0, links: 0, images: 0, videos: 0 }
 	);
 }
-
 const LazyLoaderComponent = ({ channel, loadChannel, messages }) => {
 	const [blink, setBlink] = React.useState("");
 	const [checked, setChecked] = React.useState(false);
 	const channelStats = getChannelStats(messages);
-
 	const loadMessagesHandler = () => {
 		if (channelStats.messages) Toast.warning("Messages are already Loaded!!");
 		else
@@ -384,12 +397,10 @@ const LazyLoaderComponent = ({ channel, loadChannel, messages }) => {
 				startBlinking();
 			});
 	};
-
 	const startBlinking = () => {
 		setBlink("blink");
 		setTimeout(() => setBlink(""), 1200);
 	};
-
 	const loadChannelHandler = () => {
 		if (checked) ChannelsStateManager.add("channels", channel.id);
 		loadChannel(channel);
@@ -400,7 +411,6 @@ const LazyLoaderComponent = ({ channel, loadChannel, messages }) => {
 		 */
 		reRender(`#${COMPONENT_ID}`);
 	};
-
 	/**
 	 * visibility set to hidden by default because when the plugin unloads
 	 * the css is removed while the component is still on screen,
@@ -411,26 +421,20 @@ const LazyLoaderComponent = ({ channel, loadChannel, messages }) => {
 			id: COMPONENT_ID,
 			style: { "visibility": "hidden", "height": "100%" },
 		}, React.createElement('div', { className: "logo", }), React.createElement(Channel, { channel: channel, }), React.createElement('div', { className: "title", }, "Lazy loading is Enabled!"), React.createElement('div', { className: "description", }, "This channel is lazy loaded, If you want to auto load this channel in the future, make sure you enable ", React.createElement('b', null, "Auto load"), " down below before you load it."), React.createElement('div', { className: "controls", }, React.createElement('div', { className: "buttons-container", }, React.createElement(Button, {
-				onClick: loadChannelHandler,
-				color: Button?.Colors?.GREEN,
-				size: Button?.Sizes?.LARGE,
-			}, "Load Channel"
-
-		), React.createElement(Button, {
-				onClick: loadMessagesHandler,
-				color: Button?.Colors?.PRIMARY,
-				look: Button?.Looks?.OUTLINED,
-				size: Button?.Sizes?.LARGE,
-			}, "Load Messages"
-
-		)), React.createElement(Switch, {
-				className: `${checked} switch`,
-				hideBorder: "true",
-				value: checked,
-				onChange: setChecked,
-			}, "Auto load"
-
-		)), !channelStats.messages || (
+			onClick: loadChannelHandler,
+			color: Button?.Colors?.GREEN,
+			size: Button?.Sizes?.LARGE,
+		}, "Load Channel"), React.createElement(Button, {
+			onClick: loadMessagesHandler,
+			color: Button?.Colors?.PRIMARY,
+			look: Button?.Looks?.OUTLINED,
+			size: Button?.Sizes?.LARGE,
+		}, "Load Messages")), React.createElement(Switch, {
+			className: `${checked} switch`,
+			hideBorder: "true",
+			value: checked,
+			onChange: setChecked,
+		}, "Auto load")), !channelStats.messages || (
 			React.createElement('div', { className: `stats ${blink}`, }, Object.entries(channelStats).map(([label, stat], index) => (
 				React.createElement('div', { key: `${label}-${index}`, }, label, ": ", stat)
 			)))
@@ -444,6 +448,8 @@ function Channel({ channel }) {
 		React.createElement('div', { className: "DM", }, React.createElement('div', { className: "DMName", }, channel.rawRecipients.map(a => `@${a.username}`).join(", ")))
 	) : (
 		React.createElement('div', { className: "channel", }, React.createElement('div', { className: "channelIcon", }, React.createElement('svg', {
+			role: "img",
+			'aria-label': "channel-icon",
 			width: "24",
 			height: "24",
 			viewBox: "0 0 24 24",
@@ -456,6 +462,7 @@ function Channel({ channel }) {
 	);
 }
 
+// src\LazyLoadChannels\patches\patchChannelContent.jsx
 const patchChannelContent = context => {
 	/**
 	 * main patch for the plugin.
@@ -480,10 +487,12 @@ const patchChannelContent = context => {
 	else Logger.patchError("ChannelContent");
 };
 
+// @Enums\ChannelTypeEnum
 const ChannelTypeEnum = getModule(Filters.byKeys("GUILD_TEXT", "DM"), { searchExports: true }) || {
 	"GUILD_CATEGORY": 4
 };
 
+// src\LazyLoadChannels\patches\patchContextMenu.js
 const patchContextMenu = () => {
 	return [
 		ContextMenu.patch("user-context", (retVal, { channel, targetIsUser }) => {
@@ -522,13 +531,13 @@ const patchContextMenu = () => {
 	]
 };
 
+// src\LazyLoadChannels\index.jsx
 class LazyLoadChannels {
 	constructor() {
 		ChannelsStateManager.init();
 		this.autoLoad = false;
 		this.loadChannel = this.loadChannel.bind(this);
 	}
-
 	loadChannel(channel, messageId) {
 		/**
 		 * This is what discord uses when a channel is selected
@@ -542,14 +551,12 @@ class LazyLoadChannels {
 		});
 		this.autoLoad = true;
 	}
-
 	threadCreateHandler({ channelId }) {
 		/**
 		 * Listening for threads created by current user
 		 **/
 		ChannelsStateManager.add("channels", channelId);
 	}
-
 	guildCreateHandler({ guild }) {
 		/**
 		 * No need to lazy load channels of newly created guild
@@ -563,10 +570,8 @@ class LazyLoadChannels {
 		if (!guild || !guild.id || !guild.channels || !Array.isArray(guild.channels)) return;
 		const guildCreateDate = new Date(+guild.id / 4194304 + 1420070400000).toLocaleDateString();
 		const nowDate = new Date(Date.now()).toLocaleDateString();
-
 		if (guildCreateDate === nowDate) ChannelsStateManager.add("guilds", guild.id);
 	}
-
 	channelSelectHandler({ channelId, guildId, messageId }) {
 		/** Ignore if
 		 * messageId !== undefined means it's a jump
@@ -576,11 +581,9 @@ class LazyLoadChannels {
 		if (ControlKeys.ctrlKey || messageId || (!guildId && !Settings.state.lazyLoadDMs) || ChannelsStateManager.getChannelstate(guildId, channelId)) this.loadChannel({ id: channelId, guild_id: guildId }, messageId);
 		else this.autoLoad = false;
 	}
-
 	guildDeleteHandler({ guild }) {
 		ChannelsStateManager.remove("guilds", guild.id);
 	}
-
 	setupHandlers() {
 		this.handlers = [
 			["THREAD_CREATE_LOCAL", this.threadCreateHandler],
@@ -593,11 +596,9 @@ class LazyLoadChannels {
 			return () => Dispatcher.unsubscribe(event, boundHandler);
 		});
 	}
-
 	start() {
 		try {
 			ControlKeys.init();
-
 			DOM.addStyle(css);
 			this.setupHandlers();
 			patchChannel();
@@ -610,7 +611,6 @@ class LazyLoadChannels {
 			Logger.error(e);
 		}
 	}
-
 	stop() {
 		ControlKeys.clean();
 		DOM.removeStyle();
@@ -621,7 +621,6 @@ class LazyLoadChannels {
 		this.handlers = null;
 		EVENTS.forEach(event => Dispatcher.subscribe(event, ChannelActions.actions[event]));
 	}
-
 	getSettingsPanel() {
 		return React.createElement(SettingComponent, null);
 	}
@@ -779,7 +778,4 @@ const css = `#lazyLoader {
 .autoload > div > div,
 .autoload a{
 	border-left:4px solid #2e7d46;
-}
-.transparentBackground{
-	background: transparent;
 }`;

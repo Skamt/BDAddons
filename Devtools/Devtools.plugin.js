@@ -20,30 +20,29 @@ const config = {
 	}
 }
 
+// common\Api.js
 const Api = new BdApi(config.info.name);
 const React = Api.React;
 const ReactDOM = Api.ReactDOM;
 const Patcher = Api.Patcher;
 const Logger = Api.Logger;
-
 const Webpack = Api.Webpack;
-const getOwnerInstance = Api.ReactUtils.getOwnerInstance;
+/* annoying */
+const getOwnerInstance = Api.ReactUtils.getOwnerInstance.bind(Api.ReactUtils);
 
+// common\Components\ErrorBoundary\index.jsx
 class ErrorBoundary extends React.Component {
 	state = { hasError: false, error: null, info: null };
-
 	componentDidCatch(error, info) {
 		this.setState({ error, info, hasError: true });
 		const errorMessage = `\n\t${error?.message || ""}${(info?.componentStack || "").split("\n").slice(0, 20).join("\n")}`;
 		console.error(`%c[${config?.info?.name || "Unknown Plugin"}] %cthrew an exception at %c[${this.props.id}]\n`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
 	}
-
 	renderErrorBoundary() {
 		return (
 			React.createElement('div', { style: { background: "#292c2c", padding: "20px", borderRadius: "10px" }, }, React.createElement('b', { style: { color: "#e0e1e5" }, }, "An error has occured while rendering ", React.createElement('span', { style: { color: "orange" }, }, this.props.id)))
 		);
 	}
-
 	renderFallback() {
 		if (React.isValidElement(this.props.fallback)) {
 			if (this.props.passMetaProps)
@@ -61,13 +60,13 @@ class ErrorBoundary extends React.Component {
 			})
 		);
 	}
-
 	render() {
 		if (!this.state.hasError) return this.props.children;
 		return this.props.fallback ? this.renderFallback() : this.renderErrorBoundary();
 	}
 }
 
+// common\Webpack.js
 const getModule$1 = Webpack.getModule;
 const Filters = Webpack.Filters;
 
@@ -81,70 +80,22 @@ function getModuleAndKey(filter, options) {
 	return { module, key };
 }
 
+// @Modules\Dispatcher
 const Dispatcher = getModule$1(Filters.byKeys("dispatch", "_dispatch"), { searchExports: false });
 
+// @Modules\TheBigBoyBundle
 const TheBigBoyBundle = getModule$1(Filters.byKeys("openModal", "FormSwitch", "Anchor"), { searchExports: false });
 
-const RenderLinkComponent = getModule$1(m => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false });
-
-const ImageModal = getModule$1(Filters.byStrings("renderLinkComponent", "zoomThumbnailPlaceholder"), { searchExports: true });
-
-const ModalRoot = getModule$1(Filters.byStrings("rootWithShadow", "MODAL"), { searchExports: true });
-
-const ModalSize = getModule$1(Filters.byKeys("DYNAMIC", "SMALL", "LARGE"), { searchExports: true });
-
-const _openModal = getModule$1(Filters.byStrings("onCloseCallback", "onCloseRequest", "modalKey", "backdropStyle"), { searchExports: true });
-
+// common\Utils.jsx
 function shallow(objA, objB) {
 	if (Object.is(objA, objB)) return true;
-
 	if (typeof objA !== "object" || objA === null || typeof objB !== "object" || objB === null) return false;
-
 	var keysA = Object.keys(objA);
-
 	if (keysA.length !== Object.keys(objB).length) return false;
-
 	for (var i = 0; i < keysA.length; i++)
 		if (!Object.prototype.hasOwnProperty.call(objB, keysA[i]) || !Object.is(objA[keysA[i]], objB[keysA[i]])) return false;
-
 	return true;
 }
-
-const openModal = (children, tag, modalClassName = "") => {
-	const id = `${tag ? `${tag}-` : ""}modal`;
-
-	_openModal(props => {
-		return (
-			React.createElement(ErrorBoundary, {
-				id: id,
-				plugin: config.info.name,
-			}, React.createElement(ModalRoot, {
-				...props,
-				className: `${modalClassName} transparentBackground`,
-				onClick: props.onClose,
-				size: ModalSize.DYNAMIC,
-			}, children))
-		);
-	});
-};
-
-const getImageModalComponent = (url, rest = {}) => {
-	return (
-		React.createElement('div', { className: "imageModalwrapper", }, React.createElement(ImageModal, {
-			media: {
-				...rest,
-				type: "IMAGE",
-				url: url,
-				proxyUrl: url
-			},
-		}), React.createElement('div', { className: "imageModalOptions", }, React.createElement(RenderLinkComponent, {
-				className: "downloadLink",
-				href: url,
-			}, "Open in Browser"
-
-		)))
-	);
-};
 const promiseHandler = promise => promise.then(data => [undefined, data]).catch(err => [err]);
 
 function copy(data) {
@@ -154,19 +105,16 @@ function copy(data) {
 function getNestedProp(obj, path) {
 	return path.split(".").reduce((ob, prop) => ob?.[prop], obj);
 }
-
 class BrokenAddon {
 	stop() {}
 	start() {
 		BdApi.alert(config.info.name, "Plugin is broken, Notify the dev.");
 	}
 }
-
 class Disposable {
 	constructor() {
 		this.patches = [];
 	}
-
 	Dispose() {
 		this.patches?.forEach(p => p?.());
 		this.patches = [];
@@ -180,7 +128,6 @@ function reRender(selector) {
 	const unpatch = Patcher.instead(instance, "render", () => unpatch());
 	instance.forceUpdate(() => instance.forceUpdate());
 }
-
 const nop = () => {};
 
 function sleep(delay) {
@@ -189,20 +136,16 @@ function sleep(delay) {
 
 function prettyfiyBytes(bytes, si = false, dp = 1) {
 	const thresh = si ? 1000 : 1024;
-
 	if (Math.abs(bytes) < thresh) {
 		return `${bytes} B`;
 	}
-
 	const units = si ? ["kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"] : ["KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"];
 	let u = -1;
 	const r = 10 ** dp;
-
 	do {
 		bytes /= thresh;
 		++u;
 	} while (Math.round(Math.abs(bytes) * r) / r >= thresh && u < units.length - 1);
-
 	return `${bytes.toFixed(dp)} ${units[u]}`;
 }
 
@@ -243,9 +186,7 @@ function getImageDimensions(url) {
 function hook(hook, ...args) {
 	let v;
 	const b = document.createElement("div");
-
 	ReactDOM.render(
-
 		React.createElement(() => ((v = hook(...args)), null)),
 		b
 	);
@@ -261,11 +202,9 @@ const Utils = /*#__PURE__*/ Object.freeze({
 	copy,
 	genUrlParamsFromArray,
 	getImageDimensions,
-	getImageModalComponent,
 	getNestedProp,
 	hook,
 	nop,
-	openModal,
 	parseSnowflake,
 	prettyfiyBytes,
 	promiseHandler,
@@ -274,15 +213,18 @@ const Utils = /*#__PURE__*/ Object.freeze({
 	sleep
 });
 
+// common\Utils\Logger.js
 Logger.patchError = patchId => {
 	console.error(`%c[${config.info.name}] %cCould not find module for %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
 };
 
+// @Enums\DiscordPermissionsEnum
 const DiscordPermissionsEnum = getModule$1(Filters.byKeys("ADD_REACTIONS"), { searchExports: true }) || {
 	"EMBED_LINKS": "16384n",
 	"USE_EXTERNAL_EMOJIS": "262144n"
 };
 
+// src\Devtools\webpackRequire.js
 const chunkName = Object.keys(window).find(key => key.startsWith("webpackChunk"));
 const chunk = window[chunkName];
 let webpackreq;
@@ -293,26 +235,23 @@ chunk.push([
 chunk.pop();
 const webpackRequire = webpackreq;
 
+// src\Devtools\Sources.js
 class Source {
 	constructor(id, loader) {
 		this.id = id;
 		this.loader = loader;
 	}
-
 	get module() {
 		return Modules.moduleById(this.id);
 	}
-
 	get code() {
 		return this.loader.toString();
 	}
-
 	get saveSourceToDesktop() {
 		try {
 			const fs = require("fs");
 			const path = `${process.env.USERPROFILE}\\Desktop\\${this.id}.js`;
 			fs.writeFileSync(path, this.code, "utf8");
-
 			return `Saved to: ${path}`;
 		} catch (e) {
 			return e;
@@ -327,13 +266,11 @@ function sourceById(id) {
 function* sourceLookup(...args) {
 	const strArr = args;
 	const invert = typeof args[args.length - 1] === "boolean" ? args.pop() : false;
-
 	for (const [id, source] of Object.entries(webpackRequire.m)) {
 		const sourceCode = source.toString();
 		const result = strArr.every(str => sourceCode.includes(str));
 		if (invert ^ result) yield new Source(id, source);
 	}
-
 }
 
 function getSources(...args) {
@@ -346,7 +283,6 @@ function getSource(...args) {
 	b.return();
 	return res;
 }
-
 const Sources = {
 	getWebpackSources() {
 		return webpackRequire.m;
@@ -356,6 +292,7 @@ const Sources = {
 	getSources
 };
 
+// src\Devtools\Modules.js
 const defineModuleGetter = (obj, id) =>
 	Object.defineProperty(obj, id, {
 		enumerable: true,
@@ -363,7 +300,6 @@ const defineModuleGetter = (obj, id) =>
 			return Modules.moduleById(id);
 		}
 	});
-
 class Module {
 	constructor(id, module) {
 		module = module || webpackRequire(id);
@@ -373,25 +309,20 @@ class Module {
 		const source = Sources.sourceById(id);
 		this.loader = source.loader;
 	}
-
 	get code() {
 		return this.loader.toString();
 	}
-
 	get imports() {
 		return Modules.modulesImportedInModuleById(this.id).reduce((acc, id) => defineModuleGetter(acc, id), {});
 	}
-
 	get modulesUsingThisModule() {
 		return Modules.modulesImportingModuleById(this.id).reduce((acc, id) => defineModuleGetter(acc, id), {});
 	}
-
 	get saveSourceToDesktop() {
 		try {
 			const fs = require("fs");
 			const path = `${process.env.USERPROFILE}\\Desktop\\${this.id}.js`;
 			fs.writeFileSync(path, this.code, "utf8");
-
 			return `Saved to: ${path}`;
 		} catch (e) {
 			return e;
@@ -411,9 +342,7 @@ class Module {
 					const code = module.code;
 					fs.writeFileSync(`${path}\\modulesUsingThisModule\\${id}.js`, code, "utf8");
 				}
-			}
-
-			{
+			} {
 				const modules = Object.entries(this.imports);
 				for (let i = modules.length - 1; i >= 0; i--) {
 					const [id, module] = modules[i];
@@ -440,11 +369,9 @@ function modulesImportedInModuleById(id) {
 	const { code } = Sources.sourceById(id);
 	const args = code.match(/\((.+?)\)/i)?.[1];
 	if (args?.length > 5 || !args) return [];
-
 	const req = args.split(",")[2];
 	const re = new RegExp(`(?:\\s|\\(|,|=)${req}\\("?(\\d+)"?\\)`, "g");
 	const imports = Array.from(code.matchAll(re));
-
 	return imports.map(id => id[1]);
 }
 
@@ -457,7 +384,7 @@ function noExports(filter, module, exports) {
 }
 
 function doExports(filter, module, exports) {
-	if (typeof exports !== "object") return;
+	if (typeof exports !== "object" && typeof exports !== "function") return;
 	for (const entryKey in exports) {
 		let target = null;
 		try {
@@ -465,29 +392,30 @@ function doExports(filter, module, exports) {
 		} catch {
 			continue;
 		}
-		if (!target) continue;
+		if (sanitizeExports(target)) continue;
 		if (filter(target, module, module.id)) return { target, entryKey, module: new Module(module.id, module) };
 	}
 }
 
 function sanitizeExports(exports) {
-	if (!exports) return;
-	const exportsExceptions = [exports => typeof exports === "boolean", exports => exports === window, exports => exports.TypedArray, exports => exports === document.documentElement, exports => exports[Symbol.toStringTag] === "DOMTokenList"];
-	for (let index = exportsExceptions.length - 1; index >= 0; index--) {
-		if (exportsExceptions[index](exports)) return true;
-	}
+	if (!exports) return true;
+	if (exports === Symbol) return true;
+	if (exports.TypedArray) return true;
+	if (exports === window) return true;
+	if (exports instanceof Window) return true;
+	if (exports === document.documentElement) return true;
+	if (exports[Symbol.toStringTag] === "DOMTokenList") return true;
+	return false;
 }
 
 function* moduleLookup(filter, options = {}) {
 	const { searchExports = false } = options;
 	const gauntlet = searchExports ? doExports : noExports;
-
-	const modules = Object.values(webpackRequire.c);
-	for (let index = modules.length - 1; index >= 0; index--) {
-		const module = modules[index];
+	const keys = Object.keys(webpackRequire.c);
+	for (let index = keys.length - 1; index >= 0; index--) {
+		const module = webpackRequire.c[keys[index]];
 		const { exports } = module;
 		if (sanitizeExports(exports)) continue;
-
 		const match = gauntlet(filter, module, exports);
 		if (match) yield match;
 	}
@@ -503,7 +431,6 @@ function getModule(filter, options) {
 	b.return();
 	return res;
 }
-
 const Modules = {
 	moduleById,
 	moduleLookup,
@@ -514,8 +441,8 @@ const Modules = {
 	getModule
 };
 
+// src\Devtools\Misc.js
 const Misc = {
-
 	getAllAssets() {
 		return Modules.getModules(a => typeof a.exports === "string" && a.exports.match(/\/assets\/.+/)).map(a => a.exports);
 	},
@@ -549,8 +476,10 @@ const Misc = {
 	})()
 };
 
+// @Modules\FormSwitch
 const FormSwitch = getModule$1(Filters.byStrings("note", "tooltipNote"), { searchExports: true });
 
+// common\Components\Switch\index.jsx
 const Switch = FormSwitch ||
 	function SwitchComponentFallback(props) {
 		return (
@@ -562,32 +491,29 @@ const Switch = FormSwitch ||
 		);
 	};
 
+// src\Devtools\SettingComponent.jsx
 function SettingComponent({ settings, enableExp }) {
 	const [enabled, setEnabled] = React.useState(settings.expEnabled);
-
 	return (
 		React.createElement(Switch, {
-				value: enabled,
-				hideBorder: false,
-				onChange: e => {
-					settings.expEnabled = e;
-					setEnabled(e);
-					enableExp(e);
-				},
-			}, "enableExperiments"
-
-		)
+			value: enabled,
+			hideBorder: false,
+			onChange: e => {
+				settings.expEnabled = e;
+				setEnabled(e);
+				enableExp(e);
+			},
+		}, "enableExperiments")
 	);
 }
 
+// src\Devtools\Stores.js
 class Store {
 	constructor(module) {
 		this.module = module;
 		this.name = this.store.getName();
-
 		this.methods = {};
 		const _this = this;
-
 		Object.getOwnPropertyNames(this.store.__proto__).forEach(key => {
 			if (key === "constructor") return;
 			const func = this.store[key];
@@ -601,31 +527,24 @@ class Store {
 			this.methods[key] = func;
 		});
 	}
-
 	get store() {
-
 		for (const key of ["Z", "ZP", "default"])
 			if (key in this.module.exports) return this.module.exports[key];
 	}
-
 	get events() {
 		return Stores.getStoreListeners(this.name);
 	}
 }
-
 const Zustand = Sources.getSource("/ServerSideRendering|^Deno\\//");
-
 const Stores = {
 	getStore(storeName) {
-
-		const storeFilter = exp => exp && ["Z", "ZP", "default"].some(k => exp[k]?._dispatchToken && exp[k]?.getName() === storeName);
+		const storeFilter = exp => exp && ["Z", "ZP", "default"].some(k => exp[k]?._dispatchToken && exp[k]?._changeCallbacks && exp[k]?.getName() === storeName);
 		const module = Modules.getModule(storeFilter);
 		if (!module) return undefined;
 		return new Store(module);
 	},
 	getStoreFuzzy(str = "") {
-
-		const storeFilter = exp => exp && ["Z", "ZP", "default"].some(k => exp[k]?._dispatchToken && exp[k]?.getName().toLowerCase().includes(str));
+		const storeFilter = exp => exp && ["Z", "ZP", "default"].some(k => exp[k]?._dispatchToken && exp[k]?._changeCallbacks && exp[k]?.getName()?.toLowerCase?.().includes(str));
 		return Modules.getModules(storeFilter).map(module => new Store(module));
 	},
 	getStoreListeners(storeName) {
@@ -651,6 +570,7 @@ const Stores = {
 	}
 };
 
+// src\Devtools\index.js
 const d = (() => {
 	const cache = new WeakMap();
 	const emptyDoc = document.createDocumentFragment();
@@ -666,9 +586,7 @@ const d = (() => {
 
 	function getElement(target) {
 		if (typeof target === "string" && isValidCSSSelector(target)) return document.querySelector(target);
-
 		if (target instanceof HTMLElement) return target;
-
 		return undefined;
 	}
 
@@ -679,7 +597,6 @@ const d = (() => {
 			const { rules } = stylesheet;
 			const ID = stylesheet.href || stylesheet.ownerNode.id || i;
 			output[ID] = {};
-
 			el.classList.forEach(c => {
 				output[ID][c] = [];
 				for (let j = 0; j < rules.length; j++) {
@@ -695,11 +612,8 @@ const d = (() => {
 
 	function getCssRulesForElement(target, noCache) {
 		const el = getElement(target);
-
 		if (!el) return;
-
 		if (!noCache && cache.has(el)) return cache.get(el);
-
 		const data = getCssRules(el);
 		cache.set(el, data);
 		return data;
@@ -718,7 +632,6 @@ const d = (() => {
 		}
 		return output;
 	}
-
 	return {
 		getCssRulesForElement,
 		scrollerStylesForElement
@@ -728,7 +641,6 @@ const d = (() => {
 function init() {
 	["Filters", "getModule", "getModules"].forEach(a => (window[a] = BdApi.Webpack[a]));
 	window.getModuleAndKey = getModuleAndKey;
-
 	window.s = Object.assign(id => Modules.moduleById(id), {
 		Utils: {
 			ErrorBoundary,
@@ -747,11 +659,9 @@ function init() {
 		}
 	});
 }
-
 const settings = {
 	expEnabled: false
 };
-
 const DeveloperExperimentStore = Stores.getStore("DeveloperExperimentStore");
 const ExperimentStore = Stores.getStore("ExperimentStore");
 const UserStore = Stores.getStore("UserStore").store;
@@ -765,7 +675,6 @@ function updateStores() {
 		ExperimentStore.events.storeDidChange();
 	} catch {}
 }
-
 const enableExp = (() => {
 	let unpatch = () => {};
 	return function enableExp(b) {
@@ -778,11 +687,9 @@ const enableExp = (() => {
 				ret.flags = 1;
 			});
 		}
-
 		updateStores();
 	};
 })();
-
 class Devtools {
 	start() {
 		try {
@@ -791,12 +698,10 @@ class Devtools {
 			Logger.error(e);
 		}
 	}
-
 	stop() {
 		"s" in window && delete window.s;
 		enableExp(false);
 	}
-
 	getSettingsPanel() {
 		return (
 			React.createElement(SettingComponent, {
@@ -809,6 +714,4 @@ class Devtools {
 
 module.exports = Devtools;
 
-const css = `.transparentBackground{
-	background: transparent;
-}`;
+const css = ``;

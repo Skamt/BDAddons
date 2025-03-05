@@ -20,40 +20,35 @@ const config = {
 	}
 }
 
+// common\Api.js
 const Api = new BdApi(config.info.name);
-
 const UI = Api.UI;
 const DOM = Api.DOM;
 const React = Api.React;
 const Patcher = Api.Patcher;
+const Logger = Api.Logger;
+const Webpack = Api.Webpack;
 
-const getModule = Api.Webpack.getModule;
+// common\Webpack.js
+const getModule = Webpack.getModule;
 
+// @Modules\RenderLinkComponent
 const RenderLinkComponent = getModule(m => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false });
 
+// common\Utils\Logger.js
+Logger.patchError = patchId => {
+	console.error(`%c[${config.info.name}] %cCould not find module for %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
+};
+
+// common\Utils.jsx
 function copy(data) {
 	DiscordNative.clipboard.copy(data);
 }
 
-const Logger = {
-	error(...args) {
-		this.p(console.error, ...args);
-	},
-	patch(patchId) {
-		console.error(`%c[${config.info.name}] %c Error at %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
-	},
-	log(...args) {
-		this.p(console.log, ...args);
-	},
-	p(target, ...args) {
-		target(`%c[${config.info.name}]`, "color: #3a71c1;font-weight: bold;", ...args);
-	}
-};
-
+// common\Utils\Toast.js
 function showToast(content, type) {
 	UI.showToast(`[${config.info.name}] ${content}`, { timeout: 5000, type });
 }
-
 const Toast = {
 	success(content) { showToast(content, "success"); },
 	info(content) { showToast(content, "info"); },
@@ -61,26 +56,25 @@ const Toast = {
 	error(content) { showToast(content, "error"); }
 };
 
+// src\CopyImageLink\components\CopyButtonComponent.jsx
 const CopyButtonComponent = ({ href }) => {
 	return (
 		React.createElement(React.Fragment, null, React.createElement('span', { className: "copyBtnSpan", }, "|"), React.createElement('a', {
-				className: "copyBtn",
-				onClick: () => {
-					copy(href);
-					Toast.success("Link Copied!");
-				},
-			}, "Copy link"
-
-		))
+			className: "copyBtn",
+			onClick: () => {
+				copy(href);
+				Toast.success("Link Copied!");
+			},
+		}, "Copy link"))
 	);
 };
 
+// src\CopyImageLink\index.jsx
 class CopyImageLink {
 	start() {
 		try {
-
 			DOM.addStyle(css);
-			if (!RenderLinkComponent) return Logger.patch("RenderLinkComponent");
+			if (!RenderLinkComponent) return Logger.patchError("RenderLinkComponent");
 			Patcher.after(RenderLinkComponent, "type", (_, [{ className, href }], returnValue) => {
 				if (!returnValue || !className?.startsWith("downloadLink") || !href) return;
 				return [returnValue, React.createElement(CopyButtonComponent, { href: href, })];
@@ -89,7 +83,6 @@ class CopyImageLink {
 			Logger.error(e);
 		}
 	}
-
 	stop() {
 		DOM.removeStyle();
 		Patcher.unpatchAll();

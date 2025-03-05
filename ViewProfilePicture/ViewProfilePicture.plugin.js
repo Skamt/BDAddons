@@ -24,126 +24,28 @@ const config = {
 	}
 }
 
+// common\Api.js
 const Api = new BdApi(config.info.name);
-
 const UI = Api.UI;
 const DOM = Api.DOM;
 const Data = Api.Data;
 const React = Api.React;
 const Patcher = Api.Patcher;
 const Logger = Api.Logger;
-
 const Webpack = Api.Webpack;
 const findInTree = Api.Utils.findInTree;
 
+// common\Utils\Logger.js
 Logger.patchError = patchId => {
 	console.error(`%c[${config.info.name}] %cCould not find module for %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
 };
 
-class ErrorBoundary extends React.Component {
-	state = { hasError: false, error: null, info: null };
-
-	componentDidCatch(error, info) {
-		this.setState({ error, info, hasError: true });
-		const errorMessage = `\n\t${error?.message || ""}${(info?.componentStack || "").split("\n").slice(0, 20).join("\n")}`;
-		console.error(`%c[${config?.info?.name || "Unknown Plugin"}] %cthrew an exception at %c[${this.props.id}]\n`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
-	}
-
-	renderErrorBoundary() {
-		return (
-			React.createElement('div', { style: { background: "#292c2c", padding: "20px", borderRadius: "10px" }, }, React.createElement('b', { style: { color: "#e0e1e5" }, }, "An error has occured while rendering ", React.createElement('span', { style: { color: "orange" }, }, this.props.id)))
-		);
-	}
-
-	renderFallback() {
-		if (React.isValidElement(this.props.fallback)) {
-			if (this.props.passMetaProps)
-				this.props.fallback.props = {
-					id: this.props.id,
-					plugin: config?.info?.name || "Unknown Plugin",
-					...this.props.fallback.props
-				};
-			return this.props.fallback;
-		}
-		return (
-			React.createElement(this.props.fallback, {
-				id: this.props.id,
-				plugin: config?.info?.name || "Unknown Plugin",
-			})
-		);
-	}
-
-	render() {
-		if (!this.state.hasError) return this.props.children;
-		return this.props.fallback ? this.renderFallback() : this.renderErrorBoundary();
-	}
-}
-
-const getModule = Webpack.getModule;
-const Filters = Webpack.Filters;
-const getMangled = Webpack.getMangled;
-
-function getModuleAndKey(filter, options) {
-	let module;
-	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
-	module = module?.exports;
-	if (!module) return {};
-	const key = Object.keys(module).find(k => module[k] === target);
-	if (!key) return {};
-	return { module, key };
-}
-
-const RenderLinkComponent = getModule(m => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false });
-
-const ImageModal = getModule(Filters.byStrings("renderLinkComponent", "zoomThumbnailPlaceholder"), { searchExports: true });
-
-const ModalRoot = getModule(Filters.byStrings("rootWithShadow", "MODAL"), { searchExports: true });
-
-const ModalSize = getModule(Filters.byKeys("DYNAMIC", "SMALL", "LARGE"), { searchExports: true });
-
-const _openModal = getModule(Filters.byStrings("onCloseCallback", "onCloseRequest", "modalKey", "backdropStyle"), { searchExports: true });
-
-const openModal = (children, tag, modalClassName = "") => {
-	const id = `${tag ? `${tag}-` : ""}modal`;
-
-	_openModal(props => {
-		return (
-			React.createElement(ErrorBoundary, {
-				id: id,
-				plugin: config.info.name,
-			}, React.createElement(ModalRoot, {
-				...props,
-				className: `${modalClassName} transparentBackground`,
-				onClick: props.onClose,
-				size: ModalSize.DYNAMIC,
-			}, children))
-		);
-	});
-};
-
-const getImageModalComponent = (url, rest = {}) => {
-	return (
-		React.createElement('div', { className: "imageModalwrapper", }, React.createElement(ImageModal, {
-			media: {
-				...rest,
-				type: "IMAGE",
-				url: url,
-				proxyUrl: url
-			},
-		}), React.createElement('div', { className: "imageModalOptions", }, React.createElement(RenderLinkComponent, {
-				className: "downloadLink",
-				href: url,
-			}, "Open in Browser"
-
-		)))
-	);
-};
+// common\Utils.jsx
 const promiseHandler = promise => promise.then(data => [undefined, data]).catch(err => [err]);
 
 function copy(data) {
 	DiscordNative.clipboard.copy(data);
 }
-
 const nop = () => {};
 
 function getImageDimensions(url) {
@@ -159,19 +61,34 @@ function getImageDimensions(url) {
 	});
 }
 
+// common\Webpack.js
+const getModule = Webpack.getModule;
+const Filters = Webpack.Filters;
+const getMangled = Webpack.getMangled;
+
+function getModuleAndKey(filter, options) {
+	let module;
+	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
+	module = module?.exports;
+	if (!module) return {};
+	const key = Object.keys(module).find(k => module[k] === target);
+	if (!key) return {};
+	return { module, key };
+}
+
+// common\DiscordModules\Modules.js
 const { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
 	_: Filters.byStrings("subscribe"),
 	zustand: () => true
 });
 
+// common\Utils\Settings.js
 const SettingsStoreSelectors = {};
 const persistMiddleware = config => (set, get, api) => config(args => (set(args), Data.save("settings", get().getRawState())), get, api);
-
 const SettingsStore = Object.assign(
 	zustand(
 		persistMiddleware((set, get) => {
 			const settingsObj = Object.create(null);
-
 			for (const [key, value] of Object.entries({
 					...config.settings,
 					...Data.load("settings")
@@ -198,7 +115,6 @@ const SettingsStore = Object.assign(
 		selectors: SettingsStoreSelectors
 	}
 );
-
 Object.defineProperty(SettingsStore, "state", {
 	writeable: false,
 	configurable: false,
@@ -206,11 +122,12 @@ Object.defineProperty(SettingsStore, "state", {
 		return this.getState();
 	}
 });
-
 const Settings = SettingsStore;
 
+// @Modules\FormSwitch
 const FormSwitch = getModule(Filters.byStrings("note", "tooltipNote"), { searchExports: true });
 
+// common\Components\Switch\index.jsx
 const Switch = FormSwitch ||
 	function SwitchComponentFallback(props) {
 		return (
@@ -222,6 +139,7 @@ const Switch = FormSwitch ||
 		);
 	};
 
+// common\Components\SettingSwtich\index.jsx
 function SettingSwtich({ settingKey, note, onChange = nop, hideBorder = false, description, ...rest }) {
 	const [val, set] = Settings.useSetting(settingKey);
 	return (
@@ -238,12 +156,12 @@ function SettingSwtich({ settingKey, note, onChange = nop, hideBorder = false, d
 	);
 }
 
+// src\ViewProfilePicture\components\SettingComponent.jsx
 const SettingComponent = () => [{
 		settingKey: "showOnHover",
 		note: "By default hide ViewProfilePicture button and show on hover.",
 		description: "Show on hover"
 	},
-
 	{
 		settingKey: "bannerColor",
 		note: "Always include banner color in carousel, even if a banner is present.",
@@ -251,6 +169,43 @@ const SettingComponent = () => [{
 	}
 ].map(SettingSwtich);
 
+// common\Components\ErrorBoundary\index.jsx
+class ErrorBoundary extends React.Component {
+	state = { hasError: false, error: null, info: null };
+	componentDidCatch(error, info) {
+		this.setState({ error, info, hasError: true });
+		const errorMessage = `\n\t${error?.message || ""}${(info?.componentStack || "").split("\n").slice(0, 20).join("\n")}`;
+		console.error(`%c[${config?.info?.name || "Unknown Plugin"}] %cthrew an exception at %c[${this.props.id}]\n`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
+	}
+	renderErrorBoundary() {
+		return (
+			React.createElement('div', { style: { background: "#292c2c", padding: "20px", borderRadius: "10px" }, }, React.createElement('b', { style: { color: "#e0e1e5" }, }, "An error has occured while rendering ", React.createElement('span', { style: { color: "orange" }, }, this.props.id)))
+		);
+	}
+	renderFallback() {
+		if (React.isValidElement(this.props.fallback)) {
+			if (this.props.passMetaProps)
+				this.props.fallback.props = {
+					id: this.props.id,
+					plugin: config?.info?.name || "Unknown Plugin",
+					...this.props.fallback.props
+				};
+			return this.props.fallback;
+		}
+		return (
+			React.createElement(this.props.fallback, {
+				id: this.props.id,
+				plugin: config?.info?.name || "Unknown Plugin",
+			})
+		);
+	}
+	render() {
+		if (!this.state.hasError) return this.props.children;
+		return this.props.fallback ? this.renderFallback() : this.renderErrorBoundary();
+	}
+}
+
+// common\Components\icons\ErrorIcon\index.jsx
 const ErrorIcon = props => (
 	React.createElement('div', { ...props, }, React.createElement('svg', {
 		xmlns: "http://www.w3.org/2000/svg",
@@ -264,8 +219,35 @@ const ErrorIcon = props => (
 	}), React.createElement('path', { d: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z", })))
 );
 
+// @Modules\ModalRoot
+const ModalRoot = getModule(Filters.byStrings("rootWithShadow", "MODAL"), { searchExports: true });
+
+// @Modules\ModalSize
+const ModalSize = getModule(Filters.byKeys("DYNAMIC", "SMALL", "LARGE"), { searchExports: true });
+
+// common\Utils\Modals\index.jsx
+const _openModal = getModule(Filters.byStrings("onCloseCallback", "onCloseRequest", "modalKey", "backdropStyle"), { searchExports: true });
+const openModal = (children, tag, modalClassName = "") => {
+	const id = `${tag ? `${tag}-` : ""}modal`;
+	_openModal(props => {
+		return (
+			React.createElement(ErrorBoundary, {
+				id: id,
+				plugin: config.info.name,
+			}, React.createElement(ModalRoot, {
+				...props,
+				className: `${modalClassName} transparent-background`,
+				onClick: props.onClose,
+				size: ModalSize.DYNAMIC,
+			}, children))
+		);
+	});
+};
+
+// @Modules\Tooltip
 const Tooltip$1 = getModule(Filters.byPrototypeKeys("renderTooltip"), { searchExports: true });
 
+// common\Components\Tooltip\index.jsx
 const Tooltip = ({ note, position, children }) => {
 	return (
 		React.createElement(Tooltip$1, {
@@ -281,6 +263,7 @@ const Tooltip = ({ note, position, children }) => {
 	);
 };
 
+// common\Components\icons\ImageIcon\index.jsx
 function ImageIcon(props) {
 	return (
 		React.createElement('svg', {
@@ -293,10 +276,29 @@ function ImageIcon(props) {
 	);
 }
 
+// common\Utils\ImageModal\index.jsx
+const RenderLinkComponent = getModule(m => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false });
+const ImageModal = getModule(Filters.byStrings("renderLinkComponent", "zoomThumbnailPlaceholder"), { searchExports: true });
+const getImageComponent = (url, rest = {}) => {
+	return (
+		React.createElement('div', { className: "imageModalwrapper", }, React.createElement(ImageModal, {
+			media: {
+				...rest,
+				type: "IMAGE",
+				url: url,
+				proxyUrl: url
+			},
+		}), React.createElement('div', { className: "imageModalOptions", }, React.createElement(RenderLinkComponent, {
+			className: "downloadLink",
+			href: url,
+		}, "Open in Browser")))
+	);
+};
+
+// common\Utils\Toast.js
 function showToast(content, type) {
 	UI.showToast(`[${config.info.name}] ${content}`, { timeout: 5000, type });
 }
-
 const Toast = {
 	success(content) { showToast(content, "success"); },
 	info(content) { showToast(content, "info"); },
@@ -304,12 +306,16 @@ const Toast = {
 	error(content) { showToast(content, "error"); }
 };
 
+// @Modules\Color
 const Color = getModule(Filters.byKeys("Color", "hex", "hsl"), { searchExports: false });
 
+// @Stores\ThemeStore
 const ThemeStore = getModule(m => m._dispatchToken && m.getName() === "ThemeStore");
 
+// @Stores\AccessibilityStore
 const AccessibilityStore = getModule(m => m._dispatchToken && m.getName() === "AccessibilityStore");
 
+// src\ViewProfilePicture\components\ColorModalComponent.jsx
 const DesignSystem = getModule(a => a?.unsafe_rawColors?.PRIMARY_800?.resolve);
 
 function resolveColor() {
@@ -339,7 +345,6 @@ function copyColor(type, color) {
 		Toast.success(`${c} Copied!`);
 	}
 }
-
 const {
 	module: { ZP: palletHook }
 } = getModuleAndKey(Filters.byStrings("toHexString", "toHsl", "palette"), { searchExports: true }) || {};
@@ -350,46 +355,41 @@ function SimpleColorModal({ color }) {
 			className: "VPP-NoBanner",
 			style: { backgroundColor: Color(color).css() },
 		}, React.createElement('div', { className: "VPP-copy-color-container", }, React.createElement('a', { className: "VPP-copy-color-label", }, "Copy Color:"), React.createElement('a', {
-				className: "VPP-copy-color",
-				onClick: () => copyColor("hex", color),
-			}, "hex"
-
-		), React.createElement('span', { className: "VPP-separator", }, "|"), React.createElement('a', {
-				className: "VPP-copy-color",
-				onClick: () => copyColor("rgba", color),
-			}, "rgba"
-
-		), React.createElement('span', { className: "VPP-separator", }, "|"), React.createElement('a', {
-				className: "VPP-copy-color",
-				onClick: () => copyColor("hsla", color),
-			}, "hsla"
-
-		)))
+			className: "VPP-copy-color",
+			onClick: () => copyColor("hex", color),
+		}, "hex"), React.createElement('span', { className: "VPP-separator", }, "|"), React.createElement('a', {
+			className: "VPP-copy-color",
+			onClick: () => copyColor("rgba", color),
+		}, "rgba"), React.createElement('span', { className: "VPP-separator", }, "|"), React.createElement('a', {
+			className: "VPP-copy-color",
+			onClick: () => copyColor("hsla", color),
+		}, "hsla")))
 	);
 }
 
 function ColorModal({ displayProfile, user }) {
 	const color = palletHook(user.getAvatarURL(displayProfile.guildId, 80));
-
 	return React.createElement(SimpleColorModal, { color: color || resolveColor(), });
 }
-
 const ColorModalComponent = {
 	SimpleColorModal,
 	ColorModal
 };
 
+// @Modules\ModalCarousel
 const ModalCarousel$1 = getModule(Filters.byPrototypeKeys("navigateTo", "preloadImage"), { searchExports: false });
 
+// src\ViewProfilePicture\components\ModalCarousel.jsx
 class ModalCarousel extends ModalCarousel$1 {
 	preloadNextImages() {}
 }
 
+// @Modules\Spinner
 const Spinner = getModule(a => a?.Type?.CHASING_DOTS, { searchExports: true });
 
+// src\ViewProfilePicture\components\ViewProfilePictureButtonComponent.jsx
 function fit({ width, height }) {
 	const ratio = Math.min(innerWidth / width, innerHeight / height);
-
 	return {
 		width: Math.round(width * ratio),
 		height: Math.round(height * ratio)
@@ -399,7 +399,6 @@ function fit({ width, height }) {
 function Banner({ url, src }) {
 	const [loaded, setLoaded] = React.useState(false);
 	const dimsRef = React.useRef();
-
 	React.useEffect(() => {
 		(async () => {
 			const [err, dims] = await promiseHandler(getImageDimensions(src));
@@ -407,22 +406,19 @@ function Banner({ url, src }) {
 			setLoaded(true);
 		})();
 	}, []);
-
 	if (!loaded) return React.createElement(Spinner, { type: Spinner.Type.SPINNING_CIRCLE, });
-	return getImageModalComponent(url, dimsRef.current);
+	return getImageComponent(url, dimsRef.current);
 }
-
 const ViewProfilePictureButtonComponent = ({ bannerObject, className, user, displayProfile }) => {
 	const showOnHover = Settings(Settings.selectors.showOnHover);
 	if (showOnHover) className += " VPP-hover";
-
 	const { backgroundColor } = bannerObject || {};
 	const handler = () => {
 		const avatarURL = user.getAvatarURL(displayProfile.guildId, 4096, true);
 		const bannerURL = displayProfile.getBannerURL({ canAnimate: true, size: 4096 });
 		const color = backgroundColor || displayProfile.accentColor || displayProfile.primaryColor;
 		const items = [
-				getImageModalComponent(avatarURL, { width: 4096, height: 4096 }),
+				getImageComponent(avatarURL, { width: 4096, height: 4096 }),
 				bannerURL && (
 					React.createElement(Banner, {
 						url: bannerURL,
@@ -441,7 +437,6 @@ const ViewProfilePictureButtonComponent = ({ bannerObject, className, user, disp
 			]
 			.filter(Boolean)
 			.map(item => ({ component: item }));
-
 		openModal(
 			React.createElement(ModalCarousel, {
 				startWith: 0,
@@ -452,7 +447,6 @@ const ViewProfilePictureButtonComponent = ({ bannerObject, className, user, disp
 			"VPP-carousel-modal"
 		);
 	};
-
 	return (
 		React.createElement(Tooltip, { note: "View profile picture", }, React.createElement('div', {
 			style: {
@@ -465,18 +459,16 @@ const ViewProfilePictureButtonComponent = ({ bannerObject, className, user, disp
 	);
 };
 
-const UserProfileModalforwardRef = getModule(Filters.byProps("Overlay", "render"));
+// src\ViewProfilePicture\patches\patchVPPButton.jsx
+const UserProfileModalforwardRef = getModule(Filters.byKeys("Overlay", "render"));
 const typeFilter = Filters.byStrings("BITE_SIZE", "FULL_SIZE");
-
 const patchVPPButton = () => {
 	if (!UserProfileModalforwardRef) return Logger.patchError("patchVPPButton");
-
 	Patcher.after(UserProfileModalforwardRef, "render", (_, [props], ret) => {
 		const buttonsWrapper = findInTree(ret, a => typeFilter(a?.type), { walkable: ["props", "children"] });
 		if (!buttonsWrapper) return;
 		ret.props.className = `${ret.props.className} VPP-container`;
 		buttonsWrapper.props.children = [
-
 			React.createElement(ErrorBoundary, {
 				id: "ViewProfilePictureButtonComponent",
 				plugin: config.info.name,
@@ -491,6 +483,7 @@ const patchVPPButton = () => {
 	});
 };
 
+// @Enums\ProfileTypeEnum
 const ProfileTypeEnum = getModule(Filters.byKeys("POPOUT", "SETTINGS"), { searchExports: true }) || {
 	"POPOUT": 0,
 	"MODAL": 1,
@@ -499,35 +492,26 @@ const ProfileTypeEnum = getModule(Filters.byKeys("POPOUT", "SETTINGS"), { search
 	"CARD": 4
 };
 
+// src\ViewProfilePicture\patches\patchUserBannerMask.jsx
 const UserBannerMask = getModuleAndKey(Filters.byStrings("bannerSrc", "showPremiumBadgeUpsell"), { searchExports: true });
 
 function getButtonClasses({ profileType }, isNotNitro, banner) {
 	let className = "VPP-Button";
-
 	if (profileType === ProfileTypeEnum.MODAL) className += " VPP-profile";
-
 	if (banner && isNotNitro) className += " VPP-left";
 	else className += " VPP-right";
-
 	return className;
 }
-
 const patchUserBannerMask = () => {
 	if (!UserBannerMask) return Logger.patchError("UserBannerMask");
-
 	const { module, key } = UserBannerMask;
-
 	Patcher.after(module, key, (_, [props], el) => {
 		if (props.profileType === ProfileTypeEnum.SETTINGS) return;
-
 		const bannerElement = el.props.children.props;
-
 		bannerElement.className += " VPP-container";
 		const bannerObject = bannerElement.style;
 		const children = bannerElement.children;
-
 		const className = getButtonClasses(props, children[0], bannerObject?.backgroundImage);
-
 		children.push(
 			React.createElement(ErrorBoundary, {
 				id: "ViewProfilePictureButtonComponent",
@@ -544,10 +528,10 @@ const patchUserBannerMask = () => {
 	});
 };
 
+// src\ViewProfilePicture\index.jsx
 class ViewProfilePicture {
 	start() {
 		try {
-
 			DOM.addStyle(css);
 			patchVPPButton();
 			patchUserBannerMask();
@@ -555,12 +539,10 @@ class ViewProfilePicture {
 			Logger.error(e);
 		}
 	}
-
 	stop() {
 		DOM.removeStyle();
 		Patcher.unpatchAll();
 	}
-
 	getSettingsPanel() {
 		return React.createElement(SettingComponent, null);
 	}
@@ -708,29 +690,31 @@ const css = `/* View Profile Button */
 }
 
 
+
+.transparent-background{
+	background: transparent;
+}
 .downloadLink {
 	color: white !important;
 	font-size: 14px;
 	font-weight: 500;
-/*	line-height: 18px;*/
+	/*	line-height: 18px;*/
 	text-decoration: none;
 	transition: opacity.15s ease;
-	opacity: .5;
+	opacity: 0.5;
 }
 
-.imageModalwrapper{
+.imageModalwrapper {
 	display: flex;
 	flex-direction: column;
 }
-.imageModalOptions{
+
+.imageModalOptions {
 	display: flex;
 	flex-direction: row;
 	align-items: center;
 	justify-content: space-between;
 	flex-wrap: wrap;
 	gap: 4px;
-
 }
-.transparentBackground{
-	background: transparent;
-}`;
+`;

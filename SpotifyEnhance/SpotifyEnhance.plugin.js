@@ -50,7 +50,7 @@ const ContextMenu$1 = Api.ContextMenu;
 const Logger = Api.Logger;
 const Webpack = Api.Webpack;
 const findInTree = Api.Utils.findInTree;
-const getInternalInstance = Api.ReactUtils.getInternalInstance;
+const getInternalInstance = Api.ReactUtils.getInternalInstance.bind(Api.ReactUtils);
 
 // common\Utils\Logger.js
 Logger.patchError = patchId => {
@@ -62,6 +62,7 @@ const getModule = Webpack.getModule;
 const Filters = Webpack.Filters;
 const getBySource = Webpack.getBySource;
 const getMangled = Webpack.getMangled;
+const getStore = Webpack.getStore;
 
 function getModuleAndKey(filter, options) {
 	let module;
@@ -80,13 +81,13 @@ const { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelecto
 });
 
 // @Stores\ConnectedAccountsStore
-const ConnectedAccountsStore = getModule(m => m._dispatchToken && m.getName() === "ConnectedAccountsStore");
+const ConnectedAccountsStore = getStore("ConnectedAccountsStore");
 
 // @Stores\SelectedChannelStore
-const SelectedChannelStore = getModule(m => m._dispatchToken && m.getName() === "SelectedChannelStore");
+const SelectedChannelStore = getStore("SelectedChannelStore");
 
 // @Stores\SpotifyStore
-const SpotifyStore = getModule(m => m._dispatchToken && m.getName() === "SpotifyStore");
+const SpotifyStore = getStore("SpotifyStore");
 
 // common\Utils.jsx
 function shallow(objA, objB) {
@@ -129,7 +130,7 @@ const MessageActions = getModule(Filters.byKeys('jumpToMessage', '_sendMessage')
 const Dispatcher = getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: false });
 
 // @Stores\PendingReplyStore
-const PendingReplyStore = getModule(m => m._dispatchToken && m.getName() === "PendingReplyStore");
+const PendingReplyStore = getStore("PendingReplyStore");
 
 // common\Utils\Messages.js
 function getReply(channelId) {
@@ -313,34 +314,70 @@ class SpotifyClientAPI {
 		return new FetchRequestBuilder(API_ENDPOINT).setToken(this.token);
 	}
 	next() {
-		return this.getRequestBuilder().setPath("/me/player/next").setMethod("POST").build().run();
+		return this.getRequestBuilder()
+			.setPath("/me/player/next")
+			.setMethod("POST")
+			.build()
+			.run();
 	}
 	previous() {
-		return this.getRequestBuilder().setPath("/me/player/previous").setMethod("POST").build().run();
+		return this.getRequestBuilder()
+			.setPath("/me/player/previous")
+			.setMethod("POST")
+			.build()
+			.run();
 	}
 	play() {
-		return this.getRequestBuilder().setPath("/me/player/play").setMethod("PUT").build().run();
+		return this.getRequestBuilder()
+			.setPath("/me/player/play")
+			.setMethod("PUT")
+			.build()
+			.run();
 	}
 	pause() {
-		return this.getRequestBuilder().setPath("/me/player/pause").setMethod("PUT").build().run();
+		return this.getRequestBuilder()
+			.setPath("/me/player/pause")
+			.setMethod("PUT")
+			.build()
+			.run();
 	}
 	seek(ms) {
-		return this.getRequestBuilder().setPath("/me/player/seek").setMethod("PUT").setParams({ position_ms: ms }).build().run();
+		return this.getRequestBuilder()
+			.setPath("/me/player/seek")
+			.setMethod("PUT").setParams({ position_ms: ms })
+			.build()
+			.run();
 	}
 	shuffle(state) {
-		return this.getRequestBuilder().setPath("/me/player/shuffle").setMethod("PUT").setParams({ state }).build().run();
+		return this.getRequestBuilder()
+			.setPath("/me/player/shuffle")
+			.setMethod("PUT").setParams({ state })
+			.build()
+			.run();
 	}
 	volume(volume_percent) {
-		return this.getRequestBuilder().setPath("/me/player/volume").setMethod("PUT").setParams({ volume_percent }).build().run();
+		return this.getRequestBuilder()
+			.setPath("/me/player/volume")
+			.setMethod("PUT").setParams({ volume_percent })
+			.build()
+			.run();
 	}
 	repeat(state) {
-		return this.getRequestBuilder().setPath("/me/player/repeat").setMethod("PUT").setParams({ state }).build().run();
+		return this.getRequestBuilder()
+			.setPath("/me/player/repeat")
+			.setMethod("PUT").setParams({ state })
+			.build()
+			.run();
 	}
 	listen(type, id) {
 		let body = {};
 		if (type === "track" || type === "episode") body = { uris: [`spotify:${type}:${id}`] };
 		else body = { context_uri: `spotify:${type}:${id}` };
-		return this.getRequestBuilder().setPath("/me/player/play").setMethod("PUT").setBody(body).build().run();
+		return this.getRequestBuilder()
+			.setPath("/me/player/play")
+			.setMethod("PUT").setBody(body)
+			.build()
+			.run();
 	}
 	queue(type, id) {
 		return this.getRequestBuilder()
@@ -351,10 +388,25 @@ class SpotifyClientAPI {
 			.run();
 	}
 	getPlayerState() {
-		return this.getRequestBuilder().setPath("/me/player").setMethod("GET").build().run();
+		return this.getRequestBuilder()
+			.setPath("/me/player")
+			.setMethod("GET")
+			.build()
+			.run();
 	}
 	getDevices() {
-		return this.getRequestBuilder().setPath("/me/player/devices").setMethod("GET").build().run();
+		return this.getRequestBuilder()
+			.setPath("/me/player/devices")
+			.setMethod("GET")
+			.build()
+			.run();
+	}
+	getRessource(type, id) {
+		return this.getRequestBuilder()
+			.setPath(`/${type}s/${id}`)
+			.setMethod("GET")
+			.build()
+			.run();
 	}
 }
 const SpotifyAPI = new SpotifyClientAPI();
@@ -362,70 +414,65 @@ const SpotifyAPI = new SpotifyClientAPI();
 // @Modules\RefreshToken
 const RefreshToken = getModule(Filters.byStrings("CONNECTION_ACCESS_TOKEN"), { searchExports: true });
 
-// src\SpotifyEnhance\SpotifyAPIWrapper.js
-async function requestHandler(action) {
-	let repeat = 1;
-	do {
-		const [actionError, actionResponse] = await promiseHandler(action());
-		if (!actionError) return actionResponse;
-		if (actionError.status !== 401) throw new Error(actionError.message);
-		if (!SpotifyAPI.accountId) throw new Error("Can't refresh expired access token Unknown account ID");
-		const [tokenRefreshError, tokenRefreshResponse] = await promiseHandler(RefreshToken(SpotifyAPI.accountId));
-		if (tokenRefreshError) {
-			Logger.error(tokenRefreshError);
-			throw "Could not refresh Spotify token";
-		}
-		SpotifyAPI.token = tokenRefreshResponse.body.access_token;
-	} while (repeat--);
-	throw new Error("Could not fulfill request");
-}
-
-function ressourceActions(prop) {
-	const { success, error } = {
-		queue: {
-			success: (type, name) => `Queued ${name}`,
-			error: (type, name, reason) => `Could not queue ${name}\n${reason}`
-		},
-		listen: {
-			success: (type, name) => `Playing ${name}`,
-			error: (type, name, reason) => `Could not play ${name}\n${reason}`
-		}
-	} [prop];
-	return (type, id, description) =>
-		requestHandler(() => SpotifyAPI[prop](type, id))
-		.then(() => {
-			Toast.success(success(type, description));
-		})
-		.catch(reason => {
-			Toast.error(error(type, description, reason));
-		});
-}
-const SpotifyAPIWrapper = new Proxy({}, {
-	get(_, prop) {
-		switch (prop) {
-			case "queue":
-			case "listen":
-				return ressourceActions(prop);
-			case "play":
-			case "pause":
-			case "shuffle":
-			case "repeat":
-			case "seek":
-			case "next":
-			case "previous":
-			case "volume":
-				return (...args) =>
-					requestHandler(() => SpotifyAPI[prop].apply(SpotifyAPI, args)).catch(reason => {
-						Toast.error(`Could not execute ${prop} command\n${reason}`);
-					});
-			case "getPlayerState":
-			case "getDevices":
-				return () => requestHandler(() => SpotifyAPI[prop]());
-			case "setAccount":
-				return (token, id) => SpotifyAPI.setAccount(token, id);
-		}
+// src\SpotifyEnhance\DB.js
+const DB = new(class {
+	init() {
+		const { promise, resolve } = Promise.withResolvers();
+		const openReq = indexedDB.open(config.info.name, 1);
+		openReq.onerror = () => {
+			Logger.error(openReq.result.error);
+			resolve();
+		};
+		openReq.onsuccess = () => {
+			this.db = openReq.result;
+			resolve();
+		};
+		openReq.onupgradeneeded = () => {
+			const db = openReq.result;
+			db.createObjectStore("track", { keyPath: "id" });
+			db.createObjectStore("playlist", { keyPath: "id" });
+			db.createObjectStore("album", { keyPath: "id" });
+			db.createObjectStore("artist", { keyPath: "id" });
+			db.createObjectStore("user", { keyPath: "id" });
+			db.createObjectStore("show", { keyPath: "id" });
+			db.createObjectStore("episode", { keyPath: "id" });
+		};
+		return promise;
 	}
-});
+	dispose() {
+		this.db?.close?.();
+	}
+	get(storeName, key) {
+		if (!storeName || !key || !this.db) return Promise.resolve();
+		const { promise, resolve } = Promise.withResolvers();
+		const transaction = this.db.transaction(storeName);
+		const objectStore = transaction.objectStore(storeName);
+		const getReq = objectStore.get(key);
+		transaction.onerror = () => {
+			Logger.error(getReq.error);
+			resolve();
+		};
+		transaction.oncomplete = () => {
+			resolve(getReq.result);
+		};
+		return promise;
+	}
+	set(storeName, data) {
+		if (!storeName || !data || !this.db) return Promise.resolve();
+		const { promise, resolve } = Promise.withResolvers();
+		const transaction = this.db.transaction(storeName, "readwrite");
+		const objectStore = transaction.objectStore(storeName);
+		const putReq = objectStore.put(data);
+		transaction.onerror = () => {
+			Logger.error(putReq.error);
+			resolve();
+		};
+		transaction.oncomplete = () => {
+			resolve(putReq.result);
+		};
+		return promise;
+	}
+})();
 
 // src\SpotifyEnhance\Utils.js
 function getPathName(url) {
@@ -447,6 +494,14 @@ function sanitizeSpotifyLink(link) {
 		return url.origin + url.pathname;
 	} catch {
 		return link;
+	}
+}
+
+function isSpotifyUrl(url) {
+	try {
+		return new URL(url).host === "open.spotify.com";
+	} catch {
+		return false;
 	}
 }
 const activityPanelClasses = getModule(Filters.byProps("activityPanel", "panels"), { searchExports: false });
@@ -477,10 +532,198 @@ const getFluxContainer = (() => {
 			setTimeout(() => {
 				resolve(null);
 				clearInterval(interval);
-			}, 20 * 1000);
+			}, 60 * 1000);
 		});
 	};
 })();
+const parsers = {
+	track(obj) {
+		return {
+			id: obj.id,
+			thumbnail: obj.album.images,
+			rawTitle: obj.name,
+			rawDescription: `${obj.artists.map(a => a.name).join(", ")} · ${obj.name} · ${new Date(obj.album.release_date).getFullYear()}`,
+			url: obj.external_urls.spotify,
+			preview_url: obj.preview_url,
+			explicit: obj.explicit
+		};
+	},
+	playlist(obj) {
+		return {
+			id: obj.id,
+			thumbnail: obj.images,
+			rawTitle: obj.name,
+			url: obj.external_urls.spotify,
+			rawDescription: `${obj.name} · ${obj.tracks.total} songs · ${obj.followers.total} likes`,
+			followers: obj.followers.total,
+			total_tracks: obj.tracks.total,
+			owner: {
+				name: obj.owner.display_name,
+				id: obj.owner.id
+			}
+		};
+	},
+	album(obj) {
+		return {
+			id: obj.id,
+			thumbnail: obj.images,
+			rawTitle: obj.name,
+			url: obj.external_urls.spotify,
+			rawDescription: `${obj.artists.map(a => a.name).join(", ")} · ${obj.name} · ${obj.total_tracks} songs · ${new Date(obj.release_date).getFullYear()}`,
+			total_tracks: obj.total_tracks,
+			popularity: obj.popularity,
+		};
+	},
+	artist(obj) {
+		return {
+			id: obj.id,
+			thumbnail: obj.images,
+			rawTitle: obj.name,
+			rawDescription: `${obj.name} · ${obj.followers.total} followers · ${obj.popularity} popularity`,
+			url: obj.external_urls.spotify,
+			popularity: obj.popularity,
+		};
+	},
+	user(obj) {
+		return {
+			id: obj.id,
+			thumbnail: obj.images,
+			rawTitle: obj.display_name,
+			rawDescription: `${obj.display_name} · ${obj.followers.total} followers`,
+			url: obj.external_urls.spotify,
+		};
+	},
+	show(obj) {
+		return {
+			id: obj.id,
+			thumbnail: obj.images,
+			rawTitle: obj.name,
+			rawDescription: obj.description,
+			url: obj.external_urls.spotify,
+			media_type: obj.media_type,
+			publisher: obj.publisher,
+			languages: obj.languages,
+			is_externally_hosted: obj.is_externally_hosted,
+			total_episodes: obj.total_episodes
+		};
+	},
+	episode(obj) {
+		return {
+			id: obj.id,
+			url: obj.external_urls.spotify,
+			preview_url: obj.audio_preview_url,
+			thumbnail: obj.images,
+			rawTitle: obj.name,
+			rawDescription: obj.description,
+			language: obj.language,
+			release_date: obj.release_date,
+			explicit: obj.explicit,
+			duration_ms: obj.duration_ms,
+			is_externally_hosted: obj.is_externally_hosted,
+		};
+	}
+};
+
+// src\SpotifyEnhance\SpotifyAPIWrapper.js
+async function _requestHandler(action) {
+	let repeat = 1;
+	do {
+		const [actionError, actionResponse] = await promiseHandler(action());
+		if (!actionError) return actionResponse;
+		if (actionError.status !== 401) throw new Error(actionError.message);
+		if (!SpotifyAPI.accountId) throw new Error("Can't refresh expired access token Unknown account ID");
+		const [tokenRefreshError, tokenRefreshResponse] = await promiseHandler(RefreshToken(SpotifyAPI.accountId));
+		if (tokenRefreshError) {
+			Logger.error(tokenRefreshError);
+			throw "Could not refresh Spotify token";
+		}
+		SpotifyAPI.token = tokenRefreshResponse.body.access_token;
+	} while (repeat--);
+	throw new Error("Could not fulfill request");
+}
+const requestHandler = (() => {
+	let awaiterPromise = Promise.resolve();
+	return async (...args) => {
+		/* Slopy queue, i know */
+		const { promise, resolve } = Promise.withResolvers();
+		const tempPromise = awaiterPromise;
+		awaiterPromise = promise;
+		await tempPromise;
+		try {
+			const res = await _requestHandler(...args);
+			resolve();
+			return res;
+		} catch (e) {
+			resolve();
+			throw e;
+		}
+	};
+})();
+
+function ressourceActions(prop) {
+	const { success, error } = {
+		queue: {
+			success: (type, name) => `Queued ${name}`,
+			error: (type, name, reason) => `Could not queue ${name}\n${reason}`
+		},
+		listen: {
+			success: (type, name) => `Playing ${name}`,
+			error: (type, name, reason) => `Could not play ${name}\n${reason}`
+		}
+	} [prop];
+	return (type, id, description) =>
+		requestHandler(() => SpotifyAPI[prop](type, id))
+		.then(() => {
+			Toast.success(success(type, description));
+		})
+		.catch(reason => {
+			Toast.error(error(type, description, reason));
+		});
+}
+async function fetchRessource(type, id) {
+	const [err, data] = await promiseHandler(requestHandler(() => SpotifyAPI.getRessource(type, id)));
+	if (err) return Logger.error(`Could not fetch ${type} ${id}`);
+	return data;
+}
+async function getRessourceWithCache(type, id) {
+	/* no fetching if we can't cache */
+	if (!DB.db) return;
+	const cachedData = await DB.get(type, id);
+	if (cachedData) return cachedData;
+	const fetchedData = await fetchRessource(type, id);
+	if (!fetchedData) return;
+	const parsedData = parsers[type](fetchedData);
+	await DB.set(type, parsedData);
+	return parsedData;
+}
+const SpotifyAPIWrapper = new Proxy({}, {
+	get(_, prop) {
+		switch (prop) {
+			case "queue":
+			case "listen":
+				return ressourceActions(prop);
+			case "play":
+			case "pause":
+			case "shuffle":
+			case "repeat":
+			case "seek":
+			case "next":
+			case "previous":
+			case "volume":
+				return (...args) =>
+					requestHandler(() => SpotifyAPI[prop].apply(SpotifyAPI, args)).catch(reason => {
+						Toast.error(`Could not execute ${prop} command\n${reason}`);
+					});
+			case "getPlayerState":
+			case "getDevices":
+				return () => requestHandler(() => SpotifyAPI[prop]());
+			case "setAccount":
+				return (token, id) => SpotifyAPI.setAccount(token, id);
+			case "getRessource":
+				return getRessourceWithCache;
+		}
+	}
+});
 
 // src\SpotifyEnhance\Store.js
 const subscribeWithSelector = getModule(Filters.byStrings("equalityFn", "fireImmediately"), { searchExports: true });
@@ -595,6 +838,8 @@ const Store = Object.assign(
 			ConnectedAccountsStore.addChangeListener(onAccountsChanged);
 			this.idleTimer = new Timer(() => Store.state.setAccount(undefined), 5 * 60 * 1000, Timer.TIMEOUT);
 			this.positionInterval = new Timer(Store.state.incrementPosition, 1000, Timer.INTERVAL);
+			const account = ConnectedAccountsStore.getAccount(null, "spotify") || {};
+			SpotifyAPIWrapper.setAccount(account.accessToken, account.id);
 			const { socket } = SpotifyStore.getActiveSocketAndDevice() || {};
 			if (!socket) return;
 			Store.state.setAccount(socket);
@@ -833,7 +1078,7 @@ const PlayerPlaceEnum = {
 	PIP: "PIP",
 	USERAREA: "USERAREA",
 };
-const ALLOWD_TYPES = ["track", "artist", "playlist", "album", "show", "episode"];
+const ALLOWD_TYPES = ["track", "playlist", "album", "artist", "user", "show", "episode"];
 
 // @Modules\Button
 const Button$1 = getModule(a => a && a.Link && a.Colors, { searchExports: true });
@@ -1846,14 +2091,26 @@ function SpotifyIcon(props) {
 	);
 }
 
-// @Stores\AccessibilityStore
-const AccessibilityStore = getModule(m => m._dispatchToken && m.getName() === "AccessibilityStore");
-
 // @Modules\useStateFromStores
 const useStateFromStores = getModule(Filters.byStrings("getStateFromStores"), { searchExports: true });
 
+// @Stores\AccessibilityStore
+const AccessibilityStore = getStore("AccessibilityStore");
+
 // src\SpotifyEnhance\components\SpotifyEmbed\index.jsx
-const SpotifyEmbed$1 = ({ id, type, embed: { thumbnail, rawTitle, rawDescription, url } }) => {
+function useGetRessource(type, id) {
+	const [state, setState] = React.useState(null);
+	React.useEffect(() => {
+		(async () => {
+			const data = await Store.Api.getRessource(type, id);
+			if (data) setState(data);
+		})();
+	}, []);
+	return state;
+}
+const SpotifyEmbed$1 = ({ id, type }) => {
+	const data = useGetRessource(type, id);
+	const { thumbnail, rawTitle, rawDescription, url } = data || {};
 	const embedBannerBackground = Settings(Settings.selectors.embedBannerBackground);
 	const useReducedMotion = useStateFromStores([AccessibilityStore], () => AccessibilityStore.useReducedMotion);
 	const [isPlaying, isActive] = Store(_ => [_.isPlaying, _.isActive], shallow);
@@ -1874,25 +2131,34 @@ const SpotifyEmbed$1 = ({ id, type, embed: { thumbnail, rawTitle, rawDescription
 	let className = "spotify-embed-container";
 	if (isThis && isPlaying && !useReducedMotion) className += " playing";
 	if (embedBannerBackground) className += " bannerBackground";
-	const banner = thumbnail?.proxyURL || thumbnail?.url;
+	const banner = {
+		bannerSm: thumbnail?.[2],
+		bannerMd: thumbnail?.[1],
+		bannerLg: thumbnail?.[0]
+	};
+	const bannerStyleObj = {};
+	if (banner.bannerSm) bannerStyleObj["--banner-sm"] = `url(${banner.bannerSm?.url})`;
+	if (banner.bannerMd) bannerStyleObj["--banner-md"] = `url(${banner.bannerMd?.url})`;
+	if (banner.bannerLg) bannerStyleObj["--banner-lg"] = `url(${banner.bannerLg?.url})`;
 	return (
 		React.createElement('div', {
 			className: className,
-			style: { "--thumbnail": `url(${banner})` },
-		}, React.createElement(Tooltip, { note: "View", }, React.createElement('div', {
-			onClick: () => {
-				let { width, height } = thumbnail;
-				width = width > 650 ? 650 : width;
-				height = height > 650 ? 650 : height;
-				openModal(React.createElement('div', { className: "spotify-banner-modal", }, getImageComponent(banner, { width, height })));
-			},
-			className: "spotify-embed-thumbnail",
-		})), React.createElement('h2', { className: "spotify-embed-title", }, rawTitle), React.createElement('p', { className: "spotify-embed-description", }, rawDescription), type && id && (
+			style: bannerStyleObj,
+		}, React.createElement(Tooltip, { note: "View", }
+			/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */
+			, React.createElement('div', {
+				onClick: () => {
+					const { width = 640, height = 640, url } = banner.bannerLg;
+					openModal(React.createElement('div', { className: "spotify-banner-modal", }, getImageComponent(url, { width, height })));
+				},
+				className: "spotify-embed-thumbnail",
+			})
+		), React.createElement('h2', { className: "spotify-embed-title", }, rawTitle), React.createElement('p', { className: "spotify-embed-description", }, rawDescription), type && id && (
 			React.createElement('div', { className: "spotify-embed-controls", }, ((isThis && isActive && !isPlaying) || (!isThis && isActive)) && [listenBtn, queueBtn], isThis && isActive && isPlaying && React.createElement(TrackTimeLine, null), React.createElement(Tooltip, { note: "Copy link", }, React.createElement('div', {
 				onClick: () => Store.Utils.copySpotifyLink(url),
 				className: "spotify-embed-btn spotify-embed-btn-copy",
 			}, React.createElement(CopyIcon, null))), React.createElement(Tooltip, { note: "Copy banner", }, React.createElement('div', {
-				onClick: () => Store.Utils.copySpotifyLink(banner),
+				onClick: () => Store.Utils.copySpotifyLink(banner.bannerLg?.url),
 				className: "spotify-embed-btn spotify-embed-btn-copy",
 			}, React.createElement(ImageIcon, null))))
 		), React.createElement(Tooltip, { note: "Play on Spotify", }, React.createElement('div', {
@@ -1920,7 +2186,6 @@ function SpotifyEmbedWrapper({ id, type, embedObject, embedComponent }) {
 				React.createElement(SpotifyEmbed$1, {
 					id: id,
 					type: type,
-					embed: embedObject,
 				})
 			);
 		case EmbedStyleEnum.HIDE:
@@ -1935,16 +2200,44 @@ function SpotifyEmbedWrapper({ id, type, embedObject, embedComponent }) {
 	return embedComponent;
 }
 
+// src\SpotifyEnhance\patches\patchMessageComponentAccessories.jsx
+const MessageComponentAccessories = getModule(Filters.byPrototypeKeys("renderPoll"), { searchExports: true });
+const urlRegex = /((?:https?|steam):\/\/[^\s<]+[^<.,:;"'\]\s])/g;
+const MessageStateContext = React.createContext(null);
+const patchMessageComponentAccessories = () => {
+	if (!MessageComponentAccessories) return Logger.patch("patchMessageComponentAccessories");
+	Patcher.before(MessageComponentAccessories.prototype, "renderEmbeds", (_, args) => {
+		const message = args[0];
+		const urlMatches = message.content.match(urlRegex) || [];
+		if (!urlMatches.length) return;
+		const embeds = urlMatches.filter(isSpotifyUrl).map(url => ({
+			url,
+			"type": "link",
+			"provider": {
+				"name": "Spotify",
+				"url": "https://spotify.com/"
+			}
+		}));
+		if (!embeds.length) return;
+		args[0] = Object.assign(args[0], {
+			embeds: [...message.embeds.filter(a => a.provider.name !== "Spotify"), ...embeds]
+		});
+	});
+	Patcher.after(MessageComponentAccessories.prototype, "renderEmbeds", (_, [message], ret) => {
+		if (!ret || !message?.state) return;
+		return React.createElement(MessageStateContext.Provider, { value: message.state, }, ret)
+	});
+};
+
 // src\SpotifyEnhance\patches\patchSpotifyEmbed.jsx
 const SpotifyEmbed = getModule(Filters.byStrings("iframe", "playlist", "track"), { defaultExport: false });
 const patchSpotifyEmbed = () => {
 	if (!SpotifyEmbed) return Logger.patchError("SpotifyEmbed");
 	Patcher.after(SpotifyEmbed, "Z", (_, [{ embed }], ret) => {
+		const messageState = React.useContext(MessageStateContext);
+		if (messageState !== "SENT") return null;
 		const [id, type] = parseSpotifyUrl(embed.url) || [];
-		if (!ALLOWD_TYPES.includes(type)) {
-			Logger.log(`Spotify ${type}`, embed.url);
-			return;
-		}
+		if (!ALLOWD_TYPES.includes(type)) return;
 		return (
 			React.createElement(ErrorBoundary, {
 				id: "SpotifyEmbed",
@@ -2006,7 +2299,7 @@ async function patchSpotifySocket() {
 const MessageHeader = getModuleAndKey(Filters.byStrings("userOverride", "withMentionPrefix"), { searchExports: false }) || {};
 
 // @Stores\PresenceStore
-const PresenceStore = getModule(m => m._dispatchToken && m.getName() === "PresenceStore");
+const PresenceStore = getStore("PresenceStore");
 
 // src\SpotifyEnhance\patches\patchMessageHeader.jsx
 const patchMessageHeader = () => {
@@ -2112,13 +2405,15 @@ function PipContainer() {
 
 // src\SpotifyEnhance\index.jsx
 class SpotifyEnhance {
-	start() {
+	async start() {
 		try {
 			DOM.addStyle(css);
+			await DB.init();
 			Store.init();
 			Pip.init();
 			patchListenAlong();
 			patchSpotifyEmbed();
+			patchMessageComponentAccessories();
 			patchSpotifySocket();
 			patchSpotifyActivity();
 			patchMessageHeader();
@@ -2130,6 +2425,7 @@ class SpotifyEnhance {
 	}
 	async stop() {
 		try {
+			DB.dispose();
 			Store.dispose();
 			Pip.dispose();
 			DOM.removeStyle();
@@ -2436,18 +2732,6 @@ div:has(> .spotify-banner-modal) {
 	border-radius: 5px;
 }
 
-.spotify-embed-plus {
-	display: flex;
-	min-width: 400px;
-	max-width: 100%;
-	gap: 5px;
-	overflow: hidden;
-}
-
-.spotify-embed-plus > button {
-	flex: 1 0 auto;
-	text-transform: capitalize;
-}
 .spotify-player-controls {
 	display: flex;
 	justify-content: space-between;
@@ -2551,10 +2835,22 @@ div:has(> .spotify-banner-modal) {
 .spotify-player-timeline:hover .spotify-player-timeline-trackbar-bar > div {
 	background: var(--SpotifyEnhance-spotify-green);
 }
+.spotify-embed-plus {
+	display: flex;
+	min-width: 400px;
+	max-width: 100%;
+	gap: 5px;
+	overflow: hidden;
+}
+
+.spotify-embed-plus > button {
+	flex: 1 0 auto;
+	text-transform: capitalize;
+}
 .spotify-embed-container {
 	background:
 		linear-gradient(#00000090 0 0),
-		var(--thumbnail) top center/999% no-repeat;
+		var(--banner-lg) top center/999% no-repeat;
 	max-width: 100%;
 	width: 350px;
 	box-sizing: border-box;
@@ -2577,7 +2873,7 @@ div:has(> .spotify-banner-modal) {
 	cursor: pointer;
 	width: 80px;
 	height: 80px;
-	background: var(--thumbnail) center/cover no-repeat;
+	background: var(--banner-sm, var(--banner-lg)) center/cover no-repeat;
 	border-radius: var(--SpotifyEnhance-radius);
 }
 
@@ -2613,7 +2909,7 @@ div:has(> .spotify-banner-modal) {
 	content: "";
 	background:
 		linear-gradient(#000000a0 0 0),
-		var(--thumbnail) center/cover no-repeat;
+		var(--banner-lg) center/cover no-repeat;
 	position: absolute;
 	inset: 0px;
 	filter: blur(5px);
@@ -2693,9 +2989,6 @@ div:has(> .spotify-banner-modal) {
 }
 
 
-.transparent-background{
-	background: transparent;
-}
 .downloadLink {
 	color: white !important;
 	font-size: 14px;
@@ -2719,4 +3012,7 @@ div:has(> .spotify-banner-modal) {
 	flex-wrap: wrap;
 	gap: 4px;
 }
-`;
+
+.transparent-background{
+	background: transparent;
+}`;
