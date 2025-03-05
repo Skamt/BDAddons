@@ -3,7 +3,8 @@ import Settings from "@Utils/Settings";
 import {openModal} from "@Utils/Modals"
 import Tooltip from "@Components/Tooltip";
 import ImageIcon from "@Components/icons/ImageIcon";
-import { getImageDimensions, getImageModalComponent, promiseHandler } from "@Utils";
+import { getImageDimensions, promiseHandler } from "@Utils";
+import {  getImageComponent  } from "@Utils/ImageModal";
 import ColorModalComponent from "./ColorModalComponent";
 import ModalCarousel from "./ModalCarousel";
 import Spinner from "@Modules/Spinner";
@@ -30,7 +31,7 @@ function Banner({ url, src }) {
 	}, []);
 
 	if (!loaded) return <Spinner type={Spinner.Type.SPINNING_CIRCLE} />;
-	return getImageModalComponent(url, dimsRef.current);
+	return getImageComponent(url, dimsRef.current);
 }
 
 export default ({ bannerObject, className, user, displayProfile }) => {
@@ -43,7 +44,7 @@ export default ({ bannerObject, className, user, displayProfile }) => {
 		const bannerURL = displayProfile.getBannerURL({ canAnimate: true, size: 4096 });
 		const color = backgroundColor || displayProfile.accentColor || displayProfile.primaryColor;
 		const items = [
-			getImageModalComponent(avatarURL, { width: 4096, height: 4096 }),
+			getImageComponent(avatarURL, { width: 4096, height: 4096 }),
 			bannerURL && (
 				<Banner
 					url={bannerURL}

@@ -20,7 +20,7 @@ const ModulesHandler = {
 
 const StoresHandler = {
 	resolve(moduleName) {
-		return `import { getModule } from "@Webpack"; export default getModule(m => m._dispatchToken && m.getName() === "${moduleName}");`;
+		return `import { getStore } from "@Webpack"; export default getStore("${moduleName}");`;
 	}
 };
 

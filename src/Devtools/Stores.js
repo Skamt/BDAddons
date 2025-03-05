@@ -44,14 +44,14 @@ const Zustand = Sources.getSource("/ServerSideRendering|^Deno\\//");
 export const Stores = {
 	getStore(storeName) {
 		// const storeFilter = exp => exp?.default?._dispatchToken && exp?.default?.getName() === storeName;
-		const storeFilter = exp => exp && ["Z", "ZP", "default"].some(k => exp[k]?._dispatchToken && exp[k]?.getName() ===  storeName);
+		const storeFilter = exp => exp && ["Z", "ZP", "default"].some(k => exp[k]?._dispatchToken && exp[k]?._changeCallbacks && exp[k]?.getName() ===  storeName);
 		const module = Modules.getModule(storeFilter);
 		if (!module) return undefined;
 		return new Store(module);
 	},
 	getStoreFuzzy(str = "") {
 		// const storeFilter = exp => exp?.default?._dispatchToken && exp?.default?.getName().toLowerCase().includes(str.toLowerCase());
-		const storeFilter = exp => exp && ["Z", "ZP", "default"].some(k => exp[k]?._dispatchToken && exp[k]?.getName().toLowerCase().includes(str));
+		const storeFilter = exp => exp && ["Z", "ZP", "default"].some(k => exp[k]?._dispatchToken && exp[k]?._changeCallbacks && exp[k]?.getName()?.toLowerCase?.().includes(str));
 		return Modules.getModules(storeFilter).map(module => new Store(module));
 	},
 	getStoreListeners(storeName) {

@@ -7,9 +7,9 @@ import { getNestedProp, copy } from "@Utils";
 import Toast from "@Utils/Toast";
 import Button from "@Components/Button";
 
-// const MessageDecorations = getModule(Filters.byProps("MessagePopoutContent"));
-const MessageDecorations = filterModuleAndExport(Filters.byProps("OLD_MESSAGES"), Filters.byStrings(".popoutContainer"), { searchExports: true });
-const AssetURLUtils = getModule(Filters.byProps("getEmojiURL"));
+// const MessageDecorations = getModule(Filters.byKeys("MessagePopoutContent"));
+const MessageDecorations = filterModuleAndExport(Filters.byKeys("OLD_MESSAGES"), Filters.byStrings(".popoutContainer"), { searchExports: true });
+const AssetURLUtils = getModule(Filters.byKeys("getEmojiURL"));
 
 export default () => {
 	const { module, key } = MessageDecorations;

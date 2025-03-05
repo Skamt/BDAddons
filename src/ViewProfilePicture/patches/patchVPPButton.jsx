@@ -8,7 +8,7 @@ import { Filters, getModule } from "@Webpack";
 import ViewProfilePictureButtonComponent from "../components/ViewProfilePictureButtonComponent";
 
 // const UserBannerMask = getModuleAndKey(Filters.byStrings("bannerSrc", "showPremiumBadgeUpsell"), { searchExports: true });
-const UserProfileModalforwardRef = getModule(Filters.byProps("Overlay","render"));
+const UserProfileModalforwardRef = getModule(Filters.byKeys("Overlay","render"));
 const typeFilter = Filters.byStrings("BITE_SIZE", "FULL_SIZE");
 
 export default () => {

@@ -25,5 +25,6 @@ export const showConfirmationModal = Api.showConfirmationModal;
 // Utils
 export const debounce = Api.Utils.debounce;
 export const findInTree = Api.Utils.findInTree;
-export const getOwnerInstance = Api.ReactUtils.getOwnerInstance;
-export const getInternalInstance = Api.ReactUtils.getInternalInstance;
+/* annoying */
+export const getOwnerInstance = /*@__PURE__*/ Api.ReactUtils.getOwnerInstance.bind(Api.ReactUtils); 
+export const getInternalInstance = /*@__PURE__*/ Api.ReactUtils.getInternalInstance.bind(Api.ReactUtils);

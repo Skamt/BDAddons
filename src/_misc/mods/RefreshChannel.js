@@ -1,12 +1,12 @@
 import { Patcher } from "@Api";
 import Logger from "@Utils/Logger";
 import { getModule, waitForModule, Filters } from "@Webpack";
-import { promiseHandler, Disposable } from "@Utils";
+import {  Disposable } from "@Utils";
 import ChannelSettingsStore from "@Stores/ChannelSettingsStore";
 
 const { createChannel } = getModule(a => a.createChannel);
 const { batchChannelUpdate } = getModule(a => a.batchChannelUpdate);
-const { deleteChannel } = getModule(Filters.byProps("deleteChannel", "saveChannel"));
+const { deleteChannel } = getModule(Filters.byKeys("deleteChannel", "saveChannel"));
 
 function textToJSON(str) {
 	try {

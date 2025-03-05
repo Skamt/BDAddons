@@ -145,6 +145,9 @@ export const Store = Object.assign(
 			this.idleTimer = new Timer(() => Store.state.setAccount(undefined), 5 * 60 * 1000, Timer.TIMEOUT);
 			this.positionInterval = new Timer(Store.state.incrementPosition, 1000, Timer.INTERVAL);
 
+			const account = ConnectedAccountsStore.getAccount(null, "spotify") || {};
+			SpotifyAPIWrapper.setAccount(account.accessToken, account.id);
+
 			const { socket } = SpotifyStore.getActiveSocketAndDevice() || {};
 			if (!socket) return;
 			Store.state.setAccount(socket);

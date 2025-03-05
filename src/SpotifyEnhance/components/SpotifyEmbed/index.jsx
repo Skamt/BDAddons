@@ -3,22 +3,32 @@ import { React } from "@Api";
 import Tooltip from "@Components/Tooltip";
 import AddToQueueIcon from "@Components/icons/AddToQueueIcon";
 import CopyIcon from "@Components/icons/CopyIcon";
+import ImageIcon from "@Components/icons/ImageIcon";
 import ListenIcon from "@Components/icons/ListenIcon";
 import SpotifyIcon from "@Components/icons/SpotifyIcon";
-import ImageIcon from "@Components/icons/ImageIcon";
 import { shallow } from "@Utils";
-
 import { getImageComponent } from "@Utils/ImageModal";
 import { openModal } from "@Utils/Modals";
-
 import Settings from "@Utils/Settings";
-
-import { Store } from "../../Store";
-import AccessibilityStore from "@Stores/AccessibilityStore";
 import useStateFromStores from "@Modules/useStateFromStores";
+import AccessibilityStore from "@Stores/AccessibilityStore";
+import { Store } from "../../Store";
 import TrackTimeLine from "../TrackTimeLine";
 
-export default ({ id, type, embed: { thumbnail, rawTitle, rawDescription, url } }) => {
+function useGetRessource(type, id) {
+	const [state, setState] = React.useState(null);
+	React.useEffect(() => {
+		(async () => {
+			const data = await Store.Api.getRessource(type, id);
+			if (data) setState(data);
+		})();
+	}, []);
+	return state;
+}
+
+export default ({ id, type }) => {
+	const data = useGetRessource(type, id);
+	const { thumbnail, rawTitle, rawDescription, url } = data || {};
 	const embedBannerBackground = Settings(Settings.selectors.embedBannerBackground);
 	const useReducedMotion = useStateFromStores([AccessibilityStore], () => AccessibilityStore.useReducedMotion);
 
@@ -51,19 +61,27 @@ export default ({ id, type, embed: { thumbnail, rawTitle, rawDescription, url } 
 	if (isThis && isPlaying && !useReducedMotion) className += " playing";
 	if (embedBannerBackground) className += " bannerBackground";
 
-	const banner = thumbnail?.proxyURL || thumbnail?.url;
+	const banner = {
+		bannerSm: thumbnail?.[2],
+		bannerMd: thumbnail?.[1],
+		bannerLg: thumbnail?.[0]
+	};
+
+	const bannerStyleObj = {};
+	if (banner.bannerSm) bannerStyleObj["--banner-sm"] = `url(${banner.bannerSm?.url})`;
+	if (banner.bannerMd) bannerStyleObj["--banner-md"] = `url(${banner.bannerMd?.url})`;
+	if (banner.bannerLg) bannerStyleObj["--banner-lg"] = `url(${banner.bannerLg?.url})`;
 
 	return (
 		<div
 			className={className}
-			style={{ "--thumbnail": `url(${banner})` }}>
+			style={bannerStyleObj}>
 			<Tooltip note="View">
+				{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 				<div
 					onClick={() => {
-						let { width, height } = thumbnail;
-						width = width > 650 ? 650 : width;
-						height = height > 650 ? 650 : height;
-						openModal(<div className="spotify-banner-modal">{getImageComponent(banner, { width, height })}</div>);
+						const { width = 640, height = 640, url } = banner.bannerLg;
+						openModal(<div className="spotify-banner-modal">{getImageComponent(url, { width, height })}</div>);
 					}}
 					className="spotify-embed-thumbnail"
 				/>
@@ -84,7 +102,7 @@ export default ({ id, type, embed: { thumbnail, rawTitle, rawDescription, url } 
 					</Tooltip>
 					<Tooltip note="Copy banner">
 						<div
-							onClick={() => Store.Utils.copySpotifyLink(banner)}
+							onClick={() => Store.Utils.copySpotifyLink(banner.bannerLg?.url)}
 							className="spotify-embed-btn spotify-embed-btn-copy">
 							<ImageIcon />
 						</div>

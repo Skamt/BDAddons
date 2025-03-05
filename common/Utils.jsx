@@ -115,10 +115,7 @@ export function getImageDimensions(url) {
 export function hook(hook, ...args) {
 	let v;
 	const b = document.createElement("div");
-	// eslint-disable-next-line react/no-deprecated
 	ReactDOM.render(
-		// biome-ignore lint/suspicious/noAssignInExpressions: <explanation>
-		// biome-ignore lint/style/noCommaOperator: <explanation>
 		React.createElement(() => ((v = hook(...args)), null)),
 		b
 	);

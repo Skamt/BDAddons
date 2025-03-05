@@ -23,7 +23,6 @@ export default function SpotifyEmbedWrapper({ id, type, embedObject, embedCompon
 				<SpotifyEmbed
 					id={id}
 					type={type}
-					embed={embedObject}
 				/>
 			);
 		case EmbedStyleEnum.HIDE:

@@ -103,7 +103,7 @@ function noExports(filter, module, exports) {
 }
 
 function doExports(filter, module, exports) {
-	if (typeof exports !== "object") return;
+	if (typeof exports !== "object" && typeof exports !== "function") return;
 	for (const entryKey in exports) {
 		let target = null;
 		try {
@@ -111,26 +111,30 @@ function doExports(filter, module, exports) {
 		} catch {
 			continue;
 		}
-		if (!target) continue;
+		if (sanitizeExports(target)) continue;
 		if (filter(target, module, module.id)) return { target, entryKey, module: new Module(module.id, module) };
 	}
 }
 
 function sanitizeExports(exports) {
-	if (!exports) return;
-	const exportsExceptions = [exports => typeof exports === "boolean", exports => exports === window, exports => exports.TypedArray, exports => exports === document.documentElement, exports => exports[Symbol.toStringTag] === "DOMTokenList"];
-	for (let index = exportsExceptions.length - 1; index >= 0; index--) {
-		if (exportsExceptions[index](exports)) return true;
-	}
+    if (!exports) return true;
+    if (exports === Symbol) return true;
+    if (exports.TypedArray) return true;
+    if (exports === window) return true;
+    if (exports instanceof Window) return true;
+    if (exports === document.documentElement) return true;
+    if (exports[Symbol.toStringTag] === "DOMTokenList") return true;
+	return false;
 }
 
+
 function* moduleLookup(filter, options = {}) {
-	const { searchExports = false } = options;
+	const {searchExports = false} = options;
 	const gauntlet = searchExports ? doExports : noExports;
 
-	const modules = Object.values(webpackRequire.c);
-	for (let index = modules.length - 1; index >= 0; index--) {
-		const module = modules[index];
+	const keys = Object.keys(webpackRequire.c);
+	for (let index = keys.length - 1; index >= 0; index--) {
+		const module = webpackRequire.c[keys[index]];
 		const { exports } = module;
 		if (sanitizeExports(exports)) continue;
 

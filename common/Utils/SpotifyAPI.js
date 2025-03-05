@@ -115,35 +115,67 @@ class SpotifyClientAPI {
 	}
 
 	next() {
-		return this.getRequestBuilder().setPath("/me/player/next").setMethod("POST").build().run();
+		return this.getRequestBuilder()
+				.setPath("/me/player/next")
+				.setMethod("POST")
+				.build()
+				.run();
 	}
 
 	previous() {
-		return this.getRequestBuilder().setPath("/me/player/previous").setMethod("POST").build().run();
+		return this.getRequestBuilder()
+				.setPath("/me/player/previous")
+				.setMethod("POST")
+				.build()
+				.run();
 	}
 
 	play() {
-		return this.getRequestBuilder().setPath("/me/player/play").setMethod("PUT").build().run();
+		return this.getRequestBuilder()
+				.setPath("/me/player/play")
+				.setMethod("PUT")
+				.build()
+				.run();
 	}
 
 	pause() {
-		return this.getRequestBuilder().setPath("/me/player/pause").setMethod("PUT").build().run();
+		return this.getRequestBuilder()
+				.setPath("/me/player/pause")
+				.setMethod("PUT")
+				.build()
+				.run();
 	}
 
 	seek(ms) {
-		return this.getRequestBuilder().setPath("/me/player/seek").setMethod("PUT").setParams({ position_ms: ms }).build().run();
+		return this.getRequestBuilder()
+				.setPath("/me/player/seek")
+				.setMethod("PUT").setParams({ position_ms: ms })
+				.build()
+				.run();
 	}
 
 	shuffle(state) {
-		return this.getRequestBuilder().setPath("/me/player/shuffle").setMethod("PUT").setParams({ state }).build().run();
+		return this.getRequestBuilder()
+				.setPath("/me/player/shuffle")
+				.setMethod("PUT").setParams({ state })
+				.build()
+				.run();
 	}
 
 	volume(volume_percent) {
-		return this.getRequestBuilder().setPath("/me/player/volume").setMethod("PUT").setParams({ volume_percent }).build().run();
+		return this.getRequestBuilder()
+				.setPath("/me/player/volume")
+				.setMethod("PUT").setParams({ volume_percent })
+				.build()
+				.run();
 	}
 
 	repeat(state) {
-		return this.getRequestBuilder().setPath("/me/player/repeat").setMethod("PUT").setParams({ state }).build().run();
+		return this.getRequestBuilder()
+				.setPath("/me/player/repeat")
+				.setMethod("PUT").setParams({ state })
+				.build()
+				.run();
 	}
 
 	listen(type, id) {
@@ -152,7 +184,11 @@ class SpotifyClientAPI {
 		if (type === "track" || type === "episode") body = { uris: [`spotify:${type}:${id}`] };
 		else body = { context_uri: `spotify:${type}:${id}` };
 
-		return this.getRequestBuilder().setPath("/me/player/play").setMethod("PUT").setBody(body).build().run();
+		return this.getRequestBuilder()
+				.setPath("/me/player/play")
+				.setMethod("PUT").setBody(body)
+				.build()
+				.run();
 	}
 
 	queue(type, id) {
@@ -165,11 +201,27 @@ class SpotifyClientAPI {
 	}
 
 	getPlayerState() {
-		return this.getRequestBuilder().setPath("/me/player").setMethod("GET").build().run();
+		return this.getRequestBuilder()
+				.setPath("/me/player")
+				.setMethod("GET")
+				.build()
+				.run();
 	}
 
 	getDevices() {
-		return this.getRequestBuilder().setPath("/me/player/devices").setMethod("GET").build().run();
+		return this.getRequestBuilder()
+				.setPath("/me/player/devices")
+				.setMethod("GET")
+				.build()
+				.run();
+	}
+
+	getRessource(type, id){
+		return this.getRequestBuilder()
+				.setPath(`/${type}s/${id}`)
+				.setMethod("GET")
+				.build()
+				.run(); 
 	}
 
 	//...

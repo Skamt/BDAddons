@@ -19,4 +19,4 @@ export const PlayerPlaceEnum = {
 	USERAREA: "USERAREA",
 };
 
-export const ALLOWD_TYPES = ["track", "artist", "playlist", "album", "show", "episode"];
+export const ALLOWD_TYPES = ["track", "playlist", "album", "artist", "user", "show", "episode"];

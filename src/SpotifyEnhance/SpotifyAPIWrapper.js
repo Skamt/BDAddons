@@ -2,9 +2,11 @@ import SpotifyAPI from "@Utils/SpotifyAPI";
 import RefreshToken from "@Modules/RefreshToken";
 import Logger from "@Utils/Logger";
 import Toast from "@Utils/Toast";
+import DB from "./DB";
 import { promiseHandler } from "@Utils";
+import { parsers } from "./Utils";
 
-async function requestHandler(action) {
+async function _requestHandler(action) {
 	let repeat = 1;
 	do {
 		const [actionError, actionResponse] = await promiseHandler(action());
@@ -24,6 +26,27 @@ async function requestHandler(action) {
 
 	throw new Error("Could not fulfill request");
 }
+
+const requestHandler = (() => {
+	let awaiterPromise = Promise.resolve();
+
+	return async (...args) => {
+		/* Slopy queue, i know */
+		const { promise, resolve } = Promise.withResolvers();
+		const tempPromise = awaiterPromise;
+		awaiterPromise = promise;
+
+		await tempPromise;
+		try {
+			const res = await _requestHandler(...args);
+			resolve();
+			return res;
+		} catch (e) {
+			resolve();
+			throw e;
+		}
+	};
+})();
 
 function ressourceActions(prop) {
 	const { success, error } = {
@@ -45,6 +68,26 @@ function ressourceActions(prop) {
 			.catch(reason => {
 				Toast.error(error(type, description, reason));
 			});
+}
+
+async function fetchRessource(type, id) {
+	const [err, data] = await promiseHandler(requestHandler(() => SpotifyAPI.getRessource(type, id)));
+	if (err) return Logger.error(`Could not fetch ${type} ${id}`);
+	return data;
+}
+
+async function getRessourceWithCache(type, id) {
+	/* no fetching if we can't cache */
+	if(!DB.db) return; 
+	const cachedData = await DB.get(type, id);
+	if (cachedData) return cachedData;
+
+	const fetchedData = await fetchRessource(type, id);
+	if (!fetchedData) return;
+
+	const parsedData = parsers[type](fetchedData);
+	await DB.set(type, parsedData);
+	return parsedData;
 }
 
 export default new Proxy(
@@ -72,6 +115,8 @@ export default new Proxy(
 					return () => requestHandler(() => SpotifyAPI[prop]());
 				case "setAccount":
 					return (token, id) => SpotifyAPI.setAccount(token, id);
+				case "getRessource":
+					return getRessourceWithCache;
 			}
 		}
 	}
