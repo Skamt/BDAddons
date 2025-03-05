@@ -31,7 +31,7 @@ export function isSpotifyUrl(url) {
 	}
 }
 
-const activityPanelClasses = getModule(Filters.byProps("activityPanel", "panels"), { searchExports: false });
+const activityPanelClasses = getModule(Filters.byKeys("activityPanel", "panels"), { searchExports: false });
 
 export const getFluxContainer = (() => {
 	let userAreaFluxContainer = undefined;
