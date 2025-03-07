@@ -2150,7 +2150,6 @@ class PreviewPlayer extends React.Component {
 		this.audio.onended = this.pauseHandler;
 	}
 	componentWillUnmount() {
-		console.log("componentWillUnmount");
 		this.audio.onended = null;
 		this.audio.dispose();
 		this.audio = null;
