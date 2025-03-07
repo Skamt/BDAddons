@@ -1,7 +1,7 @@
 /**
  * @name SpotifyEnhance
  * @description All in one better spotify-discord experience.
- * @version 1.0.14
+ * @version 1.0.15
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "SpotifyEnhance",
-		"version": "1.0.14",
+		"version": "1.0.15",
 		"description": "All in one better spotify-discord experience.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance",
@@ -2097,6 +2097,96 @@ const useStateFromStores = getModule(Filters.byStrings("getStateFromStores"), { 
 // @Stores\AccessibilityStore
 const AccessibilityStore = getStore("AccessibilityStore");
 
+// src\SpotifyEnhance\components\SpotifyEmbed\PreviewPlayer.jsx
+class audioPlayer {
+	constructor(src) {
+		this.src = src;
+		this.loaded = false;
+	}
+	init() {
+		if (this.loaded || this.failed) return;
+		this.audio = new Audio(this.src);
+		this.audio.volume = 0.1;
+		this.audio.onloadeddata = () => {
+			this.loaded = true;
+			this.loading = false;
+			this.audio.play();
+		};
+		this.audio.onerror = () => {
+			this.failed = true;
+			Toast.error("Could not load preview");
+		};
+		this.audio.onended = () => {
+			this.onended?.();
+		};
+	}
+	play() {
+		this.init();
+		this.play = this.audio.play.bind(this.audio);
+	}
+	pause() {
+		this.audio.pause();
+	}
+	dispose() {
+		if (!this.audio) return;
+		this.audio.pause();
+		this.audio.onloadeddata = null;
+		this.audio.onerror = null;
+		this.audio.onended = null;
+		this.audio = null;
+	}
+}
+class PreviewPlayer extends React.Component {
+	state = {
+		isPlaying: false
+	};
+	constructor() {
+		super();
+		this.playHandler = this.playHandler.bind(this);
+		this.pauseHandler = this.pauseHandler.bind(this);
+	}
+	componentDidMount() {
+		this.audio = new audioPlayer(this.props.src);
+		this.audio.onended = this.pauseHandler;
+	}
+	componentWillUnmount() {
+		console.log("componentWillUnmount");
+		this.audio.onended = null;
+		this.audio.dispose();
+		this.audio = null;
+	}
+	playHandler() {
+		this.setState({ isPlaying: true });
+		this.audio.play();
+	}
+	pauseHandler() {
+		this.setState({ isPlaying: false });
+		this.audio.pause();
+	}
+	render() {
+		const { playPauseTooltip, playPauseHandler, playPauseIcon, playPauseClassName } = {
+			true: {
+				playPauseTooltip: "Pause preview",
+				playPauseClassName: "spotify-embed-btn spotify-embed-preview-pause",
+				playPauseHandler: this.pauseHandler,
+				playPauseIcon: React.createElement(PauseIcon, null)
+			},
+			false: {
+				playPauseTooltip: "Play preview",
+				playPauseClassName: "spotify-embed-btn spotify-embed-preview-play",
+				playPauseHandler: this.playHandler,
+				playPauseIcon: React.createElement(PlayIcon$1, null)
+			}
+		} [this.state.isPlaying];
+		return (
+			React.createElement(Tooltip, { note: playPauseTooltip, }, React.createElement('div', {
+				onClick: playPauseHandler,
+				className: playPauseClassName,
+			}, playPauseIcon))
+		);
+	}
+}
+
 // src\SpotifyEnhance\components\SpotifyEmbed\index.jsx
 function useGetRessource(type, id) {
 	const [state, setState] = React.useState(null);
@@ -2110,23 +2200,29 @@ function useGetRessource(type, id) {
 }
 const SpotifyEmbed$1 = ({ id, type }) => {
 	const data = useGetRessource(type, id);
-	const { thumbnail, rawTitle, rawDescription, url } = data || {};
+	const { thumbnail, rawTitle, rawDescription, url, preview_url } = data || {};
 	const embedBannerBackground = Settings(Settings.selectors.embedBannerBackground);
 	const useReducedMotion = useStateFromStores([AccessibilityStore], () => AccessibilityStore.useReducedMotion);
 	const [isPlaying, isActive] = Store(_ => [_.isPlaying, _.isActive], shallow);
 	const mediaId = Store(Store.selectors.mediaId, (n, o) => n === o || (n !== id && o !== id));
 	const isThis = mediaId === id;
 	const listenBtn = type !== "show" && (
-		React.createElement(Tooltip, { note: `Play ${type}`, }, React.createElement('div', {
-			onClick: () => Store.Api.listen(type, id, rawTitle),
-			className: "spotify-embed-btn spotify-embed-btn-listen",
-		}, React.createElement(ListenIcon, null)))
+		React.createElement(Tooltip, { note: `Play ${type}`, }
+			/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */
+			, React.createElement('div', {
+				onClick: () => Store.Api.listen(type, id, rawTitle),
+				className: "spotify-embed-btn spotify-embed-btn-listen",
+			}, React.createElement(ListenIcon, null))
+		)
 	);
 	const queueBtn = (type === "track" || type === "episode") && (
-		React.createElement(Tooltip, { note: `Add ${type} to queue`, }, React.createElement('div', {
-			onClick: () => Store.Api.queue(type, id, rawTitle),
-			className: "spotify-embed-btn spotify-embed-btn-addToQueue",
-		}, React.createElement(AddToQueueIcon, null)))
+		React.createElement(Tooltip, { note: `Add ${type} to queue`, }
+			/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */
+			, React.createElement('div', {
+				onClick: () => Store.Api.queue(type, id, rawTitle),
+				className: "spotify-embed-btn spotify-embed-btn-addToQueue",
+			}, React.createElement(AddToQueueIcon, null))
+		)
 	);
 	let className = "spotify-embed-container";
 	if (isThis && isPlaying && !useReducedMotion) className += " playing";
@@ -2154,17 +2250,26 @@ const SpotifyEmbed$1 = ({ id, type }) => {
 				className: "spotify-embed-thumbnail",
 			})
 		), React.createElement('h2', { className: "spotify-embed-title", }, rawTitle), React.createElement('p', { className: "spotify-embed-description", }, rawDescription), type && id && (
-			React.createElement('div', { className: "spotify-embed-controls", }, ((isThis && isActive && !isPlaying) || (!isThis && isActive)) && [listenBtn, queueBtn], isThis && isActive && isPlaying && React.createElement(TrackTimeLine, null), React.createElement(Tooltip, { note: "Copy link", }, React.createElement('div', {
-				onClick: () => Store.Utils.copySpotifyLink(url),
-				className: "spotify-embed-btn spotify-embed-btn-copy",
-			}, React.createElement(CopyIcon, null))), React.createElement(Tooltip, { note: "Copy banner", }, React.createElement('div', {
-				onClick: () => Store.Utils.copySpotifyLink(banner.bannerLg?.url),
-				className: "spotify-embed-btn spotify-embed-btn-copy",
-			}, React.createElement(ImageIcon, null))))
-		), React.createElement(Tooltip, { note: "Play on Spotify", }, React.createElement('div', {
-			onClick: () => Store.Utils.openSpotifyLink(url),
-			className: "spotify-embed-spotifyIcon",
-		}, React.createElement(SpotifyIcon, null))))
+			React.createElement('div', { className: "spotify-embed-controls", }, ((isThis && isActive && !isPlaying) || (!isThis && isActive)) && [listenBtn, queueBtn], isThis && isActive && isPlaying && React.createElement(TrackTimeLine, null), React.createElement(Tooltip, { note: "Copy link", }
+				/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */
+				, React.createElement('div', {
+					onClick: () => Store.Utils.copySpotifyLink(url),
+					className: "spotify-embed-btn spotify-embed-btn-copy",
+				}, React.createElement(CopyIcon, null))
+			), React.createElement(Tooltip, { note: "Copy banner", }
+				/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */
+				, React.createElement('div', {
+					onClick: () => Store.Utils.copySpotifyLink(banner.bannerLg?.url),
+					className: "spotify-embed-btn spotify-embed-btn-copy",
+				}, React.createElement(ImageIcon, null))
+			), preview_url && React.createElement(PreviewPlayer, { src: preview_url, }))
+		), React.createElement(Tooltip, { note: "Play on Spotify", }
+			/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */
+			, React.createElement('div', {
+				onClick: () => Store.Utils.openSpotifyLink(url),
+				className: "spotify-embed-spotifyIcon",
+			}, React.createElement(SpotifyIcon, null))
+		))
 	);
 };
 
@@ -2664,64 +2769,6 @@ const css = `:root {
 	flex: 1 0 0;
 	width: 100%;
 }
-.spotify-player-controls {
-	display: flex;
-	justify-content: space-between;
-	width: 100%;
-	overflow: hidden;
-}
-
-.spotify-player-controls svg {
-	width: 16px;
-	height: 16px;
-}
-
-.spotify-player-controls-btn {
-	padding: 3px !important;
-	color: #ccc;
-	transition: all 100ms linear;
-	border-radius: 5px;
-}
-
-.spotify-player-controls-btn:hover {
-	background: #ccc3;
-	color: fff;
-	scale: 1.1;
-}
-
-.spotify-player-controls-btn.enabled {
-	color: var(--SpotifyEnhance-spotify-green);
-}
-
-.spotify-player-controls-volume-slider-wrapper {
-	height: 160px;
-	width: 25px;
-	background: var(--background-floating);
-	padding: 5px 3px;
-	border-radius: 99px;
-	display: flex;
-	flex-direction: column;
-	box-sizing:border-box;
-}
-
-.spotify-player-controls-volume-slider {
-	margin: 0;
-	width: 100%;
-	min-height: 0;
-	accent-color: var(--SpotifyEnhance-spotify-green);
-	flex: 1 0 0;
-	appearance: slider-vertical;
-}
-
-.spotify-player-controls-volume-label {
-	color:white;
-	width:100%;
-	border-top:1px solid rgba(78, 80, 88);
-	font-size:.85rem;
-	margin-top:5px;
-	padding-top:5px;
-	text-align:center;
-}
 .spotify-player-media {
 	color: white;
 	font-size: 0.9rem;
@@ -2790,6 +2837,64 @@ div:has(> .spotify-banner-modal) {
 	border-radius: 5px;
 }
 
+.spotify-player-controls {
+	display: flex;
+	justify-content: space-between;
+	width: 100%;
+	overflow: hidden;
+}
+
+.spotify-player-controls svg {
+	width: 16px;
+	height: 16px;
+}
+
+.spotify-player-controls-btn {
+	padding: 3px !important;
+	color: #ccc;
+	transition: all 100ms linear;
+	border-radius: 5px;
+}
+
+.spotify-player-controls-btn:hover {
+	background: #ccc3;
+	color: fff;
+	scale: 1.1;
+}
+
+.spotify-player-controls-btn.enabled {
+	color: var(--SpotifyEnhance-spotify-green);
+}
+
+.spotify-player-controls-volume-slider-wrapper {
+	height: 160px;
+	width: 25px;
+	background: var(--background-floating);
+	padding: 5px 3px;
+	border-radius: 99px;
+	display: flex;
+	flex-direction: column;
+	box-sizing:border-box;
+}
+
+.spotify-player-controls-volume-slider {
+	margin: 0;
+	width: 100%;
+	min-height: 0;
+	accent-color: var(--SpotifyEnhance-spotify-green);
+	flex: 1 0 0;
+	appearance: slider-vertical;
+}
+
+.spotify-player-controls-volume-label {
+	color:white;
+	width:100%;
+	border-top:1px solid rgba(78, 80, 88);
+	font-size:.85rem;
+	margin-top:5px;
+	padding-top:5px;
+	text-align:center;
+}
 .spotify-player-timeline {
 	user-select: none;
 	margin-bottom: 2px;
@@ -2989,9 +3094,6 @@ div:has(> .spotify-banner-modal) {
 }
 
 
-.transparent-background{
-	background: transparent;
-}
 .downloadLink {
 	color: white !important;
 	font-size: 14px;
@@ -3015,4 +3117,7 @@ div:has(> .spotify-banner-modal) {
 	flex-wrap: wrap;
 	gap: 4px;
 }
-`;
+
+.transparent-background{
+	background: transparent;
+}`;
