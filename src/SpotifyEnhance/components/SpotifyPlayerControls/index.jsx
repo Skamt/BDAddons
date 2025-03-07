@@ -68,7 +68,7 @@ export default () => {
 	const playerButtons = Settings(Settings.selectors.playerButtons, shallow);
 	const [isPlaying, shuffle, repeat, volume] = Store(_ => [_.isPlaying, _.shuffle, _.repeat, _.volume], shallow);
 	const actions = Store(Store.selectors.actions, shallow);
-	const context = Store(Store.selectors.context, (n,o)=> n?.uri === o?.uri);
+	const context = Store(Store.selectors.context, (n, o) => n?.uri === o?.uri);
 	const url = Store.state.getSongUrl();
 	const { bannerLg } = Store.state.getSongBanners();
 

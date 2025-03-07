@@ -6,13 +6,14 @@ import CopyIcon from "@Components/icons/CopyIcon";
 import ImageIcon from "@Components/icons/ImageIcon";
 import ListenIcon from "@Components/icons/ListenIcon";
 import SpotifyIcon from "@Components/icons/SpotifyIcon";
+import useStateFromStores from "@Modules/useStateFromStores";
+import AccessibilityStore from "@Stores/AccessibilityStore";
 import { shallow } from "@Utils";
 import { getImageComponent } from "@Utils/ImageModal";
 import { openModal } from "@Utils/Modals";
 import Settings from "@Utils/Settings";
-import useStateFromStores from "@Modules/useStateFromStores";
-import AccessibilityStore from "@Stores/AccessibilityStore";
 import { Store } from "../../Store";
+import PreviewPlayer from "./PreviewPlayer";
 import TrackTimeLine from "../TrackTimeLine";
 
 function useGetRessource(type, id) {
@@ -28,7 +29,7 @@ function useGetRessource(type, id) {
 
 export default ({ id, type }) => {
 	const data = useGetRessource(type, id);
-	const { thumbnail, rawTitle, rawDescription, url } = data || {};
+	const { thumbnail, rawTitle, rawDescription, url, preview_url } = data || {};
 	const embedBannerBackground = Settings(Settings.selectors.embedBannerBackground);
 	const useReducedMotion = useStateFromStores([AccessibilityStore], () => AccessibilityStore.useReducedMotion);
 
@@ -39,6 +40,7 @@ export default ({ id, type }) => {
 
 	const listenBtn = type !== "show" && (
 		<Tooltip note={`Play ${type}`}>
+			{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 			<div
 				onClick={() => Store.Api.listen(type, id, rawTitle)}
 				className="spotify-embed-btn spotify-embed-btn-listen">
@@ -49,6 +51,7 @@ export default ({ id, type }) => {
 
 	const queueBtn = (type === "track" || type === "episode") && (
 		<Tooltip note={`Add ${type} to queue`}>
+			{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 			<div
 				onClick={() => Store.Api.queue(type, id, rawTitle)}
 				className="spotify-embed-btn spotify-embed-btn-addToQueue">
@@ -94,6 +97,7 @@ export default ({ id, type }) => {
 					{((isThis && isActive && !isPlaying) || (!isThis && isActive)) && [listenBtn, queueBtn]}
 					{isThis && isActive && isPlaying && <TrackTimeLine />}
 					<Tooltip note="Copy link">
+						{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 						<div
 							onClick={() => Store.Utils.copySpotifyLink(url)}
 							className="spotify-embed-btn spotify-embed-btn-copy">
@@ -101,15 +105,18 @@ export default ({ id, type }) => {
 						</div>
 					</Tooltip>
 					<Tooltip note="Copy banner">
+						{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 						<div
 							onClick={() => Store.Utils.copySpotifyLink(banner.bannerLg?.url)}
 							className="spotify-embed-btn spotify-embed-btn-copy">
 							<ImageIcon />
 						</div>
 					</Tooltip>
+					{preview_url && <PreviewPlayer src={preview_url} />}
 				</div>
 			)}
 			<Tooltip note="Play on Spotify">
+				{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 				<div
 					onClick={() => Store.Utils.openSpotifyLink(url)}
 					className="spotify-embed-spotifyIcon">
