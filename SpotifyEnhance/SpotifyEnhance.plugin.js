@@ -625,7 +625,7 @@ const parsers = {
 };
 
 // src\SpotifyEnhance\SpotifyAPIWrapper.js
-async function _requestHandler(action) {
+async function requestHandler(action) {
 	let repeat = 1;
 	do {
 		const [actionError, actionResponse] = await promiseHandler(action());
@@ -641,25 +641,7 @@ async function _requestHandler(action) {
 	} while (repeat--);
 	throw new Error("Could not fulfill request");
 }
-const requestHandler = (() => {
-	let awaiterPromise = Promise.resolve();
-	return async (...args) => {
-		/* Slopy queue, i know */
-		const { promise, resolve } = Promise.withResolvers();
-		const tempPromise = awaiterPromise;
-		awaiterPromise = promise;
-		await tempPromise;
-		try {
-			const res = await _requestHandler(...args);
-			resolve();
-			return res;
-		} catch (e) {
-			resolve();
-			throw e;
-		}
-	};
-})();
-
+// 		/* Slopy queue, i know */
 function ressourceActions(prop) {
 	const { success, error } = {
 		queue: {
@@ -1716,34 +1698,32 @@ function formatMsToTime(ms) {
 }
 const TrackTimeLine = () => {
 	const [position, duration] = Store(_ => [_.position, _.duration], shallow);
-	const [localPosition, setLocalPosition] = React.useState(position);
+	const sliderRef = React.useRef();
 	React.useEffect(() => {
 		if (sliderRef.current?.state?.active) return;
-		setLocalPosition(position);
+		sliderRef.current?.setState({ value: position < 1000 ? 0 : position });
 	}, [position]);
-	const sliderRef = React.useRef();
-	const rangeChangeHandler = e => {
-		if (!sliderRef.current?.state?.active) return;
+	const rangeChangeHandler = BdApi.Utils.debounce(e => {
+		if (sliderRef.current?.state?.active) return;
 		const pos = Math.floor(e);
 		Store.positionInterval.stop();
 		Store.state.setPosition(pos);
 		Store.Api.seek(pos);
-	};
+	}, 100);
 	return (
 		React.createElement('div', { className: "spotify-player-timeline", }, React.createElement(Slider, {
 			className: "spotify-player-timeline-trackbar",
 			mini: true,
 			minValue: 0,
 			maxValue: duration,
-			initialValue: localPosition < 1000 ? 0 : localPosition,
 			onValueChange: rangeChangeHandler,
 			onValueRender: formatMsToTime,
 			ref: sliderRef,
 			grabberClassName: "spotify-player-timeline-trackbar-grabber",
 			barClassName: "spotify-player-timeline-trackbar-bar",
-		}), React.createElement('div', { className: "spotify-player-timeline-progress", }, formatMsToTime(localPosition)), React.createElement(Duration, {
+		}), React.createElement('div', { className: "spotify-player-timeline-progress", }, formatMsToTime(position)), React.createElement(Duration, {
 			duration: duration,
-			position: localPosition,
+			position: position,
 		}))
 	);
 };
@@ -2766,45 +2746,63 @@ const css = `:root {
 	flex: 1 0 0;
 	width: 100%;
 }
-.spotify-player-timeline {
-	user-select: none;
-	margin-bottom: 2px;
+.spotify-player-controls {
 	display: flex;
-	flex-wrap: wrap;
-	font-size: 0.8rem;
-	flex: 1;
+	justify-content: space-between;
+	width: 100%;
+	overflow: hidden;
 }
 
-.spotify-player-timeline-progress {
-	flex: 1;
+.spotify-player-controls svg {
+	width: 16px;
+	height: 16px;
 }
 
-.spotify-player-timeline-trackbar {
-	cursor: pointer;
+.spotify-player-controls-btn {
+	padding: 3px !important;
+	color: #ccc;
+	transition: all 100ms linear;
+	border-radius: 5px;
 }
 
-.spotify-player-timeline:hover .spotify-player-timeline-trackbar-grabber {
-	opacity: 1;
+.spotify-player-controls-btn:hover {
+	background: #ccc3;
+	color: fff;
+	scale: 1.1;
 }
 
-.spotify-player-timeline .spotify-player-timeline-trackbar-grabber {
-	opacity: 0;
-	--grabber-size:12px;
-	cursor: grab;
+.spotify-player-controls-btn.enabled {
+	color: var(--SpotifyEnhance-spotify-green);
 }
 
-.spotify-player-timeline .spotify-player-timeline-trackbar-bar {
-	background: hsl(0deg 0% 100% / 30%);
-}
-
-.spotify-player-timeline .spotify-player-timeline-trackbar-bar > div {
-	background: #fff;
-	border-radius: 4px;
+.spotify-player-controls-volume-slider-wrapper {
+	height: 160px;
+	width: 25px;
+	background: var(--background-floating);
+	padding: 5px 3px;
+	border-radius: 99px;
+	display: flex;
+	flex-direction: column;
 	box-sizing:border-box;
 }
 
-.spotify-player-timeline:hover .spotify-player-timeline-trackbar-bar > div {
-	background: var(--SpotifyEnhance-spotify-green);
+.spotify-player-controls-volume-slider {
+	margin: 0;
+	width: 100%;
+	min-height: 0;
+	accent-color: var(--SpotifyEnhance-spotify-green);
+	flex: 1 0 0;
+	appearance: slider-vertical;
+}
+
+.spotify-player-controls-volume-label {
+	color:white;
+	width:100%;
+	border-top:1px solid rgba(78, 80, 88);
+	font-size:.85rem;
+	margin-top:5px;
+	padding-top:5px;
+	text-align:center;
 }
 .spotify-player-media {
 	color: white;
@@ -2874,63 +2872,58 @@ div:has(> .spotify-banner-modal) {
 	border-radius: 5px;
 }
 
-.spotify-player-controls {
+.spotify-player-timeline {
+	user-select: none;
+	margin-bottom: 2px;
+	color:white;
 	display: flex;
-	justify-content: space-between;
-	width: 100%;
-	overflow: hidden;
+	flex-wrap: wrap;
+	font-size: 0.8rem;
+	flex: 1;
 }
 
-.spotify-player-controls svg {
-	width: 16px;
-	height: 16px;
+.spotify-player-timeline-progress {
+	flex: 1;
 }
 
-.spotify-player-controls-btn {
-	padding: 3px !important;
-	color: #ccc;
-	transition: all 100ms linear;
-	border-radius: 5px;
+.spotify-player-timeline-trackbar {
+	cursor: pointer;
 }
 
-.spotify-player-controls-btn:hover {
-	background: #ccc3;
-	color: fff;
-	scale: 1.1;
+.spotify-player-timeline:hover .spotify-player-timeline-trackbar-grabber {
+	opacity: 1;
 }
 
-.spotify-player-controls-btn.enabled {
-	color: var(--SpotifyEnhance-spotify-green);
+.spotify-player-timeline .spotify-player-timeline-trackbar-grabber {
+	opacity: 0;
+	--grabber-size:12px;
+	cursor: grab;
 }
 
-.spotify-player-controls-volume-slider-wrapper {
-	height: 160px;
-	width: 25px;
-	background: var(--background-floating);
-	padding: 5px 3px;
-	border-radius: 99px;
-	display: flex;
-	flex-direction: column;
+.spotify-player-timeline .spotify-player-timeline-trackbar-bar {
+	background: hsl(0deg 0% 100% / 30%);
+}
+
+.spotify-player-timeline .spotify-player-timeline-trackbar-bar > div {
+	background: #fff;
+	border-radius: 4px;
 	box-sizing:border-box;
 }
 
-.spotify-player-controls-volume-slider {
-	margin: 0;
-	width: 100%;
-	min-height: 0;
-	accent-color: var(--SpotifyEnhance-spotify-green);
-	flex: 1 0 0;
-	appearance: slider-vertical;
+.spotify-player-timeline:hover .spotify-player-timeline-trackbar-bar > div {
+	background: var(--SpotifyEnhance-spotify-green);
+}
+.spotify-embed-plus {
+	display: flex;
+	min-width: 400px;
+	max-width: 100%;
+	gap: 5px;
+	overflow: hidden;
 }
 
-.spotify-player-controls-volume-label {
-	color:white;
-	width:100%;
-	border-top:1px solid rgba(78, 80, 88);
-	font-size:.85rem;
-	margin-top:5px;
-	padding-top:5px;
-	text-align:center;
+.spotify-embed-plus > button {
+	flex: 1 0 auto;
+	text-transform: capitalize;
 }
 .spotify-embed-container {
 	background:
@@ -3074,21 +3067,6 @@ div:has(> .spotify-banner-modal) {
 }
 
 
-.spotify-embed-plus {
-	display: flex;
-	min-width: 400px;
-	max-width: 100%;
-	gap: 5px;
-	overflow: hidden;
-}
-
-.spotify-embed-plus > button {
-	flex: 1 0 auto;
-	text-transform: capitalize;
-}
-.transparent-background{
-	background: transparent;
-}
 .downloadLink {
 	color: white !important;
 	font-size: 14px;
@@ -3112,4 +3090,7 @@ div:has(> .spotify-banner-modal) {
 	flex-wrap: wrap;
 	gap: 4px;
 }
-`;
+
+.transparent-background{
+	background: transparent;
+}`;
