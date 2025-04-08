@@ -1,7 +1,7 @@
 /**
  * @name SpotifyEnhance
  * @description All in one better spotify-discord experience.
- * @version 1.0.15
+ * @version 1.0.16
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "SpotifyEnhance",
-		"version": "1.0.15",
+		"version": "1.0.16",
 		"description": "All in one better spotify-discord experience.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance",
@@ -1089,10 +1089,8 @@ const Button = Button$1 ||
 		return React.createElement('button', { ...props, });
 	};
 
-// @Modules\Popout
-const Popout$1 = getModule(Filters.byKeys("Animation", "defaultProps"), { searchExports: true });
-
 // common\Components\Popout\index.jsx
+const DiscordPopout = getModule(Filters.byPrototypeKeys("shouldShowPopout", "toggleShow"), { searchExports: true });
 const Popout = ({ delay, spacing, forceShow, position, animation, align, className, renderPopout, children, ...rest }) => {
 	const [show, setShow] = React.useState(false);
 	const leaveRef = React.useRef();
@@ -1118,7 +1116,7 @@ const Popout = ({ delay, spacing, forceShow, position, animation, align, classNa
 					setShow(true);
 				}, delay || 150);
 			},
-		}, React.createElement(Popout$1, {
+		}, React.createElement(DiscordPopout, {
 			renderPopout: renderPopout,
 			shouldShow: forceShow || show,
 			position: position ?? "top",
@@ -2248,7 +2246,7 @@ const SpotifyEmbed$1 = ({ id, type }) => {
 				},
 				className: "spotify-embed-thumbnail",
 			})
-		), React.createElement('h2', { className: "spotify-embed-title", }, rawTitle), React.createElement('p', { className: "spotify-embed-description", }, rawDescription), type && id && (
+		), React.createElement(Tooltip, { note: rawTitle, }, React.createElement('h2', { className: "spotify-embed-title", }, rawTitle)), React.createElement(Tooltip, { note: rawDescription, }, React.createElement('p', { className: "spotify-embed-description", }, rawDescription)), type && id && (
 			React.createElement('div', { className: "spotify-embed-controls", }, ((isThis && isActive && !isPlaying) || (!isThis && isActive)) && [listenBtn, queueBtn], isThis && isActive && isPlaying && React.createElement(TrackTimeLine, null), React.createElement(Tooltip, { note: "Copy link", }
 				/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */
 				, React.createElement('div', {
@@ -2768,6 +2766,46 @@ const css = `:root {
 	flex: 1 0 0;
 	width: 100%;
 }
+.spotify-player-timeline {
+	user-select: none;
+	margin-bottom: 2px;
+	display: flex;
+	flex-wrap: wrap;
+	font-size: 0.8rem;
+	flex: 1;
+}
+
+.spotify-player-timeline-progress {
+	flex: 1;
+}
+
+.spotify-player-timeline-trackbar {
+	cursor: pointer;
+}
+
+.spotify-player-timeline:hover .spotify-player-timeline-trackbar-grabber {
+	opacity: 1;
+}
+
+.spotify-player-timeline .spotify-player-timeline-trackbar-grabber {
+	opacity: 0;
+	--grabber-size:12px;
+	cursor: grab;
+}
+
+.spotify-player-timeline .spotify-player-timeline-trackbar-bar {
+	background: hsl(0deg 0% 100% / 30%);
+}
+
+.spotify-player-timeline .spotify-player-timeline-trackbar-bar > div {
+	background: #fff;
+	border-radius: 4px;
+	box-sizing:border-box;
+}
+
+.spotify-player-timeline:hover .spotify-player-timeline-trackbar-bar > div {
+	background: var(--SpotifyEnhance-spotify-green);
+}
 .spotify-player-media {
 	color: white;
 	font-size: 0.9rem;
@@ -2893,63 +2931,6 @@ div:has(> .spotify-banner-modal) {
 	margin-top:5px;
 	padding-top:5px;
 	text-align:center;
-}
-.spotify-player-timeline {
-	user-select: none;
-	margin-bottom: 2px;
-	color: white;
-	display: flex;
-	flex-wrap: wrap;
-	font-size: 0.8rem;
-	flex: 1;
-}
-
-.spotify-player-timeline-progress {
-	flex: 1;
-}
-
-.spotify-player-timeline-trackbar {
-	margin-top: -8px;
-	margin-bottom: 8px;
-	cursor: pointer;
-}
-
-.spotify-player-timeline:hover .spotify-player-timeline-trackbar-grabber {
-	opacity: 1;
-}
-
-.spotify-player-timeline .spotify-player-timeline-trackbar-grabber {
-	opacity: 0;
-	cursor: grab;
-	width: 10px;
-	height: 10px;
-	margin-top: 4px;
-}
-
-.spotify-player-timeline .spotify-player-timeline-trackbar-bar {
-	background: hsl(0deg 0% 100% / 30%);
-	height: 6px;
-}
-
-.spotify-player-timeline .spotify-player-timeline-trackbar-bar > div {
-	background: #fff;
-	border-radius: 4px;
-}
-
-.spotify-player-timeline:hover .spotify-player-timeline-trackbar-bar > div {
-	background: var(--SpotifyEnhance-spotify-green);
-}
-.spotify-embed-plus {
-	display: flex;
-	min-width: 400px;
-	max-width: 100%;
-	gap: 5px;
-	overflow: hidden;
-}
-
-.spotify-embed-plus > button {
-	flex: 1 0 auto;
-	text-transform: capitalize;
 }
 .spotify-embed-container {
 	background:
@@ -3093,6 +3074,21 @@ div:has(> .spotify-banner-modal) {
 }
 
 
+.spotify-embed-plus {
+	display: flex;
+	min-width: 400px;
+	max-width: 100%;
+	gap: 5px;
+	overflow: hidden;
+}
+
+.spotify-embed-plus > button {
+	flex: 1 0 auto;
+	text-transform: capitalize;
+}
+.transparent-background{
+	background: transparent;
+}
 .downloadLink {
 	color: white !important;
 	font-size: 14px;
@@ -3116,7 +3112,4 @@ div:has(> .spotify-banner-modal) {
 	flex-wrap: wrap;
 	gap: 4px;
 }
-
-.transparent-background{
-	background: transparent;
-}`;
+`;
