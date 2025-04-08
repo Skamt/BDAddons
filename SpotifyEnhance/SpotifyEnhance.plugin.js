@@ -1733,6 +1733,7 @@ const TrackTimeLine = () => {
 			className: "spotify-player-timeline-trackbar",
 			mini: true,
 			minValue: 0,
+			initialValue: position,
 			maxValue: duration,
 			onValueChange: rangeChangeHandler,
 			onValueRender: formatMsToTime,
@@ -2764,6 +2765,64 @@ const css = `:root {
 	flex: 1 0 0;
 	width: 100%;
 }
+.spotify-player-controls {
+	display: flex;
+	justify-content: space-between;
+	width: 100%;
+	overflow: hidden;
+}
+
+.spotify-player-controls svg {
+	width: 16px;
+	height: 16px;
+}
+
+.spotify-player-controls-btn {
+	padding: 3px !important;
+	color: #ccc;
+	transition: all 100ms linear;
+	border-radius: 5px;
+}
+
+.spotify-player-controls-btn:hover {
+	background: #ccc3;
+	color: fff;
+	scale: 1.1;
+}
+
+.spotify-player-controls-btn.enabled {
+	color: var(--SpotifyEnhance-spotify-green);
+}
+
+.spotify-player-controls-volume-slider-wrapper {
+	height: 160px;
+	width: 25px;
+	background: var(--background-floating);
+	padding: 5px 3px;
+	border-radius: 99px;
+	display: flex;
+	flex-direction: column;
+	box-sizing:border-box;
+}
+
+.spotify-player-controls-volume-slider {
+	margin: 0;
+	width: 100%;
+	min-height: 0;
+	accent-color: var(--SpotifyEnhance-spotify-green);
+	flex: 1 0 0;
+	appearance: slider-vertical;
+}
+
+.spotify-player-controls-volume-label {
+	color:white;
+	width:100%;
+	border-top:1px solid rgba(78, 80, 88);
+	font-size:.85rem;
+	margin-top:5px;
+	padding-top:5px;
+	text-align:center;
+}
 .spotify-player-media {
 	color: white;
 	font-size: 0.9rem;
@@ -2832,64 +2891,6 @@ div:has(> .spotify-banner-modal) {
 	border-radius: 5px;
 }
 
-.spotify-player-controls {
-	display: flex;
-	justify-content: space-between;
-	width: 100%;
-	overflow: hidden;
-}
-
-.spotify-player-controls svg {
-	width: 16px;
-	height: 16px;
-}
-
-.spotify-player-controls-btn {
-	padding: 3px !important;
-	color: #ccc;
-	transition: all 100ms linear;
-	border-radius: 5px;
-}
-
-.spotify-player-controls-btn:hover {
-	background: #ccc3;
-	color: fff;
-	scale: 1.1;
-}
-
-.spotify-player-controls-btn.enabled {
-	color: var(--SpotifyEnhance-spotify-green);
-}
-
-.spotify-player-controls-volume-slider-wrapper {
-	height: 160px;
-	width: 25px;
-	background: var(--background-floating);
-	padding: 5px 3px;
-	border-radius: 99px;
-	display: flex;
-	flex-direction: column;
-	box-sizing:border-box;
-}
-
-.spotify-player-controls-volume-slider {
-	margin: 0;
-	width: 100%;
-	min-height: 0;
-	accent-color: var(--SpotifyEnhance-spotify-green);
-	flex: 1 0 0;
-	appearance: slider-vertical;
-}
-
-.spotify-player-controls-volume-label {
-	color:white;
-	width:100%;
-	border-top:1px solid rgba(78, 80, 88);
-	font-size:.85rem;
-	margin-top:5px;
-	padding-top:5px;
-	text-align:center;
-}
 .spotify-player-timeline {
 	user-select: none;
 	margin-bottom: 2px;
@@ -3085,6 +3086,9 @@ div:has(> .spotify-banner-modal) {
 }
 
 
+.transparent-background{
+	background: transparent;
+}
 .downloadLink {
 	color: white !important;
 	font-size: 14px;
@@ -3108,7 +3112,4 @@ div:has(> .spotify-banner-modal) {
 	flex-wrap: wrap;
 	gap: 4px;
 }
-
-.transparent-background{
-	background: transparent;
-}`;
+`;
