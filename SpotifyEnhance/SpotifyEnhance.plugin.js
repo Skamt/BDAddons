@@ -1578,10 +1578,12 @@ function getArtistContextMenu(artist) {
 
 // common\Utils\ImageModal\index.jsx
 const RenderLinkComponent = getModule(m => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false });
-const ImageModal = getModule(Filters.byStrings("renderLinkComponent", "zoomThumbnailPlaceholder"), { searchExports: true });
+const ImageModal = getModule(m => m.type?.toString?.().includes("ZOOM_OUT_IMAGE_PRESSED"), { searchExports: true });
 const getImageComponent = (url, rest = {}) => {
 	return (
 		React.createElement('div', { className: "imageModalwrapper", }, React.createElement(ImageModal, {
+			maxWidth: rest.maxWidth,
+			maxHeight: rest.maxHeight,
 			media: {
 				...rest,
 				type: "IMAGE",
@@ -1657,12 +1659,24 @@ const openModal = (children, tag, modalClassName = "") => {
 };
 
 // src\SpotifyEnhance\components\TrackMediaDetails\TrackBanner.jsx
+function fit(width, height) {
+	const ratio = Math.min(innerWidth / width, innerHeight / height);
+	width = Math.round(width * ratio);
+	height = Math.round(height * ratio);
+	return {
+		width,
+		height,
+		maxHeight: height * 0.8,
+		maxWidth: width * 0.8
+	};
+}
+
 function TrackBanner() {
 	const { bannerLg: bannerObj } = Store.state.getSongBanners();
 	const thumbnailClickHandler = () => {
 		if (!bannerObj.url) return Toast.error("Could not open banner");
 		const { url, ...rest } = bannerObj;
-		openModal(React.createElement('div', { className: "spotify-banner-modal", }, getImageComponent(url, rest)));
+		openModal(React.createElement('div', { className: "spotify-banner-modal", }, getImageComponent(url, { ...rest, ...fit(rest.width, rest.height) })));
 	};
 	return (
 		React.createElement(Tooltip, { note: "View", }, React.createElement('div', {
@@ -2765,6 +2779,111 @@ const css = `:root {
 	flex: 1 0 0;
 	width: 100%;
 }
+.spotify-player-timeline {
+	user-select: none;
+	margin-bottom: 2px;
+	color:white;
+	display: flex;
+	flex-wrap: wrap;
+	font-size: 0.8rem;
+	flex: 1;
+}
+
+.spotify-player-timeline-progress {
+	flex: 1;
+}
+
+.spotify-player-timeline-trackbar {
+	cursor: pointer;
+}
+
+.spotify-player-timeline:hover .spotify-player-timeline-trackbar-grabber {
+	opacity: 1;
+}
+
+.spotify-player-timeline .spotify-player-timeline-trackbar-grabber {
+	opacity: 0;
+	--grabber-size:12px;
+	cursor: grab;
+}
+
+.spotify-player-timeline .spotify-player-timeline-trackbar-bar {
+	background: hsl(0deg 0% 100% / 30%);
+}
+
+.spotify-player-timeline .spotify-player-timeline-trackbar-bar > div {
+	background: #fff;
+	border-radius: 4px;
+	box-sizing:border-box;
+}
+
+.spotify-player-timeline:hover .spotify-player-timeline-trackbar-bar > div {
+	background: var(--SpotifyEnhance-spotify-green);
+}
+.spotify-player-media {
+	color: white;
+	font-size: 0.9rem;
+	overflow: hidden;
+	display: grid;
+	column-gap: 10px;
+	z-index: 5;
+	grid-template-columns: 64px minmax(0, 1fr);
+	grid-template-rows: repeat(3, 1fr);
+	align-items: center;
+	justify-items: flex-start;
+	grid-template-areas:
+		"banner title"
+		"banner artist"
+		"banner album";
+}
+
+.spotify-player-title {
+	grid-area: title;
+	font-weight: bold;
+	color: #fff;
+	font-size: 1.05rem;
+	max-width: 100%;
+}
+
+.spotify-player-title:first-child {
+	grid-column: 1/-1;
+	grid-row: 1/-1;
+	margin-bottom: 5px;
+}
+
+.spotify-player-artist {
+	grid-area: artist;
+	font-size: 0.8rem;
+	max-width: 100%;
+}
+
+.spotify-player-album {
+	grid-area: album;
+	max-width: 100%;
+}
+
+.spotify-player-album > div,
+.spotify-player-artist > div {
+	display: flex;
+	gap: 5px;
+}
+
+.spotify-player-album span,
+.spotify-player-artist span {
+	color: var(--SpotifyEnhance-text-sub);
+}
+
+.spotify-player-banner {
+	grid-area: banner;
+	cursor: pointer;
+	width: 64px;
+	height: 64px;
+	background:
+		var(--banner-lg) center/cover no-repeat,
+		#b2b2b217;
+	border-radius: 5px;
+}
+
 .spotify-player-controls {
 	display: flex;
 	justify-content: space-between;
@@ -2822,115 +2941,6 @@ const css = `:root {
 	margin-top:5px;
 	padding-top:5px;
 	text-align:center;
-}
-.spotify-player-media {
-	color: white;
-	font-size: 0.9rem;
-	overflow: hidden;
-	display: grid;
-	column-gap: 10px;
-	z-index: 5;
-	grid-template-columns: 64px minmax(0, 1fr);
-	grid-template-rows: repeat(3, 1fr);
-	align-items: center;
-	justify-items: flex-start;
-	grid-template-areas:
-		"banner title"
-		"banner artist"
-		"banner album";
-}
-
-.spotify-player-title {
-	grid-area: title;
-	font-weight: bold;
-	color: #fff;
-	font-size: 1.05rem;
-	max-width: 100%;
-}
-
-.spotify-player-title:first-child {
-	grid-column: 1/-1;
-	grid-row: 1/-1;
-	margin-bottom: 5px;
-}
-
-.spotify-player-artist {
-	grid-area: artist;
-	font-size: 0.8rem;
-	max-width: 100%;
-}
-
-.spotify-player-album {
-	grid-area: album;
-	max-width: 100%;
-}
-
-.spotify-player-album > div,
-.spotify-player-artist > div {
-	display: flex;
-	gap: 5px;
-}
-
-.spotify-player-album span,
-.spotify-player-artist span {
-	color: var(--SpotifyEnhance-text-sub);
-}
-
-div:has(> .spotify-banner-modal) {
-	background: #0000;
-}
-
-.spotify-player-banner {
-	grid-area: banner;
-	cursor: pointer;
-	width: 64px;
-	height: 64px;
-	background:
-		var(--banner-lg) center/cover no-repeat,
-		#b2b2b217;
-	border-radius: 5px;
-}
-
-.spotify-player-timeline {
-	user-select: none;
-	margin-bottom: 2px;
-	color:white;
-	display: flex;
-	flex-wrap: wrap;
-	font-size: 0.8rem;
-	flex: 1;
-}
-
-.spotify-player-timeline-progress {
-	flex: 1;
-}
-
-.spotify-player-timeline-trackbar {
-	cursor: pointer;
-}
-
-.spotify-player-timeline:hover .spotify-player-timeline-trackbar-grabber {
-	opacity: 1;
-}
-
-.spotify-player-timeline .spotify-player-timeline-trackbar-grabber {
-	opacity: 0;
-	--grabber-size:12px;
-	cursor: grab;
-}
-
-.spotify-player-timeline .spotify-player-timeline-trackbar-bar {
-	background: hsl(0deg 0% 100% / 30%);
-}
-
-.spotify-player-timeline .spotify-player-timeline-trackbar-bar > div {
-	background: #fff;
-	border-radius: 4px;
-	box-sizing:border-box;
-}
-
-.spotify-player-timeline:hover .spotify-player-timeline-trackbar-bar > div {
-	background: var(--SpotifyEnhance-spotify-green);
 }
 .spotify-embed-plus {
 	display: flex;
@@ -3086,8 +3096,9 @@ div:has(> .spotify-banner-modal) {
 }
 
 
-.transparent-background{
+.transparent-background.transparent-background{
 	background: transparent;
+	border:unset;
 }
 .downloadLink {
 	color: white !important;

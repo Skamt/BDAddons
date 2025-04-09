@@ -1,7 +1,7 @@
 /**
  * @name ViewProfilePicture
  * @description Adds a button to the user popout and profile that allows you to view the Avatar and banner.
- * @version 1.2.16
+ * @version 1.2.17
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "ViewProfilePicture",
-		"version": "1.2.16",
+		"version": "1.2.17",
 		"description": "Adds a button to the user popout and profile that allows you to view the Avatar and banner.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture",
@@ -65,6 +65,7 @@ function getImageDimensions(url) {
 const getModule = Webpack.getModule;
 const Filters = Webpack.Filters;
 const getMangled = Webpack.getMangled;
+const getStore = Webpack.getStore;
 
 function getModuleAndKey(filter, options) {
 	let module;
@@ -278,10 +279,12 @@ function ImageIcon(props) {
 
 // common\Utils\ImageModal\index.jsx
 const RenderLinkComponent = getModule(m => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false });
-const ImageModal = getModule(Filters.byStrings("renderLinkComponent", "zoomThumbnailPlaceholder"), { searchExports: true });
+const ImageModal = getModule(m => m.type?.toString?.().includes("ZOOM_OUT_IMAGE_PRESSED"), { searchExports: true });
 const getImageComponent = (url, rest = {}) => {
 	return (
 		React.createElement('div', { className: "imageModalwrapper", }, React.createElement(ImageModal, {
+			maxWidth: rest.maxWidth,
+			maxHeight: rest.maxHeight,
 			media: {
 				...rest,
 				type: "IMAGE",
@@ -310,10 +313,10 @@ const Toast = {
 const Color = getModule(Filters.byKeys("Color", "hex", "hsl"), { searchExports: false });
 
 // @Stores\ThemeStore
-const ThemeStore = getModule(m => m._dispatchToken && m.getName() === "ThemeStore");
+const ThemeStore = getStore("ThemeStore");
 
 // @Stores\AccessibilityStore
-const AccessibilityStore = getModule(m => m._dispatchToken && m.getName() === "AccessibilityStore");
+const AccessibilityStore = getStore("AccessibilityStore");
 
 // src\ViewProfilePicture\components\ColorModalComponent.jsx
 const DesignSystem = getModule(a => a?.unsafe_rawColors?.PRIMARY_800?.resolve);
@@ -390,9 +393,13 @@ const Spinner = getModule(a => a?.Type?.CHASING_DOTS, { searchExports: true });
 // src\ViewProfilePicture\components\ViewProfilePictureButtonComponent.jsx
 function fit({ width, height }) {
 	const ratio = Math.min(innerWidth / width, innerHeight / height);
+	width = Math.round(width * ratio);
+	height = Math.round(height * ratio);
 	return {
-		width: Math.round(width * ratio),
-		height: Math.round(height * ratio)
+		width,
+		height,
+		maxHeight: height * 0.8,
+		maxWidth: width * 0.8
 	};
 }
 
@@ -418,7 +425,7 @@ const ViewProfilePictureButtonComponent = ({ bannerObject, className, user, disp
 		const bannerURL = displayProfile.getBannerURL({ canAnimate: true, size: 4096 });
 		const color = backgroundColor || displayProfile.accentColor || displayProfile.primaryColor;
 		const items = [
-				getImageComponent(avatarURL, { width: 4096, height: 4096 }),
+				getImageComponent(avatarURL, { ...fit({ width: 4096, height: 4096 }) }),
 				bannerURL && (
 					React.createElement(Banner, {
 						url: bannerURL,
@@ -691,8 +698,9 @@ const css = `/* View Profile Button */
 
 
 
-.transparent-background{
+.transparent-background.transparent-background{
 	background: transparent;
+	border:unset;
 }
 .downloadLink {
 	color: white !important;
