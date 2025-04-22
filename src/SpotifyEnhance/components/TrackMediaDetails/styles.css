@@ -51,10 +51,6 @@
 	color: var(--SpotifyEnhance-text-sub);
 }
 
-div:has(> .spotify-banner-modal) {
-	background: #0000;
-}
-
 .spotify-player-banner {
 	grid-area: banner;
 	cursor: pointer;

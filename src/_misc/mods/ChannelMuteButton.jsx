@@ -1,15 +1,14 @@
 import Logger from "@Utils/Logger";
 import { Disposable } from "@Utils";
 import { Patcher, React } from "@Api";
-import ChannelComponent from "@Patch/ChannelComponent";
+import {ChannelComponent} from "@Discord/Modules";
 import ChannelSettings from "@Modules/ChannelSettings";
 
 export default class ChannelMuteButton extends Disposable {
 	Init() {
-		const { module, key } = ChannelComponent;
-		if (!module || !key) return Logger.patchError("ChannelMuteButton");
+		if (!ChannelComponent) return Logger.patchError("ChannelMuteButton");
 		this.patches = [
-			Patcher.before(module,key,(_,[{children,muted,channel: { guild_id, id }}]) => {
+			Patcher.before(ChannelComponent,"render",(_,[{children,muted,channel: { guild_id, id }}]) => {
 					if (children?.find(a => a?.props?.id === "channelMuteButton")) return;
 					children?.push?.(
 						<b

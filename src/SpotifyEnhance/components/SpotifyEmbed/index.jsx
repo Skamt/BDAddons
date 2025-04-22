@@ -89,8 +89,12 @@ export default ({ id, type }) => {
 					className="spotify-embed-thumbnail"
 				/>
 			</Tooltip>
-			<h2 className="spotify-embed-title">{rawTitle}</h2>
-			<p className="spotify-embed-description">{rawDescription}</p>
+			<Tooltip note={rawTitle}>
+				<h2 className="spotify-embed-title">{rawTitle}</h2>
+			</Tooltip>
+			<Tooltip note={rawDescription}>
+				<p className="spotify-embed-description">{rawDescription}</p>
+			</Tooltip>
 
 			{type && id && (
 				<div className="spotify-embed-controls">

@@ -13,17 +13,8 @@ export default class ConsoleToggleButton {
 		this.el.onclick = () => electron.ipcRenderer.send("bd-toggle-devtools");
 	}
 
-	async addButtonConsoleButton() {
-		while (true) {
-			this.host = document.querySelector("#app-mount > div > div");
-			if (!this.host) {
-				await sleep(2);
-				continue;
-			}
-			this.host.append(this.el);
-			this.addButtonConsoleButton = () => this.host.append(this.el);
-			break;
-		}
+	addButtonConsoleButton() {
+		document.body.append(this.el);
 	}
 
 	Init() {

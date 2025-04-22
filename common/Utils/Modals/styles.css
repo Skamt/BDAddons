@@ -1,3 +1,4 @@
-.transparent-background{
+.transparent-background.transparent-background{
 	background: transparent;
+	border:unset;
 }

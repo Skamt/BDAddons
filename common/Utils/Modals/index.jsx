@@ -1,6 +1,6 @@
 import "./styles";
 import { React } from "@Api";
-import { getModule, Filters } from "@Webpack";
+import { getModule, getMangled, Filters } from "@Webpack";
 import ErrorBoundary from "@Components/ErrorBoundary";
 
 import ModalRoot from "@Modules/ModalRoot";
@@ -29,3 +29,5 @@ export const openModal = (children, tag, modalClassName = "") => {
 };
 
 export function closeModal() {}
+
+export const openImageModal = getMangled("Media Viewer Modal",{openImageModal:a => typeof a !== "string"});

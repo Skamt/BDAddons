@@ -33,7 +33,7 @@
 			"options": "{ searchExports: true }"
 		},
 		"Popout": {
-			"filter": "Filters.byKeys(\"Animation\",\"defaultProps\")",
+			"filter": "Filters.byPrototypeKeys(\"shouldShowPopout\",\"toggleShow\")",
 			"options": "{ searchExports: true }"
 		},
 		"Tooltip": {

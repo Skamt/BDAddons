@@ -1,20 +1,23 @@
 import { React } from "@Api";
 import Settings from "@Utils/Settings";
-import {openModal} from "@Utils/Modals"
+import { openModal } from "@Utils/Modals";
 import Tooltip from "@Components/Tooltip";
 import ImageIcon from "@Components/icons/ImageIcon";
 import { getImageDimensions, promiseHandler } from "@Utils";
-import {  getImageComponent  } from "@Utils/ImageModal";
+import { getImageComponent } from "@Utils/ImageModal";
 import ColorModalComponent from "./ColorModalComponent";
 import ModalCarousel from "./ModalCarousel";
 import Spinner from "@Modules/Spinner";
 
 function fit({ width, height }) {
 	const ratio = Math.min(innerWidth / width, innerHeight / height);
-
+	width = Math.round(width * ratio);
+	height = Math.round(height * ratio);
 	return {
-		width: Math.round(width * ratio),
-		height: Math.round(height * ratio)
+		width,
+		height,
+		maxHeight: height * 0.8,
+		maxWidth: width * 0.8
 	};
 }
 
@@ -44,7 +47,7 @@ export default ({ bannerObject, className, user, displayProfile }) => {
 		const bannerURL = displayProfile.getBannerURL({ canAnimate: true, size: 4096 });
 		const color = backgroundColor || displayProfile.accentColor || displayProfile.primaryColor;
 		const items = [
-			getImageComponent(avatarURL, { width: 4096, height: 4096 }),
+			getImageComponent(avatarURL, { ...fit({ width: 4096, height: 4096 }) }),
 			bannerURL && (
 				<Banner
 					url={bannerURL}

@@ -66,7 +66,6 @@ export default class extends React.Component {
 	}
 
 	componentWillUnmount() {
-		console.log("componentWillUnmount");
 		this.audio.onended = null;
 		this.audio.dispose();
 		this.audio = null;

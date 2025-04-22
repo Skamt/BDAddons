@@ -1,5 +1,7 @@
 import { React } from "@Api";
-import Popout from "@Modules/Popout";
+import { getModule, Filters } from "@Webpack";
+
+export const DiscordPopout = getModule(Filters.byPrototypeKeys("shouldShowPopout","toggleShow"), { searchExports: true });
 
 export default ({ delay, spacing, forceShow, position, animation, align, className, renderPopout, children, ...rest }) => {
 	const [show, setShow] = React.useState(false);
@@ -27,7 +29,7 @@ export default ({ delay, spacing, forceShow, position, animation, align, classNa
 					setShow(true);
 				}, delay || 150);
 			}}>
-			<Popout
+			<DiscordPopout
 				renderPopout={renderPopout}
 				shouldShow={forceShow || show}
 				position={position ?? "top"}
@@ -36,7 +38,7 @@ export default ({ delay, spacing, forceShow, position, animation, align, classNa
 				spacing={spacing ?? 8}
 				{...rest}>
 				{() => children}
-			</Popout>
+			</DiscordPopout>
 		</div>
 	);
 };

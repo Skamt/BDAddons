@@ -11,23 +11,19 @@ function formatMsToTime(ms) {
 
 export default () => {
 	const [position, duration] = Store(_ => [_.position, _.duration], shallow);
-
-	const [localPosition, setLocalPosition] = React.useState(position);
-
+	const sliderRef = React.useRef();
 	React.useEffect(() => {
 		if (sliderRef.current?.state?.active) return;
-		setLocalPosition(position);
+		sliderRef.current?.setState({ value: position < 1000 ? 0 : position });
 	}, [position]);
 
-	const sliderRef = React.useRef();
-
-	const rangeChangeHandler = e => {
-		if (!sliderRef.current?.state?.active) return;
+	const rangeChangeHandler = BdApi.Utils.debounce(e => {
+		if (sliderRef.current?.state?.active) return;
 		const pos = Math.floor(e);
 		Store.positionInterval.stop();
 		Store.state.setPosition(pos);
 		Store.Api.seek(pos);
-	};
+	},100);
 
 	return (
 		<div className="spotify-player-timeline">
@@ -35,18 +31,18 @@ export default () => {
 				className="spotify-player-timeline-trackbar"
 				mini={true}
 				minValue={0}
+				initialValue={position}
 				maxValue={duration}
-				initialValue={localPosition < 1000 ? 0 : localPosition}
 				onValueChange={rangeChangeHandler}
 				onValueRender={formatMsToTime}
 				ref={sliderRef}
 				grabberClassName="spotify-player-timeline-trackbar-grabber"
 				barClassName="spotify-player-timeline-trackbar-bar"
 			/>
-			<div className="spotify-player-timeline-progress">{formatMsToTime(localPosition)}</div>
+			<div className="spotify-player-timeline-progress">{formatMsToTime(position)}</div>
 			<Duration
 				duration={duration}
-				position={localPosition}
+				position={position}
 			/>
 		</div>
 	);
