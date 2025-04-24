@@ -1,7 +1,7 @@
 /**
  * @name ViewProfilePicture
  * @description Adds a button to the user popout and profile that allows you to view the Avatar and banner.
- * @version 1.2.17
+ * @version 1.2.18
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "ViewProfilePicture",
-		"version": "1.2.17",
+		"version": "1.2.18",
 		"description": "Adds a button to the user popout and profile that allows you to view the Avatar and banner.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture",
@@ -71,9 +71,9 @@ function getModuleAndKey(filter, options) {
 	let module;
 	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
 	module = module?.exports;
-	if (!module) return {};
+	if (!module) return;
 	const key = Object.keys(module).find(k => module[k] === target);
-	if (!key) return {};
+	if (!key) return;
 	return { module, key };
 }
 
@@ -244,6 +244,7 @@ const openModal = (children, tag, modalClassName = "") => {
 		);
 	});
 };
+getMangled("Media Viewer Modal", { openImageModal: a => typeof a !== "string" });
 
 // @Modules\Tooltip
 const Tooltip$1 = getModule(Filters.byPrototypeKeys("renderTooltip"), { searchExports: true });
@@ -468,7 +469,7 @@ const ViewProfilePictureButtonComponent = ({ bannerObject, className, user, disp
 
 // src\ViewProfilePicture\patches\patchVPPButton.jsx
 const UserProfileModalforwardRef = getModule(Filters.byKeys("Overlay", "render"));
-const typeFilter = Filters.byStrings("BITE_SIZE", "FULL_SIZE");
+const typeFilter = Filters.byStrings("div", "wrapper", "children");
 const patchVPPButton = () => {
 	if (!UserProfileModalforwardRef) return Logger.patchError("patchVPPButton");
 	Patcher.after(UserProfileModalforwardRef, "render", (_, [props], ret) => {
@@ -490,58 +491,12 @@ const patchVPPButton = () => {
 	});
 };
 
-// @Enums\ProfileTypeEnum
-const ProfileTypeEnum = getModule(Filters.byKeys("POPOUT", "SETTINGS"), { searchExports: true }) || {
-	"POPOUT": 0,
-	"MODAL": 1,
-	"SETTINGS": 2,
-	"PANEL": 3,
-	"CARD": 4
-};
-
-// src\ViewProfilePicture\patches\patchUserBannerMask.jsx
-const UserBannerMask = getModuleAndKey(Filters.byStrings("bannerSrc", "showPremiumBadgeUpsell"), { searchExports: true });
-
-function getButtonClasses({ profileType }, isNotNitro, banner) {
-	let className = "VPP-Button";
-	if (profileType === ProfileTypeEnum.MODAL) className += " VPP-profile";
-	if (banner && isNotNitro) className += " VPP-left";
-	else className += " VPP-right";
-	return className;
-}
-const patchUserBannerMask = () => {
-	if (!UserBannerMask) return Logger.patchError("UserBannerMask");
-	const { module, key } = UserBannerMask;
-	Patcher.after(module, key, (_, [props], el) => {
-		if (props.profileType === ProfileTypeEnum.SETTINGS) return;
-		const bannerElement = el.props.children.props;
-		bannerElement.className += " VPP-container";
-		const bannerObject = bannerElement.style;
-		const children = bannerElement.children;
-		const className = getButtonClasses(props, children[0], bannerObject?.backgroundImage);
-		children.push(
-			React.createElement(ErrorBoundary, {
-				id: "ViewProfilePictureButtonComponent",
-				plugin: config.info.name,
-				fallback: React.createElement(ErrorIcon, { className: className, }),
-			}, React.createElement(ViewProfilePictureButtonComponent, {
-				className: className,
-				isHovering: props.isHovering,
-				user: props.user,
-				displayProfile: props.displayProfile,
-				bannerObject: bannerObject,
-			}))
-		);
-	});
-};
-
 // src\ViewProfilePicture\index.jsx
 class ViewProfilePicture {
 	start() {
 		try {
 			DOM.addStyle(css);
 			patchVPPButton();
-			patchUserBannerMask();
 		} catch (e) {
 			Logger.error(e);
 		}
@@ -698,10 +653,6 @@ const css = `/* View Profile Button */
 
 
 
-.transparent-background.transparent-background{
-	background: transparent;
-	border:unset;
-}
 .downloadLink {
 	color: white !important;
 	font-size: 14px;
@@ -725,4 +676,8 @@ const css = `/* View Profile Button */
 	flex-wrap: wrap;
 	gap: 4px;
 }
-`;
+
+.transparent-background.transparent-background{
+	background: transparent;
+	border:unset;
+}`;
