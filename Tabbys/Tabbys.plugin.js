@@ -350,7 +350,7 @@ function GenericTab({ tabId, path }) {
 const useStateFromStores = getModule(Filters.byStrings("getStateFromStores"), { searchExports: true });
 
 // common\DiscordModules\Enums.js
-const ChannelTypeEnum = getModule(Filters.byProps("GUILD_TEXT", "DM"), { searchExports: true }) || {
+const ChannelTypeEnum = getModule(Filters.byKeys("GUILD_TEXT", "DM"), { searchExports: true }) || {
 	"GUILD_CATEGORY": 4,
 	"0": "GUILD_TEXT",
 	"1": "DM",
@@ -466,23 +466,24 @@ function TabSwitch({ id }) {
 	const item = Store(state => state.tabs.find(tab => tab.id === id), shallow);
 	if (!item?.path) return;
 	const [, type, guildId, channelId, , threadId] = item.path.split("/");
+	let res = null;
 	if (type !== "channels")
-		return (
+		res = (
 			React.createElement(GenericTab, {
 				tabId: id,
 				path: item.path,
 			})
 		);
-	if (guildId === "@me" && channelId)
-		return (
+	else if (guildId === "@me" && channelId)
+		res = (
 			React.createElement(DMTab, {
 				tabId: id,
 				path: item.path,
 				channelId: channelId,
 			})
 		);
-	if (isSnowflake(guildId))
-		return (
+	else if (isSnowflake(guildId))
+		res = (
 			React.createElement(ChannelTab, {
 				tabId: id,
 				path: item.path,
@@ -491,12 +492,14 @@ function TabSwitch({ id }) {
 				threadId: threadId,
 			})
 		);
-	return (
-		React.createElement(GenericTab, {
-			tabId: id,
-			path: item.path,
-		})
-	);
+	else
+		res = (
+			React.createElement(GenericTab, {
+				tabId: id,
+				path: item.path,
+			})
+		);
+	return React.createElement('div', null, res);
 }
 
 // common\Components\icons\ArrowIcon\index.jsx
@@ -516,10 +519,12 @@ function Arrow() {
 }
 
 // src\Tabbys\components\TabsScroller\index.jsx
-function TabsScroller({ selectedTabIndex, children }) {
+function TabsScroller({ selectedTab, children }) {
 	console.log("TabsScroller rendered");
+	const [updateScrollObserver, setUpdateScrollObserver] = useState(false);
 	const [leftScrollBtn, setLeftScrollBtn] = useState(false);
 	const [rightScrollBtn, setRightScrollBtn] = useState(false);
+	const { index: selectedTabIndex } = (selectedTab.id && Store.state.getTabMeta(selectedTab.id)) || {};
 	const tabsRef = useRef(null);
 	const getTabsMeta = () => {
 		if (!selectedTabIndex) return {};
@@ -576,7 +581,6 @@ function TabsScroller({ selectedTabIndex, children }) {
 		if (length < 1) return;
 		const firstTab = tabListChildren[0];
 		const lastTab = tabListChildren[length - 1];
-		console.log(firstTab, lastTab);
 		const observerOptions = {
 			root: tabsNode,
 			threshold: 0.99
@@ -591,10 +595,25 @@ function TabsScroller({ selectedTabIndex, children }) {
 			leftObserver.disconnect();
 			rightObserver.disconnect();
 		};
-	}, [children.length]);
+	}, [updateScrollObserver, children.length]);
 	useEffect(() => {
 		scrollSelectedIntoView();
-	}, [children.length]);
+	}, [selectedTab.id]);
+	useEffect(() => {
+		const tabsNode = tabsRef.current;
+		if (!tabsNode) return;
+
+		function handleMutation() {
+			setUpdateScrollObserver(!updateScrollObserver);
+		}
+		const mutationObserver = new MutationObserver(handleMutation);
+		mutationObserver.observe(tabsNode, {
+			childList: true
+		});
+		return () => {
+			mutationObserver?.disconnect();
+		};
+	}, []);
 	const moveTabsScroll = delta => {
 		let scrollValue = tabsRef.current.scrollLeft;
 		scrollValue += delta;
@@ -645,12 +664,11 @@ function App() {
 	console.log("TabBar rendered");
 	const tabs = Store(Store.selectors.tabs, (a, b) => a.length === b.length && !a.some((_, i) => a[i].id !== b[i].id));
 	const selectedTab = Store.state.getCurrentlySelectedTab();
-	const selectedTabMeta = selectedTab.id && Store.state.getTabMeta(selectedTab.id);
 	const newTabHandler = () => {
 		Store.state.newTab();
 	};
 	return (
-		React.createElement('div', { className: "tabs-container", }, React.createElement(TabsScroller, { selectedTabIndex: selectedTabMeta?.index, }, [...tabs].map(a => (
+		React.createElement('div', { className: "tabs-container", }, React.createElement(TabsScroller, { selectedTab: selectedTab, }, [...tabs].map(a => (
 				React.createElement(TabSwitch, {
 					key: a.id,
 					id: a.id,
@@ -730,228 +748,6 @@ class Tabbys {
 module.exports = Tabbys;
 
 const css = `
-/* the great reset */
-.tabs-container * {
-	padding: 0;
-	margin: 0;
-	box-sizing: border-box;
-}
-
-
-/* main */
-
-:root {
-    --gutter: 5px;
-    --radius: 8px;
-	--tab-min-width:180px;
-	--tab-max-width:300px;
-	--tab-height:30px;
-}
-
-body {
-	display: flex;
-	flex-direction: column;
-}
-
-#app-mount {
-	transform: translate(0);
-	position: static;
-}
-
-.tabs-test-container {
-	flex: 0 0 auto;
-	margin-left: 50px;
-	background: lime;
-	/* border:1px solid red; */
-	/* padding: 5px; */
-	/* zoom:3; */
-}
-
-
-/* Tabs */
-
-
-.tabs-container {
-	background: #1f2020;
-	display: flex;
-	gap: var(--gutter);
-	user-select: none;
-	padding: 3px;
-	display: flex;
-	align-items: center;
-	font-size:calc(var(--tab-height) * .4);
-
-}
-
-.tabs-scroller{
-	min-width:0;
-	position:relative;
-	/* background:pink; */
-	/* padding:5px; */
-}
-
-.tabs-list {
-	/* flex:1 0 0; */
-    overflow: auto;
-    scrollbar-width: none;
-	/* background:red; */
-    display: flex;
-    gap: var(--gutter);
-    align-items: center;
-	height:100%;
-	
-}
-
-
-
-.new-tab {
-    background: #555555;
-    color: white;
-    border-radius: 50%;
-    display: flex;
-	padding:5px;
-    align-items: center;
-    justify-content: center;
-	flex-shrink:0;
-	--dims: calc(var(--tab-height)  * .8);
-    width:var(--dims);
-    height:var(--dims);
-	cursor: pointer;
-}
-
-.left-arrow,
-.right-arrow{
-	z-index:99;
-	position:absolute;
-	background: #555555;
-    color: white;
-    top:50%;
-	translate:0 -50%;
-    display: flex;
-	padding:5px;
-    align-items: center;
-    justify-content: center;
-	flex-shrink:0;
-	border-radius: calc(var(--tab-height) * .3);
-   --dims: calc(var(--tab-height)  * .8);
-    width:var(--dims);
-    height:var(--dims);
-	cursor: pointer;
-}
-.left-arrow{
-	left:0;
-	rotate:180deg;
-}
-.right-arrow{
-	right:0;
-}
-
-.left-arrow:hover,
-.right-arrow:hover,
-.new-tab:hover{
-	background: #686767;
-}
-
-.left-arrow:active,
-.right-arrow:active,
-.new-tab:active{
-	background: #696969;
-}
-
-
-
-/* Tab */
-
-.tab {
-    gap: var(--gutter);
-    max-width: 300px;
-    min-width: 180px;
-	height:var(--tab-height);
-    padding: 8px;
-
-    display: flex;
-	align-items: center;
-    border-radius: calc(var(--tab-height) * .3);
-    color: white;
-    font-family: consolas;
-	position:relative;
-}
-
-
-.tab:not(.selected-tab):hover{
-	background: #555555;
-}
-
-.tab:not(.selected-tab):active{
-	background: #696969;
-}
-
-.selected-tab{
-	background: #3c3c3c;
-}
-
-.tab-icon {
-	width:calc(var(--tab-height) / 1.5);
-    height:calc(var(--tab-height) / 1.5);
-    flex: 0 0 auto;
-    display: flex;
-	align-items: center;
-	justify-content:center;
-
-}
-
-
-.tab-icon img {
-	max-width:100%;
-	max-height:100%;
-    border-radius: 50%;
-}
-
-.tab-icon-unknown{
-	width:100%;
-	height:100%;
-	border-radius: 50%;
-	background: #6361f8;
-	padding:3px;
-
-}
-
-.tab-icon-unknown svg{
-	max-width:100%;
-	max-height:100%;
-}
-
-.tab-title {
-	/* display:flex; */
-	flex: 1 0 0;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-	mask:linear-gradient(to right, #000 80%, #0000 98%, #0000) no-repeat;
-}
-
-.tab-close {
-	flex-shrink:0;
-	width:calc(var(--tab-height) / 1.5);
-    height:calc(var(--tab-height) / 1.5);
-	padding:5px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction:column;
-    cursor: pointer;
-    color: white;
-    background: #1f2020;
-}
-
-.tab-close:hover{
-	background: #696969;
-}
-
-.tab-close:active{
-	background: #555555;
-}
 
 
 `;
