@@ -1,0 +1,12 @@
+import { React } from "@Api";
+export default function Plus() {
+	return (
+		<svg
+			fill="currentColor"
+			width="24"
+			height="24"
+			viewBox="0 0 24 24">
+			<path d="M13 5a1 1 0 1 0-2 0v6H5a1 1 0 1 0 0 2h6v6a1 1 0 1 0 2 0v-6h6a1 1 0 1 0 0-2h-6V5Z" />
+		</svg>
+	);
+}

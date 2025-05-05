@@ -1,5 +1,103 @@
 import { Patcher, getOwnerInstance, ReactDOM, React } from "@Api";
 
+export function isValidString(string) {
+	return string && string.length > 0;
+}
+
+export function getUserName(userObject = {}) {
+	const { global_name, globalName, username } = userObject;
+	if (isValidString(global_name)) return global_name;
+	if (isValidString(globalName)) return globalName;
+	if (isValidString(username)) return username;
+	return "???";
+}
+
+export function getAcronym(string) {
+	if (!isValidString(string)) return "";
+
+	return string
+		.replace(/'s /g, " ")
+		.replace(/\w+/g, e => e[0])
+		.replace(/\s/g, "");
+}
+
+export function concateClassNames(...args) {
+	return args.filter(Boolean).join(" ");
+}
+
+export function getPathName(url) {
+	try {
+		return new URL(url).pathname;
+	} catch {}
+}
+
+// stolen ehm.. borrowed from Material-UI
+function easeInOutSin(time) {
+	return (1 + Math.sin(Math.PI * time - Math.PI / 2)) / 2;
+}
+// stolen ehm.. borrowed from Material-UI
+export function animate(property, element, to, options = {}, cb = () => {}) {
+	const {
+		ease = easeInOutSin,
+		duration = 300 // standard
+	} = options;
+
+	let start = null;
+	const from = element[property];
+	let cancelled = false;
+
+	const cancel = () => {
+		cancelled = true;
+	};
+
+	const step = timestamp => {
+		if (cancelled) {
+			cb(new Error("Animation cancelled"));
+			return;
+		}
+
+		if (start === null) {
+			start = timestamp;
+		}
+		const time = Math.min(1, (timestamp - start) / duration);
+
+		element[property] = ease(time) * (to - from) + from;
+
+		if (time >= 1) {
+			requestAnimationFrame(() => {
+				cb(null);
+			});
+			return;
+		}
+
+		requestAnimationFrame(step);
+	};
+
+	if (from === to) {
+		cb(new Error("Element already at target position"));
+		return cancel;
+	}
+
+	requestAnimationFrame(step);
+	return cancel;
+}
+
+// stolen ehm.. borrowed from Material-UI
+export function debounce(func, wait = 166) {
+	let timeout;
+	function debounced(...args) {
+		const later = () => {
+			// @ts-ignore
+			func.apply(this, args);
+		};
+		clearTimeout(timeout);
+		timeout = setTimeout(later, wait);
+	}
+	debounced.clear = () => {
+		clearTimeout(timeout);
+	};
+	return debounced;
+}
 
 export function shallow(objA, objB) {
 	if (Object.is(objA, objB)) return true;
@@ -14,8 +112,6 @@ export function shallow(objA, objB) {
 
 	return true;
 }
-
-
 
 export const promiseHandler = promise => promise.then(data => [undefined, data]).catch(err => [err]);
 
@@ -80,6 +176,14 @@ export function prettyfiyBytes(bytes, si = false, dp = 1) {
 
 export function parseSnowflake(snowflake) {
 	return snowflake / 4194304 + 1420070400000;
+}
+
+export function isSnowflake(id) {
+	try {
+		return BigInt(id).toString() === id;
+	} catch {
+		return false;
+	}
 }
 
 export function genUrlParamsFromArray(params) {

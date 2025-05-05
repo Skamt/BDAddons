@@ -6,12 +6,17 @@ import ErrorBoundary from "@Components/ErrorBoundary";
 import ModalRoot from "@Modules/ModalRoot";
 import ModalSize from "@Modules/ModalSize";
 
-const _openModal = getModule(Filters.byStrings("onCloseCallback", "onCloseRequest", "modalKey", "backdropStyle"), { searchExports: true });
+const ModalActions = BdApi.Webpack.getMangled("onCloseRequest:null!=", {
+	openModal: Filters.byStrings("onCloseRequest:null!="),
+	closeModal: Filters.byStrings(".setState", ".getState()[")
+});
+
+// const _openModal = getModule(Filters.byStrings("onCloseCallback", "onCloseRequest", "modalKey", "backdropStyle"), { searchExports: true });
 
 export const openModal = (children, tag, modalClassName = "") => {
 	const id = `${tag ? `${tag}-` : ""}modal`;
 
-	_openModal(props => {
+	ModalActions.openModal(props => {
 		return (
 			<ErrorBoundary
 				id={id}
@@ -28,6 +33,8 @@ export const openModal = (children, tag, modalClassName = "") => {
 	});
 };
 
-export function closeModal() {}
+export function closeModal(id) {
+	ModalActions.closeModal(id);
+}
 
-export const openImageModal = getMangled("Media Viewer Modal",{openImageModal:a => typeof a !== "string"});
+export const openImageModal = getMangled("Media Viewer Modal", { openImageModal: a => typeof a !== "string" });

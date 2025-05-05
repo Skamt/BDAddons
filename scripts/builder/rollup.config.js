@@ -6,6 +6,7 @@ const cleanup = require("rollup-plugin-cleanup");
 const re = require("rollup-plugin-re");
 const sucrase = require("@rollup/plugin-sucrase");
 const nodeResolve = require("@rollup/plugin-node-resolve");
+const commonjs = require("@rollup/plugin-commonjs");
 const stripCode = require("rollup-plugin-strip-code");
 const { eslintBundle } = require("rollup-plugin-eslint-bundle");
 
@@ -52,14 +53,16 @@ const changelog = () => {
 	};
 };
 
-const aliasesObj = {
+const aliasesObj = (inputPath) => ({
 	entries: {
 		"@Api": path.resolve("common", "Api"),
 		"@Utils": path.resolve("common", "Utils"),
 		"@Webpack": path.resolve("common", "Webpack"),
-		"@Discord": path.resolve("common", "DiscordModules")
+		"@React": path.resolve("common", "React"),
+		"@Discord": path.resolve("common", "DiscordModules"),
+		"@": path.resolve(inputPath)
 	}
-};
+});
 
 module.exports = function getConfig(inputPath, releasePath, devPath, config) {
 	const inputConfig = {
@@ -68,8 +71,9 @@ module.exports = function getConfig(inputPath, releasePath, devPath, config) {
 			preset: "smallest"
 		},
 		plugins: [
+			commonjs(),
 			nodeResolve({ extensions: [".json", ".js", ".jsx", ".css"] }),
-			alias(aliasesObj),
+			alias(aliasesObj(inputPath)),
 			re({
 				include: "**/DiscordModules/**",
 				patterns: [
@@ -95,7 +99,7 @@ module.exports = function getConfig(inputPath, releasePath, devPath, config) {
 			cleanup(cleanupConfig),
 			eslintBundle(eslintBundleConfig),
 			meta(config),
-			codeRegions(),
+			codeRegions()
 		]
 	};
 
@@ -106,10 +110,7 @@ module.exports = function getConfig(inputPath, releasePath, devPath, config) {
 			objectShorthand: true
 		},
 		strict: false,
-		plugins: [
-			cleanupPureComments(),
-			beautify(),
-		]
+		plugins: [cleanupPureComments(), beautify()]
 	};
 	return {
 		release: {

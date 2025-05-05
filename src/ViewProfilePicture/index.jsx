@@ -11,7 +11,7 @@ export default class ViewProfilePicture {
 			// eslint-disable-next-line no-undef
 			DOM.addStyle(css);
 			patchVPPButton();
-			patchUserBannerMask();
+			// patchUserBannerMask();
 		} catch (e) {
 			Logger.error(e);
 		}

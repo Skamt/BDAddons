@@ -13,9 +13,9 @@ export function getModuleAndKey(filter, options) {
 	let module;
 	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
 	module = module?.exports;
-	if (!module) return {};
+	if (!module) return;
 	const key = Object.keys(module).find(k => module[k] === target);
-	if (!key) return {};
+	if (!key) return;
 	return { module, key };
 }
 

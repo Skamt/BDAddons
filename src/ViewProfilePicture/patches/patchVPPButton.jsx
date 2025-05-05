@@ -9,7 +9,7 @@ import ViewProfilePictureButtonComponent from "../components/ViewProfilePictureB
 
 // const UserBannerMask = getModuleAndKey(Filters.byStrings("bannerSrc", "showPremiumBadgeUpsell"), { searchExports: true });
 const UserProfileModalforwardRef = getModule(Filters.byKeys("Overlay","render"));
-const typeFilter = Filters.byStrings("BITE_SIZE", "FULL_SIZE");
+const typeFilter = Filters.byStrings("div","wrapper", "children");
 
 export default () => {
 	if (!UserProfileModalforwardRef) return Logger.patchError("patchVPPButton");
