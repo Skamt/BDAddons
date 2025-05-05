@@ -1,21 +1,20 @@
 import "./styles";
 import React, { useRef, useEffect, useState } from "@React";
 import ArrowIcon from "@Components/icons/ArrowIcon";
-import { animate } from "@Utils";
+import { concateClassNames, animate } from "@Utils";
 import { Store } from "@/Store";
 
-export default function TabsScroller({ selectedTab, children }) {
+export default function TabsScroller({ children }) {
 	console.log("TabsScroller rendered");
 	const [updateScrollObserver, setUpdateScrollObserver] = useState(false);
 	const [leftScrollBtn, setLeftScrollBtn] = useState(false);
 	const [rightScrollBtn, setRightScrollBtn] = useState(false);
-	const { index: selectedTabIndex } = (selectedTab.id && Store.state.getTabMeta(selectedTab.id)) || {};
-
+	const displayStartScrollRef = useRef(null);
+	const displayEndScrollRef = useRef(null);
 	const tabsRef = useRef(null);
-	// const displayStartScrollRef = useRef(null);
-	// const displayEndScrollRef = useRef(null);
-	const getTabsMeta = () => {
-		if (!selectedTabIndex) return {};
+
+	function getTabsMeta(tabIndex) {
+		if (tabIndex == null) return {};
 		const tabsNode = tabsRef.current;
 		const res = {};
 
@@ -34,9 +33,9 @@ export default function TabsScroller({ selectedTab, children }) {
 			};
 		}
 
-		const targetTab = tabsNode.children[selectedTabIndex];
-		const nextTab = tabsNode.children[selectedTabIndex + 1];
-		const previousTab = tabsNode.children[selectedTabIndex - 1];
+		const targetTab = tabsNode.children[tabIndex];
+		const nextTab = tabsNode.children[tabIndex + 1];
+		const previousTab = tabsNode.children[tabIndex - 1];
 
 		res.targetTab = !targetTab
 			? {}
@@ -50,20 +49,25 @@ export default function TabsScroller({ selectedTab, children }) {
 		res.previousTab = !previousTab ? {} : { ...previousTab.getBoundingClientRect().toJSON() };
 
 		return res;
-	};
+	}
 
-	const scroll = scrollValue => {
+	function scroll(scrollValue) {
 		animate("scrollLeft", tabsRef.current, scrollValue);
-		// tabsRef.current.scrollLeft = scrollValue;
-	};
+	}
 
-	const scrollSelectedIntoView = () => {
-		const { tabsMeta, targetTab, nextTab, previousTab } = getTabsMeta();
+	function scrollSelectedIntoView() {
+		const selectedTab = Store.state.getCurrentlySelectedTab();
+		const { index } = Store.state.getTabMeta(selectedTab.id);
+		if (index == null) return;
+		const { tabsMeta, targetTab, nextTab, previousTab } = getTabsMeta(index);
 
 		if (!targetTab || !tabsMeta) return;
 
 		if (targetTab.isFirst) return scroll(tabsRef.current.scrollWidth * -1);
 		if (targetTab.isLast) return scroll(tabsRef.current.scrollWidth);
+
+		tabsMeta.right -= displayEndScrollRef.current.clientWidth;
+		tabsMeta.left += displayStartScrollRef.current.clientWidth;
 
 		if (targetTab.left < tabsMeta.left) {
 			// left side of button is out of view
@@ -74,7 +78,7 @@ export default function TabsScroller({ selectedTab, children }) {
 			const nextScrollStart = tabsMeta.scrollLeft + (nextTab.left - tabsMeta.right);
 			scroll(nextScrollStart);
 		}
-	};
+	}
 
 	useEffect(() => {
 		const tabsNode = tabsRef.current;
@@ -101,18 +105,24 @@ export default function TabsScroller({ selectedTab, children }) {
 			leftObserver.disconnect();
 			rightObserver.disconnect();
 		};
-	}, [updateScrollObserver,children.length]);
+	}, [updateScrollObserver, children.length]);
+
+	// useEffect(() => {
+	// 	const tabsNode = tabsRef.current;
+	// 	if(children.length > tabsNode.children.length)
+	// 		scrollSelectedIntoView();
+	// }, [children.length]);
 
 	useEffect(() => {
-		scrollSelectedIntoView();
-	}, [selectedTab.id]);
+		return Store.subscribe(Store.selectors.selectedId, scrollSelectedIntoView);
+	}, []);
 
 	useEffect(() => {
 		const tabsNode = tabsRef.current;
 		if (!tabsNode) return;
 
-		function handleMutation() {
-			// handleResize();
+		function handleMutation(records) {
+			if (records.some(record => record.addedNodes.length)) scrollSelectedIntoView();
 			setUpdateScrollObserver(!updateScrollObserver);
 		}
 
@@ -132,9 +142,11 @@ export default function TabsScroller({ selectedTab, children }) {
 	};
 
 	const getScrollSize = () => {
-		const containerSize = tabsRef.current.clientWidth;
+		const tabsNode = tabsRef.current;
+		if (!tabsNode) return;
+		const containerSize = tabsNode.clientWidth;
 		let totalSize = 0;
-		const children = Array.from(tabsRef.current.children);
+		const children = Array.from(tabsNode.children);
 
 		for (let i = 0; i < children.length; i += 1) {
 			const tab = children[i];
@@ -160,29 +172,27 @@ export default function TabsScroller({ selectedTab, children }) {
 
 	return (
 		<div className="tabs-scroller">
-			{leftScrollBtn && (
-				// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-				<div
-					// ref={displayStartScrollRef}
-					onClick={handleStartScrollClick}
-					className="left-arrow">
-					<ArrowIcon />
-				</div>
-			)}
+			{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+			<div
+				ref={displayStartScrollRef}
+				onClick={handleStartScrollClick}
+				className={concateClassNames("left-arrow", !leftScrollBtn && "hidden")}>
+				<ArrowIcon />
+			</div>
+
 			<div
 				className="tabs-list"
 				ref={tabsRef}>
 				{children}
 			</div>
-			{rightScrollBtn && (
-				// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-				<div
-					// ref={displayEndScrollRef}
-					onClick={handleEndScrollClick}
-					className="right-arrow">
-					<ArrowIcon />
-				</div>
-			)}
+
+			{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+			<div
+				ref={displayEndScrollRef}
+				onClick={handleEndScrollClick}
+				className={concateClassNames("right-arrow", !rightScrollBtn && "hidden")}>
+				<ArrowIcon />
+			</div>
 		</div>
 	);
 }

@@ -6,8 +6,8 @@ import GenericTab from "./GenericTab";
 import DMTab from "./DMTab";
 import ChannelTab from "./ChannelTab";
 
-export default function TabSwitch({ id }) {
-	console.log(id, "Tab rendered");
+export default React.memo(function TabSwitch({ id }) {
+
 	const item = Store(state => state.tabs.find(tab => tab.id === id), shallow);
 	if (!item?.path) return;
 	const [, type, guildId, channelId, , threadId] = item.path.split("/");
@@ -49,4 +49,4 @@ export default function TabSwitch({ id }) {
 		);
 
 	return <div>{res}</div>;
-}
+})

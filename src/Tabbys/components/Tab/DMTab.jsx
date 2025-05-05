@@ -1,5 +1,6 @@
 import React from "@React";
 import { Store } from "@/Store";
+import { getModule } from "@Webpack";
 import useStateFromStores from "@Modules/useStateFromStores";
 import { ChannelTypeEnum } from "@Discord/Enums";
 // import { GroupDmAvatarFilter } from "@Discord/Modules";
@@ -11,11 +12,11 @@ import { getUserAvatar } from "@Utils/User";
 
 const ICON_SIZE = 80;
 
-const b = window.getModule(a => a.getChannelIconURL);
+const b = getModule(a => a.getChannelIconURL);
 
 function getDmAvatar(channel, size) {
 	const recipientId = channel.rawRecipients[0].id;
-	return getUserAvatar({id:recipientId, size});
+	return getUserAvatar({ id: recipientId, size });
 }
 
 export default function DMTab({ tabId, channelId, path }) {
@@ -34,7 +35,7 @@ export default function DMTab({ tabId, channelId, path }) {
 					size: ICON_SIZE
 				});
 
-	const icon = (
+	const icon = channelIconSrc && (
 		<img
 			src={channelIconSrc}
 			alt={channelName}
