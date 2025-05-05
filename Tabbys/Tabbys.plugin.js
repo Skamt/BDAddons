@@ -309,8 +309,21 @@ function Close() {
 	);
 }
 
+// common\Components\icons\DiscordIcon\index.jsx
+function Discord() {
+	return (
+		React.createElement('svg', {
+			width: "20",
+			height: "20",
+			fill: "currentColor",
+			viewBox: "0 0 24 24",
+		}, React.createElement('path', { d: "M19.73 4.87a18.2 18.2 0 0 0-4.6-1.44c-.21.4-.4.8-.58 1.21-1.69-.25-3.4-.25-5.1 0-.18-.41-.37-.82-.59-1.2-1.6.27-3.14.75-4.6 1.43A19.04 19.04 0 0 0 .96 17.7a18.43 18.43 0 0 0 5.63 2.87c.46-.62.86-1.28 1.2-1.98-.65-.25-1.29-.55-1.9-.92.17-.12.32-.24.47-.37 3.58 1.7 7.7 1.7 11.28 0l.46.37c-.6.36-1.25.67-1.9.92.35.7.75 1.35 1.2 1.98 2.03-.63 3.94-1.6 5.64-2.87.47-4.87-.78-9.09-3.3-12.83ZM8.3 15.12c-1.1 0-2-1.02-2-2.27 0-1.24.88-2.26 2-2.26s2.02 1.02 2 2.26c0 1.25-.89 2.27-2 2.27Zm7.4 0c-1.1 0-2-1.02-2-2.27 0-1.24.88-2.26 2-2.26s2.02 1.02 2 2.26c0 1.25-.88 2.27-2 2.27Z", }))
+	);
+}
+
 // src\Tabbys\components\Tab\BaseTab.jsx
 function BaseTab({ id, path, selected, icon, title }) {
+	const isSingleTab = Store(state => state.tabs.length === 1);
 	const clickHandler = () => {
 		Store.state.setSelectedId(id);
 		return console.log(id, "clickHandler");
@@ -322,15 +335,16 @@ function BaseTab({ id, path, selected, icon, title }) {
 	};
 	return (
 		React.createElement('div', {
-				className: concateClassNames("tab", selected && "selected-tab"),
-				onClick: clickHandler,
-			}, React.createElement('div', { className: "tab-icon", }, icon), React.createElement('div', { className: "tab-title", }, title || path)
-			/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */
-			, React.createElement('div', {
+			className: concateClassNames("tab", selected && "selected-tab"),
+			onClick: !selected && clickHandler,
+		}, React.createElement('div', { className: "tab-icon", }, icon || (
+			React.createElement('div', { className: "tab-icon-unknown", }, React.createElement(Discord, null))
+		)), React.createElement('div', { className: "tab-title", }, title || path), !isSingleTab && (
+			React.createElement('div', {
 				className: "tab-close",
 				onClick: closeHandler,
 			}, React.createElement(Close, null))
-		)
+		))
 	);
 }
 
@@ -381,7 +395,7 @@ function getUserAvatar({ id, guildId, size }) {
 
 // src\Tabbys\components\Tab\DMTab.jsx
 const ICON_SIZE = 80;
-const b = window.getModule(a => a.getChannelIconURL);
+const b = getModule(a => a.getChannelIconURL);
 
 function getDmAvatar(channel, size) {
 	const recipientId = channel.rawRecipients[0].id;
@@ -402,7 +416,7 @@ function DMTab({ tabId, channelId, path }) {
 			applicationId: channel.getApplicationId(),
 			size: ICON_SIZE
 		});
-	const icon = (
+	const icon = channelIconSrc && (
 		React.createElement('img', {
 			src: channelIconSrc,
 			alt: channelName,
@@ -419,18 +433,6 @@ function DMTab({ tabId, channelId, path }) {
 	);
 }
 
-// common\Components\icons\DiscordIcon\index.jsx
-function Discord() {
-	return (
-		React.createElement('svg', {
-			width: "20",
-			height: "20",
-			fill: "currentColor",
-			viewBox: "0 0 24 24",
-		}, React.createElement('path', { d: "M19.73 4.87a18.2 18.2 0 0 0-4.6-1.44c-.21.4-.4.8-.58 1.21-1.69-.25-3.4-.25-5.1 0-.18-.41-.37-.82-.59-1.2-1.6.27-3.14.75-4.6 1.43A19.04 19.04 0 0 0 .96 17.7a18.43 18.43 0 0 0 5.63 2.87c.46-.62.86-1.28 1.2-1.98-.65-.25-1.29-.55-1.9-.92.17-.12.32-.24.47-.37 3.58 1.7 7.7 1.7 11.28 0l.46.37c-.6.36-1.25.67-1.9.92.35.7.75 1.35 1.2 1.98 2.03-.63 3.94-1.6 5.64-2.87.47-4.87-.78-9.09-3.3-12.83ZM8.3 15.12c-1.1 0-2-1.02-2-2.27 0-1.24.88-2.26 2-2.26s2.02 1.02 2 2.26c0 1.25-.89 2.27-2 2.27Zm7.4 0c-1.1 0-2-1.02-2-2.27 0-1.24.88-2.26 2-2.26s2.02 1.02 2 2.26c0 1.25-.88 2.27-2 2.27Z", }))
-	);
-}
-
 // src\Tabbys\components\Tab\ChannelTab.jsx
 function ChannelTab({ tabId, guildId, channelId, threadId, path }) {
 	const selected = Store(state => state.selectedId === tabId);
@@ -439,30 +441,25 @@ function ChannelTab({ tabId, guildId, channelId, threadId, path }) {
 	if (!channel) return;
 	const guild = GuildStore.getGuild(guildId);
 	if (!guild) return React.createElement(BaseTab, { path: path, });
-	console.log(guild, channel);
 	const guildIcon = guild.getIconURL(80);
-	const icon = guildIcon ? (
-		React.createElement('img', {
-			src: guildIcon,
-			alt: guild.name,
-		})
-	) : (
-		React.createElement('div', { className: "tab-icon-unknown", }, React.createElement(Discord, null))
-	);
 	return (
 		React.createElement(BaseTab, {
 			id: tabId,
 			path: path,
 			selected: selected,
-			icon: icon,
+			icon: guildIcon && (
+				React.createElement('img', {
+					src: guildIcon,
+					alt: guild.name,
+				})
+			),
 			title: channel.name,
 		})
 	);
 }
 
 // src\Tabbys\components\Tab\index.jsx
-function TabSwitch({ id }) {
-	console.log(id, "Tab rendered");
+const Tab = React.memo(function TabSwitch({ id }) {
 	const item = Store(state => state.tabs.find(tab => tab.id === id), shallow);
 	if (!item?.path) return;
 	const [, type, guildId, channelId, , threadId] = item.path.split("/");
@@ -500,7 +497,7 @@ function TabSwitch({ id }) {
 			})
 		);
 	return React.createElement('div', null, res);
-}
+});
 
 // common\Components\icons\ArrowIcon\index.jsx
 function Arrow() {
@@ -519,15 +516,17 @@ function Arrow() {
 }
 
 // src\Tabbys\components\TabsScroller\index.jsx
-function TabsScroller({ selectedTab, children }) {
+function TabsScroller({ children }) {
 	console.log("TabsScroller rendered");
 	const [updateScrollObserver, setUpdateScrollObserver] = useState(false);
 	const [leftScrollBtn, setLeftScrollBtn] = useState(false);
 	const [rightScrollBtn, setRightScrollBtn] = useState(false);
-	const { index: selectedTabIndex } = (selectedTab.id && Store.state.getTabMeta(selectedTab.id)) || {};
+	const displayStartScrollRef = useRef(null);
+	const displayEndScrollRef = useRef(null);
 	const tabsRef = useRef(null);
-	const getTabsMeta = () => {
-		if (!selectedTabIndex) return {};
+
+	function getTabsMeta(tabIndex) {
+		if (tabIndex == null) return {};
 		const tabsNode = tabsRef.current;
 		const res = {};
 		if (tabsNode) {
@@ -544,9 +543,9 @@ function TabsScroller({ selectedTab, children }) {
 				right: rect.right
 			};
 		}
-		const targetTab = tabsNode.children[selectedTabIndex];
-		const nextTab = tabsNode.children[selectedTabIndex + 1];
-		const previousTab = tabsNode.children[selectedTabIndex - 1];
+		const targetTab = tabsNode.children[tabIndex];
+		const nextTab = tabsNode.children[tabIndex + 1];
+		const previousTab = tabsNode.children[tabIndex - 1];
 		res.targetTab = !targetTab ?
 			{} :
 			{
@@ -557,15 +556,22 @@ function TabsScroller({ selectedTab, children }) {
 		res.nextTab = !nextTab ? {} : { ...nextTab.getBoundingClientRect().toJSON() };
 		res.previousTab = !previousTab ? {} : { ...previousTab.getBoundingClientRect().toJSON() };
 		return res;
-	};
-	const scroll = scrollValue => {
+	}
+
+	function scroll(scrollValue) {
 		animate("scrollLeft", tabsRef.current, scrollValue);
-	};
-	const scrollSelectedIntoView = () => {
-		const { tabsMeta, targetTab, nextTab, previousTab } = getTabsMeta();
+	}
+
+	function scrollSelectedIntoView() {
+		const selectedTab = Store.state.getCurrentlySelectedTab();
+		const { index } = Store.state.getTabMeta(selectedTab.id);
+		if (index == null) return;
+		const { tabsMeta, targetTab, nextTab, previousTab } = getTabsMeta(index);
 		if (!targetTab || !tabsMeta) return;
 		if (targetTab.isFirst) return scroll(tabsRef.current.scrollWidth * -1);
 		if (targetTab.isLast) return scroll(tabsRef.current.scrollWidth);
+		tabsMeta.right -= displayEndScrollRef.current.clientWidth;
+		tabsMeta.left += displayStartScrollRef.current.clientWidth;
 		if (targetTab.left < tabsMeta.left) {
 			const nextScrollStart = tabsMeta.scrollLeft + (previousTab.right - tabsMeta.left);
 			scroll(nextScrollStart);
@@ -573,7 +579,7 @@ function TabsScroller({ selectedTab, children }) {
 			const nextScrollStart = tabsMeta.scrollLeft + (nextTab.left - tabsMeta.right);
 			scroll(nextScrollStart);
 		}
-	};
+	}
 	useEffect(() => {
 		const tabsNode = tabsRef.current;
 		const tabListChildren = Array.from(tabsNode.children);
@@ -597,13 +603,14 @@ function TabsScroller({ selectedTab, children }) {
 		};
 	}, [updateScrollObserver, children.length]);
 	useEffect(() => {
-		scrollSelectedIntoView();
-	}, [selectedTab.id]);
+		return Store.subscribe(Store.selectors.selectedId, scrollSelectedIntoView);
+	}, []);
 	useEffect(() => {
 		const tabsNode = tabsRef.current;
 		if (!tabsNode) return;
 
-		function handleMutation() {
+		function handleMutation(records) {
+			if (records.some(record => record.addedNodes.length)) scrollSelectedIntoView();
 			setUpdateScrollObserver(!updateScrollObserver);
 		}
 		const mutationObserver = new MutationObserver(handleMutation);
@@ -620,9 +627,11 @@ function TabsScroller({ selectedTab, children }) {
 		scroll(scrollValue);
 	};
 	const getScrollSize = () => {
-		const containerSize = tabsRef.current.clientWidth;
+		const tabsNode = tabsRef.current;
+		if (!tabsNode) return;
+		const containerSize = tabsNode.clientWidth;
 		let totalSize = 0;
-		const children = Array.from(tabsRef.current.children);
+		const children = Array.from(tabsNode.children);
 		for (let i = 0; i < children.length; i += 1) {
 			const tab = children[i];
 			if (totalSize + tab.clientWidth > containerSize) {
@@ -642,20 +651,23 @@ function TabsScroller({ selectedTab, children }) {
 		moveTabsScroll(getScrollSize());
 	};
 	return (
-		React.createElement('div', { className: "tabs-scroller", }, leftScrollBtn && (
-			React.createElement('div', {
+		React.createElement('div', { className: "tabs-scroller", }
+			/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */
+			, React.createElement('div', {
+				ref: displayStartScrollRef,
 				onClick: handleStartScrollClick,
-				className: "left-arrow",
-			}, React.createElement(Arrow, null))
-		), React.createElement('div', {
-			className: "tabs-list",
-			ref: tabsRef,
-		}, children), rightScrollBtn && (
-			React.createElement('div', {
+				className: concateClassNames("left-arrow", !leftScrollBtn && "hidden"),
+			}, React.createElement(Arrow, null)), React.createElement('div', {
+				className: "tabs-list",
+				ref: tabsRef,
+			}, children)
+			/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */
+			, React.createElement('div', {
+				ref: displayEndScrollRef,
 				onClick: handleEndScrollClick,
-				className: "right-arrow",
+				className: concateClassNames("right-arrow", !rightScrollBtn && "hidden"),
 			}, React.createElement(Arrow, null))
-		))
+		)
 	);
 }
 
@@ -669,7 +681,7 @@ function App() {
 	};
 	return (
 		React.createElement('div', { className: "tabs-container", }, React.createElement(TabsScroller, { selectedTab: selectedTab, }, [...tabs].map(a => (
-				React.createElement(TabSwitch, {
+				React.createElement(Tab, {
 					key: a.id,
 					id: a.id,
 				})
@@ -748,228 +760,6 @@ class Tabbys {
 module.exports = Tabbys;
 
 const css = `
-/* the great reset */
-.tabs-container * {
-	padding: 0;
-	margin: 0;
-	box-sizing: border-box;
-}
-
-
-/* main */
-
-:root {
-    --gutter: 5px;
-    --radius: 8px;
-	--tab-min-width:180px;
-	--tab-max-width:300px;
-	--tab-height:30px;
-}
-
-body {
-	display: flex;
-	flex-direction: column;
-}
-
-#app-mount {
-	transform: translate(0);
-	position: static;
-}
-
-.tabs-test-container {
-	flex: 0 0 auto;
-	margin-left: 50px;
-	background: lime;
-	/* border:1px solid red; */
-	/* padding: 5px; */
-	/* zoom:3; */
-}
-
-
-/* Tabs */
-
-
-.tabs-container {
-	background: #1f2020;
-	display: flex;
-	gap: var(--gutter);
-	user-select: none;
-	padding: 3px;
-	display: flex;
-	align-items: center;
-	font-size:calc(var(--tab-height) * .4);
-
-}
-
-.tabs-scroller{
-	min-width:0;
-	position:relative;
-	/* background:pink; */
-	/* padding:5px; */
-}
-
-.tabs-list {
-	/* flex:1 0 0; */
-    overflow: auto;
-    scrollbar-width: none;
-	/* background:red; */
-    display: flex;
-    gap: var(--gutter);
-    align-items: center;
-	height:100%;
-	
-}
-
-
-
-.new-tab {
-    background: #555555;
-    color: white;
-    border-radius: 50%;
-    display: flex;
-	padding:5px;
-    align-items: center;
-    justify-content: center;
-	flex-shrink:0;
-	--dims: calc(var(--tab-height)  * .8);
-    width:var(--dims);
-    height:var(--dims);
-	cursor: pointer;
-}
-
-.left-arrow,
-.right-arrow{
-	z-index:99;
-	position:absolute;
-	background: #555555;
-    color: white;
-    top:50%;
-	translate:0 -50%;
-    display: flex;
-	padding:5px;
-    align-items: center;
-    justify-content: center;
-	flex-shrink:0;
-	border-radius: calc(var(--tab-height) * .3);
-   --dims: calc(var(--tab-height)  * .8);
-    width:var(--dims);
-    height:var(--dims);
-	cursor: pointer;
-}
-.left-arrow{
-	left:0;
-	rotate:180deg;
-}
-.right-arrow{
-	right:0;
-}
-
-.left-arrow:hover,
-.right-arrow:hover,
-.new-tab:hover{
-	background: #686767;
-}
-
-.left-arrow:active,
-.right-arrow:active,
-.new-tab:active{
-	background: #696969;
-}
-
-
-
-/* Tab */
-
-.tab {
-    gap: var(--gutter);
-    max-width: 300px;
-    min-width: 180px;
-	height:var(--tab-height);
-    padding: 8px;
-
-    display: flex;
-	align-items: center;
-    border-radius: calc(var(--tab-height) * .3);
-    color: white;
-    font-family: consolas;
-	position:relative;
-}
-
-
-.tab:not(.selected-tab):hover{
-	background: #555555;
-}
-
-.tab:not(.selected-tab):active{
-	background: #696969;
-}
-
-.selected-tab{
-	background: #3c3c3c;
-}
-
-.tab-icon {
-	width:calc(var(--tab-height) / 1.5);
-    height:calc(var(--tab-height) / 1.5);
-    flex: 0 0 auto;
-    display: flex;
-	align-items: center;
-	justify-content:center;
-
-}
-
-
-.tab-icon img {
-	max-width:100%;
-	max-height:100%;
-    border-radius: 50%;
-}
-
-.tab-icon-unknown{
-	width:100%;
-	height:100%;
-	border-radius: 50%;
-	background: #6361f8;
-	padding:3px;
-
-}
-
-.tab-icon-unknown svg{
-	max-width:100%;
-	max-height:100%;
-}
-
-.tab-title {
-	/* display:flex; */
-	flex: 1 0 0;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-	mask:linear-gradient(to right, #000 80%, #0000 98%, #0000) no-repeat;
-}
-
-.tab-close {
-	flex-shrink:0;
-	width:calc(var(--tab-height) / 1.5);
-    height:calc(var(--tab-height) / 1.5);
-	padding:5px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction:column;
-    cursor: pointer;
-    color: white;
-    background: #1f2020;
-}
-
-.tab-close:hover{
-	background: #696969;
-}
-
-.tab-close:active{
-	background: #555555;
-}
 
 
 `;
