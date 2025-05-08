@@ -1,5 +1,4 @@
-import { Filters, getModule } from "@Webpack";
-import { zustand } from "@Discord/Modules";
+import zustand, { subscribeWithSelector } from "@Discord/zustand";
 import ConnectedAccountsStore from "@Stores/ConnectedAccountsStore";
 import SelectedChannelStore from "@Stores/SelectedChannelStore";
 import SpotifyStore from "@Stores/SpotifyStore";
@@ -12,7 +11,6 @@ import Toast from "@Utils/Toast";
 import SpotifyAPIWrapper from "./SpotifyAPIWrapper";
 import { sanitizeSpotifyLink } from "./Utils";
 
-const subscribeWithSelector = getModule(Filters.byStrings("equalityFn", "fireImmediately"), { searchExports: true });
 const Utils = {
 	copy(str) {
 		copy(str);

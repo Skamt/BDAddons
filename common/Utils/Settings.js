@@ -1,5 +1,5 @@
 // import zustand from "@Modules/zustand";
-import { zustand } from "@Discord/Modules";
+import zustand from "@Discord/zustand";
 import { Data } from "@Api";
 
 const SettingsStoreSelectors = {};

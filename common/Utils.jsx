@@ -219,10 +219,8 @@ export function getImageDimensions(url) {
 export function hook(hook, ...args) {
 	let v;
 	const b = document.createElement("div");
-	ReactDOM.render(
-		React.createElement(() => ((v = hook(...args)), null)),
-		b
-	);
-	ReactDOM.unmountComponentAtNode(b);
+	const root = ReactDOM.createRoot(b);
+	root.render(React.createElement(() => ((v = hook(...args)), null)));
+	root.unmount(b);
 	return v;
 }

@@ -4,14 +4,31 @@ import ArrowIcon from "@Components/icons/ArrowIcon";
 import { concateClassNames, animate } from "@Utils";
 import { Store } from "@/Store";
 
+function useChildrenLengthStateChange(children) {
+	const lastCount = useRef(React.Children.count(children));
+	const currentCount = React.Children.count(children);
+
+	let state = "";
+	if (lastCount.current < currentCount) state = "INCREASED";
+	else if (lastCount.current > currentCount) state = "DECREASED";
+	lastCount.current = currentCount;
+	return state;
+}
+
+function useForceUpdate() {
+    return React.useReducer((num) => num + 1, 0);
+}
+
 export default function TabsScroller({ children }) {
 	console.log("TabsScroller rendered");
-	const [updateScrollObserver, setUpdateScrollObserver] = useState(false);
+	const [updateScrollObserver, setUpdateScrollObserver] = useForceUpdate();
+
 	const [leftScrollBtn, setLeftScrollBtn] = useState(false);
 	const [rightScrollBtn, setRightScrollBtn] = useState(false);
 	const displayStartScrollRef = useRef(null);
 	const displayEndScrollRef = useRef(null);
 	const tabsRef = useRef(null);
+	const childrenLengthState = useChildrenLengthStateChange(children);
 
 	function getTabsMeta(tabIndex) {
 		if (tabIndex == null) return {};
@@ -57,6 +74,7 @@ export default function TabsScroller({ children }) {
 
 	function scrollSelectedIntoView() {
 		const selectedTab = Store.state.getCurrentlySelectedTab();
+		if (!selectedTab) return;
 		const { index } = Store.state.getTabMeta(selectedTab.id);
 		if (index == null) return;
 		const { tabsMeta, targetTab, nextTab, previousTab } = getTabsMeta(index);
@@ -81,6 +99,18 @@ export default function TabsScroller({ children }) {
 	}
 
 	useEffect(() => {
+		// Scroll to newly added tab
+		if (childrenLengthState !== "INCREASED") return;
+		scrollSelectedIntoView();
+	}, [children.length]);
+
+	useEffect(() => {
+		// Scroll selected into view
+		return Store.subscribe(Store.selectors.selectedId, scrollSelectedIntoView);
+	}, []);
+
+	useEffect(() => {
+		console.log("IntersectionObserver");
 		const tabsNode = tabsRef.current;
 		const tabListChildren = Array.from(tabsNode.children);
 		const length = tabListChildren.length;
@@ -88,9 +118,10 @@ export default function TabsScroller({ children }) {
 
 		const firstTab = tabListChildren[0];
 		const lastTab = tabListChildren[length - 1];
+		console.log(firstTab, lastTab);
 		const observerOptions = {
 			root: tabsNode,
-			threshold: 0.99
+			threshold: 0.95
 		};
 
 		const handleLeftScrollButton = entries => setLeftScrollBtn(!entries[0].isIntersecting);
@@ -105,25 +136,15 @@ export default function TabsScroller({ children }) {
 			leftObserver.disconnect();
 			rightObserver.disconnect();
 		};
-	}, [updateScrollObserver, children.length]);
-
-	// useEffect(() => {
-	// 	const tabsNode = tabsRef.current;
-	// 	if(children.length > tabsNode.children.length)
-	// 		scrollSelectedIntoView();
-	// }, [children.length]);
-
-	useEffect(() => {
-		return Store.subscribe(Store.selectors.selectedId, scrollSelectedIntoView);
-	}, []);
+	}, [updateScrollObserver]);
 
 	useEffect(() => {
 		const tabsNode = tabsRef.current;
 		if (!tabsNode) return;
 
-		function handleMutation(records) {
-			if (records.some(record => record.addedNodes.length)) scrollSelectedIntoView();
-			setUpdateScrollObserver(!updateScrollObserver);
+		function handleMutation() {
+			console.log("mutation");
+			setUpdateScrollObserver();
 		}
 
 		const mutationObserver = new MutationObserver(handleMutation);
@@ -162,13 +183,8 @@ export default function TabsScroller({ children }) {
 		return totalSize;
 	};
 
-	const handleStartScrollClick = () => {
-		moveTabsScroll(-1 * getScrollSize());
-	};
-
-	const handleEndScrollClick = () => {
-		moveTabsScroll(getScrollSize());
-	};
+	const handleStartScrollClick = () => moveTabsScroll(-1 * getScrollSize());
+	const handleEndScrollClick = () => moveTabsScroll(getScrollSize());
 
 	return (
 		<div className="tabs-scroller">

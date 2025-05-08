@@ -8,16 +8,23 @@ import TabsScroller from "../TabsScroller";
 
 export default function App() {
 	console.log("TabBar rendered");
-	const tabs = Store(Store.selectors.tabs, (a, b) => a.length ===b.length && !a.some((_, i) => a[i].id !== b[i].id));
-	const selectedTab = Store.state.getCurrentlySelectedTab();
+	const tabs = Store(Store.selectors.tabs, (a, b) => a.length === b.length && !a.some((_, i) => a[i].id !== b[i].id));
 
-	const newTabHandler = () => {
+	// const selectedTab = Store.state.getCurrentlySelectedTab();
+
+	const newTabHandler = e => {
+		e.preventDefault();
+		e.stopPropagation();
+		console.log(e);
+		// e.stopImmediatePropagation();
 		Store.state.newTab();
 	};
 
 	return (
-		<div className="tabs-container">
-			<TabsScroller selectedTab={selectedTab}>
+		<div
+			className="tabs-container"
+			onDoubleClick={e => e.stopPropagation()}>
+			<TabsScroller>
 				{[...tabs].map(a => (
 					<Tab
 						key={a.id}

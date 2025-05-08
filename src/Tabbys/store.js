@@ -9,7 +9,9 @@ import { transitionTo } from "@Discord/Modules";
 
 function generateTabs() {
 	const guildIds = GuildStore.getGuildIds();
-	const paths = guildIds.map(guildId => ChannelStore.getChannelIds(guildId).map(channelId => `/channels/${guildId}/${channelId}`)).flat();
+	const paths = 
+	guildIds.map(guildId => ChannelStore.getChannelIds(guildId)
+		.filter(id => ChannelStore.getChannel(id).type === 0).map(channelId => `/channels/${guildId}/${channelId}`)).flat();
 
 	let b = 5;
 	const res = [];
@@ -35,7 +37,8 @@ function replaceItemInArray(arr, item, index) {
 
 const initialState = {
 	tabs: [],
-	selectedId: null
+	selectedId: null,
+	lastSelectedIdAfterNewTab: null
 };
 
 function buildTab(d) {
@@ -84,28 +87,38 @@ export const Store = Object.assign(
 					const newTab = buildTab({
 						path: "/channels/@me"
 					});
-					set({ tabs: merge(state.tabs, newTab), selectedId: newTab.id });
+					set({ tabs: merge(state.tabs, newTab), selectedId: newTab.id, lastSelectedIdAfterNewTab: state.selectedId });
 				},
 
 				removeTab(id) {
-					const state = get();
-					if (state.tabs.length === 1) return;
-					const { tab, index, nextTab, previousTab } = state.getTabMeta(id);
+					const { tabs, getTabMeta, selectedId, lastSelectedIdAfterNewTab } = get();
+					if (tabs.length === 1) return;
+					const { tab, index, nextTab, previousTab } = getTabMeta(id);
 
 					if (!tab || index === undefined || index < 0) return;
 
-					const isSelected = state.selectedId === id;
-					const newSelected = !isSelected ? state.selectedId : nextTab ? nextTab.id : previousTab.id;
+					const isSelected = selectedId === id;
+					const newSelected = !isSelected ? selectedId : lastSelectedIdAfterNewTab ? lastSelectedIdAfterNewTab : nextTab ? nextTab.id : previousTab.id;
 
-					const newTabs = removeItemFromArray(state.tabs, index);
-					set({ tabs: newTabs, selectedId: newSelected });
+					const newTabs = removeItemFromArray(tabs, index);
+					set({ tabs: newTabs, selectedId: newSelected, lastSelectedIdAfterNewTab: null });
 				},
-
+				moveTab(fromTabId, toTabId) {
+					const state = get();
+					const fromIndex = state.tabs.findIndex(a => a.id === fromTabId);
+					const dragItem = state.tabs[fromIndex];
+					if (!dragItem) return;
+					const toIndex = state.tabs.findIndex(a => a.id === toTabId);
+					const newTabs = [...state.tabs];
+					const prevItem = newTabs.splice(toIndex, 1, dragItem);
+					newTabs.splice(fromIndex, 1, prevItem[0]);
+					set({ tabs: newTabs });
+				},
 				setSelectedId(id) {
 					const state = get();
 					const tabToBeSelected = state.getTab(id);
 					if (!tabToBeSelected) return;
-					set({ selectedId: id });
+					set({ selectedId: id, lastSelectedIdAfterNewTab: null });
 				},
 
 				updateSelectedTab(newTabData) {
@@ -143,11 +156,12 @@ export const Store = Object.assign(
 	),
 	{
 		init() {
-			Store.state.setTabs([
-				buildTab({
-					path: "/channels/@me"
-				})
-			]);
+			Store.state.setTabs(generateTabs());
+			// Store.state.setTabs([
+			// 	buildTab({
+			// 		path: "/channels/@me"
+			// 	})
+			// ]);
 			window.navigation.addEventListener("navigate", onLocationChange);
 			// Dispatcher.subscribe("LOGIN", onUserLogin);
 			Dispatcher.subscribe("LOGOUT", onUserLogout);
@@ -207,9 +221,9 @@ function onLocationChange(e) {
 }
 
 // function onUserLogin() {
-	// setTimeout(() => {
-	// 	Store.state.setTabs(generateTabs());
-	// }, 5 * 1000);
+// setTimeout(() => {
+// 	Store.state.setTabs(generateTabs());
+// }, 5 * 1000);
 // }
 
 function onUserLogout() {
