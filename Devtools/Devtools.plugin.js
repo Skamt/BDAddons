@@ -74,9 +74,9 @@ function getModuleAndKey(filter, options) {
 	let module;
 	const target = getModule$1((entry, m) => (filter(entry) ? (module = m) : false), options);
 	module = module?.exports;
-	if (!module) return {};
+	if (!module) return;
 	const key = Object.keys(module).find(k => module[k] === target);
-	if (!key) return {};
+	if (!key) return;
 	return { module, key };
 }
 
@@ -87,6 +87,93 @@ const Dispatcher = getModule$1(Filters.byKeys("dispatch", "_dispatch"), { search
 const TheBigBoyBundle = getModule$1(Filters.byKeys("openModal", "FormSwitch", "Anchor"), { searchExports: false });
 
 // common\Utils.jsx
+function isValidString(string) {
+	return string && string.length > 0;
+}
+
+function getUserName(userObject = {}) {
+	const { global_name, globalName, username } = userObject;
+	if (isValidString(global_name)) return global_name;
+	if (isValidString(globalName)) return globalName;
+	if (isValidString(username)) return username;
+	return "???";
+}
+
+function getAcronym(string) {
+	if (!isValidString(string)) return "";
+	return string
+		.replace(/'s /g, " ")
+		.replace(/\w+/g, e => e[0])
+		.replace(/\s/g, "");
+}
+
+function concateClassNames(...args) {
+	return args.filter(Boolean).join(" ");
+}
+
+function getPathName(url) {
+	try {
+		return new URL(url).pathname;
+	} catch {}
+}
+
+function easeInOutSin(time) {
+	return (1 + Math.sin(Math.PI * time - Math.PI / 2)) / 2;
+}
+
+function animate(property, element, to, options = {}, cb = () => {}) {
+	const {
+		ease = easeInOutSin,
+			duration = 300
+	} = options;
+	let start = null;
+	const from = element[property];
+	let cancelled = false;
+	const cancel = () => {
+		cancelled = true;
+	};
+	const step = timestamp => {
+		if (cancelled) {
+			cb(new Error("Animation cancelled"));
+			return;
+		}
+		if (start === null) {
+			start = timestamp;
+		}
+		const time = Math.min(1, (timestamp - start) / duration);
+		element[property] = ease(time) * (to - from) + from;
+		if (time >= 1) {
+			requestAnimationFrame(() => {
+				cb(null);
+			});
+			return;
+		}
+		requestAnimationFrame(step);
+	};
+	if (from === to) {
+		cb(new Error("Element already at target position"));
+		return cancel;
+	}
+	requestAnimationFrame(step);
+	return cancel;
+}
+
+function debounce(func, wait = 166) {
+	let timeout;
+
+	function debounced(...args) {
+		const later = () => {
+			func.apply(this, args);
+		};
+		clearTimeout(timeout);
+		timeout = setTimeout(later, wait);
+	}
+	debounced.clear = () => {
+		clearTimeout(timeout);
+	};
+	return debounced;
+}
+
 function shallow(objA, objB) {
 	if (Object.is(objA, objB)) return true;
 	if (typeof objA !== "object" || objA === null || typeof objB !== "object" || objB === null) return false;
@@ -153,6 +240,14 @@ function parseSnowflake(snowflake) {
 	return snowflake / 4194304 + 1420070400000;
 }
 
+function isSnowflake(id) {
+	try {
+		return BigInt(id).toString() === id;
+	} catch {
+		return false;
+	}
+}
+
 function genUrlParamsFromArray(params) {
 	if (typeof params !== "object") throw new Error("params argument must be an object or array");
 	if (typeof params === "object" && !Array.isArray(params)) {
@@ -186,11 +281,9 @@ function getImageDimensions(url) {
 function hook(hook, ...args) {
 	let v;
 	const b = document.createElement("div");
-	ReactDOM.render(
-		React.createElement(() => ((v = hook(...args)), null)),
-		b
-	);
-	ReactDOM.unmountComponentAtNode(b);
+	const root = ReactDOM.createRoot(b);
+	root.render(React.createElement(() => ((v = hook(...args)), null)));
+	root.unmount(b);
 	return v;
 }
 
@@ -198,12 +291,20 @@ const Utils = /*#__PURE__*/ Object.freeze({
 	__proto__: null,
 	BrokenAddon,
 	Disposable,
+	animate,
 	buildUrl,
+	concateClassNames,
 	copy,
+	debounce,
 	genUrlParamsFromArray,
+	getAcronym,
 	getImageDimensions,
 	getNestedProp,
+	getPathName,
+	getUserName,
 	hook,
+	isSnowflake,
+	isValidString,
 	nop,
 	parseSnowflake,
 	prettyfiyBytes,
@@ -570,7 +671,7 @@ const Stores = {
 	}
 };
 
-// src\Devtools\index.js
+// src\Devtools\index.jsx
 const d = (() => {
 	const cache = new WeakMap();
 	const emptyDoc = document.createDocumentFragment();
