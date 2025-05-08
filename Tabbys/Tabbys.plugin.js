@@ -24,38 +24,11 @@ const config = {
 const Api = new BdApi(config.info.name);
 const DOM = Api.DOM;
 const React = Api.React;
-const ReactDOM = Api.ReactDOM;
 const Patcher = Api.Patcher;
 const Logger = Api.Logger;
 const Webpack = Api.Webpack;
-
-// common\React.js
-const useState = React.useState;
-const useEffect = React.useEffect;
-const useRef = React.useRef;
-
-// common\Utils\Logger.js
-Logger.patchError = patchId => {
-	console.error(`%c[${config.info.name}] %cCould not find module for %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
-};
-
-// common\Webpack.js
-const getModule = Webpack.getModule;
-const Filters = Webpack.Filters;
-const getMangled = Webpack.getMangled;
-const getStore = Webpack.getStore;
-
-// common\DiscordModules\Modules.js
-const Dispatcher = getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: false });
-const transitionTo = getModule(Filters.byStrings(`"transitionTo - Transitioning to "`), { searchExports: true });
-
-// common\DiscordModules\zustand.js
-const { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
-	_: Filters.byStrings("subscribe"),
-	zustand: () => true
-});
-const subscribeWithSelector = getModule(Filters.byStrings("equalityFn", "fireImmediately"), { searchExports: true });
-const zustand$1 = zustand;
+/* annoying */
+const getOwnerInstance = Api.ReactUtils.getOwnerInstance.bind(Api.ReactUtils);
 
 // common\Utils.jsx
 function isValidString(string) {
@@ -131,6 +104,15 @@ function shallow(objA, objB) {
 	return true;
 }
 
+function reRender(selector) {
+	const target = document.querySelector(selector)?.parentElement;
+	if (!target) return;
+	const instance = getOwnerInstance(target);
+	const unpatch = Patcher.instead(instance, "render", () => unpatch());
+	instance.forceUpdate(() => instance.forceUpdate());
+}
+const nop = () => {};
+
 function isSnowflake(id) {
 	try {
 		return BigInt(id).toString() === id;
@@ -139,6 +121,39 @@ function isSnowflake(id) {
 	}
 }
 
+// common\Utils\Logger.js
+Logger.patchError = patchId => {
+	console.error(`%c[${config.info.name}] %cCould not find module for %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
+};
+
+// common\Webpack.js
+const getModule = Webpack.getModule;
+const Filters = Webpack.Filters;
+const getMangled = Webpack.getMangled;
+const getStore = Webpack.getStore;
+
+function getModuleAndKey(filter, options) {
+	let module;
+	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
+	module = module?.exports;
+	if (!module) return;
+	const key = Object.keys(module).find(k => module[k] === target);
+	if (!key) return;
+	return { module, key };
+}
+
+// common\DiscordModules\Modules.js
+const Dispatcher = getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: false });
+const transitionTo = getModule(Filters.byStrings(`"transitionTo - Transitioning to "`), { searchExports: true });
+
+// common\DiscordModules\zustand.js
+const { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
+	_: Filters.byStrings("subscribe"),
+	zustand: () => true
+});
+const subscribeWithSelector = getModule(Filters.byStrings("equalityFn", "fireImmediately"), { searchExports: true });
+const zustand$1 = zustand;
+
 // @Stores\ChannelStore
 const ChannelStore = getStore("ChannelStore");
 
@@ -146,6 +161,21 @@ const ChannelStore = getStore("ChannelStore");
 const GuildStore = getStore("GuildStore");
 
 // src\Tabbys\Store.js
+function generateTabs() {
+	const guildIds = GuildStore.getGuildIds();
+	const paths =
+		guildIds.map(guildId => ChannelStore.getChannelIds(guildId)
+			.filter(id => ChannelStore.getChannel(id).type === 0).map(channelId => `/channels/${guildId}/${channelId}`)).flat();
+	let b = 5;
+	const res = [];
+	while (b--)
+		res.push({
+			id: crypto.randomUUID(),
+			path: paths[Math.floor(Math.random() * paths.length)]
+		});
+	return res;
+}
+
 function removeItemFromArray(arr, index) {
 	const tempArray = [...arr];
 	tempArray.splice(index, 1);
@@ -159,7 +189,8 @@ function replaceItemInArray(arr, item, index) {
 }
 const initialState = {
 	tabs: [],
-	selectedId: null
+	selectedId: null,
+	lastSelectedIdAfterNewTab: null
 };
 
 function buildTab(d) {
@@ -193,23 +224,34 @@ const Store = Object.assign(
 					const newTab = buildTab({
 						path: "/channels/@me"
 					});
-					set({ tabs: merge(state.tabs, newTab), selectedId: newTab.id });
+					set({ tabs: merge(state.tabs, newTab), selectedId: newTab.id, lastSelectedIdAfterNewTab: state.selectedId });
 				},
 				removeTab(id) {
-					const state = get();
-					if (state.tabs.length === 1) return;
-					const { tab, index, nextTab, previousTab } = state.getTabMeta(id);
+					const { tabs, getTabMeta, selectedId, lastSelectedIdAfterNewTab } = get();
+					if (tabs.length === 1) return;
+					const { tab, index, nextTab, previousTab } = getTabMeta(id);
 					if (!tab || index === undefined || index < 0) return;
-					const isSelected = state.selectedId === id;
-					const newSelected = !isSelected ? state.selectedId : nextTab ? nextTab.id : previousTab.id;
-					const newTabs = removeItemFromArray(state.tabs, index);
-					set({ tabs: newTabs, selectedId: newSelected });
+					const isSelected = selectedId === id;
+					const newSelected = !isSelected ? selectedId : lastSelectedIdAfterNewTab ? lastSelectedIdAfterNewTab : nextTab ? nextTab.id : previousTab.id;
+					const newTabs = removeItemFromArray(tabs, index);
+					set({ tabs: newTabs, selectedId: newSelected, lastSelectedIdAfterNewTab: null });
+				},
+				moveTab(fromTabId, toTabId) {
+					const state = get();
+					const fromIndex = state.tabs.findIndex(a => a.id === fromTabId);
+					const dragItem = state.tabs[fromIndex];
+					if (!dragItem) return;
+					const toIndex = state.tabs.findIndex(a => a.id === toTabId);
+					const newTabs = [...state.tabs];
+					const prevItem = newTabs.splice(toIndex, 1, dragItem);
+					newTabs.splice(fromIndex, 1, prevItem[0]);
+					set({ tabs: newTabs });
 				},
 				setSelectedId(id) {
 					const state = get();
 					const tabToBeSelected = state.getTab(id);
 					if (!tabToBeSelected) return;
-					set({ selectedId: id });
+					set({ selectedId: id, lastSelectedIdAfterNewTab: null });
 				},
 				updateSelectedTab(newTabData) {
 					const state = get();
@@ -241,11 +283,7 @@ const Store = Object.assign(
 		})
 	), {
 		init() {
-			Store.state.setTabs([
-				buildTab({
-					path: "/channels/@me"
-				})
-			]);
+			Store.state.setTabs(generateTabs());
 			window.navigation.addEventListener("navigate", onLocationChange);
 			Dispatcher.subscribe("LOGOUT", onUserLogout);
 		},
@@ -285,6 +323,47 @@ function onUserLogout() {
 	]);
 }
 
+// common\React.js
+const useState = React.useState;
+const useEffect = React.useEffect;
+const useRef = React.useRef;
+
+// common\Components\ErrorBoundary\index.jsx
+class ErrorBoundary extends React.Component {
+	state = { hasError: false, error: null, info: null };
+	componentDidCatch(error, info) {
+		this.setState({ error, info, hasError: true });
+		const errorMessage = `\n\t${error?.message || ""}${(info?.componentStack || "").split("\n").slice(0, 20).join("\n")}`;
+		console.error(`%c[${config?.info?.name || "Unknown Plugin"}] %cthrew an exception at %c[${this.props.id}]\n`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
+	}
+	renderErrorBoundary() {
+		return (
+			React.createElement('div', { style: { background: "#292c2c", padding: "20px", borderRadius: "10px" }, }, React.createElement('b', { style: { color: "#e0e1e5" }, }, "An error has occured while rendering ", React.createElement('span', { style: { color: "orange" }, }, this.props.id)))
+		);
+	}
+	renderFallback() {
+		if (React.isValidElement(this.props.fallback)) {
+			if (this.props.passMetaProps)
+				this.props.fallback.props = {
+					id: this.props.id,
+					plugin: config?.info?.name || "Unknown Plugin",
+					...this.props.fallback.props
+				};
+			return this.props.fallback;
+		}
+		return (
+			React.createElement(this.props.fallback, {
+				id: this.props.id,
+				plugin: config?.info?.name || "Unknown Plugin",
+			})
+		);
+	}
+	render() {
+		if (!this.state.hasError) return this.props.children;
+		return this.props.fallback ? this.renderFallback() : this.renderErrorBoundary();
+	}
+}
+
 // common\Components\icons\PlusIcon\index.jsx
 function Plus() {
 	return (
@@ -322,9 +401,46 @@ function Discord() {
 }
 
 // src\Tabbys\components\Tab\BaseTab.jsx
-function BaseTab({ id, path, selected, icon, title }) {
+const DragSource = BdApi.Webpack.getByStrings("drag-source", "collect", { searchExports: true });
+const DropTarget = BdApi.Webpack.getByStrings("drop-target", "collect", { searchExports: true });
+
+function DragThis(comp) {
+	return DropTarget(
+		"TAB", {
+			drop(thisTab, monitor) {
+				const droppedTab = monitor.getItem();
+				if (thisTab.id === droppedTab.id) return;
+				Store.state.moveTab(droppedTab.id, thisTab.id);
+			}
+		},
+		function(connect, monitor, props) {
+			return {
+				isOver: monitor.isOver(),
+				canDrop: monitor.canDrop(),
+				dropRef: connect.dropTarget(),
+				draggedIsMe: monitor.getItem()?.id === props.id
+			};
+		}
+	)(
+		DragSource(
+			"TAB", {
+				beginDrag(props) {
+					return { id: props.id };
+				}
+			},
+			(props, monitor) => ({
+				isDragging: !!monitor.isDragging(),
+				dragRef: props.dragSource()
+			})
+		)(comp)
+	);
+}
+
+function BaseTab({ id, path, selected, icon, title, dragRef, dropRef, isOver, canDrop, draggedIsMe, isDragging }) {
+	const tabRef = useRef(null);
 	const isSingleTab = Store(state => state.tabs.length === 1);
-	const clickHandler = () => {
+	const clickHandler = e => {
+		e.stopPropagation();
 		Store.state.setSelectedId(id);
 		return console.log(id, "clickHandler");
 	};
@@ -333,10 +449,12 @@ function BaseTab({ id, path, selected, icon, title }) {
 		Store.state.removeTab(id);
 		return console.log(id, "closeHandler");
 	};
+	dragRef(dropRef(tabRef));
 	return (
 		React.createElement('div', {
-			className: concateClassNames("tab", selected && "selected-tab"),
-			onClick: !selected && clickHandler,
+			ref: tabRef,
+			className: concateClassNames("tab", selected && "selected-tab", isDragging && "dragging", !draggedIsMe && canDrop && isOver && "candrop"),
+			onClick: !selected ? clickHandler : nop,
 		}, React.createElement('div', { className: "tab-icon", }, icon || (
 			React.createElement('div', { className: "tab-icon-unknown", }, React.createElement(Discord, null))
 		)), React.createElement('div', { className: "tab-title", }, title || path), !isSingleTab && (
@@ -347,12 +465,13 @@ function BaseTab({ id, path, selected, icon, title }) {
 		))
 	);
 }
+const BaseTab$1 = DragThis(BaseTab);
 
 // src\Tabbys\components\Tab\GenericTab.jsx
 function GenericTab({ tabId, path }) {
 	const selected = Store(state => state.selectedId === tabId);
 	return (
-		React.createElement(BaseTab, {
+		React.createElement(BaseTab$1, {
 			id: tabId,
 			path: path,
 			selected: selected,
@@ -423,7 +542,7 @@ function DMTab({ tabId, channelId, path }) {
 		})
 	);
 	return (
-		React.createElement(BaseTab, {
+		React.createElement(BaseTab$1, {
 			id: tabId,
 			path: path,
 			selected: selected,
@@ -440,10 +559,10 @@ function ChannelTab({ tabId, guildId, channelId, threadId, path }) {
 	const channel = useStateFromStores([ChannelStore], () => ChannelStore.getChannel(id), [id]);
 	if (!channel) return;
 	const guild = GuildStore.getGuild(guildId);
-	if (!guild) return React.createElement(BaseTab, { path: path, });
+	if (!guild) return React.createElement(BaseTab$1, { path: path, });
 	const guildIcon = guild.getIconURL(80);
 	return (
-		React.createElement(BaseTab, {
+		React.createElement(BaseTab$1, {
 			id: tabId,
 			path: path,
 			selected: selected,
@@ -516,14 +635,29 @@ function Arrow() {
 }
 
 // src\Tabbys\components\TabsScroller\index.jsx
+function useChildrenLengthStateChange(children) {
+	const lastCount = useRef(React.Children.count(children));
+	const currentCount = React.Children.count(children);
+	let state = "";
+	if (lastCount.current < currentCount) state = "INCREASED";
+	else if (lastCount.current > currentCount) state = "DECREASED";
+	lastCount.current = currentCount;
+	return state;
+}
+
+function useForceUpdate() {
+	return React.useReducer((num) => num + 1, 0);
+}
+
 function TabsScroller({ children }) {
 	console.log("TabsScroller rendered");
-	const [updateScrollObserver, setUpdateScrollObserver] = useState(false);
+	const [updateScrollObserver, setUpdateScrollObserver] = useForceUpdate();
 	const [leftScrollBtn, setLeftScrollBtn] = useState(false);
 	const [rightScrollBtn, setRightScrollBtn] = useState(false);
 	const displayStartScrollRef = useRef(null);
 	const displayEndScrollRef = useRef(null);
 	const tabsRef = useRef(null);
+	const childrenLengthState = useChildrenLengthStateChange(children);
 
 	function getTabsMeta(tabIndex) {
 		if (tabIndex == null) return {};
@@ -564,6 +698,7 @@ function TabsScroller({ children }) {
 
 	function scrollSelectedIntoView() {
 		const selectedTab = Store.state.getCurrentlySelectedTab();
+		if (!selectedTab) return;
 		const { index } = Store.state.getTabMeta(selectedTab.id);
 		if (index == null) return;
 		const { tabsMeta, targetTab, nextTab, previousTab } = getTabsMeta(index);
@@ -581,15 +716,24 @@ function TabsScroller({ children }) {
 		}
 	}
 	useEffect(() => {
+		if (childrenLengthState !== "INCREASED") return;
+		scrollSelectedIntoView();
+	}, [children.length]);
+	useEffect(() => {
+		return Store.subscribe(Store.selectors.selectedId, scrollSelectedIntoView);
+	}, []);
+	useEffect(() => {
+		console.log("IntersectionObserver");
 		const tabsNode = tabsRef.current;
 		const tabListChildren = Array.from(tabsNode.children);
 		const length = tabListChildren.length;
 		if (length < 1) return;
 		const firstTab = tabListChildren[0];
 		const lastTab = tabListChildren[length - 1];
+		console.log(firstTab, lastTab);
 		const observerOptions = {
 			root: tabsNode,
-			threshold: 0.99
+			threshold: 0.95
 		};
 		const handleLeftScrollButton = entries => setLeftScrollBtn(!entries[0].isIntersecting);
 		const leftObserver = new IntersectionObserver(handleLeftScrollButton, observerOptions);
@@ -601,17 +745,14 @@ function TabsScroller({ children }) {
 			leftObserver.disconnect();
 			rightObserver.disconnect();
 		};
-	}, [updateScrollObserver, children.length]);
-	useEffect(() => {
-		return Store.subscribe(Store.selectors.selectedId, scrollSelectedIntoView);
-	}, []);
+	}, [updateScrollObserver]);
 	useEffect(() => {
 		const tabsNode = tabsRef.current;
 		if (!tabsNode) return;
 
-		function handleMutation(records) {
-			if (records.some(record => record.addedNodes.length)) scrollSelectedIntoView();
-			setUpdateScrollObserver(!updateScrollObserver);
+		function handleMutation() {
+			console.log("mutation");
+			setUpdateScrollObserver();
 		}
 		const mutationObserver = new MutationObserver(handleMutation);
 		mutationObserver.observe(tabsNode, {
@@ -644,12 +785,8 @@ function TabsScroller({ children }) {
 		}
 		return totalSize;
 	};
-	const handleStartScrollClick = () => {
-		moveTabsScroll(-1 * getScrollSize());
-	};
-	const handleEndScrollClick = () => {
-		moveTabsScroll(getScrollSize());
-	};
+	const handleStartScrollClick = () => moveTabsScroll(-1 * getScrollSize());
+	const handleEndScrollClick = () => moveTabsScroll(getScrollSize());
 	return (
 		React.createElement('div', { className: "tabs-scroller", }
 			/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */
@@ -675,12 +812,17 @@ function TabsScroller({ children }) {
 function App() {
 	console.log("TabBar rendered");
 	const tabs = Store(Store.selectors.tabs, (a, b) => a.length === b.length && !a.some((_, i) => a[i].id !== b[i].id));
-	const selectedTab = Store.state.getCurrentlySelectedTab();
-	const newTabHandler = () => {
+	const newTabHandler = e => {
+		e.preventDefault();
+		e.stopPropagation();
+		console.log(e);
 		Store.state.newTab();
 	};
 	return (
-		React.createElement('div', { className: "tabs-container", }, React.createElement(TabsScroller, { selectedTab: selectedTab, }, [...tabs].map(a => (
+		React.createElement('div', {
+				className: "tabs-container",
+				onDoubleClick: e => e.stopPropagation(),
+			}, React.createElement(TabsScroller, null, [...tabs].map(a => (
 				React.createElement(Tab, {
 					key: a.id,
 					id: a.id,
@@ -695,84 +837,51 @@ function App() {
 	);
 }
 
-// common\Components\ErrorBoundary\index.jsx
-class ErrorBoundary extends React.Component {
-	state = { hasError: false, error: null, info: null };
-	componentDidCatch(error, info) {
-		this.setState({ error, info, hasError: true });
-		const errorMessage = `\n\t${error?.message || ""}${(info?.componentStack || "").split("\n").slice(0, 20).join("\n")}`;
-		console.error(`%c[${config?.info?.name || "Unknown Plugin"}] %cthrew an exception at %c[${this.props.id}]\n`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
-	}
-	renderErrorBoundary() {
-		return (
-			React.createElement('div', { style: { background: "#292c2c", padding: "20px", borderRadius: "10px" }, }, React.createElement('b', { style: { color: "#e0e1e5" }, }, "An error has occured while rendering ", React.createElement('span', { style: { color: "orange" }, }, this.props.id)))
+// src\Tabbys\patches\patchTitleBar.jsx
+const TitleBar = getModuleAndKey(Filters.byStrings("windowKey", "title"), { searchExports: true });
+const patchTitleBar = () => {
+	const { module, key } = TitleBar;
+	if (!module || !key) return Logger.patch("patchTitleBar");
+	Patcher.before(module, key, (_, [props]) => {
+		if (!props?.title) return;
+		props.title = (
+			React.createElement(ErrorBoundary, null, React.createElement(App, null))
 		);
-	}
-	renderFallback() {
-		if (React.isValidElement(this.props.fallback)) {
-			if (this.props.passMetaProps)
-				this.props.fallback.props = {
-					id: this.props.id,
-					plugin: config?.info?.name || "Unknown Plugin",
-					...this.props.fallback.props
-				};
-			return this.props.fallback;
-		}
-		return (
-			React.createElement(this.props.fallback, {
-				id: this.props.id,
-				plugin: config?.info?.name || "Unknown Plugin",
-			})
-		);
-	}
-	render() {
-		if (!this.state.hasError) return this.props.children;
-		return this.props.fallback ? this.renderFallback() : this.renderErrorBoundary();
-	}
-}
+	});
+};
 
 // src\Tabbys\index.jsx
-const container = Object.assign(document.createElement("div"), { className: "tabs-test-container" });
-let root = ReactDOM.createRoot(container);
 class Tabbys {
 	start() {
 		try {
 			DOM.addStyle(css);
 			Store.init();
-			root = ReactDOM.createRoot(container);
-			document.body.prepend(container);
-			root.render(
-				React.createElement(ErrorBoundary, null, React.createElement(App, null))
-			);
+			patchTitleBar();
+			reRender('div[data-windows="true"] > *');
 		} catch (e) {
 			Logger.error(e);
 		}
 	}
 	stop() {
-		root.unmount();
-		container.remove();
 		Store.dispose();
 		DOM.removeStyle();
 		Patcher.unpatchAll();
+		reRender('div[data-windows="true"] > *');
 	}
 }
 
 module.exports = Tabbys;
 
-const css = `/**
- * @name debugg
- * @description debugg
- * @version 1.0.0
- * @author debugg
- * @authorId 995
- 
-*/
+const css = `
+
+
 
 /* the great reset */
 .tabs-container * {
 	padding: 0;
 	margin: 0;
 	box-sizing: border-box;
+	/* border:1px solid white; */
 }
 
 
@@ -786,31 +895,17 @@ const css = `/**
 	--tab-height:30px;
 }
 
-body {
-	display: flex;
-	flex-direction: column;
-}
-
-#app-mount {
-	transform: translate(0);
-	position: static;
-}
-
-.tabs-test-container {
-	flex: 0 0 auto;
-	margin-left: 50px;
-	background: lime;
-	/* border:1px solid red; */
-	/* padding: 5px; */
-	/* zoom:3; */
-}
 
 
 /* Tabs */
 
+div:has(>.tabs-container){
+	position:static;
+	min-width:0;
+}
 
 .tabs-container {
-	background: #1f2020;
+	/* background: #1f2020; */
 	display: flex;
 	gap: var(--gutter);
 	user-select: none;
@@ -818,21 +913,25 @@ body {
 	display: flex;
 	align-items: center;
 	font-size:calc(var(--tab-height) * .4);
-
-}
-
-.tabs-scroller{
+	align-self:flex-start;
 	min-width:0;
 	position:relative;
-	/* background:pink; */
-	/* padding:5px; */
+	-webkit-app-region: no-drag;
+}
+
+
+.tabs-scroller{
+	width:100%;
+	min-width:0;
+	position:relative;
+	
 }
 
 .tabs-list {
 	/* flex:1 0 0; */
     overflow: auto;
     scrollbar-width: none;
-	/* background:red; */
+	
     display: flex;
     gap: var(--gutter);
     align-items: center;
@@ -922,6 +1021,25 @@ body {
 	position:relative;
 }
 
+.dragging{
+	opacity:.5;
+}
+
+.candrop{
+	/* border:1px solid lime; */
+	background:green;
+
+}
+
+.candrop:after{
+	content:"";
+	position:absolute;
+	inset:0;
+	/* background:red; */
+	border:1px solid lime;
+	border-radius:inherit;
+	/* background:green; */
+}
 
 .tab:not(.selected-tab):hover{
 	background: #555555;
@@ -976,6 +1094,7 @@ body {
 }
 
 .tab-close {
+	z-index:10;
 	flex-shrink:0;
 	width:calc(var(--tab-height) / 1.5);
     height:calc(var(--tab-height) / 1.5);
@@ -996,7 +1115,4 @@ body {
 
 .tab-close:active{
 	background: #555555;
-}
-
-
-`;
+}`;
