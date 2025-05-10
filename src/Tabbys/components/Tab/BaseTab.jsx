@@ -45,7 +45,7 @@ function DragThis(comp) {
 				Store.state.moveTab(droppedTab.id, thisTab.id);
 			}
 		},
-		function(connect, monitor, props)  {
+		function (connect, monitor, props) {
 			// console.log(arguments)
 			return {
 				isOver: monitor.isOver(),
@@ -59,7 +59,7 @@ function DragThis(comp) {
 			"TAB",
 			{
 				beginDrag(props) {
-					return { id:props.id };
+					return { id: props.id };
 				}
 			},
 			(props, monitor) => ({
@@ -94,14 +94,8 @@ function BaseTab({ id, path, selected, icon, title, dragRef, dropRef, isOver, ca
 			ref={tabRef}
 			className={concateClassNames("tab", selected && "selected-tab", isDragging && "dragging", !draggedIsMe && canDrop && isOver && "candrop")}
 			onClick={!selected ? clickHandler : nop}>
-			<div className="tab-icon">
-				{icon || (
-					<div className="tab-icon-unknown">
-						<DiscordIcon />
-					</div>
-				)}
-			</div>
-			<div className="tab-title">{title || path}</div>
+			<div className={concateClassNames("tab-icon", !icon && "discord-icon")}>{icon || <DiscordIcon />}</div>
+			<div className="tab-title ellipsis">{title || path}</div>
 			{!isSingleTab && (
 				// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
 				<div

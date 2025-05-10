@@ -48,5 +48,5 @@ export default React.memo(function TabSwitch({ id }) {
 			/>
 		);
 
-	return <div>{res}</div>;
+	return res;
 })

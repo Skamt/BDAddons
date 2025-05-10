@@ -87,7 +87,6 @@ export function debounce(func, wait = 166) {
 	let timeout;
 	function debounced(...args) {
 		const later = () => {
-			// @ts-ignore
 			func.apply(this, args);
 		};
 		clearTimeout(timeout);

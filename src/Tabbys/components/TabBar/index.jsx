@@ -1,12 +1,13 @@
+/* eslint-disable react/jsx-key */
 import "./styles";
 import { Store } from "@/Store";
 import PlusIcon from "@Components/icons/PlusIcon";
-
+import Gap from "@Components/Gap";
 import React from "@React";
 import Tab from "../Tab";
 import TabsScroller from "../TabsScroller";
 
-export default function App() {
+export default function TabBar({ leading, trailing }) {
 	console.log("TabBar rendered");
 	const tabs = Store(Store.selectors.tabs, (a, b) => a.length === b.length && !a.some((_, i) => a[i].id !== b[i].id));
 
@@ -21,23 +22,29 @@ export default function App() {
 	};
 
 	return (
-		<div
-			className="tabs-container"
-			onDoubleClick={e => e.stopPropagation()}>
-			<TabsScroller>
-				{[...tabs].map(a => (
-					<Tab
-						key={a.id}
-						id={a.id}
-					/>
-				))}
-			</TabsScroller>
-			{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+		<div>
+			{leading}
 			<div
-				className="new-tab"
-				onClick={newTabHandler}>
-				<PlusIcon />
+				className="tabs-container"
+				onDoubleClick={e => e.stopPropagation()}>
+				<TabsScroller>
+					{[...tabs].map((a, index) => [
+						index !== 0 && <div className="tab-div" />,
+						<Tab
+							key={a.id}
+							id={a.id}
+						/>
+					])}
+				</TabsScroller>
+				<div className="tab-div" />
+				{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+				<div
+					className="new-tab"
+					onClick={newTabHandler}>
+					<PlusIcon />
+				</div>
 			</div>
+			{trailing}
 		</div>
 	);
 }

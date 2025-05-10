@@ -1,7 +1,7 @@
 import "./styles";
 import React, { useRef, useEffect, useState } from "@React";
 import ArrowIcon from "@Components/icons/ArrowIcon";
-import { concateClassNames, animate } from "@Utils";
+import { debounce, concateClassNames, animate } from "@Utils";
 import { Store } from "@/Store";
 
 function useChildrenLengthStateChange(children) {
@@ -50,16 +50,17 @@ export default function TabsScroller({ children }) {
 			};
 		}
 
-		const targetTab = tabsNode.children[tabIndex];
-		const nextTab = tabsNode.children[tabIndex + 1];
-		const previousTab = tabsNode.children[tabIndex - 1];
+		const tabsNodes = tabsNode.querySelectorAll(".tab");
+		const targetTab = tabsNodes[tabIndex];
+		const nextTab = tabsNodes[tabIndex + 1];
+		const previousTab = tabsNodes[tabIndex - 1];
 
 		res.targetTab = !targetTab
 			? {}
 			: {
 					...targetTab.getBoundingClientRect().toJSON(),
-					isFirst: targetTab === tabsNode.children[0],
-					isLast: targetTab === tabsNode.children[tabsNode.children.length - 1]
+					isFirst: targetTab === tabsNodes[0],
+					isLast: targetTab === tabsNodes[tabsNodes.length - 1]
 				};
 
 		res.nextTab = !nextTab ? {} : { ...nextTab.getBoundingClientRect().toJSON() };
@@ -125,11 +126,11 @@ export default function TabsScroller({ children }) {
 		};
 
 		const handleLeftScrollButton = entries => setLeftScrollBtn(!entries[0].isIntersecting);
-		const leftObserver = new IntersectionObserver(handleLeftScrollButton, observerOptions);
+		const leftObserver = new IntersectionObserver(debounce(handleLeftScrollButton), observerOptions);
 		leftObserver.observe(firstTab);
 
 		const handleRightScrollButton = entries => setRightScrollBtn(!entries[0].isIntersecting);
-		const rightObserver = new IntersectionObserver(handleRightScrollButton, observerOptions);
+		const rightObserver = new IntersectionObserver(debounce(handleRightScrollButton), observerOptions);
 		rightObserver.observe(lastTab);
 
 		return () => {
@@ -192,7 +193,7 @@ export default function TabsScroller({ children }) {
 			<div
 				ref={displayStartScrollRef}
 				onClick={handleStartScrollClick}
-				className={concateClassNames("left-arrow", !leftScrollBtn && "hidden")}>
+				className={concateClassNames("scrollBtn left-arrow", !leftScrollBtn && "hidden")}>
 				<ArrowIcon />
 			</div>
 
@@ -206,7 +207,7 @@ export default function TabsScroller({ children }) {
 			<div
 				ref={displayEndScrollRef}
 				onClick={handleEndScrollClick}
-				className={concateClassNames("right-arrow", !rightScrollBtn && "hidden")}>
+				className={concateClassNames("scrollBtn right-arrow", !rightScrollBtn && "hidden")}>
 				<ArrowIcon />
 			</div>
 		</div>
