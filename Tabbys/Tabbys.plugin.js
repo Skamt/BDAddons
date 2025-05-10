@@ -94,6 +94,22 @@ function animate(property, element, to, options = {}, cb = () => {}) {
 	return cancel;
 }
 
+function debounce(func, wait = 166) {
+	let timeout;
+
+	function debounced(...args) {
+		const later = () => {
+			func.apply(this, args);
+		};
+		clearTimeout(timeout);
+		timeout = setTimeout(later, wait);
+	}
+	debounced.clear = () => {
+		clearTimeout(timeout);
+	};
+	return debounced;
+}
+
 function shallow(objA, objB) {
 	if (Object.is(objA, objB)) return true;
 	if (typeof objA !== "object" || objA === null || typeof objB !== "object" || objB === null) return false;
@@ -455,9 +471,7 @@ function BaseTab({ id, path, selected, icon, title, dragRef, dropRef, isOver, ca
 			ref: tabRef,
 			className: concateClassNames("tab", selected && "selected-tab", isDragging && "dragging", !draggedIsMe && canDrop && isOver && "candrop"),
 			onClick: !selected ? clickHandler : nop,
-		}, React.createElement('div', { className: "tab-icon", }, icon || (
-			React.createElement('div', { className: "tab-icon-unknown", }, React.createElement(Discord, null))
-		)), React.createElement('div', { className: "tab-title", }, title || path), !isSingleTab && (
+		}, React.createElement('div', { className: concateClassNames("tab-icon", !icon && "discord-icon"), }, icon || React.createElement(Discord, null)), React.createElement('div', { className: "tab-title ellipsis", }, title || path), !isSingleTab && (
 			React.createElement('div', {
 				className: "tab-close",
 				onClick: closeHandler,
@@ -615,7 +629,7 @@ const Tab = React.memo(function TabSwitch({ id }) {
 				path: item.path,
 			})
 		);
-	return React.createElement('div', null, res);
+	return res;
 });
 
 // common\Components\icons\ArrowIcon\index.jsx
@@ -677,15 +691,16 @@ function TabsScroller({ children }) {
 				right: rect.right
 			};
 		}
-		const targetTab = tabsNode.children[tabIndex];
-		const nextTab = tabsNode.children[tabIndex + 1];
-		const previousTab = tabsNode.children[tabIndex - 1];
+		const tabsNodes = tabsNode.querySelectorAll(".tab");
+		const targetTab = tabsNodes[tabIndex];
+		const nextTab = tabsNodes[tabIndex + 1];
+		const previousTab = tabsNodes[tabIndex - 1];
 		res.targetTab = !targetTab ?
 			{} :
 			{
 				...targetTab.getBoundingClientRect().toJSON(),
-				isFirst: targetTab === tabsNode.children[0],
-				isLast: targetTab === tabsNode.children[tabsNode.children.length - 1]
+				isFirst: targetTab === tabsNodes[0],
+				isLast: targetTab === tabsNodes[tabsNodes.length - 1]
 			};
 		res.nextTab = !nextTab ? {} : { ...nextTab.getBoundingClientRect().toJSON() };
 		res.previousTab = !previousTab ? {} : { ...previousTab.getBoundingClientRect().toJSON() };
@@ -736,10 +751,10 @@ function TabsScroller({ children }) {
 			threshold: 0.95
 		};
 		const handleLeftScrollButton = entries => setLeftScrollBtn(!entries[0].isIntersecting);
-		const leftObserver = new IntersectionObserver(handleLeftScrollButton, observerOptions);
+		const leftObserver = new IntersectionObserver(debounce(handleLeftScrollButton), observerOptions);
 		leftObserver.observe(firstTab);
 		const handleRightScrollButton = entries => setRightScrollBtn(!entries[0].isIntersecting);
-		const rightObserver = new IntersectionObserver(handleRightScrollButton, observerOptions);
+		const rightObserver = new IntersectionObserver(debounce(handleRightScrollButton), observerOptions);
 		rightObserver.observe(lastTab);
 		return () => {
 			leftObserver.disconnect();
@@ -793,7 +808,7 @@ function TabsScroller({ children }) {
 			, React.createElement('div', {
 				ref: displayStartScrollRef,
 				onClick: handleStartScrollClick,
-				className: concateClassNames("left-arrow", !leftScrollBtn && "hidden"),
+				className: concateClassNames("scrollBtn left-arrow", !leftScrollBtn && "hidden"),
 			}, React.createElement(Arrow, null)), React.createElement('div', {
 				className: "tabs-list",
 				ref: tabsRef,
@@ -802,14 +817,15 @@ function TabsScroller({ children }) {
 			, React.createElement('div', {
 				ref: displayEndScrollRef,
 				onClick: handleEndScrollClick,
-				className: concateClassNames("right-arrow", !rightScrollBtn && "hidden"),
+				className: concateClassNames("scrollBtn right-arrow", !rightScrollBtn && "hidden"),
 			}, React.createElement(Arrow, null))
 		)
 	);
 }
 
 // src\Tabbys\components\TabBar\index.jsx
-function App() {
+/* eslint-disable react/jsx-key */
+function TabBar({ leading, trailing }) {
 	console.log("TabBar rendered");
 	const tabs = Store(Store.selectors.tabs, (a, b) => a.length === b.length && !a.some((_, i) => a[i].id !== b[i].id));
 	const newTabHandler = e => {
@@ -819,21 +835,34 @@ function App() {
 		Store.state.newTab();
 	};
 	return (
-		React.createElement('div', {
+		React.createElement('div', null, leading, React.createElement('div', {
 				className: "tabs-container",
 				onDoubleClick: e => e.stopPropagation(),
-			}, React.createElement(TabsScroller, null, [...tabs].map(a => (
+			}, React.createElement(TabsScroller, null, [...tabs].map((a, index) => [
+				index !== 0 && React.createElement('div', { className: "tab-div", }),
 				React.createElement(Tab, {
 					key: a.id,
 					id: a.id,
 				})
-			)))
+			])), React.createElement('div', { className: "tab-div", })
 			/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */
 			, React.createElement('div', {
 				className: "new-tab",
 				onClick: newTabHandler,
 			}, React.createElement(Plus, null))
-		)
+		), trailing)
+	);
+}
+
+// src\Tabbys\components\BookmarkBar\index.jsx
+function BookmarkBar() {
+	return React.createElement('div', { className: "bookmarks-container", });
+}
+
+// src\Tabbys\components\App\index.jsx
+function App({ leading, trailing }) {
+	return (
+		React.createElement('div', { className: "channel-tabs-container", }, React.createElement(TabBar, { leading: leading, trailing: trailing, }), React.createElement(BookmarkBar, null))
 	);
 }
 
@@ -842,10 +871,13 @@ const TitleBar = getModuleAndKey(Filters.byStrings("windowKey", "title"), { sear
 const patchTitleBar = () => {
 	const { module, key } = TitleBar;
 	if (!module || !key) return Logger.patch("patchTitleBar");
-	Patcher.before(module, key, (_, [props]) => {
-		if (!props?.title) return;
-		props.title = (
-			React.createElement(ErrorBoundary, null, React.createElement(App, null))
+	Patcher.after(module, key, (_, __, ret) => {
+		const [, leading, trailing] = ret?.props?.children || [];
+		return (
+			React.createElement(ErrorBoundary, null, React.createElement(App, {
+				leading: leading,
+				trailing: trailing,
+			}))
 		);
 	});
 };
@@ -873,106 +905,100 @@ class Tabbys {
 module.exports = Tabbys;
 
 const css = `
-
-
-
-/* the great reset */
-.tabs-container * {
-	padding: 0;
-	margin: 0;
-	box-sizing: border-box;
-	/* border:1px solid white; */
+div:has(> .channel-tabs-container):not(#a) {
+	grid-template-rows: [top] auto [titleBarEnd] min-content [noticeEnd] 1fr [end];
 }
 
+:root{
+	--tab-height:20px;
+	
+	--active-tab-bg:#353333;
+	--hover-tab-bg:#7b7b7b;
+	--selected-tab-bg:#3b3b41;
 
-/* main */
-
-:root {
-    --gutter: 5px;
-    --radius: 8px;
-	--tab-min-width:180px;
-	--tab-max-width:300px;
-	--tab-height:30px;
+	--close-btn-hover-bg:#595959;
+	--close-btn-active-bg:#262626;
 }
 
+.channel-tabs-container{
+	grid-column:1/-1;
+	position:relative;
+	line-height:1.3; /* unify line height across weird characters */
+}
 
-
-/* Tabs */
-
-div:has(>.tabs-container){
-	position:static;
-	min-width:0;
+.channel-tabs-container > div{
+	position:relative;
+	display:flex;
+	-webkit-app-region: drag;
 }
 
 .tabs-container {
-	/* background: #1f2020; */
 	display: flex;
-	gap: var(--gutter);
+	align-items:center;
+	display: flex;
 	user-select: none;
 	padding: 3px;
 	display: flex;
 	align-items: center;
-	font-size:calc(var(--tab-height) * .4);
 	align-self:flex-start;
 	min-width:0;
 	position:relative;
+	margin-right:auto;
 	-webkit-app-region: no-drag;
 }
 
+.tabs-container svg,
+.tabs-container img {
+	max-width:100%;
+	max-height:100%;
+}
 
-.tabs-scroller{
-	width:100%;
+.tabs-scroller {
+	display: flex;
 	min-width:0;
+	padding:5px;
 	position:relative;
-	
 }
 
 .tabs-list {
-	/* flex:1 0 0; */
-    overflow: auto;
-    scrollbar-width: none;
-	
-    display: flex;
-    gap: var(--gutter);
-    align-items: center;
-	height:100%;
-	
+	display: flex;
+	overflow:auto;
+	scrollbar-width:none;
+	gap:5px;
 }
 
+.new-tab{
+	flex:0 0 auto;
+	display:flex;
+	padding:2px;
+	width:20px;
+	height:20px;
+	color:white;
+	margin:0 5px;
+	border-radius:50%;
+}
 
+.new-tab:hover{
+	background:var(--hover-tab-bg);
+}
 
-.new-tab {
-    background: #555555;
-    color: white;
-    border-radius: 50%;
-    display: flex;
+.new-tab:active{
+	background:var(--active-tab-bg);
+}
+
+.scrollBtn{
+	height:var(--tab-height);
+	background:#7b7b7b;
 	padding:5px;
-    align-items: center;
-    justify-content: center;
-	flex-shrink:0;
-	--dims: calc(var(--tab-height)  * .8);
-    width:var(--dims);
-    height:var(--dims);
-	cursor: pointer;
-}
-
-.left-arrow,
-.right-arrow{
+	border-radius:8px;
 	z-index:99;
 	position:absolute;
-	background: #555555;
-    color: white;
-    top:50%;
+	top:50%;
 	translate:0 -50%;
     display: flex;
-	padding:5px;
     align-items: center;
     justify-content: center;
-	flex-shrink:0;
-	border-radius: calc(var(--tab-height) * .3);
-   --dims: calc(var(--tab-height)  * .8);
-    width:var(--dims);
-    height:var(--dims);
+	aspect-ratio:1;
 	cursor: pointer;
 }
 
@@ -985,40 +1011,21 @@ div:has(>.tabs-container){
 	right:0;
 }
 
-.hidden{
+.scrollBtn.hidden{
 	translate:-999px -999px;
 }
 
-
-.left-arrow:hover,
-.right-arrow:hover,
-.new-tab:hover{
-	background: #686767;
-}
-
-.left-arrow:active,
-.right-arrow:active,
-.new-tab:active{
-	background: #696969;
-}
-
-
-
-/* Tab */
-
-.tab {
-    gap: var(--gutter);
-    max-width: 300px;
-    min-width: 180px;
+.tab{
+	min-width:200px;
+	display:flex;
+	align-items:center;
+	gap:5px;
+	padding:5px 8px;
 	height:var(--tab-height);
-    padding: 8px;
-
-    display: flex;
-	align-items: center;
-    border-radius: calc(var(--tab-height) * .3);
-    color: white;
-    font-family: consolas;
-	position:relative;
+	color:white;
+	border-radius:8px;
+	cursor: pointer;
+	transform: translate(0);
 }
 
 .dragging{
@@ -1026,93 +1033,93 @@ div:has(>.tabs-container){
 }
 
 .candrop{
-	/* border:1px solid lime; */
 	background:green;
-
 }
-
 .candrop:after{
 	content:"";
+	border-radius:inherit;
 	position:absolute;
 	inset:0;
-	/* background:red; */
 	border:1px solid lime;
-	border-radius:inherit;
-	/* background:green; */
 }
 
-.tab:not(.selected-tab):hover{
-	background: #555555;
-}
 
-.tab:not(.selected-tab):active{
-	background: #696969;
+.tab-div{
+	min-width:2px;
+	background:#ccc5;
+	height:calc(var(--tab-height) * .7);
+	margin: auto 2px;
 }
 
 .selected-tab{
-	background: #3c3c3c;
+	background:var(--selected-tab-bg);
 }
 
-.tab-icon {
-	width:calc(var(--tab-height) / 1.5);
-    height:calc(var(--tab-height) / 1.5);
-    flex: 0 0 auto;
-    display: flex;
-	align-items: center;
+.tab:not(.selected-tab):hover{
+	background:var(--hover-tab-bg);
+}
+
+.tab:not(.selected-tab):active:has(.tab-close:not(:active)){
+	background:var(--active-tab-bg);
+}
+
+.tab-icon{
+	flex:0 0 auto;
+	display:flex;
+	--d:calc(var(--tab-height) * .7);
+	width:var(--d);
+	height:var(--d);
+	align-items:center;
 	justify-content:center;
-
+	border-radius:50%;
 }
 
-
-.tab-icon img {
-	max-width:100%;
-	max-height:100%;
-    border-radius: 50%;
+.tab-icon > svg,
+.tab-icon > img{
+	flex:1 0 0;
+	border-radius:50%;
 }
 
-.tab-icon-unknown{
-	width:100%;
-	height:100%;
-	border-radius: 50%;
+.tab-icon.discord-icon{
+	color:white;
 	background: #6361f8;
-	padding:3px;
-
 }
 
-.tab-icon-unknown svg{
-	max-width:100%;
-	max-height:100%;
+.tab-icon.discord-icon > svg{
+	width: 80%;
+	height: 80%;
 }
 
-.tab-title {
-	/* display:flex; */
-	flex: 1 0 0;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
+.tab-title{
+	flex:1 0 0;
+	min-width:0;
 	mask:linear-gradient(to right, #000 80%, #0000 98%, #0000) no-repeat;
 }
 
-.tab-close {
-	z-index:10;
-	flex-shrink:0;
-	width:calc(var(--tab-height) / 1.5);
-    height:calc(var(--tab-height) / 1.5);
-	padding:5px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction:column;
-    cursor: pointer;
-    color: white;
-    background: #1f2020;
+.tab-close{
+	flex:0 0 auto;
+	display:flex;
+	padding:3px;
+	--d:calc(var(--tab-height) * .6);
+	width:var(--d);
+	height:var(--d);
+	border-radius:50%;
 }
 
 .tab-close:hover{
-	background: #696969;
+	background:var(--close-btn-hover-bg);
 }
 
 .tab-close:active{
-	background: #555555;
-}`;
+	background:var(--close-btn-active-bg);
+}
+
+.ellipsis{
+	white-space:nowrap;
+	overflow:hidden;
+	text-overflow:ellipsis;
+}
+
+
+
+`;
