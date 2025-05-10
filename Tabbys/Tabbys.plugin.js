@@ -894,6 +894,221 @@ class Tabbys {
 module.exports = Tabbys;
 
 const css = `
+div:has(> .channel-tabs-container):not(#a) {
+	grid-template-rows: [top] auto [titleBarEnd] min-content [noticeEnd] 1fr [end];
+}
+
+:root{
+	--tab-height:20px;
+	
+	--active-tab-bg:#353333;
+	--hover-tab-bg:#7b7b7b;
+	--selected-tab-bg:#3b3b41;
+
+	--close-btn-hover-bg:#595959;
+	--close-btn-active-bg:#262626;
+}
+
+.channel-tabs-container{
+	grid-column:1/-1;
+	position:relative;
+	line-height:1.3; /* unify line height across weird characters */
+}
+
+.channel-tabs-container > div{
+	position:relative;
+	display:flex;
+	-webkit-app-region: drag;
+}
+
+.tabs-container {
+	display: flex;
+	align-items:center;
+	display: flex;
+	user-select: none;
+	padding: 3px;
+	display: flex;
+	align-items: center;
+	align-self:flex-start;
+	min-width:0;
+	position:relative;
+	margin-right:auto;
+	-webkit-app-region: no-drag;
+}
+
+.tabs-container svg,
+.tabs-container img {
+	max-width:100%;
+	max-height:100%;
+}
+
+.tabs-scroller {
+	display: flex;
+	min-width:0;
+	padding:5px;
+	position:relative;
+}
+
+.tabs-list {
+	display: flex;
+	overflow:auto;
+	scrollbar-width:none;
+	gap:5px;
+}
+
+.new-tab{
+	flex:0 0 auto;
+	display:flex;
+	padding:2px;
+	width:20px;
+	height:20px;
+	color:white;
+	margin:0 5px;
+	border-radius:50%;
+}
+
+.new-tab:hover{
+	background:var(--hover-tab-bg);
+}
+
+.new-tab:active{
+	background:var(--active-tab-bg);
+}
+
+.scrollBtn{
+	height:var(--tab-height);
+	background:#7b7b7b;
+	padding:5px;
+	border-radius:8px;
+	z-index:99;
+	position:absolute;
+	top:50%;
+	translate:0 -50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+	aspect-ratio:1;
+	cursor: pointer;
+}
+
+.left-arrow{
+	left:0;
+	rotate:180deg;
+}
+
+.right-arrow{
+	right:0;
+}
+
+.scrollBtn.hidden{
+	translate:-999px -999px;
+}
+
+.tab{
+	min-width:200px;
+	display:flex;
+	align-items:center;
+	gap:5px;
+	padding:5px 8px;
+	height:var(--tab-height);
+	color:white;
+	border-radius:8px;
+	cursor: pointer;
+	transform: translate(0);
+}
+
+.dragging{
+	opacity:.5;
+}
+
+.candrop{
+	background:green;
+}
+.candrop:after{
+	content:"";
+	border-radius:inherit;
+	position:absolute;
+	inset:0;
+	border:1px solid lime;
+}
+
+
+.tab-div{
+	min-width:2px;
+	background:#ccc5;
+	height:calc(var(--tab-height) * .7);
+	margin: auto 2px;
+}
+
+.selected-tab{
+	background:var(--selected-tab-bg);
+}
+
+.tab:not(.selected-tab):hover{
+	background:var(--hover-tab-bg);
+}
+
+.tab:not(.selected-tab):active:has(.tab-close:not(:active)){
+	background:var(--active-tab-bg);
+}
+
+.tab-icon{
+	flex:0 0 auto;
+	display:flex;
+	--d:calc(var(--tab-height) * .7);
+	width:var(--d);
+	height:var(--d);
+	align-items:center;
+	justify-content:center;
+	border-radius:50%;
+}
+
+.tab-icon > svg,
+.tab-icon > img{
+	flex:1 0 0;
+	border-radius:50%;
+}
+
+.tab-icon.discord-icon{
+	color:white;
+	background: #6361f8;
+}
+
+.tab-icon.discord-icon > svg{
+	width: 80%;
+	height: 80%;
+}
+
+.tab-title{
+	flex:1 0 0;
+	min-width:0;
+	mask:linear-gradient(to right, #000 80%, #0000 98%, #0000) no-repeat;
+}
+
+.tab-close{
+	flex:0 0 auto;
+	display:flex;
+	padding:3px;
+	--d:calc(var(--tab-height) * .6);
+	width:var(--d);
+	height:var(--d);
+	border-radius:50%;
+}
+
+.tab-close:hover{
+	background:var(--close-btn-hover-bg);
+}
+
+.tab-close:active{
+	background:var(--close-btn-active-bg);
+}
+
+.ellipsis{
+	white-space:nowrap;
+	overflow:hidden;
+	text-overflow:ellipsis;
+}
+
 
 
 `;
