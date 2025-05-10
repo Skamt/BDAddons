@@ -1,4 +1,4 @@
-import { React } from "@Api";
+import React from "@React";
 import { getImageComponent } from "@Utils/ImageModal";
 import { openModal } from "@Utils/Modals";
 import Toast from "@Utils/Toast";

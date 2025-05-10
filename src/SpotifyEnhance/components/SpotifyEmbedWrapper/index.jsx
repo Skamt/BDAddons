@@ -1,4 +1,4 @@
-import { React } from "@Api";
+import React from "@React";
 import { EmbedStyleEnum } from "../../consts.js";
 import Settings from "@Utils/Settings";
 import SpotifyControls from "../SpotifyControls";

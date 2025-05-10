@@ -1,5 +1,5 @@
 import "./styles";
-import { React } from "@Api";
+import React from "@React";
 import SpotifyPlayerControls from "../SpotifyPlayerControls";
 import TrackMediaDetails from "../TrackMediaDetails";
 import TrackTimeLine from "../TrackTimeLine";

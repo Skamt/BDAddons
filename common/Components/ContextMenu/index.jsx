@@ -1,6 +1,6 @@
 import { ContextMenu as CM, React } from "@Api";
 import Popout from "@Components/Popout";
-
+import Flex from "@Components/Flex";
 const { Item: MenuItem, Menu, Separator: MenuSeparator } = CM;
 
 function parseMenuItems(items) {
@@ -27,9 +27,11 @@ function parseMenuItems(items) {
 	});
 }
 
-export default function ContextMenu({ children, menuItems, position = "top", align = "left", className, menuClassName }) {
+export default function ContextMenu({ showOnContextMenu, showOnClick, children, menuItems, position = "top", align = "left", className, menuClassName }) {
 	return (
 		<Popout
+			showOnClick={showOnClick}
+			showOnContextMenu={showOnContextMenu}
 			renderPopout={t => (
 				<Menu
 					className={menuClassName}
@@ -43,5 +45,17 @@ export default function ContextMenu({ children, menuItems, position = "top", ali
 			className={className}>
 			{children}
 		</Popout>
+	);
+}
+
+export function MenuLabel({ label, icon }) {
+	return (
+		<Flex
+			direction={Flex.Direction.HORIZONTAL}
+			align={Flex.Align.CENTER}
+			style={{ gap: 8 }}>
+			{icon}
+			<div>{label}</div>
+		</Flex>
 	);
 }

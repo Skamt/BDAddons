@@ -1,4 +1,4 @@
-import { React } from "@Api";
+import React from "@React";
 import PauseIcon from "@Components/icons/PauseIcon";
 import PlayIcon from "@Components/icons/PlayIcon";
 import Tooltip from "@Components/Tooltip";

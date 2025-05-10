@@ -1,5 +1,5 @@
 import "./styles";
-import { React } from "@Api";
+import React from "@React";
 import Tooltip from "@Components/Tooltip";
 import AddToQueueIcon from "@Components/icons/AddToQueueIcon";
 import CopyIcon from "@Components/icons/CopyIcon";

@@ -1,4 +1,4 @@
-import { React } from "@Api";
+import React from "@React";
 import SettingSwtich from "@Components/SettingSwtich";
 import Settings from "@Utils/Settings";
 import Heading from "@Modules/Heading";

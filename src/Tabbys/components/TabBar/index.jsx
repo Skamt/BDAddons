@@ -1,8 +1,6 @@
-/* eslint-disable react/jsx-key */
 import "./styles";
 import { Store } from "@/Store";
 import PlusIcon from "@Components/icons/PlusIcon";
-import Gap from "@Components/Gap";
 import React from "@React";
 import Tab from "../Tab";
 import TabsScroller from "../TabsScroller";

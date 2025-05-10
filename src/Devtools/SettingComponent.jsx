@@ -1,4 +1,4 @@
-import { React } from "@Api";
+import React from "@React";
 import Switch from "@Components/Switch";
 
 export default function ({ settings, enableExp }) {

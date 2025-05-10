@@ -1,4 +1,4 @@
-import { React } from "@Api";
+import React from "@React";
 import { copy } from "@Utils";
 import Toast from "@Utils/Toast";
 import Color from "@Modules/Color";

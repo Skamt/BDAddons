@@ -1,4 +1,4 @@
-import { React } from "@Api";
+import React from "@React";
 import Settings from "@Utils/Settings";
 import Popout from "@Modules/Popout";
 import {PREVIEW_SIZE} from "../Constants";

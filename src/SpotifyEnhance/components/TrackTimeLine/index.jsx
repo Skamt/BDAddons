@@ -1,5 +1,5 @@
 import "./styles";
-import { React } from "@Api";
+import React from "@React";
 import Slider from "@Modules/Slider";
 import { Store } from "../../Store";
 import { shallow } from "@Utils";

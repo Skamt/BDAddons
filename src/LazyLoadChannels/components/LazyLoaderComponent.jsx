@@ -1,4 +1,4 @@
-import { React } from "@Api";
+import React from "@React";
 import { reRender } from "@Utils";
 import Toast from "@Utils/Toast";
 import MessageActions from "@Modules/MessageActions";

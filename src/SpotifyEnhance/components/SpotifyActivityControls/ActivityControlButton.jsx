@@ -1,4 +1,4 @@
-import { React } from "@Api";
+import React from "@React";
 import Button from "@Components/Button";
 
 export default function ActivityControlButton({ value, onClick, className, ...rest }) {

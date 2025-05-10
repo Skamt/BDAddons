@@ -1,5 +1,5 @@
 import "./styles";
-import { React } from "@Api";
+import React from "@React";
 import ControlBtn from "./ControlBtn";
 import { Store } from "../../Store";
 

@@ -1,4 +1,4 @@
-import { React } from "@Api";
+import React from "@React";
 import Settings from "@Utils/Settings";
 import { openModal } from "@Utils/Modals";
 import Tooltip from "@Components/Tooltip";

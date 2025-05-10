@@ -1,4 +1,4 @@
-import { React } from "@Api";
+import React from "@React";
 import ActivityControlButton from "./ActivityControlButton";
 import ListenIcon from "@Components/icons/ListenIcon";
 import Tooltip from "@Components/Tooltip";

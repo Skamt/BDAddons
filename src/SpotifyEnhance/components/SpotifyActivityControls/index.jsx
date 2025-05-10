@@ -1,5 +1,5 @@
 import "./styles";
-import { React } from "@Api";
+import React from "@React";
 import ActivityControlButton from "./ActivityControlButton";
 import ListenAlong from "./ListenAlong";
 import Play from "./Play";

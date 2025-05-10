@@ -1,5 +1,5 @@
 import "./styles";
-import { React } from "@Api";
+import React from "@React";
 import Tooltip from "@Components/Tooltip";
 import Anchor from "@Modules/Anchor";
 

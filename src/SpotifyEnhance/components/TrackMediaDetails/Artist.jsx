@@ -1,4 +1,4 @@
-import { React } from "@Api";
+import React from "@React";
 import ContextMenu from "@Components/ContextMenu";
 import ListenIcon from "@Components/icons/ListenIcon";
 import ExternalLinkIcon from "@Components/icons/ExternalLinkIcon";

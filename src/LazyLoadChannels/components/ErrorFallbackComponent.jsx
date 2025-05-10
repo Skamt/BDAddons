@@ -1,4 +1,4 @@
-import { React } from "@Api";
+import React from "@React";
 
 import { COMPONENT_ID } from "../Constants";
 

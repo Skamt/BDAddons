@@ -1,5 +1,5 @@
 import "./styles";
-import { React } from "@Api";
+import React from "@React";
 import Button from "@Components/Button";
 import Popout from "@Components/Popout";
 import ContextMenu from "@Components/ContextMenu";
