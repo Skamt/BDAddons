@@ -31,7 +31,6 @@ div:has(> .channel-tabs-container):not(#a) {
 
 .channel-tabs-container{
 	grid-column:1/-1;
-	/* position:relative; */
 	user-select: none;
 	line-height:1.3; /* unify line height across weird characters */
 	margin-bottom:2px;
@@ -39,7 +38,6 @@ div:has(> .channel-tabs-container):not(#a) {
 	display:flex;
 	flex-direction:column;
 	
-	/* zoom:2; */
 }
 
 .channel-tabs-container > .tabbar{
