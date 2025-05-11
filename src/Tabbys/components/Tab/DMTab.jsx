@@ -20,7 +20,6 @@ function getDmAvatar(channel, size) {
 }
 
 export default function DMTab({ tabId, channelId, path }) {
-	const selected = Store(state => state.selectedId === tabId);
 	const channel = useStateFromStores([ChannelStore], () => ChannelStore.getChannel(channelId), [channelId]);
 	if (!channel) return;
 	const channelName = channel ? channel.rawRecipients.map(getUserName).join(", ") : "Home";
@@ -46,7 +45,7 @@ export default function DMTab({ tabId, channelId, path }) {
 		<BaseTab
 			id={tabId}
 			path={path}
-			selected={selected}
+			
 			icon={icon}
 			title={channelName}
 		/>

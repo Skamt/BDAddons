@@ -1,0 +1,49 @@
+import List from "@Utils/List";
+
+const bookmarksList = new List("id");
+
+const store = (set, get) => ({
+	bookmarks: [],
+
+	clear() {
+		bookmarksList.clear();
+		set({ bookmarks: bookmarksList.list });
+	},
+	setBookmarks(list = []) {
+		if (list.length === 0) return;
+		bookmarksList.setList(list);
+		set({ bookmarks: bookmarksList.list });
+	},
+	addBookmark(bookmark) {
+		bookmarksList.addItem(bookmark);
+		set({ bookmarks: bookmarksList.list });
+	},
+	addBookmarkAtIndex(bookmark, index) {
+		bookmarksList.addItemAtIndex(bookmark, index);
+		set({ bookmarks: bookmarksList.list });
+	},
+	removeBookmark(id) {
+		bookmarksList.removeItemByIdentifier(id);
+		set({ bookmarks: bookmarksList.list });
+	},
+	moveBookmark(fromTabId, toTabId) {
+		bookmarksList.swapItemById(fromTabId, toTabId);
+		set({ bookmarks: bookmarksList.list });
+	},
+	setBookmark(id, payload) {
+		bookmarksList.setItemById(id, payload);
+		set({ bookmarks: bookmarksList.list });
+	},
+	getBookmark(id) {
+		return bookmarksList.getItemById(id);
+	}
+});
+
+const selectors = {
+	bookmarks: state => state.bookmarks
+};
+
+export default {
+	store,
+	selectors
+};

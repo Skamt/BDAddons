@@ -1,5 +1,6 @@
 import "./styles";
 import { Store } from "@/Store";
+import { buildTab } from "@/utils";
 import PlusIcon from "@Components/icons/PlusIcon";
 import React from "@React";
 import Tab from "../Tab";
@@ -16,21 +17,21 @@ export default function TabBar({ leading, trailing }) {
 		e.stopPropagation();
 		console.log(e);
 		// e.stopImmediatePropagation();
-		Store.state.newTab();
+		Store.state.newTab(buildTab({ path: "/channels/@me" }));
 	};
 
 	return (
-		<div>
+		<div className="tabbar">
 			{leading}
 			<div
 				className="tabs-container"
 				onDoubleClick={e => e.stopPropagation()}>
 				<TabsScroller>
-					{[...tabs].map((a, index) => [
+					{tabs.map((a, index) => [
 						index !== 0 && <div className="tab-div" />,
 						<Tab
 							key={a.id}
-							id={a.id}
+							tabId={a.id}
 						/>
 					])}
 				</TabsScroller>

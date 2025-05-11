@@ -1,5 +1,5 @@
 import "./styles";
-import React, { useRef, useEffect, useState } from "@React";
+import React, { useReducer, useRef, useEffect, useState } from "@React";
 import ArrowIcon from "@Components/icons/ArrowIcon";
 import { debounce, concateClassNames, animate } from "@Utils";
 import { Store } from "@/Store";
@@ -16,7 +16,7 @@ function useChildrenLengthStateChange(children) {
 }
 
 function useForceUpdate() {
-    return React.useReducer((num) => num + 1, 0);
+    return useReducer((num) => num + 1, 0);
 }
 
 export default function TabsScroller({ children }) {
@@ -76,7 +76,7 @@ export default function TabsScroller({ children }) {
 	function scrollSelectedIntoView() {
 		const selectedTab = Store.state.getCurrentlySelectedTab();
 		if (!selectedTab) return;
-		const { index } = Store.state.getTabMeta(selectedTab.id);
+		const index = Store.state.getTabIndex(selectedTab.id);
 		if (index == null) return;
 		const { tabsMeta, targetTab, nextTab, previousTab } = getTabsMeta(index);
 
@@ -122,7 +122,7 @@ export default function TabsScroller({ children }) {
 		console.log(firstTab, lastTab);
 		const observerOptions = {
 			root: tabsNode,
-			threshold: 0.95
+			threshold: 0.99
 		};
 
 		const handleLeftScrollButton = entries => setLeftScrollBtn(!entries[0].isIntersecting);
@@ -148,12 +148,15 @@ export default function TabsScroller({ children }) {
 			setUpdateScrollObserver();
 		}
 
+		window.addEventListener("resize", handleMutation);
 		const mutationObserver = new MutationObserver(handleMutation);
 		mutationObserver.observe(tabsNode, {
 			childList: true
 		});
+
 		return () => {
 			mutationObserver?.disconnect();
+			window.removeEventListener("resize", handleMutation);
 		};
 	}, []);
 

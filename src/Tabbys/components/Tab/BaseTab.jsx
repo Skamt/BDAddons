@@ -18,7 +18,7 @@ function DragThis(comp) {
 			drop(thisTab, monitor) {
 				const droppedTab = monitor.getItem();
 				if (thisTab.id === droppedTab.id) return;
-				Store.state.moveTab(droppedTab.id, thisTab.id);
+				Store.state.swapTab(droppedTab.id, thisTab.id);
 			}
 		},
 		(connect, monitor, props) => {
@@ -45,9 +45,27 @@ function DragThis(comp) {
 	);
 }
 
-function BaseTab({ id, path, selected, icon, title, dragRef, dropRef, isOver, canDrop, draggedIsMe, isDragging }) {
+function d(id="", action=nop, label="Unknown", icon=null, color="", children=[]) {
+	return {
+		className: `channeltab-${id}-menuitem`,
+		id,
+		color,
+		action,
+		children,
+		label: (
+			<MenuLabel
+				label={label}
+				icon={icon}
+			/>
+		)
+	};
+}
+
+function BaseTab({ id, path,  icon, title, dragRef, dropRef, isOver, canDrop, draggedIsMe, isDragging }) {
+	const selected = Store(state => state.selectedId === id);
+	const isSingleTab = Store(Store.selectors.isSingleTab);
+
 	const tabRef = useRef(null);
-	const isSingleTab = Store(state => state.tabs.length === 1);
 
 	const clickHandler = e => {
 		e.stopPropagation();
@@ -64,6 +82,7 @@ function BaseTab({ id, path, selected, icon, title, dragRef, dropRef, isOver, ca
 	dragRef(dropRef(tabRef));
 
 	return (
+		// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
 		<div
 			ref={tabRef}
 			className={concateClassNames("tab", selected && "selected-tab", isDragging && "dragging", !draggedIsMe && canDrop && isOver && "candrop")}
@@ -74,128 +93,19 @@ function BaseTab({ id, path, selected, icon, title, dragRef, dropRef, isOver, ca
 				align="left"
 				menuClassName="channeltab-tab-contextmenu"
 				menuItems={[
-					{
-						className: "channeltab-new-tab-right-menuitem",
-						id: "new-tab-right",
-						action: console.log,
-						label: (
-							<MenuLabel
-								label="New Tab to Right"
-								icon={<VectorIcon />}
-							/>
-						)
-					},
-					{
-						className: "channeltab-new-tab-left-menuitem",
-						id: "new-tab-left",
-						action: console.log,
-						label: (
-							<MenuLabel
-								label="New Tab to Left"
-								icon={<VectorIcon left={true} />}
-							/>
-						)
-					},
+					d("new-tab-right", console.log, "New Tab to Right", <VectorIcon />),
+					d("new-tab-left", console.log, "New Tab to Left", <VectorIcon left={true} />),
 					{ type: "separator" },
-					{
-						className: "channeltab-duplicate-tab-menuitem",
-						id: "duplicate-tab",
-						action: console.log,
-						label: (
-							<MenuLabel
-								label="Duplicate Tab"
-								icon={<DuplicateIcon />}
-							/>
-						)
-					},
-					{
-						className: "channeltab-pin-tab-menuitem",
-						id: "pin-tab",
-						action: console.log,
-						label: (
-							<MenuLabel
-								label="Pin Tab"
-								icon={<PinIcon />}
-							/>
-						)
-					},
-
-					{
-						className: "channeltab-bookmark-tab-menuitem",
-						id: "bookmark-tab",
-						action: console.log,
-
-						label: (
-							<MenuLabel
-								label="Bookmark Tab"
-								icon={<BookmarkIcon />}
-							/>
-						)
-					},
+					d("duplicate-tab", console.log, "Duplicate Tab", <DuplicateIcon />),
+					d("pin-tab", console.log, "Pin Tab", <PinIcon />),
+					d("bookmark-tab", console.log, "Bookmark Tab", <BookmarkIcon />),
 					{ type: "separator" },
-					{
-						className: "channeltab-close-menuitem",
-						id: "close-tab",
-						action: console.log,
-						color: "danger",
-						label: (
-							<MenuLabel
-								label="Close"
-								icon={<CloseIcon />}
-							/>
-						)
-					},
-					{
-						className: "channeltab-close-multiple-menuitem",
-						id: "close-tab-multiple",
-						color: "danger",
-
-						label: (
-							<MenuLabel
-								label="Close Multiple"
-								icon={<CloseIcon />}
-							/>
-						),
-
-						children: [
-							{
-								className: "channeltab-close-tabs-to-right-menuitem",
-								id: "close-tabs-to-right",
-								color: "danger",
-								action: console.log,
-								label: (
-									<MenuLabel
-										label="Close Tabs to Right"
-										icon={<VectorIcon />}
-									/>
-								)
-							},
-							{
-								className: "channeltab-close-tabs-to-left-menuitem",
-								id: "close-tabs-to-left",
-								color: "danger",
-								action: console.log,
-								label: (
-									<MenuLabel
-										label="Close Tabs to Left"
-										icon={<VectorIcon left={true} />}
-									/>
-								)
-							},
-							{
-								className: "channeltab-close-other-tabs-menuitem",
-								id: "close-other-tabs",
-								color: "danger",
-								action: console.log,
-								label: (
-									<MenuLabel
-										label="Close Other Tabs"
-										icon={<LightiningIcon />}
-									/>
-								)
-							}
-						]
-					}
+					d("close-tab", console.log, "Close", <CloseIcon />, "danger"),
+					d("close-tab-multiple", console.log, "Close Multiple", <CloseIcon />, "danger", [
+						d("close-tabs-to-right", console.log, "Close Tabs to Right", <VectorIcon />, "danger"),
+						d("close-tabs-to-left", console.log, "Close Tabs to Left", <VectorIcon  left={true} />, "danger"),
+						d("close-other-tabs", console.log, "Close Other Tabs", <LightiningIcon />, "danger"),
+					])					
 				]}>
 				<div className="contextmenu-handler" />
 			</ContextMenu>

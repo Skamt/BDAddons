@@ -1,10 +1,16 @@
 
-div:has(> .channel-tabs-container):not(#a) {
-	grid-template-rows: [top] auto [titleBarEnd] min-content [noticeEnd] 1fr [end];
+.channel-tabs-divider{
+	height:1px;
+	background:
+	linear-gradient(to right, #0000  0, #ccc5 25%) left center/50% no-repeat,
+	linear-gradient(to left, #0000  0, #ccc5 25%) right center/50% no-repeat;
 }
 
 :root{
-	--tab-height:20px;
+	--custom-app-top-bar-height:30px;
+	--tab-height:30px;
+	--bookmark-container-height:25px;
+	--bookmark-height:25px;
 	
 	--active-tab-bg:#353333;
 	--hover-tab-bg:#7b7b7b;
@@ -14,17 +20,87 @@ div:has(> .channel-tabs-container):not(#a) {
 	--close-btn-active-bg:#262626;
 }
 
+.channel-tabs-container * {
+	box-sizing:border-box;
+}
+
+
+div:has(> .channel-tabs-container):not(#a) {
+	grid-template-rows: [top] auto [titleBarEnd] min-content [noticeEnd] 1fr [end];
+}
+
 .channel-tabs-container{
 	grid-column:1/-1;
 	/* position:relative; */
 	user-select: none;
 	line-height:1.3; /* unify line height across weird characters */
+	margin-bottom:2px;
+	gap:2px;
+	display:flex;
+	flex-direction:column;
+	
+	/* zoom:2; */
 }
 
-.channel-tabs-container > div{
-	position:relative;
+.channel-tabs-container > .tabbar{
 	display:flex;
 	-webkit-app-region: drag;
+}
+
+.bookmarks-container{
+	height:var(--bookmark-container-height);
+	-webkit-app-region: no-drag;
+	margin-top:2px;
+	/* background:red; */
+	/* display:none; */
+}
+
+.bookmarks-list{
+	display:flex;
+	gap:2px;
+}
+
+.bookmark{
+	flex:0 1 auto;
+	/* min-width:100px; */
+	display:flex;
+	align-items:center;
+	gap:5px;
+	padding:0 4px;
+	height:var(--bookmark-height);
+	color:white;
+	border-radius:5px;
+	cursor: pointer;
+	transform: translate(0);
+}
+
+.bookmark:hover{
+	background:#353333;
+}
+
+.bookmark:active{
+	background:#353333;
+}
+
+.bookmark-title{
+	font-size:14px;
+	color:#a7a7a7;
+}
+
+.bookmark-icon{
+	flex:0 0 auto;
+	display:flex;
+	--d:calc(var(--tab-height) * .6);
+	width:var(--d);
+	height:var(--d);
+	align-items:center;
+	justify-content:center;
+	border-radius:50%;
+}
+
+.bookmark-icon.discord-icon{
+	color:white;
+	background: #6361f8;
 }
 
 .tabs-container {
@@ -37,6 +113,8 @@ div:has(> .channel-tabs-container):not(#a) {
 	-webkit-app-region: no-drag;
 }
 
+.bookmarks-container svg,
+.bookmarks-container img,
 .tabs-container svg,
 .tabs-container img {
 	max-width:100%;
@@ -46,9 +124,9 @@ div:has(> .channel-tabs-container):not(#a) {
 .tabs-scroller {
 	display: flex;
 	min-width:0;
-	padding:0 5px;
 	position:relative;
 }
+
 
 .tabs-list {
 	display: flex;
@@ -106,23 +184,22 @@ div:has(> .channel-tabs-container):not(#a) {
 }
 
 
-
 .tab{
-	flex:0 0 0;
+	flex:0 1 auto;
 	min-width:150px;
 	/* width:100px; */
 	display:flex;
 	align-items:center;
 	gap:5px;
-	padding:5px 8px;
+	padding:2px 8px;
 	height:var(--tab-height);
 	color:white;
-	border-radius:8px;
+	border-radius:5px;
 	cursor: pointer;
 	transform: translate(0);
 }
 
-.tab .contextmenu-handler{
+div:has(>.contextmenu-handler){
 	position:absolute;
 	z-index:98;
 	inset:0;
@@ -135,6 +212,7 @@ div:has(> .channel-tabs-container):not(#a) {
 .candrop{
 	background:green;
 }
+
 .candrop:after{
 	content:"";
 	border-radius:inherit;
@@ -147,13 +225,14 @@ div:has(> .channel-tabs-container):not(#a) {
 .tab-div{
 	min-width:2px;
 	background:#ccc5;
-	height:calc(var(--tab-height) * .7);
+	height:calc(var(--tab-height) * .8);
 	margin: auto 2px;
 }
 
 .selected-tab{
 	background:var(--selected-tab-bg);
 }
+
 
 .tab:not(.selected-tab):hover{
 	background:var(--hover-tab-bg);
@@ -166,14 +245,15 @@ div:has(> .channel-tabs-container):not(#a) {
 .tab-icon{
 	flex:0 0 auto;
 	display:flex;
-	--d:calc(var(--tab-height) * .7);
-	width:var(--d);
-	height:var(--d);
+	width:18px;
+	height:18px;
 	align-items:center;
 	justify-content:center;
 	border-radius:50%;
 }
 
+.bookmark-icon > svg,
+.bookmark-icon > img,
 .tab-icon > svg,
 .tab-icon > img{
 	flex:1 0 0;
@@ -185,15 +265,17 @@ div:has(> .channel-tabs-container):not(#a) {
 	background: #6361f8;
 }
 
+.bookmark-icon.discord-icon > svg,
 .tab-icon.discord-icon > svg{
-	width: 80%;
-	height: 80%;
+	width: 65%;
+	height: 65%;
 }
 
 .tab-title{
 	flex:1 0 0;
 	min-width:0;
-	/* mask:linear-gradient(to right, #000 80%, #0000 98%, #0000) no-repeat; */
+	font-size:14px;
+	mask:linear-gradient(to right, #000 80%, #0000 98%, #0000) no-repeat;
 }
 
 .tab-close{
@@ -201,9 +283,8 @@ div:has(> .channel-tabs-container):not(#a) {
 	flex:0 0 auto;
 	display:flex;
 	padding:3px;
-	--d:calc(var(--tab-height) * .6);
-	width:var(--d);
-	height:var(--d);
+	width:16px;
+	height:16px;
 	border-radius:50%;
 }
 
