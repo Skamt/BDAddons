@@ -1,7 +1,9 @@
 import { ContextMenu as CM, React } from "@Api";
 import Popout from "@Components/Popout";
 import Flex from "@Components/Flex";
+
 const { Item: MenuItem, Menu, Separator: MenuSeparator } = CM;
+
 
 function parseMenuItems(items) {
 	return items.map(({ type, children, ...rest }) => {
@@ -27,11 +29,9 @@ function parseMenuItems(items) {
 	});
 }
 
-export default function ContextMenu({ showOnContextMenu, showOnClick, children, menuItems, position = "top", align = "left", className, menuClassName }) {
+export default function ContextMenu({ children, menuItems, position = "top", align = "left", className, menuClassName }) {
 	return (
 		<Popout
-			showOnClick={showOnClick}
-			showOnContextMenu={showOnContextMenu}
 			renderPopout={t => (
 				<Menu
 					className={menuClassName}
@@ -51,6 +51,7 @@ export default function ContextMenu({ showOnContextMenu, showOnClick, children, 
 export function MenuLabel({ label, icon }) {
 	return (
 		<Flex
+			className={`${config.info.name}-menu-label-icon`}
 			direction={Flex.Direction.HORIZONTAL}
 			align={Flex.Align.CENTER}
 			style={{ gap: 8 }}>

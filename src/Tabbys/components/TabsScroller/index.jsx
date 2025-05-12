@@ -125,11 +125,11 @@ export default function TabsScroller({ children }) {
 			threshold: 0.99
 		};
 
-		const handleLeftScrollButton = entries => setLeftScrollBtn(!entries[0].isIntersecting);
+		const handleLeftScrollButton = entries => setLeftScrollBtn(!entries.sort((a,b)=> a.time - b.time).pop().isIntersecting);
 		const leftObserver = new IntersectionObserver(debounce(handleLeftScrollButton), observerOptions);
 		leftObserver.observe(firstTab);
 
-		const handleRightScrollButton = entries => setRightScrollBtn(!entries[0].isIntersecting);
+		const handleRightScrollButton = entries => setRightScrollBtn(!entries.sort((a,b)=> a.time - b.time).pop().isIntersecting);
 		const rightObserver = new IntersectionObserver(debounce(handleRightScrollButton), observerOptions);
 		rightObserver.observe(lastTab);
 

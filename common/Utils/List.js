@@ -142,11 +142,23 @@ export default class List extends ArrayHelpers {
 		return this.map[id];
 	}
 
+	getItemIndex(id){
+		return this.indexMap[id];
+	}
+
+	getListSlice(from, to){
+		return this.list.slice(from, to);
+	}
+
 	getItemMeta(id) {
 		const index = this.indexMap[id];
+		if(!index) return {};
+		const item = this.map[id];
+		if (!item) return {};
 		return {
-			item: this.map[id],
+			item,
 			index,
+			isSingle: this.list.length === 1,
 			isFirst: index === 0,
 			isLast: index === this.list.length - 1,
 			nextItem: this.list[index + 1],

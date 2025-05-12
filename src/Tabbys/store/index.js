@@ -8,7 +8,7 @@ import ChannelStore from "@Stores/ChannelStore";
 import GuildStore from "@Stores/GuildStore";
 import { getPathName } from "@Utils";
 
-function generateTabs() {
+function generateTabs(n=5) {
 	const guildIds = GuildStore.getGuildIds();
 	// biome-ignore lint/complexity/useFlatMap: <explanation>
 	const paths = guildIds
@@ -19,7 +19,7 @@ function generateTabs() {
 		)
 		.flat();
 
-	let b = 5;
+	let b = n;
 	const res = [];
 	while (b--)
 		res.push({
@@ -50,7 +50,7 @@ export const Store = Object.assign(
 	),
 	{
 		init() {
-			Store.state.setTabs([{path:'/channels/@me'},...generateTabs()]);
+			Store.state.setTabs([{id: crypto.randomUUID(),path:'/channels/@me'},...generateTabs()]);
 			Store.state.setBookmarks(generateTabs());
 			// Store.state.setTabs([
 			// 	buildTab({
@@ -62,7 +62,8 @@ export const Store = Object.assign(
 			Dispatcher.subscribe("LOGOUT", onUserLogout);
 		},
 		dispose() {
-			Store.state.reset();
+			Store.state.clearTabs();
+			Store.state.clearBookmarks();
 			window.navigation.removeEventListener("navigate", onLocationChange);
 			// Dispatcher.unsubscribe("LOGIN", onUserLogin);
 			Dispatcher.unsubscribe("LOGOUT", onUserLogout);
@@ -79,6 +80,7 @@ Object.defineProperty(Store, "state", {
 	configurable: false,
 	get: () => Store.getState()
 });
+
 
 Store.subscribe(Store.selectors.selectedId, () => {
 	const selectedTab = Store.state.getCurrentlySelectedTab();
@@ -107,5 +109,9 @@ function onUserLogout() {
 			path: "/channels/@me"
 		})
 	]);
-	Store.state.setBookmarks(generateTabs());
+	Store.state.setBookmarks([
+		buildTab({
+			path: "/channels/@me"
+		})
+	]);
 }

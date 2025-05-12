@@ -1,4 +1,5 @@
 import List from "@Utils/List";
+import { buildTab } from "@/utils";
 
 const initialState = {
 	tabs: [],
@@ -11,7 +12,7 @@ const tabsList = new List("id");
 const store = (set, get) => ({
 	...initialState,
 
-	reset() {
+	clearTabs() {
 		tabsList.clear();
 		set({ ...initialState });
 	},
@@ -22,9 +23,26 @@ const store = (set, get) => ({
 		set({ tabs: tabsList.list, selectedId: tabsList.list[0].id });
 	},
 
-	createTab(tab) {
+	addTab(tab) {
 		tabsList.addItem(tab);
 		set({ tabs: tabsList.list });
+	},
+
+	addTabToLeft(id, tab) {
+		const tabIndex = tabsList.getItemIndex(id);
+		tabsList.addItemAtIndex(tab, tabIndex);
+		set({ tabs: tabsList.list, selectedId: tab.id });
+	},
+
+	addTabToRight(id, tab) {
+		const tabIndex = tabsList.getItemIndex(id);
+		tabsList.addItemAtIndex(tab, tabIndex + 1);
+		set({ tabs: tabsList.list, selectedId: tab.id });
+	},
+
+	duplicateTab(id) {
+		const { getTab, addTabToRight } = get();
+		addTabToRight(id, buildTab(getTab(id)));
 	},
 
 	newTab(tab) {
@@ -47,6 +65,37 @@ const store = (set, get) => ({
 		set({ tabs: tabsList.list, selectedId: newSelected, lastSelectedIdAfterNewTab: null });
 	},
 
+	removeOtherTabs(id) {
+		const { getTab, setTabs } = get();
+		const tab = getTab(id);
+		setTabs([tab]);
+	},
+
+	removeTabsToRight(id) {
+		const { selectedId } = get();
+		const tabMeta = tabsList.getItemMeta(id);
+		if (tabMeta.isLast || tabMeta.isSingle) return;
+		const selectedTabIndex = tabsList.getItemIndex(selectedId);
+		const to = tabMeta.index + 1;
+		const newList = tabsList.getListSlice(0, to);
+		const newSelected = selectedTabIndex < to ? selectedId : newList[0].id;
+		tabsList.setList(newList);
+
+		set({ tabs: tabsList.list, selectedId: newSelected });
+	},
+
+	removeTabsToLeft(id) {
+		const { selectedId } = get();
+		const tabMeta = tabsList.getItemMeta(id);
+		if (tabMeta.isFirst || tabMeta.isSingle) return;
+
+		const selectedTabIndex = tabsList.getItemIndex(selectedId);
+		const newList = tabsList.getListSlice(tabMeta.index, tabsList.length);
+		const newSelected = selectedTabIndex > tabMeta.index ? selectedId : newList[0].id;
+		tabsList.setList(newList);
+		set({ tabs: tabsList.list, selectedId: newSelected });
+	},
+
 	swapTab(fromTabId, toTabId) {
 		tabsList.swapItemById(fromTabId, toTabId);
 		set({ tabs: tabsList.list });
@@ -67,24 +116,24 @@ const store = (set, get) => ({
 	getTab(id) {
 		return tabsList.getItemById(id);
 	},
-	
-	getTabIndex(id){
-		return tabsList.getItemMeta(id)?.index;
+
+	getTabIndex(id) {
+		return tabsList.getItemIndex(id);
 	},
 
 	getCurrentlySelectedTab() {
 		return tabsList.getItemById(get().selectedId);
 	}
-
 });
 
 const selectors = {
 	tabs: state => state.tabs,
-	isSingleTab : state => state.tabs.length === 1,
+	isSingleTab: state => state.tabs.length === 1,
 	selectedId: state => state.selectedId,
-	lastSelectedIdAfterNewTab: state => state.lastSelectedIdAfterNewTab,
-}
+	lastSelectedIdAfterNewTab: state => state.lastSelectedIdAfterNewTab
+};
 
 export default {
-	store,selectors
-}
+	store,
+	selectors
+};

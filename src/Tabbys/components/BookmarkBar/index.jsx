@@ -1,103 +1,108 @@
 import "./styles";
 import { Store } from "@/Store";
-import React from "@React";
-import CloseIcon from "@Components/icons/CloseIcon";
-import { nop, shallow, concateClassNames } from "@Utils";
-import DiscordIcon from "@Components/icons/DiscordIcon";
-import LightiningIcon from "@Components/icons/LightiningIcon";
-import BookmarkIcon from "@Components/icons/BookmarkIcon";
-import DuplicateIcon from "@Components/icons/DuplicateIcon";
-import VectorIcon from "@Components/icons/VectorIcon";
-import PinIcon from "@Components/icons/PinIcon";
-import ContextMenu, { MenuLabel } from "@Components/ContextMenu";
+import React, { useEffect, useState, useRef } from "@React";
+import Bookmark from "../Bookmark";
+import ArrowIcon from "@Components/icons/ArrowIcon";
+import { DiscordPopout } from "@Discord/Modules";
 // import { DragSource, DropTarget } from "@Discord/Modules";
-import ChannelStore from "@Stores/ChannelStore";
-import useStateFromStores from "@Modules/useStateFromStores";
-import { getChannelName, getChannelIcon } from "@/utils";
-const ICON_SIZE = 80;
-function d(id = "", action = nop, label = "Unknown", icon = null, color = "", children = []) {
-	return {
-		className: `channeltab-${id}-menuitem`,
-		id,
-		color,
-		action,
-		children,
-		label: (
-			<MenuLabel
-				label={label}
-				icon={icon}
-			/>
-		)
-	};
-}
 
-function XX({ id, path, icon, title }) {
-	return (
-		<div className="bookmark">
-			<ContextMenu
-				showOnContextMenu={true}
-				position="bottom"
-				align="left"
-				menuClassName="channeltab-tab-contextmenu"
-				menuItems={[d("new-tab-right", console.log, "New Tab to Right", <VectorIcon />), d("new-tab-left", console.log, "New Tab to Left", <VectorIcon left={true} />), { type: "separator" }, d("duplicate-tab", console.log, "Duplicate Tab", <DuplicateIcon />), d("pin-tab", console.log, "Pin Tab", <PinIcon />), d("bookmark-tab", console.log, "Bookmark Tab", <BookmarkIcon />), { type: "separator" }, d("close-tab", console.log, "Close", <CloseIcon />, "danger"), d("close-tab-multiple", console.log, "Close Multiple", <CloseIcon />, "danger", [d("close-tabs-to-right", console.log, "Close Tabs to Right", <VectorIcon />, "danger"), d("close-tabs-to-left", console.log, "Close Tabs to Left", <VectorIcon left={true} />, "danger"), d("close-other-tabs", console.log, "Close Other Tabs", <LightiningIcon />, "danger")])]}>
-				<div className="contextmenu-handler" />
-			</ContextMenu>
-			<div className={concateClassNames("bookmark-icon", !icon && "discord-icon")}>{icon || <DiscordIcon />}</div>
-			<div className="bookmark-title ellipsis">{title || path}</div>
-		</div>
-	);
-}
-
-function D({ tabId, channelId, path }) {
-	const channel = useStateFromStores([ChannelStore], () => ChannelStore.getChannel(channelId), [channelId]);
-	if (!channel) return;
-	const channelName = getChannelName(channel, ICON_SIZE) || "Home";
-	const iconSrc = getChannelIcon(channel, ICON_SIZE);
-	const icon = iconSrc && (
-		<img
-			src={iconSrc}
-			alt={channelName}
-		/>
-	);
-
-	return (
-		<XX
-			id={tabId}
-			path={path}
-			icon={icon}
-			title={channelName}
-		/>
-	);
-}
-
-function A({ id }) {
-	const { path } = Store(state => state.getBookmark(id), shallow) || {};
-	if (!path) return;
-	const [, , , channelId, , threadId] = path.split("/");
-
-	return (
-		<D
-			path={path}
-			channelId={threadId || channelId}
-		/>
-	);
+function getOverflowIndex(parentEl) {
+	const children = Array.from(parentEl.children).filter(a => !a.className.includes("tab-div"));
+	let widthSum = 0;
+	const overflowLimit = window.innerWidth * .95;
+	for (let i = 0; i < children.length; i++) {
+		const child = children[i];
+		const tempSum = child.clientWidth + widthSum;
+		if (tempSum > overflowLimit) return i;
+		widthSum = tempSum;
+	}
+	return -1;
 }
 
 export default function BookmarkBar() {
 	const bookmarks = Store(Store.selectors.bookmarks, (a, b) => a.length === b.length && !a.some((_, i) => a[i].id !== b[i].id));
+	const bookmarksContainerRef = useRef();
+	const [overflowIndex, setOverflowIndex] = useState(-1);
+	console.log("overflowIndex", overflowIndex);
+	const displayedBookmarks = overflowIndex > -1 ? bookmarks.slice(0, overflowIndex - 1) : bookmarks;
+	const overflowBookmarks = overflowIndex > -1 ? bookmarks.slice(overflowIndex - 1, bookmarks.length) : [];
+
+	useEffect(() => {
+		console.log("effect");
+		const bookmarksNode = bookmarksContainerRef.current;
+		if (!bookmarksNode) return;
+		const targetIndex = getOverflowIndex(bookmarksNode);
+		console.log("targetIndex", targetIndex);
+		setOverflowIndex(targetIndex);
+	}, [bookmarks.length]);
+
+	// useEffect(() => {
+	// 	const bookmarksNode = bookmarksContainerRef.current;
+	// 	if (!bookmarksNode) return;
+
+	// 	function handleMutation() {
+	// 		const targetIndex = getOverflowIndex(bookmarksNode);
+	// 		setOverflowIndex(targetIndex);
+	// 	}
+
+	// 	window.addEventListener("resize", handleMutation);
+	// 	const mutationObserver = new MutationObserver(handleMutation);
+	// 	mutationObserver.observe(bookmarksNode, {
+	// 		childList: true
+	// 	});
+
+	// 	return () => {
+	// 		mutationObserver?.disconnect();
+	// 		window.removeEventListener("resize", handleMutation);
+	// 	};
+	// }, []);
 
 	return (
-		<div className="bookmarks-container">
+		<div className="bookmarkbar">
 			<div
-				className="bookmarks-list"
+				ref={bookmarksContainerRef}
+				className="bookmarks-container"
 				onDoubleClick={e => e.stopPropagation()}>
-				{bookmarks.map(a => [
-					<A
+				{displayedBookmarks.map((a, index) => [
+					index !== 0 && <div className="tab-div" />,
+					<Bookmark
 						key={a.id}
-						id={a.id}
+						bookmarkId={a.id}
 					/>
 				])}
 			</div>
+
+			{overflowIndex > -1 && (
+				<DiscordPopout
+					position="bottom"
+					align="right"
+					animation="1"
+					renderPopout={e => {
+						return (
+							// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+							<div
+								onClick={e.closePopout}
+								className="bookmarks-overflow-popout">
+								{overflowBookmarks.map(a => [
+									<Bookmark
+										key={a.id}
+										bookmarkId={a.id}
+									/>
+								])}
+							</div>
+						);
+					}}
+					spacing={8}>
+					{e => (
+						// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+						<div
+							className="bookmarks-overflow"
+							onClick={e.onClick}>
+							<ArrowIcon />
+						</div>
+					)}
+				</DiscordPopout>
+			)}
 		</div>
 	);
 }

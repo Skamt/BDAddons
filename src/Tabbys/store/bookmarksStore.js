@@ -5,7 +5,7 @@ const bookmarksList = new List("id");
 const store = (set, get) => ({
 	bookmarks: [],
 
-	clear() {
+	clearBookmarks() {
 		bookmarksList.clear();
 		set({ bookmarks: bookmarksList.list });
 	},
