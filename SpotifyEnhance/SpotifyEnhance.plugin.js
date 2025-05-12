@@ -68,17 +68,19 @@ function getModuleAndKey(filter, options) {
 	let module;
 	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
 	module = module?.exports;
-	if (!module) return {};
+	if (!module) return;
 	const key = Object.keys(module).find(k => module[k] === target);
-	if (!key) return {};
+	if (!key) return;
 	return { module, key };
 }
 
-// common\DiscordModules\Modules.js
+// common\DiscordModules\zustand.js
 const { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
 	_: Filters.byStrings("subscribe"),
 	zustand: () => true
 });
+const subscribeWithSelector = getModule(Filters.byStrings("equalityFn", "fireImmediately"), { searchExports: true });
+const zustand$1 = zustand;
 
 // @Stores\ConnectedAccountsStore
 const ConnectedAccountsStore = getStore("ConnectedAccountsStore");
@@ -726,7 +728,6 @@ const SpotifyAPIWrapper = new Proxy({}, {
 });
 
 // src\SpotifyEnhance\Store.js
-const subscribeWithSelector = getModule(Filters.byStrings("equalityFn", "fireImmediately"), { searchExports: true });
 const Utils = {
 	copy(str) {
 		copy(str);
@@ -753,7 +754,7 @@ const Utils = {
 	}
 };
 const Store = Object.assign(
-	zustand(
+	zustand$1(
 		subscribeWithSelector((set, get) => {
 			return {
 				account: undefined,
@@ -986,7 +987,7 @@ Gap.direction = {
 const SettingsStoreSelectors = {};
 const persistMiddleware = config => (set, get, api) => config(args => (set(args), Data.save("settings", get().getRawState())), get, api);
 const SettingsStore = Object.assign(
-	zustand(
+	zustand$1(
 		persistMiddleware((set, get) => {
 			const settingsObj = Object.create(null);
 			for (const [key, value] of Object.entries({
@@ -1089,33 +1090,57 @@ const Button = Button$1 ||
 		return React.createElement('button', { ...props, });
 	};
 
-// common\Components\Popout\index.jsx
+// common\DiscordModules\Modules.js
 const DiscordPopout = getModule(Filters.byPrototypeKeys("shouldShowPopout", "toggleShow"), { searchExports: true });
-const Popout = ({ delay, spacing, forceShow, position, animation, align, className, renderPopout, children, ...rest }) => {
-	const [show, setShow] = React.useState(false);
-	const leaveRef = React.useRef();
-	const enterRef = React.useRef();
+
+// common\React.js
+const useState = React.useState;
+const useEffect = React.useEffect;
+const useRef = React.useRef;
+
+// common\Components\Popout\index.jsx
+const Popout = ({ showOnContextMenu, showOnClick, delay, spacing, forceShow, position, animation, align, className, renderPopout, children, ...rest }) => {
+	const [show, setShow] = useState(false);
+	const leaveRef = useRef();
+	const enterRef = useRef();
+	useEffect(() => {
+		if (!showOnClick && !showOnContextMenu) return;
+
+		function clickHandler() {
+			setShow(false);
+		}
+		window.addEventListener("click", clickHandler);
+		return () => window.removeEventListener("click", clickHandler);
+	}, []);
+	const clickHandler = e => {
+		e.stopPropagation();
+		setShow(!show);
+	};
+	const mouseLeaveHandler = () => {
+		clearTimeout(enterRef.current);
+		enterRef.current = null;
+		leaveRef.current = setTimeout(() => {
+			setShow(false);
+			leaveRef.current = null;
+		}, 150);
+	};
+	const mouseEnterHandler = () => {
+		if (leaveRef.current) {
+			clearTimeout(leaveRef.current);
+			leaveRef.current = null;
+			return;
+		}
+		enterRef.current = setTimeout(() => {
+			setShow(true);
+		}, delay || 150);
+	};
 	return (
 		React.createElement('div', {
 			className: `${config.info.name}-popout-container ${className ? className : ""}`,
-			onMouseLeave: () => {
-				clearTimeout(enterRef.current);
-				enterRef.current = null;
-				leaveRef.current = setTimeout(() => {
-					setShow(false);
-					leaveRef.current = null;
-				}, 150);
-			},
-			onMouseEnter: () => {
-				if (leaveRef.current) {
-					clearTimeout(leaveRef.current);
-					leaveRef.current = null;
-					return;
-				}
-				enterRef.current = setTimeout(() => {
-					setShow(true);
-				}, delay || 150);
-			},
+			onClick: !showOnClick ? nop : clickHandler,
+			onContextMenu: !showOnContextMenu ? nop : clickHandler,
+			onMouseLeave: showOnContextMenu || showOnClick ? nop : mouseLeaveHandler,
+			onMouseEnter: showOnContextMenu || showOnClick ? nop : mouseEnterHandler,
 		}, React.createElement(DiscordPopout, {
 			renderPopout: renderPopout,
 			shouldShow: forceShow || show,
@@ -1152,9 +1177,11 @@ function parseMenuItems(items) {
 	});
 }
 
-function ContextMenu({ children, menuItems, position = "top", align = "left", className, menuClassName }) {
+function ContextMenu({ showOnContextMenu, showOnClick, children, menuItems, position = "top", align = "left", className, menuClassName }) {
 	return (
 		React.createElement(Popout, {
+			showOnClick: showOnClick,
+			showOnContextMenu: showOnContextMenu,
 			renderPopout: t => (
 				React.createElement(Menu, {
 					className: menuClassName,
@@ -1640,10 +1667,13 @@ const ModalRoot = getModule(Filters.byStrings("rootWithShadow", "MODAL"), { sear
 const ModalSize = getModule(Filters.byKeys("DYNAMIC", "SMALL", "LARGE"), { searchExports: true });
 
 // common\Utils\Modals\index.jsx
-const _openModal = getModule(Filters.byStrings("onCloseCallback", "onCloseRequest", "modalKey", "backdropStyle"), { searchExports: true });
+const ModalActions = BdApi.Webpack.getMangled("onCloseRequest:null!=", {
+	openModal: Filters.byStrings("onCloseRequest:null!="),
+	closeModal: Filters.byStrings(".setState", ".getState()[")
+});
 const openModal = (children, tag, modalClassName = "") => {
 	const id = `${tag ? `${tag}-` : ""}modal`;
-	_openModal(props => {
+	ModalActions.openModal(props => {
 		return (
 			React.createElement(ErrorBoundary, {
 				id: id,
@@ -1657,6 +1687,7 @@ const openModal = (children, tag, modalClassName = "") => {
 		);
 	});
 };
+getMangled("Media Viewer Modal", { openImageModal: a => typeof a !== "string" });
 
 // src\SpotifyEnhance\components\TrackMediaDetails\TrackBanner.jsx
 function fit(width, height) {
@@ -2657,6 +2688,23 @@ const css = `:root {
 .collapsible-container.collapsible-open .collapsible-icon {
 	rotate: 90deg;
 }
+.spotify-activity-controls {
+	display: flex;
+	gap: 8px;
+	flex: 1;
+}
+
+.spotify-activity-btn {
+	padding: 0px;
+	height: 32px;
+	width: 32px;
+	flex: 0 0 32px;
+}
+
+.spotify-activity-controls .spotify-activity-btn-listen {
+	flex: 1 0 0;
+	width: 100%;
+}
 .spotify-player-container {
 	background: hsl(228 8% 12%);
 	border-bottom: 1px solid hsl(228deg 6% 33% / 48%);
@@ -2762,63 +2810,63 @@ const css = `:root {
 	left:0px;
 	rotate:-90deg;
 }
-.spotify-activity-controls {
+.spotify-player-controls {
 	display: flex;
-	gap: 8px;
-	flex: 1;
-}
-
-.spotify-activity-btn {
-	padding: 0px;
-	height: 32px;
-	width: 32px;
-	flex: 0 0 32px;
-}
-
-.spotify-activity-controls .spotify-activity-btn-listen {
-	flex: 1 0 0;
+	justify-content: space-between;
 	width: 100%;
+	overflow: hidden;
 }
-.spotify-player-timeline {
-	user-select: none;
-	margin-bottom: 2px;
-	color:white;
+
+.spotify-player-controls svg {
+	width: 16px;
+	height: 16px;
+}
+
+.spotify-player-controls-btn {
+	padding: 3px !important;
+	color: #ccc;
+	transition: all 100ms linear;
+	border-radius: 5px;
+}
+
+.spotify-player-controls-btn:hover {
+	background: #ccc3;
+	color: fff;
+	scale: 1.1;
+}
+
+.spotify-player-controls-btn.enabled {
+	color: var(--SpotifyEnhance-spotify-green);
+}
+
+.spotify-player-controls-volume-slider-wrapper {
+	height: 160px;
+	width: 25px;
+	background: var(--background-floating);
+	padding: 5px 3px;
+	border-radius: 99px;
 	display: flex;
-	flex-wrap: wrap;
-	font-size: 0.8rem;
-	flex: 1;
-}
-
-.spotify-player-timeline-progress {
-	flex: 1;
-}
-
-.spotify-player-timeline-trackbar {
-	cursor: pointer;
-}
-
-.spotify-player-timeline:hover .spotify-player-timeline-trackbar-grabber {
-	opacity: 1;
-}
-
-.spotify-player-timeline .spotify-player-timeline-trackbar-grabber {
-	opacity: 0;
-	--grabber-size:12px;
-	cursor: grab;
-}
-
-.spotify-player-timeline .spotify-player-timeline-trackbar-bar {
-	background: hsl(0deg 0% 100% / 30%);
-}
-
-.spotify-player-timeline .spotify-player-timeline-trackbar-bar > div {
-	background: #fff;
-	border-radius: 4px;
+	flex-direction: column;
 	box-sizing:border-box;
 }
 
-.spotify-player-timeline:hover .spotify-player-timeline-trackbar-bar > div {
-	background: var(--SpotifyEnhance-spotify-green);
+.spotify-player-controls-volume-slider {
+	margin: 0;
+	width: 100%;
+	min-height: 0;
+	accent-color: var(--SpotifyEnhance-spotify-green);
+	flex: 1 0 0;
+	appearance: slider-vertical;
+}
+
+.spotify-player-controls-volume-label {
+	color:white;
+	width:100%;
+	border-top:1px solid rgba(78, 80, 88);
+	font-size:.85rem;
+	margin-top:5px;
+	padding-top:5px;
+	text-align:center;
 }
 .spotify-player-media {
 	color: white;
@@ -2884,63 +2932,46 @@ const css = `:root {
 	border-radius: 5px;
 }
 
-.spotify-player-controls {
+.spotify-player-timeline {
+	user-select: none;
+	margin-bottom: 2px;
+	color:white;
 	display: flex;
-	justify-content: space-between;
-	width: 100%;
-	overflow: hidden;
+	flex-wrap: wrap;
+	font-size: 0.8rem;
+	flex: 1;
 }
 
-.spotify-player-controls svg {
-	width: 16px;
-	height: 16px;
+.spotify-player-timeline-progress {
+	flex: 1;
 }
 
-.spotify-player-controls-btn {
-	padding: 3px !important;
-	color: #ccc;
-	transition: all 100ms linear;
-	border-radius: 5px;
+.spotify-player-timeline-trackbar {
+	cursor: pointer;
 }
 
-.spotify-player-controls-btn:hover {
-	background: #ccc3;
-	color: fff;
-	scale: 1.1;
+.spotify-player-timeline:hover .spotify-player-timeline-trackbar-grabber {
+	opacity: 1;
 }
 
-.spotify-player-controls-btn.enabled {
-	color: var(--SpotifyEnhance-spotify-green);
+.spotify-player-timeline .spotify-player-timeline-trackbar-grabber {
+	opacity: 0;
+	--grabber-size:12px;
+	cursor: grab;
 }
 
-.spotify-player-controls-volume-slider-wrapper {
-	height: 160px;
-	width: 25px;
-	background: var(--background-floating);
-	padding: 5px 3px;
-	border-radius: 99px;
-	display: flex;
-	flex-direction: column;
+.spotify-player-timeline .spotify-player-timeline-trackbar-bar {
+	background: hsl(0deg 0% 100% / 30%);
+}
+
+.spotify-player-timeline .spotify-player-timeline-trackbar-bar > div {
+	background: #fff;
+	border-radius: 4px;
 	box-sizing:border-box;
 }
 
-.spotify-player-controls-volume-slider {
-	margin: 0;
-	width: 100%;
-	min-height: 0;
-	accent-color: var(--SpotifyEnhance-spotify-green);
-	flex: 1 0 0;
-	appearance: slider-vertical;
-}
-
-.spotify-player-controls-volume-label {
-	color:white;
-	width:100%;
-	border-top:1px solid rgba(78, 80, 88);
-	font-size:.85rem;
-	margin-top:5px;
-	padding-top:5px;
-	text-align:center;
+.spotify-player-timeline:hover .spotify-player-timeline-trackbar-bar > div {
+	background: var(--SpotifyEnhance-spotify-green);
 }
 .spotify-embed-plus {
 	display: flex;
@@ -3096,10 +3127,6 @@ const css = `:root {
 }
 
 
-.transparent-background.transparent-background{
-	background: transparent;
-	border:unset;
-}
 .downloadLink {
 	color: white !important;
 	font-size: 14px;
@@ -3123,4 +3150,8 @@ const css = `:root {
 	flex-wrap: wrap;
 	gap: 4px;
 }
-`;
+
+.transparent-background.transparent-background{
+	background: transparent;
+	border:unset;
+}`;

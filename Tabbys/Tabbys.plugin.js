@@ -22,9 +22,11 @@ const config = {
 
 // common\Api.js
 const Api = new BdApi(config.info.name);
+const UI = Api.UI;
 const DOM = Api.DOM;
 const React = Api.React;
 const Patcher = Api.Patcher;
+const ContextMenu = Api.ContextMenu;
 const Logger = Api.Logger;
 const Webpack = Api.Webpack;
 /* annoying */
@@ -129,17 +131,194 @@ function reRender(selector) {
 }
 const nop = () => {};
 
-function isSnowflake(id) {
-	try {
-		return BigInt(id).toString() === id;
-	} catch {
-		return false;
-	}
-}
-
 // common\Utils\Logger.js
 Logger.patchError = patchId => {
 	console.error(`%c[${config.info.name}] %cCould not find module for %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
+};
+
+// common\Utils\List.js
+function arrToObject(arr, key) {
+	if (!key) return;
+	return arr.reduce((acc, item) => {
+		acc[item[key]] = item;
+		return acc;
+	}, {});
+}
+class ArrayHelpers {
+	list = [];
+	push(item) {
+		this.list = this.list.toSpliced(this.list.length, 0, item);
+	}
+	insert(item, index) {
+		this.list = this.list.toSpliced(index, 0, item);
+	}
+	shift(item) {
+		this.list = this.list.toSpliced(0, 0, item);
+	}
+	remove(index) {
+		this.list = this.list.toSpliced(index, 1);
+	}
+	replace(index, item) {
+		this.list = this.list.toSpliced(index, 1, item);
+	}
+}
+class List extends ArrayHelpers {
+	list = [];
+	map = {};
+	indexMap = {};
+	constructor(identifierKey = "id") {
+		super();
+		this.identifierKey = identifierKey;
+	}
+	set list(_) {
+		throw new Error();
+	}
+	set map(_) {
+		throw new Error();
+	}
+	get length() {
+		return this.list.length;
+	}
+	clear() {
+		this.setList([]);
+	}
+	updateMap(item) {
+		this.map[item[this.identifierKey]] = item;
+	}
+	recreateIndexMap() {
+		this.indexMap = {};
+		this.list.forEach((item, index) => {
+			this.indexMap[item[this.identifierKey]] = index;
+		});
+	}
+	setList(arr) {
+		arr = [...arr];
+		this.list = arr;
+		this.map = arrToObject(arr, this.identifierKey);
+		this.recreateIndexMap();
+	}
+	addItem(item) {
+		item = { ...item };
+		this.push(item);
+		this.updateMap(item);
+		this.indexMap[item[this.identifierKey]] = this.list.length - 1;
+	}
+	addItemAtIndex(item, index) {
+		if (index == null) return;
+		item = { ...item };
+		this.insert(item, index);
+		this.updateMap(item);
+		this.recreateIndexMap();
+	}
+	removeItem(index) {
+		if (index == null || index < 0) return;
+		const item = this.list[index];
+		this.remove(index);
+		delete this.map[item[this.identifierKey]];
+		this.recreateIndexMap();
+	}
+	removeItemByIdentifier(id) {
+		const index = this.indexMap[id];
+		this.removeItem(index);
+	}
+	swapItem(fromIndex, toIndex) {
+		if (fromIndex === toIndex) return;
+		if (fromIndex < 0 || fromIndex >= this.list.length) return;
+		const fromItem = this.list[fromIndex];
+		const tempList = [...this.list];
+		const toItem = tempList.splice(toIndex, 1, fromItem)[0];
+		tempList.splice(fromIndex, 1, toItem);
+		this.setList(tempList);
+	}
+	swapItemById(fromId, toId) {
+		this.swapItem(this.indexMap[fromId], this.indexMap[toId]);
+	}
+	setItem(index, item) {
+		if (index == null || index < 0) return;
+		item = {
+			...item,
+			[this.identifierKey]: this.list[index][this.identifierKey]
+		};
+		this.replace(index, item);
+		this.updateMap(item);
+	}
+	setItemById(id, item) {
+		const index = this.indexMap[id];
+		if (index == null) return;
+		this.setItem(index, item);
+	}
+	getItem(index) {
+		return this.list(index)
+	}
+	getItemById(id) {
+		return this.map[id];
+	}
+	getItemIndex(id) {
+		return this.indexMap[id];
+	}
+	getListSlice(from, to) {
+		return this.list.slice(from, to);
+	}
+	getItemMeta(id) {
+		const index = this.indexMap[id];
+		if (!index) return {};
+		const item = this.map[id];
+		if (!item) return {};
+		return {
+			item,
+			index,
+			isSingle: this.list.length === 1,
+			isFirst: index === 0,
+			isLast: index === this.list.length - 1,
+			nextItem: this.list[index + 1],
+			previousItem: this.list[index - 1]
+		};
+	}
+}
+
+// src\Tabbys\Store\bookmarksStore.js
+const bookmarksList = new List("id");
+const store$1 = (set, get) => ({
+	bookmarks: [],
+	clearBookmarks() {
+		bookmarksList.clear();
+		set({ bookmarks: bookmarksList.list });
+	},
+	setBookmarks(list = []) {
+		if (list.length === 0) return;
+		bookmarksList.setList(list);
+		set({ bookmarks: bookmarksList.list });
+	},
+	addBookmark(bookmark) {
+		bookmarksList.addItem(bookmark);
+		set({ bookmarks: bookmarksList.list });
+	},
+	addBookmarkAtIndex(bookmark, index) {
+		bookmarksList.addItemAtIndex(bookmark, index);
+		set({ bookmarks: bookmarksList.list });
+	},
+	removeBookmark(id) {
+		bookmarksList.removeItemByIdentifier(id);
+		set({ bookmarks: bookmarksList.list });
+	},
+	moveBookmark(fromTabId, toTabId) {
+		bookmarksList.swapItemById(fromTabId, toTabId);
+		set({ bookmarks: bookmarksList.list });
+	},
+	setBookmark(id, payload) {
+		bookmarksList.setItemById(id, payload);
+		set({ bookmarks: bookmarksList.list });
+	},
+	getBookmark(id) {
+		return bookmarksList.getItemById(id);
+	}
+});
+const selectors$1 = {
+	bookmarks: state => state.bookmarks
+};
+const bookmarksStore = {
+	store: store$1,
+	selectors: selectors$1
 };
 
 // common\Webpack.js
@@ -159,8 +338,226 @@ function getModuleAndKey(filter, options) {
 }
 
 // common\DiscordModules\Modules.js
+const DiscordPopout = getModule(Filters.byPrototypeKeys("shouldShowPopout", "toggleShow"), { searchExports: true });
 const Dispatcher = getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: false });
 const transitionTo = getModule(Filters.byStrings(`"transitionTo - Transitioning to "`), { searchExports: true });
+const DragSource = getModule(Filters.byStrings("drag-source", "collect"), { searchExports: true });
+const DropTarget = getModule(Filters.byStrings("drop-target", "collect"), { searchExports: true });
+
+// common\React.js
+const useState = React.useState;
+const useEffect = React.useEffect;
+const useRef = React.useRef;
+const useReducer = React.useReducer;
+
+// common\Components\Flex\index.jsx
+const Flex = getModule(a => a.defaultProps?.direction, { searchExports: true });
+
+// common\Components\ContextMenu\index.jsx
+function MenuLabel({ label, icon }) {
+	return (
+		React.createElement(Flex, {
+			className: `${config.info.name}-menu-label-icon`,
+			direction: Flex.Direction.HORIZONTAL,
+			align: Flex.Align.CENTER,
+			style: { gap: 8 },
+		}, icon, React.createElement('div', null, label))
+	);
+}
+
+// @Modules\useStateFromStores
+const useStateFromStores = getModule(Filters.byStrings("getStateFromStores"), { searchExports: true });
+
+// @Stores\ChannelStore
+const ChannelStore = getStore("ChannelStore");
+
+// @Stores\GuildStore
+const GuildStore = getStore("GuildStore");
+
+// @Stores\UserStore
+const UserStore = getStore("UserStore");
+
+// common\Utils\User.js
+function getUserAvatar({ id, guildId, size }) {
+	return UserStore.getUser(id).getAvatarURL(guildId, size);
+}
+
+// src\Tabbys\utils.jsx
+const b = getModule(a => a.getChannelIconURL);
+
+function buildTab(d) {
+	const id = crypto.randomUUID();
+	return { ...d, id };
+}
+
+function getDmAvatar(channel, size) {
+	const recipientId = channel.rawRecipients[0].id;
+	return getUserAvatar({ id: recipientId, size });
+}
+
+function getChannelName(channel) {
+	if (!channel) return;
+	if (!channel.isDM()) return channel.name;
+	return channel.rawRecipients.map(getUserName).join(", ");
+}
+
+function getChannelIcon(channel, size) {
+	if (!channel) return;
+	if (channel.isDM()) return getDmAvatar(channel, size);
+	if (channel.isGroupDM())
+		return b.getChannelIconURL({
+			id: channel.id,
+			icon: channel.icon,
+			applicationId: channel.getApplicationId(),
+			size: size
+		});
+	const guild = GuildStore.getGuild(channel.guild_id);
+	if (guild) return guild.getIconURL(size);
+}
+
+function useChannel(channelId, size) {
+	const channel = useStateFromStores([ChannelStore], () => ChannelStore.getChannel(channelId), [channelId]);
+	const channelName = getChannelName(channel) || "Home";
+	const iconSrc = getChannelIcon(channel, size);
+	const icon = iconSrc && (
+		React.createElement('img', {
+			src: iconSrc,
+			alt: channelName,
+		})
+	);
+	return { icon, channelName };
+}
+
+function createContextMenuItem(type, id = "", action = nop, label = "Unknown", icon = null, color = "", children) {
+	const res = {
+		className: `channeltab-${id}-menuitem`,
+		type,
+		id,
+		action,
+		items: children,
+		label,
+		label: (
+			React.createElement(MenuLabel, {
+				label: label,
+				icon: icon,
+			})
+		)
+	};
+	if (color) res.color = color;
+	return res;
+}
+
+// src\Tabbys\Store\tabsStore.js
+const initialState = {
+	tabs: [],
+	selectedId: null,
+	lastSelectedIdAfterNewTab: null
+};
+const tabsList = new List("id");
+const store = (set, get) => ({
+	...initialState,
+	clearTabs() {
+		tabsList.clear();
+		set({ ...initialState });
+	},
+	setTabs(list = []) {
+		if (list.length === 0) return;
+		tabsList.setList(list);
+		set({ tabs: tabsList.list, selectedId: tabsList.list[0].id });
+	},
+	addTab(tab) {
+		tabsList.addItem(tab);
+		set({ tabs: tabsList.list });
+	},
+	addTabToLeft(id, tab) {
+		const tabIndex = tabsList.getItemIndex(id);
+		tabsList.addItemAtIndex(tab, tabIndex);
+		set({ tabs: tabsList.list, selectedId: tab.id });
+	},
+	addTabToRight(id, tab) {
+		const tabIndex = tabsList.getItemIndex(id);
+		tabsList.addItemAtIndex(tab, tabIndex + 1);
+		set({ tabs: tabsList.list, selectedId: tab.id });
+	},
+	duplicateTab(id) {
+		const { getTab, addTabToRight } = get();
+		addTabToRight(id, buildTab(getTab(id)));
+	},
+	newTab(tab) {
+		if (!tab.id) return;
+		const state = get();
+		tabsList.addItem(tab);
+		set({ tabs: tabsList.list, selectedId: tab.id, lastSelectedIdAfterNewTab: state.selectedId });
+	},
+	removeTab(id) {
+		const { selectedId, lastSelectedIdAfterNewTab } = get();
+		if (tabsList.length === 1) return;
+		const { nextItem: nextTab, previousItem: previousTab } = tabsList.getItemMeta(id);
+		tabsList.removeItemByIdentifier(id);
+		const isSelected = selectedId === id;
+		const newSelected = !isSelected ? selectedId : lastSelectedIdAfterNewTab ? lastSelectedIdAfterNewTab : nextTab ? nextTab.id : previousTab.id;
+		set({ tabs: tabsList.list, selectedId: newSelected, lastSelectedIdAfterNewTab: null });
+	},
+	removeOtherTabs(id) {
+		const { getTab, setTabs } = get();
+		const tab = getTab(id);
+		setTabs([tab]);
+	},
+	removeTabsToRight(id) {
+		const { selectedId } = get();
+		const tabMeta = tabsList.getItemMeta(id);
+		if (tabMeta.isLast || tabMeta.isSingle) return;
+		const selectedTabIndex = tabsList.getItemIndex(selectedId);
+		const to = tabMeta.index + 1;
+		const newList = tabsList.getListSlice(0, to);
+		const newSelected = selectedTabIndex < to ? selectedId : newList[0].id;
+		tabsList.setList(newList);
+		set({ tabs: tabsList.list, selectedId: newSelected });
+	},
+	removeTabsToLeft(id) {
+		const { selectedId } = get();
+		const tabMeta = tabsList.getItemMeta(id);
+		if (tabMeta.isFirst || tabMeta.isSingle) return;
+		const selectedTabIndex = tabsList.getItemIndex(selectedId);
+		const newList = tabsList.getListSlice(tabMeta.index, tabsList.length);
+		const newSelected = selectedTabIndex > tabMeta.index ? selectedId : newList[0].id;
+		tabsList.setList(newList);
+		set({ tabs: tabsList.list, selectedId: newSelected });
+	},
+	swapTab(fromTabId, toTabId) {
+		tabsList.swapItemById(fromTabId, toTabId);
+		set({ tabs: tabsList.list });
+	},
+	setSelectedId(id) {
+		const { getTab } = get();
+		const tabToBeSelected = getTab(id);
+		if (!tabToBeSelected) return;
+		set({ selectedId: id, lastSelectedIdAfterNewTab: null });
+	},
+	setTab(id, payload) {
+		tabsList.setItemById(id, payload);
+		set({ tabs: tabsList.list });
+	},
+	getTab(id) {
+		return tabsList.getItemById(id);
+	},
+	getTabIndex(id) {
+		return tabsList.getItemIndex(id);
+	},
+	getCurrentlySelectedTab() {
+		return tabsList.getItemById(get().selectedId);
+	}
+});
+const selectors = {
+	tabs: state => state.tabs,
+	isSingleTab: state => state.tabs.length === 1,
+	selectedId: state => state.selectedId,
+	lastSelectedIdAfterNewTab: state => state.lastSelectedIdAfterNewTab
+};
+const tabsStore = {
+	store,
+	selectors
+};
 
 // common\DiscordModules\zustand.js
 const { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
@@ -170,154 +567,67 @@ const { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelecto
 const subscribeWithSelector = getModule(Filters.byStrings("equalityFn", "fireImmediately"), { searchExports: true });
 const zustand$1 = zustand;
 
-// @Stores\ChannelStore
-const ChannelStore = getStore("ChannelStore");
-
-// @Stores\GuildStore
-const GuildStore = getStore("GuildStore");
-
-// src\Tabbys\Store.js
-function removeItemFromArray(arr, index) {
-	const tempArray = [...arr];
-	tempArray.splice(index, 1);
-	return tempArray;
-}
-
-function replaceItemInArray(arr, item, index) {
-	const tempArr = [...arr];
-	tempArr.splice(index, 1, item);
-	return tempArr;
-}
-const initialState = {
-	tabs: [],
-	selectedId: null,
-	lastSelectedIdAfterNewTab: null
-};
-
-function buildTab(d) {
-	const id = crypto.randomUUID();
-	return { ...d, id };
-}
-
-function merge(arr, item) {
-	return [...arr, item];
+// src\Tabbys\Store\index.js
+function generateTabs(n = 5) {
+	const guildIds = GuildStore.getGuildIds();
+	const paths = guildIds
+		.map(guildId =>
+			ChannelStore.getChannelIds(guildId)
+			.filter(id => ChannelStore.getChannel(id).type === 0)
+			.map(channelId => `/channels/${guildId}/${channelId}`)
+		)
+		.flat();
+	let b = n;
+	const res = [];
+	while (b--)
+		res.push({
+			id: crypto.randomUUID(),
+			path: paths[Math.floor(Math.random() * paths.length)]
+		});
+	return res;
 }
 const Store = Object.assign(
 	zustand$1(
 		subscribeWithSelector((set, get) => {
 			return {
-				...initialState,
-				reset() {
-					set({ ...initialState });
-				},
-				setTabs(list) {
-					if (!list) return;
-					if (!list.length) return;
-					set({ tabs: list, selectedId: list[0].id });
-				},
-				createTab(tabInfoObj) {
-					const state = get();
-					const newTab = buildTab(tabInfoObj);
-					set({ tabs: merge(state.tabs, newTab) });
-				},
-				newTab() {
-					const state = get();
-					const newTab = buildTab({
-						path: "/channels/@me"
-					});
-					set({ tabs: merge(state.tabs, newTab), selectedId: newTab.id, lastSelectedIdAfterNewTab: state.selectedId });
-				},
-				removeTab(id) {
-					const { tabs, getTabMeta, selectedId, lastSelectedIdAfterNewTab } = get();
-					if (tabs.length === 1) return;
-					const { tab, index, nextTab, previousTab } = getTabMeta(id);
-					if (!tab || index === undefined || index < 0) return;
-					const isSelected = selectedId === id;
-					const newSelected = !isSelected ? selectedId : lastSelectedIdAfterNewTab ? lastSelectedIdAfterNewTab : nextTab ? nextTab.id : previousTab.id;
-					const newTabs = removeItemFromArray(tabs, index);
-					set({ tabs: newTabs, selectedId: newSelected, lastSelectedIdAfterNewTab: null });
-				},
-				moveTab(fromTabId, toTabId) {
-					const state = get();
-					const fromIndex = state.tabs.findIndex(a => a.id === fromTabId);
-					const dragItem = state.tabs[fromIndex];
-					if (!dragItem) return;
-					const toIndex = state.tabs.findIndex(a => a.id === toTabId);
-					const newTabs = [...state.tabs];
-					const prevItem = newTabs.splice(toIndex, 1, dragItem);
-					newTabs.splice(fromIndex, 1, prevItem[0]);
-					set({ tabs: newTabs });
-				},
-				setSelectedId(id) {
-					const state = get();
-					const tabToBeSelected = state.getTab(id);
-					if (!tabToBeSelected) return;
-					set({ selectedId: id, lastSelectedIdAfterNewTab: null });
-				},
-				updateSelectedTab(newTabData) {
-					const state = get();
-					state.setTab(state.selectedId, newTabData);
-				},
-				setTab(id, payload) {
-					const state = get();
-					const { tab, index } = state.getTabMeta(id);
-					const newTab = { ...tab, ...payload };
-					set({ tabs: replaceItemInArray(state.tabs, newTab, index) });
-				},
-				getTabMeta(id) {
-					const state = get();
-					const index = state.tabs.findIndex(tab => tab.id === id);
-					const nextTab = state.tabs[index + 1];
-					const previousTab = state.tabs[index - 1];
-					const tab = state.tabs[index];
-					return { tab, index, nextTab, previousTab };
-				},
-				getTab(id) {
-					const state = get();
-					return state.tabs.find(tab => tab.id === id);
-				},
-				getCurrentlySelectedTab() {
-					const state = get();
-					return state.tabs.find(tab => tab.id === state.selectedId);
-				}
+				...tabsStore.store(set, get),
+				...bookmarksStore.store(set, get)
 			};
 		})
 	), {
 		init() {
-			Store.state.setTabs([
-				buildTab({
-					path: "/channels/@me"
-				})
-			]);
+			Store.state.setTabs([{ id: crypto.randomUUID(), path: '/channels/@me' }, ...generateTabs()]);
+			Store.state.setBookmarks(generateTabs());
 			window.navigation.addEventListener("navigate", onLocationChange);
 			Dispatcher.subscribe("LOGOUT", onUserLogout);
 		},
 		dispose() {
-			Store.state.reset();
+			Store.state.clearTabs();
+			Store.state.clearBookmarks();
 			window.navigation.removeEventListener("navigate", onLocationChange);
 			Dispatcher.unsubscribe("LOGOUT", onUserLogout);
 		},
 		selectors: {
-			tabs: state => state.tabs,
-			selectedId: state => state.selectedId
+			...tabsStore.selectors,
+			...bookmarksStore.selectors,
 		}
 	}
 );
-Store.subscribe(Store.selectors.selectedId, () => {
-	const selectedTab = Store.state.getCurrentlySelectedTab();
-	if (!selectedTab) return;
-	transitionTo(selectedTab.path);
-});
 Object.defineProperty(Store, "state", {
 	writeable: false,
 	configurable: false,
 	get: () => Store.getState()
 });
+Store.subscribe(Store.selectors.selectedId, () => {
+	const selectedTab = Store.state.getCurrentlySelectedTab();
+	if (!selectedTab) return;
+	transitionTo(selectedTab.path);
+});
 
 function onLocationChange(e) {
 	const pathname = getPathName(e.destination.url);
 	if (!pathname) return;
-	Store.state.updateSelectedTab({ path: pathname });
+	Store.state.setTab(Store.state.selectedId, { path: pathname });
 }
 // }, 5 * 1000);
 function onUserLogout() {
@@ -326,12 +636,12 @@ function onUserLogout() {
 			path: "/channels/@me"
 		})
 	]);
+	Store.state.setBookmarks([
+		buildTab({
+			path: "/channels/@me"
+		})
+	]);
 }
-
-// common\React.js
-const useState = React.useState;
-const useEffect = React.useEffect;
-const useRef = React.useRef;
 
 // common\Components\ErrorBoundary\index.jsx
 class ErrorBoundary extends React.Component {
@@ -405,20 +715,151 @@ function Discord() {
 	);
 }
 
-// src\Tabbys\components\Tab\BaseTab.jsx
-const DragSource = BdApi.Webpack.getByStrings("drag-source", "collect", { searchExports: true });
-const DropTarget = BdApi.Webpack.getByStrings("drop-target", "collect", { searchExports: true });
+// common\Utils\Toast.js
+function showToast(content, type) {
+	UI.showToast(`[${config.info.name}] ${content}`, { timeout: 5000, type });
+}
+const Toast = {
+	success(content) { showToast(content, "success"); },
+	info(content) { showToast(content, "info"); },
+	warning(content) { showToast(content, "warning"); },
+	error(content) { showToast(content, "error"); }
+};
 
+// common\Components\icons\BookmarkIcon\index.jsx
+function Bookmark$2({ filled }) {
+	return (
+		React.createElement('svg', {
+			width: "24",
+			height: "24",
+			fill: "currentColor",
+			viewBox: "0 0 24 24",
+		}, React.createElement('path', {
+			fillRule: filled ? "" : "evenodd",
+			d: "M17 4H7a1 1 0 0 0-1 1v13.74l3.99-3.61a3 3 0 0 1 4.02 0l3.99 3.6V5a1 1 0 0 0-1-1ZM7 2a3 3 0 0 0-3 3v16a1 1 0 0 0 1.67.74l5.66-5.13a1 1 0 0 1 1.34 0l5.66 5.13a1 1 0 0 0 1.67-.75V5a3 3 0 0 0-3-3H7Z",
+		}))
+	);
+}
+
+// common\Components\icons\DuplicateIcon\index.jsx
+function Duplicate() {
+	return (
+		React.createElement('svg', {
+			fill: "currentColor",
+			width: "24",
+			height: "24",
+			viewBox: "0 0 24 24",
+		}, React.createElement('path', { d: "M4 5a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v.18a1 1 0 1 0 2 0V5a3 3 0 0 0-3-3H5a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h.18a1 1 0 1 0 0-2H5a1 1 0 0 1-1-1V5Z", }), React.createElement('path', { d: "M8 11a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3h-8a3 3 0 0 1-3-3v-8Zm2 0a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-8a1 1 0 0 1-1-1v-8Z", }))
+	);
+}
+
+// common\Components\icons\LightiningIcon\index.jsx
+function Lightining() {
+	return (
+		React.createElement('svg', {
+			width: "24",
+			height: "24",
+			fill: "currentColor",
+			viewBox: "0 0 24 24",
+		}, React.createElement('path', { d: "M7.65 21.75a1 1 0 0 0 1.64.96l11.24-9.96a1 1 0 0 0-.66-1.75h-4.81a.5.5 0 0 1-.5-.6l1.79-8.15a1 1 0 0 0-1.64-.96L3.47 11.25A1 1 0 0 0 4.13 13h4.81c.32 0 .56.3.5.6l-1.79 8.15Z", }))
+	);
+}
+
+// common\Components\icons\PinIcon\index.jsx
+function Pin() {
+	return (
+		React.createElement('svg', {
+			width: "24",
+			height: "24",
+			fill: "currentColor",
+			viewBox: "0 0 24 24",
+		}, React.createElement('path', { d: "M19.38 11.38a3 3 0 0 0 4.24 0l.03-.03a.5.5 0 0 0 0-.7L13.35.35a.5.5 0 0 0-.7 0l-.03.03a3 3 0 0 0 0 4.24L13 5l-2.92 2.92-3.65-.34a2 2 0 0 0-1.6.58l-.62.63a1 1 0 0 0 0 1.42l9.58 9.58a1 1 0 0 0 1.42 0l.63-.63a2 2 0 0 0 .58-1.6l-.34-3.64L19 11l.38.38ZM9.07 17.07a.5.5 0 0 1-.08.77l-5.15 3.43a.5.5 0 0 1-.63-.06l-.42-.42a.5.5 0 0 1-.06-.63L6.16 15a.5.5 0 0 1 .77-.08l2.14 2.14Z", }))
+	);
+}
+
+// common\Components\icons\VectorIcon\index.jsx
+function Vector({ left }) {
+	return (
+		React.createElement('svg', {
+			style: { rotate: left ? "180deg" : "" },
+			width: "24",
+			height: "24",
+			fill: "currentColor",
+			viewBox: "0 0 24 24",
+		}, React.createElement('path', { d: "M20.7 12.7a1 1 0 0 0 0-1.4l-5-5a1 1 0 1 0-1.4 1.4l3.29 3.3H4a1 1 0 1 0 0 2h13.59l-3.3 3.3a1 1 0 0 0 1.42 1.4l5-5Z", }))
+	);
+}
+
+// src\Tabbys\contextmenus\TabContextMenu.jsx
+function newTabRight(tabId) {
+	Store.state.addTabToRight(tabId, buildTab({ path: "/channels/@me" }));
+}
+
+function newTabLeft(tabId) {
+	Store.state.addTabToLeft(tabId, buildTab({ path: "/channels/@me" }));
+}
+
+function duplicateTab(tabId) {
+	Store.state.duplicateTab(tabId);
+}
+
+function pinTab(tabId) {
+	Toast.info("Coming soon");
+}
+
+function bookmarkTab(tabId) {
+	const state = Store.state;
+	const tab = state.getTab(tabId);
+	state.addBookmark(tab);
+}
+
+function closeTab(tabId) {
+	Store.state.removeTab(tabId);
+}
+
+function closeTabsToRight(tabId) {
+	Store.state.removeTabsToRight(tabId);
+}
+
+function closeTabsToLeft(tabId) {
+	Store.state.removeTabsToLeft(tabId);
+}
+
+function closeOtherTabs(tabId) {
+	Store.state.removeOtherTabs(tabId);
+}
+
+function TabContextMenu(props) {
+	const tabId = this.tabId;
+	const Menu = ContextMenu.buildMenu([
+		createContextMenuItem(null, "new-tab-right", () => newTabRight(tabId), "New Tab to Right", React.createElement(Vector, null)),
+		createContextMenuItem(null, "new-tab-left", () => newTabLeft(tabId), "New Tab to Left", React.createElement(Vector, { left: true, })),
+		{ type: "separator" },
+		createContextMenuItem(null, "duplicate-tab", () => duplicateTab(tabId), "Duplicate Tab", React.createElement(Duplicate, null)),
+		createContextMenuItem(null, "pin-tab", () => pinTab(), "Pin Tab", React.createElement(Pin, null)),
+		createContextMenuItem(null, "bookmark-tab", () => bookmarkTab(tabId), "Bookmark Tab", React.createElement(Bookmark$2, null)),
+		{ type: "separator" },
+		createContextMenuItem("submenu", "close", () => closeTab(tabId), "Close", React.createElement(Close, null), "danger", [createContextMenuItem(null, "close-tabs-to-right", () => closeTabsToRight(tabId), "Close Tabs to Right", React.createElement(Vector, null), "danger"), createContextMenuItem(null, "close-tabs-to-left", () => closeTabsToLeft(tabId), "Close Tabs to Left", React.createElement(Vector, { left: true, }), "danger"), createContextMenuItem(null, "close-other-tabs", () => closeOtherTabs(tabId), "Close Other Tabs", React.createElement(Lightining, null), "danger")])
+	]);
+	return (
+		React.createElement(Menu, {
+			...props,
+			className: "tab-contextmenu",
+		})
+	);
+}
+
+// src\Tabbys\components\Tab\BaseTab.jsx
 function DragThis(comp) {
 	return DropTarget(
 		"TAB", {
 			drop(thisTab, monitor) {
 				const droppedTab = monitor.getItem();
 				if (thisTab.id === droppedTab.id) return;
-				Store.state.moveTab(droppedTab.id, thisTab.id);
+				Store.state.swapTab(droppedTab.id, thisTab.id);
 			}
 		},
-		function(connect, monitor, props) {
+		(connect, monitor, props) => {
 			return {
 				isOver: monitor.isOver(),
 				canDrop: monitor.canDrop(),
@@ -441,22 +882,30 @@ function DragThis(comp) {
 	);
 }
 
-function BaseTab({ id, path, selected, icon, title, dragRef, dropRef, isOver, canDrop, draggedIsMe, isDragging }) {
+function BaseTab({ tabId, path, icon, title, dragRef, dropRef, isOver, canDrop, draggedIsMe, isDragging }) {
+	const selected = Store(state => state.selectedId === tabId);
+	const isSingleTab = Store(Store.selectors.isSingleTab);
 	const tabRef = useRef(null);
-	const isSingleTab = Store(state => state.tabs.length === 1);
+	dragRef(dropRef(tabRef));
 	const clickHandler = e => {
 		e.stopPropagation();
-		Store.state.setSelectedId(id);
-		return console.log(id, "clickHandler");
+		Store.state.setSelectedId(tabId);
+		return console.log(tabId, "clickHandler");
 	};
 	const closeHandler = e => {
 		e.stopPropagation();
-		Store.state.removeTab(id);
-		return console.log(id, "closeHandler");
+		Store.state.removeTab(tabId);
+		return console.log(tabId, "closeHandler");
 	};
-	dragRef(dropRef(tabRef));
+	const contextmenuHandler = e => {
+		ContextMenu.open(e, TabContextMenu.bind({ tabId }), {
+			position: "bottom",
+			align: "left"
+		});
+	};
 	return (
 		React.createElement('div', {
+			onContextMenu: contextmenuHandler,
 			ref: tabRef,
 			className: concateClassNames("tab", selected && "selected-tab", isDragging && "dragging", !draggedIsMe && canDrop && isOver && "candrop"),
 			onClick: !selected ? clickHandler : nop,
@@ -470,155 +919,64 @@ function BaseTab({ id, path, selected, icon, title, dragRef, dropRef, isOver, ca
 }
 const BaseTab$1 = DragThis(BaseTab);
 
-// src\Tabbys\components\Tab\GenericTab.jsx
-function GenericTab({ tabId, path }) {
-	const selected = Store(state => state.selectedId === tabId);
+// src\Tabbys\components\Tab\ChannelTab.jsx
+const ICON_SIZE$1 = 80;
+
+function ChannelTab({ tabId, channelId, path }) {
+	const { icon, channelName } = useChannel(channelId, ICON_SIZE$1);
 	return (
 		React.createElement(BaseTab$1, {
-			id: tabId,
+			tabId: tabId,
 			path: path,
-			selected: selected,
-		})
-	);
-}
-
-// @Modules\useStateFromStores
-const useStateFromStores = getModule(Filters.byStrings("getStateFromStores"), { searchExports: true });
-
-// common\DiscordModules\Enums.js
-const ChannelTypeEnum = getModule(Filters.byKeys("GUILD_TEXT", "DM"), { searchExports: true }) || {
-	"GUILD_CATEGORY": 4,
-	"0": "GUILD_TEXT",
-	"1": "DM",
-	"2": "GUILD_VOICE",
-	"3": "GROUP_DM",
-	"4": "GUILD_CATEGORY",
-	"5": "GUILD_ANNOUNCEMENT",
-	"6": "GUILD_STORE",
-	"10": "ANNOUNCEMENT_THREAD",
-	"11": "PUBLIC_THREAD",
-	"12": "PRIVATE_THREAD",
-	"13": "GUILD_STAGE_VOICE",
-	"14": "GUILD_DIRECTORY",
-	"15": "GUILD_FORUM",
-	"16": "GUILD_MEDIA",
-	"17": "LOBBY",
-	"18": "DM_SDK",
-	"10000": "UNKNOWN",
-};
-
-// @Stores\UserStore
-const UserStore = getStore("UserStore");
-
-// common\Utils\User.js
-function getUserAvatar({ id, guildId, size }) {
-	return UserStore.getUser(id).getAvatarURL(guildId, size);
-}
-
-// src\Tabbys\components\Tab\DMTab.jsx
-const ICON_SIZE = 80;
-const b = getModule(a => a.getChannelIconURL);
-
-function getDmAvatar(channel, size) {
-	const recipientId = channel.rawRecipients[0].id;
-	return getUserAvatar({ id: recipientId, size });
-}
-
-function DMTab({ tabId, channelId, path }) {
-	const selected = Store(state => state.selectedId === tabId);
-	const channel = useStateFromStores([ChannelStore], () => ChannelStore.getChannel(channelId), [channelId]);
-	if (!channel) return;
-	const channelName = channel ? channel.rawRecipients.map(getUserName).join(", ") : "Home";
-	const channelIconSrc =
-		channel.type === ChannelTypeEnum.DM ?
-		getDmAvatar(channel, ICON_SIZE) :
-		b.getChannelIconURL({
-			id: channel.id,
-			icon: channel.icon,
-			applicationId: channel.getApplicationId(),
-			size: ICON_SIZE
-		});
-	const icon = channelIconSrc && (
-		React.createElement('img', {
-			src: channelIconSrc,
-			alt: channelName,
-		})
-	);
-	return (
-		React.createElement(BaseTab$1, {
-			id: tabId,
-			path: path,
-			selected: selected,
 			icon: icon,
 			title: channelName,
 		})
 	);
 }
 
-// src\Tabbys\components\Tab\ChannelTab.jsx
-function ChannelTab({ tabId, guildId, channelId, threadId, path }) {
-	const selected = Store(state => state.selectedId === tabId);
-	const id = threadId || channelId;
-	const channel = useStateFromStores([ChannelStore], () => ChannelStore.getChannel(id), [id]);
-	if (!channel) return;
-	const guild = GuildStore.getGuild(guildId);
-	if (!guild) return React.createElement(BaseTab$1, { path: path, });
-	const guildIcon = guild.getIconURL(80);
-	return (
-		React.createElement(BaseTab$1, {
-			id: tabId,
-			path: path,
-			selected: selected,
-			icon: guildIcon && (
-				React.createElement('img', {
-					src: guildIcon,
-					alt: guild.name,
-				})
-			),
-			title: channel.name,
-		})
-	);
+// src\Tabbys\components\Tab\index.jsx
+function ServersIcon() {
+	return React.createElement('svg', { 'aria-hidden': "true", role: "img", xmlns: "http://www.w3.org/2000/svg", width: "24", height: "24", fill: "none", viewBox: "0 0 24 24", }, React.createElement('path', { fill: "currentColor", d: "M10.55 4.4c.13-.24.1-.54-.12-.71L8.6 2.24a1 1 0 0 0-1.24 0l-4 3.15a1 1 0 0 0-.38.79v4.03c0 .43.5.66.82.39l2.28-1.9a3 3 0 0 1 3.84 0c.03.02.08 0 .08-.04V6.42a4 4 0 0 1 .55-2.02ZM7.36 10.23a1 1 0 0 1 1.28 0l1.18.99 2.98 2.48 1.84 1.53a1 1 0 0 1-.67 1.77.1.1 0 0 0-.1.09l-.23 3.06a2 2 0 0 1-2 1.85H4.36a2 2 0 0 1-2-1.85l-.24-3.16a1 1 0 0 1-.76-1.76l6-5Z", class: "", }), React.createElement('path', { fill: "currentColor", d: "M12 10.2c0 .14.07.28.18.38l3.74 3.12a3 3 0 0 1 .03 4.58.55.55 0 0 0-.2.37l-.12 1.65a4 4 0 0 1-.17.9c-.12.38.13.8.52.8H20a2 2 0 0 0 2-2V3.61a1.5 1.5 0 0 0-2-1.41l-6.66 2.33A2 2 0 0 0 12 6.42", class: "", }))
 }
 
-// src\Tabbys\components\Tab\index.jsx
-const Tab = React.memo(function TabSwitch({ id }) {
-	const item = Store(state => state.tabs.find(tab => tab.id === id), shallow);
-	if (!item?.path) return;
-	const [, type, guildId, channelId, , threadId] = item.path.split("/");
-	let res = null;
-	if (type !== "channels")
-		res = (
-			React.createElement(GenericTab, {
-				tabId: id,
-				path: item.path,
-			})
-		);
-	else if (guildId === "@me" && channelId)
-		res = (
-			React.createElement(DMTab, {
-				tabId: id,
-				path: item.path,
-				channelId: channelId,
-			})
-		);
-	else if (isSnowflake(guildId))
-		res = (
+function QuestsIcon() {
+	return React.createElement('svg', { 'aria-hidden': "true", role: "img", xmlns: "http://www.w3.org/2000/svg", width: "24", height: "24", fill: "none", viewBox: "0 0 24 24", }, React.createElement('path', { fill: "currentColor", d: "M7.5 21.7a8.95 8.95 0 0 1 9 0 1 1 0 0 0 1-1.73c-.6-.35-1.24-.64-1.9-.87.54-.3 1.05-.65 1.52-1.07a3.98 3.98 0 0 0 5.49-1.8.77.77 0 0 0-.24-.95 3.98 3.98 0 0 0-2.02-.76A4 4 0 0 0 23 10.47a.76.76 0 0 0-.71-.71 4.06 4.06 0 0 0-1.6.22 3.99 3.99 0 0 0 .54-5.35.77.77 0 0 0-.95-.24c-.75.36-1.37.95-1.77 1.67V6a4 4 0 0 0-4.9-3.9.77.77 0 0 0-.6.72 4 4 0 0 0 3.7 4.17c.89 1.3 1.3 2.95 1.3 4.51 0 3.66-2.75 6.5-6 6.5s-6-2.84-6-6.5c0-1.56.41-3.21 1.3-4.51A4 4 0 0 0 11 2.82a.77.77 0 0 0-.6-.72 4.01 4.01 0 0 0-4.9 3.96A4.02 4.02 0 0 0 3.73 4.4a.77.77 0 0 0-.95.24 3.98 3.98 0 0 0 .55 5.35 4 4 0 0 0-1.6-.22.76.76 0 0 0-.72.71l-.01.28a4 4 0 0 0 2.65 3.77c-.75.06-1.45.33-2.02.76-.3.22-.4.62-.24.95a4 4 0 0 0 5.49 1.8c.47.42.98.78 1.53 1.07-.67.23-1.3.52-1.91.87a1 1 0 1 0 1 1.73Z", class: "", }))
+}
+
+function AppsIcon() {
+	return React.createElement('svg', { 'aria-hidden': "true", role: "img", xmlns: "http://www.w3.org/2000/svg", width: "24", height: "24", fill: "none", viewBox: "0 0 24 24", }, React.createElement('path', { fill: "currentColor", 'fill-rule': "evenodd", d: "M20.97 4.06c0 .18.08.35.24.43.55.28.9.82 1.04 1.42.3 1.24.75 3.7.75 7.09v4.91a3.09 3.09 0 0 1-5.85 1.38l-1.76-3.51a1.09 1.09 0 0 0-1.23-.55c-.57.13-1.36.27-2.16.27s-1.6-.14-2.16-.27c-.49-.11-1 .1-1.23.55l-1.76 3.51A3.09 3.09 0 0 1 1 17.91V13c0-3.38.46-5.85.75-7.1.15-.6.49-1.13 1.04-1.4a.47.47 0 0 0 .24-.44c0-.7.48-1.32 1.2-1.47l2.93-.62c.5-.1 1 .06 1.36.4.35.34.78.71 1.28.68a42.4 42.4 0 0 1 4.4 0c.5.03.93-.34 1.28-.69.35-.33.86-.5 1.36-.39l2.94.62c.7.15 1.19.78 1.19 1.47ZM20 7.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0ZM15.5 12a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM5 7a1 1 0 0 1 2 0v1h1a1 1 0 0 1 0 2H7v1a1 1 0 1 1-2 0v-1H4a1 1 0 1 1 0-2h1V7Z", 'clip-rule': "evenodd", class: "", }))
+}
+
+function getIcon(type) {
+	switch (type) {
+		case "servers":
+			return React.createElement(ServersIcon, null);
+		case "quests":
+			return React.createElement(QuestsIcon, null);
+		case "applications":
+			return React.createElement(AppsIcon, null);
+	}
+}
+const Tab = React.memo(({ tabId }) => {
+	const { path } = Store(state => state.getTab(tabId), shallow) || {};
+	if (!path) return;
+	const [, type, idk, channelId, , threadId] = path.split("/");
+	if (type === "channels" && channelId)
+		return (
 			React.createElement(ChannelTab, {
-				tabId: id,
-				path: item.path,
-				guildId: guildId,
-				channelId: channelId,
-				threadId: threadId,
+				tabId: tabId,
+				path: path,
+				channelId: threadId || channelId,
 			})
 		);
-	else
-		res = (
-			React.createElement(GenericTab, {
-				tabId: id,
-				path: item.path,
-			})
-		);
-	return res;
+	return (
+		React.createElement(BaseTab$1, {
+			tabId: tabId,
+			path: path,
+			icon: getIcon(idk),
+			title: idk,
+		})
+	);
 });
 
 // common\Components\icons\ArrowIcon\index.jsx
@@ -649,7 +1007,7 @@ function useChildrenLengthStateChange(children) {
 }
 
 function useForceUpdate() {
-	return React.useReducer((num) => num + 1, 0);
+	return useReducer((num) => num + 1, 0);
 }
 
 function TabsScroller({ children }) {
@@ -703,7 +1061,7 @@ function TabsScroller({ children }) {
 	function scrollSelectedIntoView() {
 		const selectedTab = Store.state.getCurrentlySelectedTab();
 		if (!selectedTab) return;
-		const { index } = Store.state.getTabMeta(selectedTab.id);
+		const index = Store.state.getTabIndex(selectedTab.id);
 		if (index == null) return;
 		const { tabsMeta, targetTab, nextTab, previousTab } = getTabsMeta(index);
 		if (!targetTab || !tabsMeta) return;
@@ -737,12 +1095,12 @@ function TabsScroller({ children }) {
 		console.log(firstTab, lastTab);
 		const observerOptions = {
 			root: tabsNode,
-			threshold: 0.95
+			threshold: 0.99
 		};
-		const handleLeftScrollButton = entries => setLeftScrollBtn(!entries[0].isIntersecting);
+		const handleLeftScrollButton = entries => setLeftScrollBtn(!entries.sort((a, b) => a.time - b.time).pop().isIntersecting);
 		const leftObserver = new IntersectionObserver(debounce(handleLeftScrollButton), observerOptions);
 		leftObserver.observe(firstTab);
-		const handleRightScrollButton = entries => setRightScrollBtn(!entries[0].isIntersecting);
+		const handleRightScrollButton = entries => setRightScrollBtn(!entries.sort((a, b) => a.time - b.time).pop().isIntersecting);
 		const rightObserver = new IntersectionObserver(debounce(handleRightScrollButton), observerOptions);
 		rightObserver.observe(lastTab);
 		return () => {
@@ -758,12 +1116,14 @@ function TabsScroller({ children }) {
 			console.log("mutation");
 			setUpdateScrollObserver();
 		}
+		window.addEventListener("resize", handleMutation);
 		const mutationObserver = new MutationObserver(handleMutation);
 		mutationObserver.observe(tabsNode, {
 			childList: true
 		});
 		return () => {
 			mutationObserver?.disconnect();
+			window.removeEventListener("resize", handleMutation);
 		};
 	}, []);
 	const moveTabsScroll = delta => {
@@ -813,7 +1173,6 @@ function TabsScroller({ children }) {
 }
 
 // src\Tabbys\components\TabBar\index.jsx
-/* eslint-disable react/jsx-key */
 function TabBar({ leading, trailing }) {
 	console.log("TabBar rendered");
 	const tabs = Store(Store.selectors.tabs, (a, b) => a.length === b.length && !a.some((_, i) => a[i].id !== b[i].id));
@@ -821,17 +1180,17 @@ function TabBar({ leading, trailing }) {
 		e.preventDefault();
 		e.stopPropagation();
 		console.log(e);
-		Store.state.newTab();
+		Store.state.newTab(buildTab({ path: "/channels/@me" }));
 	};
 	return (
-		React.createElement('div', null, leading, React.createElement('div', {
+		React.createElement('div', { className: "tabbar", }, leading, React.createElement('div', {
 				className: "tabs-container",
 				onDoubleClick: e => e.stopPropagation(),
-			}, React.createElement(TabsScroller, null, [...tabs].map((a, index) => [
+			}, React.createElement(TabsScroller, null, tabs.map((a, index) => [
 				index !== 0 && React.createElement('div', { className: "tab-div", }),
 				React.createElement(Tab, {
 					key: a.id,
-					id: a.id,
+					tabId: a.id,
 				})
 			])), React.createElement('div', { className: "tab-div", })
 			/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */
@@ -843,15 +1202,141 @@ function TabBar({ leading, trailing }) {
 	);
 }
 
+// src\Tabbys\contextmenus\BookmarkContextmenu.jsx
+function deleteBookmark(bookmarkId) {
+	Store.state.removeBookmark(bookmarkId);
+}
+
+function BookmarkContextmenu(props) {
+	const bookmarkId = this.bookmarkId;
+	const Menu = ContextMenu.buildMenu([
+		createContextMenuItem(null, "new-tab-right", () => deleteBookmark(bookmarkId), "Remove Bookmark", React.createElement(Close, null)),
+	]);
+	return React.createElement(Menu, { ...props, className: "bookmark-contextmenu", });
+}
+
+// src\Tabbys\components\Bookmark\BaseBookmark.jsx
+function BaseBookmark({ bookmarkId, path, icon, title }) {
+	const clickHandler = e => {
+		e.stopPropagation();
+		Store.state.newTab(buildTab({ path }));
+		return console.log(bookmarkId, "clickHandler");
+	};
+	const contextmenuHandler = e => {
+		ContextMenu.open(e, BookmarkContextmenu.bind({ bookmarkId }), {
+			position: "bottom",
+			align: "left"
+		});
+	};
+	return (
+		React.createElement('div', {
+			className: "bookmark",
+			onContextMenu: contextmenuHandler,
+			onClick: clickHandler,
+		}, React.createElement('div', { className: concateClassNames("bookmark-icon", !icon && "discord-icon"), }, icon || React.createElement(Discord, null)), React.createElement('div', { className: "bookmark-title ellipsis", }, title || path))
+	);
+}
+
+// src\Tabbys\components\Bookmark\index.jsx
+const ICON_SIZE = 80;
+
+function Bookmark({ bookmarkId, channelId, path }) {
+	const { icon, channelName } = useChannel(channelId, ICON_SIZE);
+	return (
+		React.createElement(BaseBookmark, {
+			bookmarkId: bookmarkId,
+			path: path,
+			icon: icon,
+			title: channelName,
+		})
+	);
+}
+const Bookmark$1 = React.memo(({ bookmarkId }) => {
+	const { path } = Store(state => state.getBookmark(bookmarkId), shallow) || {};
+	if (!path) return;
+	const [, , , channelId, , threadId] = path.split("/");
+	return (
+		React.createElement(Bookmark, {
+			bookmarkId: bookmarkId,
+			path: path,
+			channelId: threadId || channelId,
+		})
+	);
+});
+
 // src\Tabbys\components\BookmarkBar\index.jsx
+function getOverflowIndex(parentEl) {
+	const children = Array.from(parentEl.children).filter(a => !a.className.includes("tab-div"));
+	let widthSum = 0;
+	const overflowLimit = window.innerWidth * .95;
+	for (let i = 0; i < children.length; i++) {
+		const child = children[i];
+		const tempSum = child.clientWidth + widthSum;
+		if (tempSum > overflowLimit) return i;
+		widthSum = tempSum;
+	}
+	return -1;
+}
+
 function BookmarkBar() {
-	return React.createElement('div', { className: "bookmarks-container", });
+	const bookmarks = Store(Store.selectors.bookmarks, (a, b) => a.length === b.length && !a.some((_, i) => a[i].id !== b[i].id));
+	const bookmarksContainerRef = useRef();
+	const [overflowIndex, setOverflowIndex] = useState(-1);
+	console.log("overflowIndex", overflowIndex);
+	const displayedBookmarks = overflowIndex > -1 ? bookmarks.slice(0, overflowIndex - 1) : bookmarks;
+	const overflowBookmarks = overflowIndex > -1 ? bookmarks.slice(overflowIndex - 1, bookmarks.length) : [];
+	useEffect(() => {
+		console.log("effect");
+		const bookmarksNode = bookmarksContainerRef.current;
+		if (!bookmarksNode) return;
+		const targetIndex = getOverflowIndex(bookmarksNode);
+		console.log("targetIndex", targetIndex);
+		setOverflowIndex(targetIndex);
+	}, [bookmarks.length]);
+	return (
+		React.createElement('div', { className: "bookmarkbar", }, React.createElement('div', {
+			ref: bookmarksContainerRef,
+			className: "bookmarks-container",
+			onDoubleClick: e => e.stopPropagation(),
+		}, displayedBookmarks.map((a, index) => [
+			index !== 0 && React.createElement('div', { className: "tab-div", }),
+			React.createElement(Bookmark$1, {
+				key: a.id,
+				bookmarkId: a.id,
+			})
+		])), overflowIndex > -1 && (
+			React.createElement(DiscordPopout, {
+				position: "bottom",
+				align: "right",
+				animation: "1",
+				renderPopout: e => {
+					return (
+						React.createElement('div', {
+							onClick: e.closePopout,
+							className: "bookmarks-overflow-popout",
+						}, overflowBookmarks.map(a => [
+							React.createElement(Bookmark$1, {
+								key: a.id,
+								bookmarkId: a.id,
+							})
+						]))
+					);
+				},
+				spacing: 8,
+			}, e => (
+				React.createElement('div', {
+					className: "bookmarks-overflow",
+					onClick: e.onClick,
+				}, React.createElement(Arrow, null))
+			))
+		))
+	);
 }
 
 // src\Tabbys\components\App\index.jsx
 function App({ leading, trailing }) {
 	return (
-		React.createElement('div', { className: "channel-tabs-container", }, React.createElement(TabBar, { leading: leading, trailing: trailing, }), React.createElement(BookmarkBar, null))
+		React.createElement('div', { className: "channel-tabs-container", }, React.createElement(TabBar, { leading: leading, trailing: trailing, }), React.createElement('div', { className: "channel-tabs-divider", }), React.createElement(BookmarkBar, null))
 	);
 }
 
@@ -894,12 +1379,18 @@ class Tabbys {
 module.exports = Tabbys;
 
 const css = `
-div:has(> .channel-tabs-container):not(#a) {
-	grid-template-rows: [top] auto [titleBarEnd] min-content [noticeEnd] 1fr [end];
+.channel-tabs-divider{
+	height:1px;
+	background:
+	linear-gradient(to right, #0000  0, #ccc3 25%) left center/50% no-repeat,
+	linear-gradient(to left, #0000  0, #ccc3 25%) right center/50% no-repeat;
 }
 
 :root{
-	--tab-height:20px;
+	/* --custom-app-top-bar-height:30px; */
+	--tab-height:30px;
+	--bookmark-container-height:25px;
+	--bookmark-height:25px;
 	
 	--active-tab-bg:#353333;
 	--hover-tab-bg:#7b7b7b;
@@ -909,24 +1400,143 @@ div:has(> .channel-tabs-container):not(#a) {
 	--close-btn-active-bg:#262626;
 }
 
-.channel-tabs-container{
-	grid-column:1/-1;
-	position:relative;
-	line-height:1.3; /* unify line height across weird characters */
+.channel-tabs-container * {
+	box-sizing:border-box;
 }
 
-.channel-tabs-container > div{
-	position:relative;
+
+div:has(> .channel-tabs-container):not(#a) {
+	grid-template-rows: [top] auto [titleBarEnd] min-content [noticeEnd] 1fr [end];
+}
+
+.channel-tabs-container{
+	grid-column:1/-1;
+	/* position:relative; */
+	user-select: none;
+	line-height:1.3;
+	margin-bottom:2px;
+	gap:2px;
+	display:flex;
+	flex-direction:column;
+	-webkit-app-region: drag;
+	/* zoom:2; */
+}
+
+.channel-tabs-container > .tabbar{
 	display:flex;
 	-webkit-app-region: drag;
 }
 
-.tabs-container {
-	display: flex;
+.bookmarkbar{
+	height:var(--bookmark-container-height);
+	-webkit-app-region: drag;
+	margin-top:2px;
+	/* background:lime; */
+	display:flex;
+	flex:0 0 auto;
 	align-items:center;
-	display: flex;
-	user-select: none;
-	padding: 3px;
+}
+
+.bookmarks-overflow{
+	flex:0 0 auto;
+	/* flex:0 0 auto; */
+	display:flex;
+	padding:2px;
+	width:20px;
+	height:20px;
+	color:white;
+	margin:0 2px;
+	z-index:988;
+	-webkit-app-region: no-drag;
+}
+
+.bookmarks-overflow:hover{
+	background:var(--hover-tab-bg);
+}
+
+.bookmarks-overflow:active{
+	background:var(--active-tab-bg);
+}
+
+.bookmarks-overflow-popout{
+	display:flex;
+	flex-direction:column;
+	background-color: var(--background-tertiary);
+	border-radius:8px;
+	gap:5px;
+	padding:5px;
+	overflow:auto;
+	max-height:50vh;
+}
+
+.bookmarks-overflow-popout::-webkit-scrollbar { 
+	height: 8px; 
+	width: 8px; 
+}
+
+.bookmarks-overflow-popout::-webkit-scrollbar-track { background-color: var(--scrollbar-thin-track); border-top-style: ; border-top-width: ; border-right-style: ; border-right-width: ; border-bottom-style: ; border-bottom-width: ; border-left-style: ; border-left-width: ; border-image-source: ; border-image-slice: ; border-image-width: ; border-image-outset: ; border-image-repeat: ; border-color: var(--scrollbar-thin-track); }
+
+.bookmarks-overflow-popout::-webkit-scrollbar-thumb { background-clip: padding-box; background-color: var(--scrollbar-thin-thumb); border: 2px solid transparent; border-radius: 4px; min-height: 40px; }
+
+.bookmarks-overflow-popout::-webkit-scrollbar-corner { background-color: transparent; }
+
+.bookmarks-container{
+	/* flex:1 0 0; */
+	margin-right:auto;
+	min-width:0;
+	overflow:hidden;
+	display:flex;
+	gap:2px;
+	-webkit-app-region: no-drag;
+	
+}
+
+.bookmark{
+	flex:0 1 auto;
+	/* min-width:100px; */
+	line-height:1.3;
+	display:flex;
+	align-items:center;
+	gap:5px;
+	padding:5px;
+	height:var(--bookmark-height);
+	color:white;
+	border-radius:5px;
+	cursor: pointer;
+	transform: translate(0);
+}
+
+.bookmark:hover{
+	background:#353333;
+}
+
+.bookmark:active{
+	background:#353333;
+}
+
+.bookmark-title:not(.bookmarks-overflow-popout .bookmark-title){
+	font-size:14px;
+	color:#a7a7a7;
+}
+
+.bookmark-icon{
+	flex:0 0 auto;
+	display:flex;
+	--d:calc(var(--tab-height) * .6);
+	width:var(--d);
+	height:var(--d);
+	align-items:center;
+	justify-content:center;
+	border-radius:50%;
+	
+}
+
+.bookmark-icon.discord-icon{
+	color:white;
+	background: #6361f8;
+}
+
+.tabs-container {
 	display: flex;
 	align-items: center;
 	align-self:flex-start;
@@ -936,8 +1546,10 @@ div:has(> .channel-tabs-container):not(#a) {
 	-webkit-app-region: no-drag;
 }
 
-.tabs-container svg,
-.tabs-container img {
+.bookmarks-overflow-popout img,
+.bookmarks-overflow-popout svg,
+.channel-tabs-container svg,
+.channel-tabs-container img{
 	max-width:100%;
 	max-height:100%;
 }
@@ -945,9 +1557,9 @@ div:has(> .channel-tabs-container):not(#a) {
 .tabs-scroller {
 	display: flex;
 	min-width:0;
-	padding:5px;
 	position:relative;
 }
+
 
 .tabs-list {
 	display: flex;
@@ -1004,17 +1616,27 @@ div:has(> .channel-tabs-container):not(#a) {
 	translate:-999px -999px;
 }
 
+
 .tab{
-	min-width:200px;
+	flex:0 1 auto;
+	min-width:150px;
+	/* width:100px; */
 	display:flex;
 	align-items:center;
 	gap:5px;
-	padding:5px 8px;
+	padding:2px 8px;
 	height:var(--tab-height);
 	color:white;
-	border-radius:8px;
+	border-radius:5px;
 	cursor: pointer;
 	transform: translate(0);
+}
+
+div:has(>.contextmenu-handler){
+	position:absolute;
+	z-index:4;
+	inset:0;
+	/* background:red; */
 }
 
 .dragging{
@@ -1024,6 +1646,7 @@ div:has(> .channel-tabs-container):not(#a) {
 .candrop{
 	background:green;
 }
+
 .candrop:after{
 	content:"";
 	border-radius:inherit;
@@ -1036,13 +1659,14 @@ div:has(> .channel-tabs-container):not(#a) {
 .tab-div{
 	min-width:2px;
 	background:#ccc5;
-	height:calc(var(--tab-height) * .7);
+	height:calc(var(--tab-height) * .8);
 	margin: auto 2px;
 }
 
 .selected-tab{
 	background:var(--selected-tab-bg);
 }
+
 
 .tab:not(.selected-tab):hover{
 	background:var(--hover-tab-bg);
@@ -1055,14 +1679,15 @@ div:has(> .channel-tabs-container):not(#a) {
 .tab-icon{
 	flex:0 0 auto;
 	display:flex;
-	--d:calc(var(--tab-height) * .7);
-	width:var(--d);
-	height:var(--d);
+	width:18px;
+	height:18px;
 	align-items:center;
 	justify-content:center;
 	border-radius:50%;
 }
 
+.bookmark-icon > svg,
+.bookmark-icon > img,
 .tab-icon > svg,
 .tab-icon > img{
 	flex:1 0 0;
@@ -1074,24 +1699,26 @@ div:has(> .channel-tabs-container):not(#a) {
 	background: #6361f8;
 }
 
+.bookmark-icon.discord-icon > svg,
 .tab-icon.discord-icon > svg{
-	width: 80%;
-	height: 80%;
+	width: 65%;
+	height: 65%;
 }
 
 .tab-title{
 	flex:1 0 0;
 	min-width:0;
+	font-size:14px;
 	mask:linear-gradient(to right, #000 80%, #0000 98%, #0000) no-repeat;
 }
 
 .tab-close{
+	z-index:5;
 	flex:0 0 auto;
 	display:flex;
 	padding:3px;
-	--d:calc(var(--tab-height) * .6);
-	width:var(--d);
-	height:var(--d);
+	width:16px;
+	height:16px;
 	border-radius:50%;
 }
 
@@ -1108,6 +1735,14 @@ div:has(> .channel-tabs-container):not(#a) {
 	overflow:hidden;
 	text-overflow:ellipsis;
 }
+
+.Tabbys-menu-label-icon svg{
+	width:18px;
+	height:18px;
+}
+
+
+
 
 
 
