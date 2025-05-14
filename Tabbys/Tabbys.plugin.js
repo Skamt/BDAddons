@@ -348,7 +348,7 @@ const DropTarget = getModule(Filters.byStrings("drop-target", "collect"), { sear
 const useState = React.useState;
 const useEffect = React.useEffect;
 const useRef = React.useRef;
-const useReducer = React.useReducer;
+const Children = React.Children;
 
 // common\Components\Flex\index.jsx
 const Flex = getModule(a => a.defaultProps?.direction, { searchExports: true });
@@ -371,6 +371,12 @@ const useStateFromStores = getModule(Filters.byStrings("getStateFromStores"), { 
 // @Stores\ChannelStore
 const ChannelStore = getStore("ChannelStore");
 
+// @Stores\ReadStateStore
+const ReadStateStore = getStore("ReadStateStore");
+
+// @Stores\TypingStore
+const TypingStore = getStore("TypingStore");
+
 // @Stores\GuildStore
 const GuildStore = getStore("GuildStore");
 
@@ -385,9 +391,9 @@ function getUserAvatar({ id, guildId, size }) {
 // src\Tabbys\utils.jsx
 const b = getModule(a => a.getChannelIconURL);
 
-function buildTab(d) {
+function buildTab(tabObj) {
 	const id = crypto.randomUUID();
-	return { ...d, id };
+	return { ...tabObj, id };
 }
 
 function getDmAvatar(channel, size) {
@@ -426,6 +432,16 @@ function useChannel(channelId, size) {
 		})
 	);
 	return { icon, channelName };
+}
+
+function useChannelState(channelId) {
+	const [mentionCount, unreadCount] = useStateFromStores([ReadStateStore], () => {
+		const mentionCount = ReadStateStore.getMentionCount(channelId);
+		const unreadCount = ReadStateStore.getUnreadCount(channelId);
+		return [mentionCount, unreadCount];
+	}, [channelId]);
+	const isTyping = useStateFromStores([TypingStore], () => !!Object.keys(TypingStore.getTypingUsers(channelId)).length, [channelId]);
+	return { isTyping, mentionCount, unreadCount };
 }
 
 function createContextMenuItem(type, id = "", action = nop, label = "Unknown", icon = null, color = "", children) {
@@ -791,55 +807,55 @@ function Vector({ left }) {
 }
 
 // src\Tabbys\contextmenus\TabContextMenu.jsx
-function newTabRight(tabId) {
-	Store.state.addTabToRight(tabId, buildTab({ path: "/channels/@me" }));
+function newTabRight(id) {
+	Store.state.addTabToRight(id, buildTab({ path: "/channels/@me" }));
 }
 
-function newTabLeft(tabId) {
-	Store.state.addTabToLeft(tabId, buildTab({ path: "/channels/@me" }));
+function newTabLeft(id) {
+	Store.state.addTabToLeft(id, buildTab({ path: "/channels/@me" }));
 }
 
-function duplicateTab(tabId) {
-	Store.state.duplicateTab(tabId);
+function duplicateTab(id) {
+	Store.state.duplicateTab(id);
 }
 
-function pinTab(tabId) {
+function pinTab(id) {
 	Toast.info("Coming soon");
 }
 
-function bookmarkTab(tabId) {
+function bookmarkTab(id) {
 	const state = Store.state;
-	const tab = state.getTab(tabId);
+	const tab = state.getTab(id);
 	state.addBookmark(tab);
 }
 
-function closeTab(tabId) {
-	Store.state.removeTab(tabId);
+function closeTab(id) {
+	Store.state.removeTab(id);
 }
 
-function closeTabsToRight(tabId) {
-	Store.state.removeTabsToRight(tabId);
+function closeTabsToRight(id) {
+	Store.state.removeTabsToRight(id);
 }
 
-function closeTabsToLeft(tabId) {
-	Store.state.removeTabsToLeft(tabId);
+function closeTabsToLeft(id) {
+	Store.state.removeTabsToLeft(id);
 }
 
-function closeOtherTabs(tabId) {
-	Store.state.removeOtherTabs(tabId);
+function closeOtherTabs(id) {
+	Store.state.removeOtherTabs(id);
 }
 
 function TabContextMenu(props) {
-	const tabId = this.tabId;
+	const id = this.id;
 	const Menu = ContextMenu.buildMenu([
-		createContextMenuItem(null, "new-tab-right", () => newTabRight(tabId), "New Tab to Right", React.createElement(Vector, null)),
-		createContextMenuItem(null, "new-tab-left", () => newTabLeft(tabId), "New Tab to Left", React.createElement(Vector, { left: true, })),
+		createContextMenuItem(null, "new-tab-right", () => newTabRight(id), "New Tab to Right", React.createElement(Vector, null)),
+		createContextMenuItem(null, "new-tab-left", () => newTabLeft(id), "New Tab to Left", React.createElement(Vector, { left: true, })),
 		{ type: "separator" },
-		createContextMenuItem(null, "duplicate-tab", () => duplicateTab(tabId), "Duplicate Tab", React.createElement(Duplicate, null)),
+		createContextMenuItem(null, "duplicate-tab", () => duplicateTab(id), "Duplicate Tab", React.createElement(Duplicate, null)),
 		createContextMenuItem(null, "pin-tab", () => pinTab(), "Pin Tab", React.createElement(Pin, null)),
-		createContextMenuItem(null, "bookmark-tab", () => bookmarkTab(tabId), "Bookmark Tab", React.createElement(Bookmark$2, null)),
+		createContextMenuItem(null, "bookmark-tab", () => bookmarkTab(id), "Bookmark Tab", React.createElement(Bookmark$2, null)),
 		{ type: "separator" },
-		createContextMenuItem("submenu", "close", () => closeTab(tabId), "Close", React.createElement(Close, null), "danger", [createContextMenuItem(null, "close-tabs-to-right", () => closeTabsToRight(tabId), "Close Tabs to Right", React.createElement(Vector, null), "danger"), createContextMenuItem(null, "close-tabs-to-left", () => closeTabsToLeft(tabId), "Close Tabs to Left", React.createElement(Vector, { left: true, }), "danger"), createContextMenuItem(null, "close-other-tabs", () => closeOtherTabs(tabId), "Close Other Tabs", React.createElement(Lightining, null), "danger")])
+		createContextMenuItem("submenu", "close", () => closeTab(id), "Close", React.createElement(Close, null), "danger", [createContextMenuItem(null, "close-tabs-to-right", () => closeTabsToRight(id), "Close Tabs to Right", React.createElement(Vector, null), "danger"), createContextMenuItem(null, "close-tabs-to-left", () => closeTabsToLeft(id), "Close Tabs to Left", React.createElement(Vector, { left: true, }), "danger"), createContextMenuItem(null, "close-other-tabs", () => closeOtherTabs(id), "Close Other Tabs", React.createElement(Lightining, null), "danger")])
 	]);
 	return (
 		React.createElement(Menu, {
@@ -850,6 +866,9 @@ function TabContextMenu(props) {
 }
 
 // src\Tabbys\components\Tab\BaseTab.jsx
+const filter = Filters.byStrings("dotRadius", "dotPosition");
+const TypingDots = getModule(a => a?.type?.render && filter(a.type.render), { searchExports: true });
+
 function DragThis(comp) {
 	return DropTarget(
 		"TAB", {
@@ -871,7 +890,7 @@ function DragThis(comp) {
 		DragSource(
 			"TAB", {
 				beginDrag(props) {
-					return { id: props.id };
+					return { ...props };
 				}
 			},
 			(props, monitor) => ({
@@ -882,23 +901,23 @@ function DragThis(comp) {
 	);
 }
 
-function BaseTab({ tabId, path, icon, title, dragRef, dropRef, isOver, canDrop, draggedIsMe, isDragging }) {
-	const selected = Store(state => state.selectedId === tabId);
+function BaseTab({ id, path, mentionCount, isTyping, unreadCount, icon, title, dragRef, dropRef, isOver, canDrop, draggedIsMe, isDragging }) {
+	const selected = Store(state => state.selectedId === id);
 	const isSingleTab = Store(Store.selectors.isSingleTab);
 	const tabRef = useRef(null);
 	dragRef(dropRef(tabRef));
 	const clickHandler = e => {
 		e.stopPropagation();
-		Store.state.setSelectedId(tabId);
-		return console.log(tabId, "clickHandler");
+		Store.state.setSelectedId(id);
+		return console.log(id, "clickHandler");
 	};
 	const closeHandler = e => {
 		e.stopPropagation();
-		Store.state.removeTab(tabId);
-		return console.log(tabId, "closeHandler");
+		Store.state.removeTab(id);
+		return console.log(id, "closeHandler");
 	};
 	const contextmenuHandler = e => {
-		ContextMenu.open(e, TabContextMenu.bind({ tabId }), {
+		ContextMenu.open(e, TabContextMenu.bind({ id }), {
 			position: "bottom",
 			align: "left"
 		});
@@ -909,7 +928,7 @@ function BaseTab({ tabId, path, icon, title, dragRef, dropRef, isOver, canDrop, 
 			ref: tabRef,
 			className: concateClassNames("tab", selected && "selected-tab", isDragging && "dragging", !draggedIsMe && canDrop && isOver && "candrop"),
 			onClick: !selected ? clickHandler : nop,
-		}, React.createElement('div', { className: concateClassNames("tab-icon", !icon && "discord-icon"), }, icon || React.createElement(Discord, null)), React.createElement('div', { className: "tab-title ellipsis", }, title || path), !isSingleTab && (
+		}, React.createElement('div', { className: concateClassNames("tab-icon", !icon && "discord-icon"), }, icon || React.createElement(Discord, null)), React.createElement('div', { className: "tab-title ellipsis", }, title || path), !!mentionCount && React.createElement('div', { className: "badge ping", }, mentionCount), !!unreadCount && React.createElement('div', { className: "badge unread", }, unreadCount), isTyping && React.createElement(TypingDots, { dotRadius: 3.5, }), !isSingleTab && (
 			React.createElement('div', {
 				className: "tab-close",
 				onClick: closeHandler,
@@ -922,14 +941,16 @@ const BaseTab$1 = DragThis(BaseTab);
 // src\Tabbys\components\Tab\ChannelTab.jsx
 const ICON_SIZE$1 = 80;
 
-function ChannelTab({ tabId, channelId, path }) {
+function ChannelTab({ id, channelId, path }) {
 	const { icon, channelName } = useChannel(channelId, ICON_SIZE$1);
+	const channelUnreadState = useChannelState(channelId);
 	return (
 		React.createElement(BaseTab$1, {
-			tabId: tabId,
+			id: id,
 			path: path,
 			icon: icon,
 			title: channelName,
+			...channelUnreadState,
 		})
 	);
 }
@@ -957,21 +978,21 @@ function getIcon(type) {
 			return React.createElement(AppsIcon, null);
 	}
 }
-const Tab = React.memo(({ tabId }) => {
-	const { path } = Store(state => state.getTab(tabId), shallow) || {};
+const Tab = React.memo(({ id }) => {
+	const { path } = Store(state => state.getTab(id), shallow) || {};
 	if (!path) return;
 	const [, type, idk, channelId, , threadId] = path.split("/");
 	if (type === "channels" && channelId)
 		return (
 			React.createElement(ChannelTab, {
-				tabId: tabId,
+				id: id,
 				path: path,
 				channelId: threadId || channelId,
 			})
 		);
 	return (
 		React.createElement(BaseTab$1, {
-			tabId: tabId,
+			id: id,
 			path: path,
 			icon: getIcon(idk),
 			title: idk,
@@ -995,30 +1016,42 @@ function Arrow() {
 	);
 }
 
-// src\Tabbys\components\TabsScroller\index.jsx
-function useChildrenLengthStateChange(children) {
-	const lastCount = useRef(React.Children.count(children));
-	const currentCount = React.Children.count(children);
+// common\Utils\Hooks.js
+const LengthStateEnum = {
+	INCREASED: "INCREASED",
+	UNCHANGED: "UNCHANGED",
+	DECREASED: "DECREASED",
+};
+
+function useNumberWatcher(num) {
+	const lastNum = useRef(num);
+	const currentNum = num;
 	let state = "";
-	if (lastCount.current < currentCount) state = "INCREASED";
-	else if (lastCount.current > currentCount) state = "DECREASED";
-	lastCount.current = currentCount;
+	if (lastNum.current < num) state = LengthStateEnum.INCREASED;
+	else if (lastNum.current > currentNum) state = LengthStateEnum.DECREASED;
+	else state = LengthStateEnum.UNCHANGED;
+	lastNum.current = currentNum;
 	return state;
 }
 
-function useForceUpdate() {
-	return useReducer((num) => num + 1, 0);
+// src\Tabbys\components\TabsScroller\index.jsx
+function getFirstAndLastChild(el) {
+	const tabListChildren = Array.from(el.children);
+	const length = tabListChildren.length;
+	if (length < 1) return;
+	const firstTab = tabListChildren[0];
+	const lastTab = tabListChildren[length - 1];
+	return [firstTab, lastTab];
 }
 
 function TabsScroller({ children }) {
 	console.log("TabsScroller rendered");
-	const [updateScrollObserver, setUpdateScrollObserver] = useForceUpdate();
 	const [leftScrollBtn, setLeftScrollBtn] = useState(false);
 	const [rightScrollBtn, setRightScrollBtn] = useState(false);
 	const displayStartScrollRef = useRef(null);
 	const displayEndScrollRef = useRef(null);
 	const tabsRef = useRef(null);
-	const childrenLengthState = useChildrenLengthStateChange(children);
+	const childrenLengthState = useNumberWatcher(Children.count(children));
 
 	function getTabsMeta(tabIndex) {
 		if (tabIndex == null) return {};
@@ -1078,52 +1111,49 @@ function TabsScroller({ children }) {
 		}
 	}
 	useEffect(() => {
-		if (childrenLengthState !== "INCREASED") return;
+		if (childrenLengthState !== LengthStateEnum.INCREASED) return;
 		scrollSelectedIntoView();
 	}, [children.length]);
 	useEffect(() => {
 		return Store.subscribe(Store.selectors.selectedId, scrollSelectedIntoView);
 	}, []);
 	useEffect(() => {
-		console.log("IntersectionObserver");
 		const tabsNode = tabsRef.current;
-		const tabListChildren = Array.from(tabsNode.children);
-		const length = tabListChildren.length;
-		if (length < 1) return;
-		const firstTab = tabListChildren[0];
-		const lastTab = tabListChildren[length - 1];
-		console.log(firstTab, lastTab);
+		if (!tabsNode) return;
 		const observerOptions = {
 			root: tabsNode,
 			threshold: 0.99
 		};
-		const handleLeftScrollButton = entries => setLeftScrollBtn(!entries.sort((a, b) => a.time - b.time).pop().isIntersecting);
-		const leftObserver = new IntersectionObserver(debounce(handleLeftScrollButton), observerOptions);
-		leftObserver.observe(firstTab);
-		const handleRightScrollButton = entries => setRightScrollBtn(!entries.sort((a, b) => a.time - b.time).pop().isIntersecting);
-		const rightObserver = new IntersectionObserver(debounce(handleRightScrollButton), observerOptions);
-		rightObserver.observe(lastTab);
-		return () => {
-			leftObserver.disconnect();
-			rightObserver.disconnect();
-		};
-	}, [updateScrollObserver]);
-	useEffect(() => {
-		const tabsNode = tabsRef.current;
-		if (!tabsNode) return;
+		const handleLeftScrollButton = debounce(entries => setLeftScrollBtn(!entries.sort((a, b) => a.time - b.time).pop().isIntersecting));
+		const leftObserver = new IntersectionObserver(handleLeftScrollButton, observerOptions);
+		const handleRightScrollButton = debounce(entries => setRightScrollBtn(!entries.sort((a, b) => a.time - b.time).pop().isIntersecting));
+		const rightObserver = new IntersectionObserver(handleRightScrollButton, observerOptions);
 
-		function handleMutation() {
-			console.log("mutation");
-			setUpdateScrollObserver();
+		function observeFirstAndLastChild() {
+			leftObserver?.disconnect?.();
+			rightObserver?.disconnect?.();
+			const [firstTab, lastTab] = getFirstAndLastChild(tabsNode);
+			if (!firstTab || !lastTab) return;
+			leftObserver.observe(firstTab);
+			rightObserver.observe(lastTab);
 		}
-		window.addEventListener("resize", handleMutation);
-		const mutationObserver = new MutationObserver(handleMutation);
-		mutationObserver.observe(tabsNode, {
-			childList: true
+		observeFirstAndLastChild();
+		const handleMutation = debounce(() => {
+			scrollSelectedIntoView();
+			observeFirstAndLastChild();
 		});
+		const resizeObserver = new ResizeObserver(handleMutation);
+		const mutationObserver = new MutationObserver(handleMutation);
+		mutationObserver.observe(tabsNode, { childList: true });
+		resizeObserver.observe(tabsNode);
 		return () => {
-			mutationObserver?.disconnect();
-			window.removeEventListener("resize", handleMutation);
+			mutationObserver?.disconnect?.();
+			resizeObserver?.disconnect?.();
+			leftObserver?.disconnect?.();
+			rightObserver?.disconnect?.();
+			handleRightScrollButton.clear();
+			handleLeftScrollButton.clear();
+			handleMutation.clear();
 		};
 	}, []);
 	const moveTabsScroll = delta => {
@@ -1190,7 +1220,7 @@ function TabBar({ leading, trailing }) {
 				index !== 0 && React.createElement('div', { className: "tab-div", }),
 				React.createElement(Tab, {
 					key: a.id,
-					tabId: a.id,
+					id: a.id,
 				})
 			])), React.createElement('div', { className: "tab-div", })
 			/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */
@@ -1203,34 +1233,39 @@ function TabBar({ leading, trailing }) {
 }
 
 // src\Tabbys\contextmenus\BookmarkContextmenu.jsx
-function deleteBookmark(bookmarkId) {
-	Store.state.removeBookmark(bookmarkId);
+function deleteBookmark(id) {
+	Store.state.removeBookmark(id);
+}
+
+function openInNewTab(id) {
+	Store.state.newTab(buildTab({ id }));
 }
 
 function BookmarkContextmenu(props) {
-	const bookmarkId = this.bookmarkId;
+	const id = this.id;
 	const Menu = ContextMenu.buildMenu([
-		createContextMenuItem(null, "new-tab-right", () => deleteBookmark(bookmarkId), "Remove Bookmark", React.createElement(Close, null)),
+		createContextMenuItem(null, "open-bookmark-in-new-tab", () => openInNewTab(id), "Open in new Tab", React.createElement(Plus, null)),
+		createContextMenuItem(null, "remove-bookmark", () => deleteBookmark(id), "Remove Bookmark", React.createElement(Close, null), "danger"),
 	]);
 	return React.createElement(Menu, { ...props, className: "bookmark-contextmenu", });
 }
 
 // src\Tabbys\components\Bookmark\BaseBookmark.jsx
-function BaseBookmark({ bookmarkId, path, icon, title }) {
+function BaseBookmark({ id, path, icon, title, className }) {
 	const clickHandler = e => {
 		e.stopPropagation();
-		Store.state.newTab(buildTab({ path }));
-		return console.log(bookmarkId, "clickHandler");
+		Store.state.addTab(buildTab({ path }));
+		return console.log(id, "clickHandler");
 	};
 	const contextmenuHandler = e => {
-		ContextMenu.open(e, BookmarkContextmenu.bind({ bookmarkId }), {
+		ContextMenu.open(e, BookmarkContextmenu.bind({ id }), {
 			position: "bottom",
 			align: "left"
 		});
 	};
 	return (
 		React.createElement('div', {
-			className: "bookmark",
+			className: concateClassNames("bookmark", className && className),
 			onContextMenu: contextmenuHandler,
 			onClick: clickHandler,
 		}, React.createElement('div', { className: concateClassNames("bookmark-icon", !icon && "discord-icon"), }, icon || React.createElement(Discord, null)), React.createElement('div', { className: "bookmark-title ellipsis", }, title || path))
@@ -1240,24 +1275,26 @@ function BaseBookmark({ bookmarkId, path, icon, title }) {
 // src\Tabbys\components\Bookmark\index.jsx
 const ICON_SIZE = 80;
 
-function Bookmark({ bookmarkId, channelId, path }) {
+function Bookmark({ id, channelId, path, className }) {
 	const { icon, channelName } = useChannel(channelId, ICON_SIZE);
 	return (
 		React.createElement(BaseBookmark, {
-			bookmarkId: bookmarkId,
+			id: id,
+			className: className,
 			path: path,
 			icon: icon,
 			title: channelName,
 		})
 	);
 }
-const Bookmark$1 = React.memo(({ bookmarkId }) => {
-	const { path } = Store(state => state.getBookmark(bookmarkId), shallow) || {};
+const Bookmark$1 = React.memo(({ id, className }) => {
+	const { path } = Store(state => state.getBookmark(id), shallow) || {};
 	if (!path) return;
 	const [, , , channelId, , threadId] = path.split("/");
 	return (
 		React.createElement(Bookmark, {
-			bookmarkId: bookmarkId,
+			id: id,
+			className: className,
 			path: path,
 			channelId: threadId || channelId,
 		})
@@ -1265,46 +1302,51 @@ const Bookmark$1 = React.memo(({ bookmarkId }) => {
 });
 
 // src\Tabbys\components\BookmarkBar\index.jsx
-function getOverflowIndex(parentEl) {
-	const children = Array.from(parentEl.children).filter(a => !a.className.includes("tab-div"));
-	let widthSum = 0;
-	const overflowLimit = window.innerWidth * .95;
-	for (let i = 0; i < children.length; i++) {
-		const child = children[i];
-		const tempSum = child.clientWidth + widthSum;
-		if (tempSum > overflowLimit) return i;
-		widthSum = tempSum;
-	}
-	return -1;
+// 	const overflowLimit = window.innerWidth * 0.95;
+function isVisible(el) {
+	const rect = el.getBoundingClientRect();
+	const elemRight = rect.right;
+	const elemLeft = rect.left;
+	return elemLeft >= 0 && elemRight <= el.parentElement.clientWidth;
 }
 
 function BookmarkBar() {
 	const bookmarks = Store(Store.selectors.bookmarks, (a, b) => a.length === b.length && !a.some((_, i) => a[i].id !== b[i].id));
 	const bookmarksContainerRef = useRef();
 	const [overflowIndex, setOverflowIndex] = useState(-1);
-	console.log("overflowIndex", overflowIndex);
-	const displayedBookmarks = overflowIndex > -1 ? bookmarks.slice(0, overflowIndex - 1) : bookmarks;
-	const overflowBookmarks = overflowIndex > -1 ? bookmarks.slice(overflowIndex - 1, bookmarks.length) : [];
+	const isOverflowing = overflowIndex > -1;
+	const childrenLengthState = useNumberWatcher(bookmarks.length);
+	const overflowBookmarks = isOverflowing ? bookmarks.slice(overflowIndex, bookmarks.length) : [];
 	useEffect(() => {
-		console.log("effect");
 		const bookmarksNode = bookmarksContainerRef.current;
 		if (!bookmarksNode) return;
-		const targetIndex = getOverflowIndex(bookmarksNode);
-		console.log("targetIndex", targetIndex);
-		setOverflowIndex(targetIndex);
-	}, [bookmarks.length]);
+		const handleMutation = debounce(() => {
+			if (childrenLengthState === LengthStateEnum.INCREASED && isOverflowing) return;
+			if (childrenLengthState === LengthStateEnum.DECREASED && !isOverflowing) return;
+			const childrenNodes = Array.from(bookmarksNode.children);
+			const indexOfFirstNotFullyVisibleChild = childrenNodes.findIndex(a => !isVisible(a));
+			setOverflowIndex(indexOfFirstNotFullyVisibleChild);
+		});
+		handleMutation();
+		const resizeObserver = new ResizeObserver(handleMutation);
+		resizeObserver.observe(bookmarksNode);
+		return () => {
+			resizeObserver.disconnect();
+			handleMutation.clear();
+		};
+	}, [childrenLengthState]);
 	return (
 		React.createElement('div', { className: "bookmarkbar", }, React.createElement('div', {
 			ref: bookmarksContainerRef,
 			className: "bookmarks-container",
 			onDoubleClick: e => e.stopPropagation(),
-		}, displayedBookmarks.map((a, index) => [
-			index !== 0 && React.createElement('div', { className: "tab-div", }),
+		}, bookmarks.map((a, index) => [
 			React.createElement(Bookmark$1, {
 				key: a.id,
-				bookmarkId: a.id,
+				id: a.id,
+				className: concateClassNames(isOverflowing && index >= overflowIndex && "hidden-visually"),
 			})
-		])), overflowIndex > -1 && (
+		])), isOverflowing && (
 			React.createElement(DiscordPopout, {
 				position: "bottom",
 				align: "right",
@@ -1398,6 +1440,9 @@ const css = `
 
 	--close-btn-hover-bg:#595959;
 	--close-btn-active-bg:#262626;
+	
+	--ping:rgb(218, 62, 68);
+	--unread:rgb(88, 101, 242);
 }
 
 .channel-tabs-container * {
@@ -1413,7 +1458,7 @@ div:has(> .channel-tabs-container):not(#a) {
 	grid-column:1/-1;
 	/* position:relative; */
 	user-select: none;
-	line-height:1.3;
+	line-height:1.4;
 	margin-bottom:2px;
 	gap:2px;
 	display:flex;
@@ -1428,7 +1473,7 @@ div:has(> .channel-tabs-container):not(#a) {
 }
 
 .bookmarkbar{
-	height:var(--bookmark-container-height);
+	/* height:var(--bookmark-container-height); */
 	-webkit-app-region: drag;
 	margin-top:2px;
 	/* background:lime; */
@@ -1481,8 +1526,8 @@ div:has(> .channel-tabs-container):not(#a) {
 .bookmarks-overflow-popout::-webkit-scrollbar-corner { background-color: transparent; }
 
 .bookmarks-container{
-	/* flex:1 0 0; */
-	margin-right:auto;
+	flex:1 0 0;
+	/* margin-right:auto; */
 	min-width:0;
 	overflow:hidden;
 	display:flex;
@@ -1541,6 +1586,7 @@ div:has(> .channel-tabs-container):not(#a) {
 	align-items: center;
 	align-self:flex-start;
 	min-width:0;
+	gap:2px;
 	position:relative;
 	margin-right:auto;
 	-webkit-app-region: no-drag;
@@ -1575,7 +1621,7 @@ div:has(> .channel-tabs-container):not(#a) {
 	width:20px;
 	height:20px;
 	color:white;
-	margin:0 5px;
+	/* margin:0 5px; */
 	border-radius:50%;
 }
 
@@ -1631,20 +1677,42 @@ div:has(> .channel-tabs-container):not(#a) {
 	cursor: pointer;
 	transform: translate(0);
 }
+.badge{
+	background:var(--brand-500);
 
-div:has(>.contextmenu-handler){
-	position:absolute;
-	z-index:4;
-	inset:0;
-	/* background:red; */
+	border-radius:50%;
+	
+	display:flex;
+	justify-content:center;
+	align-items:center;
+	
+	width:16px;
+	height:16px;
+	min-height: 16px;
+	min-width: 16px;
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: .02em;
+	line-height: 1.4;
+	text-transform: uppercase;
+
 }
+
+.badge.ping{
+	background-color: var(--ping);
+}
+
+.badge.unread{
+	background-color: var(--unread);
+}
+
 
 .dragging{
 	opacity:.5;
 }
 
 .candrop{
-	background:green;
+	background:green !important;
 }
 
 .candrop:after{
@@ -1660,7 +1728,7 @@ div:has(>.contextmenu-handler){
 	min-width:2px;
 	background:#ccc5;
 	height:calc(var(--tab-height) * .8);
-	margin: auto 2px;
+	margin: auto 3px;
 }
 
 .selected-tab{
@@ -1741,7 +1809,9 @@ div:has(>.contextmenu-handler){
 	height:18px;
 }
 
-
+.hidden-visually{
+	translate:0 -9999px;
+}
 
 
 
