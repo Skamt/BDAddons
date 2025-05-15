@@ -24,6 +24,7 @@ const config = {
 const Api = new BdApi(config.info.name);
 const UI = Api.UI;
 const DOM = Api.DOM;
+const Data = Api.Data;
 const React = Api.React;
 const Patcher = Api.Patcher;
 const ContextMenu = Api.ContextMenu;
@@ -278,14 +279,13 @@ class List extends ArrayHelpers {
 
 // src\Tabbys\Store\bookmarksStore.js
 const bookmarksList = new List("id");
-const store$1 = (set, get) => ({
+const store$1 = (set) => ({
 	bookmarks: [],
 	clearBookmarks() {
 		bookmarksList.clear();
 		set({ bookmarks: bookmarksList.list });
 	},
 	setBookmarks(list = []) {
-		if (list.length === 0) return;
 		bookmarksList.setList(list);
 		set({ bookmarks: bookmarksList.list });
 	},
@@ -431,7 +431,7 @@ function useChannel(channelId, size) {
 			alt: channelName,
 		})
 	);
-	return { icon, channelName };
+	return { icon, channelName, channel };
 }
 
 function useChannelState(channelId) {
@@ -475,6 +475,9 @@ const store = (set, get) => ({
 	clearTabs() {
 		tabsList.clear();
 		set({ ...initialState });
+	},
+	setLastSelectedIdAfterNewTab(id) {
+		set({ lastSelectedIdAfterNewTab: id });
 	},
 	setTabs(list = []) {
 		if (list.length === 0) return;
@@ -554,6 +557,9 @@ const store = (set, get) => ({
 		tabsList.setItemById(id, payload);
 		set({ tabs: tabsList.list });
 	},
+	getTabsCount() {
+		return tabsList.length;
+	},
 	getTab(id) {
 		return tabsList.getItemById(id);
 	},
@@ -584,27 +590,21 @@ const subscribeWithSelector = getModule(Filters.byStrings("equalityFn", "fireImm
 const zustand$1 = zustand;
 
 // src\Tabbys\Store\index.js
-function generateTabs(n = 5) {
-	const guildIds = GuildStore.getGuildIds();
-	const paths = guildIds
-		.map(guildId =>
-			ChannelStore.getChannelIds(guildId)
-			.filter(id => ChannelStore.getChannel(id).type === 0)
-			.map(channelId => `/channels/${guildId}/${channelId}`)
-		)
-		.flat();
-	let b = n;
-	const res = [];
-	while (b--)
-		res.push({
-			id: crypto.randomUUID(),
-			path: paths[Math.floor(Math.random() * paths.length)]
-		});
-	return res;
-}
 const Store = Object.assign(
 	zustand$1(
-		subscribeWithSelector((set, get) => {
+		subscribeWithSelector((setState, get) => {
+			const set = args => {
+				setState(args);
+				const newState = get();
+				const user = UserStore.getCurrentUser();
+				const data = Object.entries(newState)
+					.filter(([, val]) => typeof val !== "function")
+					.reduce((acc, [key, val]) => {
+						acc[key] = val;
+						return acc;
+					}, {});
+				Data.save(user.id, data);
+			};
 			return {
 				...tabsStore.store(set, get),
 				...bookmarksStore.store(set, get)
@@ -612,20 +612,17 @@ const Store = Object.assign(
 		})
 	), {
 		init() {
-			Store.state.setTabs([{ id: crypto.randomUUID(), path: '/channels/@me' }, ...generateTabs()]);
-			Store.state.setBookmarks(generateTabs());
+			hydrateStore();
 			window.navigation.addEventListener("navigate", onLocationChange);
-			Dispatcher.subscribe("LOGOUT", onUserLogout);
+			Dispatcher.subscribe("CONNECTION_OPEN", hydrateStore);
 		},
 		dispose() {
-			Store.state.clearTabs();
-			Store.state.clearBookmarks();
 			window.navigation.removeEventListener("navigate", onLocationChange);
-			Dispatcher.unsubscribe("LOGOUT", onUserLogout);
+			Dispatcher.unsubscribe("CONNECTION_OPEN", hydrateStore);
 		},
 		selectors: {
 			...tabsStore.selectors,
-			...bookmarksStore.selectors,
+			...bookmarksStore.selectors
 		}
 	}
 );
@@ -640,23 +637,19 @@ Store.subscribe(Store.selectors.selectedId, () => {
 	transitionTo(selectedTab.path);
 });
 
+function hydrateStore() {
+	const user = UserStore.getCurrentUser();
+	const userData = Data.load(user.id) || {};
+	Store.state.setTabs(userData.tabs || [buildTab({ path: location.pathname })]);
+	Store.state.setBookmarks(userData.bookmarks);
+	Store.state.setSelectedId(userData.selectedId);
+	Store.state.setLastSelectedIdAfterNewTab(userData.lastSelectedIdAfterNewTab);
+}
+
 function onLocationChange(e) {
 	const pathname = getPathName(e.destination.url);
 	if (!pathname) return;
 	Store.state.setTab(Store.state.selectedId, { path: pathname });
-}
-// }, 5 * 1000);
-function onUserLogout() {
-	Store.state.setTabs([
-		buildTab({
-			path: "/channels/@me"
-		})
-	]);
-	Store.state.setBookmarks([
-		buildTab({
-			path: "/channels/@me"
-		})
-	]);
 }
 
 // common\Components\ErrorBoundary\index.jsx
@@ -695,41 +688,39 @@ class ErrorBoundary extends React.Component {
 	}
 }
 
-// common\Components\icons\PlusIcon\index.jsx
-function Plus() {
-	return (
+// common\Components\Icon\index.jsx
+/* eslint-disable react/jsx-key */
+function svg(svgProps, ...paths) {
+	return comProps => (
 		React.createElement('svg', {
 			fill: "currentColor",
 			width: "24",
 			height: "24",
 			viewBox: "0 0 24 24",
-		}, React.createElement('path', { d: "M13 5a1 1 0 1 0-2 0v6H5a1 1 0 1 0 0 2h6v6a1 1 0 1 0 2 0v-6h6a1 1 0 1 0 0-2h-6V5Z", }))
+			...svgProps,
+			...comProps,
+		}, paths.map(p => (typeof p === "string" ? path(null, p) : p)))
 	);
 }
 
-// common\Components\icons\CloseIcon\index.jsx
-function Close() {
+function path(props, d) {
 	return (
-		React.createElement('svg', {
-			width: "24",
-			height: "24",
-			fill: "currentColor",
-			viewBox: "0 0 24 24",
-		}, React.createElement('path', { d: "M17.3 18.7a1 1 0 0 0 1.4-1.4L13.42 12l5.3-5.3a1 1 0 0 0-1.42-1.4L12 10.58l-5.3-5.3a1 1 0 0 0-1.4 1.42L10.58 12l-5.3 5.3a1 1 0 1 0 1.42 1.4L12 13.42l5.3 5.3Z", }))
+		React.createElement('path', {
+			...props,
+			d: d,
+		})
 	);
 }
-
-// common\Components\icons\DiscordIcon\index.jsx
-function Discord() {
-	return (
-		React.createElement('svg', {
-			width: "20",
-			height: "20",
-			fill: "currentColor",
-			viewBox: "0 0 24 24",
-		}, React.createElement('path', { d: "M19.73 4.87a18.2 18.2 0 0 0-4.6-1.44c-.21.4-.4.8-.58 1.21-1.69-.25-3.4-.25-5.1 0-.18-.41-.37-.82-.59-1.2-1.6.27-3.14.75-4.6 1.43A19.04 19.04 0 0 0 .96 17.7a18.43 18.43 0 0 0 5.63 2.87c.46-.62.86-1.28 1.2-1.98-.65-.25-1.29-.55-1.9-.92.17-.12.32-.24.47-.37 3.58 1.7 7.7 1.7 11.28 0l.46.37c-.6.36-1.25.67-1.9.92.35.7.75 1.35 1.2 1.98 2.03-.63 3.94-1.6 5.64-2.87.47-4.87-.78-9.09-3.3-12.83ZM8.3 15.12c-1.1 0-2-1.02-2-2.27 0-1.24.88-2.26 2-2.26s2.02 1.02 2 2.26c0 1.25-.89 2.27-2 2.27Zm7.4 0c-1.1 0-2-1.02-2-2.27 0-1.24.88-2.26 2-2.26s2.02 1.02 2 2.26c0 1.25-.88 2.27-2 2.27Z", }))
-	);
-}
+const BookmarkIconPaths = "M17 4H7a1 1 0 0 0-1 1v13.74l3.99-3.61a3 3 0 0 1 4.02 0l3.99 3.6V5a1 1 0 0 0-1-1ZM7 2a3 3 0 0 0-3 3v16a1 1 0 0 0 1.67.74l5.66-5.13a1 1 0 0 1 1.34 0l5.66 5.13a1 1 0 0 0 1.67-.75V5a3 3 0 0 0-3-3H7Z";
+const BookmarkOutlinedIcon = svg(null, path({ fillRule: "evenodd" }, BookmarkIconPaths));
+const ArrowIcon = svg(null, "M9.71069 18.2929C10.1012 18.6834 10.7344 18.6834 11.1249 18.2929L16.0123 13.4006C16.7927 12.6195 16.7924 11.3537 16.0117 10.5729L11.1213 5.68254C10.7308 5.29202 10.0976 5.29202 9.70708 5.68254C9.31655 6.07307 9.31655 6.70623 9.70708 7.09676L13.8927 11.2824C14.2833 11.6729 14.2833 12.3061 13.8927 12.6966L9.71069 16.8787C9.32016 17.2692 9.32016 17.9023 9.71069 18.2929Z");
+const CloseIcon = svg(null, "M17.3 18.7a1 1 0 0 0 1.4-1.4L13.42 12l5.3-5.3a1 1 0 0 0-1.42-1.4L12 10.58l-5.3-5.3a1 1 0 0 0-1.4 1.42L10.58 12l-5.3 5.3a1 1 0 1 0 1.42 1.4L12 13.42l5.3 5.3Z");
+const DuplicateIcon = svg(null, "M4 5a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v.18a1 1 0 1 0 2 0V5a3 3 0 0 0-3-3H5a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h.18a1 1 0 1 0 0-2H5a1 1 0 0 1-1-1V5Z", "M8 11a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3h-8a3 3 0 0 1-3-3v-8Zm2 0a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-8a1 1 0 0 1-1-1v-8Z");
+const LightiningIcon = svg(null, "M7.65 21.75a1 1 0 0 0 1.64.96l11.24-9.96a1 1 0 0 0-.66-1.75h-4.81a.5.5 0 0 1-.5-.6l1.79-8.15a1 1 0 0 0-1.64-.96L3.47 11.25A1 1 0 0 0 4.13 13h4.81c.32 0 .56.3.5.6l-1.79 8.15Z");
+const PinIcon = svg(null, "M19.38 11.38a3 3 0 0 0 4.24 0l.03-.03a.5.5 0 0 0 0-.7L13.35.35a.5.5 0 0 0-.7 0l-.03.03a3 3 0 0 0 0 4.24L13 5l-2.92 2.92-3.65-.34a2 2 0 0 0-1.6.58l-.62.63a1 1 0 0 0 0 1.42l9.58 9.58a1 1 0 0 0 1.42 0l.63-.63a2 2 0 0 0 .58-1.6l-.34-3.64L19 11l.38.38ZM9.07 17.07a.5.5 0 0 1-.08.77l-5.15 3.43a.5.5 0 0 1-.63-.06l-.42-.42a.5.5 0 0 1-.06-.63L6.16 15a.5.5 0 0 1 .77-.08l2.14 2.14Z");
+const PlusIcon = svg(null, "M13 5a1 1 0 1 0-2 0v6H5a1 1 0 1 0 0 2h6v6a1 1 0 1 0 2 0v-6h6a1 1 0 1 0 0-2h-6V5Z");
+const VectorIcon = svg(null, "M20.7 12.7a1 1 0 0 0 0-1.4l-5-5a1 1 0 1 0-1.4 1.4l3.29 3.3H4a1 1 0 1 0 0 2h13.59l-3.3 3.3a1 1 0 0 0 1.42 1.4l5-5Z");
+const DiscordIcon = svg(null, "M19.73 4.87a18.2 18.2 0 0 0-4.6-1.44c-.21.4-.4.8-.58 1.21-1.69-.25-3.4-.25-5.1 0-.18-.41-.37-.82-.59-1.2-1.6.27-3.14.75-4.6 1.43A19.04 19.04 0 0 0 .96 17.7a18.43 18.43 0 0 0 5.63 2.87c.46-.62.86-1.28 1.2-1.98-.65-.25-1.29-.55-1.9-.92.17-.12.32-.24.47-.37 3.58 1.7 7.7 1.7 11.28 0l.46.37c-.6.36-1.25.67-1.9.92.35.7.75 1.35 1.2 1.98 2.03-.63 3.94-1.6 5.64-2.87.47-4.87-.78-9.09-3.3-12.83ZM8.3 15.12c-1.1 0-2-1.02-2-2.27 0-1.24.88-2.26 2-2.26s2.02 1.02 2 2.26c0 1.25-.89 2.27-2 2.27Zm7.4 0c-1.1 0-2-1.02-2-2.27 0-1.24.88-2.26 2-2.26s2.02 1.02 2 2.26c0 1.25-.88 2.27-2 2.27Z");
 
 // common\Utils\Toast.js
 function showToast(content, type) {
@@ -741,70 +732,6 @@ const Toast = {
 	warning(content) { showToast(content, "warning"); },
 	error(content) { showToast(content, "error"); }
 };
-
-// common\Components\icons\BookmarkIcon\index.jsx
-function Bookmark$2({ filled }) {
-	return (
-		React.createElement('svg', {
-			width: "24",
-			height: "24",
-			fill: "currentColor",
-			viewBox: "0 0 24 24",
-		}, React.createElement('path', {
-			fillRule: filled ? "" : "evenodd",
-			d: "M17 4H7a1 1 0 0 0-1 1v13.74l3.99-3.61a3 3 0 0 1 4.02 0l3.99 3.6V5a1 1 0 0 0-1-1ZM7 2a3 3 0 0 0-3 3v16a1 1 0 0 0 1.67.74l5.66-5.13a1 1 0 0 1 1.34 0l5.66 5.13a1 1 0 0 0 1.67-.75V5a3 3 0 0 0-3-3H7Z",
-		}))
-	);
-}
-
-// common\Components\icons\DuplicateIcon\index.jsx
-function Duplicate() {
-	return (
-		React.createElement('svg', {
-			fill: "currentColor",
-			width: "24",
-			height: "24",
-			viewBox: "0 0 24 24",
-		}, React.createElement('path', { d: "M4 5a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v.18a1 1 0 1 0 2 0V5a3 3 0 0 0-3-3H5a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h.18a1 1 0 1 0 0-2H5a1 1 0 0 1-1-1V5Z", }), React.createElement('path', { d: "M8 11a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3h-8a3 3 0 0 1-3-3v-8Zm2 0a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-8a1 1 0 0 1-1-1v-8Z", }))
-	);
-}
-
-// common\Components\icons\LightiningIcon\index.jsx
-function Lightining() {
-	return (
-		React.createElement('svg', {
-			width: "24",
-			height: "24",
-			fill: "currentColor",
-			viewBox: "0 0 24 24",
-		}, React.createElement('path', { d: "M7.65 21.75a1 1 0 0 0 1.64.96l11.24-9.96a1 1 0 0 0-.66-1.75h-4.81a.5.5 0 0 1-.5-.6l1.79-8.15a1 1 0 0 0-1.64-.96L3.47 11.25A1 1 0 0 0 4.13 13h4.81c.32 0 .56.3.5.6l-1.79 8.15Z", }))
-	);
-}
-
-// common\Components\icons\PinIcon\index.jsx
-function Pin() {
-	return (
-		React.createElement('svg', {
-			width: "24",
-			height: "24",
-			fill: "currentColor",
-			viewBox: "0 0 24 24",
-		}, React.createElement('path', { d: "M19.38 11.38a3 3 0 0 0 4.24 0l.03-.03a.5.5 0 0 0 0-.7L13.35.35a.5.5 0 0 0-.7 0l-.03.03a3 3 0 0 0 0 4.24L13 5l-2.92 2.92-3.65-.34a2 2 0 0 0-1.6.58l-.62.63a1 1 0 0 0 0 1.42l9.58 9.58a1 1 0 0 0 1.42 0l.63-.63a2 2 0 0 0 .58-1.6l-.34-3.64L19 11l.38.38ZM9.07 17.07a.5.5 0 0 1-.08.77l-5.15 3.43a.5.5 0 0 1-.63-.06l-.42-.42a.5.5 0 0 1-.06-.63L6.16 15a.5.5 0 0 1 .77-.08l2.14 2.14Z", }))
-	);
-}
-
-// common\Components\icons\VectorIcon\index.jsx
-function Vector({ left }) {
-	return (
-		React.createElement('svg', {
-			style: { rotate: left ? "180deg" : "" },
-			width: "24",
-			height: "24",
-			fill: "currentColor",
-			viewBox: "0 0 24 24",
-		}, React.createElement('path', { d: "M20.7 12.7a1 1 0 0 0 0-1.4l-5-5a1 1 0 1 0-1.4 1.4l3.29 3.3H4a1 1 0 1 0 0 2h13.59l-3.3 3.3a1 1 0 0 0 1.42 1.4l5-5Z", }))
-	);
-}
 
 // src\Tabbys\contextmenus\TabContextMenu.jsx
 function newTabRight(id) {
@@ -824,9 +751,7 @@ function pinTab(id) {
 }
 
 function bookmarkTab(id) {
-	const state = Store.state;
-	const tab = state.getTab(id);
-	state.addBookmark(tab);
+	Store.state.addBookmark(Store.state.getTab(id));
 }
 
 function closeTab(id) {
@@ -845,19 +770,19 @@ function closeOtherTabs(id) {
 	Store.state.removeOtherTabs(id);
 }
 
-function TabContextMenu(props) {
-	const id = this.id;
+function TabContextMenu(id) {
+	const canClose = Store.state.getTabsCount() > 1;
 	const Menu = ContextMenu.buildMenu([
-		createContextMenuItem(null, "new-tab-right", () => newTabRight(id), "New Tab to Right", React.createElement(Vector, null)),
-		createContextMenuItem(null, "new-tab-left", () => newTabLeft(id), "New Tab to Left", React.createElement(Vector, { left: true, })),
+		createContextMenuItem(null, "new-tab-right", () => newTabRight(id), "New Tab to Right", React.createElement(VectorIcon, null)),
+		createContextMenuItem(null, "new-tab-left", () => newTabLeft(id), "New Tab to Left", React.createElement(VectorIcon, { style: { rotate: "180deg" }, })),
 		{ type: "separator" },
-		createContextMenuItem(null, "duplicate-tab", () => duplicateTab(id), "Duplicate Tab", React.createElement(Duplicate, null)),
-		createContextMenuItem(null, "pin-tab", () => pinTab(), "Pin Tab", React.createElement(Pin, null)),
-		createContextMenuItem(null, "bookmark-tab", () => bookmarkTab(id), "Bookmark Tab", React.createElement(Bookmark$2, null)),
-		{ type: "separator" },
-		createContextMenuItem("submenu", "close", () => closeTab(id), "Close", React.createElement(Close, null), "danger", [createContextMenuItem(null, "close-tabs-to-right", () => closeTabsToRight(id), "Close Tabs to Right", React.createElement(Vector, null), "danger"), createContextMenuItem(null, "close-tabs-to-left", () => closeTabsToLeft(id), "Close Tabs to Left", React.createElement(Vector, { left: true, }), "danger"), createContextMenuItem(null, "close-other-tabs", () => closeOtherTabs(id), "Close Other Tabs", React.createElement(Lightining, null), "danger")])
+		createContextMenuItem(null, "duplicate-tab", () => duplicateTab(id), "Duplicate Tab", React.createElement(DuplicateIcon, null)),
+		createContextMenuItem(null, "pin-tab", () => pinTab(), "Pin Tab", React.createElement(PinIcon, null)),
+		createContextMenuItem(null, "bookmark-tab", () => bookmarkTab(id), "Bookmark Tab", React.createElement(BookmarkOutlinedIcon, null)),
+		canClose && { type: "separator" },
+		canClose && createContextMenuItem("submenu", "close", () => closeTab(id), "Close", React.createElement(CloseIcon, null), "danger", [createContextMenuItem(null, "close-tabs-to-right", () => closeTabsToRight(id), "Close Tabs to Right", React.createElement(VectorIcon, null), "danger"), createContextMenuItem(null, "close-tabs-to-left", () => closeTabsToLeft(id), "Close Tabs to Left", React.createElement(VectorIcon, { style: { rotate: "180deg" }, }), "danger"), createContextMenuItem(null, "close-other-tabs", () => closeOtherTabs(id), "Close Other Tabs", React.createElement(LightiningIcon, null), "danger")])
 	]);
-	return (
+	return (props) => (
 		React.createElement(Menu, {
 			...props,
 			className: "tab-contextmenu",
@@ -901,7 +826,7 @@ function DragThis(comp) {
 	);
 }
 
-function BaseTab({ id, path, mentionCount, isTyping, unreadCount, icon, title, dragRef, dropRef, isOver, canDrop, draggedIsMe, isDragging }) {
+function BaseTab({ id, path, idDM, mentionCount, isTyping, unreadCount, icon, title, dragRef, dropRef, isOver, canDrop, draggedIsMe, isDragging }) {
 	const selected = Store(state => state.selectedId === id);
 	const isSingleTab = Store(Store.selectors.isSingleTab);
 	const tabRef = useRef(null);
@@ -917,7 +842,7 @@ function BaseTab({ id, path, mentionCount, isTyping, unreadCount, icon, title, d
 		return console.log(id, "closeHandler");
 	};
 	const contextmenuHandler = e => {
-		ContextMenu.open(e, TabContextMenu.bind({ id }), {
+		ContextMenu.open(e, TabContextMenu(id), {
 			position: "bottom",
 			align: "left"
 		});
@@ -928,11 +853,11 @@ function BaseTab({ id, path, mentionCount, isTyping, unreadCount, icon, title, d
 			ref: tabRef,
 			className: concateClassNames("tab", selected && "selected-tab", isDragging && "dragging", !draggedIsMe && canDrop && isOver && "candrop"),
 			onClick: !selected ? clickHandler : nop,
-		}, React.createElement('div', { className: concateClassNames("tab-icon", !icon && "discord-icon"), }, icon || React.createElement(Discord, null)), React.createElement('div', { className: "tab-title ellipsis", }, title || path), !!mentionCount && React.createElement('div', { className: "badge ping", }, mentionCount), !!unreadCount && React.createElement('div', { className: "badge unread", }, unreadCount), isTyping && React.createElement(TypingDots, { dotRadius: 3.5, }), !isSingleTab && (
+		}, React.createElement('div', { className: concateClassNames("tab-icon", !icon && "discord-icon"), }, icon || React.createElement(DiscordIcon, null)), React.createElement('div', { className: "tab-title ellipsis", }, title || path), !!mentionCount && React.createElement('div', { className: "badge ping", }, mentionCount), !idDM && !!unreadCount && React.createElement('div', { className: "badge unread", }, unreadCount), isTyping && React.createElement(TypingDots, { dotRadius: 3.5, }), !isSingleTab && (
 			React.createElement('div', {
 				className: "tab-close",
 				onClick: closeHandler,
-			}, React.createElement(Close, null))
+			}, React.createElement(CloseIcon, null))
 		))
 	);
 }
@@ -942,7 +867,7 @@ const BaseTab$1 = DragThis(BaseTab);
 const ICON_SIZE$1 = 80;
 
 function ChannelTab({ id, channelId, path }) {
-	const { icon, channelName } = useChannel(channelId, ICON_SIZE$1);
+	const { icon, channelName, channel } = useChannel(channelId, ICON_SIZE$1);
 	const channelUnreadState = useChannelState(channelId);
 	return (
 		React.createElement(BaseTab$1, {
@@ -950,6 +875,7 @@ function ChannelTab({ id, channelId, path }) {
 			path: path,
 			icon: icon,
 			title: channelName,
+			idDM: channel?.isDM?.(),
 			...channelUnreadState,
 		})
 	);
@@ -1000,22 +926,6 @@ const Tab = React.memo(({ id }) => {
 	);
 });
 
-// common\Components\icons\ArrowIcon\index.jsx
-function Arrow() {
-	return (
-		React.createElement('svg', {
-			width: 24,
-			height: 24,
-			viewBox: "0 0 24 24",
-			fill: "none",
-			xmlns: "http://www.w3.org/2000/svg",
-		}, React.createElement('path', {
-			d: "M9.71069 18.2929C10.1012 18.6834 10.7344 18.6834 11.1249 18.2929L16.0123 13.4006C16.7927 12.6195 16.7924 11.3537 16.0117 10.5729L11.1213 5.68254C10.7308 5.29202 10.0976 5.29202 9.70708 5.68254C9.31655 6.07307 9.31655 6.70623 9.70708 7.09676L13.8927 11.2824C14.2833 11.6729 14.2833 12.3061 13.8927 12.6966L9.71069 16.8787C9.32016 17.2692 9.32016 17.9023 9.71069 18.2929Z",
-			fill: "#ccc",
-		}))
-	);
-}
-
 // common\Utils\Hooks.js
 const LengthStateEnum = {
 	INCREASED: "INCREASED",
@@ -1038,7 +948,7 @@ function useNumberWatcher(num) {
 function getFirstAndLastChild(el) {
 	const tabListChildren = Array.from(el.children);
 	const length = tabListChildren.length;
-	if (length < 1) return;
+	if (length < 1) return [];
 	const firstTab = tabListChildren[0];
 	const lastTab = tabListChildren[length - 1];
 	return [firstTab, lastTab];
@@ -1188,7 +1098,7 @@ function TabsScroller({ children }) {
 				ref: displayStartScrollRef,
 				onClick: handleStartScrollClick,
 				className: concateClassNames("scrollBtn left-arrow", !leftScrollBtn && "hidden"),
-			}, React.createElement(Arrow, null)), React.createElement('div', {
+			}, React.createElement(ArrowIcon, { style: { rotate: "180deg" }, })), React.createElement('div', {
 				className: "tabs-list",
 				ref: tabsRef,
 			}, children)
@@ -1197,7 +1107,7 @@ function TabsScroller({ children }) {
 				ref: displayEndScrollRef,
 				onClick: handleEndScrollClick,
 				className: concateClassNames("scrollBtn right-arrow", !rightScrollBtn && "hidden"),
-			}, React.createElement(Arrow, null))
+			}, React.createElement(ArrowIcon, null))
 		)
 	);
 }
@@ -1227,7 +1137,7 @@ function TabBar({ leading, trailing }) {
 			, React.createElement('div', {
 				className: "new-tab",
 				onClick: newTabHandler,
-			}, React.createElement(Plus, null))
+			}, React.createElement(PlusIcon, null))
 		), trailing)
 	);
 }
@@ -1238,14 +1148,15 @@ function deleteBookmark(id) {
 }
 
 function openInNewTab(id) {
-	Store.state.newTab(buildTab({ id }));
+	Store.state.newTab(buildTab(Store.state.getBookmark(id)));
 }
 
 function BookmarkContextmenu(props) {
 	const id = this.id;
 	const Menu = ContextMenu.buildMenu([
-		createContextMenuItem(null, "open-bookmark-in-new-tab", () => openInNewTab(id), "Open in new Tab", React.createElement(Plus, null)),
-		createContextMenuItem(null, "remove-bookmark", () => deleteBookmark(id), "Remove Bookmark", React.createElement(Close, null), "danger"),
+		createContextMenuItem(null, "open-bookmark-in-new-tab", () => openInNewTab(id), "Open in new Tab", React.createElement(PlusIcon, null)),
+		{ type: "separator" },
+		createContextMenuItem(null, "remove-bookmark", () => deleteBookmark(id), "Remove Bookmark", React.createElement(CloseIcon, null), "danger"),
 	]);
 	return React.createElement(Menu, { ...props, className: "bookmark-contextmenu", });
 }
@@ -1254,8 +1165,8 @@ function BookmarkContextmenu(props) {
 function BaseBookmark({ id, path, icon, title, className }) {
 	const clickHandler = e => {
 		e.stopPropagation();
-		Store.state.addTab(buildTab({ path }));
-		return console.log(id, "clickHandler");
+		if (!path) return console.log(id, "no path");
+		transitionTo(path);
 	};
 	const contextmenuHandler = e => {
 		ContextMenu.open(e, BookmarkContextmenu.bind({ id }), {
@@ -1268,7 +1179,7 @@ function BaseBookmark({ id, path, icon, title, className }) {
 			className: concateClassNames("bookmark", className && className),
 			onContextMenu: contextmenuHandler,
 			onClick: clickHandler,
-		}, React.createElement('div', { className: concateClassNames("bookmark-icon", !icon && "discord-icon"), }, icon || React.createElement(Discord, null)), React.createElement('div', { className: "bookmark-title ellipsis", }, title || path))
+		}, React.createElement('div', { className: concateClassNames("bookmark-icon", !icon && "discord-icon"), }, icon || React.createElement(DiscordIcon, null)), React.createElement('div', { className: "bookmark-title ellipsis", }, title || path))
 	);
 }
 
@@ -1304,10 +1215,11 @@ const Bookmark$1 = React.memo(({ id, className }) => {
 // src\Tabbys\components\BookmarkBar\index.jsx
 // 	const overflowLimit = window.innerWidth * 0.95;
 function isVisible(el) {
+	const elParentRect = el.parentElement.getBoundingClientRect();
 	const rect = el.getBoundingClientRect();
 	const elemRight = rect.right;
 	const elemLeft = rect.left;
-	return elemLeft >= 0 && elemRight <= el.parentElement.clientWidth;
+	return elemLeft >= 0 && elemRight <= elParentRect.width;
 }
 
 function BookmarkBar() {
@@ -1325,7 +1237,7 @@ function BookmarkBar() {
 			if (childrenLengthState === LengthStateEnum.DECREASED && !isOverflowing) return;
 			const childrenNodes = Array.from(bookmarksNode.children);
 			const indexOfFirstNotFullyVisibleChild = childrenNodes.findIndex(a => !isVisible(a));
-			setOverflowIndex(indexOfFirstNotFullyVisibleChild);
+			setOverflowIndex(Math.floor(indexOfFirstNotFullyVisibleChild / 2));
 		});
 		handleMutation();
 		const resizeObserver = new ResizeObserver(handleMutation);
@@ -1344,6 +1256,7 @@ function BookmarkBar() {
 			React.createElement(Bookmark$1, {
 				key: a.id,
 				id: a.id,
+				divider: index !== 0,
 				className: concateClassNames(isOverflowing && index >= overflowIndex && "hidden-visually"),
 			})
 		])), isOverflowing && (
@@ -1359,7 +1272,7 @@ function BookmarkBar() {
 						}, overflowBookmarks.map(a => [
 							React.createElement(Bookmark$1, {
 								key: a.id,
-								bookmarkId: a.id,
+								id: a.id,
 							})
 						]))
 					);
@@ -1369,7 +1282,7 @@ function BookmarkBar() {
 				React.createElement('div', {
 					className: "bookmarks-overflow",
 					onClick: e.onClick,
-				}, React.createElement(Arrow, null))
+				}, React.createElement(ArrowIcon, null))
 			))
 		))
 	);
@@ -1383,11 +1296,12 @@ function App({ leading, trailing }) {
 }
 
 // src\Tabbys\patches\patchTitleBar.jsx
-const TitleBar = getModuleAndKey(Filters.byStrings("windowKey", "title"), { searchExports: true });
+const TitleBar = getModuleAndKey(Filters.byStrings("PlatformTypes", "windowKey", "title"), { searchExports: true });
 const patchTitleBar = () => {
 	const { module, key } = TitleBar;
 	if (!module || !key) return Logger.patch("patchTitleBar");
-	Patcher.after(module, key, (_, __, ret) => {
+	Patcher.after(module, key, (_, [props], ret) => {
+		if (props.windowKey === "DISCORD_CHANNEL_CALL_POPOUT") return ret;
 		const [, leading, trailing] = ret?.props?.children || [];
 		return (
 			React.createElement(ErrorBoundary, null, React.createElement(App, {
@@ -1398,6 +1312,77 @@ const patchTitleBar = () => {
 	});
 };
 
+// common\DiscordModules\Enums.js
+const ChannelTypeEnum = getModule(Filters.byKeys("GUILD_TEXT", "DM"), { searchExports: true }) || {
+	"GUILD_CATEGORY": 4,
+	"0": "GUILD_TEXT",
+	"1": "DM",
+	"2": "GUILD_VOICE",
+	"3": "GROUP_DM",
+	"4": "GUILD_CATEGORY",
+	"5": "GUILD_ANNOUNCEMENT",
+	"6": "GUILD_STORE",
+	"10": "ANNOUNCEMENT_THREAD",
+	"11": "PUBLIC_THREAD",
+	"12": "PRIVATE_THREAD",
+	"13": "GUILD_STAGE_VOICE",
+	"14": "GUILD_DIRECTORY",
+	"15": "GUILD_FORUM",
+	"16": "GUILD_MEDIA",
+	"17": "LOBBY",
+	"18": "DM_SDK",
+	"10000": "UNKNOWN",
+};
+
+// src\Tabbys\patches\patchContextMenu.jsx
+function channelPath(...args) {
+	return `/channels/${args.filter(Boolean).join("/")}`;
+}
+
+function getPath(channel) {
+	switch (channel.type) {
+		case ChannelTypeEnum.GUILD_ANNOUNCEMENT:
+		case ChannelTypeEnum.GUILD_FORUM:
+		case ChannelTypeEnum.GUILD_MEDIA:
+		case ChannelTypeEnum.GUILD_TEXT:
+			return channelPath(channel.guild_id, channel.id);
+		case ChannelTypeEnum.ANNOUNCEMENT_THREAD:
+		case ChannelTypeEnum.PUBLIC_THREAD:
+		case ChannelTypeEnum.PRIVATE_THREAD:
+			return channelPath(channel.guild_id, channel.parent_id, "threads", channel.id);
+		case ChannelTypeEnum.DM:
+		case ChannelTypeEnum.GROUP_DM:
+			return channelPath("@me", channel.id);
+	}
+}
+const patchContextMenu = () => {
+	return ["thread-context", "channel-context", "user-context"].map(context =>
+		ContextMenu.patch(context, (retVal, { channel, targetIsUser }) => {
+			if (!channel || targetIsUser) return;
+			const path = getPath(channel);
+			retVal.props.children.push(
+				ContextMenu.buildItem({ type: "separator" }),
+				ContextMenu.buildItem({
+					type: "submenu",
+					id: `${config.info.name}-channel-options`,
+					label: React.createElement(MenuLabel, { label: config.info.name, }),
+					items: [{
+							action: () => Store.state.newTab(buildTab({ path })),
+							icon: PlusIcon,
+							label: "Open in new Tab"
+						},
+						{
+							action: () => Store.state.addBookmark(buildTab({ path })),
+							icon: BookmarkOutlinedIcon,
+							label: "Bookmark channel"
+						}
+					]
+				})
+			);
+		})
+	);
+};
+
 // src\Tabbys\index.jsx
 class Tabbys {
 	start() {
@@ -1406,6 +1391,7 @@ class Tabbys {
 			Store.init();
 			patchTitleBar();
 			reRender('div[data-windows="true"] > *');
+			this.unpatchContextMenu = patchContextMenu();
 		} catch (e) {
 			Logger.error(e);
 		}
@@ -1415,403 +1401,14 @@ class Tabbys {
 		DOM.removeStyle();
 		Patcher.unpatchAll();
 		reRender('div[data-windows="true"] > *');
+		this.unpatchContextMenu?.forEach?.(p => p());
+		this.unpatchContextMenu = null;
 	}
 }
 
 module.exports = Tabbys;
 
 const css = `
-.channel-tabs-divider{
-	height:1px;
-	background:
-	linear-gradient(to right, #0000  0, #ccc3 25%) left center/50% no-repeat,
-	linear-gradient(to left, #0000  0, #ccc3 25%) right center/50% no-repeat;
-}
-
-:root{
-	/* --custom-app-top-bar-height:30px; */
-	--tab-height:30px;
-	--bookmark-container-height:25px;
-	--bookmark-height:25px;
-	
-	--active-tab-bg:#353333;
-	--hover-tab-bg:#7b7b7b;
-	--selected-tab-bg:#3b3b41;
-
-	--close-btn-hover-bg:#595959;
-	--close-btn-active-bg:#262626;
-	
-	--ping:rgb(218, 62, 68);
-	--unread:rgb(88, 101, 242);
-}
-
-.channel-tabs-container * {
-	box-sizing:border-box;
-}
-
-
-div:has(> .channel-tabs-container):not(#a) {
-	grid-template-rows: [top] auto [titleBarEnd] min-content [noticeEnd] 1fr [end];
-}
-
-.channel-tabs-container{
-	grid-column:1/-1;
-	/* position:relative; */
-	user-select: none;
-	line-height:1.4;
-	margin-bottom:2px;
-	gap:2px;
-	display:flex;
-	flex-direction:column;
-	-webkit-app-region: drag;
-	/* zoom:2; */
-}
-
-.channel-tabs-container > .tabbar{
-	display:flex;
-	-webkit-app-region: drag;
-}
-
-.bookmarkbar{
-	/* height:var(--bookmark-container-height); */
-	-webkit-app-region: drag;
-	margin-top:2px;
-	/* background:lime; */
-	display:flex;
-	flex:0 0 auto;
-	align-items:center;
-}
-
-.bookmarks-overflow{
-	flex:0 0 auto;
-	/* flex:0 0 auto; */
-	display:flex;
-	padding:2px;
-	width:20px;
-	height:20px;
-	color:white;
-	margin:0 2px;
-	z-index:988;
-	-webkit-app-region: no-drag;
-}
-
-.bookmarks-overflow:hover{
-	background:var(--hover-tab-bg);
-}
-
-.bookmarks-overflow:active{
-	background:var(--active-tab-bg);
-}
-
-.bookmarks-overflow-popout{
-	display:flex;
-	flex-direction:column;
-	background-color: var(--background-tertiary);
-	border-radius:8px;
-	gap:5px;
-	padding:5px;
-	overflow:auto;
-	max-height:50vh;
-}
-
-.bookmarks-overflow-popout::-webkit-scrollbar { 
-	height: 8px; 
-	width: 8px; 
-}
-
-.bookmarks-overflow-popout::-webkit-scrollbar-track { background-color: var(--scrollbar-thin-track); border-top-style: ; border-top-width: ; border-right-style: ; border-right-width: ; border-bottom-style: ; border-bottom-width: ; border-left-style: ; border-left-width: ; border-image-source: ; border-image-slice: ; border-image-width: ; border-image-outset: ; border-image-repeat: ; border-color: var(--scrollbar-thin-track); }
-
-.bookmarks-overflow-popout::-webkit-scrollbar-thumb { background-clip: padding-box; background-color: var(--scrollbar-thin-thumb); border: 2px solid transparent; border-radius: 4px; min-height: 40px; }
-
-.bookmarks-overflow-popout::-webkit-scrollbar-corner { background-color: transparent; }
-
-.bookmarks-container{
-	flex:1 0 0;
-	/* margin-right:auto; */
-	min-width:0;
-	overflow:hidden;
-	display:flex;
-	gap:2px;
-	-webkit-app-region: no-drag;
-	
-}
-
-.bookmark{
-	flex:0 1 auto;
-	/* min-width:100px; */
-	line-height:1.3;
-	display:flex;
-	align-items:center;
-	gap:5px;
-	padding:5px;
-	height:var(--bookmark-height);
-	color:white;
-	border-radius:5px;
-	cursor: pointer;
-	transform: translate(0);
-}
-
-.bookmark:hover{
-	background:#353333;
-}
-
-.bookmark:active{
-	background:#353333;
-}
-
-.bookmark-title:not(.bookmarks-overflow-popout .bookmark-title){
-	font-size:14px;
-	color:#a7a7a7;
-}
-
-.bookmark-icon{
-	flex:0 0 auto;
-	display:flex;
-	--d:calc(var(--tab-height) * .6);
-	width:var(--d);
-	height:var(--d);
-	align-items:center;
-	justify-content:center;
-	border-radius:50%;
-	
-}
-
-.bookmark-icon.discord-icon{
-	color:white;
-	background: #6361f8;
-}
-
-.tabs-container {
-	display: flex;
-	align-items: center;
-	align-self:flex-start;
-	min-width:0;
-	gap:2px;
-	position:relative;
-	margin-right:auto;
-	-webkit-app-region: no-drag;
-}
-
-.bookmarks-overflow-popout img,
-.bookmarks-overflow-popout svg,
-.channel-tabs-container svg,
-.channel-tabs-container img{
-	max-width:100%;
-	max-height:100%;
-}
-
-.tabs-scroller {
-	display: flex;
-	min-width:0;
-	position:relative;
-}
-
-
-.tabs-list {
-	display: flex;
-	overflow:auto;
-	scrollbar-width:none;
-	gap:5px;
-}
-
-.new-tab{
-	flex:0 0 auto;
-	display:flex;
-	padding:2px;
-	width:20px;
-	height:20px;
-	color:white;
-	/* margin:0 5px; */
-	border-radius:50%;
-}
-
-.new-tab:hover{
-	background:var(--hover-tab-bg);
-}
-
-.new-tab:active{
-	background:var(--active-tab-bg);
-}
-
-.scrollBtn{
-	height:var(--tab-height);
-	background:#7b7b7b;
-	padding:5px;
-	border-radius:8px;
-	z-index:99;
-	position:absolute;
-	top:50%;
-	translate:0 -50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-	aspect-ratio:1;
-	cursor: pointer;
-}
-
-.left-arrow{
-	left:0;
-	rotate:180deg;
-}
-
-.right-arrow{
-	right:0;
-}
-
-.scrollBtn.hidden{
-	translate:-999px -999px;
-}
-
-
-.tab{
-	flex:0 1 auto;
-	min-width:150px;
-	/* width:100px; */
-	display:flex;
-	align-items:center;
-	gap:5px;
-	padding:2px 8px;
-	height:var(--tab-height);
-	color:white;
-	border-radius:5px;
-	cursor: pointer;
-	transform: translate(0);
-}
-.badge{
-	background:var(--brand-500);
-
-	border-radius:50%;
-	
-	display:flex;
-	justify-content:center;
-	align-items:center;
-	
-	width:16px;
-	height:16px;
-	min-height: 16px;
-	min-width: 16px;
-	font-size: 12px;
-	font-weight: 700;
-	letter-spacing: .02em;
-	line-height: 1.4;
-	text-transform: uppercase;
-
-}
-
-.badge.ping{
-	background-color: var(--ping);
-}
-
-.badge.unread{
-	background-color: var(--unread);
-}
-
-
-.dragging{
-	opacity:.5;
-}
-
-.candrop{
-	background:green !important;
-}
-
-.candrop:after{
-	content:"";
-	border-radius:inherit;
-	position:absolute;
-	inset:0;
-	border:1px solid lime;
-}
-
-
-.tab-div{
-	min-width:2px;
-	background:#ccc5;
-	height:calc(var(--tab-height) * .8);
-	margin: auto 3px;
-}
-
-.selected-tab{
-	background:var(--selected-tab-bg);
-}
-
-
-.tab:not(.selected-tab):hover{
-	background:var(--hover-tab-bg);
-}
-
-.tab:not(.selected-tab):active:has(.tab-close:not(:active)){
-	background:var(--active-tab-bg);
-}
-
-.tab-icon{
-	flex:0 0 auto;
-	display:flex;
-	width:18px;
-	height:18px;
-	align-items:center;
-	justify-content:center;
-	border-radius:50%;
-}
-
-.bookmark-icon > svg,
-.bookmark-icon > img,
-.tab-icon > svg,
-.tab-icon > img{
-	flex:1 0 0;
-	border-radius:50%;
-}
-
-.tab-icon.discord-icon{
-	color:white;
-	background: #6361f8;
-}
-
-.bookmark-icon.discord-icon > svg,
-.tab-icon.discord-icon > svg{
-	width: 65%;
-	height: 65%;
-}
-
-.tab-title{
-	flex:1 0 0;
-	min-width:0;
-	font-size:14px;
-	mask:linear-gradient(to right, #000 80%, #0000 98%, #0000) no-repeat;
-}
-
-.tab-close{
-	z-index:5;
-	flex:0 0 auto;
-	display:flex;
-	padding:3px;
-	width:16px;
-	height:16px;
-	border-radius:50%;
-}
-
-.tab-close:hover{
-	background:var(--close-btn-hover-bg);
-}
-
-.tab-close:active{
-	background:var(--close-btn-active-bg);
-}
-
-.ellipsis{
-	white-space:nowrap;
-	overflow:hidden;
-	text-overflow:ellipsis;
-}
-
-.Tabbys-menu-label-icon svg{
-	width:18px;
-	height:18px;
-}
-
-.hidden-visually{
-	translate:0 -9999px;
-}
 
 
 
