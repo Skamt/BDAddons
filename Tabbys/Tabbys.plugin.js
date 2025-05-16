@@ -479,10 +479,10 @@ const store = (set, get) => ({
 	setLastSelectedIdAfterNewTab(id) {
 		set({ lastSelectedIdAfterNewTab: id });
 	},
-	setTabs(list = []) {
+	setTabs(list = [], selectedId) {
 		if (list.length === 0) return;
 		tabsList.setList(list);
-		set({ tabs: tabsList.list, selectedId: tabsList.list[0].id });
+		set({ tabs: tabsList.list, selectedId: selectedId || tabsList.list[0].id });
 	},
 	addTab(tab) {
 		tabsList.addItem(tab);
@@ -589,23 +589,66 @@ const { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelecto
 const subscribeWithSelector = getModule(Filters.byStrings("equalityFn", "fireImmediately"), { searchExports: true });
 const zustand$1 = zustand;
 
+// node_modules\deep-object-diff\mjs\utils.js
+const isDate = d => d instanceof Date;
+const isEmpty = o => Object.keys(o).length === 0;
+const isObject = o => o != null && typeof o === 'object';
+const hasOwnProperty = (o, ...args) => Object.prototype.hasOwnProperty.call(o, ...args);
+const isEmptyObject = (o) => isObject(o) && isEmpty(o);
+const makeObjectWithoutPrototype = () => Object.create(null);
+
+// node_modules\deep-object-diff\mjs\diff.js
+const diff = (lhs, rhs) => {
+	if (lhs === rhs) return {};
+	if (!isObject(lhs) || !isObject(rhs)) return rhs;
+	const deletedValues = Object.keys(lhs).reduce((acc, key) => {
+		if (!hasOwnProperty(rhs, key)) {
+			acc[key] = undefined;
+		}
+		return acc;
+	}, makeObjectWithoutPrototype());
+	if (isDate(lhs) || isDate(rhs)) {
+		if (lhs.valueOf() == rhs.valueOf()) return {};
+		return rhs;
+	}
+	return Object.keys(rhs).reduce((acc, key) => {
+		if (!hasOwnProperty(lhs, key)) {
+			acc[key] = rhs[key];
+			return acc;
+		}
+		const difference = diff(lhs[key], rhs[key]);
+		if (isEmptyObject(difference) && !isDate(difference) && (isEmptyObject(lhs[key]) || !isEmptyObject(rhs[key])))
+			return acc;
+		acc[key] = difference;
+		return acc;
+	}, deletedValues);
+};
+const diff$1 = diff;
+
 // src\Tabbys\Store\index.js
 const Store = Object.assign(
 	zustand$1(
 		subscribeWithSelector((setState, get) => {
 			const set = args => {
+				const oldState = get();
 				setState(args);
 				const state = get();
+				console.log("diff", diff$1(oldState, state));
 				const user = UserStore.getCurrentUser();
 				const data = Object.entries(state)
 					.filter(([, val]) => typeof val !== "function")
 					.reduce((acc, [key, val]) => {
+						if (key === "user") return acc;
 						acc[key] = val;
 						return acc;
 					}, {});
 				Data.save(user.id, data);
 			};
 			return {
+				user: null,
+				setUser(user) {
+					set({ user });
+				},
 				...tabsStore.store(set, get),
 				...bookmarksStore.store(set, get)
 			};
@@ -639,14 +682,16 @@ Store.subscribe(Store.selectors.selectedId, () => {
 
 function hydrateStore() {
 	const user = UserStore.getCurrentUser();
+	if (Store.state.user?.id === user.id) return;
 	const userData = Data.load(user.id) || {};
-	Store.state.setTabs(userData.tabs || [buildTab({ path: location.pathname })]);
+	Store.state.setUser(user);
+	Store.state.setTabs(userData.tabs || [buildTab({ path: location.pathname })], userData.selectedId);
 	Store.state.setBookmarks(userData.bookmarks || []);
-	Store.state.setSelectedId(userData.selectedId);
 	Store.state.setLastSelectedIdAfterNewTab(userData.lastSelectedIdAfterNewTab);
 }
 
 function onLocationChange(e) {
+	console.log(e);
 	const pathname = getPathName(e.destination.url);
 	if (!pathname) return;
 	Store.state.setTab(Store.state.selectedId, { path: pathname });
@@ -790,6 +835,21 @@ function TabContextMenu(id) {
 	);
 }
 
+// src\Tabbys\components\Badge\index.jsx
+function m(e) {
+	return e < 10 ? 13 : e < 100 ? 19 : 27;
+}
+
+function g(e) {
+	return e < 1e3 ? "".concat(e) : "".concat(Math.min(Math.floor(e / 1e3), 9), "k+");
+}
+const Badge = ({ count, type }) => {
+	return React.createElement('div', {
+		style: { width: m(count) },
+		className: concateClassNames("badge", type),
+	}, g(count));
+};
+
 // src\Tabbys\components\Tab\BaseTab.jsx
 const filter = Filters.byStrings("dotRadius", "dotPosition");
 const TypingDots = getModule(a => a?.type?.render && filter(a.type.render), { searchExports: true });
@@ -853,7 +913,7 @@ function BaseTab({ id, path, idDM, mentionCount, isTyping, unreadCount, icon, ti
 			ref: tabRef,
 			className: concateClassNames("tab", selected && "selected-tab", isDragging && "dragging", !draggedIsMe && canDrop && isOver && "candrop"),
 			onClick: !selected ? clickHandler : nop,
-		}, React.createElement('div', { className: concateClassNames("tab-icon", !icon && "discord-icon"), }, icon || React.createElement(DiscordIcon, null)), React.createElement('div', { className: "tab-title ellipsis", }, title || path), !!mentionCount && React.createElement('div', { className: "badge ping", }, mentionCount), !idDM && !!unreadCount && React.createElement('div', { className: "badge unread", }, unreadCount), isTyping && React.createElement(TypingDots, { dotRadius: 3.5, }), !isSingleTab && (
+		}, React.createElement('div', { className: concateClassNames("tab-icon", !icon && "discord-icon"), }, icon || React.createElement(DiscordIcon, null)), React.createElement('div', { className: "tab-title ellipsis", }, title || path), !!mentionCount && React.createElement(Badge, { count: mentionCount, type: "ping", }), !idDM && !!unreadCount && React.createElement(Badge, { count: unreadCount, type: "unread", }), isTyping && React.createElement(TypingDots, { dotRadius: 2.5, }), !isSingleTab && (
 			React.createElement('div', {
 				className: "tab-close",
 				onClick: closeHandler,
