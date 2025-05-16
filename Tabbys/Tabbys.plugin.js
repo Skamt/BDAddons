@@ -595,9 +595,9 @@ const Store = Object.assign(
 		subscribeWithSelector((setState, get) => {
 			const set = args => {
 				setState(args);
-				const newState = get();
+				const state = get();
 				const user = UserStore.getCurrentUser();
-				const data = Object.entries(newState)
+				const data = Object.entries(state)
 					.filter(([, val]) => typeof val !== "function")
 					.reduce((acc, [key, val]) => {
 						acc[key] = val;
@@ -641,7 +641,7 @@ function hydrateStore() {
 	const user = UserStore.getCurrentUser();
 	const userData = Data.load(user.id) || {};
 	Store.state.setTabs(userData.tabs || [buildTab({ path: location.pathname })]);
-	Store.state.setBookmarks(userData.bookmarks);
+	Store.state.setBookmarks(userData.bookmarks || []);
 	Store.state.setSelectedId(userData.selectedId);
 	Store.state.setLastSelectedIdAfterNewTab(userData.lastSelectedIdAfterNewTab);
 }
@@ -1384,6 +1384,17 @@ const patchContextMenu = () => {
 };
 
 // src\Tabbys\index.jsx
+function disableGoHomeAfterSwitching() {
+	function interceptor(e) {
+		if (e.type !== "LOGOUT") return;
+		e.goHomeAfterSwitching = false;
+	}
+	Dispatcher.addInterceptor(interceptor);
+	return () => {
+		const index = Dispatcher._interceptors.indexOf(interceptor);
+		Dispatcher._interceptors.splice(index, 1);
+	}
+}
 class Tabbys {
 	start() {
 		try {
@@ -1392,6 +1403,7 @@ class Tabbys {
 			patchTitleBar();
 			reRender('div[data-windows="true"] > *');
 			this.unpatchContextMenu = patchContextMenu();
+			this.removeDispatchInterceptor = disableGoHomeAfterSwitching();
 		} catch (e) {
 			Logger.error(e);
 		}
@@ -1401,6 +1413,8 @@ class Tabbys {
 		DOM.removeStyle();
 		Patcher.unpatchAll();
 		reRender('div[data-windows="true"] > *');
+		this.removeDispatchInterceptor?.();
+		this.removeDispatchInterceptor = null;
 		this.unpatchContextMenu?.forEach?.(p => p());
 		this.unpatchContextMenu = null;
 	}
