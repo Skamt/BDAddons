@@ -1,14 +1,16 @@
 import bookmarksStore from "./bookmarksStore";
 import tabsStore from "./tabsStore";
+import { Data } from "@Api";
 import { buildTab } from "@/utils";
 import { Dispatcher } from "@Discord/Modules";
 import { transitionTo } from "@Discord/Modules";
 import zustand, { subscribeWithSelector } from "@Discord/zustand";
+import UserStore from "@Stores/UserStore";
 import ChannelStore from "@Stores/ChannelStore";
 import GuildStore from "@Stores/GuildStore";
 import { getPathName } from "@Utils";
 
-function generateTabs(n=5) {
+function generateTabs(n = 5) {
 	const guildIds = GuildStore.getGuildIds();
 	// biome-ignore lint/complexity/useFlatMap: <explanation>
 	const paths = guildIds
@@ -29,20 +31,35 @@ function generateTabs(n=5) {
 	return res;
 }
 
+import { diff } from "deep-object-diff";
+
+
 export const Store = Object.assign(
 	zustand(
-		subscribeWithSelector((set, get) => {
-			// const set = args => {
-			// 	console.log("applying", args);
-			// 	const oldState = get();
-			// 	setState(args);
-			// 	const newState = get();
-			// 	console.log("old state", oldState);
-			// 	console.log("new state", newState);
-			// 	console.log("diff", diff(oldState, newState));
-			// };
+		subscribeWithSelector((setState, get) => {
+			const set = args => {
+				const oldState = get();
+				setState(args);
+				const state = get();
+				console.log("diff", diff(oldState, state));
+
+
+				const user = UserStore.getCurrentUser();
+				const data = Object.entries(state)
+					.filter(([, val]) => typeof val !== "function")
+					.reduce((acc, [key, val]) => {
+						if(key === "user") return acc;
+						acc[key] = val;
+						return acc;
+					}, {});
+				Data.save(user.id, data);
+			};
 
 			return {
+				user: null,
+				setUser(user) {
+					set({ user });
+				},
 				...tabsStore.store(set, get),
 				...bookmarksStore.store(set, get)
 			};
@@ -50,27 +67,17 @@ export const Store = Object.assign(
 	),
 	{
 		init() {
-			Store.state.setTabs([{id: crypto.randomUUID(),path:'/channels/@me'},...generateTabs()]);
-			Store.state.setBookmarks(generateTabs());
-			// Store.state.setTabs([
-			// 	buildTab({
-			// 		path: "/channels/@me"
-			// 	})
-			// ]);
+			hydrateStore();
 			window.navigation.addEventListener("navigate", onLocationChange);
-			// Dispatcher.subscribe("LOGIN", onUserLogin);
-			Dispatcher.subscribe("LOGOUT", onUserLogout);
+			Dispatcher.subscribe("CONNECTION_OPEN", hydrateStore);
 		},
 		dispose() {
-			Store.state.clearTabs();
-			Store.state.clearBookmarks();
 			window.navigation.removeEventListener("navigate", onLocationChange);
-			// Dispatcher.unsubscribe("LOGIN", onUserLogin);
-			Dispatcher.unsubscribe("LOGOUT", onUserLogout);
+			Dispatcher.unsubscribe("CONNECTION_OPEN", hydrateStore);
 		},
 		selectors: {
 			...tabsStore.selectors,
-			...bookmarksStore.selectors,
+			...bookmarksStore.selectors
 		}
 	}
 );
@@ -81,37 +88,26 @@ Object.defineProperty(Store, "state", {
 	get: () => Store.getState()
 });
 
-
 Store.subscribe(Store.selectors.selectedId, () => {
 	const selectedTab = Store.state.getCurrentlySelectedTab();
 	if (!selectedTab) return;
 	transitionTo(selectedTab.path);
 });
 
-
+function hydrateStore() {
+	const user = UserStore.getCurrentUser();
+	if (Store.state.user?.id === user.id) return;
+	const userData = Data.load(user.id) || {};
+	Store.state.setUser(user);
+	Store.state.setTabs(userData.tabs || [buildTab({ path: location.pathname })], userData.selectedId);
+	Store.state.setBookmarks(userData.bookmarks || []);
+	Store.state.setLastSelectedIdAfterNewTab(userData.lastSelectedIdAfterNewTab);
+}
 
 function onLocationChange(e) {
+	console.log(e);
 	const pathname = getPathName(e.destination.url);
 	if (!pathname) return;
 
 	Store.state.setTab(Store.state.selectedId, { path: pathname });
-}
-
-// function onUserLogin() {
-// setTimeout(() => {
-// 	Store.state.setTabs(generateTabs());
-// }, 5 * 1000);
-// }
-
-function onUserLogout() {
-	Store.state.setTabs([
-		buildTab({
-			path: "/channels/@me"
-		})
-	]);
-	Store.state.setBookmarks([
-		buildTab({
-			path: "/channels/@me"
-		})
-	]);
 }

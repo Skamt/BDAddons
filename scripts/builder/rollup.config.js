@@ -75,8 +75,16 @@ module.exports = function getConfig(inputPath, releasePath, devPath, config) {
 			nodeResolve({ extensions: [".json", ".js", ".jsx", ".css"] }),
 			alias(aliasesObj(inputPath)),
 			re({
-				include: "**/DiscordModules/**",
+				include: "**/common/**",
 				patterns: [
+					{
+						test: "svg(",
+						replace: "/*@__PURE__*/ svg("
+					},
+					{
+						test: "path(",
+						replace: "/*@__PURE__*/ path("
+					},
 					{
 						test: "getModule(",
 						replace: "/*@__PURE__*/ getModule("

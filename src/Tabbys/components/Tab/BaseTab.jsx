@@ -1,12 +1,15 @@
+import { getModule,Filters } from "@Webpack";
 import { ContextMenu } from "@Api";
 import { Store } from "@/Store";
-import CloseIcon from "@Components/icons/CloseIcon";
 import React, { useRef } from "@React";
 import { nop, concateClassNames } from "@Utils";
-import DiscordIcon from "@Components/icons/DiscordIcon";
+import { CloseIcon, DiscordIcon } from "@Components/Icon";
 import TabContextMenu from "@/contextmenus/TabContextMenu";
 import { DragSource, DropTarget } from "@Discord/Modules";
+import Badge from "../Badge";
 
+const filter = Filters.byStrings("dotRadius", "dotPosition");
+const TypingDots = getModule(a => a?.type?.render && filter(a.type.render), {searchExports:true});
 
 function DragThis(comp) {
 	return DropTarget(
@@ -31,7 +34,7 @@ function DragThis(comp) {
 			"TAB",
 			{
 				beginDrag(props) {
-					return { id: props.id };
+					return { ...props };
 				}
 			},
 			(props, monitor) => ({
@@ -42,8 +45,8 @@ function DragThis(comp) {
 	);
 }
 
-function BaseTab({ tabId, path, icon, title, dragRef, dropRef, isOver, canDrop, draggedIsMe, isDragging }) {
-	const selected = Store(state => state.selectedId === tabId);
+function BaseTab({ id, path, idDM, mentionCount, isTyping, unreadCount, icon, title, dragRef, dropRef, isOver, canDrop, draggedIsMe, isDragging }) {
+	const selected = Store(state => state.selectedId === id);
 	const isSingleTab = Store(Store.selectors.isSingleTab);
 
 	const tabRef = useRef(null);
@@ -51,18 +54,18 @@ function BaseTab({ tabId, path, icon, title, dragRef, dropRef, isOver, canDrop, 
 
 	const clickHandler = e => {
 		e.stopPropagation();
-		Store.state.setSelectedId(tabId);
-		return console.log(tabId, "clickHandler");
+		Store.state.setSelectedId(id);
+		return console.log(id, "clickHandler");
 	};
 
 	const closeHandler = e => {
 		e.stopPropagation();
-		Store.state.removeTab(tabId);
-		return console.log(tabId, "closeHandler");
+		Store.state.removeTab(id);
+		return console.log(id, "closeHandler");
 	};
 
 	const contextmenuHandler = e => {
-		ContextMenu.open(e, TabContextMenu.bind({tabId}), {
+		ContextMenu.open(e, TabContextMenu(id), {
 			position: "bottom",
 			align: "left"
 		});
@@ -77,6 +80,9 @@ function BaseTab({ tabId, path, icon, title, dragRef, dropRef, isOver, canDrop, 
 			onClick={!selected ? clickHandler : nop}>
 			<div className={concateClassNames("tab-icon", !icon && "discord-icon")}>{icon || <DiscordIcon />}</div>
 			<div className="tab-title ellipsis">{title || path}</div>
+			{!!mentionCount && <Badge count={mentionCount} type="ping"/>}
+			{!idDM && !!unreadCount && <Badge count={unreadCount} type="unread"/> }
+			{isTyping && <TypingDots dotRadius={2.5}/>}
 			{!isSingleTab && (
 				// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
 				<div

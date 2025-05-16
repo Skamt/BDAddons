@@ -2,6 +2,8 @@ import { MenuLabel } from "@Components/ContextMenu";
 import useStateFromStores from "@Modules/useStateFromStores";
 import React from "@React";
 import ChannelStore from "@Stores/ChannelStore";
+import ReadStateStore from "@Stores/ReadStateStore";
+import TypingStore from "@Stores/TypingStore";
 import GuildStore from "@Stores/GuildStore";
 import { getUserName, nop } from "@Utils";
 import { getUserAvatar } from "@Utils/User";
@@ -9,9 +11,9 @@ import { getModule } from "@Webpack";
 
 const b = getModule(a => a.getChannelIconURL);
 
-export function buildTab(d) {
+export function buildTab(tabObj) {
 	const id = crypto.randomUUID();
-	return { ...d, id };
+	return { ...tabObj, id };
 }
 
 export function getDmAvatar(channel, size) {
@@ -52,16 +54,28 @@ export function useChannel(channelId, size) {
 			alt={channelName}
 		/>
 	);
-	return { icon, channelName };
+	return { icon, channelName, channel };
 }
 
-export function createContextMenuItem(type,id = "", action = nop, label = "Unknown", icon = null, color = "", children) {
+export function useChannelState(channelId) {
+	const [mentionCount, unreadCount] = useStateFromStores([ReadStateStore], () => {
+		const mentionCount = ReadStateStore.getMentionCount(channelId);
+		const unreadCount = ReadStateStore.getUnreadCount(channelId);
+		return [mentionCount, unreadCount];
+	}, [channelId]);
+
+	const isTyping = useStateFromStores([TypingStore], () => !!Object.keys(TypingStore.getTypingUsers(channelId)).length, [channelId]);
+	
+	return { isTyping, mentionCount, unreadCount };
+}
+
+export function createContextMenuItem(type, id = "", action = nop, label = "Unknown", icon = null, color = "", children) {
 	const res = {
 		className: `channeltab-${id}-menuitem`,
 		type,
 		id,
 		action,
-		items:children,
+		items: children,
 		// icon,
 		label,
 		label: (

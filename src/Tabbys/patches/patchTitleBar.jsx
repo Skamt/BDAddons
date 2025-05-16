@@ -6,13 +6,14 @@ import Logger from "@Utils/Logger";
 import { Filters, getModuleAndKey } from "@Webpack";
 import App from "../components/App";
 
-const TitleBar = getModuleAndKey(Filters.byStrings("windowKey", "title"), { searchExports: true });
+const TitleBar = getModuleAndKey(Filters.byStrings("PlatformTypes","windowKey", "title"), { searchExports: true });
 
 export default () => {
 	const { module, key } = TitleBar;
 	if (!module || !key) return Logger.patch("patchTitleBar");
-	Patcher.after(module, key, (_, __, ret) => {
-		const [,leading, trailing] = ret?.props?.children || [];
+	Patcher.after(module, key, (_, [props], ret) => {
+		if (props.windowKey === "DISCORD_CHANNEL_CALL_POPOUT") return ret;
+		const [, leading, trailing] = ret?.props?.children || [];
 
 		return (
 			<ErrorBoundary>

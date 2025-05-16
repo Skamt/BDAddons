@@ -1,34 +1,30 @@
 import "./styles";
-import React, { useReducer, useRef, useEffect, useState } from "@React";
-import ArrowIcon from "@Components/icons/ArrowIcon";
-import { debounce, concateClassNames, animate } from "@Utils";
 import { Store } from "@/Store";
+import { ArrowIcon } from "@Components/Icon";
+import { useNumberWatcher, LengthStateEnum } from "@Utils/Hooks";
+import React, { Children, useRef, useEffect, useState } from "@React";
+import { animate, concateClassNames, debounce } from "@Utils";
 
-function useChildrenLengthStateChange(children) {
-	const lastCount = useRef(React.Children.count(children));
-	const currentCount = React.Children.count(children);
+function getFirstAndLastChild(el) {
+	const tabListChildren = Array.from(el.children);
+	const length = tabListChildren.length;
+	if (length < 1) return [];
 
-	let state = "";
-	if (lastCount.current < currentCount) state = "INCREASED";
-	else if (lastCount.current > currentCount) state = "DECREASED";
-	lastCount.current = currentCount;
-	return state;
-}
+	const firstTab = tabListChildren[0];
+	const lastTab = tabListChildren[length - 1];
 
-function useForceUpdate() {
-    return useReducer((num) => num + 1, 0);
+	return [firstTab, lastTab];
 }
 
 export default function TabsScroller({ children }) {
 	console.log("TabsScroller rendered");
-	const [updateScrollObserver, setUpdateScrollObserver] = useForceUpdate();
 
 	const [leftScrollBtn, setLeftScrollBtn] = useState(false);
 	const [rightScrollBtn, setRightScrollBtn] = useState(false);
 	const displayStartScrollRef = useRef(null);
 	const displayEndScrollRef = useRef(null);
 	const tabsRef = useRef(null);
-	const childrenLengthState = useChildrenLengthStateChange(children);
+	const childrenLengthState = useNumberWatcher(Children.count(children));
 
 	function getTabsMeta(tabIndex) {
 		if (tabIndex == null) return {};
@@ -100,8 +96,8 @@ export default function TabsScroller({ children }) {
 	}
 
 	useEffect(() => {
-		// Scroll to newly added tab
-		if (childrenLengthState !== "INCREASED") return;
+		// Scroll to newly added and selected tab, this should let us add tabs in the backgound without scrolling to them
+		if (childrenLengthState !== LengthStateEnum.INCREASED) return;
 		scrollSelectedIntoView();
 	}, [children.length]);
 
@@ -111,52 +107,49 @@ export default function TabsScroller({ children }) {
 	}, []);
 
 	useEffect(() => {
-		console.log("IntersectionObserver");
 		const tabsNode = tabsRef.current;
-		const tabListChildren = Array.from(tabsNode.children);
-		const length = tabListChildren.length;
-		if (length < 1) return;
+		if (!tabsNode) return;
 
-		const firstTab = tabListChildren[0];
-		const lastTab = tabListChildren[length - 1];
-		console.log(firstTab, lastTab);
 		const observerOptions = {
 			root: tabsNode,
 			threshold: 0.99
 		};
 
-		const handleLeftScrollButton = entries => setLeftScrollBtn(!entries.sort((a,b)=> a.time - b.time).pop().isIntersecting);
-		const leftObserver = new IntersectionObserver(debounce(handleLeftScrollButton), observerOptions);
-		leftObserver.observe(firstTab);
+		const handleLeftScrollButton = debounce(entries => setLeftScrollBtn(!entries.sort((a, b) => a.time - b.time).pop().isIntersecting));
+		const leftObserver = new IntersectionObserver(handleLeftScrollButton, observerOptions);
 
-		const handleRightScrollButton = entries => setRightScrollBtn(!entries.sort((a,b)=> a.time - b.time).pop().isIntersecting);
-		const rightObserver = new IntersectionObserver(debounce(handleRightScrollButton), observerOptions);
-		rightObserver.observe(lastTab);
+		const handleRightScrollButton = debounce(entries => setRightScrollBtn(!entries.sort((a, b) => a.time - b.time).pop().isIntersecting));
+		const rightObserver = new IntersectionObserver(handleRightScrollButton, observerOptions);
 
-		return () => {
-			leftObserver.disconnect();
-			rightObserver.disconnect();
-		};
-	}, [updateScrollObserver]);
-
-	useEffect(() => {
-		const tabsNode = tabsRef.current;
-		if (!tabsNode) return;
-
-		function handleMutation() {
-			console.log("mutation");
-			setUpdateScrollObserver();
+		function observeFirstAndLastChild() {
+			leftObserver?.disconnect?.();
+			rightObserver?.disconnect?.();
+			const [firstTab, lastTab] = getFirstAndLastChild(tabsNode);
+			if (!firstTab || !lastTab) return;
+			leftObserver.observe(firstTab);
+			rightObserver.observe(lastTab);
 		}
 
-		window.addEventListener("resize", handleMutation);
-		const mutationObserver = new MutationObserver(handleMutation);
-		mutationObserver.observe(tabsNode, {
-			childList: true
+		observeFirstAndLastChild();
+
+		const handleMutation = debounce(() => {
+			scrollSelectedIntoView(); // save on Resize observers
+			observeFirstAndLastChild();
 		});
 
+		const resizeObserver = new ResizeObserver(handleMutation);
+		const mutationObserver = new MutationObserver(handleMutation);
+		mutationObserver.observe(tabsNode, { childList: true });
+		resizeObserver.observe(tabsNode);
+
 		return () => {
-			mutationObserver?.disconnect();
-			window.removeEventListener("resize", handleMutation);
+			mutationObserver?.disconnect?.();
+			resizeObserver?.disconnect?.();
+			leftObserver?.disconnect?.();
+			rightObserver?.disconnect?.();
+			handleRightScrollButton.clear();
+			handleLeftScrollButton.clear();
+			handleMutation.clear();
 		};
 	}, []);
 
@@ -197,7 +190,7 @@ export default function TabsScroller({ children }) {
 				ref={displayStartScrollRef}
 				onClick={handleStartScrollClick}
 				className={concateClassNames("scrollBtn left-arrow", !leftScrollBtn && "hidden")}>
-				<ArrowIcon />
+				<ArrowIcon style={{ rotate: "180deg" }} />
 			</div>
 
 			<div

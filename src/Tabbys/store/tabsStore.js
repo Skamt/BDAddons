@@ -16,11 +16,13 @@ const store = (set, get) => ({
 		tabsList.clear();
 		set({ ...initialState });
 	},
-
-	setTabs(list = []) {
+	setLastSelectedIdAfterNewTab(id) {
+		set({ lastSelectedIdAfterNewTab: id });
+	},
+	setTabs(list = [], selectedId) {
 		if (list.length === 0) return;
 		tabsList.setList(list);
-		set({ tabs: tabsList.list, selectedId: tabsList.list[0].id });
+		set({ tabs: tabsList.list, selectedId: selectedId || tabsList.list[0].id });
 	},
 
 	addTab(tab) {
@@ -113,6 +115,9 @@ const store = (set, get) => ({
 		set({ tabs: tabsList.list });
 	},
 
+	getTabsCount() {
+		return tabsList.length;
+	},
 	getTab(id) {
 		return tabsList.getItemById(id);
 	},

@@ -1,7 +1,7 @@
 import "./styles";
 import { Store } from "@/Store";
 import { buildTab } from "@/utils";
-import PlusIcon from "@Components/icons/PlusIcon";
+import { PlusIcon } from "@Components/Icon";
 import React from "@React";
 import Tab from "../Tab";
 import TabsScroller from "../TabsScroller";
@@ -31,7 +31,7 @@ export default function TabBar({ leading, trailing }) {
 						index !== 0 && <div className="tab-div" />,
 						<Tab
 							key={a.id}
-							tabId={a.id}
+							id={a.id}
 						/>
 					])}
 				</TabsScroller>

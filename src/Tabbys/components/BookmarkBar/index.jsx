@@ -1,61 +1,65 @@
 import "./styles";
 import { Store } from "@/Store";
-import React, { useEffect, useState, useRef } from "@React";
+import React, {  useEffect, useState, useRef } from "@React";
 import Bookmark from "../Bookmark";
-import ArrowIcon from "@Components/icons/ArrowIcon";
+import { ArrowIcon } from "@Components/Icon";
 import { DiscordPopout } from "@Discord/Modules";
-// import { DragSource, DropTarget } from "@Discord/Modules";
+import { debounce, concateClassNames } from "@Utils";
+import { useNumberWatcher, LengthStateEnum } from "@Utils/Hooks";
 
-function getOverflowIndex(parentEl) {
-	const children = Array.from(parentEl.children).filter(a => !a.className.includes("tab-div"));
-	let widthSum = 0;
-	const overflowLimit = window.innerWidth * .95;
-	for (let i = 0; i < children.length; i++) {
-		const child = children[i];
-		const tempSum = child.clientWidth + widthSum;
-		if (tempSum > overflowLimit) return i;
-		widthSum = tempSum;
-	}
-	return -1;
+// import { DragSource, DropTarget } from "@Discord/Modules";
+// function getOverflowIndex(parentEl) {
+// 	const children = Array.from(parentEl.children);
+// 	let widthSum = 0;
+// 	const overflowLimit = window.innerWidth * 0.95;
+// 	for (let i = 0; i < children.length; i++) {
+// 		const child = children[i];
+// 		const tempSum = child.clientWidth + widthSum;
+// 		if (tempSum > overflowLimit) return i;
+// 		widthSum = tempSum;
+// 	}
+// 	return -1;
+// }
+
+function isVisible(el) {
+	const elParentRect = el.parentElement.getBoundingClientRect();
+	const rect = el.getBoundingClientRect();
+	const elemRight = rect.right;
+	const elemLeft = rect.left;
+
+	return elemLeft >= 0 && elemRight <= elParentRect.width;
 }
 
 export default function BookmarkBar() {
 	const bookmarks = Store(Store.selectors.bookmarks, (a, b) => a.length === b.length && !a.some((_, i) => a[i].id !== b[i].id));
 	const bookmarksContainerRef = useRef();
 	const [overflowIndex, setOverflowIndex] = useState(-1);
-	console.log("overflowIndex", overflowIndex);
-	const displayedBookmarks = overflowIndex > -1 ? bookmarks.slice(0, overflowIndex - 1) : bookmarks;
-	const overflowBookmarks = overflowIndex > -1 ? bookmarks.slice(overflowIndex - 1, bookmarks.length) : [];
+	const isOverflowing = overflowIndex > -1;
+	const childrenLengthState = useNumberWatcher(bookmarks.length);
+	const overflowBookmarks = isOverflowing ? bookmarks.slice(overflowIndex, bookmarks.length) : [];
 
 	useEffect(() => {
-		console.log("effect");
 		const bookmarksNode = bookmarksContainerRef.current;
 		if (!bookmarksNode) return;
-		const targetIndex = getOverflowIndex(bookmarksNode);
-		console.log("targetIndex", targetIndex);
-		setOverflowIndex(targetIndex);
-	}, [bookmarks.length]);
 
-	// useEffect(() => {
-	// 	const bookmarksNode = bookmarksContainerRef.current;
-	// 	if (!bookmarksNode) return;
+		const handleMutation = debounce(() => {
+			if (childrenLengthState === LengthStateEnum.INCREASED && isOverflowing) return;
+			if (childrenLengthState === LengthStateEnum.DECREASED && !isOverflowing) return;
 
-	// 	function handleMutation() {
-	// 		const targetIndex = getOverflowIndex(bookmarksNode);
-	// 		setOverflowIndex(targetIndex);
-	// 	}
+			const childrenNodes = Array.from(bookmarksNode.children);
+			const indexOfFirstNotFullyVisibleChild = childrenNodes.findIndex(a => !isVisible(a));
+			setOverflowIndex(Math.floor(indexOfFirstNotFullyVisibleChild/2));
+		});
 
-	// 	window.addEventListener("resize", handleMutation);
-	// 	const mutationObserver = new MutationObserver(handleMutation);
-	// 	mutationObserver.observe(bookmarksNode, {
-	// 		childList: true
-	// 	});
+		handleMutation();
+		const resizeObserver = new ResizeObserver(handleMutation);
+		resizeObserver.observe(bookmarksNode);
 
-	// 	return () => {
-	// 		mutationObserver?.disconnect();
-	// 		window.removeEventListener("resize", handleMutation);
-	// 	};
-	// }, []);
+		return () => {
+			resizeObserver.disconnect();
+			handleMutation.clear();
+		};
+	}, [childrenLengthState]);
 
 	return (
 		<div className="bookmarkbar">
@@ -63,16 +67,17 @@ export default function BookmarkBar() {
 				ref={bookmarksContainerRef}
 				className="bookmarks-container"
 				onDoubleClick={e => e.stopPropagation()}>
-				{displayedBookmarks.map((a, index) => [
-					index !== 0 && <div className="tab-div" />,
+				{bookmarks.map((a, index) => [
 					<Bookmark
 						key={a.id}
-						bookmarkId={a.id}
+						id={a.id}
+						divider={index !== 0}
+						className={concateClassNames(isOverflowing && index >= overflowIndex && "hidden-visually")}
 					/>
 				])}
 			</div>
 
-			{overflowIndex > -1 && (
+			{isOverflowing && (
 				<DiscordPopout
 					position="bottom"
 					align="right"
@@ -86,7 +91,7 @@ export default function BookmarkBar() {
 								{overflowBookmarks.map(a => [
 									<Bookmark
 										key={a.id}
-										bookmarkId={a.id}
+										id={a.id}
 									/>
 								])}
 							</div>

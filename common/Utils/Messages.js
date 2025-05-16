@@ -22,7 +22,7 @@ export function getReply(channelId) {
 	};
 }
 
-export async function sendMessageDirectly(channel, content) {
+export function sendMessageDirectly(channel, content) {
 	if (!MessageActions || !MessageActions.sendMessage || typeof MessageActions.sendMessage !== "function") throw new Error("Can't send message directly.");
 
 	return MessageActions.sendMessage(

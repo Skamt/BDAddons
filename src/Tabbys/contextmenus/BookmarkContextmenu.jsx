@@ -1,26 +1,29 @@
 import { Store } from "@/Store";
 import { ContextMenu } from "@Api";
-import CloseIcon from "@Components/icons/CloseIcon";
 import React from "@React";
+import { buildTab } from "@/utils";
 
-import BookmarkIcon from "@Components/icons/BookmarkIcon";
-import DuplicateIcon from "@Components/icons/DuplicateIcon";
-import LightiningIcon from "@Components/icons/LightiningIcon";
-import PinIcon from "@Components/icons/PinIcon";
-import VectorIcon from "@Components/icons/VectorIcon";
-
+import { CloseIcon,  PlusIcon } from "@Components/Icon";
 import { createContextMenuItem } from "@/utils";
 
 // const {  Menu } = ContextMenu;
 
-function deleteBookmark(bookmarkId) {
-	Store.state.removeBookmark(bookmarkId);
+function deleteBookmark(id) {
+	Store.state.removeBookmark(id);
+}
+
+function openInNewTab(id) {
+	Store.state.newTab(buildTab(Store.state.getBookmark(id)));
 }
 
 export default function (props) {
-	const bookmarkId = this.bookmarkId;
+	const id = this.id;
 	const Menu = ContextMenu.buildMenu([
-		createContextMenuItem(null, "new-tab-right", () => deleteBookmark(bookmarkId), "Remove Bookmark", <CloseIcon />),]);
+		createContextMenuItem(null, "open-bookmark-in-new-tab", () => openInNewTab(id), "Open in new Tab", <PlusIcon />),
+		{ type: "separator" },
+		createContextMenuItem(null, "remove-bookmark", () => deleteBookmark(id), "Remove Bookmark", <CloseIcon />, "danger"),
+	]);
+
 
 	return <Menu {...props} className="bookmark-contextmenu"/>;
 }

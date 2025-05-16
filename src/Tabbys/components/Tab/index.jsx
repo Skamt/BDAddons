@@ -28,15 +28,15 @@ function getIcon(type) {
 	}
 }
 
-export default React.memo(({ tabId }) => {
-	const {path} = Store(state => state.getTab(tabId), shallow) || {};
+export default React.memo(({ id }) => {
+	const {path} = Store(state => state.getTab(id), shallow) || {};
 	if (!path) return;
 	const [, type, idk , channelId, , threadId] = path.split("/");
 
 	if (type === "channels" && channelId)
 		return (
 			<ChannelTab
-				tabId={tabId}
+				id={id}
 				path={path}
 				channelId={threadId || channelId}
 			/>
@@ -44,7 +44,7 @@ export default React.memo(({ tabId }) => {
 
 	return (
 		<BaseTab
-			tabId={tabId}
+			id={id}
 			path={path}
 			icon={getIcon(idk)}
 			title={idk}

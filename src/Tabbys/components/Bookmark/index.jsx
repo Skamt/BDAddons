@@ -8,12 +8,13 @@ import { useChannel } from "@/utils";
 
 const ICON_SIZE = 80;
 
-function Bookmark({ bookmarkId, channelId, path }) {
+function Bookmark({ id, channelId, path,className }) {
 	const { icon, channelName } = useChannel(channelId, ICON_SIZE);
 
 	return (
 		<BaseBookmark
-			bookmarkId={bookmarkId}
+			id={id}
+			className={className}
 			path={path}
 			icon={icon}
 			title={channelName}
@@ -21,15 +22,16 @@ function Bookmark({ bookmarkId, channelId, path }) {
 	);
 }
 
-export default React.memo(({ bookmarkId }) => {
-	const { path } = Store(state => state.getBookmark(bookmarkId), shallow) || {};
+export default React.memo(({ id,className }) => {
+	const { path } = Store(state => state.getBookmark(id), shallow) || {};
 	if (!path) return;
 
 	const [, , , channelId, , threadId] = path.split("/");
 
 	return (
 		<Bookmark
-			bookmarkId={bookmarkId}
+			id={id}
+			className={className}
 			path={path}
 			channelId={threadId || channelId}
 		/>

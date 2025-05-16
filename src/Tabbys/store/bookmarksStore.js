@@ -2,15 +2,15 @@ import List from "@Utils/List";
 
 const bookmarksList = new List("id");
 
-const store = (set, get) => ({
+const store = (set) => ({
 	bookmarks: [],
 
 	clearBookmarks() {
 		bookmarksList.clear();
 		set({ bookmarks: bookmarksList.list });
 	},
+
 	setBookmarks(list = []) {
-		if (list.length === 0) return;
 		bookmarksList.setList(list);
 		set({ bookmarks: bookmarksList.list });
 	},
