@@ -331,10 +331,7 @@ const chunk = window[chunkName];
 let webpackreq;
 chunk.push([
 	[Symbol()], {},
-	r => {
-		if (Error().stack.includes("libdiscore")) return;
-		webpackreq = r;
-	}
+	r => (webpackreq = r.b ? r : webpackreq)
 ]);
 chunk.pop();
 const webpackRequire = webpackreq;
