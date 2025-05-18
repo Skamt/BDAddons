@@ -1,0 +1,34 @@
+.tabs-scroller {
+	display: flex;
+	min-width: 0;
+	position: relative;
+}
+
+.tabs-list {
+	display: flex;
+	overflow: auto;
+	scrollbar-width: none;
+}
+
+.scrollBtn {
+	height: var(--size);
+	background: #7b7b7b;
+	padding: 5px;
+	border-radius: 8px;
+	z-index: 99;
+	position: absolute;
+	top: 50%;
+	translate: 0 -50%;
+	
+	aspect-ratio: 1;
+	cursor: pointer;
+	color: #ccc;
+}
+
+.left-arrow {
+	left: 0;
+}
+
+.right-arrow {
+	right: 0;
+}

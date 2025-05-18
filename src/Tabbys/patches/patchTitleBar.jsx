@@ -10,7 +10,7 @@ const TitleBar = getModuleAndKey(Filters.byStrings("PlatformTypes","windowKey", 
 
 export default () => {
 	const { module, key } = TitleBar;
-	if (!module || !key) return Logger.patch("patchTitleBar");
+	if (!module || !key) return Logger.patchError("patchTitleBar");
 	Patcher.after(module, key, (_, [props], ret) => {
 		if (props.windowKey === "DISCORD_CHANNEL_CALL_POPOUT") return ret;
 		const [, leading, trailing] = ret?.props?.children || [];

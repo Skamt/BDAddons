@@ -1,0 +1,30 @@
+.tabs-container {
+	min-width:0;
+	gap:2px;
+	position:relative;
+	margin-right:auto;
+	height:100%;
+	-webkit-app-region: no-drag;
+}
+
+.new-tab{
+	flex:0 0 auto;
+	padding:2px;
+	width:20px;
+	height:20px;
+	color:white;
+}
+
+.new-tab:hover{
+	background:var(--hover-tab-bg);
+}
+
+.new-tab:active{
+	background:var(--active-tab-bg);
+}
+
+.tab-div{
+	height:calc(var(--size) * .8);
+	border: 1px solid #ccc5;
+	margin: auto 3px;
+}

@@ -115,10 +115,10 @@ export default function TabsScroller({ children }) {
 			threshold: 0.99
 		};
 
-		const handleLeftScrollButton = debounce(entries => setLeftScrollBtn(!entries.sort((a, b) => a.time - b.time).pop().isIntersecting));
+		const handleLeftScrollButton = debounce(entries => setLeftScrollBtn(!entries.sort((a, b) => a.time - b.time).pop().isIntersecting),100);
 		const leftObserver = new IntersectionObserver(handleLeftScrollButton, observerOptions);
 
-		const handleRightScrollButton = debounce(entries => setRightScrollBtn(!entries.sort((a, b) => a.time - b.time).pop().isIntersecting));
+		const handleRightScrollButton = debounce(entries => setRightScrollBtn(!entries.sort((a, b) => a.time - b.time).pop().isIntersecting),100);
 		const rightObserver = new IntersectionObserver(handleRightScrollButton, observerOptions);
 
 		function observeFirstAndLastChild() {
@@ -184,13 +184,13 @@ export default function TabsScroller({ children }) {
 	const handleEndScrollClick = () => moveTabsScroll(getScrollSize());
 
 	return (
-		<div className="tabs-scroller">
+		<div className="tabs-scroller flex-center">
 			{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 			<div
 				ref={displayStartScrollRef}
 				onClick={handleStartScrollClick}
-				className={concateClassNames("scrollBtn left-arrow", !leftScrollBtn && "hidden")}>
-				<ArrowIcon style={{ rotate: "180deg" }} />
+				className={concateClassNames("scrollBtn flex-center left-arrow", !leftScrollBtn && "hidden-visually")}>
+				<ArrowIcon className="parent-dim flip" />
 			</div>
 
 			<div
@@ -203,8 +203,8 @@ export default function TabsScroller({ children }) {
 			<div
 				ref={displayEndScrollRef}
 				onClick={handleEndScrollClick}
-				className={concateClassNames("scrollBtn right-arrow", !rightScrollBtn && "hidden")}>
-				<ArrowIcon />
+				className={concateClassNames("scrollBtn flex-center right-arrow", !rightScrollBtn && "hidden-visually")}>
+				<ArrowIcon className="parent-dim" />
 			</div>
 		</div>
 	);

@@ -10,7 +10,7 @@ const urlRegex = /((?:https?|steam):\/\/[^\s<]+[^<.,:;"'\]\s])/g;
 export const MessageStateContext = React.createContext(null);
 
 export default () => {
-	if (!MessageComponentAccessories) return Logger.patch("patchMessageComponentAccessories");
+	if (!MessageComponentAccessories) return Logger.patchError("patchMessageComponentAccessories");
 
 	Patcher.before(MessageComponentAccessories.prototype, "renderEmbeds", (_, args) => {
 		const message = args[0];

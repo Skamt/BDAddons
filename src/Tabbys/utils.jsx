@@ -1,6 +1,7 @@
 import { MenuLabel } from "@Components/ContextMenu";
 import useStateFromStores from "@Modules/useStateFromStores";
 import React from "@React";
+import UserStore from "@Stores/UserStore";
 import ChannelStore from "@Stores/ChannelStore";
 import ReadStateStore from "@Stores/ReadStateStore";
 import TypingStore from "@Stores/TypingStore";
@@ -17,14 +18,15 @@ export function buildTab(tabObj) {
 }
 
 export function getDmAvatar(channel, size) {
-	const recipientId = channel.rawRecipients[0].id;
+	const recipientId = channel.recipients[0];
 	return getUserAvatar({ id: recipientId, size });
 }
 
 export function getChannelName(channel) {
 	if (!channel) return;
-	if (!channel.isDM()) return channel.name;
-	return channel.rawRecipients.map(getUserName).join(", ");
+	if (channel.isDM() || channel.isGroupDM()) 
+		return channel.rawRecipients.map(getUserName).join(", ");
+	return channel.name;
 }
 
 export function getChannelIcon(channel, size) {
@@ -58,15 +60,21 @@ export function useChannel(channelId, size) {
 }
 
 export function useChannelState(channelId) {
-	const [mentionCount, unreadCount] = useStateFromStores([ReadStateStore], () => {
-		const mentionCount = ReadStateStore.getMentionCount(channelId);
-		const unreadCount = ReadStateStore.getUnreadCount(channelId);
-		return [mentionCount, unreadCount];
-	}, [channelId]);
+	const [mentionCount, unreadCount] = useStateFromStores(
+		[ReadStateStore],
+		() => {
+			const mentionCount = ReadStateStore.getMentionCount(channelId);
+			const unreadCount = ReadStateStore.getUnreadCount(channelId);
+			return [mentionCount, unreadCount];
+		},
+		[channelId]
+	);
 
-	const isTyping = useStateFromStores([TypingStore], () => !!Object.keys(TypingStore.getTypingUsers(channelId)).length, [channelId]);
-	
-	return { isTyping, mentionCount, unreadCount };
+	const typingUsersIds = useStateFromStores([TypingStore], () => Object.keys(TypingStore.getTypingUsers(channelId)), [channelId]);
+	const currentUser = UserStore.getCurrentUser();
+	const typingUsers = typingUsersIds.filter(id => id !== currentUser.id).map(UserStore.getUser);
+
+	return { typingUsers, mentionCount, unreadCount };
 }
 
 export function createContextMenuItem(type, id = "", action = nop, label = "Unknown", icon = null, color = "", children) {

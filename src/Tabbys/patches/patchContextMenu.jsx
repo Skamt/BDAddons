@@ -1,11 +1,13 @@
 import { ContextMenu } from "@Api";
-import {  MenuLabel } from "@Components/ContextMenu";
+import { MenuLabel } from "@Components/ContextMenu";
 import { Store } from "@/Store";
 import React from "@React";
 import { ChannelTypeEnum } from "@Discord/Enums";
 import { buildTab } from "@/utils";
+import { getPathName } from "@Utils";
 import { BookmarkOutlinedIcon, PlusIcon } from "@Components/Icon";
-// import { createContextMenuItem } from "@/utils";
+import ChannelStore from "@Stores/ChannelStore";
+import { getModule } from "@Webpack";
 
 export function channelPath(...args) {
 	return `/channels/${args.filter(Boolean).join("/")}`;
@@ -28,32 +30,51 @@ function getPath(channel) {
 	}
 }
 
-export default () => {
-	return ["thread-context", "channel-context", "user-context"].map(context =>
-		ContextMenu.patch(context, (retVal, { channel, targetIsUser }) => {
-			if (!channel || targetIsUser) return;
-			const path = getPath(channel);
-
-			retVal.props.children.push(
-				ContextMenu.buildItem({ type: "separator" }),
-				ContextMenu.buildItem({
-					type: "submenu",
-					id:`${config.info.name}-channel-options`,
-					label: <MenuLabel label={config.info.name} />,
-					items: [
-						{
-							action: () => Store.state.newTab(buildTab({ path })),
-							icon: PlusIcon,
-							label: "Open in new Tab"
-						},
-						{
-							action: () => Store.state.addBookmark(buildTab({ path })),
-							icon: BookmarkOutlinedIcon,
-							label: "Bookmark channel"
-						}
-					]
-				})
-			);
+function menu(path) {
+	return [
+		ContextMenu.buildItem({ type: "separator" }),
+		ContextMenu.buildItem({
+			type: "submenu",
+			id: `${config.info.name}-channel-options`,
+			label: <MenuLabel label={config.info.name} />,
+			items: [
+				{
+					action: () => Store.state.newTab(buildTab({ path })),
+					icon: PlusIcon,
+					label: "Open in new Tab"
+				},
+				{
+					action: () => Store.state.addBookmark(buildTab({ path })),
+					icon: BookmarkOutlinedIcon,
+					label: "Bookmark channel"
+				}
+			]
 		})
-	);
+	];
+}
+
+export default () => {
+	return [
+		...["thread-context", "channel-context"].map(context =>
+			ContextMenu.patch(context, (retVal, { channel, targetIsUser }) => {
+				if (!channel || targetIsUser) return;
+				const path = getPath(channel);
+				if (!path) return;
+				retVal.props.children.push(...menu(path));
+			})
+		),
+		ContextMenu.patch("channel-mention-context", (retVal, { originalLink }) => {
+			const path = getPathName(originalLink);
+			if (!path) return;
+			retVal.props.children.push(...menu(path));
+		}),
+		ContextMenu.patch("user-context", (retVal, { user }) => {
+			if (user.email) return;
+			const channel = ChannelStore.getDMChannelFromUserId(user.id);
+			if (!channel) return;
+			const path = getPath(channel);
+			if (!path) return;
+			retVal.props.children.push(...menu(path));
+		})
+	];
 };

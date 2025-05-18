@@ -1,0 +1,25 @@
+div:has(> .Tabbys-container):not(#a) {
+	grid-template-rows: [top] auto [titleBarEnd] min-content [noticeEnd] 1fr [end];
+}
+
+.Tabbys-container * {
+	box-sizing: border-box;
+}
+
+.Tabbys-container {
+	grid-column: 1/-1;
+	user-select: none;
+	line-height: 1.4;
+	margin-bottom: 2px;
+	display: flex;
+	flex-direction: column;
+	-webkit-app-region: drag;
+}
+
+.Tabbys-divider{
+	height:5px;
+	background:
+	linear-gradient(to right, #0000  0, #ccc3 25%) left center/50% 1px no-repeat,
+	linear-gradient(to left, #0000  0, #ccc3 25%) right center/50%  1px no-repeat;
+	-webkit-app-region: no-drag;
+}

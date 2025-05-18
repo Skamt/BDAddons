@@ -1,26 +1,33 @@
 import "./styles";
+import React from "@React";
 import { DOM, Patcher } from "@Api";
 import { reRender } from "@Utils";
 import Logger from "@Utils/Logger";
 import { Store } from "./Store";
+import patchChannelClick from "./patches/patchChannelClick";
 import patchTitleBar from "./patches/patchTitleBar";
+import patchDMClick from "./patches/patchDMClick";
 import patchContextMenu from "./patches/patchContextMenu";
 import { Dispatcher } from "@Discord/Modules";
+import SettingComponent from "./components/SettingComponent";
+// import Settings from "@Utils/Settings";
 
 /*DEBUG*/
 window.TabsStore = Store;
 /*DEBUG*/
 
+
+
 function disableGoHomeAfterSwitching() {
-	function interceptor(e){
+	function interceptor(e) {
 		if (e.type !== "LOGOUT") return;
 		e.goHomeAfterSwitching = false;
 	}
 	Dispatcher.addInterceptor(interceptor);
 	return () => {
 		const index = Dispatcher._interceptors.indexOf(interceptor);
-		Dispatcher._interceptors.splice(index,1);
-	}
+		Dispatcher._interceptors.splice(index, 1);
+	};
 }
 
 export default class Tabbys {
@@ -29,6 +36,8 @@ export default class Tabbys {
 			DOM.addStyle(css);
 			Store.init();
 			patchTitleBar();
+			patchDMClick();
+			patchChannelClick();
 			reRender('div[data-windows="true"] > *');
 			this.unpatchContextMenu = patchContextMenu();
 			this.removeDispatchInterceptor = disableGoHomeAfterSwitching();
@@ -47,5 +56,9 @@ export default class Tabbys {
 		// biome-ignore lint/complexity/noForEach: <explanation>
 		this.unpatchContextMenu?.forEach?.(p => p());
 		this.unpatchContextMenu = null;
+	}
+
+	getSettingsPanel() {
+		return <SettingComponent />;
 	}
 }

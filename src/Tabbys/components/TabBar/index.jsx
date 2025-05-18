@@ -5,6 +5,8 @@ import { PlusIcon } from "@Components/Icon";
 import React from "@React";
 import Tab from "../Tab";
 import TabsScroller from "../TabsScroller";
+import SettingsContextMenu from "@/contextmenus/SettingsContextMenu";
+import { ContextMenu } from "@Api";
 
 export default function TabBar({ leading, trailing }) {
 	console.log("TabBar rendered");
@@ -20,11 +22,18 @@ export default function TabBar({ leading, trailing }) {
 		Store.state.newTab(buildTab({ path: "/channels/@me" }));
 	};
 
+	const contextmenuHandler = e => {
+		ContextMenu.open(e, SettingsContextMenu(), {
+			position: "bottom",
+			align: "center"
+		});
+	};
+
 	return (
-		<div className="tabbar">
+		<div className="tabbar flex">
 			{leading}
 			<div
-				className="tabs-container"
+				className="tabs-container flex-center"
 				onDoubleClick={e => e.stopPropagation()}>
 				<TabsScroller>
 					{tabs.map((a, index) => [
@@ -38,11 +47,17 @@ export default function TabBar({ leading, trailing }) {
 				<div className="tab-div" />
 				{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 				<div
-					className="new-tab"
+					className="new-tab flex-center round"
 					onClick={newTabHandler}>
-					<PlusIcon />
+					<PlusIcon className="parent-dim" />
 				</div>
 			</div>
+			{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+			{/*<div
+				onClick={contextmenuHandler}
+				className="settings-dropdown flex-center">
+				<PlusIcon className="parent-dim" />
+			</div>*/}
 			{trailing}
 		</div>
 	);

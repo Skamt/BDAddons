@@ -1,15 +1,16 @@
-import { getModule,Filters } from "@Webpack";
+import { getModule, Filters } from "@Webpack";
 import { ContextMenu } from "@Api";
 import { Store } from "@/Store";
 import React, { useRef } from "@React";
 import { nop, concateClassNames } from "@Utils";
-import { CloseIcon, DiscordIcon } from "@Components/Icon";
+import { CloseIcon } from "@Components/Icon";
 import TabContextMenu from "@/contextmenus/TabContextMenu";
 import { DragSource, DropTarget } from "@Discord/Modules";
 import Badge from "../Badge";
-
+import Tooltip from "@Components/Tooltip";
+import Settings from "@Utils/Settings"
 const filter = Filters.byStrings("dotRadius", "dotPosition");
-const TypingDots = getModule(a => a?.type?.render && filter(a.type.render), {searchExports:true});
+const TypingDots = getModule(a => a?.type?.render && filter(a.type.render), { searchExports: true });
 
 function DragThis(comp) {
 	return DropTarget(
@@ -45,11 +46,17 @@ function DragThis(comp) {
 	);
 }
 
-function BaseTab({ id, path, idDM, mentionCount, isTyping, unreadCount, icon, title, dragRef, dropRef, isOver, canDrop, draggedIsMe, isDragging }) {
+function BaseTab(props) {
+	const { id, path, icon, title } = props;
+	const { idDM, mentionCount , typingUsers, unreadCount  } = props;
+	const { dragRef, dropRef, isOver, canDrop, draggedIsMe, isDragging } = props;
+	const size = Settings.state.size;
 	const selected = Store(state => state.selectedId === id);
 	const isSingleTab = Store(Store.selectors.isSingleTab);
-
 	const tabRef = useRef(null);
+	const isTyping = !!typingUsers?.length;
+	const typingUsersNames = typingUsers?.map(a => a.global_name).join(", ");
+
 	dragRef(dropRef(tabRef));
 
 	const clickHandler = e => {
@@ -72,26 +79,39 @@ function BaseTab({ id, path, idDM, mentionCount, isTyping, unreadCount, icon, ti
 	};
 
 	return (
-		// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-		<div
-			onContextMenu={contextmenuHandler}
-			ref={tabRef}
-			className={concateClassNames("tab", selected && "selected-tab", isDragging && "dragging", !draggedIsMe && canDrop && isOver && "candrop")}
-			onClick={!selected ? clickHandler : nop}>
-			<div className={concateClassNames("tab-icon", !icon && "discord-icon")}>{icon || <DiscordIcon />}</div>
-			<div className="tab-title ellipsis">{title || path}</div>
-			{!!mentionCount && <Badge count={mentionCount} type="ping"/>}
-			{!idDM && !!unreadCount && <Badge count={unreadCount} type="unread"/> }
-			{isTyping && <TypingDots dotRadius={2.5}/>}
-			{!isSingleTab && (
-				// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-				<div
-					className="tab-close"
-					onClick={closeHandler}>
-					<CloseIcon />
-				</div>
-			)}
-		</div>
+		<Tooltip note={isTyping ? typingUsersNames : null}>
+			{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+			<div
+				style={{"--size":size}}
+				onContextMenu={contextmenuHandler}
+				ref={tabRef}
+				className={concateClassNames("tab flex-center", selected && "selected-tab", isDragging && "dragging", !draggedIsMe && canDrop && isOver && "candrop")}
+				onClick={!selected ? clickHandler : nop}>
+				<div className="tab-icon flex-center round">{icon}</div>
+				<div className="tab-title ellipsis">{title||path}</div>
+				{!!mentionCount && (
+					<Badge
+						count={mentionCount}
+						type="ping"
+					/>
+				)}
+				{!idDM && !!unreadCount && (
+					<Badge
+						count={unreadCount}
+						type="unread"
+					/>
+				)}
+				{isTyping && <TypingDots dotRadius={2.5} />}
+				{!isSingleTab && (
+					// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+					<div
+						className="tab-close flex-center round"
+						onClick={closeHandler}>
+						<CloseIcon className="parent-dim" />
+					</div>
+				)}
+			</div>
+		</Tooltip>
 	);
 }
 

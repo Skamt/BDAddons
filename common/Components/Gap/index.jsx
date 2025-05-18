@@ -1,6 +1,6 @@
 import { React } from "@Api";
 
-export default function Gap({ direction, gap }) {
+export default function Gap({ direction, gap, className}) {
 	const style = {
 		VERTICAL: {
 			width: gap,
@@ -11,7 +11,7 @@ export default function Gap({ direction, gap }) {
 			width: "100%"
 		}
 	}[direction];
-	return <div style={style} />;
+	return <div style={style} className={className} />;
 }
 
 Gap.direction = {

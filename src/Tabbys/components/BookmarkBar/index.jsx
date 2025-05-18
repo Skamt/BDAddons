@@ -7,7 +7,6 @@ import { DiscordPopout } from "@Discord/Modules";
 import { debounce, concateClassNames } from "@Utils";
 import { useNumberWatcher, LengthStateEnum } from "@Utils/Hooks";
 
-// import { DragSource, DropTarget } from "@Discord/Modules";
 // function getOverflowIndex(parentEl) {
 // 	const children = Array.from(parentEl.children);
 // 	let widthSum = 0;
@@ -48,7 +47,7 @@ export default function BookmarkBar() {
 
 			const childrenNodes = Array.from(bookmarksNode.children);
 			const indexOfFirstNotFullyVisibleChild = childrenNodes.findIndex(a => !isVisible(a));
-			setOverflowIndex(Math.floor(indexOfFirstNotFullyVisibleChild/2));
+			setOverflowIndex(indexOfFirstNotFullyVisibleChild);
 		});
 
 		handleMutation();
@@ -87,7 +86,7 @@ export default function BookmarkBar() {
 							// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
 							<div
 								onClick={e.closePopout}
-								className="bookmarks-overflow-popout">
+								className="bookmarks-overflow-popout Tabbys-vars">
 								{overflowBookmarks.map(a => [
 									<Bookmark
 										key={a.id}

@@ -16,8 +16,8 @@ function openInNewTab(id) {
 	Store.state.newTab(buildTab(Store.state.getBookmark(id)));
 }
 
-export default function (props) {
-	const id = this.id;
+export default function (id) {
+
 	const Menu = ContextMenu.buildMenu([
 		createContextMenuItem(null, "open-bookmark-in-new-tab", () => openInNewTab(id), "Open in new Tab", <PlusIcon />),
 		{ type: "separator" },
@@ -25,5 +25,5 @@ export default function (props) {
 	]);
 
 
-	return <Menu {...props} className="bookmark-contextmenu"/>;
+	return (props) => <Menu {...props} className="bookmark-contextmenu"/>;
 }

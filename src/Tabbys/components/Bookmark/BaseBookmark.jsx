@@ -1,15 +1,12 @@
-// import "./styles";
-// import { Store } from "@/Store";
 import BookmarkContextmenu from "@/contextmenus/BookmarkContextmenu";
-// import { buildTab } from "@/utils";
 import { ContextMenu } from "@Api";
-import { DiscordIcon } from "@Components/Icon";
-// import { DragSource, DropTarget } from "@Discord/Modules";
 import { transitionTo } from "@Discord/Modules";
 import React from "@React";
 import { concateClassNames } from "@Utils";
+import Settings from "@Utils/Settings"
 
 export default function BaseBookmark({ id, path, icon, title, className }) {
+	const size = Settings.state.size;
 	const clickHandler = e => {
 		e.stopPropagation();
 		if (!path) return console.log(id, "no path");
@@ -17,7 +14,7 @@ export default function BaseBookmark({ id, path, icon, title, className }) {
 	};
 
 	const contextmenuHandler = e => {
-		ContextMenu.open(e, BookmarkContextmenu.bind({ id }), {
+		ContextMenu.open(e, BookmarkContextmenu(id), {
 			position: "bottom",
 			align: "left"
 		});
@@ -26,10 +23,11 @@ export default function BaseBookmark({ id, path, icon, title, className }) {
 	return (
 		// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
 		<div
-			className={concateClassNames("bookmark", className && className)}
+			style={{"--size":size}}
+			className={concateClassNames("bookmark flex-center", className && className)}
 			onContextMenu={contextmenuHandler}
 			onClick={clickHandler}>
-			<div className={concateClassNames("bookmark-icon", !icon && "discord-icon")}>{icon || <DiscordIcon />}</div>
+			<div className="bookmark-icon flex-center round">{icon}</div>
 			<div className="bookmark-title ellipsis">{title || path}</div>
 		</div>
 	);

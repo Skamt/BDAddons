@@ -13,8 +13,8 @@ const App = () => {
 };
 
 
-closeModal(window.id);
-window.id = showConfirmationModal("", <App />);
+// closeModal(window.id);
+// window.id = showConfirmationModal("", <App />);
 
 
 

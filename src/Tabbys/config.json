@@ -5,5 +5,8 @@
 		"description": "Empty description",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/Tabbys/Tabbys.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/Tabbys"
+	},
+	"settings":{
+		"size":20
 	}
 }
