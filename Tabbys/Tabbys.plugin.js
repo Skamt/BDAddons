@@ -17,6 +17,9 @@ const config = {
 		"authors": [{
 			"name": "Skamt"
 		}]
+	},
+	"settings": {
+		"size": 20
 	}
 }
 
@@ -32,6 +35,12 @@ const Logger = Api.Logger;
 const Webpack = Api.Webpack;
 /* annoying */
 const getOwnerInstance = Api.ReactUtils.getOwnerInstance.bind(Api.ReactUtils);
+
+// common\React.js
+const useState = React.useState;
+const useEffect = React.useEffect;
+const useRef = React.useRef;
+const Children = React.Children;
 
 // common\Utils.jsx
 function isValidString(string) {
@@ -121,6 +130,10 @@ function shallow(objA, objB) {
 	for (var i = 0; i < keysA.length; i++)
 		if (!Object.prototype.hasOwnProperty.call(objB, keysA[i]) || !Object.is(objA[keysA[i]], objB[keysA[i]])) return false;
 	return true;
+}
+
+function getNestedProp(obj, path) {
+	return path.split(".").reduce((ob, prop) => ob?.[prop], obj);
 }
 
 function reRender(selector) {
@@ -338,17 +351,10 @@ function getModuleAndKey(filter, options) {
 }
 
 // common\DiscordModules\Modules.js
-const DiscordPopout = getModule(Filters.byPrototypeKeys("shouldShowPopout", "toggleShow"), { searchExports: true });
 const Dispatcher = getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: false });
 const transitionTo = getModule(Filters.byStrings(`"transitionTo - Transitioning to "`), { searchExports: true });
 const DragSource = getModule(Filters.byStrings("drag-source", "collect"), { searchExports: true });
 const DropTarget = getModule(Filters.byStrings("drop-target", "collect"), { searchExports: true });
-
-// common\React.js
-const useState = React.useState;
-const useEffect = React.useEffect;
-const useRef = React.useRef;
-const Children = React.Children;
 
 // common\Components\Flex\index.jsx
 const Flex = getModule(a => a.defaultProps?.direction, { searchExports: true });
@@ -368,6 +374,9 @@ function MenuLabel({ label, icon }) {
 // @Modules\useStateFromStores
 const useStateFromStores = getModule(Filters.byStrings("getStateFromStores"), { searchExports: true });
 
+// @Stores\UserStore
+const UserStore = getStore("UserStore");
+
 // @Stores\ChannelStore
 const ChannelStore = getStore("ChannelStore");
 
@@ -379,9 +388,6 @@ const TypingStore = getStore("TypingStore");
 
 // @Stores\GuildStore
 const GuildStore = getStore("GuildStore");
-
-// @Stores\UserStore
-const UserStore = getStore("UserStore");
 
 // common\Utils\User.js
 function getUserAvatar({ id, guildId, size }) {
@@ -397,14 +403,15 @@ function buildTab(tabObj) {
 }
 
 function getDmAvatar(channel, size) {
-	const recipientId = channel.rawRecipients[0].id;
+	const recipientId = channel.recipients[0];
 	return getUserAvatar({ id: recipientId, size });
 }
 
 function getChannelName(channel) {
 	if (!channel) return;
-	if (!channel.isDM()) return channel.name;
-	return channel.rawRecipients.map(getUserName).join(", ");
+	if (channel.isDM() || channel.isGroupDM())
+		return channel.rawRecipients.map(getUserName).join(", ");
+	return channel.name;
 }
 
 function getChannelIcon(channel, size) {
@@ -421,27 +428,20 @@ function getChannelIcon(channel, size) {
 	if (guild) return guild.getIconURL(size);
 }
 
-function useChannel(channelId, size) {
-	const channel = useStateFromStores([ChannelStore], () => ChannelStore.getChannel(channelId), [channelId]);
-	const channelName = getChannelName(channel) || "Home";
-	const iconSrc = getChannelIcon(channel, size);
-	const icon = iconSrc && (
-		React.createElement('img', {
-			src: iconSrc,
-			alt: channelName,
-		})
-	);
-	return { icon, channelName, channel };
-}
-
 function useChannelState(channelId) {
-	const [mentionCount, unreadCount] = useStateFromStores([ReadStateStore], () => {
-		const mentionCount = ReadStateStore.getMentionCount(channelId);
-		const unreadCount = ReadStateStore.getUnreadCount(channelId);
-		return [mentionCount, unreadCount];
-	}, [channelId]);
-	const isTyping = useStateFromStores([TypingStore], () => !!Object.keys(TypingStore.getTypingUsers(channelId)).length, [channelId]);
-	return { isTyping, mentionCount, unreadCount };
+	const [mentionCount, unreadCount] = useStateFromStores(
+		[ReadStateStore],
+		() => {
+			const mentionCount = ReadStateStore.getMentionCount(channelId);
+			const unreadCount = ReadStateStore.getUnreadCount(channelId);
+			return [mentionCount, unreadCount];
+		},
+		[channelId]
+	);
+	const typingUsersIds = useStateFromStores([TypingStore], () => Object.keys(TypingStore.getTypingUsers(channelId)), [channelId]);
+	const currentUser = UserStore.getCurrentUser();
+	const typingUsers = typingUsersIds.filter(id => id !== currentUser.id).map(UserStore.getUser);
+	return { typingUsers, mentionCount, unreadCount };
 }
 
 function createContextMenuItem(type, id = "", action = nop, label = "Unknown", icon = null, color = "", children) {
@@ -697,6 +697,23 @@ function onLocationChange(e) {
 	Store.state.setTab(Store.state.selectedId, { path: pathname });
 }
 
+// src\Tabbys\patches\patchChannelClick.js
+const channelFilter = Filters.byStrings("href", "children", "onClick", "onKeyPress", "focusProps");
+const channelComponent = getModule(a => a.render && channelFilter(a.render), { searchExports: true });
+const patchChannelClick = () => {
+	if (!channelComponent) return Logger.patchError("channelComponent");
+	Patcher.after(channelComponent, "render", (_, [props], ret) => {
+		const origClick = getNestedProp(ret, "props.children.props.onClick");
+		const path = props.href;
+		if (!path || !origClick) return ret;
+		ret.props.children.props.onClick = e => {
+			e.preventDefault();
+			if (e.ctrlKey) Store.state.newTab(buildTab({ path }));
+			else origClick?.(e);
+		};
+	});
+};
+
 // common\Components\ErrorBoundary\index.jsx
 class ErrorBoundary extends React.Component {
 	state = { hasError: false, error: null, info: null };
@@ -756,8 +773,8 @@ function path(props, d) {
 		})
 	);
 }
-const BookmarkIconPaths = "M17 4H7a1 1 0 0 0-1 1v13.74l3.99-3.61a3 3 0 0 1 4.02 0l3.99 3.6V5a1 1 0 0 0-1-1ZM7 2a3 3 0 0 0-3 3v16a1 1 0 0 0 1.67.74l5.66-5.13a1 1 0 0 1 1.34 0l5.66 5.13a1 1 0 0 0 1.67-.75V5a3 3 0 0 0-3-3H7Z";
-const BookmarkOutlinedIcon = svg(null, path({ fillRule: "evenodd" }, BookmarkIconPaths));
+const BookmarkIconPath = "M17 4H7a1 1 0 0 0-1 1v13.74l3.99-3.61a3 3 0 0 1 4.02 0l3.99 3.6V5a1 1 0 0 0-1-1ZM7 2a3 3 0 0 0-3 3v16a1 1 0 0 0 1.67.74l5.66-5.13a1 1 0 0 1 1.34 0l5.66 5.13a1 1 0 0 0 1.67-.75V5a3 3 0 0 0-3-3H7Z";
+const BookmarkOutlinedIcon = svg(null, path({ fillRule: "evenodd" }, BookmarkIconPath));
 const ArrowIcon = svg(null, "M9.71069 18.2929C10.1012 18.6834 10.7344 18.6834 11.1249 18.2929L16.0123 13.4006C16.7927 12.6195 16.7924 11.3537 16.0117 10.5729L11.1213 5.68254C10.7308 5.29202 10.0976 5.29202 9.70708 5.68254C9.31655 6.07307 9.31655 6.70623 9.70708 7.09676L13.8927 11.2824C14.2833 11.6729 14.2833 12.3061 13.8927 12.6966L9.71069 16.8787C9.32016 17.2692 9.32016 17.9023 9.71069 18.2929Z");
 const CloseIcon = svg(null, "M17.3 18.7a1 1 0 0 0 1.4-1.4L13.42 12l5.3-5.3a1 1 0 0 0-1.42-1.4L12 10.58l-5.3-5.3a1 1 0 0 0-1.4 1.42L10.58 12l-5.3 5.3a1 1 0 1 0 1.42 1.4L12 13.42l5.3 5.3Z");
 const DuplicateIcon = svg(null, "M4 5a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v.18a1 1 0 1 0 2 0V5a3 3 0 0 0-3-3H5a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h.18a1 1 0 1 0 0-2H5a1 1 0 0 1-1-1V5Z", "M8 11a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3h-8a3 3 0 0 1-3-3v-8Zm2 0a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-8a1 1 0 0 1-1-1v-8Z");
@@ -766,6 +783,9 @@ const PinIcon = svg(null, "M19.38 11.38a3 3 0 0 0 4.24 0l.03-.03a.5.5 0 0 0 0-.7
 const PlusIcon = svg(null, "M13 5a1 1 0 1 0-2 0v6H5a1 1 0 1 0 0 2h6v6a1 1 0 1 0 2 0v-6h6a1 1 0 1 0 0-2h-6V5Z");
 const VectorIcon = svg(null, "M20.7 12.7a1 1 0 0 0 0-1.4l-5-5a1 1 0 1 0-1.4 1.4l3.29 3.3H4a1 1 0 1 0 0 2h13.59l-3.3 3.3a1 1 0 0 0 1.42 1.4l5-5Z");
 const DiscordIcon = svg(null, "M19.73 4.87a18.2 18.2 0 0 0-4.6-1.44c-.21.4-.4.8-.58 1.21-1.69-.25-3.4-.25-5.1 0-.18-.41-.37-.82-.59-1.2-1.6.27-3.14.75-4.6 1.43A19.04 19.04 0 0 0 .96 17.7a18.43 18.43 0 0 0 5.63 2.87c.46-.62.86-1.28 1.2-1.98-.65-.25-1.29-.55-1.9-.92.17-.12.32-.24.47-.37 3.58 1.7 7.7 1.7 11.28 0l.46.37c-.6.36-1.25.67-1.9.92.35.7.75 1.35 1.2 1.98 2.03-.63 3.94-1.6 5.64-2.87.47-4.87-.78-9.09-3.3-12.83ZM8.3 15.12c-1.1 0-2-1.02-2-2.27 0-1.24.88-2.26 2-2.26s2.02 1.02 2 2.26c0 1.25-.89 2.27-2 2.27Zm7.4 0c-1.1 0-2-1.02-2-2.27 0-1.24.88-2.26 2-2.26s2.02 1.02 2 2.26c0 1.25-.88 2.27-2 2.27Z");
+const ServersIcon = svg(null, "M10.55 4.4c.13-.24.1-.54-.12-.71L8.6 2.24a1 1 0 0 0-1.24 0l-4 3.15a1 1 0 0 0-.38.79v4.03c0 .43.5.66.82.39l2.28-1.9a3 3 0 0 1 3.84 0c.03.02.08 0 .08-.04V6.42a4 4 0 0 1 .55-2.02ZM7.36 10.23a1 1 0 0 1 1.28 0l1.18.99 2.98 2.48 1.84 1.53a1 1 0 0 1-.67 1.77.1.1 0 0 0-.1.09l-.23 3.06a2 2 0 0 1-2 1.85H4.36a2 2 0 0 1-2-1.85l-.24-3.16a1 1 0 0 1-.76-1.76l6-5Z", "M12 10.2c0 .14.07.28.18.38l3.74 3.12a3 3 0 0 1 .03 4.58.55.55 0 0 0-.2.37l-.12 1.65a4 4 0 0 1-.17.9c-.12.38.13.8.52.8H20a2 2 0 0 0 2-2V3.61a1.5 1.5 0 0 0-2-1.41l-6.66 2.33A2 2 0 0 0 12 6.42");
+const QuestsIcon = svg(null, "M7.5 21.7a8.95 8.95 0 0 1 9 0 1 1 0 0 0 1-1.73c-.6-.35-1.24-.64-1.9-.87.54-.3 1.05-.65 1.52-1.07a3.98 3.98 0 0 0 5.49-1.8.77.77 0 0 0-.24-.95 3.98 3.98 0 0 0-2.02-.76A4 4 0 0 0 23 10.47a.76.76 0 0 0-.71-.71 4.06 4.06 0 0 0-1.6.22 3.99 3.99 0 0 0 .54-5.35.77.77 0 0 0-.95-.24c-.75.36-1.37.95-1.77 1.67V6a4 4 0 0 0-4.9-3.9.77.77 0 0 0-.6.72 4 4 0 0 0 3.7 4.17c.89 1.3 1.3 2.95 1.3 4.51 0 3.66-2.75 6.5-6 6.5s-6-2.84-6-6.5c0-1.56.41-3.21 1.3-4.51A4 4 0 0 0 11 2.82a.77.77 0 0 0-.6-.72 4.01 4.01 0 0 0-4.9 3.96A4.02 4.02 0 0 0 3.73 4.4a.77.77 0 0 0-.95.24 3.98 3.98 0 0 0 .55 5.35 4 4 0 0 0-1.6-.22.76.76 0 0 0-.72.71l-.01.28a4 4 0 0 0 2.65 3.77c-.75.06-1.45.33-2.02.76-.3.22-.4.62-.24.95a4 4 0 0 0 5.49 1.8c.47.42.98.78 1.53 1.07-.67.23-1.3.52-1.91.87a1 1 0 1 0 1 1.73Z");
+const AppsIcon = svg(null, path({ "fill-rule": "evenodd", "clip-rule": "evenodd" }, "M20.97 4.06c0 .18.08.35.24.43.55.28.9.82 1.04 1.42.3 1.24.75 3.7.75 7.09v4.91a3.09 3.09 0 0 1-5.85 1.38l-1.76-3.51a1.09 1.09 0 0 0-1.23-.55c-.57.13-1.36.27-2.16.27s-1.6-.14-2.16-.27c-.49-.11-1 .1-1.23.55l-1.76 3.51A3.09 3.09 0 0 1 1 17.91V13c0-3.38.46-5.85.75-7.1.15-.6.49-1.13 1.04-1.4a.47.47 0 0 0 .24-.44c0-.7.48-1.32 1.2-1.47l2.93-.62c.5-.1 1 .06 1.36.4.35.34.78.71 1.28.68a42.4 42.4 0 0 1 4.4 0c.5.03.93-.34 1.28-.69.35-.33.86-.5 1.36-.39l2.94.62c.7.15 1.19.78 1.19 1.47ZM20 7.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0ZM15.5 12a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM5 7a1 1 0 0 1 2 0v1h1a1 1 0 0 1 0 2H7v1a1 1 0 1 1-2 0v-1H4a1 1 0 1 1 0-2h1V7Z"));
 
 // common\Utils\Toast.js
 function showToast(content, type) {
@@ -846,9 +866,70 @@ function g(e) {
 const Badge = ({ count, type }) => {
 	return React.createElement('div', {
 		style: { width: m(count) },
-		className: concateClassNames("badge", type),
+		className: concateClassNames("badge flex-center round", type),
 	}, g(count));
 };
+
+// @Modules\Tooltip
+const Tooltip$1 = getModule(Filters.byPrototypeKeys("renderTooltip"), { searchExports: true });
+
+// common\Components\Tooltip\index.jsx
+const Tooltip = ({ note, position, children }) => {
+	return (
+		React.createElement(Tooltip$1, {
+			text: note,
+			position: position || "top",
+		}, props => {
+			children.props = {
+				...props,
+				...children.props
+			};
+			return children;
+		})
+	);
+};
+
+// common\Utils\Settings.js
+const SettingsStoreSelectors = {};
+const persistMiddleware = config => (set, get, api) => config(args => (set(args), Data.save("settings", get().getRawState())), get, api);
+const SettingsStore = Object.assign(
+	zustand$1(
+		persistMiddleware(subscribeWithSelector((set, get) => {
+			const settingsObj = Object.create(null);
+			for (const [key, value] of Object.entries({
+					...config.settings,
+					...Data.load("settings")
+				})) {
+				settingsObj[key] = value;
+				settingsObj[`set${key}`] = newValue => set({
+					[key]: newValue });
+				SettingsStoreSelectors[key] = state => state[key];
+			}
+			settingsObj.getRawState = () => {
+				return Object.entries(get())
+					.filter(([, val]) => typeof val !== "function")
+					.reduce((acc, [key, val]) => {
+						acc[key] = val;
+						return acc;
+					}, {});
+			};
+			return settingsObj;
+		}))
+	), {
+		useSetting: function(key) {
+			return this(state => [state[key], state[`set${key}`]]);
+		},
+		selectors: SettingsStoreSelectors
+	}
+);
+Object.defineProperty(SettingsStore, "state", {
+	writeable: false,
+	configurable: false,
+	get() {
+		return this.getState();
+	}
+});
+const Settings = SettingsStore;
 
 // src\Tabbys\components\Tab\BaseTab.jsx
 const filter = Filters.byStrings("dotRadius", "dotPosition");
@@ -886,10 +967,16 @@ function DragThis(comp) {
 	);
 }
 
-function BaseTab({ id, path, idDM, mentionCount, isTyping, unreadCount, icon, title, dragRef, dropRef, isOver, canDrop, draggedIsMe, isDragging }) {
+function BaseTab(props) {
+	const { id, path, icon, title } = props;
+	const { idDM, mentionCount, typingUsers, unreadCount } = props;
+	const { dragRef, dropRef, isOver, canDrop, draggedIsMe, isDragging } = props;
+	const size = Settings.state.size;
 	const selected = Store(state => state.selectedId === id);
 	const isSingleTab = Store(Store.selectors.isSingleTab);
 	const tabRef = useRef(null);
+	const isTyping = !!typingUsers?.length;
+	const typingUsersNames = typingUsers?.map(a => a.global_name).join(", ");
 	dragRef(dropRef(tabRef));
 	const clickHandler = e => {
 		e.stopPropagation();
@@ -908,65 +995,142 @@ function BaseTab({ id, path, idDM, mentionCount, isTyping, unreadCount, icon, ti
 		});
 	};
 	return (
-		React.createElement('div', {
-			onContextMenu: contextmenuHandler,
-			ref: tabRef,
-			className: concateClassNames("tab", selected && "selected-tab", isDragging && "dragging", !draggedIsMe && canDrop && isOver && "candrop"),
-			onClick: !selected ? clickHandler : nop,
-		}, React.createElement('div', { className: concateClassNames("tab-icon", !icon && "discord-icon"), }, icon || React.createElement(DiscordIcon, null)), React.createElement('div', { className: "tab-title ellipsis", }, title || path), !!mentionCount && React.createElement(Badge, { count: mentionCount, type: "ping", }), !idDM && !!unreadCount && React.createElement(Badge, { count: unreadCount, type: "unread", }), isTyping && React.createElement(TypingDots, { dotRadius: 2.5, }), !isSingleTab && (
-			React.createElement('div', {
-				className: "tab-close",
-				onClick: closeHandler,
-			}, React.createElement(CloseIcon, null))
-		))
+		React.createElement(Tooltip, { note: isTyping ? typingUsersNames : null, }
+			/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */
+			, React.createElement('div', {
+				style: { "--size": size },
+				onContextMenu: contextmenuHandler,
+				ref: tabRef,
+				className: concateClassNames("tab flex-center", selected && "selected-tab", isDragging && "dragging", !draggedIsMe && canDrop && isOver && "candrop"),
+				onClick: !selected ? clickHandler : nop,
+			}, React.createElement('div', { className: "tab-icon flex-center round", }, icon), React.createElement('div', { className: "tab-title ellipsis", }, title || path), !!mentionCount && (
+				React.createElement(Badge, {
+					count: mentionCount,
+					type: "ping",
+				})
+			), !idDM && !!unreadCount && (
+				React.createElement(Badge, {
+					count: unreadCount,
+					type: "unread",
+				})
+			), isTyping && React.createElement(TypingDots, { dotRadius: 2.5, }), !isSingleTab && (
+				React.createElement('div', {
+					className: "tab-close flex-center round",
+					onClick: closeHandler,
+				}, React.createElement(CloseIcon, { className: "parent-dim", }))
+			))
+		)
 	);
 }
 const BaseTab$1 = DragThis(BaseTab);
 
+// @Stores\PresenceStore
+const PresenceStore = getStore("PresenceStore");
+
+// src\Tabbys\components\UserAvatar\index.jsx
+const UserAvatarFilter = Filters.byStrings("statusColor", "isTyping");
+const UserAvatar = getModule(a => a?.type && UserAvatarFilter(a.type), { searchExports: true });
+const UserAvatar$1 = UserAvatar &&
+	(({ id, size, src }) => {
+		const [status, isMobile] = useStateFromStores([PresenceStore], () => [PresenceStore.getStatus(id), PresenceStore.isMobileOnline(id)], [id]);
+		return (
+			React.createElement(UserAvatar, {
+				status: status,
+				isMobile: isMobile,
+				size: size,
+				src: src,
+			})
+		);
+	});
+
 // src\Tabbys\components\Tab\ChannelTab.jsx
-const ICON_SIZE$1 = 80;
+const GroupDMAvatar = getModule(Filters.byStrings("recipients", "backSrc"));
+const sizes$1 = {
+	16: "SIZE_16",
+	20: "SIZE_20",
+	24: "SIZE_24",
+	32: "SIZE_32",
+	40: "SIZE_40",
+	44: "SIZE_44",
+	48: "SIZE_48",
+	56: "SIZE_56",
+	80: "SIZE_80",
+};
 
 function ChannelTab({ id, channelId, path }) {
-	const { icon, channelName, channel } = useChannel(channelId, ICON_SIZE$1);
+	const size = Settings.state.size;
 	const channelUnreadState = useChannelState(channelId);
+	const channel = useStateFromStores([ChannelStore], () => ChannelStore.getChannel(channelId), [channelId]);
+	if (!channel) return;
+	const channelName = getChannelName(channel);
+	const isDM = channel.isDM();
+	const isGroupDM = channel.isGroupDM();
+	let icon = null;
+	if (isGroupDM && GroupDMAvatar && !channel.icon) {
+		icon = (
+			React.createElement(GroupDMAvatar, {
+				recipients: channel.recipients,
+				size: sizes$1[size],
+			})
+		);
+	} else {
+		const src = getChannelIcon(channel, size);
+		if (isDM && UserAvatar$1) {
+			const userId = channel.recipients[0];
+			icon = (
+				React.createElement(UserAvatar$1, {
+					id: userId,
+					src: src,
+					size: sizes$1[size],
+				})
+			);
+		} else if (src)
+			icon = (
+				React.createElement('img', {
+					className: "parent-dim fill round",
+					src: src,
+					alt: channelName,
+				})
+			);
+	}
+	icon = icon || React.createElement('div', { className: "discord-icon flex-center fill round", }, React.createElement(DiscordIcon, null));
 	return (
 		React.createElement(BaseTab$1, {
 			id: id,
 			path: path,
 			icon: icon,
 			title: channelName,
-			idDM: channel?.isDM?.(),
+			isGroupDM: isGroupDM,
+			isDM: isDM,
 			...channelUnreadState,
 		})
 	);
 }
 
 // src\Tabbys\components\Tab\index.jsx
-function ServersIcon() {
-	return React.createElement('svg', { 'aria-hidden': "true", role: "img", xmlns: "http://www.w3.org/2000/svg", width: "24", height: "24", fill: "none", viewBox: "0 0 24 24", }, React.createElement('path', { fill: "currentColor", d: "M10.55 4.4c.13-.24.1-.54-.12-.71L8.6 2.24a1 1 0 0 0-1.24 0l-4 3.15a1 1 0 0 0-.38.79v4.03c0 .43.5.66.82.39l2.28-1.9a3 3 0 0 1 3.84 0c.03.02.08 0 .08-.04V6.42a4 4 0 0 1 .55-2.02ZM7.36 10.23a1 1 0 0 1 1.28 0l1.18.99 2.98 2.48 1.84 1.53a1 1 0 0 1-.67 1.77.1.1 0 0 0-.1.09l-.23 3.06a2 2 0 0 1-2 1.85H4.36a2 2 0 0 1-2-1.85l-.24-3.16a1 1 0 0 1-.76-1.76l6-5Z", class: "", }), React.createElement('path', { fill: "currentColor", d: "M12 10.2c0 .14.07.28.18.38l3.74 3.12a3 3 0 0 1 .03 4.58.55.55 0 0 0-.2.37l-.12 1.65a4 4 0 0 1-.17.9c-.12.38.13.8.52.8H20a2 2 0 0 0 2-2V3.61a1.5 1.5 0 0 0-2-1.41l-6.66 2.33A2 2 0 0 0 12 6.42", class: "", }))
-}
-
-function QuestsIcon() {
-	return React.createElement('svg', { 'aria-hidden': "true", role: "img", xmlns: "http://www.w3.org/2000/svg", width: "24", height: "24", fill: "none", viewBox: "0 0 24 24", }, React.createElement('path', { fill: "currentColor", d: "M7.5 21.7a8.95 8.95 0 0 1 9 0 1 1 0 0 0 1-1.73c-.6-.35-1.24-.64-1.9-.87.54-.3 1.05-.65 1.52-1.07a3.98 3.98 0 0 0 5.49-1.8.77.77 0 0 0-.24-.95 3.98 3.98 0 0 0-2.02-.76A4 4 0 0 0 23 10.47a.76.76 0 0 0-.71-.71 4.06 4.06 0 0 0-1.6.22 3.99 3.99 0 0 0 .54-5.35.77.77 0 0 0-.95-.24c-.75.36-1.37.95-1.77 1.67V6a4 4 0 0 0-4.9-3.9.77.77 0 0 0-.6.72 4 4 0 0 0 3.7 4.17c.89 1.3 1.3 2.95 1.3 4.51 0 3.66-2.75 6.5-6 6.5s-6-2.84-6-6.5c0-1.56.41-3.21 1.3-4.51A4 4 0 0 0 11 2.82a.77.77 0 0 0-.6-.72 4.01 4.01 0 0 0-4.9 3.96A4.02 4.02 0 0 0 3.73 4.4a.77.77 0 0 0-.95.24 3.98 3.98 0 0 0 .55 5.35 4 4 0 0 0-1.6-.22.76.76 0 0 0-.72.71l-.01.28a4 4 0 0 0 2.65 3.77c-.75.06-1.45.33-2.02.76-.3.22-.4.62-.24.95a4 4 0 0 0 5.49 1.8c.47.42.98.78 1.53 1.07-.67.23-1.3.52-1.91.87a1 1 0 1 0 1 1.73Z", class: "", }))
-}
-
-function AppsIcon() {
-	return React.createElement('svg', { 'aria-hidden': "true", role: "img", xmlns: "http://www.w3.org/2000/svg", width: "24", height: "24", fill: "none", viewBox: "0 0 24 24", }, React.createElement('path', { fill: "currentColor", 'fill-rule': "evenodd", d: "M20.97 4.06c0 .18.08.35.24.43.55.28.9.82 1.04 1.42.3 1.24.75 3.7.75 7.09v4.91a3.09 3.09 0 0 1-5.85 1.38l-1.76-3.51a1.09 1.09 0 0 0-1.23-.55c-.57.13-1.36.27-2.16.27s-1.6-.14-2.16-.27c-.49-.11-1 .1-1.23.55l-1.76 3.51A3.09 3.09 0 0 1 1 17.91V13c0-3.38.46-5.85.75-7.1.15-.6.49-1.13 1.04-1.4a.47.47 0 0 0 .24-.44c0-.7.48-1.32 1.2-1.47l2.93-.62c.5-.1 1 .06 1.36.4.35.34.78.71 1.28.68a42.4 42.4 0 0 1 4.4 0c.5.03.93-.34 1.28-.69.35-.33.86-.5 1.36-.39l2.94.62c.7.15 1.19.78 1.19 1.47ZM20 7.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0ZM15.5 12a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM5 7a1 1 0 0 1 2 0v1h1a1 1 0 0 1 0 2H7v1a1 1 0 1 1-2 0v-1H4a1 1 0 1 1 0-2h1V7Z", 'clip-rule': "evenodd", class: "", }))
-}
-
 function getIcon(type) {
+	let icon = null;
 	switch (type) {
 		case "servers":
-			return React.createElement(ServersIcon, null);
+			icon = React.createElement(ServersIcon, null);
+			break;
 		case "quests":
-			return React.createElement(QuestsIcon, null);
+			icon = React.createElement(QuestsIcon, null);
+			break;
 		case "applications":
-			return React.createElement(AppsIcon, null);
+			icon = React.createElement(AppsIcon, null);
+			break;
 	}
+	return icon ? (
+		React.createElement('div', { className: "svg-icon", }, icon)
+	) : (
+		React.createElement('div', { className: "discord-icon flex-center fill round", }, React.createElement(DiscordIcon, null))
+	);
 }
 const Tab = React.memo(({ id }) => {
+	Settings(Settings.selectors.tabIconSize);
 	const { path } = Store(state => state.getTab(id), shallow) || {};
-	if (!path) return;
+	if (!path) return Logger.error("unknown tab path", path, id);
 	const [, type, idk, channelId, , threadId] = path.split("/");
 	if (type === "channels" && channelId)
 		return (
@@ -1094,9 +1258,9 @@ function TabsScroller({ children }) {
 			root: tabsNode,
 			threshold: 0.99
 		};
-		const handleLeftScrollButton = debounce(entries => setLeftScrollBtn(!entries.sort((a, b) => a.time - b.time).pop().isIntersecting));
+		const handleLeftScrollButton = debounce(entries => setLeftScrollBtn(!entries.sort((a, b) => a.time - b.time).pop().isIntersecting), 100);
 		const leftObserver = new IntersectionObserver(handleLeftScrollButton, observerOptions);
-		const handleRightScrollButton = debounce(entries => setRightScrollBtn(!entries.sort((a, b) => a.time - b.time).pop().isIntersecting));
+		const handleRightScrollButton = debounce(entries => setRightScrollBtn(!entries.sort((a, b) => a.time - b.time).pop().isIntersecting), 100);
 		const rightObserver = new IntersectionObserver(handleRightScrollButton, observerOptions);
 
 		function observeFirstAndLastChild() {
@@ -1152,13 +1316,13 @@ function TabsScroller({ children }) {
 	const handleStartScrollClick = () => moveTabsScroll(-1 * getScrollSize());
 	const handleEndScrollClick = () => moveTabsScroll(getScrollSize());
 	return (
-		React.createElement('div', { className: "tabs-scroller", }
+		React.createElement('div', { className: "tabs-scroller flex-center", }
 			/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */
 			, React.createElement('div', {
 				ref: displayStartScrollRef,
 				onClick: handleStartScrollClick,
-				className: concateClassNames("scrollBtn left-arrow", !leftScrollBtn && "hidden"),
-			}, React.createElement(ArrowIcon, { style: { rotate: "180deg" }, })), React.createElement('div', {
+				className: concateClassNames("scrollBtn flex-center left-arrow", !leftScrollBtn && "hidden-visually"),
+			}, React.createElement(ArrowIcon, { className: "parent-dim flip", })), React.createElement('div', {
 				className: "tabs-list",
 				ref: tabsRef,
 			}, children)
@@ -1166,8 +1330,8 @@ function TabsScroller({ children }) {
 			, React.createElement('div', {
 				ref: displayEndScrollRef,
 				onClick: handleEndScrollClick,
-				className: concateClassNames("scrollBtn right-arrow", !rightScrollBtn && "hidden"),
-			}, React.createElement(ArrowIcon, null))
+				className: concateClassNames("scrollBtn flex-center right-arrow", !rightScrollBtn && "hidden-visually"),
+			}, React.createElement(ArrowIcon, { className: "parent-dim", }))
 		)
 	);
 }
@@ -1183,175 +1347,40 @@ function TabBar({ leading, trailing }) {
 		Store.state.newTab(buildTab({ path: "/channels/@me" }));
 	};
 	return (
-		React.createElement('div', { className: "tabbar", }, leading, React.createElement('div', {
-				className: "tabs-container",
-				onDoubleClick: e => e.stopPropagation(),
-			}, React.createElement(TabsScroller, null, tabs.map((a, index) => [
-				index !== 0 && React.createElement('div', { className: "tab-div", }),
-				React.createElement(Tab, {
-					key: a.id,
-					id: a.id,
-				})
-			])), React.createElement('div', { className: "tab-div", })
+		React.createElement('div', { className: "tabbar flex", }, leading, React.createElement('div', {
+					className: "tabs-container flex-center",
+					onDoubleClick: e => e.stopPropagation(),
+				}, React.createElement(TabsScroller, null, tabs.map((a, index) => [
+					index !== 0 && React.createElement('div', { className: "tab-div", }),
+					React.createElement(Tab, {
+						key: a.id,
+						id: a.id,
+					})
+				])), React.createElement('div', { className: "tab-div", })
+				/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */
+				, React.createElement('div', {
+					className: "new-tab flex-center round",
+					onClick: newTabHandler,
+				}, React.createElement(PlusIcon, { className: "parent-dim", }))
+			)
 			/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */
-			, React.createElement('div', {
-				className: "new-tab",
-				onClick: newTabHandler,
-			}, React.createElement(PlusIcon, null))
-		), trailing)
-	);
-}
-
-// src\Tabbys\contextmenus\BookmarkContextmenu.jsx
-function deleteBookmark(id) {
-	Store.state.removeBookmark(id);
-}
-
-function openInNewTab(id) {
-	Store.state.newTab(buildTab(Store.state.getBookmark(id)));
-}
-
-function BookmarkContextmenu(props) {
-	const id = this.id;
-	const Menu = ContextMenu.buildMenu([
-		createContextMenuItem(null, "open-bookmark-in-new-tab", () => openInNewTab(id), "Open in new Tab", React.createElement(PlusIcon, null)),
-		{ type: "separator" },
-		createContextMenuItem(null, "remove-bookmark", () => deleteBookmark(id), "Remove Bookmark", React.createElement(CloseIcon, null), "danger"),
-	]);
-	return React.createElement(Menu, { ...props, className: "bookmark-contextmenu", });
-}
-
-// src\Tabbys\components\Bookmark\BaseBookmark.jsx
-function BaseBookmark({ id, path, icon, title, className }) {
-	const clickHandler = e => {
-		e.stopPropagation();
-		if (!path) return console.log(id, "no path");
-		transitionTo(path);
-	};
-	const contextmenuHandler = e => {
-		ContextMenu.open(e, BookmarkContextmenu.bind({ id }), {
-			position: "bottom",
-			align: "left"
-		});
-	};
-	return (
-		React.createElement('div', {
-			className: concateClassNames("bookmark", className && className),
-			onContextMenu: contextmenuHandler,
-			onClick: clickHandler,
-		}, React.createElement('div', { className: concateClassNames("bookmark-icon", !icon && "discord-icon"), }, icon || React.createElement(DiscordIcon, null)), React.createElement('div', { className: "bookmark-title ellipsis", }, title || path))
-	);
-}
-
-// src\Tabbys\components\Bookmark\index.jsx
-const ICON_SIZE = 80;
-
-function Bookmark({ id, channelId, path, className }) {
-	const { icon, channelName } = useChannel(channelId, ICON_SIZE);
-	return (
-		React.createElement(BaseBookmark, {
-			id: id,
-			className: className,
-			path: path,
-			icon: icon,
-			title: channelName,
-		})
-	);
-}
-const Bookmark$1 = React.memo(({ id, className }) => {
-	const { path } = Store(state => state.getBookmark(id), shallow) || {};
-	if (!path) return;
-	const [, , , channelId, , threadId] = path.split("/");
-	return (
-		React.createElement(Bookmark, {
-			id: id,
-			className: className,
-			path: path,
-			channelId: threadId || channelId,
-		})
-	);
-});
-
-// src\Tabbys\components\BookmarkBar\index.jsx
-// 	const overflowLimit = window.innerWidth * 0.95;
-function isVisible(el) {
-	const elParentRect = el.parentElement.getBoundingClientRect();
-	const rect = el.getBoundingClientRect();
-	const elemRight = rect.right;
-	const elemLeft = rect.left;
-	return elemLeft >= 0 && elemRight <= elParentRect.width;
-}
-
-function BookmarkBar() {
-	const bookmarks = Store(Store.selectors.bookmarks, (a, b) => a.length === b.length && !a.some((_, i) => a[i].id !== b[i].id));
-	const bookmarksContainerRef = useRef();
-	const [overflowIndex, setOverflowIndex] = useState(-1);
-	const isOverflowing = overflowIndex > -1;
-	const childrenLengthState = useNumberWatcher(bookmarks.length);
-	const overflowBookmarks = isOverflowing ? bookmarks.slice(overflowIndex, bookmarks.length) : [];
-	useEffect(() => {
-		const bookmarksNode = bookmarksContainerRef.current;
-		if (!bookmarksNode) return;
-		const handleMutation = debounce(() => {
-			if (childrenLengthState === LengthStateEnum.INCREASED && isOverflowing) return;
-			if (childrenLengthState === LengthStateEnum.DECREASED && !isOverflowing) return;
-			const childrenNodes = Array.from(bookmarksNode.children);
-			const indexOfFirstNotFullyVisibleChild = childrenNodes.findIndex(a => !isVisible(a));
-			setOverflowIndex(Math.floor(indexOfFirstNotFullyVisibleChild / 2));
-		});
-		handleMutation();
-		const resizeObserver = new ResizeObserver(handleMutation);
-		resizeObserver.observe(bookmarksNode);
-		return () => {
-			resizeObserver.disconnect();
-			handleMutation.clear();
-		};
-	}, [childrenLengthState]);
-	return (
-		React.createElement('div', { className: "bookmarkbar", }, React.createElement('div', {
-			ref: bookmarksContainerRef,
-			className: "bookmarks-container",
-			onDoubleClick: e => e.stopPropagation(),
-		}, bookmarks.map((a, index) => [
-			React.createElement(Bookmark$1, {
-				key: a.id,
-				id: a.id,
-				divider: index !== 0,
-				className: concateClassNames(isOverflowing && index >= overflowIndex && "hidden-visually"),
-			})
-		])), isOverflowing && (
-			React.createElement(DiscordPopout, {
-				position: "bottom",
-				align: "right",
-				animation: "1",
-				renderPopout: e => {
-					return (
-						React.createElement('div', {
-							onClick: e.closePopout,
-							className: "bookmarks-overflow-popout",
-						}, overflowBookmarks.map(a => [
-							React.createElement(Bookmark$1, {
-								key: a.id,
-								id: a.id,
-							})
-						]))
-					);
-				},
-				spacing: 8,
-			}, e => (
-				React.createElement('div', {
-					className: "bookmarks-overflow",
-					onClick: e.onClick,
-				}, React.createElement(ArrowIcon, null))
-			))
-		))
+			/*<div
+							onClick={contextmenuHandler}
+							className="settings-dropdown flex-center">
+							<PlusIcon className="parent-dim" />
+						</div>*/
+			, trailing
+		)
 	);
 }
 
 // src\Tabbys\components\App\index.jsx
 function App({ leading, trailing }) {
 	return (
-		React.createElement('div', { className: "channel-tabs-container", }, React.createElement(TabBar, { leading: leading, trailing: trailing, }), React.createElement('div', { className: "channel-tabs-divider", }), React.createElement(BookmarkBar, null))
+		React.createElement('div', { className: `${config.info.name}-container Tabbys-vars`, }, React.createElement(TabBar, { leading: leading, trailing: trailing, })
+			/*<div className={`${config.info.name}-divider`}/>*/
+			/*<BookmarkBar />*/
+		)
 	);
 }
 
@@ -1359,7 +1388,7 @@ function App({ leading, trailing }) {
 const TitleBar = getModuleAndKey(Filters.byStrings("PlatformTypes", "windowKey", "title"), { searchExports: true });
 const patchTitleBar = () => {
 	const { module, key } = TitleBar;
-	if (!module || !key) return Logger.patch("patchTitleBar");
+	if (!module || !key) return Logger.patchError("patchTitleBar");
 	Patcher.after(module, key, (_, [props], ret) => {
 		if (props.windowKey === "DISCORD_CHANNEL_CALL_POPOUT") return ret;
 		const [, leading, trailing] = ret?.props?.children || [];
@@ -1369,6 +1398,23 @@ const patchTitleBar = () => {
 				trailing: trailing,
 			}))
 		);
+	});
+};
+
+// src\Tabbys\patches\patchDMClick.js
+const DMChannelFilter = Filters.byStrings("navigate", "location", "href", "createHref");
+const DMChannel = getModule(a => a.render && DMChannelFilter(a.render), { searchExports: true });
+const patchDMClick = () => {
+	if (!DMChannel) return Logger.patchError("DMChannel");
+	Patcher.before(DMChannel, "render", (_, [props]) => {
+		const origClick = props.onClick;
+		const path = props.to;
+		if (!path || !origClick) return;
+		props.onClick = e => {
+			e.preventDefault();
+			if (e.ctrlKey) Store.state.newTab(buildTab({ path }));
+			else origClick();
+		};
 	});
 };
 
@@ -1415,32 +1461,95 @@ function getPath(channel) {
 			return channelPath("@me", channel.id);
 	}
 }
-const patchContextMenu = () => {
-	return ["thread-context", "channel-context", "user-context"].map(context =>
-		ContextMenu.patch(context, (retVal, { channel, targetIsUser }) => {
-			if (!channel || targetIsUser) return;
-			const path = getPath(channel);
-			retVal.props.children.push(
-				ContextMenu.buildItem({ type: "separator" }),
-				ContextMenu.buildItem({
-					type: "submenu",
-					id: `${config.info.name}-channel-options`,
-					label: React.createElement(MenuLabel, { label: config.info.name, }),
-					items: [{
-							action: () => Store.state.newTab(buildTab({ path })),
-							icon: PlusIcon,
-							label: "Open in new Tab"
-						},
-						{
-							action: () => Store.state.addBookmark(buildTab({ path })),
-							icon: BookmarkOutlinedIcon,
-							label: "Bookmark channel"
-						}
-					]
-				})
-			);
+
+function menu(path) {
+	return [
+		ContextMenu.buildItem({ type: "separator" }),
+		ContextMenu.buildItem({
+			type: "submenu",
+			id: `${config.info.name}-channel-options`,
+			label: React.createElement(MenuLabel, { label: config.info.name, }),
+			items: [{
+					action: () => Store.state.newTab(buildTab({ path })),
+					icon: PlusIcon,
+					label: "Open in new Tab"
+				},
+				{
+					action: () => Store.state.addBookmark(buildTab({ path })),
+					icon: BookmarkOutlinedIcon,
+					label: "Bookmark channel"
+				}
+			]
 		})
+	];
+}
+const patchContextMenu = () => {
+	return [
+		...["thread-context", "channel-context"].map(context =>
+			ContextMenu.patch(context, (retVal, { channel, targetIsUser }) => {
+				if (!channel || targetIsUser) return;
+				const path = getPath(channel);
+				if (!path) return;
+				retVal.props.children.push(...menu(path));
+			})
+		),
+		ContextMenu.patch("channel-mention-context", (retVal, { originalLink }) => {
+			const path = getPathName(originalLink);
+			if (!path) return;
+			retVal.props.children.push(...menu(path));
+		}),
+		ContextMenu.patch("user-context", (retVal, { user }) => {
+			if (user.email) return;
+			const channel = ChannelStore.getDMChannelFromUserId(user.id);
+			if (!channel) return;
+			const path = getPath(channel);
+			if (!path) return;
+			retVal.props.children.push(...menu(path));
+		})
+	];
+};
+
+// @Modules\Heading
+const Heading = getModule(a => a?.render?.toString().includes("data-excessive-heading-level"), { searchExports: true });
+
+// @Modules\Slider
+const Slider = getModule(Filters.byPrototypeKeys("renderMark"), { searchExports: true });
+
+// src\Tabbys\components\SettingComponent\index.jsx
+/* eslint-disable react/jsx-key */
+function SettingSlider({ settingKey, label, className, defaultValue, stickToMarkers, equidistant, sortedMarkers, markers, minValue, maxValue }) {
+	const [val, set] = Settings.useSetting(settingKey);
+	return (
+		React.createElement(React.Fragment, null, React.createElement(Heading, {
+			style: { marginBottom: 20 },
+			tag: "h2",
+		}, label), React.createElement(Slider, {
+			className: className,
+			stickToMarkers: stickToMarkers,
+			sortedMarkers: sortedMarkers,
+			equidistant: equidistant,
+			defaultValue: defaultValue,
+			markers: markers,
+			minValue: minValue || markers[0],
+			maxValue: maxValue || markers[markers.length - 1],
+			initialValue: val,
+			onValueChange: set,
+		}))
 	);
+}
+const sizes = [16, 20, 24, 32, 40, 48, 56, 80];
+const SettingComponent = () => {
+	return [
+		React.createElement(SettingSlider, {
+			settingKey: "size",
+			label: "UI size",
+			markers: sizes,
+			defaultValue: 20,
+			stickToMarkers: true,
+			sortedMarkers: true,
+			equidistant: true,
+		})
+	];
 };
 
 // src\Tabbys\index.jsx
@@ -1453,7 +1562,7 @@ function disableGoHomeAfterSwitching() {
 	return () => {
 		const index = Dispatcher._interceptors.indexOf(interceptor);
 		Dispatcher._interceptors.splice(index, 1);
-	}
+	};
 }
 class Tabbys {
 	start() {
@@ -1461,6 +1570,8 @@ class Tabbys {
 			DOM.addStyle(css);
 			Store.init();
 			patchTitleBar();
+			patchDMClick();
+			patchChannelClick();
 			reRender('div[data-windows="true"] > *');
 			this.unpatchContextMenu = patchContextMenu();
 			this.removeDispatchInterceptor = disableGoHomeAfterSwitching();
@@ -1478,13 +1589,347 @@ class Tabbys {
 		this.unpatchContextMenu?.forEach?.(p => p());
 		this.unpatchContextMenu = null;
 	}
+	getSettingsPanel() {
+		return React.createElement(SettingComponent, null);
+	}
 }
 
 module.exports = Tabbys;
 
 const css = `
+.tab,
+.bookmark{
+	flex: 0 1 auto;
+	gap: 5px;
+	padding: 5px;
+	height: 100%;
+	color: white;
+	border-radius: 5px;
+	cursor: pointer;
+	transform: translate(0);
+}
+
+.dragging {
+	opacity: 0.5;
+}
+
+.candrop {
+	background: green !important;
+}
+
+.candrop:after {
+	content: "";
+	border-radius: inherit;
+	position: absolute;
+	inset: 0;
+	border: 1px solid lime;
+}
+
+.bookmark-icon,
+.tab-icon {
+	flex: 0 0 var(--size);
+	width: var(--size);
+	height: var(--size);
+}
+
+
+.discord-icon {
+	color: white;
+	background: #6361f8;
+}
+
+.discord-icon > svg {
+	width: 65%;
+	height: 65%;
+}
+
+.Tabbys-menu-label-icon svg {
+	width: 18px;
+	height: 18px;
+}
+
+/* Helpers  */
+.flip {
+	rotate: 180deg;
+}
+
+.ellipsis {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.hidden-visually {
+	translate: 0 -9999px !important;
+}
+
+.parent-dim {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+.round {
+	border-radius: var(--radius-round);
+}
+
+.fill {
+	width: 100%;
+	height: 100%;
+}
+
+.flex {
+	display: flex;
+}
+
+.flex-center {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+div:has(> .Tabbys-container):not(#a) {
+	grid-template-rows: [top] auto [titleBarEnd] min-content [noticeEnd] 1fr [end];
+}
+
+.Tabbys-container * {
+	box-sizing: border-box;
+}
+
+.Tabbys-container {
+	grid-column: 1/-1;
+	user-select: none;
+	line-height: 1.4;
+	margin-bottom: 2px;
+	display: flex;
+	flex-direction: column;
+	-webkit-app-region: drag;
+}
+
+.Tabbys-divider{
+	height:5px;
+	background:
+	linear-gradient(to right, #0000  0, #ccc3 25%) left center/50% 1px no-repeat,
+	linear-gradient(to left, #0000  0, #ccc3 25%) right center/50%  1px no-repeat;
+	-webkit-app-region: no-drag;
+}
+.bookmarkbar {
+	-webkit-app-region: no-drag;
+	display: flex;
+	flex: 0 0 auto;
+	align-items: center;
+}
+
+.bookmarks-container {
+	flex: 1 0 0;
+	min-width: 0;
+	overflow: hidden;
+	display: flex;
+	gap: 2px;
+	-webkit-app-region: no-drag;
+}
+
+.bookmarks-overflow {
+	flex: 0 0 auto;
+	display: flex;
+	padding: 2px;
+	width: 20px;
+	height: 20px;
+	color: white;
+	margin: 0 2px;
+	z-index: 988;
+	-webkit-app-region: no-drag;
+}
+
+.bookmarks-overflow:hover {
+	background: var(--hover-tab-bg);
+}
+
+.bookmarks-overflow:active {
+	background: var(--active-tab-bg);
+}
+
+.bookmarks-overflow-popout {
+	display: flex;
+	flex-direction: column;
+	background-color: var(--background-tertiary);
+	border-radius: 8px;
+	gap: 5px;
+	padding: 5px;
+	overflow: auto;
+	max-height: 50vh;
+}
+
+.bookmarks-overflow-popout::-webkit-scrollbar {
+	height: 8px;
+	width: 8px;
+}
+
+.bookmarks-overflow-popout::-webkit-scrollbar-track {
+	background-color: var(--scrollbar-thin-track);
+	border-color: var(--scrollbar-thin-track);
+}
+
+.bookmarks-overflow-popout::-webkit-scrollbar-thumb {
+	background-clip: padding-box;
+	background-color: var(--scrollbar-thin-thumb);
+	border: 2px solid transparent;
+	border-radius: 4px;
+	min-height: 40px;
+}
+
+.bookmarks-overflow-popout::-webkit-scrollbar-corner {
+	background-color: transparent;
+}
+
+.tabs-container {
+	min-width:0;
+	gap:2px;
+	position:relative;
+	margin-right:auto;
+	height:100%;
+	-webkit-app-region: no-drag;
+}
+
+.new-tab{
+	flex:0 0 auto;
+	padding:2px;
+	width:20px;
+	height:20px;
+	color:white;
+}
+
+.new-tab:hover{
+	background:var(--hover-tab-bg);
+}
+
+.new-tab:active{
+	background:var(--active-tab-bg);
+}
+
+.tab-div{
+	height:calc(var(--size) * .8);
+	border: 1px solid #ccc5;
+	margin: auto 3px;
+}
+
+
+.bookmark:hover{
+	background:#353333;
+}
+
+.bookmark:active{
+	background:#353333;
+}
+
+.bookmark > .bookmark-title {
+	color:#a7a7a7;
+	font-size:calc(var(--size) * .6);
+}
+
+
+
+.tab {
+	min-width: var(--tab-min-width);
+	max-width:var(--tab-max-width);
+}
+
+.selected-tab {
+	background: var(--selected-tab-bg);
+}
+
+.tab:not(.selected-tab):hover {
+	background: var(--hover-tab-bg);
+}
+
+.tab:not(.selected-tab):active:has(.tab-close:not(:active)) {
+	background: var(--active-tab-bg);
+}
+
+
+
+.tab-title {
+	flex: 1 1 0;
+	min-width: 0;
+	font-size:calc(var(--size) * .6);
+	mask: linear-gradient(to right, #000 80%, #0000 98%, #0000) no-repeat;
+}
+
+.tab-close {
+	z-index: 5;
+	flex: 0 0 calc(var(--size) * .5);
+	width: calc(var(--size) * .5);
+	height: calc(var(--size)* .5);
+}
+
+.tab-close  svg{
+	width: 65%;
+	height: 65%;
+}
+
+.tab-close:hover {
+	background: var(--close-btn-hover-bg);
+}
+
+.tab-close:active {
+	background: var(--close-btn-active-bg);
+}
 
 
 
 
+
+.tabs-scroller {
+	display: flex;
+	min-width: 0;
+	position: relative;
+}
+
+.tabs-list {
+	display: flex;
+	overflow: auto;
+	scrollbar-width: none;
+}
+
+.scrollBtn {
+	height: var(--size);
+	background: #7b7b7b;
+	padding: 5px;
+	border-radius: 8px;
+	z-index: 99;
+	position: absolute;
+	top: 50%;
+	translate: 0 -50%;
+	
+	aspect-ratio: 1;
+	cursor: pointer;
+	color: #ccc;
+}
+
+.left-arrow {
+	left: 0;
+}
+
+.right-arrow {
+	right: 0;
+}
+
+.badge {
+	width: 16px;
+	height: 16px;
+	min-height: 16px;
+	min-width: 16px;
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.02em;
+	line-height: 1.4;
+	text-transform: uppercase;
+}
+
+.badge.ping {
+	background-color: var(--ping);
+}
+
+.badge.unread {
+	background-color: var(--unread);
+}
 `;
