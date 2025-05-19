@@ -19,7 +19,14 @@ const config = {
 		}]
 	},
 	"settings": {
-		"size": 20
+		"size": 20,
+		"tabDividerSize": 5,
+		"showTabDivider": true,
+		"showSettingsButton": true,
+		"showTabbar": true,
+		"showBookmarkbar": true,
+		"showUnreads": true,
+		"showPings": true
 	}
 }
 
@@ -314,12 +321,12 @@ const store$1 = (set) => ({
 		bookmarksList.removeItemByIdentifier(id);
 		set({ bookmarks: bookmarksList.list });
 	},
-	moveBookmark(fromTabId, toTabId) {
-		bookmarksList.swapItemById(fromTabId, toTabId);
-		set({ bookmarks: bookmarksList.list });
-	},
 	setBookmark(id, payload) {
 		bookmarksList.setItemById(id, payload);
+		set({ bookmarks: bookmarksList.list });
+	},
+	swapBookmark(fromId, toId) {
+		bookmarksList.swapItemById(fromId, toId);
 		set({ bookmarks: bookmarksList.list });
 	},
 	getBookmark(id) {
@@ -351,6 +358,7 @@ function getModuleAndKey(filter, options) {
 }
 
 // common\DiscordModules\Modules.js
+const DiscordPopout = getModule(Filters.byPrototypeKeys("shouldShowPopout", "toggleShow"), { searchExports: true });
 const Dispatcher = getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: false });
 const transitionTo = getModule(Filters.byStrings(`"transitionTo - Transitioning to "`), { searchExports: true });
 const DragSource = getModule(Filters.byStrings("drag-source", "collect"), { searchExports: true });
@@ -395,7 +403,7 @@ function getUserAvatar({ id, guildId, size }) {
 }
 
 // src\Tabbys\utils.jsx
-const b = getModule(a => a.getChannelIconURL);
+const ChannelIconsUtils = getModule(a => a.getChannelIconURL);
 
 function buildTab(tabObj) {
 	const id = crypto.randomUUID();
@@ -409,8 +417,7 @@ function getDmAvatar(channel, size) {
 
 function getChannelName(channel) {
 	if (!channel) return;
-	if (channel.isDM() || channel.isGroupDM())
-		return channel.rawRecipients.map(getUserName).join(", ");
+	if (channel.isDM() || channel.isGroupDM()) return channel.rawRecipients.map(getUserName).join(", ");
 	return channel.name;
 }
 
@@ -418,7 +425,7 @@ function getChannelIcon(channel, size) {
 	if (!channel) return;
 	if (channel.isDM()) return getDmAvatar(channel, size);
 	if (channel.isGroupDM())
-		return b.getChannelIconURL({
+		return ChannelIconsUtils.getChannelIconURL({
 			id: channel.id,
 			icon: channel.icon,
 			applicationId: channel.getApplicationId(),
@@ -451,7 +458,6 @@ function createContextMenuItem(type, id = "", action = nop, label = "Unknown", i
 		id,
 		action,
 		items: children,
-		label,
 		label: (
 			React.createElement(MenuLabel, {
 				label: label,
@@ -543,8 +549,8 @@ const store = (set, get) => ({
 		tabsList.setList(newList);
 		set({ tabs: tabsList.list, selectedId: newSelected });
 	},
-	swapTab(fromTabId, toTabId) {
-		tabsList.swapItemById(fromTabId, toTabId);
+	swapTab(fromId, toId) {
+		tabsList.swapItemById(fromId, toId);
 		set({ tabs: tabsList.list });
 	},
 	setSelectedId(id) {
@@ -786,6 +792,7 @@ const DiscordIcon = svg(null, "M19.73 4.87a18.2 18.2 0 0 0-4.6-1.44c-.21.4-.4.8-
 const ServersIcon = svg(null, "M10.55 4.4c.13-.24.1-.54-.12-.71L8.6 2.24a1 1 0 0 0-1.24 0l-4 3.15a1 1 0 0 0-.38.79v4.03c0 .43.5.66.82.39l2.28-1.9a3 3 0 0 1 3.84 0c.03.02.08 0 .08-.04V6.42a4 4 0 0 1 .55-2.02ZM7.36 10.23a1 1 0 0 1 1.28 0l1.18.99 2.98 2.48 1.84 1.53a1 1 0 0 1-.67 1.77.1.1 0 0 0-.1.09l-.23 3.06a2 2 0 0 1-2 1.85H4.36a2 2 0 0 1-2-1.85l-.24-3.16a1 1 0 0 1-.76-1.76l6-5Z", "M12 10.2c0 .14.07.28.18.38l3.74 3.12a3 3 0 0 1 .03 4.58.55.55 0 0 0-.2.37l-.12 1.65a4 4 0 0 1-.17.9c-.12.38.13.8.52.8H20a2 2 0 0 0 2-2V3.61a1.5 1.5 0 0 0-2-1.41l-6.66 2.33A2 2 0 0 0 12 6.42");
 const QuestsIcon = svg(null, "M7.5 21.7a8.95 8.95 0 0 1 9 0 1 1 0 0 0 1-1.73c-.6-.35-1.24-.64-1.9-.87.54-.3 1.05-.65 1.52-1.07a3.98 3.98 0 0 0 5.49-1.8.77.77 0 0 0-.24-.95 3.98 3.98 0 0 0-2.02-.76A4 4 0 0 0 23 10.47a.76.76 0 0 0-.71-.71 4.06 4.06 0 0 0-1.6.22 3.99 3.99 0 0 0 .54-5.35.77.77 0 0 0-.95-.24c-.75.36-1.37.95-1.77 1.67V6a4 4 0 0 0-4.9-3.9.77.77 0 0 0-.6.72 4 4 0 0 0 3.7 4.17c.89 1.3 1.3 2.95 1.3 4.51 0 3.66-2.75 6.5-6 6.5s-6-2.84-6-6.5c0-1.56.41-3.21 1.3-4.51A4 4 0 0 0 11 2.82a.77.77 0 0 0-.6-.72 4.01 4.01 0 0 0-4.9 3.96A4.02 4.02 0 0 0 3.73 4.4a.77.77 0 0 0-.95.24 3.98 3.98 0 0 0 .55 5.35 4 4 0 0 0-1.6-.22.76.76 0 0 0-.72.71l-.01.28a4 4 0 0 0 2.65 3.77c-.75.06-1.45.33-2.02.76-.3.22-.4.62-.24.95a4 4 0 0 0 5.49 1.8c.47.42.98.78 1.53 1.07-.67.23-1.3.52-1.91.87a1 1 0 1 0 1 1.73Z");
 const AppsIcon = svg(null, path({ "fill-rule": "evenodd", "clip-rule": "evenodd" }, "M20.97 4.06c0 .18.08.35.24.43.55.28.9.82 1.04 1.42.3 1.24.75 3.7.75 7.09v4.91a3.09 3.09 0 0 1-5.85 1.38l-1.76-3.51a1.09 1.09 0 0 0-1.23-.55c-.57.13-1.36.27-2.16.27s-1.6-.14-2.16-.27c-.49-.11-1 .1-1.23.55l-1.76 3.51A3.09 3.09 0 0 1 1 17.91V13c0-3.38.46-5.85.75-7.1.15-.6.49-1.13 1.04-1.4a.47.47 0 0 0 .24-.44c0-.7.48-1.32 1.2-1.47l2.93-.62c.5-.1 1 .06 1.36.4.35.34.78.71 1.28.68a42.4 42.4 0 0 1 4.4 0c.5.03.93-.34 1.28-.69.35-.33.86-.5 1.36-.39l2.94.62c.7.15 1.19.78 1.19 1.47ZM20 7.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0ZM15.5 12a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM5 7a1 1 0 0 1 2 0v1h1a1 1 0 0 1 0 2H7v1a1 1 0 1 1-2 0v-1H4a1 1 0 1 1 0-2h1V7Z"));
+const SettingIcon = svg(null, "M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z");
 
 // common\Utils\Toast.js
 function showToast(content, type) {
@@ -935,7 +942,7 @@ const Settings = SettingsStore;
 const filter = Filters.byStrings("dotRadius", "dotPosition");
 const TypingDots = getModule(a => a?.type?.render && filter(a.type.render), { searchExports: true });
 
-function DragThis(comp) {
+function DragThis$2(comp) {
 	return DropTarget(
 		"TAB", {
 			drop(thisTab, monitor) {
@@ -955,14 +962,17 @@ function DragThis(comp) {
 	)(
 		DragSource(
 			"TAB", {
-				beginDrag(props) {
+				beginDrag(props, monitor, comp) {
+					console.log(props, monitor, comp);
 					return { ...props };
 				}
 			},
-			(props, monitor) => ({
-				isDragging: !!monitor.isDragging(),
-				dragRef: props.dragSource()
-			})
+			(props, monitor) => {
+				return {
+					isDragging: !!monitor.isDragging(),
+					dragRef: props.dragSource()
+				};
+			}
 		)(comp)
 	);
 }
@@ -971,7 +981,8 @@ function BaseTab(props) {
 	const { id, path, icon, title } = props;
 	const { idDM, mentionCount, typingUsers, unreadCount } = props;
 	const { dragRef, dropRef, isOver, canDrop, draggedIsMe, isDragging } = props;
-	const size = Settings.state.size;
+	const showUnreads = Settings(Settings.selectors.showUnreads);
+	const showPings = Settings(Settings.selectors.showPings);
 	const selected = Store(state => state.selectedId === id);
 	const isSingleTab = Store(Store.selectors.isSingleTab);
 	const tabRef = useRef(null);
@@ -998,17 +1009,16 @@ function BaseTab(props) {
 		React.createElement(Tooltip, { note: isTyping ? typingUsersNames : null, }
 			/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */
 			, React.createElement('div', {
-				style: { "--size": size },
 				onContextMenu: contextmenuHandler,
 				ref: tabRef,
 				className: concateClassNames("tab flex-center", selected && "selected-tab", isDragging && "dragging", !draggedIsMe && canDrop && isOver && "candrop"),
 				onClick: !selected ? clickHandler : nop,
-			}, React.createElement('div', { className: "tab-icon flex-center round", }, icon), React.createElement('div', { className: "tab-title ellipsis", }, title || path), !!mentionCount && (
+			}, React.createElement('div', { className: "tab-icon flex-center round", }, icon), React.createElement('div', { className: "tab-title ellipsis", }, title || path), showPings && !!mentionCount && (
 				React.createElement(Badge, {
 					count: mentionCount,
 					type: "ping",
 				})
-			), !idDM && !!unreadCount && (
+			), showUnreads && !idDM && !!unreadCount && (
 				React.createElement(Badge, {
 					count: unreadCount,
 					type: "unread",
@@ -1022,7 +1032,7 @@ function BaseTab(props) {
 		)
 	);
 }
-const BaseTab$1 = DragThis(BaseTab);
+const BaseTab$1 = DragThis$2(BaseTab);
 
 // @Stores\PresenceStore
 const PresenceStore = getStore("PresenceStore");
@@ -1054,11 +1064,11 @@ const sizes$1 = {
 	44: "SIZE_44",
 	48: "SIZE_48",
 	56: "SIZE_56",
-	80: "SIZE_80",
+	80: "SIZE_80"
 };
 
 function ChannelTab({ id, channelId, path }) {
-	const size = Settings.state.size;
+	const size = Settings(Settings.selectors.size);
 	const channelUnreadState = useChannelState(channelId);
 	const channel = useStateFromStores([ChannelStore], () => ChannelStore.getChannel(channelId), [channelId]);
 	if (!channel) return;
@@ -1093,7 +1103,9 @@ function ChannelTab({ id, channelId, path }) {
 				})
 			);
 	}
-	icon = icon || React.createElement('div', { className: "discord-icon flex-center fill round", }, React.createElement(DiscordIcon, null));
+	icon = icon || (
+		React.createElement('div', { className: "discord-icon flex-center fill round", }, React.createElement(DiscordIcon, null))
+	);
 	return (
 		React.createElement(BaseTab$1, {
 			id: id,
@@ -1128,7 +1140,6 @@ function getIcon(type) {
 	);
 }
 const Tab = React.memo(({ id }) => {
-	Settings(Settings.selectors.tabIconSize);
 	const { path } = Store(state => state.getTab(id), shallow) || {};
 	if (!path) return Logger.error("unknown tab path", path, id);
 	const [, type, idk, channelId, , threadId] = path.split("/");
@@ -1256,7 +1267,7 @@ function TabsScroller({ children }) {
 		if (!tabsNode) return;
 		const observerOptions = {
 			root: tabsNode,
-			threshold: 0.99
+			threshold: 0.80
 		};
 		const handleLeftScrollButton = debounce(entries => setLeftScrollBtn(!entries.sort((a, b) => a.time - b.time).pop().isIntersecting), 100);
 		const leftObserver = new IntersectionObserver(handleLeftScrollButton, observerOptions);
@@ -1272,17 +1283,11 @@ function TabsScroller({ children }) {
 			rightObserver.observe(lastTab);
 		}
 		observeFirstAndLastChild();
-		const handleMutation = debounce(() => {
-			scrollSelectedIntoView();
-			observeFirstAndLastChild();
-		});
-		const resizeObserver = new ResizeObserver(handleMutation);
+		const handleMutation = debounce(() => observeFirstAndLastChild());
 		const mutationObserver = new MutationObserver(handleMutation);
 		mutationObserver.observe(tabsNode, { childList: true });
-		resizeObserver.observe(tabsNode);
 		return () => {
 			mutationObserver?.disconnect?.();
-			resizeObserver?.disconnect?.();
 			leftObserver?.disconnect?.();
 			rightObserver?.disconnect?.();
 			handleRightScrollButton.clear();
@@ -1336,10 +1341,214 @@ function TabsScroller({ children }) {
 	);
 }
 
+// common\Components\Gap\index.jsx
+function Gap({ direction, gap, className }) {
+	const style = {
+		VERTICAL: {
+			width: gap,
+			height: "100%"
+		},
+		HORIZONTAL: {
+			height: gap,
+			width: "100%"
+		}
+	} [direction];
+	return React.createElement('div', { style: style, className: className, });
+}
+Gap.direction = {
+	HORIZONTAL: "HORIZONTAL",
+	VERTICAL: "VERTICAL",
+};
+
+// @Modules\Heading
+const Heading = getModule(a => a?.render?.toString().includes("data-excessive-heading-level"), { searchExports: true });
+
+// @Modules\Slider
+const Slider = getModule(Filters.byPrototypeKeys("renderMark"), { searchExports: true });
+
+// common\Components\icons\ArrowIcon\index.jsx
+function Arrow() {
+	return (
+		React.createElement('svg', {
+			width: 24,
+			height: 24,
+			viewBox: "0 0 24 24",
+			fill: "none",
+			xmlns: "http://www.w3.org/2000/svg",
+		}, React.createElement('path', {
+			d: "M9.71069 18.2929C10.1012 18.6834 10.7344 18.6834 11.1249 18.2929L16.0123 13.4006C16.7927 12.6195 16.7924 11.3537 16.0117 10.5729L11.1213 5.68254C10.7308 5.29202 10.0976 5.29202 9.70708 5.68254C9.31655 6.07307 9.31655 6.70623 9.70708 7.09676L13.8927 11.2824C14.2833 11.6729 14.2833 12.3061 13.8927 12.6966L9.71069 16.8787C9.32016 17.2692 9.32016 17.9023 9.71069 18.2929Z",
+			fill: "#ccc",
+		}))
+	);
+}
+
+// common\Components\Collapsible\index.jsx
+function Collapsible({ title, children }) {
+	const [open, setOpen] = React.useState(false);
+	return (
+		React.createElement('div', { className: open ? "collapsible-container collapsible-open" : "collapsible-container", }, React.createElement('div', {
+			className: "collapsible-header",
+			onClick: () => setOpen(!open),
+		}, React.createElement('div', { className: "collapsible-icon", }, React.createElement(Arrow, null)), React.createElement(Heading, {
+			className: "collapsible-title",
+			tag: "h5",
+		}, title)), React.createElement('div', { className: "collapsible-body", }, children))
+	);
+}
+
+// @Modules\FormSwitch
+const FormSwitch = getModule(Filters.byStrings("note", "tooltipNote"), { searchExports: true });
+
+// common\Components\Switch\index.jsx
+const Switch = FormSwitch ||
+	function SwitchComponentFallback(props) {
+		return (
+			React.createElement('div', { style: { color: "#fff" }, }, props.children, React.createElement('input', {
+				type: "checkbox",
+				checked: props.value,
+				onChange: e => props.onChange(e.target.checked),
+			}))
+		);
+	};
+
+// common\Components\SettingSwtich\index.jsx
+function SettingSwtich({ settingKey, note, onChange = nop, hideBorder = false, description, ...rest }) {
+	const [val, set] = Settings.useSetting(settingKey);
+	return (
+		React.createElement(Switch, {
+			...rest,
+			value: val,
+			note: note,
+			hideBorder: hideBorder,
+			onChange: e => {
+				set(e);
+				onChange(e);
+			},
+		}, description || settingKey)
+	);
+}
+
+// src\Tabbys\components\SettingComponent\index.jsx
+/* eslint-disable react/jsx-key */
+function SettingSlider({ settingKey, label, className, note, defaultValue, stickToMarkers, equidistant, sortedMarkers, markers, minValue, maxValue }) {
+	const [val, set] = Settings.useSetting(settingKey);
+	return (
+		React.createElement(React.Fragment, null, React.createElement(BdApi.Components.Text, {
+			strong: true,
+			size: BdApi.Components.Text.Sizes.SIZE_16,
+			style: { marginBottom: 8 },
+		}, label), React.createElement(BdApi.Components.Text, {
+			size: BdApi.Components.Text.Sizes.SIZE_14,
+			style: { marginBottom: 8 },
+		}, note), React.createElement(Slider, {
+			className: className,
+			stickToMarkers: stickToMarkers,
+			sortedMarkers: sortedMarkers,
+			equidistant: equidistant,
+			defaultValue: defaultValue,
+			markers: markers,
+			minValue: minValue || markers[0],
+			maxValue: maxValue || markers[markers.length - 1],
+			initialValue: val,
+			onValueChange: set,
+		}))
+	);
+}
+const sizes = [16, 20, 24, 32, 40, 48, 56, 80];
+const SettingComponent = () => {
+	return [
+		React.createElement(Collapsible, { title: "Show/Hide", }, [{
+				settingKey: "showTabDivider",
+				description: "Show dividers between tabs",
+				hideBorder: false
+			},
+			{
+				settingKey: "showSettingsButton",
+				description: "Show a quick settings button next to tabs",
+				hideBorder: false
+			},
+			{
+				settingKey: "showTabbar",
+				description: "Show/hide Tabs bar",
+				hideBorder: false
+			},
+			{
+				settingKey: "showBookmarkbar",
+				description: "Show/hide Bookmarks bar",
+				hideBorder: false
+			},
+			{
+				settingKey: "showUnreads",
+				description: "Show/hide unread messages indicator",
+				note: "DM unreads always show as red badges",
+				hideBorder: false
+			},
+			{
+				settingKey: "showPings",
+				description: "Show/hide pings indicator",
+				hideBorder: true
+			}
+		].map(SettingSwtich)),
+		React.createElement(Gap, {
+			className: "divider-h",
+			direction: Gap.direction.HORIZONTAL,
+			gap: 40,
+		}),
+		React.createElement(SettingSlider, {
+			settingKey: "tabDividerSize",
+			label: "Tabs divider size",
+			note: "Space between tabs, selected value is doubled",
+			markers: [5, 100],
+			minValue: 5,
+			maxValue: 100,
+			stickToMarkers: false,
+			sortedMarkers: true,
+			equidistant: false,
+		}),
+		React.createElement(Gap, {
+			className: "divider-h",
+			direction: Gap.direction.HORIZONTAL,
+			gap: 40,
+		}),
+		React.createElement(SettingSlider, {
+			settingKey: "size",
+			label: "UI density",
+			note: "",
+			markers: sizes,
+			stickToMarkers: true,
+			sortedMarkers: true,
+			equidistant: true,
+		})
+	];
+};
+
+// src\Tabbys\components\TabBar\SettingsDropdown.jsx
+const SettingsDropdown = React.memo(function SettingsDropdown() {
+	return (
+		React.createElement(DiscordPopout, {
+			position: "bottom",
+			align: "right",
+			animation: 1,
+			spacing: 8,
+			renderPopout: () => (
+				React.createElement('div', { className: "settings-dropdown", }, React.createElement(SettingComponent, null))
+			),
+		}, e => {
+			return (
+				React.createElement('div', {
+					onClick: e.onClick,
+					className: "settings-dropdown-btn flex-center",
+				}, React.createElement(SettingIcon, { className: "parent-dim", }))
+			);
+		})
+	);
+});
+
 // src\Tabbys\components\TabBar\index.jsx
 function TabBar({ leading, trailing }) {
 	console.log("TabBar rendered");
 	const tabs = Store(Store.selectors.tabs, (a, b) => a.length === b.length && !a.some((_, i) => a[i].id !== b[i].id));
+	const showSettingsButton = Settings(Settings.selectors.showSettingsButton);
 	const newTabHandler = e => {
 		e.preventDefault();
 		e.stopPropagation();
@@ -1348,39 +1557,252 @@ function TabBar({ leading, trailing }) {
 	};
 	return (
 		React.createElement('div', { className: "tabbar flex", }, leading, React.createElement('div', {
-					className: "tabs-container flex-center",
-					onDoubleClick: e => e.stopPropagation(),
-				}, React.createElement(TabsScroller, null, tabs.map((a, index) => [
-					index !== 0 && React.createElement('div', { className: "tab-div", }),
-					React.createElement(Tab, {
-						key: a.id,
-						id: a.id,
-					})
-				])), React.createElement('div', { className: "tab-div", })
-				/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */
-				, React.createElement('div', {
-					className: "new-tab flex-center round",
-					onClick: newTabHandler,
-				}, React.createElement(PlusIcon, { className: "parent-dim", }))
-			)
+				className: "tabs-container flex-center",
+				onDoubleClick: e => e.stopPropagation(),
+			}, React.createElement(TabsScroller, null, tabs.map((a, index) => [
+				index !== 0 && React.createElement('div', { className: "tab-div", }),
+				React.createElement(Tab, {
+					key: a.id,
+					id: a.id,
+				})
+			])), React.createElement('div', { className: "tab-div", })
 			/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */
-			/*<div
-							onClick={contextmenuHandler}
-							className="settings-dropdown flex-center">
-							<PlusIcon className="parent-dim" />
-						</div>*/
-			, trailing
-		)
+			, React.createElement('div', {
+				className: "new-tab flex-center round",
+				onClick: newTabHandler,
+			}, React.createElement(PlusIcon, { className: "parent-dim", }))
+		), showSettingsButton && React.createElement(SettingsDropdown, null), trailing)
 	);
 }
 
+// src\Tabbys\contextmenus\BookmarkContextmenu.jsx
+function deleteBookmark(id) {
+	Store.state.removeBookmark(id);
+}
+
+function openInNewTab(id) {
+	Store.state.newTab(buildTab(Store.state.getBookmark(id)));
+}
+
+function BookmarkContextmenu(id) {
+	const Menu = ContextMenu.buildMenu([
+		createContextMenuItem(null, "open-bookmark-in-new-tab", () => openInNewTab(id), "Open in new Tab", React.createElement(PlusIcon, null)),
+		{ type: "separator" },
+		createContextMenuItem(null, "remove-bookmark", () => deleteBookmark(id), "Remove Bookmark", React.createElement(CloseIcon, null), "danger"),
+	]);
+	return (props) => React.createElement(Menu, { ...props, className: "bookmark-contextmenu", });
+}
+
+// src\Tabbys\components\Bookmark\BaseBookmark.jsx
+function DragThis$1(comp) {
+	return DropTarget(
+		"BOOKMARK", {
+			drop(thisBookmark, monitor) {
+				const droppedBookmark = monitor.getItem();
+				if (thisBookmark.id === droppedBookmark.id) return;
+				Store.state.swapBookmark(droppedBookmark.id, thisBookmark.id);
+			}
+		},
+		(connect, monitor, props) => {
+			return {
+				isOver: monitor.isOver(),
+				canDrop: monitor.canDrop(),
+				dropRef: connect.dropTarget(),
+				draggedIsMe: monitor.getItem()?.id === props.id
+			};
+		}
+	)(
+		DragSource(
+			"BOOKMARK", {
+				beginDrag(props) {
+					return { ...props };
+				}
+			},
+			(props, monitor) => {
+				return {
+					isDragging: !!monitor.isDragging(),
+					dragRef: props.dragSource()
+				};
+			}
+		)(comp)
+	);
+}
+
+function BaseBookmark(props) {
+	const { id, path, icon, title, className } = props;
+	const { dragRef, dropRef, isOver, canDrop, draggedIsMe, isDragging } = props;
+	const bookmarkRef = useRef(null);
+	dropRef(dragRef(bookmarkRef));
+	const clickHandler = e => {
+		e.stopPropagation();
+		if (!path) return console.log(id, "no path");
+		transitionTo(path);
+	};
+	const contextmenuHandler = e => {
+		ContextMenu.open(e, BookmarkContextmenu(id), {
+			position: "bottom",
+			align: "left"
+		});
+	};
+	return (
+		React.createElement('div', {
+			ref: bookmarkRef,
+			className: concateClassNames("bookmark flex-center", className && className, isDragging && "dragging", !draggedIsMe && canDrop && isOver && "candrop"),
+			onContextMenu: contextmenuHandler,
+			onClick: clickHandler,
+		}, React.createElement('div', { className: "bookmark-icon flex-center round", }, icon), React.createElement('div', { className: "bookmark-title ellipsis", }, title || path))
+	);
+}
+const BaseBookmark$1 = DragThis$1(BaseBookmark);
+
+// src\Tabbys\components\Bookmark\index.jsx
+function Bookmark({ id, channelId, path, className }) {
+	const size = Settings(Settings.selectors.size) || 20;
+	const channel = useStateFromStores([ChannelStore], () => ChannelStore.getChannel(channelId), [channelId]);
+	const channelName = getChannelName(channel) || path.split("/")[2];
+	const src = getChannelIcon(channel, size);
+	let icon = null;
+	if (src)
+		icon = src && (
+			React.createElement('img', {
+				className: "parent-dim fill round",
+				src: src,
+				alt: channelName,
+			})
+		);
+	else {
+		icon = (
+			React.createElement('div', { className: "discord-icon flex-center fill round", }, React.createElement(DiscordIcon, null))
+		);
+	}
+	return (
+		React.createElement(BaseBookmark$1, {
+			id: id,
+			className: className,
+			path: path,
+			icon: icon,
+			title: channelName,
+		})
+	);
+}
+const Bookmark$1 = React.memo(({ id, className }) => {
+	const { path } = Store(state => state.getBookmark(id), shallow) || {};
+	if (!path) return Logger.error("unknown bookmark path", path, id);
+	const [, , , channelId, , threadId] = path.split("/");
+	return (
+		React.createElement(Bookmark, {
+			id: id,
+			className: className,
+			path: path,
+			channelId: threadId || channelId,
+		})
+	);
+});
+
+// src\Tabbys\components\BookmarkBar\index.jsx
+function DragThis(comp) {
+	return DropTarget(
+		"TAB", {
+			drop(thisComp, monitor) {
+				const dropppedTab = monitor.getItem();
+				console.log(dropppedTab);
+				const path = dropppedTab.path;
+				if (!path) return;
+				Store.state.addBookmark(buildTab({ path }));
+			}
+		},
+		(connect, monitor, props) => {
+			return {
+				isOver: monitor.isOver(),
+				canDrop: monitor.canDrop(),
+				dropRef: connect.dropTarget(),
+			};
+		}
+	)(comp);
+}
+// 	const overflowLimit = window.innerWidth * 0.95;
+function isVisible(el) {
+	const elParentRect = el.parentElement.getBoundingClientRect();
+	const rect = el.getBoundingClientRect();
+	const elemRight = rect.right;
+	const elemLeft = rect.left;
+	return elemLeft >= 0 && elemRight <= elParentRect.width;
+}
+const BookmarkBar = DragThis(function BookmarkBar({ isOver, canDrop, dropRef }) {
+	const bookmarks = Store(Store.selectors.bookmarks, (a, b) => a.length === b.length && !a.some((_, i) => a[i].id !== b[i].id));
+	const bookmarksContainerRef = useRef();
+	const [overflowIndex, setOverflowIndex] = useState(-1);
+	const isOverflowing = overflowIndex > -1;
+	const childrenLengthState = useNumberWatcher(bookmarks.length);
+	const overflowBookmarks = isOverflowing ? bookmarks.slice(overflowIndex, bookmarks.length) : [];
+	const bookmarkbarRef = useRef();
+	dropRef(bookmarkbarRef);
+	useEffect(() => {
+		const bookmarksNode = bookmarksContainerRef.current;
+		if (!bookmarksNode) return;
+		const handleMutation = debounce(() => {
+			if (childrenLengthState === LengthStateEnum.INCREASED && isOverflowing) return;
+			if (childrenLengthState === LengthStateEnum.DECREASED && !isOverflowing) return;
+			const childrenNodes = Array.from(bookmarksNode.children);
+			const indexOfFirstNotFullyVisibleChild = childrenNodes.findIndex(a => !isVisible(a));
+			setOverflowIndex(indexOfFirstNotFullyVisibleChild);
+		});
+		handleMutation();
+		const resizeObserver = new ResizeObserver(handleMutation);
+		resizeObserver.observe(bookmarksNode);
+		return () => {
+			resizeObserver.disconnect();
+			handleMutation.clear();
+		};
+	}, [childrenLengthState]);
+	return (
+		React.createElement('div', { className: concateClassNames("bookmarkbar", canDrop && isOver && "candrop"), ref: bookmarkbarRef, }, React.createElement('div', {
+			ref: bookmarksContainerRef,
+			className: "bookmarks-container",
+			onDoubleClick: e => e.stopPropagation(),
+		}, bookmarks.map((a, index) => [
+			React.createElement(Bookmark$1, {
+				key: a.id,
+				id: a.id,
+				divider: index !== 0,
+				className: concateClassNames(isOverflowing && index >= overflowIndex && "hidden-visually"),
+			})
+		])), isOverflowing && (
+			React.createElement(DiscordPopout, {
+				position: "bottom",
+				align: "right",
+				animation: "1",
+				renderPopout: e => {
+					return (
+						React.createElement('div', {
+							onClick: e.closePopout,
+							className: "bookmarks-overflow-popout Tabbys-vars",
+						}, overflowBookmarks.map(a => [
+							React.createElement(Bookmark$1, {
+								key: a.id,
+								id: a.id,
+							})
+						]))
+					);
+				},
+				spacing: 8,
+			}, e => (
+				React.createElement('div', {
+					className: "bookmarks-overflow",
+					onClick: e.onClick,
+				}, React.createElement(ArrowIcon, { className: "parent-dim", }))
+			))
+		))
+	);
+});
+
 // src\Tabbys\components\App\index.jsx
 function App({ leading, trailing }) {
+	const size = Settings(Settings.selectors.size);
+	const showTabbar = Settings(Settings.selectors.showTabbar);
+	const showBookmarkbar = Settings(Settings.selectors.showBookmarkbar);
 	return (
-		React.createElement('div', { className: `${config.info.name}-container Tabbys-vars`, }, React.createElement(TabBar, { leading: leading, trailing: trailing, })
-			/*<div className={`${config.info.name}-divider`}/>*/
-			/*<BookmarkBar />*/
-		)
+		React.createElement('div', { style: { "--size": `${size}px` }, className: `${config.info.name}-container Tabbys-vars`, }, showTabbar && React.createElement(TabBar, { leading: leading, trailing: trailing, }), showTabbar && showBookmarkbar && React.createElement('div', { className: `${config.info.name}-divider`, }), showBookmarkbar && React.createElement(BookmarkBar, null))
 	);
 }
 
@@ -1509,49 +1931,6 @@ const patchContextMenu = () => {
 	];
 };
 
-// @Modules\Heading
-const Heading = getModule(a => a?.render?.toString().includes("data-excessive-heading-level"), { searchExports: true });
-
-// @Modules\Slider
-const Slider = getModule(Filters.byPrototypeKeys("renderMark"), { searchExports: true });
-
-// src\Tabbys\components\SettingComponent\index.jsx
-/* eslint-disable react/jsx-key */
-function SettingSlider({ settingKey, label, className, defaultValue, stickToMarkers, equidistant, sortedMarkers, markers, minValue, maxValue }) {
-	const [val, set] = Settings.useSetting(settingKey);
-	return (
-		React.createElement(React.Fragment, null, React.createElement(Heading, {
-			style: { marginBottom: 20 },
-			tag: "h2",
-		}, label), React.createElement(Slider, {
-			className: className,
-			stickToMarkers: stickToMarkers,
-			sortedMarkers: sortedMarkers,
-			equidistant: equidistant,
-			defaultValue: defaultValue,
-			markers: markers,
-			minValue: minValue || markers[0],
-			maxValue: maxValue || markers[markers.length - 1],
-			initialValue: val,
-			onValueChange: set,
-		}))
-	);
-}
-const sizes = [16, 20, 24, 32, 40, 48, 56, 80];
-const SettingComponent = () => {
-	return [
-		React.createElement(SettingSlider, {
-			settingKey: "size",
-			label: "UI size",
-			markers: sizes,
-			defaultValue: 20,
-			stickToMarkers: true,
-			sortedMarkers: true,
-			equidistant: true,
-		})
-	];
-};
-
 // src\Tabbys\index.jsx
 function disableGoHomeAfterSwitching() {
 	function interceptor(e) {
@@ -1596,15 +1975,37 @@ class Tabbys {
 
 module.exports = Tabbys;
 
-const css = `
+const css = `.Tabbys-vars {
+	--size:20;
+	--active-tab-bg: rgba(151, 151, 159, 0.15);
+	--hover-tab-bg: rgba(151, 151, 159, 0.35);
+	--selected-tab-bg: rgba(151, 151, 159, 0.25);
+
+	--close-btn-hover-bg: #595959;
+	--close-btn-active-bg: #262626;
+
+	--ping: rgb(218, 62, 68);
+	--unread: rgb(88, 101, 242);
+
+	--radius-round: 2147483647px;
+
+	/* overrides */
+	--custom-app-top-bar-height: calc(var(--size) + 10px);
+	--space-32: calc(var(--size) + 10px);
+}
+
+.divider-h{
+	background:linear-gradient(rgba(151, 151, 159, 0.12) 0 0) center/100%  1px no-repeat;
+}
+
 .tab,
-.bookmark{
+.bookmark {
 	flex: 0 1 auto;
 	gap: 5px;
 	padding: 5px;
 	height: 100%;
 	color: white;
-	border-radius: 5px;
+	border-radius: calc(5 * (var(--size) / 16));
 	cursor: pointer;
 	transform: translate(0);
 }
@@ -1632,12 +2033,14 @@ const css = `
 	height: var(--size);
 }
 
-
 .discord-icon {
 	color: white;
 	background: #6361f8;
 }
 
+.settings-dropdown-btn > svg,
+.new-tab > svg,
+.scrollBtn > svg,
 .discord-icon > svg {
 	width: 65%;
 	height: 65%;
@@ -1687,6 +2090,56 @@ const css = `
 	justify-content: center;
 }
 
+.collapsible-container {
+	border-radius: 5px;
+	border: 1px solid rgb(30, 31, 34);
+	gap: 0px 20px;
+	display: grid;
+	grid-template-rows: min-content 0fr;
+	transition: grid-template-rows 200ms linear;
+}
+
+.collapsible-header {
+	background: rgba(30, 31, 34, 0.3);
+	padding: 10px 3px;
+	gap: 8px;
+	display: flex;
+	align-items: center;
+}
+
+.collapsible-icon {
+	display: flex;
+	flex-grow: 0;
+	rotate: 0deg;
+	transition: rotate 150ms linear;
+}
+
+.collapsible-title {
+	text-transform: capitalize;
+}
+
+.collapsible-body {
+	margin: 0 10px;
+	transition: margin 0ms 200ms;
+	overflow: hidden;
+}
+
+.collapsible-container.collapsible-open .collapsible-body{
+	margin: 10px;
+	transition: none;
+}
+
+.collapsible-container.collapsible-open {
+	grid-template-rows: min-content 1fr;
+}
+
+.collapsible-container.collapsible-open .collapsible-header {
+	border-bottom: 1px solid rgb(30, 31, 34);
+}
+
+.collapsible-container.collapsible-open .collapsible-icon {
+	rotate: 90deg;
+}
 div:has(> .Tabbys-container):not(#a) {
 	grid-template-rows: [top] auto [titleBarEnd] min-content [noticeEnd] 1fr [end];
 }
@@ -1712,11 +2165,94 @@ div:has(> .Tabbys-container):not(#a) {
 	linear-gradient(to left, #0000  0, #ccc3 25%) right center/50%  1px no-repeat;
 	-webkit-app-region: no-drag;
 }
+.tabs-container {
+	min-width:0;
+	gap:2px;
+	position:relative;
+	margin-right:auto;
+	height:100%;
+	-webkit-app-region: no-drag;
+}
+
+.new-tab{
+	flex:0 0 auto;
+	padding:2px;
+	aspect-ratio: 1;
+	height:calc(100% * .8);
+	color:white;
+}
+
+.new-tab:hover{
+	background:var(--hover-tab-bg);
+}
+
+.new-tab:active{
+	background:var(--active-tab-bg);
+}
+
+.tab-div{
+	height:calc(var(--size) * .8);
+	border: 1px solid #ccc5;
+	margin: auto 3px;
+}
+
+.settings-dropdown{
+	background-color: oklab(0.262384 0.00252247 -0.00889932);
+	border-radius: 8px;
+	gap: 5px;
+	padding: 15px;
+	overflow: auto;
+	width:40vw;
+	max-height: 80vh;
+}
+
+
+.settings-dropdown::-webkit-scrollbar {
+	height: 8px;
+	width: 8px;
+}
+
+.settings-dropdown::-webkit-scrollbar-track {
+	background-color: var(--scrollbar-thin-track);
+	border-color: var(--scrollbar-thin-track);
+}
+
+.settings-dropdown::-webkit-scrollbar-thumb {
+	background-clip: padding-box;
+	background-color: var(--scrollbar-thin-thumb);
+	border: 2px solid transparent;
+	border-radius: 4px;
+	min-height: 40px;
+}
+
+.settings-dropdown::-webkit-scrollbar-corner {
+	background-color: transparent;
+}
+
+.settings-dropdown-btn{
+	color:white;
+	flex:0 0 auto;
+	padding:2px;
+	aspect-ratio:1;
+	height:100%;
+	color:#fff;
+	cursor:pointer;
+	-webkit-app-region: no-drag;
+}
+
+.settings-dropdown-btn:hover{
+	color:#fffb;
+}
+
+.settings-dropdown-btn:active{
+	color:#fff9;
+}
 .bookmarkbar {
 	-webkit-app-region: no-drag;
 	display: flex;
 	flex: 0 0 auto;
 	align-items: center;
+	transform:translate(0);
 }
 
 .bookmarks-container {
@@ -1781,56 +2317,10 @@ div:has(> .Tabbys-container):not(#a) {
 	background-color: transparent;
 }
 
-.tabs-container {
-	min-width:0;
-	gap:2px;
-	position:relative;
-	margin-right:auto;
-	height:100%;
-	-webkit-app-region: no-drag;
-}
-
-.new-tab{
-	flex:0 0 auto;
-	padding:2px;
-	width:20px;
-	height:20px;
-	color:white;
-}
-
-.new-tab:hover{
-	background:var(--hover-tab-bg);
-}
-
-.new-tab:active{
-	background:var(--active-tab-bg);
-}
-
-.tab-div{
-	height:calc(var(--size) * .8);
-	border: 1px solid #ccc5;
-	margin: auto 3px;
-}
-
-
-.bookmark:hover{
-	background:#353333;
-}
-
-.bookmark:active{
-	background:#353333;
-}
-
-.bookmark > .bookmark-title {
-	color:#a7a7a7;
-	font-size:calc(var(--size) * .6);
-}
-
-
-
 .tab {
-	min-width: var(--tab-min-width);
-	max-width:var(--tab-max-width);
+
+	min-width: calc(100 * (var(--size) / 16));
+	max-width: calc(200 * (var(--size) / 16));
 }
 
 .selected-tab {
@@ -1845,20 +2335,17 @@ div:has(> .Tabbys-container):not(#a) {
 	background: var(--active-tab-bg);
 }
 
-
-
 .tab-title {
 	flex: 1 1 0;
 	min-width: 0;
-	font-size:calc(var(--size) * .6);
+	font-size:calc(var(--size) * .7);
 	mask: linear-gradient(to right, #000 80%, #0000 98%, #0000) no-repeat;
 }
 
 .tab-close {
-	z-index: 5;
-	flex: 0 0 calc(var(--size) * .5);
-	width: calc(var(--size) * .5);
-	height: calc(var(--size)* .5);
+	flex: 0 0 calc(var(--size) * .8);
+	width: calc(var(--size) * .8);
+	height: calc(var(--size)* .8);
 }
 
 .tab-close  svg{
@@ -1891,7 +2378,7 @@ div:has(> .Tabbys-container):not(#a) {
 }
 
 .scrollBtn {
-	height: var(--size);
+	height: 100%;
 	background: #7b7b7b;
 	padding: 5px;
 	border-radius: 8px;
@@ -1905,6 +2392,8 @@ div:has(> .Tabbys-container):not(#a) {
 	color: #ccc;
 }
 
+
+
 .left-arrow {
 	left: 0;
 }
@@ -1912,6 +2401,25 @@ div:has(> .Tabbys-container):not(#a) {
 .right-arrow {
 	right: 0;
 }
+
+.bookmark{
+	justify-content:flex-start;
+}
+
+.bookmark:hover{
+	background:#353333;
+}
+
+.bookmark:active{
+	background:#353333;
+}
+
+.bookmark > .bookmark-title {
+	color:#a7a7a7;
+	font-size:calc(var(--size) * .6);
+}
+
+
 
 .badge {
 	width: 16px;
