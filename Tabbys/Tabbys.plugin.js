@@ -949,7 +949,7 @@ function BaseTab(props) {
 	const isSingleTab = Store(Store.selectors.isSingleTab);
 	const tabRef = useRef(null);
 	const isTyping = !!typingUsers?.length;
-	const typingUsersNames = typingUsers?.map(a => a.global_name).join(", ");
+	const typingUsersNames = typingUsers?.map(getUserName).join(", ");
 	dragRef(dropRef(tabRef));
 	const clickHandler = e => {
 		e.stopPropagation();
@@ -1389,7 +1389,7 @@ function SettingSwtich({ settingKey, note, onChange = nop, hideBorder = false, d
 
 // src\Tabbys\components\SettingComponent\index.jsx
 /* eslint-disable react/jsx-key */
-const Text = BdApi.Components;
+const Text = BdApi.Components.Text;
 
 function SettingSlider({ settingKey, label, note, ...props }) {
 	const [val, set] = Settings.useSetting(settingKey);
@@ -1453,9 +1453,10 @@ const SettingComponent = () => {
 			settingKey: "tabDividerSize",
 			label: "Tabs divider size",
 			note: "Space between tabs, selected value is doubled",
-			markers: [...Array(55 / 5)].map((_, i) => i * 10),
-			defaultValue: 5,
-			stickToMarkers: false,
+			markers: [...Array(11)].map((_, i) => i),
+			minValue: 5,
+			maxValue: 11,
+			stickToMarkers: true,
 			sortedMarkers: true,
 			equidistant: true,
 		}),
@@ -1924,6 +1925,7 @@ class Tabbys {
 	start() {
 		try {
 			DOM.addStyle(css);
+			updateCssVars();
 			Store.init();
 			patchTitleBar();
 			patchDMClick();
@@ -2147,6 +2149,76 @@ div:has(> .Tabbys-container):not(#a) {
 	linear-gradient(to left, #0000  0, #ccc3 25%) right center/50%  1px no-repeat;
 	-webkit-app-region: no-drag;
 }
+.bookmarkbar {
+	-webkit-app-region: no-drag;
+	display: flex;
+	flex: 0 0 auto;
+	align-items: center;
+	transform:translate(0);
+}
+
+.bookmarks-container {
+	flex: 1 0 0;
+	min-width: 0;
+	overflow: hidden;
+	display: flex;
+	gap: 2px;
+	-webkit-app-region: no-drag;
+}
+
+.bookmarks-overflow {
+	flex: 0 0 auto;
+	display: flex;
+	padding: 2px;
+	width: 20px;
+	height: 20px;
+	color: white;
+	margin: 0 2px;
+	z-index: 988;
+	-webkit-app-region: no-drag;
+}
+
+.bookmarks-overflow:hover {
+	background: var(--hover-tab-bg);
+}
+
+.bookmarks-overflow:active {
+	background: var(--active-tab-bg);
+}
+
+.bookmarks-overflow-popout {
+	display: flex;
+	flex-direction: column;
+	background-color: var(--background-tertiary);
+	border-radius: 8px;
+	gap: 5px;
+	padding: 5px;
+	overflow: auto;
+	max-height: 50vh;
+}
+
+.bookmarks-overflow-popout::-webkit-scrollbar {
+	height: 8px;
+	width: 8px;
+}
+
+.bookmarks-overflow-popout::-webkit-scrollbar-track {
+	background-color: var(--scrollbar-thin-track);
+	border-color: var(--scrollbar-thin-track);
+}
+
+.bookmarks-overflow-popout::-webkit-scrollbar-thumb {
+	background-clip: padding-box;
+	background-color: var(--scrollbar-thin-thumb);
+	border: 2px solid transparent;
+	border-radius: 4px;
+	min-height: 40px;
+}
+
+.bookmarks-overflow-popout::-webkit-scrollbar-corner {
+	background-color: transparent;
+}
+
 .tabs-container {
 	min-width:0;
 	gap:2px;
@@ -2233,75 +2305,24 @@ div:has(> .Tabbys-container):not(#a) {
 .settings-dropdown-btn:active{
 	color:#fff9;
 }
-.bookmarkbar {
-	-webkit-app-region: no-drag;
-	display: flex;
-	flex: 0 0 auto;
-	align-items: center;
-	transform:translate(0);
+.bookmark{
+	justify-content:flex-start;
 }
 
-.bookmarks-container {
-	flex: 1 0 0;
-	min-width: 0;
-	overflow: hidden;
-	display: flex;
-	gap: 2px;
-	-webkit-app-region: no-drag;
+.bookmark:hover{
+	background:#353333;
 }
 
-.bookmarks-overflow {
-	flex: 0 0 auto;
-	display: flex;
-	padding: 2px;
-	width: 20px;
-	height: 20px;
-	color: white;
-	margin: 0 2px;
-	z-index: 988;
-	-webkit-app-region: no-drag;
+.bookmark:active{
+	background:#353333;
 }
 
-.bookmarks-overflow:hover {
-	background: var(--hover-tab-bg);
+.bookmark > .bookmark-title {
+	color:#a7a7a7;
+	font-size:calc(var(--size) * .6);
 }
 
-.bookmarks-overflow:active {
-	background: var(--active-tab-bg);
-}
 
-.bookmarks-overflow-popout {
-	display: flex;
-	flex-direction: column;
-	background-color: var(--background-tertiary);
-	border-radius: 8px;
-	gap: 5px;
-	padding: 5px;
-	overflow: auto;
-	max-height: 50vh;
-}
-
-.bookmarks-overflow-popout::-webkit-scrollbar {
-	height: 8px;
-	width: 8px;
-}
-
-.bookmarks-overflow-popout::-webkit-scrollbar-track {
-	background-color: var(--scrollbar-thin-track);
-	border-color: var(--scrollbar-thin-track);
-}
-
-.bookmarks-overflow-popout::-webkit-scrollbar-thumb {
-	background-clip: padding-box;
-	background-color: var(--scrollbar-thin-thumb);
-	border: 2px solid transparent;
-	border-radius: 4px;
-	min-height: 40px;
-}
-
-.bookmarks-overflow-popout::-webkit-scrollbar-corner {
-	background-color: transparent;
-}
 
 .tab {
 
@@ -2387,25 +2408,6 @@ div:has(> .Tabbys-container):not(#a) {
 .right-arrow {
 	right: 0;
 }
-
-.bookmark{
-	justify-content:flex-start;
-}
-
-.bookmark:hover{
-	background:#353333;
-}
-
-.bookmark:active{
-	background:#353333;
-}
-
-.bookmark > .bookmark-title {
-	color:#a7a7a7;
-	font-size:calc(var(--size) * .6);
-}
-
-
 
 .badge {
 	width: 16px;
