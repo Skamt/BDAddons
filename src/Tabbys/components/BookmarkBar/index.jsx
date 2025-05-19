@@ -1,12 +1,35 @@
 import "./styles";
 import { Store } from "@/Store";
-import React, {  useEffect, useState, useRef } from "@React";
+import React, { useEffect, useState, useRef } from "@React";
 import Bookmark from "../Bookmark";
 import { ArrowIcon } from "@Components/Icon";
 import { DiscordPopout } from "@Discord/Modules";
 import { debounce, concateClassNames } from "@Utils";
 import { useNumberWatcher, LengthStateEnum } from "@Utils/Hooks";
+import { buildTab } from "@/utils";
+import { DropTarget } from "@Discord/Modules";
 
+function DragThis(comp) {
+	return DropTarget(
+		"TAB",
+		{
+			drop(thisComp, monitor) {
+				const dropppedTab = monitor.getItem();
+				console.log(dropppedTab);
+				const path = dropppedTab.path;
+				if(!path) return;
+				Store.state.addBookmark(buildTab({ path }))
+			}
+		},
+		(connect, monitor, props) => {
+			return {
+				isOver: monitor.isOver(),
+				canDrop: monitor.canDrop(),
+				dropRef: connect.dropTarget(),
+			};
+		}
+	)(comp);
+}
 // function getOverflowIndex(parentEl) {
 // 	const children = Array.from(parentEl.children);
 // 	let widthSum = 0;
@@ -29,14 +52,17 @@ function isVisible(el) {
 	return elemLeft >= 0 && elemRight <= elParentRect.width;
 }
 
-export default function BookmarkBar() {
+
+export default DragThis(function BookmarkBar({isOver, canDrop, dropRef}) {
 	const bookmarks = Store(Store.selectors.bookmarks, (a, b) => a.length === b.length && !a.some((_, i) => a[i].id !== b[i].id));
+
 	const bookmarksContainerRef = useRef();
 	const [overflowIndex, setOverflowIndex] = useState(-1);
 	const isOverflowing = overflowIndex > -1;
 	const childrenLengthState = useNumberWatcher(bookmarks.length);
 	const overflowBookmarks = isOverflowing ? bookmarks.slice(overflowIndex, bookmarks.length) : [];
-
+	const bookmarkbarRef = useRef();
+	dropRef(bookmarkbarRef);
 	useEffect(() => {
 		const bookmarksNode = bookmarksContainerRef.current;
 		if (!bookmarksNode) return;
@@ -61,7 +87,7 @@ export default function BookmarkBar() {
 	}, [childrenLengthState]);
 
 	return (
-		<div className="bookmarkbar">
+		<div className={concateClassNames("bookmarkbar", canDrop && isOver && "candrop")} ref={bookmarkbarRef}>
 			<div
 				ref={bookmarksContainerRef}
 				className="bookmarks-container"
@@ -102,11 +128,12 @@ export default function BookmarkBar() {
 						<div
 							className="bookmarks-overflow"
 							onClick={e.onClick}>
-							<ArrowIcon />
+							<ArrowIcon className="parent-dim" />
 						</div>
 					)}
 				</DiscordPopout>
 			)}
 		</div>
 	);
-}
+})
+

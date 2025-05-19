@@ -6,7 +6,6 @@ import { shallow } from "@Utils";
 import Logger from "@Utils/Logger";
 import BaseTab from "./BaseTab";
 import ChannelTab from "./ChannelTab";
-import Settings from "@Utils/Settings"
 
 function getIcon(type) {
 	let icon = null;
@@ -33,7 +32,7 @@ function getIcon(type) {
 }
 
 export default React.memo(({ id }) => {
-	Settings(Settings.selectors.tabIconSize);
+	
 	const { path } = Store(state => state.getTab(id), shallow) || {};
 	if (!path) return Logger.error("unknown tab path", path, id);
 	const [, type, idk, channelId, , threadId] = path.split("/");

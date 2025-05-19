@@ -1,12 +1,34 @@
+.Tabbys-vars {
+	--size:20;
+	--active-tab-bg: rgba(151, 151, 159, 0.15);
+	--hover-tab-bg: rgba(151, 151, 159, 0.35);
+	--selected-tab-bg: rgba(151, 151, 159, 0.25);
+
+	--close-btn-hover-bg: #595959;
+	--close-btn-active-bg: #262626;
+
+	--ping: rgb(218, 62, 68);
+	--unread: rgb(88, 101, 242);
+
+	--radius-round: 2147483647px;
+
+	/* overrides */
+	--custom-app-top-bar-height: calc(var(--size) + 10px);
+	--space-32: calc(var(--size) + 10px);
+}
+
+.divider-h{
+	background:linear-gradient(rgba(151, 151, 159, 0.12) 0 0) center/100%  1px no-repeat;
+}
 
 .tab,
-.bookmark{
+.bookmark {
 	flex: 0 1 auto;
 	gap: 5px;
 	padding: 5px;
 	height: 100%;
 	color: white;
-	border-radius: 5px;
+	border-radius: calc(5 * (var(--size) / 16));
 	cursor: pointer;
 	transform: translate(0);
 }
@@ -34,12 +56,14 @@
 	height: var(--size);
 }
 
-
 .discord-icon {
 	color: white;
 	background: #6361f8;
 }
 
+.settings-dropdown-btn > svg,
+.new-tab > svg,
+.scrollBtn > svg,
 .discord-icon > svg {
 	width: 65%;
 	height: 65%;

@@ -26,12 +26,12 @@ const store = (set) => ({
 		bookmarksList.removeItemByIdentifier(id);
 		set({ bookmarks: bookmarksList.list });
 	},
-	moveBookmark(fromTabId, toTabId) {
-		bookmarksList.swapItemById(fromTabId, toTabId);
-		set({ bookmarks: bookmarksList.list });
-	},
 	setBookmark(id, payload) {
 		bookmarksList.setItemById(id, payload);
+		set({ bookmarks: bookmarksList.list });
+	},
+	swapBookmark(fromId, toId) {
+		bookmarksList.swapItemById(fromId, toId);
 		set({ bookmarks: bookmarksList.list });
 	},
 	getBookmark(id) {

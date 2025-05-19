@@ -112,13 +112,13 @@ export default function TabsScroller({ children }) {
 
 		const observerOptions = {
 			root: tabsNode,
-			threshold: 0.99
+			threshold: 0.80
 		};
 
-		const handleLeftScrollButton = debounce(entries => setLeftScrollBtn(!entries.sort((a, b) => a.time - b.time).pop().isIntersecting),100);
+		const handleLeftScrollButton = debounce(entries => setLeftScrollBtn(!entries.sort((a, b) => a.time - b.time).pop().isIntersecting), 100);
 		const leftObserver = new IntersectionObserver(handleLeftScrollButton, observerOptions);
 
-		const handleRightScrollButton = debounce(entries => setRightScrollBtn(!entries.sort((a, b) => a.time - b.time).pop().isIntersecting),100);
+		const handleRightScrollButton = debounce(entries => setRightScrollBtn(!entries.sort((a, b) => a.time - b.time).pop().isIntersecting), 100);
 		const rightObserver = new IntersectionObserver(handleRightScrollButton, observerOptions);
 
 		function observeFirstAndLastChild() {
@@ -132,19 +132,17 @@ export default function TabsScroller({ children }) {
 
 		observeFirstAndLastChild();
 
-		const handleMutation = debounce(() => {
-			scrollSelectedIntoView(); // save on Resize observers
-			observeFirstAndLastChild();
-		});
+		// const resizeMutation = debounce(() => scrollSelectedIntoView());
+		// const resizeObserver = new ResizeObserver(resizeMutation);
+		// resizeObserver.observe(tabsNode);
 
-		const resizeObserver = new ResizeObserver(handleMutation);
+		const handleMutation = debounce(() => observeFirstAndLastChild());
 		const mutationObserver = new MutationObserver(handleMutation);
 		mutationObserver.observe(tabsNode, { childList: true });
-		resizeObserver.observe(tabsNode);
 
 		return () => {
 			mutationObserver?.disconnect?.();
-			resizeObserver?.disconnect?.();
+			// resizeObserver?.disconnect?.();
 			leftObserver?.disconnect?.();
 			rightObserver?.disconnect?.();
 			handleRightScrollButton.clear();

@@ -1,3 +1,6 @@
+.bookmark{
+	justify-content:flex-start;
+}
 
 .bookmark:hover{
 	background:#353333;

@@ -1,6 +1,7 @@
 .tab {
-	min-width: var(--tab-min-width);
-	max-width:var(--tab-max-width);
+
+	min-width: calc(100 * (var(--size) / 16));
+	max-width: calc(200 * (var(--size) / 16));
 }
 
 .selected-tab {
@@ -15,20 +16,17 @@
 	background: var(--active-tab-bg);
 }
 
-
-
 .tab-title {
 	flex: 1 1 0;
 	min-width: 0;
-	font-size:calc(var(--size) * .6);
+	font-size:calc(var(--size) * .7);
 	mask: linear-gradient(to right, #000 80%, #0000 98%, #0000) no-repeat;
 }
 
 .tab-close {
-	z-index: 5;
-	flex: 0 0 calc(var(--size) * .5);
-	width: calc(var(--size) * .5);
-	height: calc(var(--size)* .5);
+	flex: 0 0 calc(var(--size) * .8);
+	width: calc(var(--size) * .8);
+	height: calc(var(--size)* .8);
 }
 
 .tab-close  svg{

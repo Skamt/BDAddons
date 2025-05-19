@@ -98,8 +98,8 @@ const store = (set, get) => ({
 		set({ tabs: tabsList.list, selectedId: newSelected });
 	},
 
-	swapTab(fromTabId, toTabId) {
-		tabsList.swapItemById(fromTabId, toTabId);
+	swapTab(fromId, toId) {
+		tabsList.swapItemById(fromId, toId);
 		set({ tabs: tabsList.list });
 	},
 

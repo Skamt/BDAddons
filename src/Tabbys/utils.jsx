@@ -10,7 +10,7 @@ import { getUserName, nop } from "@Utils";
 import { getUserAvatar } from "@Utils/User";
 import { getModule } from "@Webpack";
 
-const b = getModule(a => a.getChannelIconURL);
+const ChannelIconsUtils = getModule(a => a.getChannelIconURL);
 
 export function buildTab(tabObj) {
 	const id = crypto.randomUUID();
@@ -24,8 +24,7 @@ export function getDmAvatar(channel, size) {
 
 export function getChannelName(channel) {
 	if (!channel) return;
-	if (channel.isDM() || channel.isGroupDM()) 
-		return channel.rawRecipients.map(getUserName).join(", ");
+	if (channel.isDM() || channel.isGroupDM()) return channel.rawRecipients.map(getUserName).join(", ");
 	return channel.name;
 }
 
@@ -34,7 +33,7 @@ export function getChannelIcon(channel, size) {
 	if (channel.isDM()) return getDmAvatar(channel, size);
 
 	if (channel.isGroupDM())
-		return b.getChannelIconURL({
+		return ChannelIconsUtils.getChannelIconURL({
 			id: channel.id,
 			icon: channel.icon,
 			applicationId: channel.getApplicationId(),
@@ -84,8 +83,6 @@ export function createContextMenuItem(type, id = "", action = nop, label = "Unkn
 		id,
 		action,
 		items: children,
-		// icon,
-		label,
 		label: (
 			<MenuLabel
 				label={label}

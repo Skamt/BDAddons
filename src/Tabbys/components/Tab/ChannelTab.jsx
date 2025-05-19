@@ -6,10 +6,9 @@ import { getChannelIcon, getChannelName, useChannelState } from "@/utils";
 import UserAvatar from "../UserAvatar";
 import { Filters, getModule } from "@Webpack";
 import { DiscordIcon } from "@Components/Icon";
-import Settings from "@Utils/Settings"
+import Settings from "@Utils/Settings";
 
 const GroupDMAvatar = getModule(Filters.byStrings("recipients", "backSrc"));
-
 
 const sizes = {
 	16: "SIZE_16",
@@ -20,15 +19,14 @@ const sizes = {
 	44: "SIZE_44",
 	48: "SIZE_48",
 	56: "SIZE_56",
-	80: "SIZE_80",
+	80: "SIZE_80"
 };
 
 export default function ChannelTab({ id, channelId, path }) {
-	const size = Settings.state.size;
-
+	const size = Settings(Settings.selectors.size);
 	const channelUnreadState = useChannelState(channelId);
 	const channel = useStateFromStores([ChannelStore], () => ChannelStore.getChannel(channelId), [channelId]);
-	if(!channel) return;
+	if (!channel) return;
 	const channelName = getChannelName(channel);
 	const isDM = channel.isDM();
 	const isGroupDM = channel.isGroupDM();
@@ -53,7 +51,7 @@ export default function ChannelTab({ id, channelId, path }) {
 					size={sizes[size]}
 				/>
 			);
-		} else if(src)
+		} else if (src)
 			icon = (
 				<img
 					className="parent-dim fill round"
@@ -63,12 +61,15 @@ export default function ChannelTab({ id, channelId, path }) {
 			);
 	}
 
-	icon = icon || <div className="discord-icon flex-center fill round"><DiscordIcon /></div>
+	icon = icon || (
+		<div className="discord-icon flex-center fill round">
+			<DiscordIcon />
+		</div>
+	);
 
 	return (
 		<BaseTab
 			id={id}
-
 			path={path}
 			icon={icon}
 			title={channelName}

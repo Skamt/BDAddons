@@ -5,13 +5,13 @@ import { PlusIcon } from "@Components/Icon";
 import React from "@React";
 import Tab from "../Tab";
 import TabsScroller from "../TabsScroller";
-import SettingsContextMenu from "@/contextmenus/SettingsContextMenu";
-import { ContextMenu } from "@Api";
+import SettingsDropdown from "./SettingsDropdown";
+import Settings from "@Utils/Settings";
 
 export default function TabBar({ leading, trailing }) {
 	console.log("TabBar rendered");
 	const tabs = Store(Store.selectors.tabs, (a, b) => a.length === b.length && !a.some((_, i) => a[i].id !== b[i].id));
-
+	const showSettingsButton = Settings(Settings.selectors.showSettingsButton);
 	// const selectedTab = Store.state.getCurrentlySelectedTab();
 
 	const newTabHandler = e => {
@@ -20,13 +20,6 @@ export default function TabBar({ leading, trailing }) {
 		console.log(e);
 		// e.stopImmediatePropagation();
 		Store.state.newTab(buildTab({ path: "/channels/@me" }));
-	};
-
-	const contextmenuHandler = e => {
-		ContextMenu.open(e, SettingsContextMenu(), {
-			position: "bottom",
-			align: "center"
-		});
 	};
 
 	return (
@@ -52,12 +45,7 @@ export default function TabBar({ leading, trailing }) {
 					<PlusIcon className="parent-dim" />
 				</div>
 			</div>
-			{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-			{/*<div
-				onClick={contextmenuHandler}
-				className="settings-dropdown flex-center">
-				<PlusIcon className="parent-dim" />
-			</div>*/}
+			{showSettingsButton && <SettingsDropdown />}
 			{trailing}
 		</div>
 	);

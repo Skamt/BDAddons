@@ -11,12 +11,14 @@ import patchContextMenu from "./patches/patchContextMenu";
 import { Dispatcher } from "@Discord/Modules";
 import SettingComponent from "./components/SettingComponent";
 // import Settings from "@Utils/Settings";
-
+// import { closeModal } from "@Utils/Modals";
 /*DEBUG*/
 window.TabsStore = Store;
 /*DEBUG*/
 
 
+// closeModal(window.id);
+// window.id = showConfirmationModal("", <SettingComponent />);
 
 function disableGoHomeAfterSwitching() {
 	function interceptor(e) {

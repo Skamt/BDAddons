@@ -13,7 +13,7 @@ import Settings from "@Utils/Settings"
 
 
 function Bookmark({ id, channelId, path, className }) {
-	const size = Settings(Settings.selectors.bookmarkIconSize) || 20;
+	const size = Settings(Settings.selectors.size) || 20;
 	const channel = useStateFromStores([ChannelStore], () => ChannelStore.getChannel(channelId), [channelId]);
 	const channelName = getChannelName(channel) || path.split("/")[2];
 	const src = getChannelIcon(channel, size);

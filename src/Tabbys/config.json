@@ -7,6 +7,13 @@
 		"github": "https://github.com/Skamt/BDAddons/tree/main/Tabbys"
 	},
 	"settings":{
-		"size":20
+		"size":20,
+		"tabDividerSize":5,
+		"showTabDivider":true,
+		"showSettingsButton":true,
+		"showTabbar":true,
+		"showBookmarkbar":true,
+		"showUnreads":true,
+		"showPings":true
 	}
 }
