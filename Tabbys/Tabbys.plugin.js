@@ -282,7 +282,7 @@ class List extends ArrayHelpers {
 	}
 	getItemMeta(id) {
 		const index = this.indexMap[id];
-		if (!index) return {};
+		if (index == null || index < 0) return {};
 		const item = this.map[id];
 		if (!item) return {};
 		return {
@@ -595,51 +595,13 @@ const { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelecto
 const subscribeWithSelector = getModule(Filters.byStrings("equalityFn", "fireImmediately"), { searchExports: true });
 const zustand$1 = zustand;
 
-// node_modules\deep-object-diff\mjs\utils.js
-const isDate = d => d instanceof Date;
-const isEmpty = o => Object.keys(o).length === 0;
-const isObject = o => o != null && typeof o === 'object';
-const hasOwnProperty = (o, ...args) => Object.prototype.hasOwnProperty.call(o, ...args);
-const isEmptyObject = (o) => isObject(o) && isEmpty(o);
-const makeObjectWithoutPrototype = () => Object.create(null);
-
-// node_modules\deep-object-diff\mjs\diff.js
-const diff = (lhs, rhs) => {
-	if (lhs === rhs) return {};
-	if (!isObject(lhs) || !isObject(rhs)) return rhs;
-	const deletedValues = Object.keys(lhs).reduce((acc, key) => {
-		if (!hasOwnProperty(rhs, key)) {
-			acc[key] = undefined;
-		}
-		return acc;
-	}, makeObjectWithoutPrototype());
-	if (isDate(lhs) || isDate(rhs)) {
-		if (lhs.valueOf() == rhs.valueOf()) return {};
-		return rhs;
-	}
-	return Object.keys(rhs).reduce((acc, key) => {
-		if (!hasOwnProperty(lhs, key)) {
-			acc[key] = rhs[key];
-			return acc;
-		}
-		const difference = diff(lhs[key], rhs[key]);
-		if (isEmptyObject(difference) && !isDate(difference) && (isEmptyObject(lhs[key]) || !isEmptyObject(rhs[key])))
-			return acc;
-		acc[key] = difference;
-		return acc;
-	}, deletedValues);
-};
-const diff$1 = diff;
-
 // src\Tabbys\Store\index.js
 const Store = Object.assign(
 	zustand$1(
 		subscribeWithSelector((setState, get) => {
 			const set = args => {
-				const oldState = get();
 				setState(args);
 				const state = get();
-				console.log("diff", diff$1(oldState, state));
 				const user = UserStore.getCurrentUser();
 				const data = Object.entries(state)
 					.filter(([, val]) => typeof val !== "function")
@@ -853,7 +815,7 @@ function TabContextMenu(id) {
 		createContextMenuItem(null, "bookmark-tab", () => bookmarkTab(id), "Bookmark Tab", React.createElement(BookmarkOutlinedIcon, null)),
 		canClose && { type: "separator" },
 		canClose && createContextMenuItem("submenu", "close", () => closeTab(id), "Close", React.createElement(CloseIcon, null), "danger", [createContextMenuItem(null, "close-tabs-to-right", () => closeTabsToRight(id), "Close Tabs to Right", React.createElement(VectorIcon, null), "danger"), createContextMenuItem(null, "close-tabs-to-left", () => closeTabsToLeft(id), "Close Tabs to Left", React.createElement(VectorIcon, { style: { rotate: "180deg" }, }), "danger"), createContextMenuItem(null, "close-other-tabs", () => closeOtherTabs(id), "Close Other Tabs", React.createElement(LightiningIcon, null), "danger")])
-	]);
+	].filter(Boolean));
 	return (props) => (
 		React.createElement(Menu, {
 			...props,
@@ -1006,30 +968,27 @@ function BaseTab(props) {
 		});
 	};
 	return (
-		React.createElement(Tooltip, { note: isTyping ? typingUsersNames : null, }
-			/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */
-			, React.createElement('div', {
-				onContextMenu: contextmenuHandler,
-				ref: tabRef,
-				className: concateClassNames("tab flex-center", selected && "selected-tab", isDragging && "dragging", !draggedIsMe && canDrop && isOver && "candrop"),
-				onClick: !selected ? clickHandler : nop,
-			}, React.createElement('div', { className: "tab-icon flex-center round", }, icon), React.createElement('div', { className: "tab-title ellipsis", }, title || path), showPings && !!mentionCount && (
-				React.createElement(Badge, {
-					count: mentionCount,
-					type: "ping",
-				})
-			), showUnreads && !idDM && !!unreadCount && (
-				React.createElement(Badge, {
-					count: unreadCount,
-					type: "unread",
-				})
-			), isTyping && React.createElement(TypingDots, { dotRadius: 2.5, }), !isSingleTab && (
-				React.createElement('div', {
-					className: "tab-close flex-center round",
-					onClick: closeHandler,
-				}, React.createElement(CloseIcon, { className: "parent-dim", }))
-			))
-		)
+		React.createElement('div', {
+			onContextMenu: contextmenuHandler,
+			ref: tabRef,
+			className: concateClassNames("tab flex-center", selected && "selected-tab", isDragging && "dragging", !draggedIsMe && canDrop && isOver && "candrop"),
+			onClick: !selected ? clickHandler : nop,
+		}, React.createElement('div', { className: "tab-icon flex-center round", }, icon), React.createElement('div', { className: "tab-title ellipsis", }, title || path), showPings && !!mentionCount && (
+			React.createElement(Badge, {
+				count: mentionCount,
+				type: "ping",
+			})
+		), showUnreads && !idDM && !!unreadCount && (
+			React.createElement(Badge, {
+				count: unreadCount,
+				type: "unread",
+			})
+		), isTyping && React.createElement(Tooltip, { note: isTyping ? typingUsersNames : null, }, React.createElement('div', { className: "typing-dots flex-center", }, React.createElement(TypingDots, { dotRadius: 2.5, }))), !isSingleTab && (
+			React.createElement('div', {
+				className: "tab-close flex-center round",
+				onClick: closeHandler,
+			}, React.createElement(CloseIcon, { className: "parent-dim", }))
+		))
 	);
 }
 const BaseTab$1 = DragThis$2(BaseTab);
@@ -1267,11 +1226,11 @@ function TabsScroller({ children }) {
 		if (!tabsNode) return;
 		const observerOptions = {
 			root: tabsNode,
-			threshold: 0.80
+			threshold: 0.99
 		};
-		const handleLeftScrollButton = debounce(entries => setLeftScrollBtn(!entries.sort((a, b) => a.time - b.time).pop().isIntersecting), 100);
+		const handleLeftScrollButton = debounce(entries => setLeftScrollBtn(!entries.sort((a, b) => a.time - b.time).pop().isIntersecting));
 		const leftObserver = new IntersectionObserver(handleLeftScrollButton, observerOptions);
-		const handleRightScrollButton = debounce(entries => setRightScrollBtn(!entries.sort((a, b) => a.time - b.time).pop().isIntersecting), 100);
+		const handleRightScrollButton = debounce(entries => setRightScrollBtn(!entries.sort((a, b) => a.time - b.time).pop().isIntersecting));
 		const rightObserver = new IntersectionObserver(handleRightScrollButton, observerOptions);
 
 		function observeFirstAndLastChild() {
@@ -1430,27 +1389,23 @@ function SettingSwtich({ settingKey, note, onChange = nop, hideBorder = false, d
 
 // src\Tabbys\components\SettingComponent\index.jsx
 /* eslint-disable react/jsx-key */
-function SettingSlider({ settingKey, label, className, note, defaultValue, stickToMarkers, equidistant, sortedMarkers, markers, minValue, maxValue }) {
+const Text = BdApi.Components;
+
+function SettingSlider({ settingKey, label, note, ...props }) {
 	const [val, set] = Settings.useSetting(settingKey);
 	return (
-		React.createElement(React.Fragment, null, React.createElement(BdApi.Components.Text, {
+		React.createElement(React.Fragment, null, React.createElement(Text, {
 			strong: true,
-			size: BdApi.Components.Text.Sizes.SIZE_16,
+			size: Text.Sizes.SIZE_16,
 			style: { marginBottom: 8 },
-		}, label), React.createElement(BdApi.Components.Text, {
-			size: BdApi.Components.Text.Sizes.SIZE_14,
+		}, label), React.createElement(Text, {
+			size: Text.Sizes.SIZE_14,
 			style: { marginBottom: 8 },
 		}, note), React.createElement(Slider, {
-			className: className,
-			stickToMarkers: stickToMarkers,
-			sortedMarkers: sortedMarkers,
-			equidistant: equidistant,
-			defaultValue: defaultValue,
-			markers: markers,
-			minValue: minValue || markers[0],
-			maxValue: maxValue || markers[markers.length - 1],
+			onValueRender: Math.round,
+			...props,
 			initialValue: val,
-			onValueChange: set,
+			onValueChange: a => set(Math.round(a)),
 		}))
 	);
 }
@@ -1498,12 +1453,11 @@ const SettingComponent = () => {
 			settingKey: "tabDividerSize",
 			label: "Tabs divider size",
 			note: "Space between tabs, selected value is doubled",
-			markers: [5, 100],
-			minValue: 5,
-			maxValue: 100,
+			markers: [...Array(55 / 5)].map((_, i) => i * 10),
+			defaultValue: 5,
 			stickToMarkers: false,
 			sortedMarkers: true,
-			equidistant: false,
+			equidistant: true,
 		}),
 		React.createElement(Gap, {
 			className: "divider-h",
@@ -1515,6 +1469,7 @@ const SettingComponent = () => {
 			label: "UI density",
 			note: "",
 			markers: sizes,
+			defaultValue: 20,
 			stickToMarkers: true,
 			sortedMarkers: true,
 			equidistant: true,
@@ -1549,6 +1504,7 @@ function TabBar({ leading, trailing }) {
 	console.log("TabBar rendered");
 	const tabs = Store(Store.selectors.tabs, (a, b) => a.length === b.length && !a.some((_, i) => a[i].id !== b[i].id));
 	const showSettingsButton = Settings(Settings.selectors.showSettingsButton);
+	const showTabDivider = Settings(Settings.selectors.showTabDivider);
 	const newTabHandler = e => {
 		e.preventDefault();
 		e.stopPropagation();
@@ -1560,12 +1516,12 @@ function TabBar({ leading, trailing }) {
 				className: "tabs-container flex-center",
 				onDoubleClick: e => e.stopPropagation(),
 			}, React.createElement(TabsScroller, null, tabs.map((a, index) => [
-				index !== 0 && React.createElement('div', { className: "tab-div", }),
+				showTabDivider && index !== 0 && React.createElement('div', { className: "tab-div", }),
 				React.createElement(Tab, {
 					key: a.id,
 					id: a.id,
 				})
-			])), React.createElement('div', { className: "tab-div", })
+			])), React.createElement('div', { className: "new-tab-div", })
 			/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */
 			, React.createElement('div', {
 				className: "new-tab flex-center round",
@@ -1798,11 +1754,10 @@ const BookmarkBar = DragThis(function BookmarkBar({ isOver, canDrop, dropRef }) 
 
 // src\Tabbys\components\App\index.jsx
 function App({ leading, trailing }) {
-	const size = Settings(Settings.selectors.size);
 	const showTabbar = Settings(Settings.selectors.showTabbar);
 	const showBookmarkbar = Settings(Settings.selectors.showBookmarkbar);
 	return (
-		React.createElement('div', { style: { "--size": `${size}px` }, className: `${config.info.name}-container Tabbys-vars`, }, showTabbar && React.createElement(TabBar, { leading: leading, trailing: trailing, }), showTabbar && showBookmarkbar && React.createElement('div', { className: `${config.info.name}-divider`, }), showBookmarkbar && React.createElement(BookmarkBar, null))
+		React.createElement('div', { className: `${config.info.name}-container Tabbys-vars`, }, showTabbar && React.createElement(TabBar, { leading: leading, trailing: trailing, }), showTabbar && showBookmarkbar && React.createElement('div', { className: `${config.info.name}-divider`, }), showBookmarkbar && React.createElement(BookmarkBar, null))
 	);
 }
 
@@ -1943,6 +1898,28 @@ function disableGoHomeAfterSwitching() {
 		Dispatcher._interceptors.splice(index, 1);
 	};
 }
+
+function cssVarsListener() {
+	return Settings.subscribe(
+		a => a,
+		() => updateCssVars(),
+		shallow
+	);
+}
+
+function updateCssVars() {
+	const state = Settings.state;
+	BdApi.DOM.removeStyle("Tabbys-vars");
+	BdApi.DOM.addStyle(
+		"Tabbys-vars",
+		`
+			.Tabbys-vars {
+				--size:${state.size}px;
+				--tab-divider-size:${state.tabDividerSize}px;
+			}
+		`
+	);
+}
 class Tabbys {
 	start() {
 		try {
@@ -1952,6 +1929,7 @@ class Tabbys {
 			patchDMClick();
 			patchChannelClick();
 			reRender('div[data-windows="true"] > *');
+			this.unCssVarsListener = cssVarsListener();
 			this.unpatchContextMenu = patchContextMenu();
 			this.removeDispatchInterceptor = disableGoHomeAfterSwitching();
 		} catch (e) {
@@ -1963,6 +1941,8 @@ class Tabbys {
 		DOM.removeStyle();
 		Patcher.unpatchAll();
 		reRender('div[data-windows="true"] > *');
+		this.unCssVarsListener?.();
+		this.unCssVarsListener = null;
 		this.removeDispatchInterceptor?.();
 		this.removeDispatchInterceptor = null;
 		this.unpatchContextMenu?.forEach?.(p => p());
@@ -1976,7 +1956,9 @@ class Tabbys {
 module.exports = Tabbys;
 
 const css = `.Tabbys-vars {
-	--size:20;
+	--size:20px;
+	--tab-divider-size:3px;
+
 	--active-tab-bg: rgba(151, 151, 159, 0.15);
 	--hover-tab-bg: rgba(151, 151, 159, 0.35);
 	--selected-tab-bg: rgba(151, 151, 159, 0.25);
@@ -2190,10 +2172,14 @@ div:has(> .Tabbys-container):not(#a) {
 	background:var(--active-tab-bg);
 }
 
+.new-tab-div,
 .tab-div{
 	height:calc(var(--size) * .8);
-	border: 1px solid #ccc5;
-	margin: auto 3px;
+	border: 1px solid #ccc5;	
+}
+
+.tab-div{
+	margin: auto var(--tab-divider-size);
 }
 
 .settings-dropdown{
@@ -2364,7 +2350,9 @@ div:has(> .Tabbys-container):not(#a) {
 
 
 
-
+.typing-dots{
+	flex:0 0 auto;
+}
 .tabs-scroller {
 	display: flex;
 	min-width: 0;
@@ -2373,7 +2361,7 @@ div:has(> .Tabbys-container):not(#a) {
 
 .tabs-list {
 	display: flex;
-	overflow: auto;
+	overflow: auto hidden;
 	scrollbar-width: none;
 }
 
@@ -2386,13 +2374,11 @@ div:has(> .Tabbys-container):not(#a) {
 	position: absolute;
 	top: 50%;
 	translate: 0 -50%;
-	
+
 	aspect-ratio: 1;
 	cursor: pointer;
 	color: #ccc;
 }
-
-
 
 .left-arrow {
 	left: 0;
