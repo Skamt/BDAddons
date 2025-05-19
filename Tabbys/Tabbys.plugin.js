@@ -447,7 +447,7 @@ function useChannelState(channelId) {
 	);
 	const typingUsersIds = useStateFromStores([TypingStore], () => Object.keys(TypingStore.getTypingUsers(channelId)), [channelId]);
 	const currentUser = UserStore.getCurrentUser();
-	const typingUsers = typingUsersIds.filter(id => id !== currentUser.id).map(UserStore.getUser);
+	const typingUsers = typingUsersIds.filter(id => id !== currentUser?.id).map(UserStore.getUser);
 	return { typingUsers, mentionCount, unreadCount };
 }
 
