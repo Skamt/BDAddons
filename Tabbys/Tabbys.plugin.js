@@ -26,13 +26,15 @@ const config = {
 		"showTabbar": true,
 		"showBookmarkbar": true,
 		"showUnreads": true,
-		"showPings": true
+		"showDMNames": true,
+		"showPings": true,
+		"showTyping": true,
+		"focusNewTab": true
 	}
 }
 
 // common\Api.js
 const Api = new BdApi(config.info.name);
-const UI = Api.UI;
 const DOM = Api.DOM;
 const Data = Api.Data;
 const React = Api.React;
@@ -191,12 +193,6 @@ class List extends ArrayHelpers {
 		super();
 		this.identifierKey = identifierKey;
 	}
-	set list(_) {
-		throw new Error();
-	}
-	set map(_) {
-		throw new Error();
-	}
 	get length() {
 		return this.list.length;
 	}
@@ -233,43 +229,45 @@ class List extends ArrayHelpers {
 	}
 	removeItem(index) {
 		if (index == null || index < 0) return;
-		const item = this.list[index];
+		const item = this.getItemByIndex(index);
 		this.remove(index);
 		delete this.map[item[this.identifierKey]];
 		this.recreateIndexMap();
 	}
 	removeItemByIdentifier(id) {
-		const index = this.indexMap[id];
+		const index = this.getItemIndex(id);
 		this.removeItem(index);
 	}
 	swapItem(fromIndex, toIndex) {
 		if (fromIndex === toIndex) return;
-		if (fromIndex < 0 || fromIndex >= this.list.length) return;
-		const fromItem = this.list[fromIndex];
+		if (fromIndex < 0 || fromIndex >= this.length) return;
+		const fromItem = this.getItemByIndex(fromIndex);
 		const tempList = [...this.list];
 		const toItem = tempList.splice(toIndex, 1, fromItem)[0];
 		tempList.splice(fromIndex, 1, toItem);
 		this.setList(tempList);
 	}
 	swapItemById(fromId, toId) {
-		this.swapItem(this.indexMap[fromId], this.indexMap[toId]);
+		this.swapItem(this.getItemIndex(fromId), this.getItemIndex(toId));
 	}
 	setItem(index, item) {
 		if (index == null || index < 0) return;
+		const currentItem = this.getItemByIndex(index);
 		item = {
+			...currentItem,
 			...item,
-			[this.identifierKey]: this.list[index][this.identifierKey]
+			[this.identifierKey]: currentItem[this.identifierKey]
 		};
 		this.replace(index, item);
 		this.updateMap(item);
 	}
 	setItemById(id, item) {
-		const index = this.indexMap[id];
+		const index = this.getItemIndex(id);
 		if (index == null) return;
 		this.setItem(index, item);
 	}
-	getItem(index) {
-		return this.list(index)
+	getItemByIndex(index) {
+		return this.list[index];
 	}
 	getItemById(id) {
 		return this.map[id];
@@ -281,9 +279,9 @@ class List extends ArrayHelpers {
 		return this.list.slice(from, to);
 	}
 	getItemMeta(id) {
-		const index = this.indexMap[id];
+		const index = this.getItemIndex(id);
 		if (index == null || index < 0) return {};
-		const item = this.map[id];
+		const item = this.getItemById(id);
 		if (!item) return {};
 		return {
 			item,
@@ -291,8 +289,8 @@ class List extends ArrayHelpers {
 			isSingle: this.list.length === 1,
 			isFirst: index === 0,
 			isLast: index === this.list.length - 1,
-			nextItem: this.list[index + 1],
-			previousItem: this.list[index - 1]
+			nextItem: this.getItemByIndex(index + 1),
+			previousItem: this.getItemByIndex(index - 1)
 		};
 	}
 }
@@ -436,19 +434,20 @@ function getChannelIcon(channel, size) {
 }
 
 function useChannelState(channelId) {
-	const [mentionCount, unreadCount] = useStateFromStores(
+	const [mentionCount, unreadCount, hasUnread] = useStateFromStores(
 		[ReadStateStore],
 		() => {
+			const hasUnread = ReadStateStore.hasUnread(channelId);
 			const mentionCount = ReadStateStore.getMentionCount(channelId);
 			const unreadCount = ReadStateStore.getUnreadCount(channelId);
-			return [mentionCount, unreadCount];
+			return [mentionCount, unreadCount, hasUnread];
 		},
 		[channelId]
 	);
 	const typingUsersIds = useStateFromStores([TypingStore], () => Object.keys(TypingStore.getTypingUsers(channelId)), [channelId]);
 	const currentUser = UserStore.getCurrentUser();
 	const typingUsers = typingUsersIds.filter(id => id !== currentUser?.id).map(UserStore.getUser);
-	return { typingUsers, mentionCount, unreadCount };
+	return { typingUsers, mentionCount, unreadCount, hasUnread };
 }
 
 function createContextMenuItem(type, id = "", action = nop, label = "Unknown", icon = null, color = "", children) {
@@ -468,6 +467,56 @@ function createContextMenuItem(type, id = "", action = nop, label = "Unknown", i
 	if (color) res.color = color;
 	return res;
 }
+
+// common\DiscordModules\zustand.js
+const { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
+	_: Filters.byStrings("subscribe"),
+	zustand: () => true
+});
+const subscribeWithSelector = getModule(Filters.byStrings("equalityFn", "fireImmediately"), { searchExports: true });
+const zustand$1 = zustand;
+
+// common\Utils\Settings.js
+const SettingsStoreSelectors = {};
+const persistMiddleware = config => (set, get, api) => config(args => (set(args), Data.save("settings", get().getRawState())), get, api);
+const SettingsStore = Object.assign(
+	zustand$1(
+		persistMiddleware(subscribeWithSelector((set, get) => {
+			const settingsObj = Object.create(null);
+			for (const [key, value] of Object.entries({
+					...config.settings,
+					...Data.load("settings")
+				})) {
+				settingsObj[key] = value;
+				settingsObj[`set${key}`] = newValue => set({
+					[key]: newValue });
+				SettingsStoreSelectors[key] = state => state[key];
+			}
+			settingsObj.getRawState = () => {
+				return Object.entries(get())
+					.filter(([, val]) => typeof val !== "function")
+					.reduce((acc, [key, val]) => {
+						acc[key] = val;
+						return acc;
+					}, {});
+			};
+			return settingsObj;
+		}))
+	), {
+		useSetting: function(key) {
+			return this(state => [state[key], state[`set${key}`]]);
+		},
+		selectors: SettingsStoreSelectors
+	}
+);
+Object.defineProperty(SettingsStore, "state", {
+	writeable: false,
+	configurable: false,
+	get() {
+		return this.getState();
+	}
+});
+const Settings = SettingsStore;
 
 // src\Tabbys\Store\tabsStore.js
 const initialState = {
@@ -512,6 +561,9 @@ const store = (set, get) => ({
 		if (!tab.id) return;
 		const state = get();
 		tabsList.addItem(tab);
+		if (!Settings.state.focusNewTab) {
+			return set({ tabs: tabsList.list });
+		}
 		set({ tabs: tabsList.list, selectedId: tab.id, lastSelectedIdAfterNewTab: state.selectedId });
 	},
 	removeTab(id) {
@@ -578,7 +630,6 @@ const store = (set, get) => ({
 });
 const selectors = {
 	tabs: state => state.tabs,
-	isSingleTab: state => state.tabs.length === 1,
 	selectedId: state => state.selectedId,
 	lastSelectedIdAfterNewTab: state => state.lastSelectedIdAfterNewTab
 };
@@ -587,15 +638,8 @@ const tabsStore = {
 	selectors
 };
 
-// common\DiscordModules\zustand.js
-const { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
-	_: Filters.byStrings("subscribe"),
-	zustand: () => true
-});
-const subscribeWithSelector = getModule(Filters.byStrings("equalityFn", "fireImmediately"), { searchExports: true });
-const zustand$1 = zustand;
-
 // src\Tabbys\Store\index.js
+// 			path: paths[Math.floor(Math.random() * paths.length)]
 const Store = Object.assign(
 	zustand$1(
 		subscribeWithSelector((setState, get) => {
@@ -659,7 +703,6 @@ function hydrateStore() {
 }
 
 function onLocationChange(e) {
-	console.log(e);
 	const pathname = getPathName(e.destination.url);
 	if (!pathname) return;
 	Store.state.setTab(Store.state.selectedId, { path: pathname });
@@ -747,7 +790,6 @@ const ArrowIcon = svg(null, "M9.71069 18.2929C10.1012 18.6834 10.7344 18.6834 11
 const CloseIcon = svg(null, "M17.3 18.7a1 1 0 0 0 1.4-1.4L13.42 12l5.3-5.3a1 1 0 0 0-1.42-1.4L12 10.58l-5.3-5.3a1 1 0 0 0-1.4 1.42L10.58 12l-5.3 5.3a1 1 0 1 0 1.42 1.4L12 13.42l5.3 5.3Z");
 const DuplicateIcon = svg(null, "M4 5a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v.18a1 1 0 1 0 2 0V5a3 3 0 0 0-3-3H5a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h.18a1 1 0 1 0 0-2H5a1 1 0 0 1-1-1V5Z", "M8 11a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3h-8a3 3 0 0 1-3-3v-8Zm2 0a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-8a1 1 0 0 1-1-1v-8Z");
 const LightiningIcon = svg(null, "M7.65 21.75a1 1 0 0 0 1.64.96l11.24-9.96a1 1 0 0 0-.66-1.75h-4.81a.5.5 0 0 1-.5-.6l1.79-8.15a1 1 0 0 0-1.64-.96L3.47 11.25A1 1 0 0 0 4.13 13h4.81c.32 0 .56.3.5.6l-1.79 8.15Z");
-const PinIcon = svg(null, "M19.38 11.38a3 3 0 0 0 4.24 0l.03-.03a.5.5 0 0 0 0-.7L13.35.35a.5.5 0 0 0-.7 0l-.03.03a3 3 0 0 0 0 4.24L13 5l-2.92 2.92-3.65-.34a2 2 0 0 0-1.6.58l-.62.63a1 1 0 0 0 0 1.42l9.58 9.58a1 1 0 0 0 1.42 0l.63-.63a2 2 0 0 0 .58-1.6l-.34-3.64L19 11l.38.38ZM9.07 17.07a.5.5 0 0 1-.08.77l-5.15 3.43a.5.5 0 0 1-.63-.06l-.42-.42a.5.5 0 0 1-.06-.63L6.16 15a.5.5 0 0 1 .77-.08l2.14 2.14Z");
 const PlusIcon = svg(null, "M13 5a1 1 0 1 0-2 0v6H5a1 1 0 1 0 0 2h6v6a1 1 0 1 0 2 0v-6h6a1 1 0 1 0 0-2h-6V5Z");
 const VectorIcon = svg(null, "M20.7 12.7a1 1 0 0 0 0-1.4l-5-5a1 1 0 1 0-1.4 1.4l3.29 3.3H4a1 1 0 1 0 0 2h13.59l-3.3 3.3a1 1 0 0 0 1.42 1.4l5-5Z");
 const DiscordIcon = svg(null, "M19.73 4.87a18.2 18.2 0 0 0-4.6-1.44c-.21.4-.4.8-.58 1.21-1.69-.25-3.4-.25-5.1 0-.18-.41-.37-.82-.59-1.2-1.6.27-3.14.75-4.6 1.43A19.04 19.04 0 0 0 .96 17.7a18.43 18.43 0 0 0 5.63 2.87c.46-.62.86-1.28 1.2-1.98-.65-.25-1.29-.55-1.9-.92.17-.12.32-.24.47-.37 3.58 1.7 7.7 1.7 11.28 0l.46.37c-.6.36-1.25.67-1.9.92.35.7.75 1.35 1.2 1.98 2.03-.63 3.94-1.6 5.64-2.87.47-4.87-.78-9.09-3.3-12.83ZM8.3 15.12c-1.1 0-2-1.02-2-2.27 0-1.24.88-2.26 2-2.26s2.02 1.02 2 2.26c0 1.25-.89 2.27-2 2.27Zm7.4 0c-1.1 0-2-1.02-2-2.27 0-1.24.88-2.26 2-2.26s2.02 1.02 2 2.26c0 1.25-.88 2.27-2 2.27Z");
@@ -755,17 +797,6 @@ const ServersIcon = svg(null, "M10.55 4.4c.13-.24.1-.54-.12-.71L8.6 2.24a1 1 0 0
 const QuestsIcon = svg(null, "M7.5 21.7a8.95 8.95 0 0 1 9 0 1 1 0 0 0 1-1.73c-.6-.35-1.24-.64-1.9-.87.54-.3 1.05-.65 1.52-1.07a3.98 3.98 0 0 0 5.49-1.8.77.77 0 0 0-.24-.95 3.98 3.98 0 0 0-2.02-.76A4 4 0 0 0 23 10.47a.76.76 0 0 0-.71-.71 4.06 4.06 0 0 0-1.6.22 3.99 3.99 0 0 0 .54-5.35.77.77 0 0 0-.95-.24c-.75.36-1.37.95-1.77 1.67V6a4 4 0 0 0-4.9-3.9.77.77 0 0 0-.6.72 4 4 0 0 0 3.7 4.17c.89 1.3 1.3 2.95 1.3 4.51 0 3.66-2.75 6.5-6 6.5s-6-2.84-6-6.5c0-1.56.41-3.21 1.3-4.51A4 4 0 0 0 11 2.82a.77.77 0 0 0-.6-.72 4.01 4.01 0 0 0-4.9 3.96A4.02 4.02 0 0 0 3.73 4.4a.77.77 0 0 0-.95.24 3.98 3.98 0 0 0 .55 5.35 4 4 0 0 0-1.6-.22.76.76 0 0 0-.72.71l-.01.28a4 4 0 0 0 2.65 3.77c-.75.06-1.45.33-2.02.76-.3.22-.4.62-.24.95a4 4 0 0 0 5.49 1.8c.47.42.98.78 1.53 1.07-.67.23-1.3.52-1.91.87a1 1 0 1 0 1 1.73Z");
 const AppsIcon = svg(null, path({ "fill-rule": "evenodd", "clip-rule": "evenodd" }, "M20.97 4.06c0 .18.08.35.24.43.55.28.9.82 1.04 1.42.3 1.24.75 3.7.75 7.09v4.91a3.09 3.09 0 0 1-5.85 1.38l-1.76-3.51a1.09 1.09 0 0 0-1.23-.55c-.57.13-1.36.27-2.16.27s-1.6-.14-2.16-.27c-.49-.11-1 .1-1.23.55l-1.76 3.51A3.09 3.09 0 0 1 1 17.91V13c0-3.38.46-5.85.75-7.1.15-.6.49-1.13 1.04-1.4a.47.47 0 0 0 .24-.44c0-.7.48-1.32 1.2-1.47l2.93-.62c.5-.1 1 .06 1.36.4.35.34.78.71 1.28.68a42.4 42.4 0 0 1 4.4 0c.5.03.93-.34 1.28-.69.35-.33.86-.5 1.36-.39l2.94.62c.7.15 1.19.78 1.19 1.47ZM20 7.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0ZM15.5 12a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM5 7a1 1 0 0 1 2 0v1h1a1 1 0 0 1 0 2H7v1a1 1 0 1 1-2 0v-1H4a1 1 0 1 1 0-2h1V7Z"));
 const SettingIcon = svg(null, "M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z");
-
-// common\Utils\Toast.js
-function showToast(content, type) {
-	UI.showToast(`[${config.info.name}] ${content}`, { timeout: 5000, type });
-}
-const Toast = {
-	success(content) { showToast(content, "success"); },
-	info(content) { showToast(content, "info"); },
-	warning(content) { showToast(content, "warning"); },
-	error(content) { showToast(content, "error"); }
-};
 
 // src\Tabbys\contextmenus\TabContextMenu.jsx
 function newTabRight(id) {
@@ -778,10 +809,6 @@ function newTabLeft(id) {
 
 function duplicateTab(id) {
 	Store.state.duplicateTab(id);
-}
-
-function pinTab(id) {
-	Toast.info("Coming soon");
 }
 
 function bookmarkTab(id) {
@@ -806,17 +833,18 @@ function closeOtherTabs(id) {
 
 function TabContextMenu(id) {
 	const canClose = Store.state.getTabsCount() > 1;
-	const Menu = ContextMenu.buildMenu([
-		createContextMenuItem(null, "new-tab-right", () => newTabRight(id), "New Tab to Right", React.createElement(VectorIcon, null)),
-		createContextMenuItem(null, "new-tab-left", () => newTabLeft(id), "New Tab to Left", React.createElement(VectorIcon, { style: { rotate: "180deg" }, })),
-		{ type: "separator" },
-		createContextMenuItem(null, "duplicate-tab", () => duplicateTab(id), "Duplicate Tab", React.createElement(DuplicateIcon, null)),
-		createContextMenuItem(null, "pin-tab", () => pinTab(), "Pin Tab", React.createElement(PinIcon, null)),
-		createContextMenuItem(null, "bookmark-tab", () => bookmarkTab(id), "Bookmark Tab", React.createElement(BookmarkOutlinedIcon, null)),
-		canClose && { type: "separator" },
-		canClose && createContextMenuItem("submenu", "close", () => closeTab(id), "Close", React.createElement(CloseIcon, null), "danger", [createContextMenuItem(null, "close-tabs-to-right", () => closeTabsToRight(id), "Close Tabs to Right", React.createElement(VectorIcon, null), "danger"), createContextMenuItem(null, "close-tabs-to-left", () => closeTabsToLeft(id), "Close Tabs to Left", React.createElement(VectorIcon, { style: { rotate: "180deg" }, }), "danger"), createContextMenuItem(null, "close-other-tabs", () => closeOtherTabs(id), "Close Other Tabs", React.createElement(LightiningIcon, null), "danger")])
-	].filter(Boolean));
-	return (props) => (
+	const Menu = ContextMenu.buildMenu(
+		[
+			createContextMenuItem(null, "new-tab-right", () => newTabRight(id), "New Tab to Right", React.createElement(VectorIcon, null)),
+			createContextMenuItem(null, "new-tab-left", () => newTabLeft(id), "New Tab to Left", React.createElement(VectorIcon, { style: { rotate: "180deg" }, })),
+			{ type: "separator" },
+			createContextMenuItem(null, "duplicate-tab", () => duplicateTab(id), "Duplicate Tab", React.createElement(DuplicateIcon, null)),
+			createContextMenuItem(null, "bookmark-tab", () => bookmarkTab(id), "Bookmark Tab", React.createElement(BookmarkOutlinedIcon, null)),
+			canClose && { type: "separator" },
+			canClose && createContextMenuItem("submenu", "close", () => closeTab(id), "Close", React.createElement(CloseIcon, null), "danger", [createContextMenuItem(null, "close-tabs-to-right", () => closeTabsToRight(id), "Close Tabs to Right", React.createElement(VectorIcon, null), "danger"), createContextMenuItem(null, "close-tabs-to-left", () => closeTabsToLeft(id), "Close Tabs to Left", React.createElement(VectorIcon, { style: { rotate: "180deg" }, }), "danger"), createContextMenuItem(null, "close-other-tabs", () => closeOtherTabs(id), "Close Other Tabs", React.createElement(LightiningIcon, null), "danger")])
+		].filter(Boolean)
+	);
+	return props => (
 		React.createElement(Menu, {
 			...props,
 			className: "tab-contextmenu",
@@ -858,53 +886,11 @@ const Tooltip = ({ note, position, children }) => {
 	);
 };
 
-// common\Utils\Settings.js
-const SettingsStoreSelectors = {};
-const persistMiddleware = config => (set, get, api) => config(args => (set(args), Data.save("settings", get().getRawState())), get, api);
-const SettingsStore = Object.assign(
-	zustand$1(
-		persistMiddleware(subscribeWithSelector((set, get) => {
-			const settingsObj = Object.create(null);
-			for (const [key, value] of Object.entries({
-					...config.settings,
-					...Data.load("settings")
-				})) {
-				settingsObj[key] = value;
-				settingsObj[`set${key}`] = newValue => set({
-					[key]: newValue });
-				SettingsStoreSelectors[key] = state => state[key];
-			}
-			settingsObj.getRawState = () => {
-				return Object.entries(get())
-					.filter(([, val]) => typeof val !== "function")
-					.reduce((acc, [key, val]) => {
-						acc[key] = val;
-						return acc;
-					}, {});
-			};
-			return settingsObj;
-		}))
-	), {
-		useSetting: function(key) {
-			return this(state => [state[key], state[`set${key}`]]);
-		},
-		selectors: SettingsStoreSelectors
-	}
-);
-Object.defineProperty(SettingsStore, "state", {
-	writeable: false,
-	configurable: false,
-	get() {
-		return this.getState();
-	}
-});
-const Settings = SettingsStore;
-
 // src\Tabbys\components\Tab\BaseTab.jsx
 const filter = Filters.byStrings("dotRadius", "dotPosition");
 const TypingDots = getModule(a => a?.type?.render && filter(a.type.render), { searchExports: true });
 
-function DragThis$2(comp) {
+function DragThis$3(comp) {
 	return DropTarget(
 		"TAB", {
 			drop(thisTab, monitor) {
@@ -924,8 +910,7 @@ function DragThis$2(comp) {
 	)(
 		DragSource(
 			"TAB", {
-				beginDrag(props, monitor, comp) {
-					console.log(props, monitor, comp);
+				beginDrag(props) {
 					return { ...props };
 				}
 			},
@@ -938,15 +923,15 @@ function DragThis$2(comp) {
 		)(comp)
 	);
 }
-
-function BaseTab(props) {
-	const { id, path, icon, title } = props;
-	const { idDM, mentionCount, typingUsers, unreadCount } = props;
+const BaseTab = DragThis$3(function BaseTab(props) {
+	const { id, path, icon, title, isSingle } = props;
+	const { isDM, mentionCount, typingUsers, unreadCount, hasUnread } = props;
 	const { dragRef, dropRef, isOver, canDrop, draggedIsMe, isDragging } = props;
 	const showUnreads = Settings(Settings.selectors.showUnreads);
 	const showPings = Settings(Settings.selectors.showPings);
+	const showDMNames = Settings(Settings.selectors.showDMNames);
+	const showTyping = Settings(Settings.selectors.showTyping);
 	const selected = Store(state => state.selectedId === id);
-	const isSingleTab = Store(Store.selectors.isSingleTab);
 	const tabRef = useRef(null);
 	const isTyping = !!typingUsers?.length;
 	const typingUsersNames = typingUsers?.map(getUserName).join(", ");
@@ -954,12 +939,10 @@ function BaseTab(props) {
 	const clickHandler = e => {
 		e.stopPropagation();
 		Store.state.setSelectedId(id);
-		return console.log(id, "clickHandler");
 	};
 	const closeHandler = e => {
 		e.stopPropagation();
 		Store.state.removeTab(id);
-		return console.log(id, "closeHandler");
 	};
 	const contextmenuHandler = e => {
 		ContextMenu.open(e, TabContextMenu(id), {
@@ -973,25 +956,26 @@ function BaseTab(props) {
 			ref: tabRef,
 			className: concateClassNames("tab flex-center", selected && "selected-tab", isDragging && "dragging", !draggedIsMe && canDrop && isOver && "candrop"),
 			onClick: !selected ? clickHandler : nop,
-		}, React.createElement('div', { className: "tab-icon flex-center round", }, icon), React.createElement('div', { className: "tab-title ellipsis", }, title || path), showPings && !!mentionCount && (
+		}, React.createElement('div', { className: "tab-icon flex-center round", }, icon), !isDM && React.createElement('div', { className: "tab-title ellipsis", }, title || path), isDM && showDMNames && React.createElement('div', { className: "tab-title ellipsis", }, title || path), showPings && !!mentionCount && (
 			React.createElement(Badge, {
 				count: mentionCount,
 				type: "ping",
 			})
-		), showUnreads && !idDM && !!unreadCount && (
+		), showUnreads && !isDM && hasUnread && (
 			React.createElement(Badge, {
 				count: unreadCount,
 				type: "unread",
 			})
-		), isTyping && React.createElement(Tooltip, { note: isTyping ? typingUsersNames : null, }, React.createElement('div', { className: "typing-dots flex-center", }, React.createElement(TypingDots, { dotRadius: 2.5, }))), !isSingleTab && (
+		), showTyping && isTyping && (
+			React.createElement(Tooltip, { note: isTyping ? typingUsersNames : null, }, React.createElement('div', { className: "typing-dots flex-center", }, React.createElement(TypingDots, { dotRadius: 2.5, })))
+		), !isSingle && (
 			React.createElement('div', {
 				className: "tab-close flex-center round",
 				onClick: closeHandler,
 			}, React.createElement(CloseIcon, { className: "parent-dim", }))
 		))
 	);
-}
-const BaseTab$1 = DragThis$2(BaseTab);
+});
 
 // @Stores\PresenceStore
 const PresenceStore = getStore("PresenceStore");
@@ -1026,7 +1010,7 @@ const sizes$1 = {
 	80: "SIZE_80"
 };
 
-function ChannelTab({ id, channelId, path }) {
+function ChannelTab({ id, channelId, path, ...rest }) {
 	const size = Settings(Settings.selectors.size);
 	const channelUnreadState = useChannelState(channelId);
 	const channel = useStateFromStores([ChannelStore], () => ChannelStore.getChannel(channelId), [channelId]);
@@ -1066,7 +1050,7 @@ function ChannelTab({ id, channelId, path }) {
 		React.createElement('div', { className: "discord-icon flex-center fill round", }, React.createElement(DiscordIcon, null))
 	);
 	return (
-		React.createElement(BaseTab$1, {
+		React.createElement(BaseTab, {
 			id: id,
 			path: path,
 			icon: icon,
@@ -1074,6 +1058,7 @@ function ChannelTab({ id, channelId, path }) {
 			isGroupDM: isGroupDM,
 			isDM: isDM,
 			...channelUnreadState,
+			...rest,
 		})
 	);
 }
@@ -1099,7 +1084,7 @@ function getIcon(type) {
 	);
 }
 const Tab = React.memo(({ id }) => {
-	const { path } = Store(state => state.getTab(id), shallow) || {};
+	const { path, ...rest } = Store(state => state.getTab(id), shallow) || {};
 	if (!path) return Logger.error("unknown tab path", path, id);
 	const [, type, idk, channelId, , threadId] = path.split("/");
 	if (type === "channels" && channelId)
@@ -1108,14 +1093,16 @@ const Tab = React.memo(({ id }) => {
 				id: id,
 				path: path,
 				channelId: threadId || channelId,
+				...rest,
 			})
 		);
 	return (
-		React.createElement(BaseTab$1, {
+		React.createElement(BaseTab, {
 			id: id,
 			path: path,
 			icon: getIcon(idk),
 			title: idk,
+			...rest,
 		})
 	);
 });
@@ -1149,7 +1136,6 @@ function getFirstAndLastChild(el) {
 }
 
 function TabsScroller({ children }) {
-	console.log("TabsScroller rendered");
 	const [leftScrollBtn, setLeftScrollBtn] = useState(false);
 	const [rightScrollBtn, setRightScrollBtn] = useState(false);
 	const displayStartScrollRef = useRef(null);
@@ -1319,11 +1305,11 @@ Gap.direction = {
 	VERTICAL: "VERTICAL",
 };
 
-// @Modules\Heading
-const Heading = getModule(a => a?.render?.toString().includes("data-excessive-heading-level"), { searchExports: true });
-
 // @Modules\Slider
 const Slider = getModule(Filters.byPrototypeKeys("renderMark"), { searchExports: true });
+
+// @Modules\Heading
+const Heading = getModule(a => a?.render?.toString().includes("data-excessive-heading-level"), { searchExports: true });
 
 // common\Components\icons\ArrowIcon\index.jsx
 function Arrow() {
@@ -1398,10 +1384,12 @@ function SettingSlider({ settingKey, label, note, ...props }) {
 			strong: true,
 			size: Text.Sizes.SIZE_16,
 			style: { marginBottom: 8 },
-		}, label), React.createElement(Text, {
-			size: Text.Sizes.SIZE_14,
-			style: { marginBottom: 8 },
-		}, note), React.createElement(Slider, {
+		}, label), note && (
+			React.createElement(Text, {
+				size: Text.Sizes.SIZE_14,
+				style: { marginBottom: 8 },
+			}, note)
+		), React.createElement(Slider, {
 			onValueRender: Math.round,
 			...props,
 			initialValue: val,
@@ -1415,33 +1403,56 @@ const SettingComponent = () => {
 		React.createElement(Collapsible, { title: "Show/Hide", }, [{
 				settingKey: "showTabDivider",
 				description: "Show dividers between tabs",
-				hideBorder: false
+				hideBorder: true,
+				style: { marginBottom: 2 }
 			},
 			{
 				settingKey: "showSettingsButton",
 				description: "Show a quick settings button next to tabs",
-				hideBorder: false
+				hideBorder: true,
+				style: { marginBottom: 2 }
 			},
 			{
 				settingKey: "showTabbar",
 				description: "Show/hide Tabs bar",
-				hideBorder: false
+				hideBorder: true,
+				style: { marginBottom: 2 }
 			},
 			{
 				settingKey: "showBookmarkbar",
 				description: "Show/hide Bookmarks bar",
-				hideBorder: false
-			},
-			{
-				settingKey: "showUnreads",
-				description: "Show/hide unread messages indicator",
-				note: "DM unreads always show as red badges",
-				hideBorder: false
+				hideBorder: true,
+				style: { marginBottom: 2 }
 			},
 			{
 				settingKey: "showPings",
 				description: "Show/hide pings indicator",
-				hideBorder: true
+				hideBorder: true,
+				style: { marginBottom: 2 }
+			},
+			{
+				settingKey: "focusNewTab",
+				description: "switch to newly created tabs",
+				hideBorder: true,
+				style: { marginBottom: 2 }
+			},
+			{
+				settingKey: "showUnreads",
+				description: "Show/hide unread messages indicator",
+				hideBorder: true,
+				style: { marginBottom: 2 }
+			},
+			{
+				settingKey: "showTyping",
+				description: "Show/hide typing users indicator",
+				hideBorder: true,
+				style: { marginBottom: 2 }
+			},
+			{
+				settingKey: "showDMNames",
+				description: "Show/hide DM names",
+				hideBorder: true,
+				style: { marginBottom: 2 }
 			}
 		].map(SettingSwtich)),
 		React.createElement(Gap, {
@@ -1454,8 +1465,9 @@ const SettingComponent = () => {
 			label: "Tabs divider size",
 			note: "Space between tabs, selected value is doubled",
 			markers: [...Array(11)].map((_, i) => i),
-			minValue: 5,
-			maxValue: 11,
+			defaultValue: 5,
+			minValue: 0,
+			maxValue: 10,
 			stickToMarkers: true,
 			sortedMarkers: true,
 			equidistant: true,
@@ -1468,7 +1480,6 @@ const SettingComponent = () => {
 		React.createElement(SettingSlider, {
 			settingKey: "size",
 			label: "UI density",
-			note: "",
 			markers: sizes,
 			defaultValue: 20,
 			stickToMarkers: true,
@@ -1501,24 +1512,45 @@ const SettingsDropdown = React.memo(function SettingsDropdown() {
 });
 
 // src\Tabbys\components\TabBar\index.jsx
-function TabBar({ leading, trailing }) {
-	console.log("TabBar rendered");
+function DragThis$2(comp) {
+	return DropTarget(
+		"BOOKMARK", {
+			drop(_, monitor) {
+				const droppedBookmark = monitor.getItem();
+				const path = droppedBookmark.path;
+				if (!path) return;
+				Store.state.newTab(buildTab({ path }));
+			}
+		},
+		(connect, monitor) => {
+			return {
+				isOver: monitor.isOver(),
+				canDrop: monitor.canDrop(),
+				dropRef: connect.dropTarget()
+			};
+		}
+	)(comp);
+}
+const TabBar = DragThis$2(function TabBar({ isOver, canDrop, dropRef, leading, trailing }) {
 	const tabs = Store(Store.selectors.tabs, (a, b) => a.length === b.length && !a.some((_, i) => a[i].id !== b[i].id));
 	const showSettingsButton = Settings(Settings.selectors.showSettingsButton);
 	const showTabDivider = Settings(Settings.selectors.showTabDivider);
+	const tabsContainerRef = useRef();
+	dropRef(tabsContainerRef);
 	const newTabHandler = e => {
 		e.preventDefault();
 		e.stopPropagation();
-		console.log(e);
 		Store.state.newTab(buildTab({ path: "/channels/@me" }));
 	};
 	return (
 		React.createElement('div', { className: "tabbar flex", }, leading, React.createElement('div', {
-				className: "tabs-container flex-center",
+				className: concateClassNames("tabs-container flex-center", canDrop && isOver && "candrop"),
+				ref: tabsContainerRef,
 				onDoubleClick: e => e.stopPropagation(),
-			}, React.createElement(TabsScroller, null, tabs.map((a, index) => [
+			}, React.createElement(TabsScroller, null, tabs.map((a, index, list) => [
 				showTabDivider && index !== 0 && React.createElement('div', { className: "tab-div", }),
 				React.createElement(Tab, {
+					isSingle: list.length === 1,
 					key: a.id,
 					id: a.id,
 				})
@@ -1530,7 +1562,7 @@ function TabBar({ leading, trailing }) {
 			}, React.createElement(PlusIcon, { className: "parent-dim", }))
 		), showSettingsButton && React.createElement(SettingsDropdown, null), trailing)
 	);
-}
+});
 
 // src\Tabbys\contextmenus\BookmarkContextmenu.jsx
 function deleteBookmark(id) {
@@ -1592,8 +1624,11 @@ function BaseBookmark(props) {
 	dropRef(dragRef(bookmarkRef));
 	const clickHandler = e => {
 		e.stopPropagation();
-		if (!path) return console.log(id, "no path");
-		transitionTo(path);
+		if (!path) return Logger.log(id, "no path");
+		if (e.ctrlKey)
+			Store.state.newTab(buildTab({ path }));
+		else
+			transitionTo(path);
 	};
 	const contextmenuHandler = e => {
 		ContextMenu.open(e, BookmarkContextmenu(id), {
@@ -1662,13 +1697,12 @@ function DragThis(comp) {
 		"TAB", {
 			drop(thisComp, monitor) {
 				const dropppedTab = monitor.getItem();
-				console.log(dropppedTab);
 				const path = dropppedTab.path;
 				if (!path) return;
 				Store.state.addBookmark(buildTab({ path }));
 			}
 		},
-		(connect, monitor, props) => {
+		(connect, monitor) => {
 			return {
 				isOver: monitor.isOver(),
 				canDrop: monitor.canDrop(),
@@ -2149,76 +2183,6 @@ div:has(> .Tabbys-container):not(#a) {
 	linear-gradient(to left, #0000  0, #ccc3 25%) right center/50%  1px no-repeat;
 	-webkit-app-region: no-drag;
 }
-.bookmarkbar {
-	-webkit-app-region: no-drag;
-	display: flex;
-	flex: 0 0 auto;
-	align-items: center;
-	transform:translate(0);
-}
-
-.bookmarks-container {
-	flex: 1 0 0;
-	min-width: 0;
-	overflow: hidden;
-	display: flex;
-	gap: 2px;
-	-webkit-app-region: no-drag;
-}
-
-.bookmarks-overflow {
-	flex: 0 0 auto;
-	display: flex;
-	padding: 2px;
-	width: 20px;
-	height: 20px;
-	color: white;
-	margin: 0 2px;
-	z-index: 988;
-	-webkit-app-region: no-drag;
-}
-
-.bookmarks-overflow:hover {
-	background: var(--hover-tab-bg);
-}
-
-.bookmarks-overflow:active {
-	background: var(--active-tab-bg);
-}
-
-.bookmarks-overflow-popout {
-	display: flex;
-	flex-direction: column;
-	background-color: var(--background-tertiary);
-	border-radius: 8px;
-	gap: 5px;
-	padding: 5px;
-	overflow: auto;
-	max-height: 50vh;
-}
-
-.bookmarks-overflow-popout::-webkit-scrollbar {
-	height: 8px;
-	width: 8px;
-}
-
-.bookmarks-overflow-popout::-webkit-scrollbar-track {
-	background-color: var(--scrollbar-thin-track);
-	border-color: var(--scrollbar-thin-track);
-}
-
-.bookmarks-overflow-popout::-webkit-scrollbar-thumb {
-	background-clip: padding-box;
-	background-color: var(--scrollbar-thin-thumb);
-	border: 2px solid transparent;
-	border-radius: 4px;
-	min-height: 40px;
-}
-
-.bookmarks-overflow-popout::-webkit-scrollbar-corner {
-	background-color: transparent;
-}
-
 .tabs-container {
 	min-width:0;
 	gap:2px;
@@ -2305,28 +2269,78 @@ div:has(> .Tabbys-container):not(#a) {
 .settings-dropdown-btn:active{
 	color:#fff9;
 }
-.bookmark{
-	justify-content:flex-start;
+.bookmarkbar {
+	-webkit-app-region: no-drag;
+	display: flex;
+	flex: 0 0 auto;
+	align-items: center;
+	transform:translate(0);
 }
 
-.bookmark:hover{
-	background:#353333;
+.bookmarks-container {
+	flex: 1 0 0;
+	min-width: 0;
+	overflow: hidden;
+	display: flex;
+	gap: 2px;
+	-webkit-app-region: no-drag;
 }
 
-.bookmark:active{
-	background:#353333;
+.bookmarks-overflow {
+	flex: 0 0 auto;
+	display: flex;
+	padding: 2px;
+	width: 20px;
+	height: 20px;
+	color: white;
+	margin: 0 2px;
+	z-index: 988;
+	-webkit-app-region: no-drag;
 }
 
-.bookmark > .bookmark-title {
-	color:#a7a7a7;
-	font-size:calc(var(--size) * .6);
+.bookmarks-overflow:hover {
+	background: var(--hover-tab-bg);
 }
 
+.bookmarks-overflow:active {
+	background: var(--active-tab-bg);
+}
 
+.bookmarks-overflow-popout {
+	display: flex;
+	flex-direction: column;
+	background-color: var(--background-tertiary);
+	border-radius: 8px;
+	gap: 5px;
+	padding: 5px;
+	overflow: auto;
+	max-height: 50vh;
+}
+
+.bookmarks-overflow-popout::-webkit-scrollbar {
+	height: 8px;
+	width: 8px;
+}
+
+.bookmarks-overflow-popout::-webkit-scrollbar-track {
+	background-color: var(--scrollbar-thin-track);
+	border-color: var(--scrollbar-thin-track);
+}
+
+.bookmarks-overflow-popout::-webkit-scrollbar-thumb {
+	background-clip: padding-box;
+	background-color: var(--scrollbar-thin-thumb);
+	border: 2px solid transparent;
+	border-radius: 4px;
+	min-height: 40px;
+}
+
+.bookmarks-overflow-popout::-webkit-scrollbar-corner {
+	background-color: transparent;
+}
 
 .tab {
-
-	min-width: calc(100 * (var(--size) / 16));
+	min-width:	min-content;
 	max-width: calc(200 * (var(--size) / 16));
 }
 
@@ -2346,7 +2360,6 @@ div:has(> .Tabbys-container):not(#a) {
 	flex: 1 1 0;
 	min-width: 0;
 	font-size:calc(var(--size) * .7);
-	mask: linear-gradient(to right, #000 80%, #0000 98%, #0000) no-repeat;
 }
 
 .tab-close {
@@ -2367,9 +2380,6 @@ div:has(> .Tabbys-container):not(#a) {
 .tab-close:active {
 	background: var(--close-btn-active-bg);
 }
-
-
-
 
 .typing-dots{
 	flex:0 0 auto;
@@ -2408,6 +2418,25 @@ div:has(> .Tabbys-container):not(#a) {
 .right-arrow {
 	right: 0;
 }
+
+.bookmark{
+	justify-content:flex-start;
+}
+
+.bookmark:hover{
+	background:#353333;
+}
+
+.bookmark:active{
+	background:#353333;
+}
+
+.bookmark > .bookmark-title {
+	color:#a7a7a7;
+	font-size:calc(var(--size) * .6);
+}
+
+
 
 .badge {
 	width: 16px;
