@@ -1,6 +1,6 @@
 /**
  * @name Tabbys
- * @description Empty description
+ * @description Adds Browser like tabs/bookmarks for channels
  * @version 1.0.0
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/Tabbys
@@ -11,7 +11,7 @@ const config = {
 	"info": {
 		"name": "Tabbys",
 		"version": "1.0.0",
-		"description": "Empty description",
+		"description": "Adds Browser like tabs/bookmarks for channels",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/Tabbys/Tabbys.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/Tabbys",
 		"authors": [{
