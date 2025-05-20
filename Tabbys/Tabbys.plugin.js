@@ -1270,231 +1270,6 @@ function TabsScroller({ children }) {
 	);
 }
 
-// common\Components\Gap\index.jsx
-function Gap({ direction, gap, className }) {
-	const style = {
-		VERTICAL: {
-			width: gap,
-			height: "100%"
-		},
-		HORIZONTAL: {
-			height: gap,
-			width: "100%"
-		}
-	} [direction];
-	return React.createElement('div', { style: style, className: className, });
-}
-Gap.direction = {
-	HORIZONTAL: "HORIZONTAL",
-	VERTICAL: "VERTICAL",
-};
-
-// @Modules\Slider
-const Slider = getModule(Filters.byPrototypeKeys("renderMark"), { searchExports: true });
-
-// @Modules\Heading
-const Heading = getModule(a => a?.render?.toString().includes("data-excessive-heading-level"), { searchExports: true });
-
-// common\Components\icons\ArrowIcon\index.jsx
-function Arrow() {
-	return (
-		React.createElement('svg', {
-			width: 24,
-			height: 24,
-			viewBox: "0 0 24 24",
-			fill: "none",
-			xmlns: "http://www.w3.org/2000/svg",
-		}, React.createElement('path', {
-			d: "M9.71069 18.2929C10.1012 18.6834 10.7344 18.6834 11.1249 18.2929L16.0123 13.4006C16.7927 12.6195 16.7924 11.3537 16.0117 10.5729L11.1213 5.68254C10.7308 5.29202 10.0976 5.29202 9.70708 5.68254C9.31655 6.07307 9.31655 6.70623 9.70708 7.09676L13.8927 11.2824C14.2833 11.6729 14.2833 12.3061 13.8927 12.6966L9.71069 16.8787C9.32016 17.2692 9.32016 17.9023 9.71069 18.2929Z",
-			fill: "#ccc",
-		}))
-	);
-}
-
-// common\Components\Collapsible\index.jsx
-function Collapsible({ title, children }) {
-	const [open, setOpen] = React.useState(false);
-	return (
-		React.createElement('div', { className: open ? "collapsible-container collapsible-open" : "collapsible-container", }, React.createElement('div', {
-			className: "collapsible-header",
-			onClick: () => setOpen(!open),
-		}, React.createElement('div', { className: "collapsible-icon", }, React.createElement(Arrow, null)), React.createElement(Heading, {
-			className: "collapsible-title",
-			tag: "h5",
-		}, title)), React.createElement('div', { className: "collapsible-body", }, children))
-	);
-}
-
-// @Modules\FormSwitch
-const FormSwitch = getModule(Filters.byStrings("note", "tooltipNote"), { searchExports: true });
-
-// common\Components\Switch\index.jsx
-const Switch = FormSwitch ||
-	function SwitchComponentFallback(props) {
-		return (
-			React.createElement('div', { style: { color: "#fff" }, }, props.children, React.createElement('input', {
-				type: "checkbox",
-				checked: props.value,
-				onChange: e => props.onChange(e.target.checked),
-			}))
-		);
-	};
-
-// common\Components\SettingSwtich\index.jsx
-function SettingSwtich({ settingKey, note, onChange = nop, hideBorder = false, description, ...rest }) {
-	const [val, set] = Settings.useSetting(settingKey);
-	return (
-		React.createElement(Switch, {
-			...rest,
-			value: val,
-			note: note,
-			hideBorder: hideBorder,
-			onChange: e => {
-				set(e);
-				onChange(e);
-			},
-		}, description || settingKey)
-	);
-}
-
-// src\Tabbys\components\SettingComponent\index.jsx
-/* eslint-disable react/jsx-key */
-const Text = BdApi.Components.Text;
-
-function SettingSlider({ settingKey, label, note, ...props }) {
-	const [val, set] = Settings.useSetting(settingKey);
-	return (
-		React.createElement(React.Fragment, null, React.createElement(Text, {
-			strong: true,
-			size: Text.Sizes.SIZE_16,
-			style: { marginBottom: 8 },
-		}, label), note && (
-			React.createElement(Text, {
-				size: Text.Sizes.SIZE_14,
-				style: { marginBottom: 8 },
-			}, note)
-		), React.createElement(Slider, {
-			onValueRender: Math.round,
-			...props,
-			initialValue: val,
-			onValueChange: a => set(Math.round(a)),
-		}))
-	);
-}
-const sizes = [16, 20, 24, 32, 40, 48, 56, 80];
-const SettingComponent = () => {
-	return [
-		React.createElement(Collapsible, { title: "Show/Hide", }, [{
-				settingKey: "showTabDivider",
-				description: "Show dividers between tabs",
-				hideBorder: true,
-				style: { marginBottom: 2 }
-			},
-			{
-				settingKey: "showSettingsButton",
-				description: "Show a quick settings button next to tabs",
-				hideBorder: true,
-				style: { marginBottom: 2 }
-			},
-			{
-				settingKey: "showTabbar",
-				description: "Show/hide Tabs bar",
-				hideBorder: true,
-				style: { marginBottom: 2 }
-			},
-			{
-				settingKey: "showBookmarkbar",
-				description: "Show/hide Bookmarks bar",
-				hideBorder: true,
-				style: { marginBottom: 2 }
-			},
-			{
-				settingKey: "showPings",
-				description: "Show/hide pings indicator",
-				hideBorder: true,
-				style: { marginBottom: 2 }
-			},
-			{
-				settingKey: "focusNewTab",
-				description: "switch to newly created tabs",
-				hideBorder: true,
-				style: { marginBottom: 2 }
-			},
-			{
-				settingKey: "showUnreads",
-				description: "Show/hide unread messages indicator",
-				hideBorder: true,
-				style: { marginBottom: 2 }
-			},
-			{
-				settingKey: "showTyping",
-				description: "Show/hide typing users indicator",
-				hideBorder: true,
-				style: { marginBottom: 2 }
-			},
-			{
-				settingKey: "showDMNames",
-				description: "Show/hide DM names",
-				hideBorder: true,
-				style: { marginBottom: 2 }
-			}
-		].map(SettingSwtich)),
-		React.createElement(Gap, {
-			className: "divider-h",
-			direction: Gap.direction.HORIZONTAL,
-			gap: 40,
-		}),
-		React.createElement(SettingSlider, {
-			settingKey: "tabDividerSize",
-			label: "Tabs divider size",
-			note: "Space between tabs, selected value is doubled",
-			markers: [...Array(11)].map((_, i) => i),
-			defaultValue: 5,
-			minValue: 0,
-			maxValue: 10,
-			stickToMarkers: true,
-			sortedMarkers: true,
-			equidistant: true,
-		}),
-		React.createElement(Gap, {
-			className: "divider-h",
-			direction: Gap.direction.HORIZONTAL,
-			gap: 40,
-		}),
-		React.createElement(SettingSlider, {
-			settingKey: "size",
-			label: "UI density",
-			markers: sizes,
-			defaultValue: 20,
-			stickToMarkers: true,
-			sortedMarkers: true,
-			equidistant: true,
-		})
-	];
-};
-
-// src\Tabbys\components\TabBar\SettingsDropdown.jsx
-const SettingsDropdown = React.memo(function SettingsDropdown() {
-	return (
-		React.createElement(DiscordPopout, {
-			position: "bottom",
-			align: "right",
-			animation: 1,
-			spacing: 8,
-			renderPopout: () => (
-				React.createElement('div', { className: "settings-dropdown", }, React.createElement(SettingComponent, null))
-			),
-		}, e => {
-			return (
-				React.createElement('div', {
-					onClick: e.onClick,
-					className: "settings-dropdown-btn flex-center",
-				}, React.createElement(SettingIcon, { className: "parent-dim", }))
-			);
-		})
-	);
-});
-
 // src\Tabbys\components\TabBar\index.jsx
 function DragThis$2(comp) {
 	return DropTarget(
@@ -1517,7 +1292,6 @@ function DragThis$2(comp) {
 }
 const TabBar = DragThis$2(function TabBar({ isOver, canDrop, dropRef, leading, trailing }) {
 	const tabs = Store(Store.selectors.tabs, (a, b) => a.length === b.length && !a.some((_, i) => a[i].id !== b[i].id));
-	const showSettingsButton = Settings(Settings.selectors.showSettingsButton);
 	const showTabDivider = Settings(Settings.selectors.showTabDivider);
 	const tabsContainerRef = useRef();
 	dropRef(tabsContainerRef);
@@ -1544,7 +1318,7 @@ const TabBar = DragThis$2(function TabBar({ isOver, canDrop, dropRef, leading, t
 				className: "new-tab flex-center round",
 				onClick: newTabHandler,
 			}, React.createElement(PlusIcon, { className: "parent-dim", }))
-		), showSettingsButton && React.createElement(SettingsDropdown, null), trailing)
+		), trailing)
 	);
 });
 
@@ -1771,10 +1545,238 @@ const BookmarkBar = DragThis(function BookmarkBar({ isOver, canDrop, dropRef }) 
 	);
 });
 
+// common\Components\Gap\index.jsx
+function Gap({ direction, gap, className }) {
+	const style = {
+		VERTICAL: {
+			width: gap,
+			height: "100%"
+		},
+		HORIZONTAL: {
+			height: gap,
+			width: "100%"
+		}
+	} [direction];
+	return React.createElement('div', { style: style, className: className, });
+}
+Gap.direction = {
+	HORIZONTAL: "HORIZONTAL",
+	VERTICAL: "VERTICAL",
+};
+
+// @Modules\Slider
+const Slider = getModule(Filters.byPrototypeKeys("renderMark"), { searchExports: true });
+
+// @Modules\Heading
+const Heading = getModule(a => a?.render?.toString().includes("data-excessive-heading-level"), { searchExports: true });
+
+// common\Components\icons\ArrowIcon\index.jsx
+function Arrow() {
+	return (
+		React.createElement('svg', {
+			width: 24,
+			height: 24,
+			viewBox: "0 0 24 24",
+			fill: "none",
+			xmlns: "http://www.w3.org/2000/svg",
+		}, React.createElement('path', {
+			d: "M9.71069 18.2929C10.1012 18.6834 10.7344 18.6834 11.1249 18.2929L16.0123 13.4006C16.7927 12.6195 16.7924 11.3537 16.0117 10.5729L11.1213 5.68254C10.7308 5.29202 10.0976 5.29202 9.70708 5.68254C9.31655 6.07307 9.31655 6.70623 9.70708 7.09676L13.8927 11.2824C14.2833 11.6729 14.2833 12.3061 13.8927 12.6966L9.71069 16.8787C9.32016 17.2692 9.32016 17.9023 9.71069 18.2929Z",
+			fill: "#ccc",
+		}))
+	);
+}
+
+// common\Components\Collapsible\index.jsx
+function Collapsible({ title, children }) {
+	const [open, setOpen] = React.useState(false);
+	return (
+		React.createElement('div', { className: open ? "collapsible-container collapsible-open" : "collapsible-container", }, React.createElement('div', {
+			className: "collapsible-header",
+			onClick: () => setOpen(!open),
+		}, React.createElement('div', { className: "collapsible-icon", }, React.createElement(Arrow, null)), React.createElement(Heading, {
+			className: "collapsible-title",
+			tag: "h5",
+		}, title)), React.createElement('div', { className: "collapsible-body", }, children))
+	);
+}
+
+// @Modules\FormSwitch
+const FormSwitch = getModule(Filters.byStrings("note", "tooltipNote"), { searchExports: true });
+
+// common\Components\Switch\index.jsx
+const Switch = FormSwitch ||
+	function SwitchComponentFallback(props) {
+		return (
+			React.createElement('div', { style: { color: "#fff" }, }, props.children, React.createElement('input', {
+				type: "checkbox",
+				checked: props.value,
+				onChange: e => props.onChange(e.target.checked),
+			}))
+		);
+	};
+
+// common\Components\SettingSwtich\index.jsx
+function SettingSwtich({ settingKey, note, onChange = nop, hideBorder = false, description, ...rest }) {
+	const [val, set] = Settings.useSetting(settingKey);
+	return (
+		React.createElement(Switch, {
+			...rest,
+			value: val,
+			note: note,
+			hideBorder: hideBorder,
+			onChange: e => {
+				set(e);
+				onChange(e);
+			},
+		}, description || settingKey)
+	);
+}
+
+// src\Tabbys\components\SettingComponent\index.jsx
+/* eslint-disable react/jsx-key */
+const Text = BdApi.Components.Text;
+
+function SettingSlider({ settingKey, label, note, ...props }) {
+	const [val, set] = Settings.useSetting(settingKey);
+	return (
+		React.createElement(React.Fragment, null, React.createElement(Text, {
+			strong: true,
+			size: Text.Sizes.SIZE_16,
+			style: { marginBottom: 8 },
+		}, label), note && (
+			React.createElement(Text, {
+				size: Text.Sizes.SIZE_14,
+				style: { marginBottom: 8 },
+			}, note)
+		), React.createElement(Slider, {
+			onValueRender: Math.round,
+			...props,
+			initialValue: val,
+			onValueChange: a => set(Math.round(a)),
+		}))
+	);
+}
+const sizes = [16, 20, 24, 32, 40, 48, 56, 80];
+const SettingComponent = () => {
+	return [
+		React.createElement(Collapsible, { title: "Show/Hide", }, [{
+				settingKey: "showTabDivider",
+				description: "Show dividers between tabs",
+				hideBorder: true,
+				style: { marginBottom: 2 }
+			},
+			{
+				settingKey: "showSettingsButton",
+				description: "Show a quick settings button next to tabs",
+				hideBorder: true,
+				style: { marginBottom: 2 }
+			},
+			{
+				settingKey: "showTabbar",
+				description: "Show/hide Tabs bar",
+				hideBorder: true,
+				style: { marginBottom: 2 }
+			},
+			{
+				settingKey: "showBookmarkbar",
+				description: "Show/hide Bookmarks bar",
+				hideBorder: true,
+				style: { marginBottom: 2 }
+			},
+			{
+				settingKey: "showPings",
+				description: "Show/hide pings indicator",
+				hideBorder: true,
+				style: { marginBottom: 2 }
+			},
+			{
+				settingKey: "focusNewTab",
+				description: "switch to newly created tabs",
+				hideBorder: true,
+				style: { marginBottom: 2 }
+			},
+			{
+				settingKey: "showUnreads",
+				description: "Show/hide unread messages indicator",
+				hideBorder: true,
+				style: { marginBottom: 2 }
+			},
+			{
+				settingKey: "showTyping",
+				description: "Show/hide typing users indicator",
+				hideBorder: true,
+				style: { marginBottom: 2 }
+			},
+			{
+				settingKey: "showDMNames",
+				description: "Show/hide DM names",
+				hideBorder: true,
+				style: { marginBottom: 2 }
+			}
+		].map(SettingSwtich)),
+		React.createElement(Gap, {
+			className: "divider-h",
+			direction: Gap.direction.HORIZONTAL,
+			gap: 40,
+		}),
+		React.createElement(SettingSlider, {
+			settingKey: "tabDividerSize",
+			label: "Tabs divider size",
+			note: "Space between tabs, selected value is doubled",
+			markers: [...Array(11)].map((_, i) => i),
+			defaultValue: 5,
+			minValue: 0,
+			maxValue: 10,
+			stickToMarkers: true,
+			sortedMarkers: true,
+			equidistant: true,
+		}),
+		React.createElement(Gap, {
+			className: "divider-h",
+			direction: Gap.direction.HORIZONTAL,
+			gap: 40,
+		}),
+		React.createElement(SettingSlider, {
+			settingKey: "size",
+			label: "UI density",
+			markers: sizes,
+			defaultValue: 20,
+			stickToMarkers: true,
+			sortedMarkers: true,
+			equidistant: true,
+		})
+	];
+};
+
+// src\Tabbys\components\App\SettingsDropdown.jsx
+const SettingsDropdown = React.memo(function SettingsDropdown() {
+	return (
+		React.createElement(DiscordPopout, {
+			position: "bottom",
+			align: "right",
+			animation: 1,
+			spacing: 8,
+			renderPopout: () => (
+				React.createElement('div', { className: "settings-dropdown", }, React.createElement(SettingComponent, null))
+			),
+		}, e => {
+			return (
+				React.createElement('div', {
+					onClick: e.onClick,
+					className: "settings-dropdown-btn flex-center",
+				}, React.createElement(SettingIcon, { className: "parent-dim", }))
+			);
+		})
+	);
+});
+
 // src\Tabbys\components\App\index.jsx
 function App({ leading, trailing }) {
 	const showTabbar = Settings(Settings.selectors.showTabbar);
 	const showBookmarkbar = Settings(Settings.selectors.showBookmarkbar);
+	const showSettingsButton = Settings(Settings.selectors.showSettingsButton);
+	if (showSettingsButton)
+		trailing?.props?.children?.unshift?.(React.createElement(SettingsDropdown, null));
 	return (
 		React.createElement('div', { className: `${config.info.name}-container Tabbys-vars`, }, showTabbar && React.createElement(TabBar, { leading: leading, trailing: trailing, }), showTabbar && showBookmarkbar && React.createElement('div', { className: `${config.info.name}-divider`, }), showBookmarkbar && React.createElement(BookmarkBar, null))
 	);
@@ -1786,7 +1788,7 @@ const patchTitleBar = () => {
 	const { module, key } = TitleBar;
 	if (!module || !key) return Logger.patchError("patchTitleBar");
 	Patcher.after(module, key, (_, [props], ret) => {
-		if (props.windowKey === "DISCORD_CHANNEL_CALL_POPOUT") return ret;
+		if (props.windowKey?.startsWith("DISCORD_")) return ret;
 		const [, leading, trailing] = ret?.props?.children || [];
 		return (
 			React.createElement(ErrorBoundary, null, React.createElement(App, {
@@ -2167,6 +2169,93 @@ div:has(> .Tabbys-container):not(#a) {
 	linear-gradient(to left, #0000  0, #ccc3 25%) right center/50%  1px no-repeat;
 	-webkit-app-region: no-drag;
 }
+
+.settings-dropdown{
+	background-color: oklab(0.262384 0.00252247 -0.00889932);
+	border-radius: 8px;
+	gap: 5px;
+	padding: 15px;
+	overflow: auto;
+	width:40vw;
+	max-height: 80vh;
+}
+
+
+.settings-dropdown::-webkit-scrollbar {
+	height: 8px;
+	width: 8px;
+}
+
+.settings-dropdown::-webkit-scrollbar-track {
+	background-color: var(--scrollbar-thin-track);
+	border-color: var(--scrollbar-thin-track);
+}
+
+.settings-dropdown::-webkit-scrollbar-thumb {
+	background-clip: padding-box;
+	background-color: var(--scrollbar-thin-thumb);
+	border: 2px solid transparent;
+	border-radius: 4px;
+	min-height: 40px;
+}
+
+.settings-dropdown::-webkit-scrollbar-corner {
+	background-color: transparent;
+}
+
+.settings-dropdown-btn{
+	color:white;
+	flex:0 0 auto;
+	aspect-ratio:1;
+	height:100%;
+	color: var(--interactive-normal);
+	cursor:pointer;
+	-webkit-app-region: no-drag;
+}
+
+.settings-dropdown-btn:hover{
+	color:#fffb;
+}
+
+.settings-dropdown-btn:active{
+	color:#fff9;
+}
+.tabs-container {
+	min-width:0;
+	gap:2px;
+	position:relative;
+	margin-right:auto;
+	height:100%;
+	-webkit-app-region: no-drag;
+}
+
+.new-tab{
+	flex:0 0 auto;
+	padding:2px;
+	aspect-ratio: 1;
+	height:calc(100% * .8);
+	color:white;
+}
+
+.new-tab:hover{
+	background:var(--hover-tab-bg);
+}
+
+.new-tab:active{
+	background:var(--active-tab-bg);
+}
+
+.new-tab-div,
+.tab-div{
+	height:calc(var(--size) * .8);
+	border: 1px solid #ccc5;	
+}
+
+.tab-div{
+	margin: auto var(--tab-divider-size);
+}
+
+
 .bookmarkbar {
 	-webkit-app-region: no-drag;
 	display: flex;
@@ -2237,146 +2326,6 @@ div:has(> .Tabbys-container):not(#a) {
 	background-color: transparent;
 }
 
-.tabs-container {
-	min-width:0;
-	gap:2px;
-	position:relative;
-	margin-right:auto;
-	height:100%;
-	-webkit-app-region: no-drag;
-}
-
-.new-tab{
-	flex:0 0 auto;
-	padding:2px;
-	aspect-ratio: 1;
-	height:calc(100% * .8);
-	color:white;
-}
-
-.new-tab:hover{
-	background:var(--hover-tab-bg);
-}
-
-.new-tab:active{
-	background:var(--active-tab-bg);
-}
-
-.new-tab-div,
-.tab-div{
-	height:calc(var(--size) * .8);
-	border: 1px solid #ccc5;	
-}
-
-.tab-div{
-	margin: auto var(--tab-divider-size);
-}
-
-.settings-dropdown{
-	background-color: oklab(0.262384 0.00252247 -0.00889932);
-	border-radius: 8px;
-	gap: 5px;
-	padding: 15px;
-	overflow: auto;
-	width:40vw;
-	max-height: 80vh;
-}
-
-
-.settings-dropdown::-webkit-scrollbar {
-	height: 8px;
-	width: 8px;
-}
-
-.settings-dropdown::-webkit-scrollbar-track {
-	background-color: var(--scrollbar-thin-track);
-	border-color: var(--scrollbar-thin-track);
-}
-
-.settings-dropdown::-webkit-scrollbar-thumb {
-	background-clip: padding-box;
-	background-color: var(--scrollbar-thin-thumb);
-	border: 2px solid transparent;
-	border-radius: 4px;
-	min-height: 40px;
-}
-
-.settings-dropdown::-webkit-scrollbar-corner {
-	background-color: transparent;
-}
-
-.settings-dropdown-btn{
-	color:white;
-	flex:0 0 auto;
-	padding:2px;
-	aspect-ratio:1;
-	height:100%;
-	color:#fff;
-	cursor:pointer;
-	-webkit-app-region: no-drag;
-}
-
-.settings-dropdown-btn:hover{
-	color:#fffb;
-}
-
-.settings-dropdown-btn:active{
-	color:#fff9;
-}
-.bookmark{
-	justify-content:flex-start;
-}
-
-.bookmark:hover{
-	background:#353333;
-}
-
-.bookmark:active{
-	background:#353333;
-}
-
-.bookmark > .bookmark-title {
-	color:#a7a7a7;
-	font-size:calc(var(--size) * .6);
-}
-
-
-
-.tabs-scroller {
-	display: flex;
-	min-width: 0;
-	position: relative;
-}
-
-.tabs-list {
-	display: flex;
-	overflow: auto hidden;
-	scrollbar-width: none;
-}
-
-.scrollBtn {
-	height: 100%;
-	background: #7b7b7b;
-	padding: 5px;
-	border-radius: 8px;
-	z-index: 99;
-	position: absolute;
-	top: 50%;
-	translate: 0 -50%;
-
-	aspect-ratio: 1;
-	cursor: pointer;
-	color: #ccc;
-}
-
-.left-arrow {
-	left: 0;
-}
-
-.right-arrow {
-	right: 0;
-}
-
 .tab {
 	min-width:	min-content;
 	max-width: calc(200 * (var(--size) / 16));
@@ -2422,6 +2371,60 @@ div:has(> .Tabbys-container):not(#a) {
 .typing-dots{
 	flex:0 0 auto;
 }
+.tabs-scroller {
+	display: flex;
+	min-width: 0;
+	position: relative;
+}
+
+.tabs-list {
+	display: flex;
+	overflow: auto hidden;
+	scrollbar-width: none;
+}
+
+.scrollBtn {
+	height: 100%;
+	background: #7b7b7b;
+	padding: 5px;
+	border-radius: 8px;
+	z-index: 99;
+	position: absolute;
+	top: 50%;
+	translate: 0 -50%;
+
+	aspect-ratio: 1;
+	cursor: pointer;
+	color: #ccc;
+}
+
+.left-arrow {
+	left: 0;
+}
+
+.right-arrow {
+	right: 0;
+}
+
+.bookmark{
+	justify-content:flex-start;
+}
+
+.bookmark:hover{
+	background:#353333;
+}
+
+.bookmark:active{
+	background:#353333;
+}
+
+.bookmark > .bookmark-title {
+	color:#a7a7a7;
+	font-size:calc(var(--size) * .6);
+}
+
+
+
 .badge {
 	width: 16px;
 	height: 16px;
