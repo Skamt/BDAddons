@@ -167,30 +167,11 @@ function arrToObject(arr, key) {
 		return acc;
 	}, {});
 }
-class ArrayHelpers {
-	list = [];
-	push(item) {
-		this.list = this.list.toSpliced(this.list.length, 0, item);
-	}
-	insert(item, index) {
-		this.list = this.list.toSpliced(index, 0, item);
-	}
-	shift(item) {
-		this.list = this.list.toSpliced(0, 0, item);
-	}
-	remove(index) {
-		this.list = this.list.toSpliced(index, 1);
-	}
-	replace(index, item) {
-		this.list = this.list.toSpliced(index, 1, item);
-	}
-}
-class List extends ArrayHelpers {
+class List {
 	list = [];
 	map = {};
 	indexMap = {};
 	constructor(identifierKey = "id") {
-		super();
 		this.identifierKey = identifierKey;
 	}
 	get length() {
@@ -216,21 +197,21 @@ class List extends ArrayHelpers {
 	}
 	addItem(item) {
 		item = { ...item };
-		this.push(item);
+		this.list = this.list.toSpliced(this.list.length, 0, item);
 		this.updateMap(item);
 		this.indexMap[item[this.identifierKey]] = this.list.length - 1;
 	}
 	addItemAtIndex(item, index) {
 		if (index == null) return;
 		item = { ...item };
-		this.insert(item, index);
+		this.list = this.list.toSpliced(index, 0, item);
 		this.updateMap(item);
 		this.recreateIndexMap();
 	}
 	removeItem(index) {
 		if (index == null || index < 0) return;
 		const item = this.getItemByIndex(index);
-		this.remove(index);
+		this.list = this.list.toSpliced(index, 1);
 		delete this.map[item[this.identifierKey]];
 		this.recreateIndexMap();
 	}
@@ -258,7 +239,7 @@ class List extends ArrayHelpers {
 			...item,
 			[this.identifierKey]: currentItem[this.identifierKey]
 		};
-		this.replace(index, item);
+		this.list = this.list.toSpliced(index, 1, item);
 		this.updateMap(item);
 	}
 	setItemById(id, item) {
@@ -296,7 +277,7 @@ class List extends ArrayHelpers {
 }
 
 // src\Tabbys\Store\bookmarksStore.js
-const bookmarksList = new List("id");
+const bookmarksList = new List();
 const store$1 = (set) => ({
 	bookmarks: [],
 	clearBookmarks() {
@@ -524,7 +505,7 @@ const initialState = {
 	selectedId: null,
 	lastSelectedIdAfterNewTab: null
 };
-const tabsList = new List("id");
+const tabsList = new List();
 const store = (set, get) => ({
 	...initialState,
 	clearTabs() {
@@ -1086,8 +1067,8 @@ function getIcon(type) {
 		React.createElement('div', { className: "discord-icon flex-center fill round", }, React.createElement(DiscordIcon, null))
 	);
 }
-const Tab = React.memo(({ id }) => {
-	const { path, ...rest } = Store(state => state.getTab(id), shallow) || {};
+const Tab = React.memo(({ id, ...rest }) => {
+	const { path } = Store(state => state.getTab(id), shallow) || {};
 	if (!path) return Logger.error("unknown tab path", path, id);
 	const [, type, idk, channelId, , threadId] = path.split("/");
 	if (type === "channels" && channelId)
@@ -2186,76 +2167,6 @@ div:has(> .Tabbys-container):not(#a) {
 	linear-gradient(to left, #0000  0, #ccc3 25%) right center/50%  1px no-repeat;
 	-webkit-app-region: no-drag;
 }
-.bookmarkbar {
-	-webkit-app-region: no-drag;
-	display: flex;
-	flex: 0 0 auto;
-	align-items: center;
-	transform:translate(0);
-}
-
-.bookmarks-container {
-	flex: 1 0 0;
-	min-width: 0;
-	overflow: hidden;
-	display: flex;
-	gap: 2px;
-	-webkit-app-region: no-drag;
-}
-
-.bookmarks-overflow {
-	flex: 0 0 auto;
-	display: flex;
-	padding: 2px;
-	width: 20px;
-	height: 20px;
-	color: white;
-	margin: 0 2px;
-	z-index: 988;
-	-webkit-app-region: no-drag;
-}
-
-.bookmarks-overflow:hover {
-	background: var(--hover-tab-bg);
-}
-
-.bookmarks-overflow:active {
-	background: var(--active-tab-bg);
-}
-
-.bookmarks-overflow-popout {
-	display: flex;
-	flex-direction: column;
-	background-color: var(--background-tertiary);
-	border-radius: 8px;
-	gap: 5px;
-	padding: 5px;
-	overflow: auto;
-	max-height: 50vh;
-}
-
-.bookmarks-overflow-popout::-webkit-scrollbar {
-	height: 8px;
-	width: 8px;
-}
-
-.bookmarks-overflow-popout::-webkit-scrollbar-track {
-	background-color: var(--scrollbar-thin-track);
-	border-color: var(--scrollbar-thin-track);
-}
-
-.bookmarks-overflow-popout::-webkit-scrollbar-thumb {
-	background-clip: padding-box;
-	background-color: var(--scrollbar-thin-thumb);
-	border: 2px solid transparent;
-	border-radius: 4px;
-	min-height: 40px;
-}
-
-.bookmarks-overflow-popout::-webkit-scrollbar-corner {
-	background-color: transparent;
-}
-
 .tabs-container {
 	min-width:0;
 	gap:2px;
@@ -2342,6 +2253,111 @@ div:has(> .Tabbys-container):not(#a) {
 .settings-dropdown-btn:active{
 	color:#fff9;
 }
+.bookmarkbar {
+	-webkit-app-region: no-drag;
+	display: flex;
+	flex: 0 0 auto;
+	align-items: center;
+	transform:translate(0);
+}
+
+.bookmarks-container {
+	flex: 1 0 0;
+	min-width: 0;
+	overflow: hidden;
+	display: flex;
+	gap: 2px;
+	-webkit-app-region: no-drag;
+}
+
+.bookmarks-overflow {
+	flex: 0 0 auto;
+	display: flex;
+	padding: 2px;
+	width: 20px;
+	height: 20px;
+	color: white;
+	margin: 0 2px;
+	z-index: 988;
+	-webkit-app-region: no-drag;
+}
+
+.bookmarks-overflow:hover {
+	background: var(--hover-tab-bg);
+}
+
+.bookmarks-overflow:active {
+	background: var(--active-tab-bg);
+}
+
+.bookmarks-overflow-popout {
+	display: flex;
+	flex-direction: column;
+	background-color: var(--background-tertiary);
+	border-radius: 8px;
+	gap: 5px;
+	padding: 5px;
+	overflow: auto;
+	max-height: 50vh;
+}
+
+.bookmarks-overflow-popout::-webkit-scrollbar {
+	height: 8px;
+	width: 8px;
+}
+
+.bookmarks-overflow-popout::-webkit-scrollbar-track {
+	background-color: var(--scrollbar-thin-track);
+	border-color: var(--scrollbar-thin-track);
+}
+
+.bookmarks-overflow-popout::-webkit-scrollbar-thumb {
+	background-clip: padding-box;
+	background-color: var(--scrollbar-thin-thumb);
+	border: 2px solid transparent;
+	border-radius: 4px;
+	min-height: 40px;
+}
+
+.bookmarks-overflow-popout::-webkit-scrollbar-corner {
+	background-color: transparent;
+}
+
+.tabs-scroller {
+	display: flex;
+	min-width: 0;
+	position: relative;
+}
+
+.tabs-list {
+	display: flex;
+	overflow: auto hidden;
+	scrollbar-width: none;
+}
+
+.scrollBtn {
+	height: 100%;
+	background: #7b7b7b;
+	padding: 5px;
+	border-radius: 8px;
+	z-index: 99;
+	position: absolute;
+	top: 50%;
+	translate: 0 -50%;
+
+	aspect-ratio: 1;
+	cursor: pointer;
+	color: #ccc;
+}
+
+.left-arrow {
+	left: 0;
+}
+
+.right-arrow {
+	right: 0;
+}
+
 .bookmark{
 	justify-content:flex-start;
 }
@@ -2406,41 +2422,6 @@ div:has(> .Tabbys-container):not(#a) {
 .typing-dots{
 	flex:0 0 auto;
 }
-.tabs-scroller {
-	display: flex;
-	min-width: 0;
-	position: relative;
-}
-
-.tabs-list {
-	display: flex;
-	overflow: auto hidden;
-	scrollbar-width: none;
-}
-
-.scrollBtn {
-	height: 100%;
-	background: #7b7b7b;
-	padding: 5px;
-	border-radius: 8px;
-	z-index: 99;
-	position: absolute;
-	top: 50%;
-	translate: 0 -50%;
-
-	aspect-ratio: 1;
-	cursor: pointer;
-	color: #ccc;
-}
-
-.left-arrow {
-	left: 0;
-}
-
-.right-arrow {
-	right: 0;
-}
-
 .badge {
 	width: 16px;
 	height: 16px;
