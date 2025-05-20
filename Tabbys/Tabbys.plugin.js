@@ -678,7 +678,7 @@ function hydrateStore() {
 	if (Store.state.user?.id === user.id) return;
 	const userData = Data.load(user.id) || {};
 	Store.state.setUser(user);
-	Store.state.setTabs(userData.tabs || [buildTab({ path: location.pathname })], userData.selectedId);
+	Store.state.setTabs(userData.tabs || [buildTab({ path: "/channels/@me" })], userData.selectedId);
 	Store.state.setBookmarks(userData.bookmarks || []);
 	Store.state.setLastSelectedIdAfterNewTab(userData.lastSelectedIdAfterNewTab);
 }
@@ -1803,13 +1803,13 @@ const DMChannel = getModule(a => a.render && DMChannelFilter(a.render), { search
 const patchDMClick = () => {
 	if (!DMChannel) return Logger.patchError("DMChannel");
 	Patcher.before(DMChannel, "render", (_, [props]) => {
-		const origClick = props.onClick;
 		const path = props.to;
-		if (!path || !origClick) return;
+		if (!path) return;
 		props.onClick = e => {
-			e.preventDefault();
-			if (e.ctrlKey) Store.state.newTab(buildTab({ path }));
-			else origClick();
+			if (e.ctrlKey) {
+				e.preventDefault();
+				Store.state.newTab(buildTab({ path }));
+			}
 		};
 	});
 };
@@ -2167,6 +2167,76 @@ div:has(> .Tabbys-container):not(#a) {
 	linear-gradient(to left, #0000  0, #ccc3 25%) right center/50%  1px no-repeat;
 	-webkit-app-region: no-drag;
 }
+.bookmarkbar {
+	-webkit-app-region: no-drag;
+	display: flex;
+	flex: 0 0 auto;
+	align-items: center;
+	transform:translate(0);
+}
+
+.bookmarks-container {
+	flex: 1 0 0;
+	min-width: 0;
+	overflow: hidden;
+	display: flex;
+	gap: 2px;
+	-webkit-app-region: no-drag;
+}
+
+.bookmarks-overflow {
+	flex: 0 0 auto;
+	display: flex;
+	padding: 2px;
+	width: 20px;
+	height: 20px;
+	color: white;
+	margin: 0 2px;
+	z-index: 988;
+	-webkit-app-region: no-drag;
+}
+
+.bookmarks-overflow:hover {
+	background: var(--hover-tab-bg);
+}
+
+.bookmarks-overflow:active {
+	background: var(--active-tab-bg);
+}
+
+.bookmarks-overflow-popout {
+	display: flex;
+	flex-direction: column;
+	background-color: var(--background-tertiary);
+	border-radius: 8px;
+	gap: 5px;
+	padding: 5px;
+	overflow: auto;
+	max-height: 50vh;
+}
+
+.bookmarks-overflow-popout::-webkit-scrollbar {
+	height: 8px;
+	width: 8px;
+}
+
+.bookmarks-overflow-popout::-webkit-scrollbar-track {
+	background-color: var(--scrollbar-thin-track);
+	border-color: var(--scrollbar-thin-track);
+}
+
+.bookmarks-overflow-popout::-webkit-scrollbar-thumb {
+	background-clip: padding-box;
+	background-color: var(--scrollbar-thin-thumb);
+	border: 2px solid transparent;
+	border-radius: 4px;
+	min-height: 40px;
+}
+
+.bookmarks-overflow-popout::-webkit-scrollbar-corner {
+	background-color: transparent;
+}
+
 .tabs-container {
 	min-width:0;
 	gap:2px;
@@ -2253,75 +2323,24 @@ div:has(> .Tabbys-container):not(#a) {
 .settings-dropdown-btn:active{
 	color:#fff9;
 }
-.bookmarkbar {
-	-webkit-app-region: no-drag;
-	display: flex;
-	flex: 0 0 auto;
-	align-items: center;
-	transform:translate(0);
+.bookmark{
+	justify-content:flex-start;
 }
 
-.bookmarks-container {
-	flex: 1 0 0;
-	min-width: 0;
-	overflow: hidden;
-	display: flex;
-	gap: 2px;
-	-webkit-app-region: no-drag;
+.bookmark:hover{
+	background:#353333;
 }
 
-.bookmarks-overflow {
-	flex: 0 0 auto;
-	display: flex;
-	padding: 2px;
-	width: 20px;
-	height: 20px;
-	color: white;
-	margin: 0 2px;
-	z-index: 988;
-	-webkit-app-region: no-drag;
+.bookmark:active{
+	background:#353333;
 }
 
-.bookmarks-overflow:hover {
-	background: var(--hover-tab-bg);
+.bookmark > .bookmark-title {
+	color:#a7a7a7;
+	font-size:calc(var(--size) * .6);
 }
 
-.bookmarks-overflow:active {
-	background: var(--active-tab-bg);
-}
 
-.bookmarks-overflow-popout {
-	display: flex;
-	flex-direction: column;
-	background-color: var(--background-tertiary);
-	border-radius: 8px;
-	gap: 5px;
-	padding: 5px;
-	overflow: auto;
-	max-height: 50vh;
-}
-
-.bookmarks-overflow-popout::-webkit-scrollbar {
-	height: 8px;
-	width: 8px;
-}
-
-.bookmarks-overflow-popout::-webkit-scrollbar-track {
-	background-color: var(--scrollbar-thin-track);
-	border-color: var(--scrollbar-thin-track);
-}
-
-.bookmarks-overflow-popout::-webkit-scrollbar-thumb {
-	background-clip: padding-box;
-	background-color: var(--scrollbar-thin-thumb);
-	border: 2px solid transparent;
-	border-radius: 4px;
-	min-height: 40px;
-}
-
-.bookmarks-overflow-popout::-webkit-scrollbar-corner {
-	background-color: transparent;
-}
 
 .tabs-scroller {
 	display: flex;
@@ -2357,25 +2376,6 @@ div:has(> .Tabbys-container):not(#a) {
 .right-arrow {
 	right: 0;
 }
-
-.bookmark{
-	justify-content:flex-start;
-}
-
-.bookmark:hover{
-	background:#353333;
-}
-
-.bookmark:active{
-	background:#353333;
-}
-
-.bookmark > .bookmark-title {
-	color:#a7a7a7;
-	font-size:calc(var(--size) * .6);
-}
-
-
 
 .tab {
 	min-width:	min-content;
