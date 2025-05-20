@@ -40,13 +40,6 @@ export default class List extends ArrayHelpers {
 		this.identifierKey = identifierKey;
 	}
 
-	set list(_) {
-		throw new Error();
-	}
-	set map(_) {
-		throw new Error();
-	}
-
 	get length() {
 		return this.list.length;
 	}
@@ -90,21 +83,21 @@ export default class List extends ArrayHelpers {
 
 	removeItem(index) {
 		if (index == null || index < 0) return;
-		const item = this.list[index];
+		const item = this.getItemByIndex(index);
 		this.remove(index);
 		delete this.map[item[this.identifierKey]];
 		this.recreateIndexMap();
 	}
 
 	removeItemByIdentifier(id) {
-		const index = this.indexMap[id];
+		const index = this.getItemIndex(id);
 		this.removeItem(index);
 	}
 
 	swapItem(fromIndex, toIndex) {
 		if (fromIndex === toIndex) return;
-		if (fromIndex < 0 || fromIndex >= this.list.length) return;
-		const fromItem = this.list[fromIndex];
+		if (fromIndex < 0 || fromIndex >= this.length) return;
+		const fromItem = this.getItemByIndex(fromIndex);
 
 		const tempList = [...this.list];
 
@@ -115,45 +108,47 @@ export default class List extends ArrayHelpers {
 	}
 
 	swapItemById(fromId, toId) {
-		this.swapItem(this.indexMap[fromId], this.indexMap[toId]);
+		this.swapItem(this.getItemIndex(fromId), this.getItemIndex(toId));
 	}
 
 	setItem(index, item) {
 		if (index == null || index < 0) return;
+		const currentItem = this.getItemByIndex(index);
 		item = {
+			...currentItem,
 			...item,
-			[this.identifierKey]: this.list[index][this.identifierKey]
+			[this.identifierKey]: currentItem[this.identifierKey]
 		};
 		this.replace(index, item);
 		this.updateMap(item);
 	}
 
 	setItemById(id, item) {
-		const index = this.indexMap[id];
+		const index = this.getItemIndex(id);
 		if (index == null) return;
 		this.setItem(index, item);
 	}
 
-	getItem(index){
-		return this.list(index)
+	getItemByIndex(index) {
+		return this.list[index];
 	}
 
-	getItemById(id){
+	getItemById(id) {
 		return this.map[id];
 	}
 
-	getItemIndex(id){
+	getItemIndex(id) {
 		return this.indexMap[id];
 	}
 
-	getListSlice(from, to){
+	getListSlice(from, to) {
 		return this.list.slice(from, to);
 	}
 
 	getItemMeta(id) {
-		const index = this.indexMap[id];
-		if(!index) return {};
-		const item = this.map[id];
+		const index = this.getItemIndex(id);
+		if (index == null || index < 0) return {};
+		const item = this.getItemById(id);
 		if (!item) return {};
 		return {
 			item,
@@ -161,8 +156,8 @@ export default class List extends ArrayHelpers {
 			isSingle: this.list.length === 1,
 			isFirst: index === 0,
 			isLast: index === this.list.length - 1,
-			nextItem: this.list[index + 1],
-			previousItem: this.list[index - 1]
+			nextItem: this.getItemByIndex(index + 1),
+			previousItem: this.getItemByIndex(index - 1)
 		};
 	}
 }

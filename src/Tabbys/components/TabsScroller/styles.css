@@ -6,7 +6,7 @@
 
 .tabs-list {
 	display: flex;
-	overflow: auto;
+	overflow: auto hidden;
 	scrollbar-width: none;
 }
 
@@ -19,13 +19,11 @@
 	position: absolute;
 	top: 50%;
 	translate: 0 -50%;
-	
+
 	aspect-ratio: 1;
 	cursor: pointer;
 	color: #ccc;
 }
-
-
 
 .left-arrow {
 	left: 0;

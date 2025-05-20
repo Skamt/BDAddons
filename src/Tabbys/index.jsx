@@ -1,7 +1,7 @@
 import "./styles";
 import React from "@React";
 import { DOM, Patcher } from "@Api";
-import { reRender } from "@Utils";
+import { reRender, shallow } from "@Utils";
 import Logger from "@Utils/Logger";
 import { Store } from "./Store";
 import patchChannelClick from "./patches/patchChannelClick";
@@ -10,15 +10,12 @@ import patchDMClick from "./patches/patchDMClick";
 import patchContextMenu from "./patches/patchContextMenu";
 import { Dispatcher } from "@Discord/Modules";
 import SettingComponent from "./components/SettingComponent";
-// import Settings from "@Utils/Settings";
+import Settings from "@Utils/Settings";
 // import { closeModal } from "@Utils/Modals";
+
 /*DEBUG*/
 window.TabsStore = Store;
 /*DEBUG*/
-
-
-// closeModal(window.id);
-// window.id = showConfirmationModal("", <SettingComponent />);
 
 function disableGoHomeAfterSwitching() {
 	function interceptor(e) {
@@ -32,15 +29,39 @@ function disableGoHomeAfterSwitching() {
 	};
 }
 
+function cssVarsListener() {
+	return Settings.subscribe(
+		a => a,
+		() => updateCssVars(),
+		shallow
+	);
+}
+
+function updateCssVars() {
+	const state = Settings.state;
+	BdApi.DOM.removeStyle("Tabbys-vars");
+	BdApi.DOM.addStyle(
+		"Tabbys-vars",
+		`
+			.Tabbys-vars {
+				--size:${state.size}px;
+				--tab-divider-size:${state.tabDividerSize}px;
+			}
+		`
+	);
+}
+
 export default class Tabbys {
 	start() {
 		try {
 			DOM.addStyle(css);
+			updateCssVars()
 			Store.init();
 			patchTitleBar();
 			patchDMClick();
 			patchChannelClick();
 			reRender('div[data-windows="true"] > *');
+			this.unCssVarsListener = cssVarsListener();
 			this.unpatchContextMenu = patchContextMenu();
 			this.removeDispatchInterceptor = disableGoHomeAfterSwitching();
 		} catch (e) {
@@ -53,6 +74,8 @@ export default class Tabbys {
 		DOM.removeStyle();
 		Patcher.unpatchAll();
 		reRender('div[data-windows="true"] > *');
+		this.unCssVarsListener?.();
+		this.unCssVarsListener = null;
 		this.removeDispatchInterceptor?.();
 		this.removeDispatchInterceptor = null;
 		// biome-ignore lint/complexity/noForEach: <explanation>

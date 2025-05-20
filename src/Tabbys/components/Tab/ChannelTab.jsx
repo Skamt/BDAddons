@@ -22,7 +22,7 @@ const sizes = {
 	80: "SIZE_80"
 };
 
-export default function ChannelTab({ id, channelId, path }) {
+export default function ChannelTab({ id, channelId, path, ...rest }) {
 	const size = Settings(Settings.selectors.size);
 	const channelUnreadState = useChannelState(channelId);
 	const channel = useStateFromStores([ChannelStore], () => ChannelStore.getChannel(channelId), [channelId]);
@@ -76,6 +76,7 @@ export default function ChannelTab({ id, channelId, path }) {
 			isGroupDM={isGroupDM}
 			isDM={isDM}
 			{...channelUnreadState}
+			{...rest}
 		/>
 	);
 }

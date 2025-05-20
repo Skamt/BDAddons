@@ -1,5 +1,7 @@
 .Tabbys-vars {
-	--size:20;
+	--size:20px;
+	--tab-divider-size:3px;
+
 	--active-tab-bg: rgba(151, 151, 159, 0.15);
 	--hover-tab-bg: rgba(151, 151, 159, 0.35);
 	--selected-tab-bg: rgba(151, 151, 159, 0.25);

@@ -15,13 +15,12 @@ function DragThis(comp) {
 		{
 			drop(thisComp, monitor) {
 				const dropppedTab = monitor.getItem();
-				console.log(dropppedTab);
 				const path = dropppedTab.path;
 				if(!path) return;
 				Store.state.addBookmark(buildTab({ path }))
 			}
 		},
-		(connect, monitor, props) => {
+		(connect, monitor) => {
 			return {
 				isOver: monitor.isOver(),
 				canDrop: monitor.canDrop(),

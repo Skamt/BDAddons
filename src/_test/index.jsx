@@ -7,25 +7,24 @@ import * as icons from "@Components/Icon";
 // import { EmojiSendAvailabilityEnum } from "@Discord/Enums";
 
 import { DiscordPopout } from "@Discord/Modules";
-
+import Slider from "@Modules/Slider";
 // const PopupMenu
 
+
+
 const App = () => {
+	const [val, set] = React.useState(5);
+	console.log(val);
 	return (
-		<DiscordPopout
-			position="top"
-			align="left"
-			renderPopout={e => {
-				console.log(e);
-				// biome-ignore lint/a11y/useButtonType: <explanation>
-				return <button>poped out button</button>;
-			}}>
-			{e => {
-				// console.log(e);
-				// biome-ignore lint/a11y/useButtonType: <explanation>
-				return <button onClick={e.onClick}>ClickMEH</button>;
-			}}
-		</DiscordPopout>
+		<Slider
+			onValueRender={a => Math.round(a)+""}
+			initialValue={val}
+			onValueChange={a => set(Math.round(a))}
+			markers={[...Array(11)].map((_, i) => i)}
+			minValue={0}
+			maxValue={10}
+			defaultValue={val}
+		/>
 	);
 };
 

@@ -2,7 +2,7 @@ import { getModule, Filters } from "@Webpack";
 import { ContextMenu } from "@Api";
 import { Store } from "@/Store";
 import React, { useRef } from "@React";
-import { nop, concateClassNames } from "@Utils";
+import { getUserName, nop, concateClassNames } from "@Utils";
 import { CloseIcon } from "@Components/Icon";
 import TabContextMenu from "@/contextmenus/TabContextMenu";
 import { DragSource, DropTarget } from "@Discord/Modules";
@@ -35,8 +35,7 @@ function DragThis(comp) {
 		DragSource(
 			"TAB",
 			{
-				beginDrag(props, monitor, comp) {
-					console.log(props, monitor, comp);
+				beginDrag(props) {
 					return { ...props };
 				}
 			},
@@ -50,30 +49,29 @@ function DragThis(comp) {
 	);
 }
 
-function BaseTab(props) {
-	const { id, path, icon, title } = props;
-	const { idDM, mentionCount, typingUsers, unreadCount } = props;
+export default DragThis(function BaseTab(props) {
+	const { id, path, icon, title, isSingle } = props;
+	const { isDM, mentionCount, typingUsers, unreadCount, hasUnread } = props;
 	const { dragRef, dropRef, isOver, canDrop, draggedIsMe, isDragging } = props;
 	const showUnreads = Settings(Settings.selectors.showUnreads);
 	const showPings = Settings(Settings.selectors.showPings);
+	const showDMNames = Settings(Settings.selectors.showDMNames);
+	const showTyping = Settings(Settings.selectors.showTyping);
 	const selected = Store(state => state.selectedId === id);
-	const isSingleTab = Store(Store.selectors.isSingleTab);
 	const tabRef = useRef(null);
 	const isTyping = !!typingUsers?.length;
-	const typingUsersNames = typingUsers?.map(a => a.global_name).join(", ");
+	const typingUsersNames = typingUsers?.map(getUserName).join(", ");
 
 	dragRef(dropRef(tabRef));
 
 	const clickHandler = e => {
 		e.stopPropagation();
 		Store.state.setSelectedId(id);
-		return console.log(id, "clickHandler");
 	};
 
 	const closeHandler = e => {
 		e.stopPropagation();
 		Store.state.removeTab(id);
-		return console.log(id, "closeHandler");
 	};
 
 	const contextmenuHandler = e => {
@@ -84,39 +82,42 @@ function BaseTab(props) {
 	};
 
 	return (
-		<Tooltip note={isTyping ? typingUsersNames : null}>
-			{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-			<div
-				onContextMenu={contextmenuHandler}
-				ref={tabRef}
-				className={concateClassNames("tab flex-center", selected && "selected-tab", isDragging && "dragging", !draggedIsMe && canDrop && isOver && "candrop")}
-				onClick={!selected ? clickHandler : nop}>
-				<div className="tab-icon flex-center round">{icon}</div>
-				<div className="tab-title ellipsis">{title || path}</div>
-				{showPings && !!mentionCount && (
-					<Badge
-						count={mentionCount}
-						type="ping"
-					/>
-				)}
-				{showUnreads && !idDM && !!unreadCount && (
-					<Badge
-						count={unreadCount}
-						type="unread"
-					/>
-				)}
-				{isTyping && <TypingDots dotRadius={2.5} />}
-				{!isSingleTab && (
-					// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-					<div
-						className="tab-close flex-center round"
-						onClick={closeHandler}>
-						<CloseIcon className="parent-dim" />
+		// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+		<div
+			onContextMenu={contextmenuHandler}
+			ref={tabRef}
+			className={concateClassNames("tab flex-center", selected && "selected-tab", isDragging && "dragging", !draggedIsMe && canDrop && isOver && "candrop")}
+			onClick={!selected ? clickHandler : nop}>
+			<div className="tab-icon flex-center round">{icon}</div>
+			{!isDM && <div className="tab-title ellipsis">{title || path}</div>}
+			{isDM && showDMNames && <div className="tab-title ellipsis">{title || path}</div>}
+			{showPings && !!mentionCount && (
+				<Badge
+					count={mentionCount}
+					type="ping"
+				/>
+			)}
+			{showUnreads && !isDM && hasUnread && (
+				<Badge
+					count={unreadCount}
+					type="unread"
+				/>
+			)}
+			{showTyping && isTyping && (
+				<Tooltip note={isTyping ? typingUsersNames : null}>
+					<div className="typing-dots flex-center">
+						<TypingDots dotRadius={2.5} />
 					</div>
-				)}
-			</div>
-		</Tooltip>
+				</Tooltip>
+			)}
+			{!isSingle && (
+				// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+				<div
+					className="tab-close flex-center round"
+					onClick={closeHandler}>
+					<CloseIcon className="parent-dim" />
+				</div>
+			)}
+		</div>
 	);
-}
-
-export default DragThis(BaseTab);
+});

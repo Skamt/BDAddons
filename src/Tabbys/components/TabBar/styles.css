@@ -23,10 +23,14 @@
 	background:var(--active-tab-bg);
 }
 
+.new-tab-div,
 .tab-div{
 	height:calc(var(--size) * .8);
-	border: 1px solid #ccc5;
-	margin: auto 3px;
+	border: 1px solid #ccc5;	
+}
+
+.tab-div{
+	margin: auto var(--tab-divider-size);
 }
 
 .settings-dropdown{

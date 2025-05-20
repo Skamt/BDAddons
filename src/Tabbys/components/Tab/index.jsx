@@ -33,7 +33,7 @@ function getIcon(type) {
 
 export default React.memo(({ id }) => {
 	
-	const { path } = Store(state => state.getTab(id), shallow) || {};
+	const { path,...rest } = Store(state => state.getTab(id), shallow) || {};
 	if (!path) return Logger.error("unknown tab path", path, id);
 	const [, type, idk, channelId, , threadId] = path.split("/");
 
@@ -43,6 +43,7 @@ export default React.memo(({ id }) => {
 				id={id}
 				path={path}
 				channelId={threadId || channelId}
+				{...rest}
 			/>
 		);
 
@@ -52,6 +53,7 @@ export default React.memo(({ id }) => {
 			path={path}
 			icon={getIcon(idk)}
 			title={idk}
+			{...rest}
 		/>
 	);
 });

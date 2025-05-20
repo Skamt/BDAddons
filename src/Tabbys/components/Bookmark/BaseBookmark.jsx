@@ -5,6 +5,8 @@ import React, { useRef } from "@React";
 import { concateClassNames } from "@Utils";
 import { DragSource, DropTarget } from "@Discord/Modules";
 import { Store } from "@/Store";
+import Logger from "@Utils/Logger";
+import { buildTab } from "@/utils";
 
 function DragThis(comp) {
 	return DropTarget(
@@ -51,7 +53,10 @@ function BaseBookmark(props) {
 
 	const clickHandler = e => {
 		e.stopPropagation();
-		if (!path) return console.log(id, "no path");
+		if (!path) return Logger.log(id, "no path");
+		if(e.ctrlKey)
+			Store.state.newTab(buildTab({ path }));
+		else
 		transitionTo(path);
 	};
 

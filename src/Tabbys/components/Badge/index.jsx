@@ -11,6 +11,7 @@ function g(e) {
 }
 
 export default ({ count, type }) => {
+	
 	return <div
 		style={{ width: m(count) }}
 		className={concateClassNames("badge flex-center round", type)}>

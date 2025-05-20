@@ -7,7 +7,7 @@ import { buildTab } from "@/utils";
 import { getPathName } from "@Utils";
 import { BookmarkOutlinedIcon, PlusIcon } from "@Components/Icon";
 import ChannelStore from "@Stores/ChannelStore";
-import { getModule } from "@Webpack";
+// import { getModule } from "@Webpack";
 
 export function channelPath(...args) {
 	return `/channels/${args.filter(Boolean).join("/")}`;

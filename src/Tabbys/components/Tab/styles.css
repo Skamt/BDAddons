@@ -1,6 +1,5 @@
 .tab {
-
-	min-width: calc(100 * (var(--size) / 16));
+	min-width:	min-content;
 	max-width: calc(200 * (var(--size) / 16));
 }
 
@@ -20,7 +19,6 @@
 	flex: 1 1 0;
 	min-width: 0;
 	font-size:calc(var(--size) * .7);
-	mask: linear-gradient(to right, #000 80%, #0000 98%, #0000) no-repeat;
 }
 
 .tab-close {
@@ -42,6 +40,6 @@
 	background: var(--close-btn-active-bg);
 }
 
-
-
-
+.typing-dots{
+	flex:0 0 auto;
+}

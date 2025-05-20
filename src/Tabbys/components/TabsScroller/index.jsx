@@ -17,8 +17,6 @@ function getFirstAndLastChild(el) {
 }
 
 export default function TabsScroller({ children }) {
-	console.log("TabsScroller rendered");
-
 	const [leftScrollBtn, setLeftScrollBtn] = useState(false);
 	const [rightScrollBtn, setRightScrollBtn] = useState(false);
 	const displayStartScrollRef = useRef(null);
@@ -112,13 +110,13 @@ export default function TabsScroller({ children }) {
 
 		const observerOptions = {
 			root: tabsNode,
-			threshold: 0.80
+			threshold: 0.99
 		};
 
-		const handleLeftScrollButton = debounce(entries => setLeftScrollBtn(!entries.sort((a, b) => a.time - b.time).pop().isIntersecting), 100);
+		const handleLeftScrollButton = debounce(entries => setLeftScrollBtn(!entries.sort((a, b) => a.time - b.time).pop().isIntersecting));
 		const leftObserver = new IntersectionObserver(handleLeftScrollButton, observerOptions);
 
-		const handleRightScrollButton = debounce(entries => setRightScrollBtn(!entries.sort((a, b) => a.time - b.time).pop().isIntersecting), 100);
+		const handleRightScrollButton = debounce(entries => setRightScrollBtn(!entries.sort((a, b) => a.time - b.time).pop().isIntersecting));
 		const rightObserver = new IntersectionObserver(handleRightScrollButton, observerOptions);
 
 		function observeFirstAndLastChild() {

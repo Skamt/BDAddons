@@ -1,5 +1,6 @@
 import List from "@Utils/List";
 import { buildTab } from "@/utils";
+import Settings from "@Utils/Settings";
 
 const initialState = {
 	tabs: [],
@@ -50,8 +51,10 @@ const store = (set, get) => ({
 	newTab(tab) {
 		if (!tab.id) return;
 		const state = get();
-
 		tabsList.addItem(tab);
+		if (!Settings.state.focusNewTab) {
+			return set({ tabs: tabsList.list });
+		}
 		set({ tabs: tabsList.list, selectedId: tab.id, lastSelectedIdAfterNewTab: state.selectedId });
 	},
 
@@ -133,7 +136,7 @@ const store = (set, get) => ({
 
 const selectors = {
 	tabs: state => state.tabs,
-	isSingleTab: state => state.tabs.length === 1,
+	// isSingleTab: state => state.tabs.length === 1,
 	selectedId: state => state.selectedId,
 	lastSelectedIdAfterNewTab: state => state.lastSelectedIdAfterNewTab
 };
