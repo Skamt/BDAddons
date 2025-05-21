@@ -782,6 +782,247 @@ const SettingIcon = svg(
 	"M10.56 1.1c-.46.05-.7.53-.64.98.18 1.16-.19 2.2-.98 2.53-.8.33-1.79-.15-2.49-1.1-.27-.36-.78-.52-1.14-.24-.77.59-1.45 1.27-2.04 2.04-.28.36-.12.87.24 1.14.96.7 1.43 1.7 1.1 2.49-.33.8-1.37 1.16-2.53.98-.45-.07-.93.18-.99.64a11.1 11.1 0 0 0 0 2.88c.06.46.54.7.99.64 1.16-.18 2.2.19 2.53.98.33.8-.14 1.79-1.1 2.49-.36.27-.52.78-.24 1.14.59.77 1.27 1.45 2.04 2.04.36.28.87.12 1.14-.24.7-.95 1.7-1.43 2.49-1.1.8.33 1.16 1.37.98 2.53-.07.45.18.93.64.99a11.1 11.1 0 0 0 2.88 0c.46-.06.7-.54.64-.99-.18-1.16.19-2.2.98-2.53.8-.33 1.79.14 2.49 1.1.27.36.78.52 1.14.24.77-.59 1.45-1.27 2.04-2.04.28-.36.12-.87-.24-1.14-.96-.7-1.43-1.7-1.1-2.49.33-.8 1.37-1.16 2.53-.98.45.07.93-.18.99-.64a11.1 11.1 0 0 0 0-2.88c-.06-.46-.54-.7-.99-.64-1.16.18-2.2-.19-2.53-.98-.33-.8.14-1.79 1.1-2.49.36-.27.52-.78.24-1.14a11.07 11.07 0 0 0-2.04-2.04c-.36-.28-.87-.12-1.14.24-.7.96-1.7 1.43-2.49 1.1-.8-.33-1.16-1.37-.98-2.53.07-.45-.18-.93-.64-.99a11.1 11.1 0 0 0-2.88 0ZM16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"
 );
 
+// src\Tabbys\contextmenus\BookmarkContextmenu.jsx
+function deleteBookmark(id) {
+	Store.state.removeBookmark(id);
+}
+
+function openInNewTab(id) {
+	Store.state.newTab(buildTab(Store.state.getBookmark(id)));
+}
+
+function BookmarkContextmenu(id) {
+	const Menu = ContextMenu.buildMenu([
+		createContextMenuItem(null, "open-bookmark-in-new-tab", () => openInNewTab(id), "Open in new Tab", React.createElement(PlusIcon, null)),
+		{ type: "separator" },
+		createContextMenuItem(null, "remove-bookmark", () => deleteBookmark(id), "Remove Bookmark", React.createElement(CloseIcon, null), "danger"),
+	]);
+	return (props) => React.createElement(Menu, { ...props, className: "bookmark-contextmenu", });
+}
+
+// src\Tabbys\components\Bookmark\BaseBookmark.jsx
+function DragThis$3(comp) {
+	return DropTarget(
+		"BOOKMARK", {
+			drop(thisBookmark, monitor) {
+				const droppedBookmark = monitor.getItem();
+				if (thisBookmark.id === droppedBookmark.id) return;
+				Store.state.swapBookmark(droppedBookmark.id, thisBookmark.id);
+			}
+		},
+		(connect, monitor, props) => {
+			return {
+				isOver: monitor.isOver(),
+				canDrop: monitor.canDrop(),
+				dropRef: connect.dropTarget(),
+				draggedIsMe: monitor.getItem()?.id === props.id
+			};
+		}
+	)(
+		DragSource(
+			"BOOKMARK", {
+				beginDrag(props) {
+					return { ...props };
+				}
+			},
+			(props, monitor) => {
+				return {
+					isDragging: !!monitor.isDragging(),
+					dragRef: props.dragSource()
+				};
+			}
+		)(comp)
+	);
+}
+
+function BaseBookmark(props) {
+	const { id, path, icon, title, className } = props;
+	const { dragRef, dropRef, isOver, canDrop, draggedIsMe, isDragging } = props;
+	const bookmarkRef = useRef(null);
+	dropRef(dragRef(bookmarkRef));
+	const clickHandler = e => {
+		e.stopPropagation();
+		if (!path) return Logger.log(id, "no path");
+		if (e.ctrlKey)
+			Store.state.newTab(buildTab({ path }));
+		else
+			transitionTo(path);
+	};
+	const contextmenuHandler = e => {
+		ContextMenu.open(e, BookmarkContextmenu(id), {
+			position: "bottom",
+			align: "left"
+		});
+	};
+	return (
+		React.createElement('div', {
+			ref: bookmarkRef,
+			className: concateClassNames("bookmark flex-center", className && className, isDragging && "dragging", !draggedIsMe && canDrop && isOver && "candrop"),
+			onContextMenu: contextmenuHandler,
+			onClick: clickHandler,
+		}, React.createElement('div', { className: "bookmark-icon flex-center round", }, icon), React.createElement('div', { className: "bookmark-title ellipsis", }, title || path))
+	);
+}
+const BaseBookmark$1 = DragThis$3(BaseBookmark);
+
+// src\Tabbys\components\Bookmark\index.jsx
+function Bookmark({ id, channelId, path, className }) {
+	const size = Settings(Settings.selectors.size) || 20;
+	const channel = useStateFromStores([ChannelStore], () => ChannelStore.getChannel(channelId), [channelId]);
+	const channelName = getChannelName(channel) || path.split("/")[2];
+	const src = getChannelIcon(channel, size);
+	let icon = null;
+	if (src)
+		icon = src && (
+			React.createElement('img', {
+				className: "parent-dim fill round",
+				src: src,
+				alt: channelName,
+			})
+		);
+	else {
+		icon = (
+			React.createElement('div', { className: "discord-icon flex-center fill round", }, React.createElement(DiscordIcon, null))
+		);
+	}
+	return (
+		React.createElement(BaseBookmark$1, {
+			id: id,
+			className: className,
+			path: path,
+			icon: icon,
+			title: channelName,
+		})
+	);
+}
+const Bookmark$1 = React.memo(({ id, className }) => {
+	const { path } = Store(state => state.getBookmark(id), shallow) || {};
+	if (!path) return Logger.error("unknown bookmark path", path, id);
+	const [, , , channelId, , threadId] = path.split("/");
+	return (
+		React.createElement(Bookmark, {
+			id: id,
+			className: className,
+			path: path,
+			channelId: threadId || channelId,
+		})
+	);
+});
+
+// common\Utils\Hooks.js
+const LengthStateEnum = {
+	INCREASED: "INCREASED",
+	UNCHANGED: "UNCHANGED",
+	DECREASED: "DECREASED",
+};
+
+function useNumberWatcher(num) {
+	const lastNum = useRef(num);
+	const currentNum = num;
+	let state = "";
+	if (lastNum.current < num) state = LengthStateEnum.INCREASED;
+	else if (lastNum.current > currentNum) state = LengthStateEnum.DECREASED;
+	else state = LengthStateEnum.UNCHANGED;
+	lastNum.current = currentNum;
+	return state;
+}
+
+// src\Tabbys\components\BookmarkBar\index.jsx
+function DragThis$2(comp) {
+	return DropTarget(
+		"TAB", {
+			drop(thisComp, monitor) {
+				const dropppedTab = monitor.getItem();
+				const path = dropppedTab.path;
+				if (!path) return;
+				Store.state.addBookmark(buildTab({ path }));
+			}
+		},
+		(connect, monitor) => {
+			return {
+				isOver: monitor.isOver(),
+				canDrop: monitor.canDrop(),
+				dropRef: connect.dropTarget(),
+			};
+		}
+	)(comp);
+}
+// 	const overflowLimit = window.innerWidth * 0.95;
+function isVisible(el) {
+	const elParentRect = el.parentElement.getBoundingClientRect();
+	const rect = el.getBoundingClientRect();
+	const elemRight = rect.right;
+	const elemLeft = rect.left;
+	return elemLeft >= 0 && elemRight <= elParentRect.width;
+}
+const BookmarkBar = DragThis$2(function BookmarkBar({ isOver, canDrop, dropRef, leading, trailing }) {
+	const bookmarks = Store(Store.selectors.bookmarks, (a, b) => a.length === b.length && !a.some((_, i) => a[i].id !== b[i].id));
+	const bookmarksContainerRef = useRef();
+	const [overflowIndex, setOverflowIndex] = useState(-1);
+	const isOverflowing = overflowIndex > -1;
+	const childrenLengthState = useNumberWatcher(bookmarks.length);
+	const overflowBookmarks = isOverflowing ? bookmarks.slice(overflowIndex, bookmarks.length) : [];
+	const bookmarkbarRef = useRef();
+	dropRef(bookmarkbarRef);
+	useEffect(() => {
+		const bookmarksNode = bookmarksContainerRef.current;
+		if (!bookmarksNode) return;
+		const handleMutation = debounce(() => {
+			if (childrenLengthState === LengthStateEnum.INCREASED && isOverflowing) return;
+			if (childrenLengthState === LengthStateEnum.DECREASED && !isOverflowing) return;
+			const childrenNodes = Array.from(bookmarksNode.children);
+			const indexOfFirstNotFullyVisibleChild = childrenNodes.findIndex(a => !isVisible(a));
+			setOverflowIndex(indexOfFirstNotFullyVisibleChild);
+		});
+		handleMutation();
+		const resizeObserver = new ResizeObserver(handleMutation);
+		resizeObserver.observe(bookmarksNode);
+		return () => {
+			resizeObserver.disconnect();
+			handleMutation.clear();
+		};
+	}, [childrenLengthState]);
+	return (
+		React.createElement('div', { className: concateClassNames("bookmarkbar", canDrop && isOver && "candrop"), ref: bookmarkbarRef, }, leading && leading, React.createElement('div', {
+			ref: bookmarksContainerRef,
+			className: "bookmarks-container",
+			onDoubleClick: e => e.stopPropagation(),
+		}, bookmarks.map((a, index) => [
+			React.createElement(Bookmark$1, {
+				key: a.id,
+				id: a.id,
+				divider: index !== 0,
+				className: concateClassNames(isOverflowing && index >= overflowIndex && "hidden-visually"),
+			})
+		])), isOverflowing && (
+			React.createElement(DiscordPopout, {
+				position: "bottom",
+				align: "right",
+				animation: "1",
+				renderPopout: e => {
+					return (
+						React.createElement('div', {
+							onClick: e.closePopout,
+							className: "bookmarks-overflow-popout Tabbys-vars",
+						}, overflowBookmarks.map(a => [
+							React.createElement(Bookmark$1, {
+								key: a.id,
+								id: a.id,
+							})
+						]))
+					);
+				},
+				spacing: 8,
+			}, e => (
+				React.createElement('div', {
+					className: "bookmarks-overflow flex-center",
+					onClick: e.onClick,
+				}, React.createElement(ArrowIcon, { className: "parent-dim", }))
+			))
+		), trailing && trailing)
+	);
+});
+
 // src\Tabbys\contextmenus\TabContextMenu.jsx
 function newTabRight(id) {
 	Store.state.addTabToRight(id, buildTab({ path: "/channels/@me" }));
@@ -874,7 +1115,7 @@ const Tooltip = ({ note, position, children }) => {
 const filter = Filters.byStrings("dotRadius", "dotPosition");
 const TypingDots = getModule(a => a?.type?.render && filter(a.type.render), { searchExports: true });
 
-function DragThis$3(comp) {
+function DragThis$1(comp) {
 	return DropTarget(
 		"TAB", {
 			drop(thisTab, monitor) {
@@ -907,7 +1148,7 @@ function DragThis$3(comp) {
 		)(comp)
 	);
 }
-const BaseTab = DragThis$3(function BaseTab(props) {
+const BaseTab = DragThis$1(function BaseTab(props) {
 	const { id, path, icon, title, isSingle } = props;
 	const { isDM, mentionCount, typingUsers, unreadCount, hasUnread } = props;
 	const { dragRef, dropRef, isOver, canDrop, draggedIsMe, isDragging } = props;
@@ -1091,24 +1332,6 @@ const Tab = React.memo(({ id, ...rest }) => {
 	);
 });
 
-// common\Utils\Hooks.js
-const LengthStateEnum = {
-	INCREASED: "INCREASED",
-	UNCHANGED: "UNCHANGED",
-	DECREASED: "DECREASED",
-};
-
-function useNumberWatcher(num) {
-	const lastNum = useRef(num);
-	const currentNum = num;
-	let state = "";
-	if (lastNum.current < num) state = LengthStateEnum.INCREASED;
-	else if (lastNum.current > currentNum) state = LengthStateEnum.DECREASED;
-	else state = LengthStateEnum.UNCHANGED;
-	lastNum.current = currentNum;
-	return state;
-}
-
 // src\Tabbys\components\TabsScroller\index.jsx
 function getFirstAndLastChild(el) {
 	const tabListChildren = Array.from(el.children);
@@ -1271,7 +1494,7 @@ function TabsScroller({ children }) {
 }
 
 // src\Tabbys\components\TabBar\index.jsx
-function DragThis$2(comp) {
+function DragThis(comp) {
 	return DropTarget(
 		"BOOKMARK", {
 			drop(_, monitor) {
@@ -1290,7 +1513,7 @@ function DragThis$2(comp) {
 		}
 	)(comp);
 }
-const TabBar = DragThis$2(function TabBar({ isOver, canDrop, dropRef, leading, trailing }) {
+const TabBar = DragThis(function TabBar({ isOver, canDrop, dropRef, leading, trailing }) {
 	const tabs = Store(Store.selectors.tabs, (a, b) => a.length === b.length && !a.some((_, i) => a[i].id !== b[i].id));
 	const showTabDivider = Settings(Settings.selectors.showTabDivider);
 	const tabsContainerRef = useRef();
@@ -1319,229 +1542,6 @@ const TabBar = DragThis$2(function TabBar({ isOver, canDrop, dropRef, leading, t
 				onClick: newTabHandler,
 			}, React.createElement(PlusIcon, { className: "parent-dim", }))
 		), trailing)
-	);
-});
-
-// src\Tabbys\contextmenus\BookmarkContextmenu.jsx
-function deleteBookmark(id) {
-	Store.state.removeBookmark(id);
-}
-
-function openInNewTab(id) {
-	Store.state.newTab(buildTab(Store.state.getBookmark(id)));
-}
-
-function BookmarkContextmenu(id) {
-	const Menu = ContextMenu.buildMenu([
-		createContextMenuItem(null, "open-bookmark-in-new-tab", () => openInNewTab(id), "Open in new Tab", React.createElement(PlusIcon, null)),
-		{ type: "separator" },
-		createContextMenuItem(null, "remove-bookmark", () => deleteBookmark(id), "Remove Bookmark", React.createElement(CloseIcon, null), "danger"),
-	]);
-	return (props) => React.createElement(Menu, { ...props, className: "bookmark-contextmenu", });
-}
-
-// src\Tabbys\components\Bookmark\BaseBookmark.jsx
-function DragThis$1(comp) {
-	return DropTarget(
-		"BOOKMARK", {
-			drop(thisBookmark, monitor) {
-				const droppedBookmark = monitor.getItem();
-				if (thisBookmark.id === droppedBookmark.id) return;
-				Store.state.swapBookmark(droppedBookmark.id, thisBookmark.id);
-			}
-		},
-		(connect, monitor, props) => {
-			return {
-				isOver: monitor.isOver(),
-				canDrop: monitor.canDrop(),
-				dropRef: connect.dropTarget(),
-				draggedIsMe: monitor.getItem()?.id === props.id
-			};
-		}
-	)(
-		DragSource(
-			"BOOKMARK", {
-				beginDrag(props) {
-					return { ...props };
-				}
-			},
-			(props, monitor) => {
-				return {
-					isDragging: !!monitor.isDragging(),
-					dragRef: props.dragSource()
-				};
-			}
-		)(comp)
-	);
-}
-
-function BaseBookmark(props) {
-	const { id, path, icon, title, className } = props;
-	const { dragRef, dropRef, isOver, canDrop, draggedIsMe, isDragging } = props;
-	const bookmarkRef = useRef(null);
-	dropRef(dragRef(bookmarkRef));
-	const clickHandler = e => {
-		e.stopPropagation();
-		if (!path) return Logger.log(id, "no path");
-		if (e.ctrlKey)
-			Store.state.newTab(buildTab({ path }));
-		else
-			transitionTo(path);
-	};
-	const contextmenuHandler = e => {
-		ContextMenu.open(e, BookmarkContextmenu(id), {
-			position: "bottom",
-			align: "left"
-		});
-	};
-	return (
-		React.createElement('div', {
-			ref: bookmarkRef,
-			className: concateClassNames("bookmark flex-center", className && className, isDragging && "dragging", !draggedIsMe && canDrop && isOver && "candrop"),
-			onContextMenu: contextmenuHandler,
-			onClick: clickHandler,
-		}, React.createElement('div', { className: "bookmark-icon flex-center round", }, icon), React.createElement('div', { className: "bookmark-title ellipsis", }, title || path))
-	);
-}
-const BaseBookmark$1 = DragThis$1(BaseBookmark);
-
-// src\Tabbys\components\Bookmark\index.jsx
-function Bookmark({ id, channelId, path, className }) {
-	const size = Settings(Settings.selectors.size) || 20;
-	const channel = useStateFromStores([ChannelStore], () => ChannelStore.getChannel(channelId), [channelId]);
-	const channelName = getChannelName(channel) || path.split("/")[2];
-	const src = getChannelIcon(channel, size);
-	let icon = null;
-	if (src)
-		icon = src && (
-			React.createElement('img', {
-				className: "parent-dim fill round",
-				src: src,
-				alt: channelName,
-			})
-		);
-	else {
-		icon = (
-			React.createElement('div', { className: "discord-icon flex-center fill round", }, React.createElement(DiscordIcon, null))
-		);
-	}
-	return (
-		React.createElement(BaseBookmark$1, {
-			id: id,
-			className: className,
-			path: path,
-			icon: icon,
-			title: channelName,
-		})
-	);
-}
-const Bookmark$1 = React.memo(({ id, className }) => {
-	const { path } = Store(state => state.getBookmark(id), shallow) || {};
-	if (!path) return Logger.error("unknown bookmark path", path, id);
-	const [, , , channelId, , threadId] = path.split("/");
-	return (
-		React.createElement(Bookmark, {
-			id: id,
-			className: className,
-			path: path,
-			channelId: threadId || channelId,
-		})
-	);
-});
-
-// src\Tabbys\components\BookmarkBar\index.jsx
-function DragThis(comp) {
-	return DropTarget(
-		"TAB", {
-			drop(thisComp, monitor) {
-				const dropppedTab = monitor.getItem();
-				const path = dropppedTab.path;
-				if (!path) return;
-				Store.state.addBookmark(buildTab({ path }));
-			}
-		},
-		(connect, monitor) => {
-			return {
-				isOver: monitor.isOver(),
-				canDrop: monitor.canDrop(),
-				dropRef: connect.dropTarget(),
-			};
-		}
-	)(comp);
-}
-// 	const overflowLimit = window.innerWidth * 0.95;
-function isVisible(el) {
-	const elParentRect = el.parentElement.getBoundingClientRect();
-	const rect = el.getBoundingClientRect();
-	const elemRight = rect.right;
-	const elemLeft = rect.left;
-	return elemLeft >= 0 && elemRight <= elParentRect.width;
-}
-const BookmarkBar = DragThis(function BookmarkBar({ isOver, canDrop, dropRef }) {
-	const bookmarks = Store(Store.selectors.bookmarks, (a, b) => a.length === b.length && !a.some((_, i) => a[i].id !== b[i].id));
-	const bookmarksContainerRef = useRef();
-	const [overflowIndex, setOverflowIndex] = useState(-1);
-	const isOverflowing = overflowIndex > -1;
-	const childrenLengthState = useNumberWatcher(bookmarks.length);
-	const overflowBookmarks = isOverflowing ? bookmarks.slice(overflowIndex, bookmarks.length) : [];
-	const bookmarkbarRef = useRef();
-	dropRef(bookmarkbarRef);
-	useEffect(() => {
-		const bookmarksNode = bookmarksContainerRef.current;
-		if (!bookmarksNode) return;
-		const handleMutation = debounce(() => {
-			if (childrenLengthState === LengthStateEnum.INCREASED && isOverflowing) return;
-			if (childrenLengthState === LengthStateEnum.DECREASED && !isOverflowing) return;
-			const childrenNodes = Array.from(bookmarksNode.children);
-			const indexOfFirstNotFullyVisibleChild = childrenNodes.findIndex(a => !isVisible(a));
-			setOverflowIndex(indexOfFirstNotFullyVisibleChild);
-		});
-		handleMutation();
-		const resizeObserver = new ResizeObserver(handleMutation);
-		resizeObserver.observe(bookmarksNode);
-		return () => {
-			resizeObserver.disconnect();
-			handleMutation.clear();
-		};
-	}, [childrenLengthState]);
-	return (
-		React.createElement('div', { className: concateClassNames("bookmarkbar", canDrop && isOver && "candrop"), ref: bookmarkbarRef, }, React.createElement('div', {
-			ref: bookmarksContainerRef,
-			className: "bookmarks-container",
-			onDoubleClick: e => e.stopPropagation(),
-		}, bookmarks.map((a, index) => [
-			React.createElement(Bookmark$1, {
-				key: a.id,
-				id: a.id,
-				divider: index !== 0,
-				className: concateClassNames(isOverflowing && index >= overflowIndex && "hidden-visually"),
-			})
-		])), isOverflowing && (
-			React.createElement(DiscordPopout, {
-				position: "bottom",
-				align: "right",
-				animation: "1",
-				renderPopout: e => {
-					return (
-						React.createElement('div', {
-							onClick: e.closePopout,
-							className: "bookmarks-overflow-popout Tabbys-vars",
-						}, overflowBookmarks.map(a => [
-							React.createElement(Bookmark$1, {
-								key: a.id,
-								id: a.id,
-							})
-						]))
-					);
-				},
-				spacing: 8,
-			}, e => (
-				React.createElement('div', {
-					className: "bookmarks-overflow",
-					onClick: e.onClick,
-				}, React.createElement(ArrowIcon, { className: "parent-dim", }))
-			))
-		))
 	);
 });
 
@@ -1775,10 +1775,23 @@ function App({ leading, trailing }) {
 	const showTabbar = Settings(Settings.selectors.showTabbar);
 	const showBookmarkbar = Settings(Settings.selectors.showBookmarkbar);
 	const showSettingsButton = Settings(Settings.selectors.showSettingsButton);
-	if (showSettingsButton)
-		trailing?.props?.children?.unshift?.(React.createElement(SettingsDropdown, null));
+	if (showSettingsButton) {
+		trailing = React.cloneElement(trailing, {
+			children: [React.createElement(SettingsDropdown, null), ...trailing.props.children]
+		});
+	}
 	return (
-		React.createElement('div', { className: `${config.info.name}-container Tabbys-vars`, }, showTabbar && React.createElement(TabBar, { leading: leading, trailing: trailing, }), showTabbar && showBookmarkbar && React.createElement('div', { className: `${config.info.name}-divider`, }), showBookmarkbar && React.createElement(BookmarkBar, null))
+		React.createElement('div', { className: `${config.info.name}-container Tabbys-vars`, }, showTabbar && (
+			React.createElement(TabBar, {
+				leading: leading,
+				trailing: trailing,
+			})
+		), showTabbar && showBookmarkbar && React.createElement('div', { className: `${config.info.name}-divider`, }), showBookmarkbar && (
+			React.createElement(BookmarkBar, {
+				leading: !showTabbar && leading,
+				trailing: !showTabbar && trailing,
+			})
+		))
 	);
 }
 
@@ -2042,6 +2055,7 @@ const css = `.Tabbys-vars {
 	background: #6361f8;
 }
 
+.bookmarks-overflow > svg,
 .settings-dropdown-btn > svg,
 .new-tab > svg,
 .scrollBtn > svg,
@@ -2220,47 +2234,11 @@ div:has(> .Tabbys-container):not(#a) {
 .settings-dropdown-btn:active{
 	color:#fff9;
 }
-.tabs-container {
-	min-width:0;
-	gap:2px;
-	position:relative;
-	margin-right:auto;
-	height:100%;
-	-webkit-app-region: no-drag;
-}
-
-.new-tab{
-	flex:0 0 auto;
-	padding:2px;
-	aspect-ratio: 1;
-	height:calc(100% * .8);
-	color:white;
-}
-
-.new-tab:hover{
-	background:var(--hover-tab-bg);
-}
-
-.new-tab:active{
-	background:var(--active-tab-bg);
-}
-
-.new-tab-div,
-.tab-div{
-	height:calc(var(--size) * .8);
-	border: 1px solid #ccc5;	
-}
-
-.tab-div{
-	margin: auto var(--tab-divider-size);
-}
-
-
 .bookmarkbar {
 	-webkit-app-region: no-drag;
 	display: flex;
 	flex: 0 0 auto;
-	align-items: center;
+	overflow:hidden;
 	transform:translate(0);
 }
 
@@ -2275,12 +2253,11 @@ div:has(> .Tabbys-container):not(#a) {
 
 .bookmarks-overflow {
 	flex: 0 0 auto;
-	display: flex;
 	padding: 2px;
-	width: 20px;
-	height: 20px;
 	color: white;
-	margin: 0 2px;
+	color: var(--interactive-normal);
+	aspect-ratio: 1;
+	margin: 0 6px;
 	z-index: 988;
 	-webkit-app-region: no-drag;
 }
@@ -2324,6 +2301,96 @@ div:has(> .Tabbys-container):not(#a) {
 
 .bookmarks-overflow-popout::-webkit-scrollbar-corner {
 	background-color: transparent;
+}
+
+.tabs-container {
+	min-width:0;
+	gap:2px;
+	position:relative;
+	margin-right:auto;
+	height:100%;
+	-webkit-app-region: no-drag;
+}
+
+.new-tab{
+	flex:0 0 auto;
+	padding:2px;
+	aspect-ratio: 1;
+	height:calc(100% * .8);
+	color:white;
+}
+
+.new-tab:hover{
+	background:var(--hover-tab-bg);
+}
+
+.new-tab:active{
+	background:var(--active-tab-bg);
+}
+
+.new-tab-div,
+.tab-div{
+	height:calc(var(--size) * .8);
+	border: 1px solid #ccc5;	
+}
+
+.tab-div{
+	margin: auto var(--tab-divider-size);
+}
+
+
+.bookmark{
+	justify-content:flex-start;
+}
+
+.bookmark:hover{
+	background:#353333;
+}
+
+.bookmark:active{
+	background:#353333;
+}
+
+.bookmark > .bookmark-title {
+	color:#a7a7a7;
+	font-size:calc(var(--size) * .6);
+}
+
+
+
+.tabs-scroller {
+	display: flex;
+	min-width: 0;
+	position: relative;
+}
+
+.tabs-list {
+	display: flex;
+	overflow: auto hidden;
+	scrollbar-width: none;
+}
+
+.scrollBtn {
+	height: 100%;
+	background: #7b7b7b;
+	padding: 5px;
+	border-radius: 8px;
+	z-index: 99;
+	position: absolute;
+	top: 50%;
+	translate: 0 -50%;
+
+	aspect-ratio: 1;
+	cursor: pointer;
+	color: #ccc;
+}
+
+.left-arrow {
+	left: 0;
+}
+
+.right-arrow {
+	right: 0;
 }
 
 .tab {
@@ -2371,60 +2438,6 @@ div:has(> .Tabbys-container):not(#a) {
 .typing-dots{
 	flex:0 0 auto;
 }
-.tabs-scroller {
-	display: flex;
-	min-width: 0;
-	position: relative;
-}
-
-.tabs-list {
-	display: flex;
-	overflow: auto hidden;
-	scrollbar-width: none;
-}
-
-.scrollBtn {
-	height: 100%;
-	background: #7b7b7b;
-	padding: 5px;
-	border-radius: 8px;
-	z-index: 99;
-	position: absolute;
-	top: 50%;
-	translate: 0 -50%;
-
-	aspect-ratio: 1;
-	cursor: pointer;
-	color: #ccc;
-}
-
-.left-arrow {
-	left: 0;
-}
-
-.right-arrow {
-	right: 0;
-}
-
-.bookmark{
-	justify-content:flex-start;
-}
-
-.bookmark:hover{
-	background:#353333;
-}
-
-.bookmark:active{
-	background:#353333;
-}
-
-.bookmark > .bookmark-title {
-	color:#a7a7a7;
-	font-size:calc(var(--size) * .6);
-}
-
-
-
 .badge {
 	width: 16px;
 	height: 16px;
