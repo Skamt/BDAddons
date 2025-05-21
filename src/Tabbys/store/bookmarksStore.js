@@ -1,6 +1,6 @@
 import List from "@Utils/List";
 
-const bookmarksList = new List("id");
+const bookmarksList = new List();
 
 const store = (set) => ({
 	bookmarks: [],

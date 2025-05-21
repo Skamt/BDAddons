@@ -52,7 +52,7 @@ function isVisible(el) {
 }
 
 
-export default DragThis(function BookmarkBar({isOver, canDrop, dropRef}) {
+export default DragThis(function BookmarkBar({isOver, canDrop, dropRef, leading, trailing}) {
 	const bookmarks = Store(Store.selectors.bookmarks, (a, b) => a.length === b.length && !a.some((_, i) => a[i].id !== b[i].id));
 
 	const bookmarksContainerRef = useRef();
@@ -87,6 +87,7 @@ export default DragThis(function BookmarkBar({isOver, canDrop, dropRef}) {
 
 	return (
 		<div className={concateClassNames("bookmarkbar", canDrop && isOver && "candrop")} ref={bookmarkbarRef}>
+			{leading && leading}
 			<div
 				ref={bookmarksContainerRef}
 				className="bookmarks-container"
@@ -125,13 +126,16 @@ export default DragThis(function BookmarkBar({isOver, canDrop, dropRef}) {
 					{e => (
 						// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
 						<div
-							className="bookmarks-overflow"
+							className="bookmarks-overflow flex-center"
 							onClick={e.onClick}>
 							<ArrowIcon className="parent-dim" />
 						</div>
 					)}
 				</DiscordPopout>
 			)}
+			
+			
+			{trailing && trailing}
 		</div>
 	);
 })

@@ -6,37 +6,12 @@ function arrToObject(arr, key) {
 	}, {});
 }
 
-class ArrayHelpers {
-	list = [];
-
-	push(item) {
-		this.list = this.list.toSpliced(this.list.length, 0, item);
-	}
-
-	insert(item, index) {
-		this.list = this.list.toSpliced(index, 0, item);
-	}
-
-	shift(item) {
-		this.list = this.list.toSpliced(0, 0, item);
-	}
-
-	remove(index) {
-		this.list = this.list.toSpliced(index, 1);
-	}
-
-	replace(index, item) {
-		this.list = this.list.toSpliced(index, 1, item);
-	}
-}
-
-export default class List extends ArrayHelpers {
+export default class List {
 	list = [];
 	map = {};
 	indexMap = {};
 
 	constructor(identifierKey = "id") {
-		super();
 		this.identifierKey = identifierKey;
 	}
 
@@ -68,7 +43,7 @@ export default class List extends ArrayHelpers {
 
 	addItem(item) {
 		item = { ...item };
-		this.push(item);
+		this.list = this.list.toSpliced(this.list.length, 0, item);
 		this.updateMap(item);
 		this.indexMap[item[this.identifierKey]] = this.list.length - 1;
 	}
@@ -76,7 +51,7 @@ export default class List extends ArrayHelpers {
 	addItemAtIndex(item, index) {
 		if (index == null) return;
 		item = { ...item };
-		this.insert(item, index);
+		this.list = this.list.toSpliced(index, 0, item);
 		this.updateMap(item);
 		this.recreateIndexMap();
 	}
@@ -84,7 +59,7 @@ export default class List extends ArrayHelpers {
 	removeItem(index) {
 		if (index == null || index < 0) return;
 		const item = this.getItemByIndex(index);
-		this.remove(index);
+		this.list = this.list.toSpliced(index, 1);
 		delete this.map[item[this.identifierKey]];
 		this.recreateIndexMap();
 	}
@@ -119,7 +94,7 @@ export default class List extends ArrayHelpers {
 			...item,
 			[this.identifierKey]: currentItem[this.identifierKey]
 		};
-		this.replace(index, item);
+		this.list = this.list.toSpliced(index, 1, item);
 		this.updateMap(item);
 	}
 

@@ -8,7 +8,7 @@ const initialState = {
 	lastSelectedIdAfterNewTab: null
 };
 
-const tabsList = new List("id");
+const tabsList = new List();
 
 const store = (set, get) => ({
 	...initialState,

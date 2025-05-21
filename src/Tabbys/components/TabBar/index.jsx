@@ -5,7 +5,7 @@ import { PlusIcon } from "@Components/Icon";
 import React, { useRef } from "@React";
 import Tab from "../Tab";
 import TabsScroller from "../TabsScroller";
-import SettingsDropdown from "./SettingsDropdown";
+
 import Settings from "@Utils/Settings";
 import { concateClassNames } from "@Utils";
 import { DropTarget } from "@Discord/Modules";
@@ -33,7 +33,6 @@ function DragThis(comp) {
 
 export default DragThis(function TabBar({ isOver, canDrop, dropRef, leading, trailing }) {
 	const tabs = Store(Store.selectors.tabs, (a, b) => a.length === b.length && !a.some((_, i) => a[i].id !== b[i].id));
-	const showSettingsButton = Settings(Settings.selectors.showSettingsButton);
 	const showTabDivider = Settings(Settings.selectors.showTabDivider);
 	const tabsContainerRef = useRef();
 	dropRef(tabsContainerRef);
@@ -69,7 +68,7 @@ export default DragThis(function TabBar({ isOver, canDrop, dropRef, leading, tra
 					<PlusIcon className="parent-dim" />
 				</div>
 			</div>
-			{showSettingsButton && <SettingsDropdown />}
+			
 			{trailing}
 		</div>
 	);

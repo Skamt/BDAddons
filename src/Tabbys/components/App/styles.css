@@ -23,3 +23,54 @@ div:has(> .Tabbys-container):not(#a) {
 	linear-gradient(to left, #0000  0, #ccc3 25%) right center/50%  1px no-repeat;
 	-webkit-app-region: no-drag;
 }
+
+.settings-dropdown{
+	background-color: oklab(0.262384 0.00252247 -0.00889932);
+	border-radius: 8px;
+	gap: 5px;
+	padding: 15px;
+	overflow: auto;
+	width:40vw;
+	max-height: 80vh;
+}
+
+
+.settings-dropdown::-webkit-scrollbar {
+	height: 8px;
+	width: 8px;
+}
+
+.settings-dropdown::-webkit-scrollbar-track {
+	background-color: var(--scrollbar-thin-track);
+	border-color: var(--scrollbar-thin-track);
+}
+
+.settings-dropdown::-webkit-scrollbar-thumb {
+	background-clip: padding-box;
+	background-color: var(--scrollbar-thin-thumb);
+	border: 2px solid transparent;
+	border-radius: 4px;
+	min-height: 40px;
+}
+
+.settings-dropdown::-webkit-scrollbar-corner {
+	background-color: transparent;
+}
+
+.settings-dropdown-btn{
+	color:white;
+	flex:0 0 auto;
+	aspect-ratio:1;
+	height:100%;
+	color: var(--interactive-normal);
+	cursor:pointer;
+	-webkit-app-region: no-drag;
+}
+
+.settings-dropdown-btn:hover{
+	color:#fffb;
+}
+
+.settings-dropdown-btn:active{
+	color:#fff9;
+}

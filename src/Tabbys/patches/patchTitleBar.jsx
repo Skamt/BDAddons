@@ -12,7 +12,7 @@ export default () => {
 	const { module, key } = TitleBar;
 	if (!module || !key) return Logger.patchError("patchTitleBar");
 	Patcher.after(module, key, (_, [props], ret) => {
-		if (props.windowKey === "DISCORD_CHANNEL_CALL_POPOUT") return ret;
+		if (props.windowKey?.startsWith("DISCORD_")) return ret;
 		const [, leading, trailing] = ret?.props?.children || [];
 
 		return (

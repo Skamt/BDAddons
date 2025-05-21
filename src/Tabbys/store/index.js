@@ -95,7 +95,7 @@ function hydrateStore() {
 	if (Store.state.user?.id === user.id) return;
 	const userData = Data.load(user.id) || {};
 	Store.state.setUser(user);
-	Store.state.setTabs(userData.tabs || [buildTab({ path: location.pathname })], userData.selectedId);
+	Store.state.setTabs(userData.tabs || [buildTab({ path: "/channels/@me" })], userData.selectedId);
 	Store.state.setBookmarks(userData.bookmarks || []);
 	Store.state.setLastSelectedIdAfterNewTab(userData.lastSelectedIdAfterNewTab);
 }

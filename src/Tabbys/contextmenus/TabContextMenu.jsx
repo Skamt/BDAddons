@@ -28,7 +28,7 @@ function duplicateTab(id) {
 // }
 
 function bookmarkTab(id) {
-	Store.state.addBookmark(Store.state.getTab(id));
+	Store.state.addBookmark(buildTab(Store.state.getTab(id)));
 }
 
 function closeTab(id) {
@@ -49,6 +49,7 @@ function closeOtherTabs(id) {
 
 export default function (id) {
 	const canClose = Store.state.getTabsCount() > 1;
+
 	const Menu = ContextMenu.buildMenu(
 		[
 			createContextMenuItem(null, "new-tab-right", () => newTabRight(id), "New Tab to Right", <VectorIcon />),
