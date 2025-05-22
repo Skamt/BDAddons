@@ -949,11 +949,9 @@ function DragThis$2(comp) {
 }
 // 	const overflowLimit = window.innerWidth * 0.95;
 function isVisible(el) {
-	const elParentRect = el.parentElement.getBoundingClientRect();
-	const rect = el.getBoundingClientRect();
-	const elemRight = rect.right;
-	const elemLeft = rect.left;
-	return elemLeft >= 0 && elemRight <= elParentRect.width;
+	const parentRect = el.parentElement.getBoundingClientRect();
+	const childRect = el.getBoundingClientRect();
+	return childRect.left >= parentRect.left && childRect.right <= parentRect.right;
 }
 const BookmarkBar = DragThis$2(function BookmarkBar({ isOver, canDrop, dropRef, leading, trailing }) {
 	const bookmarks = Store(Store.selectors.bookmarks, (a, b) => a.length === b.length && !a.some((_, i) => a[i].id !== b[i].id));
@@ -1974,6 +1972,7 @@ class Tabbys {
 	stop() {
 		Store.dispose();
 		DOM.removeStyle();
+		BdApi.DOM.removeStyle("Tabbys-vars");
 		Patcher.unpatchAll();
 		reRender('div[data-windows="true"] > *');
 		this.unCssVarsListener?.();
@@ -1991,8 +1990,8 @@ class Tabbys {
 module.exports = Tabbys;
 
 const css = `.Tabbys-vars {
-	--size:20px;
-	--tab-divider-size:3px;
+	--size: 20px;
+	--tab-divider-size: 3px;
 
 	--active-tab-bg: rgba(151, 151, 159, 0.15);
 	--hover-tab-bg: rgba(151, 151, 159, 0.35);
@@ -2011,8 +2010,8 @@ const css = `.Tabbys-vars {
 	--space-32: calc(var(--size) + 10px);
 }
 
-.divider-h{
-	background:linear-gradient(rgba(151, 151, 159, 0.12) 0 0) center/100%  1px no-repeat;
+.divider-h {
+	background: linear-gradient(rgba(151, 151, 159, 0.12) 0 0) center/100% 1px no-repeat;
 }
 
 .tab,
@@ -2055,10 +2054,6 @@ const css = `.Tabbys-vars {
 	background: #6361f8;
 }
 
-.bookmarks-overflow > svg,
-.settings-dropdown-btn > svg,
-.new-tab > svg,
-.scrollBtn > svg,
 .discord-icon > svg {
 	width: 65%;
 	height: 65%;
@@ -2176,24 +2171,23 @@ div:has(> .Tabbys-container):not(#a) {
 	-webkit-app-region: drag;
 }
 
-.Tabbys-divider{
-	height:5px;
+.Tabbys-divider {
+	height: 5px;
 	background:
-	linear-gradient(to right, #0000  0, #ccc3 25%) left center/50% 1px no-repeat,
-	linear-gradient(to left, #0000  0, #ccc3 25%) right center/50%  1px no-repeat;
+		linear-gradient(to right, #0000 0, #ccc3 25%) left center/50% 1px no-repeat,
+		linear-gradient(to left, #0000 0, #ccc3 25%) right center/50% 1px no-repeat;
 	-webkit-app-region: no-drag;
 }
 
-.settings-dropdown{
+.settings-dropdown {
 	background-color: oklab(0.262384 0.00252247 -0.00889932);
 	border-radius: 8px;
 	gap: 5px;
 	padding: 15px;
 	overflow: auto;
-	width:40vw;
+	width: 40vw;
 	max-height: 80vh;
 }
-
 
 .settings-dropdown::-webkit-scrollbar {
 	height: 8px;
@@ -2217,29 +2211,31 @@ div:has(> .Tabbys-container):not(#a) {
 	background-color: transparent;
 }
 
-.settings-dropdown-btn{
-	color:white;
-	flex:0 0 auto;
-	aspect-ratio:1;
-	height:100%;
+.settings-dropdown-btn {
+	color: white;
+	flex: 0 0 auto;
 	color: var(--interactive-normal);
-	cursor:pointer;
+	cursor: pointer;
 	-webkit-app-region: no-drag;
+	height: var(--space-32);
+	width: var(--space-32);
 }
 
-.settings-dropdown-btn:hover{
-	color:#fffb;
+.settings-dropdown-btn:hover {
+	color: var(--interactive-hover);
 }
 
-.settings-dropdown-btn:active{
-	color:#fff9;
+.settings-dropdown-btn > svg {
+	height: var(--chat-input-icon-size);
+	width: var(--chat-input-icon-size);
 }
+
 .bookmarkbar {
 	-webkit-app-region: no-drag;
 	display: flex;
 	flex: 0 0 auto;
-	overflow:hidden;
-	transform:translate(0);
+	overflow: hidden;
+	transform: translate(0);
 }
 
 .bookmarks-container {
@@ -2262,12 +2258,13 @@ div:has(> .Tabbys-container):not(#a) {
 	-webkit-app-region: no-drag;
 }
 
-.bookmarks-overflow:hover {
-	background: var(--hover-tab-bg);
+.bookmarks-overflow > svg {
+	height: var(--chat-input-icon-size);
+	width: var(--chat-input-icon-size);
 }
 
-.bookmarks-overflow:active {
-	background: var(--active-tab-bg);
+.bookmarks-overflow:hover {
+	color: var(--interactive-hover);
 }
 
 .bookmarks-overflow-popout {
@@ -2314,18 +2311,19 @@ div:has(> .Tabbys-container):not(#a) {
 
 .new-tab{
 	flex:0 0 auto;
-	padding:2px;
-	aspect-ratio: 1;
-	height:calc(100% * .8);
-	color:white;
+	color: var(--interactive-normal);
+	cursor: pointer;
+	height: var(--space-32);
+	width: var(--space-32);
 }
 
-.new-tab:hover{
-	background:var(--hover-tab-bg);
+.new-tab:hover {
+	color: var(--interactive-hover);
 }
 
-.new-tab:active{
-	background:var(--active-tab-bg);
+.new-tab > svg{
+	height: var(--chat-input-icon-size);
+	width: var(--chat-input-icon-size);
 }
 
 .new-tab-div,
@@ -2357,41 +2355,6 @@ div:has(> .Tabbys-container):not(#a) {
 }
 
 
-
-.tabs-scroller {
-	display: flex;
-	min-width: 0;
-	position: relative;
-}
-
-.tabs-list {
-	display: flex;
-	overflow: auto hidden;
-	scrollbar-width: none;
-}
-
-.scrollBtn {
-	height: 100%;
-	background: #7b7b7b;
-	padding: 5px;
-	border-radius: 8px;
-	z-index: 99;
-	position: absolute;
-	top: 50%;
-	translate: 0 -50%;
-
-	aspect-ratio: 1;
-	cursor: pointer;
-	color: #ccc;
-}
-
-.left-arrow {
-	left: 0;
-}
-
-.right-arrow {
-	right: 0;
-}
 
 .tab {
 	min-width:	min-content;
@@ -2438,6 +2401,47 @@ div:has(> .Tabbys-container):not(#a) {
 .typing-dots{
 	flex:0 0 auto;
 }
+.tabs-scroller {
+	display: flex;
+	min-width: 0;
+	position: relative;
+}
+
+.tabs-list {
+	display: flex;
+	overflow: auto hidden;
+	scrollbar-width: none;
+}
+
+.scrollBtn {
+	background-color: #27272b;
+	z-index: 99;
+	position: absolute;
+	top: 50%;
+	translate: 0 -50%;
+	color: var(--interactive-normal);
+	cursor: pointer;
+	height: var(--space-32);
+	width: var(--space-32);
+}
+
+.scrollBtn:hover {
+	color: var(--interactive-hover);
+}
+
+.scrollBtn > svg {
+	height: var(--chat-input-icon-size);
+	width: var(--chat-input-icon-size);
+}
+
+.left-arrow {
+	left: 0;
+}
+
+.right-arrow {
+	right: 0;
+}
+
 .badge {
 	width: 16px;
 	height: 16px;
