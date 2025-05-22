@@ -1,6 +1,6 @@
 .Tabbys-vars {
-	--size:20px;
-	--tab-divider-size:3px;
+	--size: 20px;
+	--tab-divider-size: 3px;
 
 	--active-tab-bg: rgba(151, 151, 159, 0.15);
 	--hover-tab-bg: rgba(151, 151, 159, 0.35);
@@ -19,8 +19,8 @@
 	--space-32: calc(var(--size) + 10px);
 }
 
-.divider-h{
-	background:linear-gradient(rgba(151, 151, 159, 0.12) 0 0) center/100%  1px no-repeat;
+.divider-h {
+	background: linear-gradient(rgba(151, 151, 159, 0.12) 0 0) center/100% 1px no-repeat;
 }
 
 .tab,
@@ -63,10 +63,6 @@
 	background: #6361f8;
 }
 
-.bookmarks-overflow > svg,
-.settings-dropdown-btn > svg,
-.new-tab > svg,
-.scrollBtn > svg,
 .discord-icon > svg {
 	width: 65%;
 	height: 65%;

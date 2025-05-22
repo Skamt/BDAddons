@@ -51,11 +51,24 @@ function updateCssVars() {
 	);
 }
 
+
+// import App from "./components/App";
+// import { closeModal } from "@Utils/Modals";
+// import ErrorBoundary from "@Components/ErrorBoundary";
+// import { showConfirmationModal } from "@Api";
+// closeModal(window.id);
+// window.id = showConfirmationModal(
+// 	"",
+// 	<ErrorBoundary>
+// 		<App />
+// 	</ErrorBoundary>
+// );
+
 export default class Tabbys {
 	start() {
 		try {
 			DOM.addStyle(css);
-			updateCssVars()
+			updateCssVars();
 			Store.init();
 			patchTitleBar();
 			patchDMClick();
@@ -72,6 +85,7 @@ export default class Tabbys {
 	stop() {
 		Store.dispose();
 		DOM.removeStyle();
+		BdApi.DOM.removeStyle("Tabbys-vars");
 		Patcher.unpatchAll();
 		reRender('div[data-windows="true"] > *');
 		this.unCssVarsListener?.();

@@ -6,6 +6,7 @@ const cleanup = require("rollup-plugin-cleanup");
 const re = require("rollup-plugin-re");
 const sucrase = require("@rollup/plugin-sucrase");
 const nodeResolve = require("@rollup/plugin-node-resolve");
+// const postcss = require("rollup-plugin-postcss");
 const commonjs = require("@rollup/plugin-commonjs");
 const stripCode = require("rollup-plugin-strip-code");
 const { eslintBundle } = require("rollup-plugin-eslint-bundle");
@@ -53,7 +54,7 @@ const changelog = () => {
 	};
 };
 
-const aliasesObj = (inputPath) => ({
+const aliasesObj = inputPath => ({
 	entries: {
 		"@Api": path.resolve("common", "Api"),
 		"@Utils": path.resolve("common", "Utils"),
@@ -102,6 +103,11 @@ module.exports = function getConfig(inputPath, releasePath, devPath, config) {
 				preferConst: true
 			}),
 			config.changelog ? changelog() : {},
+			// postcss({
+			// 	plugins: [require("@tailwindcss/postcss")],
+			// 	inject: false,
+			// 	minimize: true
+			// }),
 			css(),
 			sucrase(sucraseConfig),
 			cleanup(cleanupConfig),

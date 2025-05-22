@@ -38,7 +38,7 @@ const SettingsStore = Object.assign(
 );
 
 Object.defineProperty(SettingsStore, "state", {
-	writeable: false,
+	writable: false,
 	configurable: false,
 	get() {
 		return this.getState();

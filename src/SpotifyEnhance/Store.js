@@ -180,7 +180,7 @@ export const Store = Object.assign(
 );
 
 Object.defineProperty(Store, "state", {
-	writeable: false,
+	writable: false,
 	configurable: false,
 	get: () => Store.getState()
 });

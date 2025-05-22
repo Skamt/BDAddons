@@ -11,18 +11,24 @@
 }
 
 .scrollBtn {
-	height: 100%;
-	background: #7b7b7b;
-	padding: 5px;
-	border-radius: 8px;
+	background-color: #27272b;
 	z-index: 99;
 	position: absolute;
 	top: 50%;
 	translate: 0 -50%;
-
-	aspect-ratio: 1;
+	color: var(--interactive-normal);
 	cursor: pointer;
-	color: #ccc;
+	height: var(--space-32);
+	width: var(--space-32);
+}
+
+.scrollBtn:hover {
+	color: var(--interactive-hover);
+}
+
+.scrollBtn > svg {
+	height: var(--chat-input-icon-size);
+	width: var(--chat-input-icon-size);
 }
 
 .left-arrow {

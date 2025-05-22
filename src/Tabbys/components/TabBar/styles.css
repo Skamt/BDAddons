@@ -9,18 +9,19 @@
 
 .new-tab{
 	flex:0 0 auto;
-	padding:2px;
-	aspect-ratio: 1;
-	height:calc(100% * .8);
-	color:white;
+	color: var(--interactive-normal);
+	cursor: pointer;
+	height: var(--space-32);
+	width: var(--space-32);
 }
 
-.new-tab:hover{
-	background:var(--hover-tab-bg);
+.new-tab:hover {
+	color: var(--interactive-hover);
 }
 
-.new-tab:active{
-	background:var(--active-tab-bg);
+.new-tab > svg{
+	height: var(--chat-input-icon-size);
+	width: var(--chat-input-icon-size);
 }
 
 .new-tab-div,

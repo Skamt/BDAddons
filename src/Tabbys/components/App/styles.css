@@ -16,24 +16,23 @@ div:has(> .Tabbys-container):not(#a) {
 	-webkit-app-region: drag;
 }
 
-.Tabbys-divider{
-	height:5px;
+.Tabbys-divider {
+	height: 5px;
 	background:
-	linear-gradient(to right, #0000  0, #ccc3 25%) left center/50% 1px no-repeat,
-	linear-gradient(to left, #0000  0, #ccc3 25%) right center/50%  1px no-repeat;
+		linear-gradient(to right, #0000 0, #ccc3 25%) left center/50% 1px no-repeat,
+		linear-gradient(to left, #0000 0, #ccc3 25%) right center/50% 1px no-repeat;
 	-webkit-app-region: no-drag;
 }
 
-.settings-dropdown{
+.settings-dropdown {
 	background-color: oklab(0.262384 0.00252247 -0.00889932);
 	border-radius: 8px;
 	gap: 5px;
 	padding: 15px;
 	overflow: auto;
-	width:40vw;
+	width: 40vw;
 	max-height: 80vh;
 }
-
 
 .settings-dropdown::-webkit-scrollbar {
 	height: 8px;
@@ -57,20 +56,21 @@ div:has(> .Tabbys-container):not(#a) {
 	background-color: transparent;
 }
 
-.settings-dropdown-btn{
-	color:white;
-	flex:0 0 auto;
-	aspect-ratio:1;
-	height:100%;
+.settings-dropdown-btn {
+	color: white;
+	flex: 0 0 auto;
 	color: var(--interactive-normal);
-	cursor:pointer;
+	cursor: pointer;
 	-webkit-app-region: no-drag;
+	height: var(--space-32);
+	width: var(--space-32);
 }
 
-.settings-dropdown-btn:hover{
-	color:#fffb;
+.settings-dropdown-btn:hover {
+	color: var(--interactive-hover);
 }
 
-.settings-dropdown-btn:active{
-	color:#fff9;
+.settings-dropdown-btn > svg {
+	height: var(--chat-input-icon-size);
+	width: var(--chat-input-icon-size);
 }

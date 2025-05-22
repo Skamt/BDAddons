@@ -43,12 +43,10 @@ function DragThis(comp) {
 // }
 
 function isVisible(el) {
-	const elParentRect = el.parentElement.getBoundingClientRect();
-	const rect = el.getBoundingClientRect();
-	const elemRight = rect.right;
-	const elemLeft = rect.left;
+	const parentRect = el.parentElement.getBoundingClientRect();
+	const childRect = el.getBoundingClientRect();
 
-	return elemLeft >= 0 && elemRight <= elParentRect.width;
+	return childRect.left >= parentRect.left && childRect.right <= parentRect.right;
 }
 
 
