@@ -4,6 +4,7 @@ import { concateClassNames } from "@Utils";
 
 export default ({ delay, spacing, forceShow, position, animation, align, className, renderPopout, children, ...rest }) => {
 	const [show, setShow] = useState(false);
+	const ref = useRef();
 	const leaveRef = useRef();
 	const enterRef = useRef();
 
@@ -31,12 +32,13 @@ export default ({ delay, spacing, forceShow, position, animation, align, classNa
 			<DiscordPopout
 				renderPopout={renderPopout}
 				shouldShow={forceShow || show}
+				targetElementRef={ref}
 				position={position ?? "top"}
 				align={align ?? "left"}
 				animation={animation ?? "1"}
 				spacing={spacing ?? 8}
 				{...rest}>
-				{() => children}
+				{() => React.cloneElement(children, { ref: ref })}
 			</DiscordPopout>
 		</div>
 	);

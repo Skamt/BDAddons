@@ -1,15 +1,14 @@
-import React from "@React";
+import React, {useRef} from "@React";
 import Settings from "@Utils/Settings";
-import Popout from "@Modules/Popout";
-import {PREVIEW_SIZE} from "../Constants";
-
+import { DiscordPopout } from "@Discord/Modules";
+import { PREVIEW_SIZE } from "../Constants";
 
 export default ({ target, previewComponent }) => {
 	const [show, setShow] = Settings.useSetting("previewState");
-
+	const ref = useRef();
 	React.useEffect(() => {
 		function keyupHandler(e) {
-			if(e.key === "Control"){
+			if (e.key === "Control") {
 				setShow(!show);
 			}
 		}
@@ -18,7 +17,7 @@ export default ({ target, previewComponent }) => {
 	}, [show]);
 
 	return (
-		<Popout
+		<DiscordPopout
 			renderPopout={() => (
 				<div
 					className="stickersPreview"
@@ -26,12 +25,13 @@ export default ({ target, previewComponent }) => {
 					{previewComponent}
 				</div>
 			)}
+			targetElementRef={ref}
 			shouldShow={show}
 			position="left"
 			align="bottom"
-			animation="3"
+			animation="1"
 			spacing={60}>
-			{() => target}
-		</Popout>
+			{() => <div ref={ref}>{target}</div>}
+		</DiscordPopout>
 	);
 };

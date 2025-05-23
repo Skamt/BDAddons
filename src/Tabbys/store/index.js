@@ -79,7 +79,6 @@ export const Store = Object.assign(
 );
 
 Object.defineProperty(Store, "state", {
-	writable: false,
 	configurable: false,
 	get: () => Store.getState()
 });

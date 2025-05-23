@@ -52,7 +52,7 @@ function isVisible(el) {
 
 export default DragThis(function BookmarkBar({isOver, canDrop, dropRef, leading, trailing}) {
 	const bookmarks = Store(Store.selectors.bookmarks, (a, b) => a.length === b.length && !a.some((_, i) => a[i].id !== b[i].id));
-
+	const popoutRef = useRef();
 	const bookmarksContainerRef = useRef();
 	const [overflowIndex, setOverflowIndex] = useState(-1);
 	const isOverflowing = overflowIndex > -1;
@@ -105,6 +105,7 @@ export default DragThis(function BookmarkBar({isOver, canDrop, dropRef, leading,
 					position="bottom"
 					align="right"
 					animation="1"
+					targetElementRef={popoutRef}
 					renderPopout={e => {
 						return (
 							// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
@@ -124,6 +125,7 @@ export default DragThis(function BookmarkBar({isOver, canDrop, dropRef, leading,
 					{e => (
 						// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
 						<div
+							ref={popoutRef}
 							className="bookmarks-overflow flex-center"
 							onClick={e.onClick}>
 							<ArrowIcon className="parent-dim" />
