@@ -28,8 +28,6 @@ const Patcher = Api.Patcher;
 const ContextMenu = Api.ContextMenu;
 const Logger = Api.Logger;
 const Webpack = Api.Webpack;
-const findInTree = Api.Utils.findInTree;
-const getInternalInstance = Api.ReactUtils.getInternalInstance.bind(Api.ReactUtils);
 
 // common\Utils\Logger.js
 Logger.patchError = patchId => {
@@ -41,6 +39,16 @@ const getModule = Webpack.getModule;
 const Filters = Webpack.Filters;
 const getMangled = Webpack.getMangled;
 const getStore = Webpack.getStore;
+
+function getModuleAndKey(filter, options) {
+	let module;
+	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
+	module = module?.exports;
+	if (!module) return;
+	const key = Object.keys(module).find(k => module[k] === target);
+	if (!key) return;
+	return { module, key };
+}
 
 // common\DiscordModules\zustand.js
 const { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
@@ -124,8 +132,6 @@ function concateClassNames(...args) {
 }
 
 // src\FloatingChannels\utils.js
-getModule(Filters.byKeys("activityPanel", "panels"), { searchExports: false });
-
 function getChannelName(channel) {
 	if (!channel) return;
 	if (channel.isDM() || channel.isGroupDM()) return channel.rawRecipients.map(getUserName).join(", ");
@@ -159,7 +165,8 @@ const useDraggable = () => {
 				const dx = Math.round(e.clientX - startPos.x);
 				const dy = Math.round(e.clientY - startPos.y);
 				position.current = { dx, dy };
-				targetEl.style.translate = `${dx}px ${dy}px`;
+				targetEl.style.top = `${dy}px`;
+				targetEl.style.left = `${dx}px `;
 			};
 			const handleMouseUp = () => {
 				document.removeEventListener("mousemove", handleMouseMove);
@@ -334,7 +341,7 @@ const useResizable = options => {
 		};
 		return {
 			onMouseDown: handleDown,
-			onTouchStart: handleDown,
+			onTouchStart: handleDown
 		};
 	};
 	return {
@@ -527,7 +534,7 @@ const GuildStore = getStore("GuildStore");
 
 // src\FloatingChannels\components\FloatingChannel.jsx
 const ChannelComp = getModule(m => m?.type?.toString().indexOf("communicationDisabledUntil") > -1);
-const chatInputTypes = BdApi.Webpack.getByKeys("OVERLAY", "NORMAL", { searchExports: true });
+const chatInputTypes = getModule(Filters.byKeys("OVERLAY", "NORMAL"), { searchExports: true });
 const FloatingChannel = React.memo(function FloatingChannel({ id }) {
 	const isFocused = Store(state => state.getFocused() === id);
 	const { channelId } = Store.state.get(id) || {};
@@ -571,66 +578,26 @@ const FloatingWindowContainer = React.memo(() => {
 	);
 });
 
-// src\FloatingChannels\Utils.js
-const activityPanelClasses = getModule(Filters.byKeys("activityPanel", "panels"), { searchExports: false });
-const getFluxContainer = (() => {
-	let userAreaFluxContainer = undefined;
-
-	function tryGetFluxContainer() {
-		const el = document.querySelector(`.${activityPanelClasses.panels}`);
-		if (!el) return;
-		const instance = getInternalInstance(el);
-		if (!instance) return;
-		const res = findInTree(instance, a => a?.type?.prototype?.hasParty, { walkable: ["child", "sibling"] });
-		if (!res) return;
-		return res;
-	}
-	return () => {
-		if (userAreaFluxContainer) return Promise.resolve(userAreaFluxContainer);
-		userAreaFluxContainer = tryGetFluxContainer();
-		if (userAreaFluxContainer) Promise.resolve(userAreaFluxContainer);
-		return new Promise(resolve => {
-			const interval = setInterval(() => {
-				userAreaFluxContainer = tryGetFluxContainer();
-				if (!userAreaFluxContainer) return;
-				resolve(userAreaFluxContainer);
-				clearInterval(interval);
-			}, 500);
-			/* Fail safe */
-			setTimeout(() => {
-				resolve(null);
-				clearInterval(interval);
-			}, 60 * 1000);
-		});
-	};
-})();
-
 // src\FloatingChannels\patches\patchSomething.jsx
+const AppLayerContainer = getModuleAndKey(a => a.displayName === "AppLayerContainer", { searchExports: true });
 const patchSomething = async () => {
-	const fluxContainer = await getFluxContainer();
-	if (!fluxContainer) return Logger.patchError("FlowtingWindowError");
-	Patcher.after(fluxContainer.type.prototype, "render", (_, __, ret) => {
+	if (!AppLayerContainer) return Logger.patchError("PIP");
+	const { module, key } = AppLayerContainer;
+	Patcher.after(module, key, (_, __, ret) => {
 		return [
 			ret,
 			React.createElement(ErrorBoundary, null, React.createElement(FloatingWindowContainer, null))
 		];
 	});
-	fluxContainer.stateNode.forceUpdate();
 };
-async function cleanFluxContainer() {
-	const fluxContainer = await getFluxContainer();
-	if (fluxContainer) fluxContainer.stateNode.forceUpdate();
-}
 
 // src\FloatingChannels\index.jsx
-BdApi.Webpack.getByKeys("OVERLAY", "NORMAL", { searchExports: true });
 class FloatingChannels {
 	start() {
 		try {
 			DOM.addStyle(css);
 			Store.init();
 			patchSomething();
-			// reRender('div[data-windows="true"] > *');
 			this.unpatchContextMenu = patchContextMenu();
 		} catch (e) {
 			Logger.error(e);
@@ -640,135 +607,125 @@ class FloatingChannels {
 		DOM.removeStyle();
 		Store.dispose();
 		Patcher.unpatchAll();
-		cleanFluxContainer();
-		// reRender('div[data-windows="true"] > *');
 		this.unpatchContextMenu?.forEach?.(p => p());
 		this.unpatchContextMenu = null;
-		this.unpatchChatInputType?.();
-		this.unpatchChatInputType = null;
 	}
 }
 
 module.exports = FloatingChannels;
 
-const css = `
-.panels_c48ade.panels_c48ade{
-	z-index:111 ;
-}
-
-.floating-window-root {
+const css = `.floating-window-root {
 	position: fixed;
-	inset:0;
+	inset: 0;
 	z-index: 2999001;
-	pointer-events:none;
+	pointer-events: none;
 	-webkit-app-region: no-drag;
 }
 
-.floating-window-container{
-	position:fixed;
-	pointer-events:initial;
+.floating-window-container {
+	position: fixed;
+	pointer-events: initial;
 	line-height: 1.4;
-	display:grid;
+	display: grid;
 	grid-template-areas:
-	"resizetopleft resizeup resizetopright"
-	"resizeleft title resizeright"
-	"resizeleft content resizeright "
-	"resizebottomleft resizedown resizebottomright"
-	;
+		"resizetopleft resizeup resizetopright"
+		"resizeleft title resizeright"
+		"resizeleft content resizeright "
+		"resizebottomleft resizedown resizebottomright";
 	grid-template-rows: auto auto minmax(0, 1fr) auto;
 	grid-template-columns: auto minmax(0, 1fr) auto;
-	
+
 	flex-direction: column;
-	--border-radius:12px;
-	overflow:hidden;
+	--border-radius: 12px;
+	overflow: hidden;
 	filter: drop-shadow(0px 0px 6px #000a);
 }
 
-.focused-window{
-	z-index:99;
+.focused-window {
+	z-index: 99;
 }
 
-.floating-window-title-bar{
-	display:flex;
-	height:20px;
+.floating-window-title-bar {
+	display: flex;
+	height: 20px;
 	background-color: oklab(0.262384 0.00252247 -0.00889932);
-	padding:8px;
-	grid-area:title;
-	border-radius:var(--border-radius) var(--border-radius) 0 0;
-	z-index:111 ;
+	padding: 8px;
+	grid-area: title;
+	border-radius: var(--border-radius) var(--border-radius) 0 0;
+	z-index: 111;
 }
-.floating-window-title{
-	display:flex;
+.floating-window-title {
+	display: flex;
 	justify-content: center;
 	align-items: center;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
-	color:white;
-}	
+	color: white;
+}
 
-.floating-window-close{
-	width:20px;
-	height:20px;
+.floating-window-close {
+	width: 20px;
+	height: 20px;
 	box-sizing: border-box;
-	display:flex;
+	display: flex;
 	justify-content: center;
 	align-items: center;
-	margin-left:auto;
+	margin-left: auto;
 	color: var(--interactive-normal);
-	cursor:pointer;
+	cursor: pointer;
 }
 
 .floating-window-close:hover {
 	color: var(--interactive-hover);
 }
 
-.floating-window-content{
-	grid-area:content;
-	border-radius:0 0 var(--border-radius) var(--border-radius) ;
+.floating-window-content {
+	grid-area: content;
+	border-radius: 0 0 var(--border-radius) var(--border-radius);
 }
 
-.resize-handle{
-	padding:3px;
-	background:#0000;
-
+.resize-handle {
+	padding: 3px;
+	background: #0000;
 }
-.resize-handle-top{
-	grid-area:resizeup;
-	cursor:ns-resize;
-}
-
-.resize-handle-right{
-	grid-area:resizeright;
-	cursor:ew-resize;
+.resize-handle-top {
+	grid-area: resizeup;
+	cursor: ns-resize;
 }
 
-.resize-handle-bottom{
-	grid-area:resizedown;
-	cursor:ns-resize;
+.resize-handle-right {
+	grid-area: resizeright;
+	cursor: ew-resize;
 }
 
-.resize-handle-left{
-	grid-area:resizeleft;
-	cursor:ew-resize;
+.resize-handle-bottom {
+	grid-area: resizedown;
+	cursor: ns-resize;
 }
 
-.resize-handle-bottom-left{
-	grid-area:resizebottomleft;
+.resize-handle-left {
+	grid-area: resizeleft;
+	cursor: ew-resize;
+}
+
+.resize-handle-bottom-left {
+	grid-area: resizebottomleft;
 	cursor: nesw-resize;
 }
 
-.resize-handle-bottom-right{
-	grid-area:resizebottomright;
+.resize-handle-bottom-right {
+	grid-area: resizebottomright;
 	cursor: nwse-resize;
 }
 
-.resize-handle-top-left{
-	grid-area:resizetopleft;
+.resize-handle-top-left {
+	grid-area: resizetopleft;
 	cursor: nwse-resize;
 }
 
-.resize-handle-top-right{
-	grid-area:resizetopright;
+.resize-handle-top-right {
+	grid-area: resizetopright;
 	cursor: nesw-resize;
-}`;
+}
+`;
