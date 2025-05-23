@@ -50,16 +50,16 @@ const { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelecto
 const subscribeWithSelector = getModule(Filters.byStrings("equalityFn", "fireImmediately"), { searchExports: true });
 const zustand$1 = zustand;
 
+// common\DiscordModules\Modules.js
+const Dispatcher = getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: false });
+
 // src\FloatingChannels\Store.js
 const Store = Object.assign(
 	zustand$1(
 		subscribeWithSelector((set, get) => {
 			return {
 				focused: null,
-				windows: [{
-					"channelId": "1329545977698455785",
-					"id": "c53d4000-2c76-41c4-b266-528be75d0b5d"
-				}],
+				windows: [],
 				clear() {
 					set({ windows: [], focused: null });
 				},
@@ -85,9 +85,12 @@ const Store = Object.assign(
 			};
 		})
 	), {
-		init() {},
+		init() {
+			Dispatcher.subscribe("CONNECTION_OPEN", Store.state.clear);
+		},
 		dispose() {
 			Store.state.clear();
+			Dispatcher.unsubscribe("CONNECTION_OPEN", Store.state.clear);
 		},
 		selectors: {
 			windows: state => state.windows
