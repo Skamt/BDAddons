@@ -1,7 +1,7 @@
 /**
  * @name SpotifyEnhance
  * @description All in one better spotify-discord experience.
- * @version 1.0.16
+ * @version 1.0.17
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "SpotifyEnhance",
-		"version": "1.0.16",
+		"version": "1.0.17",
 		"description": "All in one better spotify-discord experience.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance",
@@ -44,7 +44,6 @@ const UI = Api.UI;
 const DOM = Api.DOM;
 const Data = Api.Data;
 const React = Api.React;
-const ReactDOM = Api.ReactDOM;
 const Patcher = Api.Patcher;
 const ContextMenu$1 = Api.ContextMenu;
 const Logger = Api.Logger;
@@ -92,6 +91,10 @@ const SelectedChannelStore = getStore("SelectedChannelStore");
 const SpotifyStore = getStore("SpotifyStore");
 
 // common\Utils.jsx
+function concateClassNames(...args) {
+	return args.filter(Boolean).join(" ");
+}
+
 function shallow(objA, objB) {
 	if (Object.is(objA, objB)) return true;
 	if (typeof objA !== "object" || objA === null || typeof objB !== "object" || objB === null) return false;
@@ -153,7 +156,8 @@ function getReply(channelId) {
 			}
 	};
 }
-async function sendMessageDirectly(channel, content) {
+
+function sendMessageDirectly(channel, content) {
 	if (!MessageActions || !MessageActions.sendMessage || typeof MessageActions.sendMessage !== "function") throw new Error("Can't send message directly.");
 	return MessageActions.sendMessage(
 		channel.id, {
@@ -874,7 +878,6 @@ const Store = Object.assign(
 	}
 );
 Object.defineProperty(Store, "state", {
-	writeable: false,
 	configurable: false,
 	get: () => Store.getState()
 });
@@ -931,6 +934,10 @@ function onAccountsChanged() {
 	}
 }
 
+// common\React.js
+const useState = React.useState;
+const useRef = React.useRef;
+
 // @Modules\Heading
 const Heading = getModule(a => a?.render?.toString().includes("data-excessive-heading-level"), { searchExports: true });
 
@@ -965,7 +972,7 @@ function Collapsible({ title, children }) {
 }
 
 // common\Components\Gap\index.jsx
-function Gap({ direction, gap }) {
+function Gap({ direction, gap, className }) {
 	const style = {
 		VERTICAL: {
 			width: gap,
@@ -976,7 +983,7 @@ function Gap({ direction, gap }) {
 			width: "100%"
 		}
 	} [direction];
-	return React.createElement('div', { style: style, });
+	return React.createElement('div', { style: style, className: className, });
 }
 Gap.direction = {
 	HORIZONTAL: "HORIZONTAL",
@@ -988,27 +995,29 @@ const SettingsStoreSelectors = {};
 const persistMiddleware = config => (set, get, api) => config(args => (set(args), Data.save("settings", get().getRawState())), get, api);
 const SettingsStore = Object.assign(
 	zustand$1(
-		persistMiddleware((set, get) => {
-			const settingsObj = Object.create(null);
-			for (const [key, value] of Object.entries({
-					...config.settings,
-					...Data.load("settings")
-				})) {
-				settingsObj[key] = value;
-				settingsObj[`set${key}`] = newValue => set({
-					[key]: newValue });
-				SettingsStoreSelectors[key] = state => state[key];
-			}
-			settingsObj.getRawState = () => {
-				return Object.entries(get())
-					.filter(([, val]) => typeof val !== "function")
-					.reduce((acc, [key, val]) => {
-						acc[key] = val;
-						return acc;
-					}, {});
-			};
-			return settingsObj;
-		})
+		persistMiddleware(
+			subscribeWithSelector((set, get) => {
+				const settingsObj = Object.create(null);
+				for (const [key, value] of Object.entries({
+						...config.settings,
+						...Data.load("settings")
+					})) {
+					settingsObj[key] = value;
+					settingsObj[`set${key}`] = newValue => set({
+						[key]: newValue });
+					SettingsStoreSelectors[key] = state => state[key];
+				}
+				settingsObj.getRawState = () => {
+					return Object.entries(get())
+						.filter(([, val]) => typeof val !== "function")
+						.reduce((acc, [key, val]) => {
+							acc[key] = val;
+							return acc;
+						}, {});
+				};
+				return settingsObj;
+			})
+		)
 	), {
 		useSetting: function(key) {
 			return this(state => [state[key], state[`set${key}`]]);
@@ -1017,12 +1026,16 @@ const SettingsStore = Object.assign(
 	}
 );
 Object.defineProperty(SettingsStore, "state", {
-	writeable: false,
 	configurable: false,
 	get() {
 		return this.getState();
 	}
 });
+
+function renderListener(content, [selector, eqFn = Object.is], shouldShow, memo) {
+	const wrappedComp = () => (shouldShow(SettingsStore(selector, eqFn)) ? content : null);
+	return React.createElement(memo ? React.memo(wrappedComp) : wrappedComp);
+}
 const Settings = SettingsStore;
 
 // @Modules\FormSwitch
@@ -1093,65 +1106,48 @@ const Button = Button$1 ||
 // common\DiscordModules\Modules.js
 const DiscordPopout = getModule(Filters.byPrototypeKeys("shouldShowPopout", "toggleShow"), { searchExports: true });
 
-// common\React.js
-const useState = React.useState;
-const useEffect = React.useEffect;
-const useRef = React.useRef;
-
 // common\Components\Popout\index.jsx
-const Popout = ({ showOnContextMenu, showOnClick, delay, spacing, forceShow, position, animation, align, className, renderPopout, children, ...rest }) => {
+const Popout = ({ delay, spacing, forceShow, position, animation, align, className, renderPopout, children, ...rest }) => {
 	const [show, setShow] = useState(false);
+	const ref = useRef();
 	const leaveRef = useRef();
 	const enterRef = useRef();
-	useEffect(() => {
-		if (!showOnClick && !showOnContextMenu) return;
-
-		function clickHandler() {
-			setShow(false);
-		}
-		window.addEventListener("click", clickHandler);
-		return () => window.removeEventListener("click", clickHandler);
-	}, []);
-	const clickHandler = e => {
-		e.stopPropagation();
-		setShow(!show);
-	};
-	const mouseLeaveHandler = () => {
-		clearTimeout(enterRef.current);
-		enterRef.current = null;
-		leaveRef.current = setTimeout(() => {
-			setShow(false);
-			leaveRef.current = null;
-		}, 150);
-	};
-	const mouseEnterHandler = () => {
-		if (leaveRef.current) {
-			clearTimeout(leaveRef.current);
-			leaveRef.current = null;
-			return;
-		}
-		enterRef.current = setTimeout(() => {
-			setShow(true);
-		}, delay || 150);
-	};
 	return (
 		React.createElement('div', {
-			className: `${config.info.name}-popout-container ${className ? className : ""}`,
-			onClick: !showOnClick ? nop : clickHandler,
-			onContextMenu: !showOnContextMenu ? nop : clickHandler,
-			onMouseLeave: showOnContextMenu || showOnClick ? nop : mouseLeaveHandler,
-			onMouseEnter: showOnContextMenu || showOnClick ? nop : mouseEnterHandler,
+			className: concateClassNames(`${config.info.name}-popout-container`, className),
+			onMouseLeave: () => {
+				clearTimeout(enterRef.current);
+				enterRef.current = null;
+				leaveRef.current = setTimeout(() => {
+					setShow(false);
+					leaveRef.current = null;
+				}, 150);
+			},
+			onMouseEnter: () => {
+				if (leaveRef.current) {
+					clearTimeout(leaveRef.current);
+					leaveRef.current = null;
+					return;
+				}
+				enterRef.current = setTimeout(() => {
+					setShow(true);
+				}, delay || 150);
+			},
 		}, React.createElement(DiscordPopout, {
 			renderPopout: renderPopout,
 			shouldShow: forceShow || show,
+			targetElementRef: ref,
 			position: position ?? "top",
 			align: align ?? "left",
 			animation: animation ?? "1",
 			spacing: spacing ?? 8,
 			...rest,
-		}, () => children))
+		}, () => React.cloneElement(children, { ref: ref })))
 	);
 };
+
+// common\Components\Flex\index.jsx
+const Flex = getModule(a => a.defaultProps?.direction, { searchExports: true });
 
 // common\Components\ContextMenu\index.jsx
 const { Item: MenuItem$1, Menu, Separator: MenuSeparator } = ContextMenu$1;
@@ -1177,11 +1173,9 @@ function parseMenuItems(items) {
 	});
 }
 
-function ContextMenu({ showOnContextMenu, showOnClick, children, menuItems, position = "top", align = "left", className, menuClassName }) {
+function ContextMenu({ children, menuItems, position = "top", align = "left", className, menuClassName }) {
 	return (
 		React.createElement(Popout, {
-			showOnClick: showOnClick,
-			showOnContextMenu: showOnContextMenu,
 			renderPopout: t => (
 				React.createElement(Menu, {
 					className: menuClassName,
@@ -1203,15 +1197,14 @@ const Tooltip$1 = getModule(Filters.byPrototypeKeys("renderTooltip"), { searchEx
 const Tooltip = ({ note, position, children }) => {
 	return (
 		React.createElement(Tooltip$1, {
-			text: note,
-			position: position || "top",
-		}, props => {
-			children.props = {
+				text: note,
+				position: position || "top",
+			}, props =>
+			React.cloneElement(children, {
 				...props,
 				...children.props
-			};
-			return children;
-		})
+			})
+		)
 	);
 };
 
@@ -1492,9 +1485,10 @@ const SpotifyPlayerControls = () => {
 	);
 };
 
-function SpotifyPlayerButton({ className, active, name, value, ...rest }) {
+function SpotifyPlayerButton({ className, ref, active, name, value, ...rest }) {
 	return (
 		React.createElement(Tooltip, { note: name, }, React.createElement(Button, {
+			buttonRef: ref,
 			innerClassName: "flexCenterCenter",
 			className: `spotify-player-controls-btn ${className} ${active ? "enabled" : ""}`,
 			size: Button.Sizes.NONE,
@@ -1671,6 +1665,7 @@ const ModalActions = BdApi.Webpack.getMangled("onCloseRequest:null!=", {
 	openModal: Filters.byStrings("onCloseRequest:null!="),
 	closeModal: Filters.byStrings(".setState", ".getState()[")
 });
+// const _openModal =  getModule( Filters.byStrings("onCloseCallback", "onCloseRequest", "modalKey", "backdropStyle"), { searchExports: true });
 const openModal = (children, tag, modalClassName = "") => {
 	const id = `${tag ? `${tag}-` : ""}modal`;
 	ModalActions.openModal(props => {
@@ -1834,14 +1829,25 @@ const SpotifyPlayer = React.memo(function SpotifyPlayer() {
 });
 
 // src\SpotifyEnhance\patches\patchSpotifyPlayer.jsx
+React.memo(function Listener() {
+	const [player, spotifyPlayerPlace] = Settings(_ => [_.player, _.spotifyPlayerPlace], shallow);
+	if (spotifyPlayerPlace !== PlayerPlaceEnum.USERAREA) return;
+	if (!player) return;
+	return (
+		React.createElement(ErrorBoundary, { id: "SpotifyPlayer", }, React.createElement(SpotifyPlayer, null))
+	);
+});
 const patchSpotifyPlayer = async () => {
 	const fluxContainer = await getFluxContainer();
 	if (!fluxContainer) return Logger.patchError("SpotifyPlayer");
 	Patcher.after(fluxContainer.type.prototype, "render", (_, __, ret) => {
-		if (Settings.state.spotifyPlayerPlace !== PlayerPlaceEnum.USERAREA) return ret;
-		if (Array.isArray(ret)) return;
 		return [
-			React.createElement(ErrorBoundary, { id: "SpotifyPlayer", }, React.createElement(SpotifyPlayer, null)),
+			renderListener(
+				React.createElement(ErrorBoundary, { id: "SpotifyPlayer", }, React.createElement(SpotifyPlayer, null)),
+				[_ => [_.player, _.spotifyPlayerPlace], shallow],
+				([player, place]) => place === PlayerPlaceEnum.USERAREA && player,
+				true
+			),
 			ret
 		];
 	});
@@ -2351,7 +2357,7 @@ const MessageComponentAccessories = getModule(Filters.byPrototypeKeys("renderPol
 const urlRegex = /((?:https?|steam):\/\/[^\s<]+[^<.,:;"'\]\s])/g;
 const MessageStateContext = React.createContext(null);
 const patchMessageComponentAccessories = () => {
-	if (!MessageComponentAccessories) return Logger.patch("patchMessageComponentAccessories");
+	if (!MessageComponentAccessories) return Logger.patchError("patchMessageComponentAccessories");
 	Patcher.before(MessageComponentAccessories.prototype, "renderEmbeds", (_, args) => {
 		const message = args[0];
 		const urlMatches = message.content.match(urlRegex) || [];
@@ -2441,6 +2447,25 @@ async function patchSpotifySocket() {
 	});
 }
 
+// src\SpotifyEnhance\patches\patchLayer.jsx
+const AppLayerContainer = getModuleAndKey(a => a.displayName === "AppLayerContainer", { searchExports: true });
+const Draggable = getBySource("edgeOffsetBottom", "defaultPosition")?.Z;
+const patchLayer = async () => {
+	if (!AppLayerContainer) return Logger.patchError("PIP");
+	const { module, key } = AppLayerContainer;
+	Patcher.after(module, key, (_, __, ret) => {
+		return [
+			ret,
+			renderListener(
+				React.createElement(ErrorBoundary, { id: "PIP", }, React.createElement('div', { className: "pipContainer", }, React.createElement(Draggable, null, React.createElement(SpotifyPlayer, null)))),
+				[_ => [_.player, _.spotifyPlayerPlace], shallow],
+				([player, place]) => place === PlayerPlaceEnum.PIP && player,
+				true
+			)
+		];
+	});
+};
+
 // @Patch\MessageHeader
 const MessageHeader = getModuleAndKey(Filters.byStrings("userOverride", "withMentionPrefix"), { searchExports: false }) || {};
 
@@ -2471,9 +2496,6 @@ function SpotifyActivityIndicator({ userId }) {
 		}))
 	);
 }
-
-// common\Components\Flex\index.jsx
-const Flex = getModule(a => a.defaultProps?.direction, { searchExports: true });
 
 // src\SpotifyEnhance\patches\patchChannelAttach.jsx
 const { Item: MenuItem } = ContextMenu$1;
@@ -2523,32 +2545,6 @@ const patchChannelAttach = () => {
 	});
 };
 
-// src\SpotifyEnhance\pip.jsx
-const pipContainer = Object.assign(document.createElement("div"), { className: "pipContainer" });
-const Pip = {
-	init() {
-		document.body.appendChild(pipContainer);
-		this.root = ReactDOM.createRoot(pipContainer);
-		this.root.render(
-			React.createElement(ErrorBoundary, null, React.createElement(PipContainer, null))
-		);
-	},
-	dispose() {
-		this.root.unmount();
-		pipContainer.remove();
-	}
-};
-const Draggable = getBySource("edgeOffsetBottom", "defaultPosition")?.Z;
-
-function PipContainer() {
-	const [player, spotifyPlayerPlace] = Settings(_ => [_.player, _.spotifyPlayerPlace], shallow);
-	if (spotifyPlayerPlace !== PlayerPlaceEnum.PIP) return;
-	if (!player) return;
-	return (
-		React.createElement(Draggable, null, React.createElement(SpotifyPlayer, null))
-	);
-}
-
 // src\SpotifyEnhance\index.jsx
 class SpotifyEnhance {
 	async start() {
@@ -2556,7 +2552,7 @@ class SpotifyEnhance {
 			DOM.addStyle(css);
 			await DB.init();
 			Store.init();
-			Pip.init();
+			patchLayer();
 			patchListenAlong();
 			patchSpotifyEmbed();
 			patchMessageComponentAccessories();
@@ -2573,7 +2569,6 @@ class SpotifyEnhance {
 		try {
 			DB.dispose();
 			Store.dispose();
-			Pip.dispose();
 			DOM.removeStyle();
 			Patcher.unpatchAll();
 			cleanFluxContainer();
@@ -2628,10 +2623,13 @@ const css = `:root {
 	margin: 0 0.25rem 0 0.25rem;
 }
 
+
+
 .pipContainer{
-	position: absolute;
+	position: fixed;
 	inset:0;
 	pointer-events:none;
+	z-index:999;
 }
 
 .pipContainer .spotify-player-container {
@@ -2810,169 +2808,6 @@ const css = `:root {
 	left:0px;
 	rotate:-90deg;
 }
-.spotify-player-controls {
-	display: flex;
-	justify-content: space-between;
-	width: 100%;
-	overflow: hidden;
-}
-
-.spotify-player-controls svg {
-	width: 16px;
-	height: 16px;
-}
-
-.spotify-player-controls-btn {
-	padding: 3px !important;
-	color: #ccc;
-	transition: all 100ms linear;
-	border-radius: 5px;
-}
-
-.spotify-player-controls-btn:hover {
-	background: #ccc3;
-	color: fff;
-	scale: 1.1;
-}
-
-.spotify-player-controls-btn.enabled {
-	color: var(--SpotifyEnhance-spotify-green);
-}
-
-.spotify-player-controls-volume-slider-wrapper {
-	height: 160px;
-	width: 25px;
-	background: var(--background-floating);
-	padding: 5px 3px;
-	border-radius: 99px;
-	display: flex;
-	flex-direction: column;
-	box-sizing:border-box;
-}
-
-.spotify-player-controls-volume-slider {
-	margin: 0;
-	width: 100%;
-	min-height: 0;
-	accent-color: var(--SpotifyEnhance-spotify-green);
-	flex: 1 0 0;
-	appearance: slider-vertical;
-}
-
-.spotify-player-controls-volume-label {
-	color:white;
-	width:100%;
-	border-top:1px solid rgba(78, 80, 88);
-	font-size:.85rem;
-	margin-top:5px;
-	padding-top:5px;
-	text-align:center;
-}
-.spotify-player-media {
-	color: white;
-	font-size: 0.9rem;
-	overflow: hidden;
-	display: grid;
-	column-gap: 10px;
-	z-index: 5;
-	grid-template-columns: 64px minmax(0, 1fr);
-	grid-template-rows: repeat(3, 1fr);
-	align-items: center;
-	justify-items: flex-start;
-	grid-template-areas:
-		"banner title"
-		"banner artist"
-		"banner album";
-}
-
-.spotify-player-title {
-	grid-area: title;
-	font-weight: bold;
-	color: #fff;
-	font-size: 1.05rem;
-	max-width: 100%;
-}
-
-.spotify-player-title:first-child {
-	grid-column: 1/-1;
-	grid-row: 1/-1;
-	margin-bottom: 5px;
-}
-
-.spotify-player-artist {
-	grid-area: artist;
-	font-size: 0.8rem;
-	max-width: 100%;
-}
-
-.spotify-player-album {
-	grid-area: album;
-	max-width: 100%;
-}
-
-.spotify-player-album > div,
-.spotify-player-artist > div {
-	display: flex;
-	gap: 5px;
-}
-
-.spotify-player-album span,
-.spotify-player-artist span {
-	color: var(--SpotifyEnhance-text-sub);
-}
-
-.spotify-player-banner {
-	grid-area: banner;
-	cursor: pointer;
-	width: 64px;
-	height: 64px;
-	background:
-		var(--banner-lg) center/cover no-repeat,
-		#b2b2b217;
-	border-radius: 5px;
-}
-
-.spotify-player-timeline {
-	user-select: none;
-	margin-bottom: 2px;
-	color:white;
-	display: flex;
-	flex-wrap: wrap;
-	font-size: 0.8rem;
-	flex: 1;
-}
-
-.spotify-player-timeline-progress {
-	flex: 1;
-}
-
-.spotify-player-timeline-trackbar {
-	cursor: pointer;
-}
-
-.spotify-player-timeline:hover .spotify-player-timeline-trackbar-grabber {
-	opacity: 1;
-}
-
-.spotify-player-timeline .spotify-player-timeline-trackbar-grabber {
-	opacity: 0;
-	--grabber-size:12px;
-	cursor: grab;
-}
-
-.spotify-player-timeline .spotify-player-timeline-trackbar-bar {
-	background: hsl(0deg 0% 100% / 30%);
-}
-
-.spotify-player-timeline .spotify-player-timeline-trackbar-bar > div {
-	background: #fff;
-	border-radius: 4px;
-	box-sizing:border-box;
-}
-
-.spotify-player-timeline:hover .spotify-player-timeline-trackbar-bar > div {
-	background: var(--SpotifyEnhance-spotify-green);
-}
 .spotify-embed-plus {
 	display: flex;
 	min-width: 400px;
@@ -3126,6 +2961,169 @@ const css = `:root {
 	}
 }
 
+
+.spotify-player-controls {
+	display: flex;
+	justify-content: space-between;
+	width: 100%;
+	overflow: hidden;
+}
+
+.spotify-player-controls svg {
+	width: 16px;
+	height: 16px;
+}
+
+.spotify-player-controls-btn {
+	padding: 3px !important;
+	color: #ccc;
+	transition: all 100ms linear;
+	border-radius: 5px;
+}
+
+.spotify-player-controls-btn:hover {
+	background: #ccc3;
+	color: fff;
+	scale: 1.1;
+}
+
+.spotify-player-controls-btn.enabled {
+	color: var(--SpotifyEnhance-spotify-green);
+}
+
+.spotify-player-controls-volume-slider-wrapper {
+	height: 160px;
+	width: 25px;
+	background: var(--background-floating);
+	padding: 5px 3px;
+	border-radius: 99px;
+	display: flex;
+	flex-direction: column;
+	box-sizing:border-box;
+}
+
+.spotify-player-controls-volume-slider {
+	margin: 0;
+	width: 100%;
+	min-height: 0;
+	accent-color: var(--SpotifyEnhance-spotify-green);
+	flex: 1 0 0;
+	appearance: slider-vertical;
+}
+
+.spotify-player-controls-volume-label {
+	color:white;
+	width:100%;
+	border-top:1px solid rgba(78, 80, 88);
+	font-size:.85rem;
+	margin-top:5px;
+	padding-top:5px;
+	text-align:center;
+}
+.spotify-player-timeline {
+	user-select: none;
+	margin-bottom: 2px;
+	color:white;
+	display: flex;
+	flex-wrap: wrap;
+	font-size: 0.8rem;
+	flex: 1;
+}
+
+.spotify-player-timeline-progress {
+	flex: 1;
+}
+
+.spotify-player-timeline-trackbar {
+	cursor: pointer;
+}
+
+.spotify-player-timeline:hover .spotify-player-timeline-trackbar-grabber {
+	opacity: 1;
+}
+
+.spotify-player-timeline .spotify-player-timeline-trackbar-grabber {
+	opacity: 0;
+	--grabber-size:12px;
+	cursor: grab;
+}
+
+.spotify-player-timeline .spotify-player-timeline-trackbar-bar {
+	background: hsl(0deg 0% 100% / 30%);
+}
+
+.spotify-player-timeline .spotify-player-timeline-trackbar-bar > div {
+	background: #fff;
+	border-radius: 4px;
+	box-sizing:border-box;
+}
+
+.spotify-player-timeline:hover .spotify-player-timeline-trackbar-bar > div {
+	background: var(--SpotifyEnhance-spotify-green);
+}
+.spotify-player-media {
+	color: white;
+	font-size: 0.9rem;
+	overflow: hidden;
+	display: grid;
+	column-gap: 10px;
+	z-index: 5;
+	grid-template-columns: 64px minmax(0, 1fr);
+	grid-template-rows: repeat(3, 1fr);
+	align-items: center;
+	justify-items: flex-start;
+	grid-template-areas:
+		"banner title"
+		"banner artist"
+		"banner album";
+}
+
+.spotify-player-title {
+	grid-area: title;
+	font-weight: bold;
+	color: #fff;
+	font-size: 1.05rem;
+	max-width: 100%;
+}
+
+.spotify-player-title:first-child {
+	grid-column: 1/-1;
+	grid-row: 1/-1;
+	margin-bottom: 5px;
+}
+
+.spotify-player-artist {
+	grid-area: artist;
+	font-size: 0.8rem;
+	max-width: 100%;
+}
+
+.spotify-player-album {
+	grid-area: album;
+	max-width: 100%;
+}
+
+.spotify-player-album > div,
+.spotify-player-artist > div {
+	display: flex;
+	gap: 5px;
+}
+
+.spotify-player-album span,
+.spotify-player-artist span {
+	color: var(--SpotifyEnhance-text-sub);
+}
+
+.spotify-player-banner {
+	grid-area: banner;
+	cursor: pointer;
+	width: 64px;
+	height: 64px;
+	background:
+		var(--banner-lg) center/cover no-repeat,
+		#b2b2b217;
+	border-radius: 5px;
+}
 
 .downloadLink {
 	color: white !important;

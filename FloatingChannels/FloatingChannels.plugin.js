@@ -86,11 +86,11 @@ const Store = Object.assign(
 		})
 	), {
 		init() {
-			Dispatcher.subscribe("CONNECTION_OPEN", Store.state.clear);
+			Dispatcher.subscribe("LOGOUT", Store.state.clear);
 		},
 		dispose() {
 			Store.state.clear();
-			Dispatcher.unsubscribe("CONNECTION_OPEN", Store.state.clear);
+			Dispatcher.unsubscribe("LOGOUT", Store.state.clear);
 		},
 		selectors: {
 			windows: state => state.windows
