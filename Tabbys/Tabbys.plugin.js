@@ -491,7 +491,6 @@ const SettingsStore = Object.assign(
 	}
 );
 Object.defineProperty(SettingsStore, "state", {
-	writeable: false,
 	configurable: false,
 	get() {
 		return this.getState();
@@ -663,7 +662,6 @@ const Store = Object.assign(
 	}
 );
 Object.defineProperty(Store, "state", {
-	writeable: false,
 	configurable: false,
 	get: () => Store.getState()
 });
@@ -955,6 +953,7 @@ function isVisible(el) {
 }
 const BookmarkBar = DragThis$2(function BookmarkBar({ isOver, canDrop, dropRef, leading, trailing }) {
 	const bookmarks = Store(Store.selectors.bookmarks, (a, b) => a.length === b.length && !a.some((_, i) => a[i].id !== b[i].id));
+	const popoutRef = useRef();
 	const bookmarksContainerRef = useRef();
 	const [overflowIndex, setOverflowIndex] = useState(-1);
 	const isOverflowing = overflowIndex > -1;
@@ -997,6 +996,7 @@ const BookmarkBar = DragThis$2(function BookmarkBar({ isOver, canDrop, dropRef, 
 				position: "bottom",
 				align: "right",
 				animation: "1",
+				targetElementRef: popoutRef,
 				renderPopout: e => {
 					return (
 						React.createElement('div', {
@@ -1013,6 +1013,7 @@ const BookmarkBar = DragThis$2(function BookmarkBar({ isOver, canDrop, dropRef, 
 				spacing: 8,
 			}, e => (
 				React.createElement('div', {
+					ref: popoutRef,
 					className: "bookmarks-overflow flex-center",
 					onClick: e.onClick,
 				}, React.createElement(ArrowIcon, { className: "parent-dim", }))
@@ -1748,10 +1749,12 @@ const SettingComponent = () => {
 
 // src\Tabbys\components\App\SettingsDropdown.jsx
 const SettingsDropdown = React.memo(function SettingsDropdown() {
+	const ref = useRef();
 	return (
 		React.createElement(DiscordPopout, {
 			position: "bottom",
 			align: "right",
+			targetElementRef: ref,
 			animation: 1,
 			spacing: 8,
 			renderPopout: () => (
@@ -1760,6 +1763,7 @@ const SettingsDropdown = React.memo(function SettingsDropdown() {
 		}, e => {
 			return (
 				React.createElement('div', {
+					ref: ref,
 					onClick: e.onClick,
 					className: "settings-dropdown-btn flex-center",
 				}, React.createElement(SettingIcon, { className: "parent-dim", }))
@@ -2230,6 +2234,43 @@ div:has(> .Tabbys-container):not(#a) {
 	width: var(--chat-input-icon-size);
 }
 
+.tabs-container {
+	min-width:0;
+	gap:2px;
+	position:relative;
+	margin-right:auto;
+	height:100%;
+	-webkit-app-region: no-drag;
+}
+
+.new-tab{
+	flex:0 0 auto;
+	color: var(--interactive-normal);
+	cursor: pointer;
+	height: var(--space-32);
+	width: var(--space-32);
+}
+
+.new-tab:hover {
+	color: var(--interactive-hover);
+}
+
+.new-tab > svg{
+	height: var(--chat-input-icon-size);
+	width: var(--chat-input-icon-size);
+}
+
+.new-tab-div,
+.tab-div{
+	height:calc(var(--size) * .8);
+	border: 1px solid #ccc5;	
+}
+
+.tab-div{
+	margin: auto var(--tab-divider-size);
+}
+
+
 .bookmarkbar {
 	-webkit-app-region: no-drag;
 	display: flex;
@@ -2299,62 +2340,6 @@ div:has(> .Tabbys-container):not(#a) {
 .bookmarks-overflow-popout::-webkit-scrollbar-corner {
 	background-color: transparent;
 }
-
-.tabs-container {
-	min-width:0;
-	gap:2px;
-	position:relative;
-	margin-right:auto;
-	height:100%;
-	-webkit-app-region: no-drag;
-}
-
-.new-tab{
-	flex:0 0 auto;
-	color: var(--interactive-normal);
-	cursor: pointer;
-	height: var(--space-32);
-	width: var(--space-32);
-}
-
-.new-tab:hover {
-	color: var(--interactive-hover);
-}
-
-.new-tab > svg{
-	height: var(--chat-input-icon-size);
-	width: var(--chat-input-icon-size);
-}
-
-.new-tab-div,
-.tab-div{
-	height:calc(var(--size) * .8);
-	border: 1px solid #ccc5;	
-}
-
-.tab-div{
-	margin: auto var(--tab-divider-size);
-}
-
-
-.bookmark{
-	justify-content:flex-start;
-}
-
-.bookmark:hover{
-	background:#353333;
-}
-
-.bookmark:active{
-	background:#353333;
-}
-
-.bookmark > .bookmark-title {
-	color:#a7a7a7;
-	font-size:calc(var(--size) * .6);
-}
-
-
 
 .tab {
 	min-width:	min-content;
@@ -2441,6 +2426,25 @@ div:has(> .Tabbys-container):not(#a) {
 .right-arrow {
 	right: 0;
 }
+
+.bookmark{
+	justify-content:flex-start;
+}
+
+.bookmark:hover{
+	background:#353333;
+}
+
+.bookmark:active{
+	background:#353333;
+}
+
+.bookmark > .bookmark-title {
+	color:#a7a7a7;
+	font-size:calc(var(--size) * .6);
+}
+
+
 
 .badge {
 	width: 16px;

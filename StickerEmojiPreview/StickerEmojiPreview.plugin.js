@@ -50,9 +50,9 @@ function getModuleAndKey(filter, options) {
 	let module;
 	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
 	module = module?.exports;
-	if (!module) return {};
+	if (!module) return;
 	const key = Object.keys(module).find(k => module[k] === target);
-	if (!key) return {};
+	if (!key) return;
 	return { module, key };
 }
 
@@ -62,18 +62,23 @@ const ExpressionPickerInspector = getModuleAndKey(Filters.byStrings("graphicPrim
 // @Patch\CloseExpressionPicker
 const CloseExpressionPicker = getModuleAndKey(Filters.byStrings("activeView:null,activeViewType:null"), { searchExports: true }) || {};
 
-// common\DiscordModules\Modules.js
+// common\React.js
+const useRef = React.useRef;
+
+// common\DiscordModules\zustand.js
 const { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
 	_: Filters.byStrings("subscribe"),
 	zustand: () => true
 });
+const subscribeWithSelector = getModule(Filters.byStrings("equalityFn", "fireImmediately"), { searchExports: true });
+const zustand$1 = zustand;
 
 // common\Utils\Settings.js
 const SettingsStoreSelectors = {};
 const persistMiddleware = config => (set, get, api) => config(args => (set(args), Data.save("settings", get().getRawState())), get, api);
 const SettingsStore = Object.assign(
-	zustand(
-		persistMiddleware((set, get) => {
+	zustand$1(
+		persistMiddleware(subscribeWithSelector((set, get) => {
 			const settingsObj = Object.create(null);
 			for (const [key, value] of Object.entries({
 					...config.settings,
@@ -93,7 +98,7 @@ const SettingsStore = Object.assign(
 					}, {});
 			};
 			return settingsObj;
-		})
+		}))
 	), {
 		useSetting: function(key) {
 			return this(state => [state[key], state[`set${key}`]]);
@@ -102,7 +107,6 @@ const SettingsStore = Object.assign(
 	}
 );
 Object.defineProperty(SettingsStore, "state", {
-	writeable: false,
 	configurable: false,
 	get() {
 		return this.getState();
@@ -110,8 +114,8 @@ Object.defineProperty(SettingsStore, "state", {
 });
 const Settings = SettingsStore;
 
-// @Modules\Popout
-const Popout = getModule(Filters.byPrototypeKeys("shouldShowPopout", "toggleShow"), { searchExports: true });
+// common\DiscordModules\Modules.js
+const DiscordPopout = getModule(Filters.byPrototypeKeys("shouldShowPopout", "toggleShow"), { searchExports: true });
 
 // src\StickerEmojiPreview\Constants.js
 const PREVIEW_SIZE = 300;
@@ -120,6 +124,7 @@ const PREVIEW_UNAVAILABLE = `data:image/svg+xml,<svg xmlns="http://www.w3.org/20
 // src\StickerEmojiPreview\components\PreviewComponent.jsx
 const PreviewComponent = ({ target, previewComponent }) => {
 	const [show, setShow] = Settings.useSetting("previewState");
+	const ref = useRef();
 	React.useEffect(() => {
 		function keyupHandler(e) {
 			if (e.key === "Control") {
@@ -130,19 +135,20 @@ const PreviewComponent = ({ target, previewComponent }) => {
 		return () => document.removeEventListener("keyup", keyupHandler);
 	}, [show]);
 	return (
-		React.createElement(Popout, {
+		React.createElement(DiscordPopout, {
 			renderPopout: () => (
 				React.createElement('div', {
 					className: "stickersPreview",
 					style: { width: `${PREVIEW_SIZE}px` },
 				}, previewComponent)
 			),
+			targetElementRef: ref,
 			shouldShow: show,
 			position: "left",
 			align: "bottom",
-			animation: "3",
+			animation: "1",
 			spacing: 60,
-		}, () => target)
+		}, () => React.createElement('div', { ref: ref, }, target))
 	);
 };
 
