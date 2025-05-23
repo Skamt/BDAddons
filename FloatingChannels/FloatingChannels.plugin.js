@@ -56,7 +56,10 @@ const Store = Object.assign(
 		subscribeWithSelector((set, get) => {
 			return {
 				focused: null,
-				windows: [],
+				windows: [{
+					"channelId": "1329545977698455785",
+					"id": "c53d4000-2c76-41c4-b266-528be75d0b5d"
+				}],
 				clear() {
 					set({ windows: [], focused: null });
 				},
@@ -199,7 +202,7 @@ const useResizable = options => {
 		if (!handleProps) {
 			handleProps = {};
 		}
-		const { parent = parentRef, interval = 1, maxHeight = Number.MAX_SAFE_INTEGER, maxWidth = Number.MAX_SAFE_INTEGER, reverse, lockHorizontal, lockVertical, onResize, onDragEnd, onDragStart, minHeight = 0, minWidth = 0, disabled = false, maintainAspectRatio = false } = Object.assign(Object.assign({}, props), handleProps);
+		const { parent = parentRef, interval = 1, maxHeight = Number.MAX_SAFE_INTEGER, maxWidth = Number.MAX_SAFE_INTEGER, reverse, reverseWidth, reverseHeight, lockHorizontal, lockVertical, onResize, onDragEnd, onDragStart, minHeight = 0, minWidth = 0, disabled = false, maintainAspectRatio = false } = Object.assign(Object.assign({}, props), handleProps);
 		const handleMove = (clientY, startHeight, startY, clientX, startWidth, startX) => {
 			let _a;
 			let _b;
@@ -209,7 +212,7 @@ const useResizable = options => {
 			let roundedHeight = currentHeight;
 			let roundedWidth = currentWidth;
 			if (!lockVertical) {
-				const newHeight = startHeight + (clientY - startY) * (reverse ? -1 : 1);
+				const newHeight = startHeight + (clientY - startY) * (reverse || reverseHeight ? -1 : 1);
 				roundedHeight = Math.round(newHeight / interval) * interval;
 				if (roundedHeight <= 0) {
 					roundedHeight = interval;
@@ -225,7 +228,7 @@ const useResizable = options => {
 				}
 			}
 			if (!lockHorizontal) {
-				const newWidth = startWidth + (clientX - startX) * (reverse ? -1 : 1);
+				const newWidth = startWidth + (clientX - startX) * (reverse || reverseWidth ? -1 : 1);
 				roundedWidth = Math.round(newWidth / interval) * interval;
 				if (roundedWidth <= 0) {
 					roundedWidth = interval;
@@ -397,6 +400,12 @@ class ErrorBoundary extends React.Component {
 	}
 }
 
+// @Modules\useStateFromStores
+const useStateFromStores = getModule(Filters.byStrings("getStateFromStores"), { searchExports: true });
+
+// @Stores\ChannelStore
+const ChannelStore = getStore("ChannelStore");
+
 // common\Components\Icon\index.jsx
 /* eslint-disable react/jsx-key */
 function svg(svgProps, ...paths) {
@@ -426,36 +435,15 @@ const CloseIcon = svg(null, "M17.3 18.7a1 1 0 0 0 1.4-1.4L13.42 12l5.3-5.3a1 1 0
 function FloatingWindow({ focused, onMouseDown, title, content, onClose }) {
 	const [fw, handle] = useDraggable();
 	const { getRootProps, getHandleProps, rootRef } = useResizable({
-		initialWidth: window.innerWidth * 0.8,
-		initialHeight: window.innerHeight * 0.8
+		initialWidth: window.innerWidth * 0.5,
+		initialHeight: window.innerHeight * 0.5
 	});
-	useEffect(() => {
-		const targetEl = fw.current;
-		if (!targetEl) return;
-		const dx = (window.innerWidth - targetEl.clientWidth) / 2;
-		const dy = (window.innerHeight - targetEl.clientHeight) / 2;
-		targetEl.style.translate = `${dx}px ${dy}px`;
-	}, []);
-	const onReverseHandleChangeVertical = (parent, { heightDiff }) => {
-		if (!parent.current) return;
-		const [dx, dy] = getComputedStyle(parent.current)
-			.translate.split(" ")
-			.map(a => a.replace("px", ""));
-		parent.current.style.translate = `${dx}px ${Number.parseInt(dy || "0") - heightDiff}px`;
-	};
-	const onReverseHandleChangeHorizontal = (parent, { widthDiff }) => {
-		if (!parent.current) return;
-		const [dx, dy] = getComputedStyle(parent.current)
-			.translate.split(" ")
-			.map(a => a.replace("px", ""));
-		parent.current.style.translate = `${Number.parseInt(dx || "0") - widthDiff}px ${dy}px `;
-	};
-	const { style, ref } = getRootProps();
+	const { style } = getRootProps();
 	return (
 		React.createElement('div', {
 			style: style,
 			ref: e => {
-				ref.current = e;
+				rootRef.current = e;
 				fw.current = e;
 			},
 			onMouseDown: onMouseDown,
@@ -467,11 +455,45 @@ function FloatingWindow({ focused, onMouseDown, title, content, onClose }) {
 			className: "floating-window-close",
 			onClick: onClose,
 		}, React.createElement(CloseIcon, null))), React.createElement('div', { className: "floating-window-content", }, content), React.createElement('div', {
-			className: "resize-handle resize-handle-up",
+			className: "resize-handle resize-handle-top",
 			...getHandleProps({
 				reverse: true,
 				lockHorizontal: true,
-				onResize: values => onReverseHandleChangeVertical(rootRef, values)
+				onResize: ({ heightDiff }) => {
+					if (!rootRef.current) return;
+					rootRef.current.style.top = `${Number.parseInt(rootRef.current.style.top || "0") - heightDiff}px`;
+				}
+			}),
+		}), React.createElement('div', {
+			className: "resize-handle resize-handle-top-left",
+			...getHandleProps({
+				reverse: true,
+				onResize: ({ widthDiff, heightDiff }) => {
+					if (!rootRef.current) return;
+					rootRef.current.style.left = `${Number.parseInt(rootRef.current.style.left || "0") - widthDiff}px`;
+					rootRef.current.style.top = `${Number.parseInt(rootRef.current.style.top || "0") - heightDiff}px`;
+				}
+			}),
+		}), React.createElement('div', {
+			className: "resize-handle resize-handle-top-right",
+			...getHandleProps({
+				reverseHeight: true,
+				onResize: ({ heightDiff }) => {
+					if (!rootRef.current) return;
+					rootRef.current.style.top = `${Number.parseInt(rootRef.current.style.top || "0") - heightDiff}px`;
+				}
+			}),
+		}), React.createElement('div', {
+			className: "resize-handle resize-handle-bottom-right",
+			...getHandleProps({}),
+		}), React.createElement('div', {
+			className: "resize-handle resize-handle-bottom-left",
+			...getHandleProps({
+				reverseWidth: true,
+				onResize: ({ widthDiff }) => {
+					if (!rootRef.current) return;
+					rootRef.current.style.left = `${Number.parseInt(rootRef.current.style.left || "0") - widthDiff}px`;
+				}
 			}),
 		}), React.createElement('div', {
 			className: "resize-handle resize-handle-right",
@@ -479,7 +501,7 @@ function FloatingWindow({ focused, onMouseDown, title, content, onClose }) {
 				lockVertical: true
 			}),
 		}), React.createElement('div', {
-			className: "resize-handle resize-handle-down",
+			className: "resize-handle resize-handle-bottom",
 			...getHandleProps({
 				lockHorizontal: true
 			}),
@@ -488,31 +510,31 @@ function FloatingWindow({ focused, onMouseDown, title, content, onClose }) {
 			...getHandleProps({
 				reverse: true,
 				lockVertical: true,
-				onResize: values => onReverseHandleChangeHorizontal(rootRef, values)
+				onResize: ({ widthDiff }) => {
+					if (!rootRef.current) return;
+					rootRef.current.style.left = `${Number.parseInt(rootRef.current.style.left || "0") - widthDiff}px`;
+				}
 			}),
 		}))
 	);
 }
 
-// @Stores\ChannelStore
-const ChannelStore = getStore("ChannelStore");
-
-// @Modules\useStateFromStores
-const useStateFromStores = getModule(Filters.byStrings("getStateFromStores"), { searchExports: true });
+// @Stores\GuildStore
+const GuildStore = getStore("GuildStore");
 
 // src\FloatingChannels\components\FloatingChannel.jsx
-const ChannelComp = getModule(a => a.type && String(a.type).includes("providedChannel"));
+const ChannelComp = getModule(m => m?.type?.toString().indexOf("communicationDisabledUntil") > -1);
+const chatInputTypes = BdApi.Webpack.getByKeys("OVERLAY", "NORMAL", { searchExports: true });
 const FloatingChannel = React.memo(function FloatingChannel({ id }) {
 	const isFocused = Store(state => state.getFocused() === id);
 	const { channelId } = Store.state.get(id) || {};
 	const channel = useStateFromStores([ChannelStore], () => ChannelStore.getChannel(channelId), [channelId]);
 	if (!channel) return;
-	const closeHandler = e => {
-		console.log(e);
+	const guild = GuildStore.getGuild(channel.id);
+	const closeHandler = () => {
 		Store.state.remove(id);
 	};
-	const clickHandler = e => {
-		console.log(e);
+	const clickHandler = () => {
 		Store.state.setFocused(id);
 	};
 	return (
@@ -521,7 +543,14 @@ const FloatingChannel = React.memo(function FloatingChannel({ id }) {
 			onMouseDown: clickHandler,
 			onClose: closeHandler,
 			title: getChannelName(channel),
-			content: React.createElement(ChannelComp, { providedChannel: channel, }),
+			content: React.createElement(ChannelComp, {
+				channel: channel,
+				guild: guild,
+				chatInputType: {
+					...chatInputTypes.NORMAL,
+					analyticsName: crypto.randomUUID()
+				},
+			}),
 		})
 	);
 });
@@ -591,15 +620,7 @@ async function cleanFluxContainer() {
 }
 
 // src\FloatingChannels\index.jsx
-const chatInputTypes = BdApi.Webpack.getByKeys("OVERLAY", "NORMAL", { searchExports: true });
-
-function patchChatInputType() {
-	const orig = { ...chatInputTypes.NORMAL };
-	Object.defineProperty(chatInputTypes, "NORMAL", {
-		get: () => Object.assign({}, orig, { analyticsName: crypto.randomUUID() })
-	});
-	return () => Object.defineProperty(chatInputTypes, "NORMAL", { value: orig });
-}
+BdApi.Webpack.getByKeys("OVERLAY", "NORMAL", { searchExports: true });
 class FloatingChannels {
 	start() {
 		try {
@@ -608,7 +629,6 @@ class FloatingChannels {
 			patchSomething();
 			// reRender('div[data-windows="true"] > *');
 			this.unpatchContextMenu = patchContextMenu();
-			this.unpatchChatInputType = patchChatInputType();
 		} catch (e) {
 			Logger.error(e);
 		}
@@ -621,7 +641,7 @@ class FloatingChannels {
 		// reRender('div[data-windows="true"] > *');
 		this.unpatchContextMenu?.forEach?.(p => p());
 		this.unpatchContextMenu = null;
-		this.unpatchChatInputType();
+		this.unpatchChatInputType?.();
 		this.unpatchChatInputType = null;
 	}
 }
@@ -638,6 +658,7 @@ const css = `
 	inset:0;
 	z-index: 2999001;
 	pointer-events:none;
+	-webkit-app-region: no-drag;
 }
 
 .floating-window-container{
@@ -646,10 +667,10 @@ const css = `
 	line-height: 1.4;
 	display:grid;
 	grid-template-areas:
-	"resizeup resizeup resizeup"
+	"resizetopleft resizeup resizetopright"
 	"resizeleft title resizeright"
-	"resizeleft content resizeright"
-	"resizedown resizedown resizedown"
+	"resizeleft content resizeright "
+	"resizebottomleft resizedown resizebottomright"
 	;
 	grid-template-rows: auto auto minmax(0, 1fr) auto;
 	grid-template-columns: auto minmax(0, 1fr) auto;
@@ -671,7 +692,7 @@ const css = `
 	padding:8px;
 	grid-area:title;
 	border-radius:var(--border-radius) var(--border-radius) 0 0;
-	
+	z-index:111 ;
 }
 .floating-window-title{
 	display:flex;
@@ -705,11 +726,11 @@ const css = `
 }
 
 .resize-handle{
-	padding:2px;
+	padding:3px;
 	background:#0000;
-	cursor:col-resize;
+
 }
-.resize-handle-up{
+.resize-handle-top{
 	grid-area:resizeup;
 	cursor:ns-resize;
 }
@@ -719,7 +740,7 @@ const css = `
 	cursor:ew-resize;
 }
 
-.resize-handle-down{
+.resize-handle-bottom{
 	grid-area:resizedown;
 	cursor:ns-resize;
 }
@@ -728,4 +749,23 @@ const css = `
 	grid-area:resizeleft;
 	cursor:ew-resize;
 }
-`;
+
+.resize-handle-bottom-left{
+	grid-area:resizebottomleft;
+	cursor: nesw-resize;
+}
+
+.resize-handle-bottom-right{
+	grid-area:resizebottomright;
+	cursor: nwse-resize;
+}
+
+.resize-handle-top-left{
+	grid-area:resizetopleft;
+	cursor: nwse-resize;
+}
+
+.resize-handle-top-right{
+	grid-area:resizetopright;
+	cursor: nesw-resize;
+}`;
