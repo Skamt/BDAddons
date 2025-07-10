@@ -1929,7 +1929,7 @@ function Artist({ artists }) {
 		label: artist.name,
 		items: getArtistContextMenu(artist)
 	}));
-	return /* @__PURE__ */ React_default.createElement(HoverPopout, { popout: (e) => /* @__PURE__ */ React_default.createElement(ContextMenu.Menu, { onClose: e.closePopout }, ContextMenu.buildMenuChildren(menu)) }, /* @__PURE__ */ React_default.createElement("div", { className: "spotify-player-artist" }, "by ", /* @__PURE__ */ React_default.createElement("span", { className: "ellipsis" }, artists[0].name)));
+	return /* @__PURE__ */ React_default.createElement(HoverPopout, { popout: (e) => /* @__PURE__ */ React_default.createElement(ContextMenu.Menu, { onClose: e.closePopout }, ContextMenu.buildMenuChildren(menu)) }, /* @__PURE__ */ React_default.createElement("div", { className: "spotify-player-artist ellipsis" }, `on ${artists[0].name}`));
 }
 
 function getArtistContextMenu(artist) {
@@ -2131,7 +2131,7 @@ var TrackMediaDetails_default = ({ name, artists, mediaType }) => {
 			]))
 		},
 		/* @__PURE__ */
-		React_default.createElement("div", { className: "spotify-player-album" }, "on ", /* @__PURE__ */ React_default.createElement("span", { className: "ellipsis" }, albumName))
+		React_default.createElement("div", { className: "spotify-player-album ellipsis" }, `on ${albumName}`)
 	));
 };
 

@@ -1,16 +1,73 @@
 /**
  * @name StickerEmojiPreview
  * @description Adds a zoomed preview to those tiny Stickers and Emojis
- * @version 1.2.7
+ * @version 1.3.0
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/StickerEmojiPreview
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/StickerEmojiPreview/StickerEmojiPreview.plugin.js
  */
 
-const config = {
+// common/Utils/EventEmitter.js
+var EventEmitter_default = class {
+	constructor() {
+		this.listeners = {};
+	}
+	isInValid(event, handler) {
+		return typeof event !== "string" || typeof handler !== "function";
+	}
+	once(event, handler) {
+		if (this.isInValid(event, handler)) return;
+		if (!this.listeners[event]) this.listeners[event] = /* @__PURE__ */ new Set();
+		const wrapper = () => {
+			handler();
+			this.off(event, wrapper);
+		};
+		this.listeners[event].add(wrapper);
+	}
+	on(event, handler) {
+		if (this.isInValid(event, handler)) return;
+		if (!this.listeners[event]) this.listeners[event] = /* @__PURE__ */ new Set();
+		this.listeners[event].add(handler);
+		return () => this.off(event, handler);
+	}
+	off(event, handler) {
+		if (this.isInValid(event, handler)) return;
+		if (!this.listeners[event]) return;
+		this.listeners[event].delete(handler);
+		if (this.listeners[event].size !== 0) return;
+		delete this.listeners[event];
+	}
+	emit(event, ...payload) {
+		if (!this.listeners[event]) return;
+		for (const listener of this.listeners[event]) {
+			try {
+				listener.apply(null, payload);
+			} catch (err) {
+				console.error(`Could not run listener for ${event}`, err);
+			}
+		}
+	}
+};
+
+// common/Utils/Plugin.js
+var Events = {
+	START: "START",
+	STOP: "STOP"
+};
+var Plugin_default = new class extends EventEmitter_default {
+	start() {
+		this.emit(Events.START);
+	}
+	stop() {
+		this.emit(Events.STOP);
+	}
+}();
+
+// config:@Config
+var Config_default = {
 	"info": {
 		"name": "StickerEmojiPreview",
-		"version": "1.2.7",
+		"version": "1.3.0",
 		"description": "Adds a zoomed preview to those tiny Stickers and Emojis",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/StickerEmojiPreview/StickerEmojiPreview.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/StickerEmojiPreview",
@@ -22,291 +79,37 @@ const config = {
 		"previewState": false,
 		"previewDefaultState": false
 	}
-}
-
-// common\Api.js
-const Api = new BdApi(config.info.name);
-const DOM = Api.DOM;
-const Data = Api.Data;
-const React = Api.React;
-const Patcher = Api.Patcher;
-const Logger = Api.Logger;
-const Webpack = Api.Webpack;
-
-// common\Utils\Logger.js
-Logger.patchError = patchId => {
-	console.error(`%c[${config.info.name}] %cCould not find module for %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
 };
 
-// common\Utils.jsx
-const nop = () => {};
+// common/Api.js
+var Api = new BdApi(Config_default.info.name);
+var DOM = /* @__PURE__ */ (() => Api.DOM)();
+var Data = /* @__PURE__ */ (() => Api.Data)();
+var React = /* @__PURE__ */ (() => Api.React)();
+var Patcher = /* @__PURE__ */ (() => Api.Patcher)();
+var Logger = /* @__PURE__ */ (() => Api.Logger)();
+var Webpack = /* @__PURE__ */ (() => Api.Webpack)();
 
-// common\Webpack.js
-const getModule = Webpack.getModule;
-const Filters = Webpack.Filters;
-const getMangled = Webpack.getMangled;
-
-function getModuleAndKey(filter, options) {
-	let module;
-	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
-	module = module?.exports;
-	if (!module) return;
-	const key = Object.keys(module).find(k => module[k] === target);
-	if (!key) return;
-	return { module, key };
-}
-
-// @Patch\ExpressionPickerInspector
-const ExpressionPickerInspector = getModuleAndKey(Filters.byStrings("graphicPrimary", "titlePrimary"), { searchExports: false }) || {};
-
-// @Patch\CloseExpressionPicker
-const CloseExpressionPicker = getModuleAndKey(Filters.byStrings("activeView:null,activeViewType:null"), { searchExports: true }) || {};
-
-// common\React.js
-const useRef = React.useRef;
-
-// common\DiscordModules\zustand.js
-const { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
-	_: Filters.byStrings("subscribe"),
-	zustand: () => true
+// common/Utils/StylesLoader.js
+var styleLoader = {
+	_styles: [],
+	push(styles) {
+		this._styles.push(styles);
+	}
+};
+Plugin_default.on(Events.START, () => {
+	DOM.addStyle(styleLoader._styles.join("\n"));
 });
-const subscribeWithSelector = getModule(Filters.byStrings("equalityFn", "fireImmediately"), { searchExports: true });
-const zustand$1 = zustand;
-
-// common\Utils\Settings.js
-const SettingsStoreSelectors = {};
-const persistMiddleware = config => (set, get, api) => config(args => (set(args), Data.save("settings", get().getRawState())), get, api);
-const SettingsStore = Object.assign(
-	zustand$1(
-		persistMiddleware(subscribeWithSelector((set, get) => {
-			const settingsObj = Object.create(null);
-			for (const [key, value] of Object.entries({
-					...config.settings,
-					...Data.load("settings")
-				})) {
-				settingsObj[key] = value;
-				settingsObj[`set${key}`] = newValue => set({
-					[key]: newValue });
-				SettingsStoreSelectors[key] = state => state[key];
-			}
-			settingsObj.getRawState = () => {
-				return Object.entries(get())
-					.filter(([, val]) => typeof val !== "function")
-					.reduce((acc, [key, val]) => {
-						acc[key] = val;
-						return acc;
-					}, {});
-			};
-			return settingsObj;
-		}))
-	), {
-		useSetting: function(key) {
-			return this(state => [state[key], state[`set${key}`]]);
-		},
-		selectors: SettingsStoreSelectors
-	}
-);
-Object.defineProperty(SettingsStore, "state", {
-	configurable: false,
-	get() {
-		return this.getState();
-	}
+Plugin_default.on(Events.STOP, () => {
+	DOM.removeStyle();
 });
-const Settings = SettingsStore;
+var StylesLoader_default = styleLoader;
 
-// common\DiscordModules\Modules.js
-const DiscordPopout = getModule(Filters.byPrototypeKeys("shouldShowPopout", "toggleShow"), { searchExports: true });
-
-// src\StickerEmojiPreview\Constants.js
-const PREVIEW_SIZE = 300;
-const PREVIEW_UNAVAILABLE = `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="rgb(202 204 206)" d="M12 2C6.477 2 2 6.477 2 12C2 17.522 6.477 22 12 22C17.523 22 22 17.522 22 12C22 6.477 17.523 2 12 2ZM8 6C9.104 6 10 6.896 10 8C10 9.105 9.104 10 8 10C6.896 10 6 9.105 6 8C6 6.896 6.896 6 8 6ZM18 14C18 16.617 15.14 19 12 19C8.86 19 6 16.617 6 14V13H18V14ZM16 10C14.896 10 14 9.105 14 8C14 6.896 14.896 6 16 6C17.104 6 18 6.896 18 8C18 9.105 17.104 10 16 10Z"></path></svg>`;
-
-// src\StickerEmojiPreview\components\PreviewComponent.jsx
-const PreviewComponent = ({ target, previewComponent }) => {
-	const [show, setShow] = Settings.useSetting("previewState");
-	const ref = useRef();
-	React.useEffect(() => {
-		function keyupHandler(e) {
-			if (e.key === "Control") {
-				setShow(!show);
-			}
-		}
-		document.addEventListener("keyup", keyupHandler);
-		return () => document.removeEventListener("keyup", keyupHandler);
-	}, [show]);
-	return (
-		React.createElement(DiscordPopout, {
-			renderPopout: () => (
-				React.createElement('div', {
-					className: "stickersPreview",
-					style: { width: `${PREVIEW_SIZE}px` },
-				}, previewComponent)
-			),
-			targetElementRef: ref,
-			shouldShow: show,
-			position: "left",
-			align: "bottom",
-			animation: "1",
-			spacing: 60,
-		}, () => React.createElement('div', { ref: ref, }, target))
-	);
-};
-
-// common\Components\ErrorBoundary\index.jsx
-class ErrorBoundary extends React.Component {
-	state = { hasError: false, error: null, info: null };
-	componentDidCatch(error, info) {
-		this.setState({ error, info, hasError: true });
-		const errorMessage = `\n\t${error?.message || ""}${(info?.componentStack || "").split("\n").slice(0, 20).join("\n")}`;
-		console.error(`%c[${config?.info?.name || "Unknown Plugin"}] %cthrew an exception at %c[${this.props.id}]\n`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
-	}
-	renderErrorBoundary() {
-		return (
-			React.createElement('div', { style: { background: "#292c2c", padding: "20px", borderRadius: "10px" }, }, React.createElement('b', { style: { color: "#e0e1e5" }, }, "An error has occured while rendering ", React.createElement('span', { style: { color: "orange" }, }, this.props.id)))
-		);
-	}
-	renderFallback() {
-		if (React.isValidElement(this.props.fallback)) {
-			if (this.props.passMetaProps)
-				this.props.fallback.props = {
-					id: this.props.id,
-					plugin: config?.info?.name || "Unknown Plugin",
-					...this.props.fallback.props
-				};
-			return this.props.fallback;
-		}
-		return (
-			React.createElement(this.props.fallback, {
-				id: this.props.id,
-				plugin: config?.info?.name || "Unknown Plugin",
-			})
-		);
-	}
-	render() {
-		if (!this.state.hasError) return this.props.children;
-		return this.props.fallback ? this.renderFallback() : this.renderErrorBoundary();
-	}
-}
-
-// src\StickerEmojiPreview\patches\patchPickerInspector.jsx
-function getMediaInfo({ props, type }) {
-	if (props.sticker) return [type, props];
-	if (props.src) return [type, { src: props.src.replace(/([?&]size=)(\d+)/, `$1${PREVIEW_SIZE}`) || PREVIEW_UNAVAILABLE }];
-	return ["img", null];
-}
-
-function getPreviewComponent(graphicPrimary) {
-	const [TypeComponent, props] = getMediaInfo(graphicPrimary);
-	return (
-		React.createElement(TypeComponent, {
-			...props,
-			disableAnimation: false,
-			size: PREVIEW_SIZE,
-		})
-	);
-}
-const patchPickerInspector = () => {
-	/**
-	 * Main patch for the plugin
-	 */
-	const { module, key } = ExpressionPickerInspector;
-	if (module && key)
-		Patcher.after(module, key, (_, [{ graphicPrimary, titlePrimary }], ret) => {
-			if (titlePrimary?.toLowerCase().includes("upload")) return;
-			return (
-				React.createElement(ErrorBoundary, {
-					id: "PreviewComponent",
-					plugin: config.info.name,
-					fallback: ret,
-				}, React.createElement(PreviewComponent, {
-					target: ret,
-					previewComponent: getPreviewComponent(graphicPrimary),
-				}))
-			);
-		});
-	else Logger.patchError("ExpressionPickerInspector");
-};
-
-// src\StickerEmojiPreview\patches\patchCloseExpressionPicker.js
-const patchCloseExpressionPicker = () => {
-	/**
-	 * a listener for when experession picker is closed
-	 */
-	const { module, key } = CloseExpressionPicker;
-	if (module && key)
-		Patcher.after(module, key, () => {
-			Settings.state.setpreviewState(Settings.state.previewDefaultState);
-		});
-	else Logger.patchError("CloseExpressionPicker");
-};
-
-// @Modules\FormSwitch
-const FormSwitch = getModule(Filters.byStrings("note", "tooltipNote"), { searchExports: true });
-
-// common\Components\Switch\index.jsx
-const Switch = FormSwitch ||
-	function SwitchComponentFallback(props) {
-		return (
-			React.createElement('div', { style: { color: "#fff" }, }, props.children, React.createElement('input', {
-				type: "checkbox",
-				checked: props.value,
-				onChange: e => props.onChange(e.target.checked),
-			}))
-		);
-	};
-
-// common\Components\SettingSwtich\index.jsx
-function SettingSwtich({ settingKey, note, onChange = nop, hideBorder = false, description, ...rest }) {
-	const [val, set] = Settings.useSetting(settingKey);
-	return (
-		React.createElement(Switch, {
-			...rest,
-			value: val,
-			note: note,
-			hideBorder: hideBorder,
-			onChange: e => {
-				set(e);
-				onChange(e);
-			},
-		}, description || settingKey)
-	);
-}
-
-// src\StickerEmojiPreview\components\SettingComponent.jsx
-const SettingComponent = () => [{
-	settingKey: "previewDefaultState",
-	description: "Preview open by default.",
-	onChange() {
-		Settings.state.setpreviewState(Settings.state.previewDefaultState);
-	}
-}].map(SettingSwtich);
-
-// src\StickerEmojiPreview\index.jsx
-class StickerEmojiPreview {
-	start() {
-		try {
-			DOM.addStyle(css);
-			patchPickerInspector();
-			patchCloseExpressionPicker();
-		} catch (e) {
-			Logger.error(e);
-		}
-	}
-	stop() {
-		DOM.removeStyle();
-		Patcher.unpatchAll();
-	}
-	getSettingsPanel() {
-		return React.createElement(SettingComponent, null);
-	}
-}
-
-module.exports = StickerEmojiPreview;
-
-const css = `.stickersPreview {
+// src/StickerEmojiPreview/styles.css
+StylesLoader_default.push(`.stickersPreview {
 	width: 400px;
 	font-size: 14px;
-	background: var(--background-floating);
+	background: oklab(0.278867 0.00249027 -0.00875303);
 	border-radius: 5px;
 	padding: 0.5em;
 	box-shadow: var(--elevation-high);
@@ -322,4 +125,213 @@ const css = `.stickersPreview {
 	padding: 1px;
 	box-sizing: border-box;
 }
-`;
+`);
+
+// common/Utils/Logger.js
+Logger.patchError = (patchId) => {
+	console.error(`%c[${Config_default.info.name}] %cCould not find module for %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
+};
+var Logger_default = Logger;
+
+// common/Webpack.js
+var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
+var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
+var getMangled = /* @__PURE__ */ (() => Webpack.getMangled)();
+
+function getModuleAndKey(filter, options) {
+	let module2;
+	const target = getModule((entry, m) => filter(entry) ? module2 = m : false, options);
+	module2 = module2?.exports;
+	if (!module2) return;
+	const key = Object.keys(module2).find((k) => module2[k] === target);
+	if (!key) return;
+	return { module: module2, key };
+}
+
+// MODULES-AUTO-LOADER:@Patch/CloseExpressionPicker
+var CloseExpressionPicker_default = getModuleAndKey(Filters.byStrings("activeView:null,activeViewType:null"), { searchExports: true }) || {};
+
+// common/React.js
+var useRef = /* @__PURE__ */ (() => React.useRef)();
+var React_default = /* @__PURE__ */ (() => React)();
+
+// common/DiscordModules/zustand.js
+var { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
+	_: Filters.byStrings("subscribe"),
+	zustand: () => true
+});
+var subscribeWithSelector = getModule(Filters.byStrings("equalityFn", "fireImmediately"), { searchExports: true });
+var zustand_default = zustand;
+
+// common/Utils/Settings.js
+var SettingsStoreSelectors = {};
+var persistMiddleware = (config) => (set, get, api) => config((args) => (set(args), Data.save("settings", get().getRawState())), get, api);
+var SettingsStore = Object.assign(
+	zustand_default(
+		persistMiddleware(
+			subscribeWithSelector((set, get) => {
+				const settingsObj = /* @__PURE__ */ Object.create(null);
+				for (const [key, value] of Object.entries({
+						...Config_default.settings,
+						...Data.load("settings")
+					})) {
+					settingsObj[key] = value;
+					settingsObj[`set${key}`] = (newValue) => set({
+						[key]: newValue });
+					SettingsStoreSelectors[key] = (state) => state[key];
+				}
+				settingsObj.getRawState = () => {
+					return Object.entries(get()).filter(([, val]) => typeof val !== "function").reduce((acc, [key, val]) => {
+						acc[key] = val;
+						return acc;
+					}, {});
+				};
+				return settingsObj;
+			})
+		)
+	), {
+		useSetting: function(key) {
+			return this((state) => [state[key], state[`set${key}`]]);
+		},
+		selectors: SettingsStoreSelectors
+	}
+);
+Object.defineProperty(SettingsStore, "state", {
+	configurable: false,
+	get() {
+		return this.getState();
+	}
+});
+var Settings_default = SettingsStore;
+
+// src/StickerEmojiPreview/patches/patchCloseExpressionPicker.js
+Plugin_default.on(Events.START, () => {
+	const { module: module2, key } = CloseExpressionPicker_default;
+	if (!module2 || !key) return Logger_default.patchError("CloseExpressionPicker");
+	const unpatch = Patcher.after(module2, key, (_, args, ret) => {
+		Settings_default.state.setpreviewState(Settings_default.state.previewDefaultState);
+	});
+	Plugin_default.once(Events.STOP, unpatch);
+});
+
+// MODULES-AUTO-LOADER:@Patch/ExpressionPickerInspector
+var ExpressionPickerInspector_default = getModuleAndKey(Filters.byStrings("graphicPrimary", "titlePrimary"), { searchExports: false }) || {};
+
+// common/DiscordModules/Modules.js
+var DiscordPopout = /* @__PURE__ */ (() => getModule((a) => a?.prototype?.render && a.Animation, { searchExports: true }))();
+
+// src/StickerEmojiPreview/Constants.js
+var PREVIEW_SIZE = 300;
+var PREVIEW_UNAVAILABLE = `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="rgb(202 204 206)" d="M12 2C6.477 2 2 6.477 2 12C2 17.522 6.477 22 12 22C17.523 22 22 17.522 22 12C22 6.477 17.523 2 12 2ZM8 6C9.104 6 10 6.896 10 8C10 9.105 9.104 10 8 10C6.896 10 6 9.105 6 8C6 6.896 6.896 6 8 6ZM18 14C18 16.617 15.14 19 12 19C8.86 19 6 16.617 6 14V13H18V14ZM16 10C14.896 10 14 9.105 14 8C14 6.896 14.896 6 16 6C17.104 6 18 6.896 18 8C18 9.105 17.104 10 16 10Z"></path></svg>`;
+
+// src/StickerEmojiPreview/components/PreviewComponent.jsx
+var PreviewComponent_default = ({ target, previewComponent }) => {
+	const [show, setShow] = Settings_default.useSetting("previewState");
+	const ref = useRef();
+	React_default.useEffect(() => {
+		function keyupHandler(e) {
+			if (e.key === "Control") {
+				setShow(!show);
+			}
+		}
+		document.addEventListener("keyup", keyupHandler);
+		return () => document.removeEventListener("keyup", keyupHandler);
+	}, [show]);
+	return /* @__PURE__ */ React_default.createElement(
+		DiscordPopout, {
+			renderPopout: () => /* @__PURE__ */ React_default.createElement(
+				"div", {
+					className: "stickersPreview",
+					style: { width: `${PREVIEW_SIZE}px` }
+				},
+				previewComponent
+			),
+			targetElementRef: ref,
+			shouldShow: show,
+			position: "left",
+			align: "bottom",
+			animation: "1",
+			spacing: 60
+		},
+		() => React_default.cloneElement(target, { ref })
+	);
+};
+
+// common/Components/ErrorBoundary/index.jsx
+var ErrorBoundary = class extends React.Component {
+	state = { hasError: false, error: null, info: null };
+	componentDidCatch(error, info) {
+		this.setState({ error, info, hasError: true });
+		const errorMessage = `
+	${error?.message || ""}${(info?.componentStack || "").split("\n").slice(0, 20).join("\n")}`;
+		console.error(`%c[${Config_default?.info?.name || "Unknown Plugin"}] %cthrew an exception at %c[${this.props.id}]
+`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
+	}
+	renderErrorBoundary() {
+		return /* @__PURE__ */ React.createElement("div", { style: { background: "#292c2c", padding: "20px", borderRadius: "10px" } }, /* @__PURE__ */ React.createElement("b", { style: { color: "#e0e1e5" } }, "An error has occured while rendering ", /* @__PURE__ */ React.createElement("span", { style: { color: "orange" } }, this.props.id)));
+	}
+	renderFallback() {
+		if (React.isValidElement(this.props.fallback)) {
+			if (this.props.passMetaProps)
+				this.props.fallback.props = {
+					id: this.props.id,
+					plugin: Config_default?.info?.name || "Unknown Plugin",
+					...this.props.fallback.props
+				};
+			return this.props.fallback;
+		}
+		return /* @__PURE__ */ React.createElement(
+			this.props.fallback, {
+				id: this.props.id,
+				plugin: Config_default?.info?.name || "Unknown Plugin"
+			}
+		);
+	}
+	render() {
+		if (!this.state.hasError) return this.props.children;
+		return this.props.fallback ? this.renderFallback() : this.renderErrorBoundary();
+	}
+};
+
+// src/StickerEmojiPreview/patches/patchPickerInspector.jsx
+function getMediaInfo({ props, type }) {
+	if (props.sticker) return [type, props];
+	if (props.src) return [type, { src: props.src.replace(/([?&]size=)(\d+)/, `$1${PREVIEW_SIZE}`) || PREVIEW_UNAVAILABLE }];
+	return ["img", null];
+}
+
+function getPreviewComponent(graphicPrimary) {
+	const [TypeComponent, props] = getMediaInfo(graphicPrimary);
+	return /* @__PURE__ */ React.createElement(
+		TypeComponent, {
+			...props,
+			disableAnimation: false,
+			size: PREVIEW_SIZE
+		}
+	);
+}
+Plugin_default.on(Events.START, () => {
+	const { module: module2, key } = ExpressionPickerInspector_default;
+	if (!module2 || !key) return Logger_default.patchError("ExpressionPickerInspector");
+	const unpatch = Patcher.after(module2, key, (_, [{ graphicPrimary, titlePrimary }], ret) => {
+		if (titlePrimary?.toLowerCase().includes("upload")) return;
+		return /* @__PURE__ */ React.createElement(
+			ErrorBoundary, {
+				id: "PreviewComponent",
+				plugin: Config_default.info.name,
+				fallback: ret
+			},
+			/* @__PURE__ */
+			React.createElement(
+				PreviewComponent_default, {
+					target: ret,
+					previewComponent: getPreviewComponent(graphicPrimary)
+				}
+			)
+		);
+	});
+	Plugin_default.once(Events.STOP, unpatch);
+});
+
+// src/StickerEmojiPreview/index.jsx
+module.exports = () => Plugin_default;
