@@ -85,7 +85,7 @@ var Config_default = {
 var Api = new BdApi(Config_default.info.name);
 var DOM = /* @__PURE__ */ (() => Api.DOM)();
 var Data = /* @__PURE__ */ (() => Api.Data)();
-var React2 = /* @__PURE__ */ (() => Api.React)();
+var React = /* @__PURE__ */ (() => Api.React)();
 var Patcher = /* @__PURE__ */ (() => Api.Patcher)();
 var Logger = /* @__PURE__ */ (() => Api.Logger)();
 var Webpack = /* @__PURE__ */ (() => Api.Webpack)();
@@ -152,8 +152,8 @@ function getModuleAndKey(filter, options) {
 var CloseExpressionPicker_default = getModuleAndKey(Filters.byStrings("activeView:null,activeViewType:null"), { searchExports: true }) || {};
 
 // common/React.js
-var useRef = /* @__PURE__ */ (() => React2.useRef)();
-var React_default = /* @__PURE__ */ (() => React2)();
+var useRef = /* @__PURE__ */ (() => React.useRef)();
+var React_default = /* @__PURE__ */ (() => React)();
 
 // common/DiscordModules/zustand.js
 var { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
@@ -261,7 +261,7 @@ var PreviewComponent_default = ({ target, previewComponent }) => {
 };
 
 // common/Components/ErrorBoundary/index.jsx
-var ErrorBoundary = class extends React2.Component {
+var ErrorBoundary = class extends React.Component {
 	state = { hasError: false, error: null, info: null };
 	componentDidCatch(error, info) {
 		this.setState({ error, info, hasError: true });
@@ -271,10 +271,10 @@ var ErrorBoundary = class extends React2.Component {
 `, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
 	}
 	renderErrorBoundary() {
-		return /* @__PURE__ */ React2.createElement("div", { style: { background: "#292c2c", padding: "20px", borderRadius: "10px" } }, /* @__PURE__ */ React2.createElement("b", { style: { color: "#e0e1e5" } }, "An error has occured while rendering ", /* @__PURE__ */ React2.createElement("span", { style: { color: "orange" } }, this.props.id)));
+		return /* @__PURE__ */ React.createElement("div", { style: { background: "#292c2c", padding: "20px", borderRadius: "10px" } }, /* @__PURE__ */ React.createElement("b", { style: { color: "#e0e1e5" } }, "An error has occured while rendering ", /* @__PURE__ */ React.createElement("span", { style: { color: "orange" } }, this.props.id)));
 	}
 	renderFallback() {
-		if (React2.isValidElement(this.props.fallback)) {
+		if (React.isValidElement(this.props.fallback)) {
 			if (this.props.passMetaProps)
 				this.props.fallback.props = {
 					id: this.props.id,
@@ -283,7 +283,7 @@ var ErrorBoundary = class extends React2.Component {
 				};
 			return this.props.fallback;
 		}
-		return /* @__PURE__ */ React2.createElement(
+		return /* @__PURE__ */ React.createElement(
 			this.props.fallback, {
 				id: this.props.id,
 				plugin: Config_default?.info?.name || "Unknown Plugin"
@@ -305,7 +305,7 @@ function getMediaInfo({ props, type }) {
 
 function getPreviewComponent(graphicPrimary) {
 	const [TypeComponent, props] = getMediaInfo(graphicPrimary);
-	return /* @__PURE__ */ React2.createElement(
+	return /* @__PURE__ */ React.createElement(
 		TypeComponent, {
 			...props,
 			disableAnimation: false,
@@ -318,14 +318,14 @@ Plugin_default.on(Events.START, () => {
 	if (!module2 || !key) return Logger_default.patchError("ExpressionPickerInspector");
 	const unpatch = Patcher.after(module2, key, (_, [{ graphicPrimary, titlePrimary }], ret) => {
 		if (titlePrimary?.toLowerCase().includes("upload")) return;
-		return /* @__PURE__ */ React2.createElement(
+		return /* @__PURE__ */ React.createElement(
 			ErrorBoundary, {
 				id: "PreviewComponent",
 				plugin: Config_default.info.name,
 				fallback: ret
 			},
 			/* @__PURE__ */
-			React2.createElement(
+			React.createElement(
 				PreviewComponent_default, {
 					target: ret,
 					previewComponent: getPreviewComponent(graphicPrimary)
@@ -341,7 +341,7 @@ var FormSwitch_default = getModule(Filters.byStrings("note", "tooltipNote"), { s
 
 // common/Components/Switch/index.jsx
 var Switch_default = FormSwitch_default || function SwitchComponentFallback(props) {
-	return /* @__PURE__ */ React2.createElement("div", { style: { color: "#fff" } }, props.children, /* @__PURE__ */ React2.createElement(
+	return /* @__PURE__ */ React.createElement("div", { style: { color: "#fff" } }, props.children, /* @__PURE__ */ React.createElement(
 		"input", {
 			type: "checkbox",
 			checked: props.value,
@@ -353,7 +353,7 @@ var Switch_default = FormSwitch_default || function SwitchComponentFallback(prop
 // common/Components/SettingSwtich/index.jsx
 function SettingSwtich({ settingKey, note, onChange = nop, hideBorder = false, description, ...rest }) {
 	const [val, set] = Settings_default.useSetting(settingKey);
-	return /* @__PURE__ */ React2.createElement(
+	return /* @__PURE__ */ React.createElement(
 		Switch_default, {
 			...rest,
 			value: val,
@@ -378,7 +378,6 @@ function SettingComponent() {
 		}
 	}].map(SettingSwtich);
 }
-Plugin_default.getSettingsPanel = () => /* @__PURE__ */ React.createElement(SettingComponent, null);
 
 // src/StickerEmojiPreview/index.jsx
 Plugin_default.getSettingsPanel = () => /* @__PURE__ */ React_default.createElement(SettingComponent, null);
