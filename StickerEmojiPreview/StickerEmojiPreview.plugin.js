@@ -1,7 +1,7 @@
 /**
  * @name StickerEmojiPreview
  * @description Adds a zoomed preview to those tiny Stickers and Emojis
- * @version 1.3.0
+ * @version 1.3.1
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/StickerEmojiPreview
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/StickerEmojiPreview/StickerEmojiPreview.plugin.js
@@ -67,7 +67,7 @@ var Plugin_default = new class extends EventEmitter_default {
 var Config_default = {
 	"info": {
 		"name": "StickerEmojiPreview",
-		"version": "1.3.0",
+		"version": "1.3.1",
 		"description": "Adds a zoomed preview to those tiny Stickers and Emojis",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/StickerEmojiPreview/StickerEmojiPreview.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/StickerEmojiPreview",
@@ -85,7 +85,7 @@ var Config_default = {
 var Api = new BdApi(Config_default.info.name);
 var DOM = /* @__PURE__ */ (() => Api.DOM)();
 var Data = /* @__PURE__ */ (() => Api.Data)();
-var React = /* @__PURE__ */ (() => Api.React)();
+var React2 = /* @__PURE__ */ (() => Api.React)();
 var Patcher = /* @__PURE__ */ (() => Api.Patcher)();
 var Logger = /* @__PURE__ */ (() => Api.Logger)();
 var Webpack = /* @__PURE__ */ (() => Api.Webpack)();
@@ -152,8 +152,8 @@ function getModuleAndKey(filter, options) {
 var CloseExpressionPicker_default = getModuleAndKey(Filters.byStrings("activeView:null,activeViewType:null"), { searchExports: true }) || {};
 
 // common/React.js
-var useRef = /* @__PURE__ */ (() => React.useRef)();
-var React_default = /* @__PURE__ */ (() => React)();
+var useRef = /* @__PURE__ */ (() => React2.useRef)();
+var React_default = /* @__PURE__ */ (() => React2)();
 
 // common/DiscordModules/zustand.js
 var { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
@@ -214,6 +214,9 @@ Plugin_default.on(Events.START, () => {
 	Plugin_default.once(Events.STOP, unpatch);
 });
 
+// common/Utils/index.js
+var nop = () => {};
+
 // MODULES-AUTO-LOADER:@Patch/ExpressionPickerInspector
 var ExpressionPickerInspector_default = getModuleAndKey(Filters.byStrings("graphicPrimary", "titlePrimary"), { searchExports: false }) || {};
 
@@ -258,7 +261,7 @@ var PreviewComponent_default = ({ target, previewComponent }) => {
 };
 
 // common/Components/ErrorBoundary/index.jsx
-var ErrorBoundary = class extends React.Component {
+var ErrorBoundary = class extends React2.Component {
 	state = { hasError: false, error: null, info: null };
 	componentDidCatch(error, info) {
 		this.setState({ error, info, hasError: true });
@@ -268,10 +271,10 @@ var ErrorBoundary = class extends React.Component {
 `, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
 	}
 	renderErrorBoundary() {
-		return /* @__PURE__ */ React.createElement("div", { style: { background: "#292c2c", padding: "20px", borderRadius: "10px" } }, /* @__PURE__ */ React.createElement("b", { style: { color: "#e0e1e5" } }, "An error has occured while rendering ", /* @__PURE__ */ React.createElement("span", { style: { color: "orange" } }, this.props.id)));
+		return /* @__PURE__ */ React2.createElement("div", { style: { background: "#292c2c", padding: "20px", borderRadius: "10px" } }, /* @__PURE__ */ React2.createElement("b", { style: { color: "#e0e1e5" } }, "An error has occured while rendering ", /* @__PURE__ */ React2.createElement("span", { style: { color: "orange" } }, this.props.id)));
 	}
 	renderFallback() {
-		if (React.isValidElement(this.props.fallback)) {
+		if (React2.isValidElement(this.props.fallback)) {
 			if (this.props.passMetaProps)
 				this.props.fallback.props = {
 					id: this.props.id,
@@ -280,7 +283,7 @@ var ErrorBoundary = class extends React.Component {
 				};
 			return this.props.fallback;
 		}
-		return /* @__PURE__ */ React.createElement(
+		return /* @__PURE__ */ React2.createElement(
 			this.props.fallback, {
 				id: this.props.id,
 				plugin: Config_default?.info?.name || "Unknown Plugin"
@@ -302,7 +305,7 @@ function getMediaInfo({ props, type }) {
 
 function getPreviewComponent(graphicPrimary) {
 	const [TypeComponent, props] = getMediaInfo(graphicPrimary);
-	return /* @__PURE__ */ React.createElement(
+	return /* @__PURE__ */ React2.createElement(
 		TypeComponent, {
 			...props,
 			disableAnimation: false,
@@ -315,14 +318,14 @@ Plugin_default.on(Events.START, () => {
 	if (!module2 || !key) return Logger_default.patchError("ExpressionPickerInspector");
 	const unpatch = Patcher.after(module2, key, (_, [{ graphicPrimary, titlePrimary }], ret) => {
 		if (titlePrimary?.toLowerCase().includes("upload")) return;
-		return /* @__PURE__ */ React.createElement(
+		return /* @__PURE__ */ React2.createElement(
 			ErrorBoundary, {
 				id: "PreviewComponent",
 				plugin: Config_default.info.name,
 				fallback: ret
 			},
 			/* @__PURE__ */
-			React.createElement(
+			React2.createElement(
 				PreviewComponent_default, {
 					target: ret,
 					previewComponent: getPreviewComponent(graphicPrimary)
@@ -333,5 +336,50 @@ Plugin_default.on(Events.START, () => {
 	Plugin_default.once(Events.STOP, unpatch);
 });
 
+// MODULES-AUTO-LOADER:@Modules/FormSwitch
+var FormSwitch_default = getModule(Filters.byStrings("note", "tooltipNote"), { searchExports: true });
+
+// common/Components/Switch/index.jsx
+var Switch_default = FormSwitch_default || function SwitchComponentFallback(props) {
+	return /* @__PURE__ */ React2.createElement("div", { style: { color: "#fff" } }, props.children, /* @__PURE__ */ React2.createElement(
+		"input", {
+			type: "checkbox",
+			checked: props.value,
+			onChange: (e) => props.onChange(e.target.checked)
+		}
+	));
+};
+
+// common/Components/SettingSwtich/index.jsx
+function SettingSwtich({ settingKey, note, onChange = nop, hideBorder = false, description, ...rest }) {
+	const [val, set] = Settings_default.useSetting(settingKey);
+	return /* @__PURE__ */ React2.createElement(
+		Switch_default, {
+			...rest,
+			value: val,
+			note,
+			hideBorder,
+			onChange: (e) => {
+				set(e);
+				onChange(e);
+			}
+		},
+		description || settingKey
+	);
+}
+
+// src/StickerEmojiPreview/components/SettingComponent.jsx
+function SettingComponent() {
+	return [{
+		settingKey: "previewDefaultState",
+		description: "Preview open by default.",
+		onChange() {
+			Settings_default.state.setpreviewState(Settings_default.state.previewDefaultState);
+		}
+	}].map(SettingSwtich);
+}
+Plugin_default.getSettingsPanel = () => /* @__PURE__ */ React.createElement(SettingComponent, null);
+
 // src/StickerEmojiPreview/index.jsx
+Plugin_default.getSettingsPanel = () => /* @__PURE__ */ React_default.createElement(SettingComponent, null);
 module.exports = () => Plugin_default;

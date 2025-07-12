@@ -1,7 +1,7 @@
 /**
  * @name SpotifyEnhance
  * @description All in one better spotify-discord experience.
- * @version 1.1.0
+ * @version 1.1.1
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js
@@ -67,7 +67,7 @@ var Plugin_default = new class extends EventEmitter_default {
 var Config_default = {
 	"info": {
 		"name": "SpotifyEnhance",
-		"version": "1.1.0",
+		"version": "1.1.1",
 		"description": "All in one better spotify-discord experience.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance",
@@ -191,6 +191,11 @@ var getBySource = /* @__PURE__ */ (() => Webpack.getBySource)();
 var getMangled = /* @__PURE__ */ (() => Webpack.getMangled)();
 var getStore = /* @__PURE__ */ (() => Webpack.getStore)();
 
+function reactRefMemoFilter(type, ...args) {
+	const filter = Filters.byStrings(...args);
+	return (target) => target[type] && filter(target[type]);
+}
+
 function getModuleAndKey(filter, options) {
 	let module2;
 	const target = getModule((entry, m) => filter(entry) ? module2 = m : false, options);
@@ -249,6 +254,7 @@ var promiseHandler = (promise) => promise.then((data) => [void 0, data]).catch((
 function copy(data) {
 	DiscordNative.clipboard.copy(data);
 }
+var nop = () => {};
 
 function genUrlParamsFromArray(params) {
 	if (typeof params !== "object") throw new Error("params argument must be an object or array");
@@ -1238,6 +1244,7 @@ var useState = /* @__PURE__ */ (() => React.useState)();
 var useEffect = /* @__PURE__ */ (() => React.useEffect)();
 var useRef = /* @__PURE__ */ (() => React.useRef)();
 var useCallback = /* @__PURE__ */ (() => React.useCallback)();
+var useMemo = /* @__PURE__ */ (() => React.useMemo)();
 var Children = /* @__PURE__ */ (() => React.Children)();
 var React_default = /* @__PURE__ */ (() => React)();
 
@@ -1687,7 +1694,7 @@ var SpotifyPlayerControls_default = () => {
 	const playerButtons = Settings_default(Settings_default.selectors.playerButtons, shallow);
 	const [isPlaying, shuffle, repeat, volume] = Store2((_) => [_.isPlaying, _.shuffle, _.repeat, _.volume], shallow);
 	const actions = Store2(Store2.selectors.actions, shallow);
-	const context = Store2(Store2.selectors.context, (n, o) => n?.uri === o?.uri);
+	const context2 = Store2(Store2.selectors.context, (n, o) => n?.uri === o?.uri);
 	const url = Store2.state.getSongUrl();
 	const { bannerLg } = Store2.state.getSongBanners();
 	const { toggling_shuffle, toggling_repeat_track, skipping_next, skipping_prev } = actions || {};
@@ -1696,7 +1703,7 @@ var SpotifyPlayerControls_default = () => {
 	const repeatHandler = () => Store2.Api.repeat(repeatArg);
 	const shareSongHandler = () => Store2.Utils.share(url);
 	const sharePosterHandler = () => Store2.Utils.share(bannerLg.url);
-	const sharePlaylistHandler = () => Store2.Utils.share(context?.external_urls?.spotify);
+	const sharePlaylistHandler = () => Store2.Utils.share(context2?.external_urls?.spotify);
 	const copySongHandler = () => Store2.Utils.copySpotifyLink(url);
 	const copyPosterHandler = () => Store2.Utils.copySpotifyLink(bannerLg.url);
 	const copyNameHandler = () => Store2.Utils.copy(Store2.state.getFullSongName());
@@ -1748,7 +1755,7 @@ var SpotifyPlayerControls_default = () => {
 					icon: ImageIcon,
 					label: "Share poster in current channel"
 				},
-				context.type === "playlist" && {
+				context2.type === "playlist" && {
 					className: "spotify-menuitem",
 					id: "share-playlist-link",
 					action: sharePlaylistHandler,
@@ -1976,11 +1983,49 @@ StylesLoader_default.push(`.downloadLink {
 }
 `);
 
+// MODULES-AUTO-LOADER:@Stores/AccessibilityStore
+var AccessibilityStore_default = getStore("AccessibilityStore");
+
 // common/Utils/ImageModal/index.jsx
 var RenderLinkComponent = getModule((m) => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false });
-var ImageModal = getModule((m) => m.type?.toString?.().includes("ZOOM_OUT_IMAGE_PRESSED"), { searchExports: true });
-var getImageComponent = (url, rest = {}) => {
-	return /* @__PURE__ */ React.createElement("div", { className: "imageModalwrapper" }, /* @__PURE__ */ React.createElement(
+var ImageModal = getModule(reactRefMemoFilter("type", "renderLinkComponent"), { searchExports: true });
+
+function h(e, t) {
+	let n = arguments.length > 2 && void 0 !== arguments[2] && arguments[2];
+	true === n || AccessibilityStore_default.useReducedMotion ? e.set(t) : e.start(t);
+}
+var useSomeScalingHook = getModule(Filters.byStrings("reducedMotion.enabled", "useSpring", "respect-motion-settings"), { searchExports: true });
+var context = getModule((a) => a?._currentValue?.scale, { searchExports: true });
+var ImageComponent = ({ url, ...rest }) => {
+	const [x, P] = useState(false);
+	const [M, w] = useSomeScalingHook(() => ({
+		scale: AccessibilityStore_default.useReducedMotion ? 1 : 0.9,
+		x: 0,
+		y: 0,
+		config: {
+			friction: 30,
+			tension: 300
+		}
+	}));
+	const contextVal = useMemo(
+		() => ({
+			scale: M.scale,
+			x: M.x,
+			y: M.y,
+			setScale(e, t) {
+				h(M.scale, e, null == t ? void 0 : t.immediate);
+			},
+			setOffset(e, t, n) {
+				h(M.x, e, null == n ? void 0 : n.immediate), h(M.y, t, null == n ? void 0 : n.immediate);
+			},
+			zoomed: x,
+			setZoomed(e) {
+				P(e), h(M.scale, e ? 2.5 : 1), e || (h(M.x, 0), h(M.y, 0));
+			}
+		}),
+		[x, M]
+	);
+	return /* @__PURE__ */ React_default.createElement(context.Provider, { value: contextVal }, /* @__PURE__ */ React_default.createElement("div", { className: "imageModalwrapper" }, /* @__PURE__ */ React_default.createElement(
 		ImageModal, {
 			maxWidth: rest.maxWidth,
 			maxHeight: rest.maxHeight,
@@ -1991,13 +2036,13 @@ var getImageComponent = (url, rest = {}) => {
 				proxyUrl: url
 			}
 		}
-	), /* @__PURE__ */ React.createElement("div", { className: "imageModalOptions" }, /* @__PURE__ */ React.createElement(
+	), !x && /* @__PURE__ */ React_default.createElement("div", { className: "imageModalOptions" }, /* @__PURE__ */ React_default.createElement(
 		RenderLinkComponent, {
 			className: "downloadLink",
 			href: url
 		},
 		"Open in Browser"
-	)));
+	))));
 };
 
 // common/Utils/Modals/styles.css
@@ -2049,19 +2094,11 @@ var ModalRoot_default = getModule(Filters.byStrings("rootWithShadow", "MODAL"), 
 var ModalSize_default = getModule(Filters.byKeys("DYNAMIC", "SMALL", "LARGE"), { searchExports: true });
 
 // common/Utils/Modals/index.jsx
-var ModalActions = getMangled("onCloseRequest:null!=", {
-	openModal: Filters.byStrings("onCloseRequest:null!="),
-	closeModal: Filters.byStrings(".setState", ".getState()[")
+var ModalActions = /* @__PURE__ */ getMangled("onCloseRequest:null!=", {
+	openModal: /* @__PURE__ */ Filters.byStrings("onCloseRequest:null!="),
+	closeModal: /* @__PURE__ */ Filters.byStrings(".setState", ".getState()[")
 });
-var Modals = getMangled(Filters.bySource("root", "headerIdIsManaged"), {
-	ModalRoot: Filters.byStrings("rootWithShadow"),
-	ModalFooter: Filters.byStrings(".footer"),
-	ModalContent: Filters.byStrings(".content"),
-	ModalHeader: Filters.byStrings(".header", "separator"),
-	Animations: (a) => a.SUBTLE,
-	Sizes: (a) => a.DYNAMIC
-});
-var openModal = (children, tag, modalRootProps) => {
+var openModal = (children, tag, { className, ...modalRootProps } = {}) => {
 	const id = `${tag ? `${tag}-` : ""}modal`;
 	return ModalActions.openModal((props) => {
 		return /* @__PURE__ */ React.createElement(
@@ -2072,8 +2109,9 @@ var openModal = (children, tag, modalRootProps) => {
 			/* @__PURE__ */
 			React.createElement(
 				ModalRoot_default, {
+					onClick: props.onClose,
 					transitionState: props.transitionState,
-					className: "transparent-background",
+					className: concateClassNames("transparent-background", className),
 					size: ModalSize_default.DYNAMIC,
 					...modalRootProps
 				},
@@ -2089,7 +2127,15 @@ function TrackBanner() {
 	const thumbnailClickHandler = () => {
 		if (!bannerObj.url) return Toast_default.error("Could not open banner");
 		const { url, ...rest } = bannerObj;
-		openModal( /* @__PURE__ */ React_default.createElement("div", { className: "spotify-banner-modal" }, getImageComponent(url, fit(rest))));
+		openModal(
+			/* @__PURE__ */
+			React_default.createElement("div", { className: "spotify-banner-modal" }, /* @__PURE__ */ React_default.createElement(
+				ImageComponent, {
+					url,
+					...fit(rest)
+				}
+			))
+		);
 	};
 	return /* @__PURE__ */ React_default.createElement(Tooltip_default2, { note: "View" }, /* @__PURE__ */ React_default.createElement(
 		"div", {
@@ -2753,9 +2799,6 @@ function CopyIcon() {
 	);
 }
 
-// MODULES-AUTO-LOADER:@Stores/AccessibilityStore
-var AccessibilityStore_default = getStore("AccessibilityStore");
-
 // src/SpotifyEnhance/components/SpotifyEmbed/PreviewPlayer.jsx
 var audioPlayer = class {
 	constructor(src) {
@@ -2903,7 +2946,15 @@ var SpotifyEmbed_default = ({ id, type }) => {
 			"div", {
 				onClick: () => {
 					const { url: url2, ...rest } = banner.bannerLg;
-					openModal( /* @__PURE__ */ React_default.createElement("div", { className: "spotify-banner-modal" }, getImageComponent(url2, fit(rest))));
+					openModal(
+						/* @__PURE__ */
+						React_default.createElement("div", { className: "spotify-banner-modal" }, /* @__PURE__ */ React_default.createElement(
+							ImageComponent, {
+								url: url2,
+								...fit(rest)
+							}
+						))
+					);
 				},
 				className: "spotify-embed-thumbnail"
 			}
@@ -3076,5 +3127,246 @@ Plugin_default.on(Events.START, async () => {
 	Plugin_default.once(Events.STOP, unpatch);
 });
 
+// common/Components/Collapsible/styles.css
+StylesLoader_default.push(`.collapsible-container {
+	border-radius: 5px;
+	border: 1px solid rgb(30, 31, 34);
+	gap: 0px 20px;
+	display: grid;
+	grid-template-rows: min-content 0fr;
+	transition: grid-template-rows 200ms linear;
+}
+
+.collapsible-header {
+	background: rgba(30, 31, 34, 0.3);
+	padding: 10px 3px;
+	gap: 8px;
+	display: flex;
+	align-items: center;
+}
+
+.collapsible-icon {
+	display: flex;
+	flex-grow: 0;
+	rotate: 0deg;
+	transition: rotate 150ms linear;
+}
+
+.collapsible-title {
+	text-transform: capitalize;
+}
+
+.collapsible-body {
+	margin: 0 10px;
+	transition: margin 0ms 200ms;
+	overflow: hidden;
+}
+
+.collapsible-container.collapsible-open .collapsible-body{
+	margin: 10px;
+	transition: none;
+}
+
+.collapsible-container.collapsible-open {
+	grid-template-rows: min-content 1fr;
+}
+
+.collapsible-container.collapsible-open .collapsible-header {
+	border-bottom: 1px solid rgb(30, 31, 34);
+}
+
+.collapsible-container.collapsible-open .collapsible-icon {
+	rotate: 90deg;
+}`);
+
+// MODULES-AUTO-LOADER:@Modules/Heading
+var Heading_default = getModule((a) => a?.render?.toString().includes("data-excessive-heading-level"), { searchExports: true });
+
+// common/Components/Collapsible/index.jsx
+function Collapsible({ title, children }) {
+	const [open, setOpen] = React.useState(false);
+	return /* @__PURE__ */ React.createElement("div", { className: open ? "collapsible-container collapsible-open" : "collapsible-container" }, /* @__PURE__ */ React.createElement(
+		"div", {
+			className: "collapsible-header",
+			onClick: () => setOpen(!open)
+		},
+		/* @__PURE__ */
+		React.createElement("div", { className: "collapsible-icon" }, /* @__PURE__ */ React.createElement(Arrow, null)),
+		/* @__PURE__ */
+		React.createElement(
+			Heading_default, {
+				className: "collapsible-title",
+				tag: "h5"
+			},
+			title
+		)
+	), /* @__PURE__ */ React.createElement("div", { className: "collapsible-body" }, children));
+}
+
+// common/Components/Gap/index.jsx
+function Gap({ direction, gap, className }) {
+	const style = {
+		VERTICAL: {
+			width: gap,
+			height: "100%"
+		},
+		HORIZONTAL: {
+			height: gap,
+			width: "100%"
+		}
+	} [direction];
+	return /* @__PURE__ */ React.createElement("div", { style, className });
+}
+Gap.direction = {
+	HORIZONTAL: "HORIZONTAL",
+	VERTICAL: "VERTICAL"
+};
+
+// MODULES-AUTO-LOADER:@Modules/FormSwitch
+var FormSwitch_default = getModule(Filters.byStrings("note", "tooltipNote"), { searchExports: true });
+
+// common/Components/Switch/index.jsx
+var Switch_default = FormSwitch_default || function SwitchComponentFallback(props) {
+	return /* @__PURE__ */ React.createElement("div", { style: { color: "#fff" } }, props.children, /* @__PURE__ */ React.createElement(
+		"input", {
+			type: "checkbox",
+			checked: props.value,
+			onChange: (e) => props.onChange(e.target.checked)
+		}
+	));
+};
+
+// common/Components/SettingSwtich/index.jsx
+function SettingSwtich({ settingKey, note, onChange = nop, hideBorder = false, description, ...rest }) {
+	const [val, set] = Settings_default.useSetting(settingKey);
+	return /* @__PURE__ */ React.createElement(
+		Switch_default, {
+			...rest,
+			value: val,
+			note,
+			hideBorder,
+			onChange: (e) => {
+				set(e);
+				onChange(e);
+			}
+		},
+		description || settingKey
+	);
+}
+
+// MODULES-AUTO-LOADER:@Modules/RadioGroup
+var RadioGroup_default = getModule((a) => a?.Sizes?.NOT_SET === "", { searchExports: true });
+
+// src/SpotifyEnhance/components/SettingComponent/index.jsx
+function SpotifyEmbedOptions() {
+	const [val, set] = Settings_default.useSetting("spotifyEmbed");
+	return /* @__PURE__ */ React_default.createElement(
+		RadioGroup_default, {
+			options: [{
+					value: EmbedStyleEnum.KEEP,
+					name: "Keep: Use original Spotify Embed"
+				},
+				{
+					value: EmbedStyleEnum.REPLACE,
+					name: "Replace: A less laggy Spotify Embed"
+				},
+				{
+					value: EmbedStyleEnum.HIDE,
+					name: "Hide: Completely remove spotify embed"
+				}
+			],
+			orientation: "horizontal",
+			value: val,
+			onChange: (e) => set(e.value)
+		}
+	);
+}
+
+function SpotifyPLayerOptions() {
+	const [val, set] = Settings_default.useSetting("spotifyPlayerPlace;");
+	return /* @__PURE__ */ React_default.createElement(
+		RadioGroup_default, {
+			options: [{
+					value: PlayerPlaceEnum.PIP,
+					name: "PIP: place the player in a draggable picture-in-picture"
+				},
+				{
+					value: PlayerPlaceEnum.USERAREA,
+					name: "USERAREA: place the player in the user area (bottom left)"
+				}
+			],
+			orientation: "horizontal",
+			value: val,
+			onChange: (e) => {
+				set(e.value);
+			}
+		}
+	);
+}
+
+function SettingComponent() {
+	return /* @__PURE__ */ React_default.createElement("div", { className: `${Config_default.info.name}-settings` }, /* @__PURE__ */ React_default.createElement(Collapsible, { title: "miscellaneous" }, [{
+			settingKey: "player",
+			description: "Enable/Disable player.",
+			hideBorder: true
+		},
+		{
+			settingKey: "enableListenAlong",
+			description: "Enables/Disable listen along without premium.",
+			hideBorder: true
+		},
+		{
+			settingKey: "activity",
+			description: "Modify Spotify activity.",
+			hideBorder: true
+		},
+		{
+			settingKey: "activityIndicator",
+			description: "Show user's Spotify activity in chat.",
+			hideBorder: true
+		},
+		{
+			settingKey: "playerCompactMode",
+			description: "Player compact mode",
+			hideBorder: true
+		},
+		{
+			settingKey: "playerBannerBackground",
+			description: "Use the banner as background for the player.",
+			hideBorder: true
+		},
+		{
+			settingKey: "embedBannerBackground",
+			description: "Use the banner as background for the embed.",
+			hideBorder: true,
+			style: { marginBottom: 0 }
+		}
+	].map(SettingSwtich)), /* @__PURE__ */ React_default.createElement(
+		Gap, {
+			direction: Gap.direction.HORIZONTAL,
+			gap: 5
+		}
+	), /* @__PURE__ */ React_default.createElement(Collapsible, { title: "Show/Hide Player buttons" }, [
+		{ settingKey: PlayerButtonsEnum.SHARE, hideBorder: true },
+		{ settingKey: PlayerButtonsEnum.SHUFFLE, hideBorder: true },
+		{ settingKey: PlayerButtonsEnum.PREVIOUS, hideBorder: true },
+		{ settingKey: PlayerButtonsEnum.PLAY, hideBorder: true },
+		{ settingKey: PlayerButtonsEnum.NEXT, hideBorder: true },
+		{ settingKey: PlayerButtonsEnum.REPEAT, hideBorder: true },
+		{ settingKey: PlayerButtonsEnum.VOLUME, hideBorder: true, style: { marginBottom: 0 } }
+	].map(SettingSwtich)), /* @__PURE__ */ React_default.createElement(
+		Gap, {
+			direction: Gap.direction.HORIZONTAL,
+			gap: 5
+		}
+	), /* @__PURE__ */ React_default.createElement(Collapsible, { title: "Spotify embed style" }, /* @__PURE__ */ React_default.createElement(SpotifyEmbedOptions, null)), /* @__PURE__ */ React_default.createElement(
+		Gap, {
+			direction: Gap.direction.HORIZONTAL,
+			gap: 5
+		}
+	), /* @__PURE__ */ React_default.createElement(Collapsible, { title: "Spotify player placement" }, /* @__PURE__ */ React_default.createElement(SpotifyPLayerOptions, null)));
+}
+
 // src/SpotifyEnhance/index.jsx
+Plugin_default.getSettingsPanel = () => /* @__PURE__ */ React_default.createElement(SettingComponent, null);
 module.exports = () => Plugin_default;
