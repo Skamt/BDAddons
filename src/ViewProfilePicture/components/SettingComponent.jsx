@@ -1,8 +1,7 @@
 import SettingSwtich from "@Components/SettingSwtich";
 
-// eslint-disable-next-line react/jsx-key
-export default () =>
-	[
+export default function SettingComponent() {
+	return [
 		{
 			settingKey: "showOnHover",
 			note: "By default hide ViewProfilePicture button and show on hover.",
@@ -15,3 +14,4 @@ export default () =>
 			description: "Include banner color."
 		}
 	].map(SettingSwtich);
+}

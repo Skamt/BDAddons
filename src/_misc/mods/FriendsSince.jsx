@@ -1,3 +1,4 @@
+import config from "@Config";
 import Logger from "@Utils/Logger";
 import { Disposable } from "@Utils";
 import { Patcher, React } from "@Api";

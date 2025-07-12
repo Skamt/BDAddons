@@ -1,0 +1,237 @@
+{
+	"Modules": {
+		"Anchor": {
+			"filter": "Filters.byStrings(\"anchor\",\"noreferrer noopener\")",
+			"options": "{ searchExports: true }"
+		},
+		"RadioGroup": {
+			"filter": "a => a?.Sizes?.NOT_SET === \"\"",
+			"options": "{ searchExports: true }"
+		},
+		"FormText": {
+			"filter": "a => a?.Types?.LABEL_DESCRIPTOR",
+			"options": "{ searchExports: true }"
+		},
+		"Slider": {
+			"filter": "Filters.byPrototypeKeys(\"renderMark\")",
+			"options": "{ searchExports: true }"
+		},
+		"Spinner": {
+			"filter": "a => a?.Type?.CHASING_DOTS",
+			"options": "{ searchExports: true }"
+		},
+		"FormSwitch": {
+			"filter": "Filters.byStrings(\"note\",\"tooltipNote\")",
+			"options": "{ searchExports: true }"
+		},
+		"Button": {
+			"filter": "a => a && a.Link && a.Colors",
+			"options": "{ searchExports: true }"
+		},
+		"Heading": {
+			"filter": "a => a?.render?.toString().includes(\"data-excessive-heading-level\")",
+			"options": "{ searchExports: true }"
+		},
+		"Popout": {
+			"filter": "Filters.byPrototypeKeys(\"shouldShowPopout\",\"toggleShow\")",
+			"options": "{ searchExports: true }"
+		},
+		"Tooltip": {
+			"filter": "Filters.byPrototypeKeys(\"renderTooltip\")",
+			"options": "{ searchExports: true }"
+		},
+		"openModal": {
+			"filter": "Filters.byStrings(\"onCloseCallback\",\"onCloseRequest\",\"modalKey\",\"backdropStyle\")",
+			"options": "{ searchExports: true }"
+		},
+		"zustand": {
+			"filter": "Filters.byStrings(\"useStore, api\")",
+			"options": "{ searchExports: false }"
+		},
+		"TreadComponent": {
+			"filter": "a => a?.type?.toString().includes(\"GUILD_CHANNEL_LIST\")",
+			"options": "{ searchExports: false }"
+		},
+		"useStateFromStores": {
+			"filter": "Filters.byStrings(\"getStateFromStores\")",
+			"options": "{ searchExports: true }"
+		},
+		"TimeBar": {
+			"filter": "a => a.prototype.render && a.defaultProps.themed === false",
+			"options": "{ searchExports: false }"
+		},
+		"RefreshToken": {
+			"filter": "Filters.byStrings(\"CONNECTION_ACCESS_TOKEN\")",
+			"options": "{ searchExports: true }"
+		},
+		"EmbedComponent": {
+			"filter": "m => m.prototype.getSpoilerStyles",
+			"options": "{ searchExports: false }"
+		},
+		"ChannelLink": {
+			"filter": "m => m && m.render && Filters.byStrings(\"ENTER\", \"SPACE\", \"charCode\")(m.render)",
+			"options": "{ searchExports: false }"
+		},
+		"FetchUser": {
+			"filter": "Filters.byStrings(\"USER_UPDATE\",\"default.getUser\",\"oldFormErrors\")",
+			"options": "{ searchExports: true }"
+		},
+		"MentionComponent": {
+			"filter": "Filters.byStrings(\"backgroundColor\",\"color\",\"interactive\", \"wrapper\")",
+			"options": "{ searchExports: false }"
+		},
+		"EmojiFunctions": {
+			"filter": "Filters.byKeys(\"getEmojiUnavailableReason\")",
+			"options": "{ searchExports: true }"
+		},
+		"MessageHeader": {
+			"filter": "Filters.byStrings(\"userOverride\", \"withMentionPrefix\")",
+			"options": "{ searchExports: false }"
+		},
+		"Analytics": {
+			"filter": "Filters.byKeys(\"AnalyticEventConfigs\")",
+			"options": "{ searchExports: false }"
+		},
+		"DiscordUtils": {
+			"filter": "Filters.byKeys(\"getDiscordUtils\")",
+			"options": "{ searchExports: false }"
+		},
+		"GuildTooltip": {
+			"filter": "Filters.byStrings(\"includeActivity\", \"listItemTooltip\")",
+			"options": "{ searchExports: false }"
+		},
+		"ChannelSettings": {
+			"filter": "Filters.byKeys(\"updateChannelOverrideSettings\")",
+			"options": "{ searchExports: false }"
+		},
+		"StickerModule": {
+			"filter": "Filters.byStrings(\"sticker\", \"withLoadingIndicator\")",
+			"options": "{ searchExports: false }"
+		},
+		"DiscordPermissions": {
+			"filter": "Filters.byKeys(\"computePermissions\")",
+			"options": "{ searchExports: false }"
+		},
+		"StickerSendability": {
+			"filter": "Filters.byKeys(\"StickerSendability\", \"getStickerSendability\")",
+			"options": "{ searchExports: false }"
+		},
+		"CloseExpressionPicker": {
+			"filter": "Filters.byStrings(\"activeView:null,activeViewType:null\")",
+			"options": "{ searchExports: true }"
+		},
+		"ExpressionPickerInspector": {
+			"filter": "Filters.byStrings(\"graphicPrimary\",\"titlePrimary\")",
+			"options": "{ searchExports: false }"
+		},
+		"MessageActions": {
+			"filter": "Filters.byKeys('jumpToMessage', '_sendMessage')",
+			"options": "{ searchExports: false }"
+		},
+		"CreateChannel": {
+			"filter": "m => m.createChannel",
+			"options": "{ searchExports: false }"
+		},
+		"ChannelContent": {
+			"filter": "m => m.type && m.type.toString?.().includes(\"messageGroupSpacing\")",
+			"options": "{ searchExports: false }"
+		},
+		"ChannelComponent": {
+			"filter": "Filters.byStrings(\"hasActiveThreads\", \"channelTypeOverride\")",
+			"options": "{ searchExports: true }"
+		},
+		"ChannelActions": {
+			"filter": "Filters.byKeys(\"actions\", \"fetchMessages\")",
+			"options": "{ searchExports: true }"
+		},
+		"Color": {
+			"filter": "Filters.byKeys(\"Color\", \"hex\", \"hsl\")",
+			"options": "{ searchExports: false }"
+		},
+		"Dispatcher": {
+			"filter": "Filters.byKeys(\"dispatch\", \"_dispatch\")",
+			"options": "{ searchExports: false }"
+		},
+		"ImageModal": {
+			"filter": "Filters.byStrings(\"renderLinkComponent\", \"zoomThumbnailPlaceholder\")",
+			"options": "{ searchExports: true }"
+		},
+		"ModalCarousel": {
+			"filter": "Filters.byPrototypeKeys(\"navigateTo\", \"preloadImage\")",
+			"options": "{ searchExports: false }"
+		},
+		"ModalRoot": {
+			"filter": "Filters.byStrings(\"rootWithShadow\",\"MODAL\")",
+			"options": "{ searchExports: true }"
+		},
+		"ModalSize": {
+			"filter": "Filters.byKeys(\"DYNAMIC\",\"SMALL\",\"LARGE\")",
+			"options": "{ searchExports: true }"
+		},
+		"RenderLinkComponent": {
+			"filter": "m => m.type?.toString?.().includes(\"MASKED_LINK\")",
+			"options": "{ searchExports: false }"
+		},
+		"TheBigBoyBundle": {
+			"filter": "Filters.byKeys(\"openModal\", \"FormSwitch\", \"Anchor\")",
+			"options": "{ searchExports: false }"
+		}
+	},
+	"Enums": {
+		"GuildFeaturesEnum": {
+			"filter": "Filters.byKeys(\"CLYDE_ENABLED\")",
+			"options": "{ searchExports: true }",
+			"fallback": {
+				"CLYDE_ENABLED": "CLYDE_ENABLED"
+			}
+		},
+		"EmojiSendAvailabilityEnum": {
+			"filter": "Filters.byKeys(\"GUILD_SUBSCRIPTION_UNAVAILABLE\")",
+			"options": "{ searchExports: true }",
+			"fallback": {
+				"PREMIUM_LOCKED": 2
+			}
+		},
+		"EmojiIntentionEnum": {
+			"filter": "Filters.byKeys(\"GUILD_ROLE_BENEFIT_EMOJI\")",
+			"options": "{ searchExports: true }",
+			"fallback": {
+				"CHAT": 3
+			}
+		},
+		"DiscordPermissionsEnum": {
+			"filter": "Filters.byKeys(\"ADD_REACTIONS\")",
+			"options": "{ searchExports: true }",
+			"fallback": {
+				"EMBED_LINKS": "16384n",
+				"USE_EXTERNAL_EMOJIS": "262144n"
+			}
+		},
+		"StickerTypeEnum": {
+			"filter": "Filters.byKeys(\"GUILD\", \"STANDARD\")",
+			"options": "{ searchExports: true }",
+			"fallback": {
+				"STANDARD": 1,
+				"GUILD": 2
+			}
+		},
+		"ProfileTypeEnum": {
+			"filter": "Filters.byKeys(\"POPOUT\", \"SETTINGS\")",
+			"options": "{ searchExports: true }",
+			"fallback": {
+				"POPOUT": 0,
+				"MODAL": 1,
+				"SETTINGS": 2,
+				"PANEL": 3,
+				"CARD": 4
+			}
+		},
+		"ChannelTypeEnum": {
+			"filter": "Filters.byKeys(\"GUILD_TEXT\", \"DM\")",
+			"options": "{ searchExports: true }",
+			"fallback": {
+				"GUILD_CATEGORY": 4
+			}
+		}
+	}
+}

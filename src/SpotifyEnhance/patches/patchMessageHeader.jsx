@@ -8,19 +8,7 @@ import PresenceStore from "@Stores/PresenceStore";
 import SpotifyIcon from "@Components/icons/SpotifyIcon";
 import Tooltip from "@Components/Tooltip";
 import Settings from "@Utils/Settings";
-
-export default () => {
-	const { module, key } = MessageHeader;
-	if (!module || !key) return Logger.patchError("MessageHeader");
-	Patcher.after(module, key, (_, [{ message }], ret) => {
-		const userId = message.author.id;
-		ret.props.children.push(
-			<ErrorBoundary id="SpotifyActivityIndicator">
-				<SpotifyActivityIndicator userId={userId} />
-			</ErrorBoundary>
-		);
-	});
-};
+import Plugin, { Events } from "@Utils/Plugin";
 
 function SpotifyActivityIndicator({ userId }) {
 	const activityIndicator = Settings(Settings.selectors.activityIndicator);
@@ -37,3 +25,18 @@ function SpotifyActivityIndicator({ userId }) {
 		</Tooltip>
 	);
 }
+
+Plugin.on(Events.START, () => {
+	const { module, key } = MessageHeader;
+	if (!module || !key) return Logger.patchError("MessageHeader");
+	const unpatch = Patcher.after(module, key, (_, [{ message }], ret) => {
+		const userId = message.author.id;
+		ret.props.children.push(
+			<ErrorBoundary id="SpotifyActivityIndicator">
+				<SpotifyActivityIndicator userId={userId} />
+			</ErrorBoundary>
+		);
+	});
+
+	Plugin.once(Events.STOP, unpatch);
+});

@@ -1,4 +1,5 @@
 import zustand, { subscribeWithSelector } from "@Discord/zustand";
+import { Dispatcher } from "@Discord/Modules";
 
 export const Store = Object.assign(
 	zustand(
@@ -32,9 +33,12 @@ export const Store = Object.assign(
 		})
 	),
 	{
-		init() {},
+		init() {
+			Dispatcher.subscribe("LOGOUT", Store.state.clear);
+		},
 		dispose() {
 			Store.state.clear();
+			Dispatcher.unsubscribe("LOGOUT", Store.state.clear);
 		},
 		selectors: {
 			windows: state => state.windows

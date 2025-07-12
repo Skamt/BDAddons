@@ -8,7 +8,8 @@ export default ({ href }) => {
             <span className="copyBtnSpan">|</span>
             <a
                 className="copyBtn"
-                onClick={() => {
+                onClick={e => {
+                	e.stopPropagation();
                     copy(href);
                     Toast.success("Link Copied!");
                 }}>

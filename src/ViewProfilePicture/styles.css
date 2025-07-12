@@ -1,10 +1,9 @@
 /* View Profile Button */
 .VPP-Button {
-	background: hsl(var(--black-500-hsl)/.7);
+	background: hsl(var(--black-500-hsl) / 0.7);
 	cursor: pointer;
 	display: flex;
 	border-radius: 50%;
-	top: 10px;
 	color: #fff;
 	width: 32px;
 	height: 32px;
@@ -12,40 +11,16 @@
 	align-items: center;
 }
 
+.VPP-float {
+	position: absolute;
+	top: 12px;
+	right: 12px;
+	z-index: 987;
+}
 
 .VPP-Button svg {
 	height: 18px;
 	width: 18px;
-}
-
-/* Popout */
-.VPP-right {
-	right: 12px;
-}
-
-.VPP-left {
-	left: 12px;
-}
-
-.VPP-self {
-	right: 48px;
-}
-
-/* Profile */
-.VPP-profile {
-	top: 10px;
-}
-
-.VPP-profile.VPP-right {
-	right: 16px;
-}
-
-.VPP-profile.VPP-self {
-	right: 58px;
-}
-
-.VPP-profile.VPP-left {
-	left: 16px;
 }
 
 /* Bigger icon on profile */
@@ -55,8 +30,8 @@
 	width: 24px;
 }
 
-.VPP-Button:hover{
-	background: hsl(var(--black-500-hsl)/.85);
+.VPP-Button:hover {
+	background: hsl(var(--black-500-hsl) / 0.85);
 }
 
 /* div replacement if No banner */
@@ -82,7 +57,7 @@
 .VPP-carousel button {
 	margin: 0 15px;
 	opacity: 0.8;
-	background: var(--background-primary);
+	background: var(--background-base-low);
 	border-radius: 50%;
 }
 
@@ -136,5 +111,3 @@
 .VPP-colorFormat-options > div {
 	flex: 1;
 }
-
-

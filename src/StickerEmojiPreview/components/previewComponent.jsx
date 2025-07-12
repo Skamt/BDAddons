@@ -1,4 +1,4 @@
-import React, {useRef} from "@React";
+import React, { useRef } from "@React";
 import Settings from "@Utils/Settings";
 import { DiscordPopout } from "@Discord/Modules";
 import { PREVIEW_SIZE } from "../Constants";
@@ -31,7 +31,7 @@ export default ({ target, previewComponent }) => {
 			align="bottom"
 			animation="1"
 			spacing={60}>
-			{() => <div ref={ref}>{target}</div>}
+			{() => React.cloneElement(target, { ref: ref })}
 		</DiscordPopout>
 	);
 };

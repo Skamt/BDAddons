@@ -1,4 +1,6 @@
+
 import { MenuLabel } from "@Components/ContextMenu";
+
 import useStateFromStores from "@Modules/useStateFromStores";
 import React from "@React";
 import UserStore from "@Stores/UserStore";
@@ -15,6 +17,11 @@ const ChannelIconsUtils = getModule(a => a.getChannelIconURL);
 export function buildTab(tabObj) {
 	const id = crypto.randomUUID();
 	return { ...tabObj, id };
+}
+
+export function buildFolder(folderObj) {
+	const id = crypto.randomUUID();
+	return { ...folderObj, bookmarks: folderObj.bookmarks || [], id, isFolder: true };
 }
 
 export function getDmAvatar(channel, size) {

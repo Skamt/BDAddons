@@ -14,21 +14,23 @@ function DragThis(comp) {
 		"TAB",
 		{
 			drop(thisComp, monitor) {
+				if(monitor.didDrop()) return;
 				const dropppedTab = monitor.getItem();
 				const path = dropppedTab.path;
 				if(!path) return;
-				Store.state.addBookmark(buildTab({ path }))
+				Store.state.addBookmark(buildTab({ path }));
 			}
 		},
 		(connect, monitor) => {
 			return {
-				isOver: monitor.isOver(),
+				isOver: monitor.isOver({ shallow: true }),
 				canDrop: monitor.canDrop(),
 				dropRef: connect.dropTarget(),
 			};
 		}
 	)(comp);
 }
+
 // function getOverflowIndex(parentEl) {
 // 	const children = Array.from(parentEl.children);
 // 	let widthSum = 0;

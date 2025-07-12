@@ -1,0 +1,12 @@
+{
+	"compilerOptions": {
+		"paths": {
+			"@Api": ["./common/Api"],
+			"@Webpack": ["./common/Webpack"],
+			"@React": ["./common/React"],
+			"@Utils": ["./common/Utils"],
+			"@Utils/*": ["./common/Utils/*"],
+			"@Discord/*": ["./common/DiscordModules/*"]
+		}
+	}
+}

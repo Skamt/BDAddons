@@ -1,11 +1,12 @@
+import config from "@Config";
 import React from "@React";
 import Collapsible from "@Components/Collapsible";
 import Gap from "@Components/Gap";
 import SettingSwtich from "@Components/SettingSwtich";
 import RadioGroup from "@Modules/RadioGroup";
 import Settings from "@Utils/Settings";
-import { PlayerButtonsEnum, PlayerPlaceEnum, EmbedStyleEnum } from "../../consts.js";
-import { cleanFluxContainer } from "../../patches/patchSpotifyPlayer";
+import { PlayerButtonsEnum, PlayerPlaceEnum, EmbedStyleEnum } from "@/consts.js";
+import Plugin from "@Utils/Plugin";
 
 function SpotifyEmbedOptions() {
 	const [val, set] = Settings.useSetting("spotifyEmbed");
@@ -33,7 +34,7 @@ function SpotifyEmbedOptions() {
 }
 
 function SpotifyPLayerOptions() {
-	const [val, set] = Settings.useSetting("spotifyPlayerPlace");
+	const [val, set] = Settings.useSetting("spotifyPlayerPlace;");
 	return (
 		<RadioGroup
 			options={[
@@ -49,14 +50,13 @@ function SpotifyPLayerOptions() {
 			orientation={"horizontal"}
 			value={val}
 			onChange={e => {
-				cleanFluxContainer();
 				set(e.value);
 			}}
 		/>
 	);
 }
 
-export default function () {
+export default function SettingComponent() {
 	return (
 		<div className={`${config.info.name}-settings`}>
 			<Collapsible title="miscellaneous">

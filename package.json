@@ -1,68 +1,26 @@
 {
-	"name": "BDStuff",
-	"version": "2.0.0",
-	"description": "Mitt BD Stuff",
+	"name": "y",
+	"version": "1.0.0",
 	"main": "index.js",
 	"scripts": {
-		"dev": "node scripts/builder/index.js dev",
-		"build": "node scripts/builder/index.js",
-		"all": "node scripts/builder/index.js all",
-		"inspect": "node --inspect-brk=5858 scripts/builder/index.js build",
-		"lint-b": "eslint scripts/builder",
+		"build": "bun builder/index.js build",
+		"dev": "bun builder/index.js build -dw",
 		"lint": "eslint %INIT_CWD%/**",
-		"new": "node scripts/new/index.js"
-	},
-	"devDependencies": {
-		"@babel/plugin-transform-react-jsx": "^7.21.0",
-		"@babel/plugin-transform-runtime": "^7.21.4",
-		"@rollup/plugin-alias": "^5.0.0",
-		"@rollup/plugin-babel": "^6.0.3",
-		"@rollup/plugin-commonjs": "^28.0.3",
-		"@rollup/plugin-json": "^6.0.0",
-		"@rollup/plugin-node-resolve": "^15.0.2",
-		"@rollup/plugin-sucrase": "^5.0.1",
-		"@rollup/pluginutils": "^5.1.0",
-		"@tailwindcss/postcss": "^4.1.7",
-		"autoprefixer": "^10.4.21",
-		"deep-object-diff": "^1.1.9",
-		"dotenv": "^16.3.1",
-		"eslint": "^8.40.0",
-		"eslint-plugin-react": "^7.34.1",
-		"js-beautify": "^1.14.7",
-		"postcss": "^8.5.3",
-		"rollup": "^3.20.6",
-		"rollup-plugin-cleanup": "^3.2.1",
-		"rollup-plugin-eslint-bundle": "^8.0.0",
-		"rollup-plugin-postcss": "^4.0.2",
-		"rollup-plugin-re": "^1.0.7",
-		"rollup-plugin-strip-code": "^0.2.7",
-		"tailwindcss": "^4.1.7"
-	},
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/Skamt/BetterDiscordPlugins.git"
+		"list": "bun builder/index.js list"
 	},
 	"keywords": [],
-	"author": "Skamt",
+	"author": "",
 	"license": "ISC",
-	"bugs": {
-		"url": "https://github.com/Skamt/BDAddons/issues"
-	},
-	"homepage": "https://github.com/Skamt/BetterDiscordPlugins#readme",
-	"buildConfig": {
-		"pluginsFolder": "./src",
-		"releaseFolder": "./release",
-		"baseConfig": {
-			"info": {
-				"authors": [
-					{
-						"name": "Skamt"
-					}
-				]
-			}
-		}
+	"description": "",
+	"devDependencies": {
+		"dotenv": "^16.5.0",
+		"eslint": "^9.30.0",
+		"eslint-plugin-react": "^7.37.5"
 	},
 	"dependencies": {
-		"draggabilly": "^3.0.0"
+		"commander": "^14.0.0",
+		"esbuild": "^0.25.5",
+		"esbuild-plugin-import-glob": "^0.1.1",
+		"js-beautify": "^1.15.4"
 	}
 }

@@ -1,6 +1,9 @@
 import { React, Data, UI } from "@Api";
+import config from "@Config";
+import Plugin, { Events } from "@Utils/Plugin";
+import StylesLoader from "@Utils/StylesLoader";
 
-const changelogStyles = `
+StylesLoader.push(`
 #changelog-container {
 	font-family: "gg sans", "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
 	--added: #2dc770;
@@ -49,7 +52,7 @@ const changelogStyles = `
     margin-left: -3px;
     border-radius: 50%;
     opacity: .5;
-}`;
+}`);
 
 function ChangelogComponent({ id, changelog }) {
 	React.useEffect(() => {
@@ -62,16 +65,16 @@ function ChangelogComponent({ id, changelog }) {
 function showChangelog() {
 	if (!config.changelog || !Array.isArray(config.changelog)) return;
 	const changelog = config.changelog.map(({ type, items }) => [
-		// eslint-disable-next-line react/jsx-key
+		// biome-ignore lint/correctness/useJsxKeyInIterable: <explanation>
 		<h3
 			style={{ color: `var(--${type})` }}
 			className="title">
 			{type}
 		</h3>,
-		// eslint-disable-next-line react/jsx-key
+		// biome-ignore lint/correctness/useJsxKeyInIterable: <explanation>
 		<ul>
 			{items.map(item => (
-				// eslint-disable-next-line react/jsx-key
+				// biome-ignore lint/correctness/useJsxKeyInIterable: <explanation>
 				<li>{item}</li>
 			))}
 		</ul>
@@ -86,11 +89,11 @@ function showChangelog() {
 	);
 }
 
-export default function shouldChangelog() {
+Plugin.once("START", () => {
 	const { version = config.info.version, changelog = false } = Data.load("metadata") || {};
 
 	if (version !== config.info.version || !changelog) {
 		Data.save("metadata", { version: config.info.version, changelog: true });
 		return showChangelog;
 	}
-}
+});

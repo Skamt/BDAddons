@@ -1,33 +1,44 @@
 import { Patcher, React } from "@Api";
 import { getFluxContainer } from "../Utils";
-import SpotifyPlayer from "../components/SpotifyPlayer";
+import SpotifyPlayer from "@/components/SpotifyPlayer";
 import Logger from "@Utils/Logger";
 import ErrorBoundary from "@Components/ErrorBoundary";
-import Setting from "@Utils/Settings";
-import { PlayerPlaceEnum } from "./../consts.js";
+import { PlayerPlaceEnum } from "@/consts.js";
+import Settings, { renderListener } from "@Utils/Settings";
+import { shallow } from "@Utils";
 
-export default async () => {
-	const fluxContainer = await getFluxContainer();
-	if (!fluxContainer) return Logger.patchError("SpotifyPlayer");
+import Plugin, { Events } from "@Utils/Plugin";
 
-	Patcher.after(fluxContainer.type.prototype, "render", (_, __, ret) => {
-		/*DEBUG*/
-		console.log(ret);
-		/*DEBUG*/
-		if (Setting.state.spotifyPlayerPlace !== PlayerPlaceEnum.USERAREA) return ret;
-		if (Array.isArray(ret)) return;
-		return [
-			// eslint-disable-next-line react/jsx-key
-			<ErrorBoundary id="SpotifyPlayer">
-				<SpotifyPlayer />
-			</ErrorBoundary>,
-			ret
-		];
-	});
-	fluxContainer.stateNode.forceUpdate();
-};
-
-export async function cleanFluxContainer() {
+async function cleanFluxContainer() {
 	const fluxContainer = await getFluxContainer();
 	if (fluxContainer) fluxContainer.stateNode.forceUpdate();
 }
+
+Plugin.on(Events.START, async () => {
+	const fluxContainer = await getFluxContainer();
+	if (!fluxContainer) return Logger.patchError("SpotifyPlayer");
+
+	const unpatch = Patcher.after(fluxContainer.type.prototype, "render", (_, __, ret) => {
+		/*DEBUG*/
+		console.log(ret);
+		/*DEBUG*/
+
+		return [
+			renderListener(
+				<ErrorBoundary id="SpotifyPlayer">
+					<SpotifyPlayer />
+				</ErrorBoundary>,
+				[_ => [_.player, _.spotifyPlayerPlace], shallow],
+				([player, place]) => place === PlayerPlaceEnum.USERAREA && player,
+				true
+			),
+			ret
+		];
+	});
+
+	fluxContainer.stateNode.forceUpdate();
+	Plugin.once(Events.STOP, () => {
+		unpatch();
+		cleanFluxContainer();
+	});
+});

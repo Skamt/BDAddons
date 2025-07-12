@@ -7,6 +7,16 @@ export default class {
 		return typeof event !== "string" || typeof handler !== "function";
 	}
 
+	once(event, handler) {
+		if (this.isInValid(event, handler)) return;
+		if (!this.listeners[event]) this.listeners[event] = new Set();
+		const wrapper = () => {
+			handler();
+			this.off(event, wrapper);
+		};
+		this.listeners[event].add(wrapper);
+	}
+
 	on(event, handler) {
 		if (this.isInValid(event, handler)) return;
 		if (!this.listeners[event]) this.listeners[event] = new Set();

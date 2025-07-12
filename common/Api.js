@@ -1,30 +1,26 @@
+import config from "@Config";
 export const Api = new BdApi(config.info.name);
 
-export const UI = Api.UI;
-export const DOM = Api.DOM;
-export const Data = Api.Data;
-export const React = Api.React;
-export const ReactDOM = Api.ReactDOM;
-export const Patcher = Api.Patcher;
-export const ContextMenu = Api.ContextMenu;
-export const Logger = Api.Logger;
+export const UI = /*@__PURE__*/ (() => Api.UI)();
+export const DOM = /*@__PURE__*/ (() => Api.DOM)();
+export const Data = /*@__PURE__*/ (() => Api.Data)();
+export const React = /*@__PURE__*/ (() => Api.React)();
+export const ReactDOM = /*@__PURE__*/ (() => Api.ReactDOM)();
+export const Patcher = /*@__PURE__*/ (() => Api.Patcher)();
+export const ContextMenu = /*@__PURE__*/ (() => Api.ContextMenu)();
+export const Logger = /*@__PURE__*/ (() => Api.Logger)();
 
 // Components
-export const ErrorBoundary = Api.Components.ErrorBoundary;
+export const ErrorBoundary = /*@__PURE__*/ (() => Api.Components.ErrorBoundary)();
 
 // Webpack
-export const Webpack = Api.Webpack;
-
-// React
-export const useState = Api.React.useState;
-export const useEffect = Api.React.useEffect;
+export const Webpack = /*@__PURE__*/ (() => Api.Webpack)();
 
 // Modals
-export const showConfirmationModal = Api.showConfirmationModal;
+export const showConfirmationModal = /*@__PURE__*/ (() => Api.showConfirmationModal)();
 
 // Utils
-export const debounce = Api.Utils.debounce;
-export const findInTree = Api.Utils.findInTree;
-/* annoying */
-export const getOwnerInstance = /*@__PURE__*/ Api.ReactUtils.getOwnerInstance.bind(Api.ReactUtils); 
-export const getInternalInstance = /*@__PURE__*/ Api.ReactUtils.getInternalInstance.bind(Api.ReactUtils);
+export const debounce = /*@__PURE__*/ (() => Api.Utils.debounce)();
+export const findInTree = /*@__PURE__*/ (() => Api.Utils.findInTree)();
+export const getOwnerInstance = /*@__PURE__*/ (() => Api.ReactUtils.getOwnerInstance.bind(Api.ReactUtils))();
+export const getInternalInstance = /*@__PURE__*/ (() => Api.ReactUtils.getInternalInstance.bind(Api.ReactUtils))();

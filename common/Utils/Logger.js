@@ -1,3 +1,4 @@
+import config from "@Config";
 import { Logger } from "@Api";
 
 Logger.patchError = patchId => {

@@ -1,13 +1,17 @@
 import { Webpack } from "@Api";
 
-export const getModule = Webpack.getModule;
-export const Filters = Webpack.Filters;
-export const waitForModule = Webpack.waitForModule;
-export const modules = Webpack.modules;
-export const getBySource = Webpack.getBySource;
-export const getMangled = Webpack.getMangled;
-export const getStore = Webpack.getStore;
+export const getModule = /*@__PURE__*/ (() => Webpack.getModule)();
+export const Filters = /*@__PURE__*/ (() => Webpack.Filters)();
+export const waitForModule = /*@__PURE__*/ (() => Webpack.waitForModule)();
+export const modules = /*@__PURE__*/ (() => Webpack.modules)();
+export const getBySource = /*@__PURE__*/ (() => Webpack.getBySource)();
+export const getMangled = /*@__PURE__*/ (() => Webpack.getMangled)();
+export const getStore = /*@__PURE__*/ (() => Webpack.getStore)();
 
+export function reactRefMemoFilter(type, ...args){
+	const filter = Filters.byStrings(...args);
+	return target => target[type] && filter(target[type])
+}
 
 export function getModuleAndKey(filter, options) {
 	let module;
@@ -20,7 +24,7 @@ export function getModuleAndKey(filter, options) {
 }
 
 export function filterModuleAndExport(moduleFilter, exportFilter, options) {
-	const module = getModule(moduleFilter, {...options, raw:true});
+	const module = getModule(moduleFilter, { ...options, raw: true });
 	if (!module) return;
 	const { exports } = module;
 	const key = Object.keys(exports).find(k => exportFilter(exports[k]));
@@ -29,7 +33,7 @@ export function filterModuleAndExport(moduleFilter, exportFilter, options) {
 }
 
 export function mapExports(moduleFilter, exportsMap, options) {
-	const module = getModule(moduleFilter , {...options, raw:true});
+	const module = getModule(moduleFilter, { ...options, raw: true });
 	if (!module) return {};
 	const { exports } = module;
 	const res = { module: exports, mangledKeys: {} };

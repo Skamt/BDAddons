@@ -1,14 +1,16 @@
+import config from "@Config";
 import { nop } from "@Utils";
 import Logger from "@Utils/Logger";
 import { React, Patcher } from "@Api";
+import Plugin, { Events } from "@Utils/Plugin";
 
 import ExpressionPickerInspector from "@Patch/ExpressionPickerInspector";
 import CloseExpressionPicker from "@Patch/CloseExpressionPicker";
 
-import PreviewComponent from "../components/PreviewComponent";
+import PreviewComponent from "@/components/PreviewComponent";
 import ErrorBoundary from "@Components/ErrorBoundary";
 
-import { PREVIEW_SIZE, PREVIEW_UNAVAILABLE } from "../Constants";
+import { PREVIEW_SIZE, PREVIEW_UNAVAILABLE } from "@/Constants";
 
 function getMediaInfo({ props, type }) {
 	if (props.sticker) return [type, props];
@@ -29,25 +31,23 @@ function getPreviewComponent(graphicPrimary) {
 	);
 }
 
-export default () => {
-	/**
-	 * Main patch for the plugin
-	 */
+Plugin.on(Events.START, () => {
 	const { module, key } = ExpressionPickerInspector;
-	if (module && key)
-		Patcher.after(module, key, (_, [{ graphicPrimary, titlePrimary }], ret) => {
-			if (titlePrimary?.toLowerCase().includes("upload")) return;
-			return (
-				<ErrorBoundary
-					id="PreviewComponent"
-					plugin={config.info.name}
-					fallback={ret}>
-					<PreviewComponent
-						target={ret}
-						previewComponent={getPreviewComponent(graphicPrimary)}
-					/>
-				</ErrorBoundary>
-			);
-		});
-	else Logger.patchError("ExpressionPickerInspector");
-};
+	if (!module || !key) return Logger.patchError("ExpressionPickerInspector");
+	const unpatch = Patcher.after(module, key, (_, [{ graphicPrimary, titlePrimary }], ret) => {
+		if (titlePrimary?.toLowerCase().includes("upload")) return;
+		return (
+			<ErrorBoundary
+				id="PreviewComponent"
+				plugin={config.info.name}
+				fallback={ret}>
+				<PreviewComponent
+					target={ret}
+					previewComponent={getPreviewComponent(graphicPrimary)}
+				/>
+			</ErrorBoundary>
+		);
+	});
+
+	Plugin.once(Events.STOP, unpatch);
+});

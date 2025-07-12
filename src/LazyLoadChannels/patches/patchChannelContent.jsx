@@ -1,3 +1,4 @@
+import config from "@Config";
 import { Patcher, findInTree, React } from "@Api";
 import Logger from "@Utils/Logger";
 import ChannelContent from "@Modules/ChannelContent";

@@ -1,20 +1,4 @@
-import { Children, useRef, useReducer, useState, useEffect } from "@React";
-import Settings from "@Utils/Settings";
-
-export function useSettings(key) {
-	const target = Settings.get(key);
-	const [state, setState] = useState(target);
-	useEffect(() => {
-		function settingsChangeHandler() {
-			const newVal = Settings.get(key);
-			if (newVal !== state);
-			setState(newVal);
-		}
-		return Settings.on(settingsChangeHandler);
-	}, []);
-
-	return state;
-}
+import { Children, useCallback, useEffect, useReducer, useRef, useState } from "@React";
 
 export function usePropBasedState(prop) {
 	const [state, setState] = useState(prop);
@@ -26,10 +10,10 @@ export function usePropBasedState(prop) {
 }
 
 export const LengthStateEnum = {
-	INCREASED:"INCREASED",
-	UNCHANGED:"UNCHANGED",
-	DECREASED:"DECREASED",
-}
+	INCREASED: "INCREASED",
+	UNCHANGED: "UNCHANGED",
+	DECREASED: "DECREASED"
+};
 
 export function useNumberWatcher(num) {
 	const lastNum = useRef(num);
@@ -42,8 +26,6 @@ export function useNumberWatcher(num) {
 	lastNum.current = currentNum;
 	return state;
 }
-
-
 
 export function useChildrenLengthStateChange(children) {
 	const lastCount = useRef(Children.count(children));
@@ -59,4 +41,25 @@ export function useChildrenLengthStateChange(children) {
 
 export function useForceUpdate() {
 	return useReducer(num => num + 1, 0);
+}
+
+export function useTimer(fn, delay) {
+	const hideTimeoutId = useRef(null);
+
+	const clear = useCallback(() => {
+		if (hideTimeoutId.current === null) return;
+		clearTimeout(hideTimeoutId.current);
+		hideTimeoutId.current = null;
+	}, []);
+
+	const start = useCallback(() => {
+		hideTimeoutId.current = setTimeout(() => {
+			clear(); // clean first in case of exception
+			fn();
+		}, delay);
+	}, [fn, delay]);
+
+	useEffect(() => clear, []);
+
+	return [start, clear];
 }

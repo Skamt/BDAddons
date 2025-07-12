@@ -1,10 +1,11 @@
 import { React, Patcher, ContextMenu } from "@Api";
 import Logger from "@Utils/Logger";
 import { Filters, getModule } from "@Webpack";
-import { Store } from "../Store";
+import { Store } from "@/Store";
 import Flex from "@Components/Flex";
 import ImageIcon from "@Components/icons/ImageIcon";
 import ListenIcon from "@Components/icons/ListenIcon";
+import Plugin, { Events } from "@Utils/Plugin";
 
 const { Item: MenuItem } = ContextMenu;
 
@@ -22,9 +23,9 @@ function MenuLabel({ label, icon }) {
 	);
 }
 
-export default () => {
+Plugin.on(Events.START, () => {
 	if (!ChannelAttachMenu) return Logger.patchError("patchChannelAttach");
-	Patcher.after(ChannelAttachMenu, "Z", (_, args, ret) => {
+	const unpatch = Patcher.after(ChannelAttachMenu, "Z", (_, args, ret) => {
 		if (!Store.state.isActive) return;
 		if (!Store.state.mediaId) return;
 		if (!Array.isArray(ret?.props?.children)) return;
@@ -60,4 +61,6 @@ export default () => {
 			/>
 		);
 	});
-};
+
+	Plugin.once(Events.STOP, unpatch);
+});

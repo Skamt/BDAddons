@@ -3,11 +3,11 @@ import React from "@React";
 import Tooltip from "@Components/Tooltip";
 import Anchor from "@Modules/Anchor";
 
-import { Store } from "../../Store";
-import ContextMenu from "@Components/ContextMenu";
+import { Store } from "@/Store";
 import Artist from "./Artist";
 import TrackBanner from "./TrackBanner";
-
+import { ContextMenu } from "@Api";
+import HoverPopout from "@Components/HoverPopout";
 import ListenIcon from "@Components/icons/ListenIcon";
 import ExternalLinkIcon from "@Components/icons/ExternalLinkIcon";
 
@@ -34,30 +34,30 @@ export default ({ name, artists, mediaType }) => {
 				</Anchor>
 			</Tooltip>
 			<Artist artists={artists} />
-			<ContextMenu
-				menuItems={[
-					{
-						className: "spotify-menuitem",
-						id: "open-link",
-						action: () => Store.Utils.openSpotifyLink(albumUrl),
-						icon: ExternalLinkIcon,
-						label: "Open externally"
-					},
-					{
-						className: "spotify-menuitem",
-						id: "album-play",
-						action: () => Store.Api.listen("album", albumeId, albumName),
-						icon: ListenIcon,
-						label: "Play Album"
-					}
-				]}
-				className="spotify-player-album">
-				<div>
-					on<span className="ellipsis">{albumName}</span>
-				</div>
-			</ContextMenu>
+
+			<HoverPopout
+				popout={e => (
+					<ContextMenu.Menu onClose={e.closePopout}>
+						{ContextMenu.buildMenuChildren([
+							{
+								className: "spotify-menuitem",
+								id: "open-link",
+								action: () => Store.Utils.openSpotifyLink(albumUrl),
+								icon: ExternalLinkIcon,
+								label: "Open externally"
+							},
+							{
+								className: "spotify-menuitem",
+								id: "album-play",
+								action: () => Store.Api.listen("album", albumeId, albumName),
+								icon: ListenIcon,
+								label: "Play Album"
+							}
+						])}
+					</ContextMenu.Menu>
+				)}>
+				<div className="spotify-player-album ellipsis">{`on ${albumName}`}</div>
+			</HoverPopout>
 		</div>
 	);
 };
-
-

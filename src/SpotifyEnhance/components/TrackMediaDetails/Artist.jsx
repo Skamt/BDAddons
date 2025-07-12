@@ -1,28 +1,26 @@
+import "./styles";
 import React from "@React";
-import ContextMenu from "@Components/ContextMenu";
+import { ContextMenu } from "@Api";
+import HoverPopout from "@Components/HoverPopout";
 import ListenIcon from "@Components/icons/ListenIcon";
 import ExternalLinkIcon from "@Components/icons/ExternalLinkIcon";
-import { Store } from "../../Store";
+// import { Store } from "@/Store";
 
 export default function Artist({ artists }) {
+	const menu =
+		artists.length === 1
+			? getArtistContextMenu(artists[0])
+			: artists.map(artist => ({
+					type: "submenu",
+					id: artist.id,
+					label: artist.name,
+					items: getArtistContextMenu(artist)
+				}));
+
 	return (
-		<ContextMenu
-			menuItems={
-				artists.length > 1
-					? artists.map(artist => {
-							return {
-								id: artist.id,
-								label: artist.name,
-								children: getArtistContextMenu(artist)
-							};
-						})
-					: getArtistContextMenu(artists[0])
-			}
-			className="spotify-player-artist">
-			<div>
-				by<span className="ellipsis">{artists[0].name}</span>
-			</div>
-		</ContextMenu>
+		<HoverPopout popout={e => <ContextMenu.Menu onClose={e.closePopout}>{ContextMenu.buildMenuChildren(menu)}</ContextMenu.Menu>}>
+			<div className="spotify-player-artist ellipsis">{`on ${artists[0].name}`}</div>
+		</HoverPopout>
 	);
 }
 

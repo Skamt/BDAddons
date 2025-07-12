@@ -3,7 +3,7 @@ import React from "@React";
 import SpotifyPlayerControls from "../SpotifyPlayerControls";
 import TrackMediaDetails from "../TrackMediaDetails";
 import TrackTimeLine from "../TrackTimeLine";
-import { Store } from "../../Store";
+import { Store } from "@/Store";
 import Settings from "@Utils/Settings";
 import { shallow } from "@Utils";
 

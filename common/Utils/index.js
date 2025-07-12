@@ -1,4 +1,18 @@
+import config from "@Config";
 import { Patcher, getOwnerInstance, ReactDOM, React } from "@Api";
+
+
+export function fit({ width, height, gap = 0.8 }) {
+	const ratio = Math.min(innerWidth / width, innerHeight / height);
+	width = Math.round(width * ratio);
+	height = Math.round(height * ratio);
+	return {
+		width,
+		height,
+		maxHeight: height * gap,
+		maxWidth: width * gap
+	};
+}
 
 export function isValidString(string) {
 	return string && string.length > 0;
@@ -31,11 +45,11 @@ export function getPathName(url) {
 	} catch {}
 }
 
-// stolen ehm.. borrowed from Material-UI
+// from Material-UI
 function easeInOutSin(time) {
 	return (1 + Math.sin(Math.PI * time - Math.PI / 2)) / 2;
 }
-// stolen ehm.. borrowed from Material-UI
+// from Material-UI
 export function animate(property, element, to, options = {}, cb = () => {}) {
 	const {
 		ease = easeInOutSin,
@@ -81,8 +95,7 @@ export function animate(property, element, to, options = {}, cb = () => {}) {
 	requestAnimationFrame(step);
 	return cancel;
 }
-
-// stolen ehm.. borrowed from Material-UI
+// from Material-UI
 export function debounce(func, wait = 166) {
 	let timeout;
 	function debounced(...args) {
@@ -103,11 +116,11 @@ export function shallow(objA, objB) {
 
 	if (typeof objA !== "object" || objA === null || typeof objB !== "object" || objB === null) return false;
 
-	var keysA = Object.keys(objA);
+	const keysA = Object.keys(objA);
 
 	if (keysA.length !== Object.keys(objB).length) return false;
 
-	for (var i = 0; i < keysA.length; i++) if (!Object.prototype.hasOwnProperty.call(objB, keysA[i]) || !Object.is(objA[keysA[i]], objB[keysA[i]])) return false;
+	for (let i = 0; i < keysA.length; i++) if (!Object.prototype.hasOwnProperty.call(objB, keysA[i]) || !Object.is(objA[keysA[i]], objB[keysA[i]])) return false;
 
 	return true;
 }
@@ -222,4 +235,16 @@ export function hook(hook, ...args) {
 	root.render(React.createElement(() => ((v = hook(...args)), null)));
 	root.unmount(b);
 	return v;
+}
+
+export function exceptionWrapper(fn, exp, fin) {
+	return () => {
+		try {
+			fn?.();
+		} catch (e) {
+			exp?.(e);
+		} finally {
+			fin?.();
+		}
+	};
 }

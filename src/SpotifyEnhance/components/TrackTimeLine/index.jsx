@@ -1,7 +1,7 @@
 import "./styles";
 import React from "@React";
 import Slider from "@Modules/Slider";
-import { Store } from "../../Store";
+import { Store } from "@/Store";
 import { shallow } from "@Utils";
 
 function formatMsToTime(ms) {

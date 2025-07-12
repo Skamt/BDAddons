@@ -1,26 +1,25 @@
-import { DOM, Patcher, React } from "@Api";
+import Plugin, { Events } from "@Utils/Plugin";
+import { Patcher, React } from "@Api";
 import RenderLinkComponent from "@Modules/RenderLinkComponent";
 import Logger from "@Utils/Logger";
 import CopyButtonComponent from "./components/CopyButtonComponent";
 import "./styles";
 
-export default class CopyImageLink {
-	start() {
-		try {
-			// eslint-disable-next-line no-undef
-			DOM.addStyle(css);
-			if (!RenderLinkComponent) return Logger.patchError("RenderLinkComponent");
-			Patcher.after(RenderLinkComponent, "type", (_, [{ className, href }], returnValue) => {
-				if (!returnValue || !className?.startsWith("downloadLink") || !href) return;
-				return [returnValue, <CopyButtonComponent href={href} />];
-			});
-		} catch (e) {
-			Logger.error(e);
-		}
+Plugin.on(Events.START, () => {
+	try {
+		if (!RenderLinkComponent) return Logger.patchError("RenderLinkComponent");
+		Patcher.after(RenderLinkComponent, "type", (_, [{ className, href }], returnValue) => {
+			if (!returnValue || !className?.startsWith("downloadLink") || !href) return;
+			// biome-ignore lint/correctness/useJsxKeyInIterable: <explanation>
+			return [returnValue, <CopyButtonComponent href={href} />];
+		});
+	} catch (e) {
+		Logger.error(e);
 	}
+});
 
-	stop() {
-		DOM.removeStyle();
-		Patcher.unpatchAll();
-	}
-}
+Plugin.on(Events.STOP, () => {
+	Patcher.unpatchAll();
+});
+
+module.exports = ()=>Plugin;

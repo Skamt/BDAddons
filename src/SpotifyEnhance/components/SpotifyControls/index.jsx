@@ -1,7 +1,7 @@
 import "./styles";
 import React from "@React";
 import ControlBtn from "./ControlBtn";
-import { Store } from "../../Store";
+import { Store } from "@/Store";
 
 export default ({ id, type, embed: { thumbnail, rawTitle, url } }) => {
 	const isActive = Store(Store.selectors.isActive);

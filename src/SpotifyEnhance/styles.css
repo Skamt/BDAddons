@@ -38,10 +38,13 @@
 	margin: 0 0.25rem 0 0.25rem;
 }
 
+
+
 .pipContainer{
-	position: absolute;
+	position: fixed;
 	inset:0;
 	pointer-events:none;
+	z-index:999;
 }
 
 .pipContainer .spotify-player-container {

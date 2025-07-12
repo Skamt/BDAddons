@@ -8,11 +8,11 @@ import ListenIcon from "@Components/icons/ListenIcon";
 import SpotifyIcon from "@Components/icons/SpotifyIcon";
 import useStateFromStores from "@Modules/useStateFromStores";
 import AccessibilityStore from "@Stores/AccessibilityStore";
-import { shallow } from "@Utils";
-import { getImageComponent } from "@Utils/ImageModal";
+import { fit, shallow } from "@Utils";
+import { ImageComponent } from "@Utils/ImageModal";
 import { openModal } from "@Utils/Modals";
 import Settings from "@Utils/Settings";
-import { Store } from "../../Store";
+import { Store } from "@/Store";
 import PreviewPlayer from "./PreviewPlayer";
 import TrackTimeLine from "../TrackTimeLine";
 
@@ -83,8 +83,15 @@ export default ({ id, type }) => {
 				{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 				<div
 					onClick={() => {
-						const { width = 640, height = 640, url } = banner.bannerLg;
-						openModal(<div className="spotify-banner-modal">{getImageComponent(url, { width, height })}</div>);
+						const { url, ...rest } = banner.bannerLg;
+						openModal(
+							<div className="spotify-banner-modal">
+								<ImageComponent
+									url={url}
+									{...fit(rest)}
+								/>
+							</div>
+						);
 					}}
 					className="spotify-embed-thumbnail"
 				/>

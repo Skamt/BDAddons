@@ -1,10 +1,11 @@
+import Color from "@Modules/Color";
 import React from "@React";
+import AccessibilityStore from "@Stores/AccessibilityStore";
+import ThemeStore from "@Stores/ThemeStore";
 import { copy } from "@Utils";
 import Toast from "@Utils/Toast";
-import Color from "@Modules/Color";
-import ThemeStore from "@Stores/ThemeStore";
-import AccessibilityStore from "@Stores/AccessibilityStore";
-import { getModuleAndKey, getModule, Filters } from "@Webpack";
+import { Filters, getModule, getModuleAndKey } from "@Webpack";
+
 const DesignSystem = getModule(a => a?.unsafe_rawColors?.PRIMARY_800?.resolve);
 
 function resolveColor() {
@@ -35,38 +36,36 @@ function copyColor(type, color) {
 	}
 }
 
-const {
-	module: { ZP: palletHook }
-} = getModuleAndKey(Filters.byStrings("toHexString", "toHsl", "palette"), { searchExports: true }) || {};
-
 function SimpleColorModal({ color }) {
 	return (
 		<div
+			onClick={e => e.stopPropagation()}
 			className="VPP-NoBanner"
 			style={{ backgroundColor: Color(color).css() }}>
 			<div className="VPP-copy-color-container">
-				<a className="VPP-copy-color-label">Copy Color:</a>
-				<a
-					className="VPP-copy-color"
-					onClick={() => copyColor("hex", color)}>
-					hex
-				</a>
-				<span className="VPP-separator">|</span>
-				<a
-					className="VPP-copy-color"
-					onClick={() => copyColor("rgba", color)}>
-					rgba
-				</a>
-				<span className="VPP-separator">|</span>
-				<a
-					className="VPP-copy-color"
-					onClick={() => copyColor("hsla", color)}>
-					hsla
-				</a>
+				<span className="VPP-copy-color-label">Copy Color:</span>
+				{["hex", false, "rgba", false, "hsla"].map(name =>
+					name ? (
+						<a
+							className="VPP-copy-color"
+							onClick={e => {
+								e.stopPropagation();
+								copyColor(name, color);
+							}}>
+							{name}
+						</a>
+					) : (
+						<span className="VPP-separator">|</span>
+					)
+				)}
 			</div>
 		</div>
 	);
 }
+
+const {
+	module: { ZP: palletHook }
+} = getModuleAndKey(Filters.byStrings("toHexString", "toHsl", "palette"), { searchExports: true }) || {};
 
 function ColorModal({ displayProfile, user }) {
 	const color = palletHook(user.getAvatarURL(displayProfile.guildId, 80));

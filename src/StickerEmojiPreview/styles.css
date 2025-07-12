@@ -1,7 +1,7 @@
 .stickersPreview {
 	width: 400px;
 	font-size: 14px;
-	background: var(--background-floating);
+	background: oklab(0.278867 0.00249027 -0.00875303);
 	border-radius: 5px;
 	padding: 0.5em;
 	box-shadow: var(--elevation-high);

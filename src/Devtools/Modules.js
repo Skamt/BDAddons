@@ -11,12 +11,31 @@ const defineModuleGetter = (obj, id) =>
 
 class Module {
 	constructor(id, module) {
-		module = module || webpackRequire(id);
 		this.id = id;
 		this.rawModule = module;
 		this.exports = module.exports;
 		const source = Sources.sourceById(id);
 		this.loader = source.loader;
+	}
+
+	get exportsUses() {
+		const keys = Object.keys(this.exports);
+		const t= this;
+		const ret = {};
+
+		for (let i = keys.length - 1; i >= 0; i--) {
+			const key = keys[i];
+			Object.defineProperty(ret, key, {
+				enumerable: true,
+				get() {
+					return Object.keys(t.modulesUsingThisModule).filter((id) => {
+						const code = t.modulesUsingThisModule[id].code;
+						return exportInModule(code, t.id, key)
+					}).reduce((acc, id) => defineModuleGetter(acc, id), {});
+				}
+			});
+		}
+		return ret;
 	}
 
 	get code() {
@@ -79,7 +98,9 @@ function getWebpackModules() {
 }
 
 function moduleById(id) {
-	return new Module(id, webpackRequire.c[id]);
+	const module = webpackRequire.c[id];
+	if (!module) return;
+	return new Module(id, module);
 }
 
 function modulesImportedInModuleById(id) {
@@ -93,6 +114,18 @@ function modulesImportedInModuleById(id) {
 
 	return imports.map(id => id[1]);
 }
+
+function exportInModule(code, id, key){
+	const args = code.match(/\((.+?)\)/i)?.[1];
+	if (args?.length > 5 || !args) return [];
+	const req = args.split(",")[2];
+	const re = new RegExp(`([a-zA-Z_$][a-zA-Z_$0-9]*)=${req}\\(${id}\\)`);
+	const [, identifier] = Array.from(code.match(re));
+
+	return code.includes(`${identifier}.${key}`);
+}
+
+
 
 function modulesImportingModuleById(id) {
 	return Object.keys(Sources.getWebpackSources()).filter(sourceId => modulesImportedInModuleById(sourceId).includes(`${id}`));
@@ -117,19 +150,18 @@ function doExports(filter, module, exports) {
 }
 
 function sanitizeExports(exports) {
-    if (!exports) return true;
-    if (exports === Symbol) return true;
-    if (exports.TypedArray) return true;
-    if (exports === window) return true;
-    if (exports instanceof Window) return true;
-    if (exports === document.documentElement) return true;
-    if (exports[Symbol.toStringTag] === "DOMTokenList") return true;
+	if (!exports) return true;
+	if (exports === Symbol) return true;
+	if (exports.TypedArray) return true;
+	if (exports === window) return true;
+	if (exports instanceof Window) return true;
+	if (exports === document.documentElement) return true;
+	if (exports[Symbol.toStringTag] === "DOMTokenList") return true;
 	return false;
 }
 
-
 function* moduleLookup(filter, options = {}) {
-	const {searchExports = false} = options;
+	const { searchExports = false } = options;
 	const gauntlet = searchExports ? doExports : noExports;
 
 	const keys = Object.keys(webpackRequire.c);

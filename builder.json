@@ -1,0 +1,13 @@
+{
+	"pluginsFolder": "./src",
+	"releaseFolder": "./release",
+	"baseConfig": {
+		"info": {
+			"authors": [
+				{
+					"name": "Skamt"
+				}
+			]
+		}
+	}
+}

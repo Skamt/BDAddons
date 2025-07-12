@@ -1,4 +1,5 @@
-const DiscordModules = require("../DiscordModules.json");
+const { resolve } = require("node:path");
+const DiscordModules = require(resolve(global.appRoot, "DiscordModules.json"));
 
 const regex = /@(Patch|Modules|Enums|Stores)\/(.+)/;
 const filter = id => id.match(regex);
@@ -31,25 +32,25 @@ const EnumsHandler = {
 	}
 };
 
-module.exports = function componentsAutoLoader() {
+const namespace = "MODULES-AUTO-LOADER";
+module.exports = function modulesAutoLoader() {
 	return {
 		name: "modules-auto-loader",
-		resolveId(id) {
-			return filter(id) ? id : null;
-		},
-		load(id) {
-			if (filter(id)) {
+		setup(build) {
+			build.onResolve({ filter: regex }, ({ path }) => ({ path, namespace }));
+			build.onLoad({ filter: regex, namespace }, ({ path: id }) => {
 				const [target, moduleName] = getModuleInfo(id);
+
 				switch (target) {
 					case "Patch":
 					case "Modules":
-						return ModulesHandler.resolve(moduleName, target);
+						return { contents: ModulesHandler.resolve(moduleName, target), resolveDir: __dirname };
 					case "Stores":
-						return StoresHandler.resolve(moduleName);
+						return { contents: StoresHandler.resolve(moduleName), resolveDir: __dirname };
 					case "Enums":
-						return EnumsHandler.resolve(moduleName);
+						return { contents: EnumsHandler.resolve(moduleName), resolveDir: __dirname };
 				}
-			}
+			});
 		}
 	};
 };

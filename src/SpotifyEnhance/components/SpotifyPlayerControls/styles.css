@@ -30,7 +30,7 @@
 .spotify-player-controls-volume-slider-wrapper {
 	height: 160px;
 	width: 25px;
-	background: var(--background-floating);
+	background: oklab(0.278867 0.00249027 -0.00875303);
 	padding: 5px 3px;
 	border-radius: 99px;
 	display: flex;

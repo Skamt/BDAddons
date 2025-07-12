@@ -10,6 +10,7 @@ import Timer from "@Utils/Timer";
 import Toast from "@Utils/Toast";
 import SpotifyAPIWrapper from "./SpotifyAPIWrapper";
 import { sanitizeSpotifyLink } from "./Utils";
+import Plugin, { Events } from "@Utils/Plugin";
 
 const Utils = {
 	copy(str) {
@@ -179,8 +180,15 @@ export const Store = Object.assign(
 	}
 );
 
+Plugin.on(Events.START, () => {
+	Store.init();
+});
+
+Plugin.on(Events.STOP, () => {
+	Store.dispose();
+});
+
 Object.defineProperty(Store, "state", {
-	writable: false,
 	configurable: false,
 	get: () => Store.getState()
 });

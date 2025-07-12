@@ -2,7 +2,7 @@ import "./styles";
 import React from "@React";
 import Button from "@Components/Button";
 import Popout from "@Components/Popout";
-import ContextMenu from "@Components/ContextMenu";
+import HoverPopout from "@Components/HoverPopout";
 import Tooltip from "@Components/Tooltip";
 import MuteVolumeIcon from "@Components/icons/MuteVolumeIcon";
 import NextIcon from "@Components/icons/NextIcon";
@@ -17,9 +17,10 @@ import VolumeIcon from "@Components/icons/VolumeIcon";
 import ImageIcon from "@Components/icons/ImageIcon";
 import ListenIcon from "@Components/icons/ListenIcon";
 import AddToQueueIcon from "@Components/icons/AddToQueueIcon";
-import { PlayerButtonsEnum } from "../../consts.js";
+import { PlayerButtonsEnum } from "@/consts.js";
 
-import { Store } from "../../Store";
+import { ContextMenu } from "@Api";
+import { Store } from "@/Store";
 import Settings from "@Utils/Settings";
 import { shallow } from "@Utils";
 
@@ -87,71 +88,75 @@ export default () => {
 
 	const { playPauseTooltip, playPauseHandler, playPauseIcon, playPauseClassName } = playpause[isPlaying];
 
+	const shareMenu = [
+		{
+			className: "spotify-menuitem",
+			id: "copy",
+			label: "copy",
+			type: "submenu",
+			items: [
+				{
+					className: "spotify-menuitem",
+					id: "copy-song-link",
+					action: copySongHandler,
+					icon: ListenIcon,
+					label: "Copy song url"
+				},
+				{
+					className: "spotify-menuitem",
+					id: "copy-poster-link",
+					action: copyPosterHandler,
+					icon: ImageIcon,
+					label: "Copy poster url"
+				},
+				{
+					className: "spotify-menuitem",
+					id: "copy-song-name",
+					action: copyNameHandler,
+					// icon: ImageIcon,
+					label: "Copy name"
+				}
+			]
+		},
+		{
+			className: "spotify-menuitem",
+			id: "share",
+			label: "share",
+			type: "submenu",
+			items: [
+				{
+					className: "spotify-menuitem",
+					id: "share-song-link",
+					action: shareSongHandler,
+					icon: ListenIcon,
+					label: "Share song in current channel"
+				},
+				{
+					className: "spotify-menuitem",
+					id: "share-poster-link",
+					action: sharePosterHandler,
+					icon: ImageIcon,
+					label: "Share poster in current channel"
+				},
+				context.type === "playlist" && {
+					className: "spotify-menuitem",
+					id: "share-playlist-link",
+					action: sharePlaylistHandler,
+					icon: AddToQueueIcon,
+					label: "Share playlist in current channel"
+				}
+			].filter(Boolean)
+		}
+	];
+	console.log(shareMenu);
 	return (
 		<div className="spotify-player-controls">
 			{playerButtons[PlayerButtonsEnum.SHARE] && (
-				<ContextMenu
+				<HoverPopout
 					className="spotify-player-controls-share"
-					menuItems={[
-						{
-							className: "spotify-menuitem",
-							id: "copy",
-							label: "copy",
-							children: [
-								{
-									className: "spotify-menuitem",
-									id: "copy-song-link",
-									action: copySongHandler,
-									icon: ListenIcon,
-									label: "Copy song url"
-								},
-								{
-									className: "spotify-menuitem",
-									id: "copy-poster-link",
-									action: copyPosterHandler,
-									icon: ImageIcon,
-									label: "Copy poster url"
-								},
-								{
-									className: "spotify-menuitem",
-									id: "copy-song-name",
-									action: copyNameHandler,
-									// icon: ImageIcon,
-									label: "Copy name"
-								}
-							]
-						},
-						{
-							className: "spotify-menuitem",
-							id: "share",
-							label: "share",
-							children: [
-								{
-									className: "spotify-menuitem",
-									id: "share-song-link",
-									action: shareSongHandler,
-									icon: ListenIcon,
-									label: "Share song in current channel"
-								},
-								{
-									className: "spotify-menuitem",
-									id: "share-poster-link",
-									action: sharePosterHandler,
-									icon: ImageIcon,
-									label: "Share poster in current channel"
-								},
-								context.type === "playlist" && {
-									className: "spotify-menuitem",
-									id: "share-playlist-link",
-									action: sharePlaylistHandler,
-									icon: AddToQueueIcon,
-									label: "Share playlist in current channel"
-								}
-							].filter(Boolean)
-						}
-					]}>
+					popout={e => <ContextMenu.Menu onClose={e.closePopout}>{ContextMenu.buildMenuChildren(shareMenu)}</ContextMenu.Menu>}>
 					<SpotifyPlayerButton value={<ShareIcon />} />
-				</ContextMenu>
+				</HoverPopout>
 			)}
 			{[playerButtons[PlayerButtonsEnum.SHUFFLE] && { name: "Shuffle", value: <ShuffleIcon />, className: "spotify-player-controls-shuffle", disabled: toggling_shuffle, active: shuffle, onClick: shuffleHandler }, playerButtons[PlayerButtonsEnum.PREVIOUS] && { name: "Previous", value: <PreviousIcon />, className: "spotify-player-controls-previous", disabled: skipping_prev, onClick: previousHandler }, { name: playPauseTooltip, value: playPauseIcon, className: playPauseClassName, disabled: false, onClick: playPauseHandler }, playerButtons[PlayerButtonsEnum.NEXT] && { name: "Next", value: <NextIcon />, className: "spotify-player-controls-next", disabled: skipping_next, onClick: nextHandler }, playerButtons[PlayerButtonsEnum.REPEAT] && { name: repeatTooltip, value: repeatIcon, className: "spotify-player-controls-repeat", disabled: toggling_repeat_track, active: repeatActive, onClick: repeatHandler }].filter(Boolean).map(SpotifyPlayerButton)}
 			{playerButtons[PlayerButtonsEnum.VOLUME] && <Volume volume={volume} />}
@@ -159,10 +164,11 @@ export default () => {
 	);
 };
 
-function SpotifyPlayerButton({ className, active, name, value, ...rest }) {
+function SpotifyPlayerButton({ className, ref, active, name, value, ...rest }) {
 	return (
 		<Tooltip note={name}>
 			<Button
+				buttonRef={ref}
 				innerClassName="flexCenterCenter"
 				className={`spotify-player-controls-btn ${className} ${active ? "enabled" : ""}`}
 				size={Button.Sizes.NONE}
@@ -200,8 +206,8 @@ function Volume({ volume }) {
 	};
 
 	return (
-		<Popout
-			renderPopout={() => (
+		<HoverPopout
+			popout={() => (
 				<div className="spotify-player-controls-volume-slider-wrapper">
 					<input
 						value={val}
@@ -226,6 +232,6 @@ function Volume({ volume }) {
 				onClick={volumeMuteHandler}
 				value={val ? <VolumeIcon /> : <MuteVolumeIcon />}
 			/>
-		</Popout>
+		</HoverPopout>
 	);
 }

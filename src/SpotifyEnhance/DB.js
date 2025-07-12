@@ -1,6 +1,8 @@
+import config from "@Config";
 import Logger from "@Utils/Logger";
+import Plugin, { Events } from "@Utils/Plugin";
 
-export default new (class {
+const DB = new (class {
 	init() {
 		const { promise, resolve } = Promise.withResolvers();
 
@@ -17,7 +19,7 @@ export default new (class {
 
 		openReq.onupgradeneeded = () => {
 			const db = openReq.result;
-			
+
 			db.createObjectStore("track", { keyPath: "id" });
 			db.createObjectStore("playlist", { keyPath: "id" });
 			db.createObjectStore("album", { keyPath: "id" });
@@ -73,3 +75,13 @@ export default new (class {
 		return promise;
 	}
 })();
+
+Plugin.on(Events.START, () => {
+	DB.init();
+});
+
+Plugin.on(Events.STOP, () => {
+	DB.dispose();
+});
+
+export default DB;

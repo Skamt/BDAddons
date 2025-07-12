@@ -10,10 +10,11 @@ function getCompName(id) {
 
 module.exports = function componentsAutoLoader() {
 	return {
-		name: 'components-auto-loader',
-		resolveId(id) {
-			return filter(id)  ?
-				path.resolve('common', 'Components', getCompName(id), 'index.jsx') : null;
+		name: "components-auto-loader",
+		setup(build) {
+			build.onResolve({ filter: /@Components\/(.+)/ }, ({ path: id }) => ({
+				path: path.resolve("common", "Components", getCompName(id), "index.jsx")
+			}));
 		}
 	};
-}
+};

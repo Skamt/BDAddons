@@ -1,7 +1,8 @@
 import { Patcher } from "@Api";
 import Logger from "@Utils/Logger";
 import SpotifyStore from "@Stores/SpotifyStore";
-import { Store } from "../Store";
+import { Store } from "@/Store";
+import Plugin, { Events } from "@Utils/Plugin";
 
 function getSocketConstructor() {
 	const playableComputerDevices = SpotifyStore.getPlayableComputerDevices() || [];
@@ -27,13 +28,13 @@ function getSocket() {
 	});
 }
 
-export default async function () {
+Plugin.on(Events.START, async () => {
 	const socket = await getSocket();
-	Patcher.after(socket.prototype, "handleEvent", function onSocketEvent(socket, [socketEvent]) {
+
+	const unpatch = Patcher.after(socket.prototype, "handleEvent", function onSocketEvent(socket, [socketEvent]) {
 		/*DEBUG*/
-		Logger.log("Spotify Socket", socketEvent , Date.now());
+		Logger.log("Spotify Socket", socketEvent, Date.now());
 		/*DEBUG*/
-		
 
 		if (Store.state.account?.accountId && socket.accountId !== Store.state.account?.accountId) return;
 		const { type, event } = socketEvent;
@@ -46,9 +47,11 @@ export default async function () {
 				const devices = event.devices;
 				const isActive = !!(devices.find(d => d.is_active) || devices[0])?.is_active;
 				Store.state.setDeviceState(isActive);
-				if(!isActive) Store.state.setPlayerState({});
+				if (!isActive) Store.state.setPlayerState({});
 				break;
 			}
 		}
 	});
-}
+
+	Plugin.once(Events.STOP, unpatch);
+});

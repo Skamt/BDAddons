@@ -35,8 +35,8 @@ function DragThis(comp) {
 		DragSource(
 			"TAB",
 			{
-				beginDrag(props) {
-					return { ...props };
+				beginDrag({ id, path }) {
+					return { id, path };
 				}
 			},
 			(props, monitor) => {

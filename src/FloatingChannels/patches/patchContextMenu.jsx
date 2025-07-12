@@ -1,3 +1,4 @@
+import config from "@Config";
 import { ContextMenu } from "@Api";
 import { Store } from "@/Store";
 import { buildWindow } from "@/utils";

@@ -3,23 +3,11 @@ import Settings from "@Utils/Settings";
 import { openModal } from "@Utils/Modals";
 import Tooltip from "@Components/Tooltip";
 import ImageIcon from "@Components/icons/ImageIcon";
-import { getImageDimensions, promiseHandler } from "@Utils";
-import { getImageComponent } from "@Utils/ImageModal";
+import { concateClassNames, fit, getImageDimensions, promiseHandler } from "@Utils";
+import { ImageComponent } from "@Utils/ImageModal";
 import ColorModalComponent from "./ColorModalComponent";
 import ModalCarousel from "./ModalCarousel";
 import Spinner from "@Modules/Spinner";
-
-function fit({ width, height }) {
-	const ratio = Math.min(innerWidth / width, innerHeight / height);
-	width = Math.round(width * ratio);
-	height = Math.round(height * ratio);
-	return {
-		width,
-		height,
-		maxHeight: height * 0.8,
-		maxWidth: width * 0.8
-	};
-}
 
 function Banner({ url, src }) {
 	const [loaded, setLoaded] = React.useState(false);
@@ -34,20 +22,26 @@ function Banner({ url, src }) {
 	}, []);
 
 	if (!loaded) return <Spinner type={Spinner.Type.SPINNING_CIRCLE} />;
-	return getImageComponent(url, dimsRef.current);
+	return (
+		<ImageComponent
+			url={url}
+			{...dimsRef.current}
+		/>
+	);
 }
 
-export default ({ bannerObject, className, user, displayProfile }) => {
+export default ({ className, user, displayProfile }) => {
 	const showOnHover = Settings(Settings.selectors.showOnHover);
-	if (showOnHover) className += " VPP-hover";
 
-	const { backgroundColor } = bannerObject || {};
 	const handler = () => {
 		const avatarURL = user.getAvatarURL(displayProfile.guildId, 4096, true);
 		const bannerURL = displayProfile.getBannerURL({ canAnimate: true, size: 4096 });
-		const color = backgroundColor || displayProfile.accentColor || displayProfile.primaryColor;
+		const color = displayProfile.accentColor || displayProfile.primaryColor;
 		const items = [
-			getImageComponent(avatarURL, { ...fit({ width: 4096, height: 4096 }) }),
+			<ImageComponent
+				url={avatarURL}
+				{...fit({ width: 4096, height: 4096 })}
+			/>,
 			bannerURL && (
 				<Banner
 					url={bannerURL}
@@ -74,19 +68,16 @@ export default ({ bannerObject, className, user, displayProfile }) => {
 				items={items}
 			/>,
 			"VPP-carousel",
-			"VPP-carousel-modal"
+			{ className: "VPP-carousel-modal" }
 		);
 	};
 
 	return (
 		<Tooltip note="View profile picture">
+			{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 			<div
-				style={{
-					position: backgroundColor ? "absolute" : "static"
-				}}
-				role="button"
 				onClick={handler}
-				className={className}>
+				className={concateClassNames(className, showOnHover && "VPP-hover")}>
 				<ImageIcon />
 			</div>
 		</Tooltip>

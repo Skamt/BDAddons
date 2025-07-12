@@ -1,3 +1,4 @@
+import config from "@Config";
 import { React } from "@Api";
 
 export default class ErrorBoundary extends React.Component {

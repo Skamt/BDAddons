@@ -1,3 +1,4 @@
+import config from "@Config";
 import { UI } from "@Api";
 
 function showToast(content, type) {

@@ -9,7 +9,7 @@ import AddToQueueIcon from "@Components/icons/AddToQueueIcon";
 import ShareIcon from "@Components/icons/ShareIcon";
 import { Filters, getMangled } from "@Webpack";
 
-import { Store } from "../../Store";
+import { Store } from "@/Store";
 
 const { useSpotifyPlayAction, useSpotifySyncAction } = getMangled(
 	Filters.byStrings("USER_ACTIVITY_PLAY", "spotifyData", "tooltip"),
