@@ -857,7 +857,7 @@ var Utils = {
 		});
 	}
 };
-var Store2 = Object.assign(
+var Store = Object.assign(
 	zustand_default(
 		subscribeWithSelector((set, get) => {
 			return {
@@ -943,20 +943,20 @@ Album: ${album.name}`;
 		init() {
 			SpotifyStore_default.addChangeListener(onSpotifyStoreChange);
 			ConnectedAccountsStore_default.addChangeListener(onAccountsChanged);
-			this.idleTimer = new Timer(() => Store2.state.setAccount(void 0), 5 * 60 * 1e3, Timer.TIMEOUT);
-			this.positionInterval = new Timer(Store2.state.incrementPosition, 1e3, Timer.INTERVAL);
+			this.idleTimer = new Timer(() => Store.state.setAccount(void 0), 5 * 60 * 1e3, Timer.TIMEOUT);
+			this.positionInterval = new Timer(Store.state.incrementPosition, 1e3, Timer.INTERVAL);
 			const account = ConnectedAccountsStore_default.getAccount(null, "spotify") || {};
 			SpotifyAPIWrapper_default.setAccount(account.accessToken, account.id);
 			const { socket } = SpotifyStore_default.getActiveSocketAndDevice() || {};
 			if (!socket) return;
-			Store2.state.setAccount(socket);
-			Store2.state.fetchPlayerState();
+			Store.state.setAccount(socket);
+			Store.state.fetchPlayerState();
 		},
 		dispose() {
 			SpotifyStore_default.removeChangeListener(onSpotifyStoreChange);
 			ConnectedAccountsStore_default.removeChangeListener(onAccountsChanged);
-			Store2.state.setAccount();
-			Store2.state.setPlayerState({});
+			Store.state.setAccount();
+			Store.state.setPlayerState({});
 			this.idleTimer.stop();
 		},
 		Utils,
@@ -980,48 +980,48 @@ Album: ${album.name}`;
 	}
 );
 Plugin_default.on(Events.START, () => {
-	Store2.init();
+	Store.init();
 });
 Plugin_default.on(Events.STOP, () => {
-	Store2.dispose();
+	Store.dispose();
 });
-Object.defineProperty(Store2, "state", {
+Object.defineProperty(Store, "state", {
 	configurable: false,
-	get: () => Store2.getState()
+	get: () => Store.getState()
 });
-Store2.subscribe(Store2.selectors.account, (account = {}) => {
+Store.subscribe(Store.selectors.account, (account = {}) => {
 	SpotifyAPIWrapper_default.setAccount(account.accessToken, account.accountId);
 });
-Store2.subscribe(Store2.selectors.isPlaying, (isPlaying) => {
+Store.subscribe(Store.selectors.isPlaying, (isPlaying) => {
 	if (isPlaying) {
-		Store2.idleTimer.stop();
-		Store2.positionInterval.start();
+		Store.idleTimer.stop();
+		Store.positionInterval.start();
 	} else {
-		Store2.positionInterval.stop();
-		Store2.idleTimer.start();
+		Store.positionInterval.stop();
+		Store.idleTimer.start();
 	}
 });
-Store2.subscribe(Store2.selectors.position, (position) => {
-	const { duration, setPosition } = Store2.state;
+Store.subscribe(Store.selectors.position, (position) => {
+	const { duration, setPosition } = Store.state;
 	if (position < duration) return;
-	Store2.positionInterval.stop();
+	Store.positionInterval.stop();
 	setPosition(duration || 0);
 });
-Store2.subscribe(
+Store.subscribe(
 	(state) => [state.isPlaying, state.progress],
 	([isPlaying]) => {
-		if (!isPlaying) Store2.positionInterval.stop();
-		else Store2.positionInterval.start();
+		if (!isPlaying) Store.positionInterval.stop();
+		else Store.positionInterval.start();
 	}, { equalityFn: shallow }
 );
 
 function onSpotifyStoreChange() {
 	try {
-		if (Store2.state.account?.accountId && Store2.state.account?.accessToken) return;
+		if (Store.state.account?.accountId && Store.state.account?.accessToken) return;
 		const { socket } = SpotifyStore_default.getActiveSocketAndDevice() || {};
 		if (!socket) return;
-		Store2.state.setAccount(socket);
-		Store2.state.fetchPlayerState();
+		Store.state.setAccount(socket);
+		Store.state.fetchPlayerState();
 	} catch (e) {
 		Logger_default.error(e);
 	}
@@ -1029,10 +1029,10 @@ function onSpotifyStoreChange() {
 
 function onAccountsChanged() {
 	try {
-		if (!Store2.state.account) return;
+		if (!Store.state.account) return;
 		const connectedAccounts = ConnectedAccountsStore_default.getAccounts().filter((account) => account.type === "spotify");
-		if (connectedAccounts.some((a) => a.id === Store2.state.account.accountId)) return;
-		Store2.state.setAccount(void 0);
+		if (connectedAccounts.some((a) => a.id === Store.state.account.accountId)) return;
+		Store.state.setAccount(void 0);
 	} catch (e) {
 		Logger_default.error(e);
 	}
@@ -1089,8 +1089,8 @@ function MenuLabel({ label, icon }) {
 Plugin_default.on(Events.START, () => {
 	if (!ChannelAttachMenu) return Logger_default.patchError("patchChannelAttach");
 	const unpatch = Patcher.after(ChannelAttachMenu, "Z", (_, args, ret) => {
-		if (!Store2.state.isActive) return;
-		if (!Store2.state.mediaId) return;
+		if (!Store.state.isActive) return;
+		if (!Store.state.mediaId) return;
 		if (!Array.isArray(ret?.props?.children)) return;
 		ret.props.children.push(
 			/* @__PURE__ */
@@ -1104,8 +1104,8 @@ Plugin_default.on(Events.START, () => {
 						}
 					),
 					action: () => {
-						const songUrl = Store2.state.getSongUrl();
-						Store2.Utils.share(songUrl);
+						const songUrl = Store.state.getSongUrl();
+						Store.Utils.share(songUrl);
 					}
 				}
 			),
@@ -1122,8 +1122,8 @@ Plugin_default.on(Events.START, () => {
 					action: () => {
 						const {
 							bannerLg: { url }
-						} = Store2.state.getSongBanners();
-						Store2.Utils.share(url);
+						} = Store.state.getSongBanners();
+						Store.Utils.share(url);
 					}
 				}
 			)
@@ -1652,10 +1652,10 @@ function renderListener(content, [selector, eqFn = Object.is], shouldShow, memo)
 var Settings_default = SettingsStore;
 
 // src/SpotifyEnhance/components/SpotifyPlayerControls/index.jsx
-var pauseHandler = () => Store2.Api.pause();
-var playHandler = () => Store2.Api.play();
-var previousHandler = () => Store2.Api.previous();
-var nextHandler = () => Store2.Api.next();
+var pauseHandler = () => Store.Api.pause();
+var playHandler = () => Store.Api.play();
+var previousHandler = () => Store.Api.previous();
+var nextHandler = () => Store.Api.next();
 var playpause = {
 	true: {
 		playPauseTooltip: "Pause",
@@ -1692,21 +1692,21 @@ var repeatObj = {
 };
 var SpotifyPlayerControls_default = () => {
 	const playerButtons = Settings_default(Settings_default.selectors.playerButtons, shallow);
-	const [isPlaying, shuffle, repeat, volume] = Store2((_) => [_.isPlaying, _.shuffle, _.repeat, _.volume], shallow);
-	const actions = Store2(Store2.selectors.actions, shallow);
-	const context2 = Store2(Store2.selectors.context, (n, o) => n?.uri === o?.uri);
-	const url = Store2.state.getSongUrl();
-	const { bannerLg } = Store2.state.getSongBanners();
+	const [isPlaying, shuffle, repeat, volume] = Store((_) => [_.isPlaying, _.shuffle, _.repeat, _.volume], shallow);
+	const actions = Store(Store.selectors.actions, shallow);
+	const context2 = Store(Store.selectors.context, (n, o) => n?.uri === o?.uri);
+	const url = Store.state.getSongUrl();
+	const { bannerLg } = Store.state.getSongBanners();
 	const { toggling_shuffle, toggling_repeat_track, skipping_next, skipping_prev } = actions || {};
 	const { repeatTooltip, repeatActive, repeatIcon, repeatArg } = repeatObj[repeat || "off"];
-	const shuffleHandler = () => Store2.Api.shuffle(!shuffle);
-	const repeatHandler = () => Store2.Api.repeat(repeatArg);
-	const shareSongHandler = () => Store2.Utils.share(url);
-	const sharePosterHandler = () => Store2.Utils.share(bannerLg.url);
-	const sharePlaylistHandler = () => Store2.Utils.share(context2?.external_urls?.spotify);
-	const copySongHandler = () => Store2.Utils.copySpotifyLink(url);
-	const copyPosterHandler = () => Store2.Utils.copySpotifyLink(bannerLg.url);
-	const copyNameHandler = () => Store2.Utils.copy(Store2.state.getFullSongName());
+	const shuffleHandler = () => Store.Api.shuffle(!shuffle);
+	const repeatHandler = () => Store.Api.repeat(repeatArg);
+	const shareSongHandler = () => Store.Utils.share(url);
+	const sharePosterHandler = () => Store.Utils.share(bannerLg.url);
+	const sharePlaylistHandler = () => Store.Utils.share(context2?.external_urls?.spotify);
+	const copySongHandler = () => Store.Utils.copySpotifyLink(url);
+	const copyPosterHandler = () => Store.Utils.copySpotifyLink(bannerLg.url);
+	const copyNameHandler = () => Store.Utils.copy(Store.state.getFullSongName());
 	const { playPauseTooltip, playPauseHandler, playPauseIcon, playPauseClassName } = playpause[isPlaying];
 	const shareMenu = [{
 			className: "spotify-menuitem",
@@ -1801,7 +1801,7 @@ function Volume({ volume }) {
 	}, [volume]);
 	const volumeMuteHandler = () => {
 		const target = val ? 0 : volumeRef.current;
-		Store2.Api.volume(target).then(() => {
+		Store.Api.volume(target).then(() => {
 			setVal(target);
 		});
 	};
@@ -1809,7 +1809,7 @@ function Volume({ volume }) {
 	const volumeOnMouseDown = () => setActive(true);
 	const volumeOnMouseUp = () => {
 		setActive(false);
-		Store2.Api.volume(val).then(() => volumeRef.current = val);
+		Store.Api.volume(val).then(() => volumeRef.current = val);
 	};
 	return /* @__PURE__ */ React_default.createElement(
 		HoverPopout, {
@@ -2123,7 +2123,7 @@ var openModal = (children, tag, { className, ...modalRootProps } = {}) => {
 
 // src/SpotifyEnhance/components/TrackMediaDetails/TrackBanner.jsx
 function TrackBanner() {
-	const { bannerLg: bannerObj } = Store2.state.getSongBanners();
+	const { bannerLg: bannerObj } = Store.state.getSongBanners();
 	const thumbnailClickHandler = () => {
 		if (!bannerObj.url) return Toast_default.error("Could not open banner");
 		const { url, ...rest } = bannerObj;
@@ -2150,8 +2150,8 @@ var TrackMediaDetails_default = ({ name, artists, mediaType }) => {
 	if (mediaType !== "track") {
 		return /* @__PURE__ */ React_default.createElement("div", { className: "spotify-player-media" }, /* @__PURE__ */ React_default.createElement("div", { className: "spotify-player-title" }, "Playing ", mediaType || "Unknown"));
 	}
-	const songUrl = Store2.state.getSongUrl();
-	const { name: albumName, url: albumUrl, id: albumeId } = Store2.state.getAlbum();
+	const songUrl = Store.state.getSongUrl();
+	const { name: albumName, url: albumUrl, id: albumeId } = Store.state.getAlbum();
 	return /* @__PURE__ */ React_default.createElement("div", { className: "spotify-player-media" }, /* @__PURE__ */ React_default.createElement(TrackBanner, null), /* @__PURE__ */ React_default.createElement(Tooltip_default2, { note: name }, /* @__PURE__ */ React_default.createElement(
 		Anchor_default, {
 			href: songUrl,
@@ -2163,14 +2163,14 @@ var TrackMediaDetails_default = ({ name, artists, mediaType }) => {
 			popout: (e) => /* @__PURE__ */ React_default.createElement(ContextMenu.Menu, { onClose: e.closePopout }, ContextMenu.buildMenuChildren([{
 					className: "spotify-menuitem",
 					id: "open-link",
-					action: () => Store2.Utils.openSpotifyLink(albumUrl),
+					action: () => Store.Utils.openSpotifyLink(albumUrl),
 					icon: ExternalLinkIcon,
 					label: "Open externally"
 				},
 				{
 					className: "spotify-menuitem",
 					id: "album-play",
-					action: () => Store2.Api.listen("album", albumeId, albumName),
+					action: () => Store.Api.listen("album", albumeId, albumName),
 					icon: ListenIcon,
 					label: "Play Album"
 				}
@@ -2233,7 +2233,7 @@ function formatMsToTime(ms) {
 	return [time.getUTCHours(), String(time.getUTCMinutes()), String(time.getUTCSeconds()).padStart(2, "0")].filter(Boolean).join(":");
 }
 var TrackTimeLine_default = () => {
-	const [position, duration] = Store2((_) => [_.position, _.duration], shallow);
+	const [position, duration] = Store((_) => [_.position, _.duration], shallow);
 	const sliderRef = React_default.useRef();
 	React_default.useEffect(() => {
 		if (sliderRef.current?.state?.active) return;
@@ -2242,9 +2242,9 @@ var TrackTimeLine_default = () => {
 	const rangeChangeHandler = BdApi.Utils.debounce((e) => {
 		if (sliderRef.current?.state?.active) return;
 		const pos = Math.floor(e);
-		Store2.positionInterval.stop();
-		Store2.state.setPosition(pos);
-		Store2.Api.seek(pos);
+		Store.positionInterval.stop();
+		Store.state.setPosition(pos);
+		Store.Api.seek(pos);
 	}, 100);
 	return /* @__PURE__ */ React_default.createElement("div", { className: "spotify-player-timeline" }, /* @__PURE__ */ React_default.createElement(
 		Slider_default, {
@@ -2301,11 +2301,11 @@ function Arrow() {
 
 // src/SpotifyEnhance/components/SpotifyPlayer/index.jsx
 var SpotifyPlayer_default = React_default.memo(function SpotifyPlayer() {
-	const [isActive, media, mediaType] = Store2((_) => [_.isActive, _.media, _.mediaType], shallow);
+	const [isActive, media, mediaType] = Store((_) => [_.isActive, _.media, _.mediaType], shallow);
 	const [player, playerBannerBackground] = Settings_default((_) => [_.player, _.playerBannerBackground], shallow);
 	const [playerCompactMode, setplayerCompactMode] = Settings_default.useSetting("playerCompactMode");
 	if (!player || !isActive || !mediaType) return;
-	const { bannerMd, bannerSm, bannerLg } = Store2.state.getSongBanners();
+	const { bannerMd, bannerSm, bannerLg } = Store.state.getSongBanners();
 	let className = "spotify-player-container";
 	if (playerCompactMode) className += " compact";
 	if (playerBannerBackground) className += " bannerBackground";
@@ -2545,7 +2545,7 @@ var { useSpotifyPlayAction, useSpotifySyncAction } = getMangled(
 	}, { searchExports: true, raw: true }
 );
 var SpotifyActivityControls_default = ({ activity, user }) => {
-	const isActive = Store2(Store2.selectors.isActive);
+	const isActive = Store(Store.selectors.isActive);
 	const userSyncActivityState = useSpotifySyncAction(activity, user);
 	const userPlayActivityState = useSpotifyPlayAction(activity, user);
 	return /* @__PURE__ */ React_default.createElement("div", { className: "spotify-activity-controls" }, /* @__PURE__ */ React_default.createElement(Play, { userPlayActivityState }), /* @__PURE__ */ React_default.createElement(Tooltip_default2, { note: "Add to queue" }, /* @__PURE__ */ React_default.createElement(
@@ -2553,12 +2553,12 @@ var SpotifyActivityControls_default = ({ activity, user }) => {
 			className: "spotify-activity-btn-queue",
 			value: /* @__PURE__ */ React_default.createElement(AddToQueueIcon, null),
 			disabled: !isActive,
-			onClick: () => Store2.Api.queue("track", activity.sync_id, activity.details)
+			onClick: () => Store.Api.queue("track", activity.sync_id, activity.details)
 		}
 	)), /* @__PURE__ */ React_default.createElement(Tooltip_default2, { note: "Share in current channel" }, /* @__PURE__ */ React_default.createElement(
 		ActivityControlButton, {
 			className: "spotify-activity-btn-share",
-			onClick: () => Store2.Utils.share(`https://open.spotify.com/track/${activity.sync_id}`),
+			onClick: () => Store.Utils.share(`https://open.spotify.com/track/${activity.sync_id}`),
 			value: /* @__PURE__ */ React_default.createElement(ShareIcon_default, null)
 		}
 	)), /* @__PURE__ */ React_default.createElement(ListenAlong, { userSyncActivityState }));
@@ -2611,30 +2611,30 @@ function ControlBtn({ value, onClick, ...rest }) {
 
 // src/SpotifyEnhance/components/SpotifyControls/index.jsx
 var SpotifyControls_default = ({ id, type, embed: { thumbnail, rawTitle, url } }) => {
-	const isActive = Store2(Store2.selectors.isActive);
+	const isActive = Store(Store.selectors.isActive);
 	const listenBtn = type !== "show" && /* @__PURE__ */ React_default.createElement(
 		ControlBtn, {
 			disabled: !isActive,
 			value: "play on spotify",
-			onClick: () => Store2.Api.listen(type, id, rawTitle)
+			onClick: () => Store.Api.listen(type, id, rawTitle)
 		}
 	);
 	const queueBtn = (type === "track" || type === "episode") && /* @__PURE__ */ React_default.createElement(
 		ControlBtn, {
 			disabled: !isActive,
 			value: "add to queue",
-			onClick: () => Store2.Api.queue(type, id, rawTitle)
+			onClick: () => Store.Api.queue(type, id, rawTitle)
 		}
 	);
 	return /* @__PURE__ */ React_default.createElement("div", { className: "spotify-embed-plus" }, listenBtn, queueBtn, /* @__PURE__ */ React_default.createElement(
 		ControlBtn, {
 			value: "copy link",
-			onClick: () => Store2.Utils.copySpotifyLink(url)
+			onClick: () => Store.Utils.copySpotifyLink(url)
 		}
 	), /* @__PURE__ */ React_default.createElement(
 		ControlBtn, {
 			value: "copy banner",
-			onClick: () => Store2.Utils.copySpotifyLink(thumbnail?.url || thumbnail?.proxyURL)
+			onClick: () => Store.Utils.copySpotifyLink(thumbnail?.url || thumbnail?.proxyURL)
 		}
 	));
 };
@@ -2894,7 +2894,7 @@ function useGetRessource(type, id) {
 	const [state, setState] = React_default.useState(null);
 	React_default.useEffect(() => {
 		(async () => {
-			const data = await Store2.Api.getRessource(type, id);
+			const data = await Store.Api.getRessource(type, id);
 			if (data) setState(data);
 		})();
 	}, []);
@@ -2905,12 +2905,12 @@ var SpotifyEmbed_default = ({ id, type }) => {
 	const { thumbnail, rawTitle, rawDescription, url, preview_url } = data || {};
 	const embedBannerBackground = Settings_default(Settings_default.selectors.embedBannerBackground);
 	const useReducedMotion = useStateFromStores_default([AccessibilityStore_default], () => AccessibilityStore_default.useReducedMotion);
-	const [isPlaying, isActive] = Store2((_) => [_.isPlaying, _.isActive], shallow);
-	const mediaId = Store2(Store2.selectors.mediaId, (n, o) => n === o || n !== id && o !== id);
+	const [isPlaying, isActive] = Store((_) => [_.isPlaying, _.isActive], shallow);
+	const mediaId = Store(Store.selectors.mediaId, (n, o) => n === o || n !== id && o !== id);
 	const isThis = mediaId === id;
 	const listenBtn = type !== "show" && /* @__PURE__ */ React_default.createElement(Tooltip_default2, { note: `Play ${type}` }, /* @__PURE__ */ React_default.createElement(
 		"div", {
-			onClick: () => Store2.Api.listen(type, id, rawTitle),
+			onClick: () => Store.Api.listen(type, id, rawTitle),
 			className: "spotify-embed-btn spotify-embed-btn-listen"
 		},
 		/* @__PURE__ */
@@ -2918,7 +2918,7 @@ var SpotifyEmbed_default = ({ id, type }) => {
 	));
 	const queueBtn = (type === "track" || type === "episode") && /* @__PURE__ */ React_default.createElement(Tooltip_default2, { note: `Add ${type} to queue` }, /* @__PURE__ */ React_default.createElement(
 		"div", {
-			onClick: () => Store2.Api.queue(type, id, rawTitle),
+			onClick: () => Store.Api.queue(type, id, rawTitle),
 			className: "spotify-embed-btn spotify-embed-btn-addToQueue"
 		},
 		/* @__PURE__ */
@@ -2965,14 +2965,14 @@ var SpotifyEmbed_default = ({ id, type }) => {
 		React_default.createElement(Tooltip_default2, { note: rawDescription }, /* @__PURE__ */ React_default.createElement("p", { className: "spotify-embed-description" }, rawDescription)),
 		type && id && /* @__PURE__ */ React_default.createElement("div", { className: "spotify-embed-controls" }, (isThis && isActive && !isPlaying || !isThis && isActive) && [listenBtn, queueBtn], isThis && isActive && isPlaying && /* @__PURE__ */ React_default.createElement(TrackTimeLine_default, null), /* @__PURE__ */ React_default.createElement(Tooltip_default2, { note: "Copy link" }, /* @__PURE__ */ React_default.createElement(
 			"div", {
-				onClick: () => Store2.Utils.copySpotifyLink(url),
+				onClick: () => Store.Utils.copySpotifyLink(url),
 				className: "spotify-embed-btn spotify-embed-btn-copy"
 			},
 			/* @__PURE__ */
 			React_default.createElement(CopyIcon, null)
 		)), /* @__PURE__ */ React_default.createElement(Tooltip_default2, { note: "Copy banner" }, /* @__PURE__ */ React_default.createElement(
 			"div", {
-				onClick: () => Store2.Utils.copySpotifyLink(banner.bannerLg?.url),
+				onClick: () => Store.Utils.copySpotifyLink(banner.bannerLg?.url),
 				className: "spotify-embed-btn spotify-embed-btn-copy"
 			},
 			/* @__PURE__ */
@@ -2981,7 +2981,7 @@ var SpotifyEmbed_default = ({ id, type }) => {
 		/* @__PURE__ */
 		React_default.createElement(Tooltip_default2, { note: "Play on Spotify" }, /* @__PURE__ */ React_default.createElement(
 			"div", {
-				onClick: () => Store2.Utils.openSpotifyLink(url),
+				onClick: () => Store.Utils.openSpotifyLink(url),
 				className: "spotify-embed-spotifyIcon"
 			},
 			/* @__PURE__ */
@@ -3109,17 +3109,17 @@ Plugin_default.on(Events.START, async () => {
 	const socket = await getSocket();
 	const unpatch = Patcher.after(socket.prototype, "handleEvent", function onSocketEvent(socket2, [socketEvent]) {
 		Logger_default.log("Spotify Socket", socketEvent, Date.now());
-		if (Store2.state.account?.accountId && socket2.accountId !== Store2.state.account?.accountId) return;
+		if (Store.state.account?.accountId && socket2.accountId !== Store.state.account?.accountId) return;
 		const { type, event } = socketEvent;
 		switch (type) {
 			case "PLAYER_STATE_CHANGED":
-				Store2.state.setPlayerState(event.state);
+				Store.state.setPlayerState(event.state);
 				break;
 			case "DEVICE_STATE_CHANGED": {
 				const devices = event.devices;
 				const isActive = !!(devices.find((d) => d.is_active) || devices[0])?.is_active;
-				Store2.state.setDeviceState(isActive);
-				if (!isActive) Store2.state.setPlayerState({});
+				Store.state.setDeviceState(isActive);
+				if (!isActive) Store.state.setPlayerState({});
 				break;
 			}
 		}
