@@ -943,7 +943,7 @@ Album: ${album.name}`;
 		init() {
 			SpotifyStore_default.addChangeListener(onSpotifyStoreChange);
 			ConnectedAccountsStore_default.addChangeListener(onAccountsChanged);
-			this.idleTimer = new Timer(() => Store.state.setAccount(void 0), 5 * 60 * 1e3, Timer.TIMEOUT);
+			this.idleTimer = new Timer(() => Store.state.setDeviceState(false), 5 * 60 * 1e3, Timer.TIMEOUT);
 			this.positionInterval = new Timer(Store.state.incrementPosition, 1e3, Timer.INTERVAL);
 			const account = ConnectedAccountsStore_default.getAccount(null, "spotify") || {};
 			SpotifyAPIWrapper_default.setAccount(account.accessToken, account.id);
