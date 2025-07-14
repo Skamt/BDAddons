@@ -1,73 +1,17 @@
 /**
  * @name SpotifyEnhance
  * @description All in one better spotify-discord experience.
- * @version 1.1.1
+ * @version 1.1.2
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js
  */
 
-// common/Utils/EventEmitter.js
-var EventEmitter_default = class {
-	constructor() {
-		this.listeners = {};
-	}
-	isInValid(event, handler) {
-		return typeof event !== "string" || typeof handler !== "function";
-	}
-	once(event, handler) {
-		if (this.isInValid(event, handler)) return;
-		if (!this.listeners[event]) this.listeners[event] = /* @__PURE__ */ new Set();
-		const wrapper = () => {
-			handler();
-			this.off(event, wrapper);
-		};
-		this.listeners[event].add(wrapper);
-	}
-	on(event, handler) {
-		if (this.isInValid(event, handler)) return;
-		if (!this.listeners[event]) this.listeners[event] = /* @__PURE__ */ new Set();
-		this.listeners[event].add(handler);
-		return () => this.off(event, handler);
-	}
-	off(event, handler) {
-		if (this.isInValid(event, handler)) return;
-		if (!this.listeners[event]) return;
-		this.listeners[event].delete(handler);
-		if (this.listeners[event].size !== 0) return;
-		delete this.listeners[event];
-	}
-	emit(event, ...payload) {
-		if (!this.listeners[event]) return;
-		for (const listener of this.listeners[event]) {
-			try {
-				listener.apply(null, payload);
-			} catch (err) {
-				console.error(`Could not run listener for ${event}`, err);
-			}
-		}
-	}
-};
-
-// common/Utils/Plugin.js
-var Events = {
-	START: "START",
-	STOP: "STOP"
-};
-var Plugin_default = new class extends EventEmitter_default {
-	start() {
-		this.emit(Events.START);
-	}
-	stop() {
-		this.emit(Events.STOP);
-	}
-}();
-
 // config:@Config
 var Config_default = {
 	"info": {
 		"name": "SpotifyEnhance",
-		"version": "1.1.1",
+		"version": "1.1.2",
 		"description": "All in one better spotify-discord experience.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance",
@@ -107,6 +51,68 @@ var Logger = /* @__PURE__ */ (() => Api.Logger)();
 var Webpack = /* @__PURE__ */ (() => Api.Webpack)();
 var findInTree = /* @__PURE__ */ (() => Api.Utils.findInTree)();
 var getInternalInstance = /* @__PURE__ */ (() => Api.ReactUtils.getInternalInstance.bind(Api.ReactUtils))();
+
+// common/Utils/Logger.js
+Logger.patchError = (patchId) => {
+	console.error(`%c[${Config_default.info.name}] %cCould not find module for %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
+};
+var Logger_default = Logger;
+
+// common/Utils/EventEmitter.js
+var EventEmitter_default = class {
+	constructor() {
+		this.listeners = {};
+	}
+	isInValid(event, handler) {
+		return typeof event !== "string" || typeof handler !== "function";
+	}
+	once(event, handler) {
+		if (this.isInValid(event, handler)) return;
+		if (!this.listeners[event]) this.listeners[event] = /* @__PURE__ */ new Set();
+		const wrapper = () => {
+			handler();
+			this.off(event, wrapper);
+		};
+		this.listeners[event].add(wrapper);
+	}
+	on(event, handler) {
+		if (this.isInValid(event, handler)) return;
+		if (!this.listeners[event]) this.listeners[event] = /* @__PURE__ */ new Set();
+		this.listeners[event].add(handler);
+		return () => this.off(event, handler);
+	}
+	off(event, handler) {
+		if (this.isInValid(event, handler)) return;
+		if (!this.listeners[event]) return;
+		this.listeners[event].delete(handler);
+		if (this.listeners[event].size !== 0) return;
+		delete this.listeners[event];
+	}
+	emit(event, ...payload) {
+		if (!this.listeners[event]) return;
+		for (const listener of this.listeners[event]) {
+			try {
+				listener.apply(null, payload);
+			} catch (err) {
+				Logger_default.error(`Could not run listener for ${event}`, err);
+			}
+		}
+	}
+};
+
+// common/Utils/Plugin.js
+var Events = {
+	START: "START",
+	STOP: "STOP"
+};
+var Plugin_default = new class extends EventEmitter_default {
+	start() {
+		this.emit(Events.START);
+	}
+	stop() {
+		this.emit(Events.STOP);
+	}
+}();
 
 // common/Utils/StylesLoader.js
 var styleLoader = {
@@ -177,12 +183,6 @@ StylesLoader_default.push(`:root {
 	width: 240px;
 	box-sizing: border-box;
 }`);
-
-// common/Utils/Logger.js
-Logger.patchError = (patchId) => {
-	console.error(`%c[${Config_default.info.name}] %cCould not find module for %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
-};
-var Logger_default = Logger;
 
 // common/Webpack.js
 var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
@@ -382,7 +382,7 @@ var API_ENDPOINT = "https://api.spotify.com/v1";
 async function wrappedFetch(url, options) {
 	const [fetchError, response] = await promiseHandler(fetch(url, options));
 	if (fetchError) {
-		console.error("Fetch Error", fetchError);
+		Logger_default.error("Fetch Error", fetchError);
 		throw new Error(`[Network error] ${fetchError}`);
 	}
 	if (!response.ok) {
@@ -1765,7 +1765,6 @@ var SpotifyPlayerControls_default = () => {
 			].filter(Boolean)
 		}
 	];
-	console.log(shareMenu);
 	return /* @__PURE__ */ React_default.createElement("div", { className: "spotify-player-controls" }, playerButtons[PlayerButtonsEnum.SHARE] && /* @__PURE__ */ React_default.createElement(
 		HoverPopout, {
 			className: "spotify-player-controls-share",
@@ -3063,7 +3062,6 @@ Plugin_default.on(Events.START, async () => {
 	const fluxContainer = await getFluxContainer();
 	if (!fluxContainer) return Logger_default.patchError("SpotifyPlayer");
 	const unpatch = Patcher.after(fluxContainer.type.prototype, "render", (_, __, ret) => {
-		console.log(ret);
 		return [
 			renderListener(
 				/* @__PURE__ */
