@@ -317,14 +317,12 @@ var insertText = /* @__PURE__ */ (() => {
 
 // src/SendStickersAsLinks/Modules.js
 var StickerSendability = getMangled(
-	/SENDABLE_WITH_BOOSTED_GUILD.{1,3}/, {
+	(a) => typeof a === "object" && "SENDABLE" in a, {
 		StickersSendabilityEnum: Filters.byKeys("SENDABLE_WITH_PREMIUM"),
 		getStickerSendability: Filters.byStrings("canUseCustomStickersEverywhere"),
 		isSendableSticker: Filters.byStrings("0===")
-	}
-	// { searchExports: true, raw:true }
+	}, { searchExports: true, raw: true }
 );
-console.log(StickerSendability);
 
 // src/SendStickersAsLinks/Utils.js
 var getStickerAssetUrl = getModule(Filters.byStrings("&passthrough=false"), { searchExports: true });
