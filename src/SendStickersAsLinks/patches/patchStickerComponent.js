@@ -5,10 +5,13 @@ import Logger from "@Utils/Logger";
 import StickerModule from "@Patch/StickerModule";
 import { isLottieSticker, isAnimatedSticker } from "../Utils";
 
-export default () => {
+import Plugin, { Events } from "@Utils/Plugin";
+
+Plugin.on(Events.START, () => {
 	const { module, key } = StickerModule;
 	if (!module || !key) return Logger.patchError("GetStickerById");
-	Patcher.after(module, key, (_, args, returnValue) => {
+	
+	const unpatch = Patcher.after(module, key, (_, args, returnValue) => {
 		const { size, sticker } = returnValue.props.children[0].props;
 		if (size === 96) {
 			if (Settings.state.shouldHighlightAnimated && !isLottieSticker(sticker) && isAnimatedSticker(sticker)) {
@@ -16,4 +19,6 @@ export default () => {
 			}
 		}
 	});
-};
+
+	Plugin.once(Events.STOP, unpatch);
+});

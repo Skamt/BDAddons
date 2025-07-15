@@ -1,7 +1,7 @@
 {
 	"info": {
 		"name": "SpotifyEnhance",
-		"version": "1.1.1",
+		"version": "1.1.2",
 		"description": "All in one better spotify-discord experience.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance"

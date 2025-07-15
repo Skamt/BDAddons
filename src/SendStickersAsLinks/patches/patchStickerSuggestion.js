@@ -1,3 +1,4 @@
+import Plugin, { Events } from "@Utils/Plugin";
 import { Patcher } from "@Api";
 import Logger from "@Utils/Logger";
 
@@ -5,17 +6,18 @@ import StickerTypeEnum from "@Enums/StickerTypeEnum";
 
 import { StickerSendability } from "../Modules";
 
-export default () => {
+Plugin.on(Events.START, () => {
 	/**
 	 * Enables suggestions
 	 * */
 
 	if (!StickerSendability) return Logger.patchError("StickerSuggestion");
-
-	Patcher.after(StickerSendability.module, StickerSendability.mangledKeys.getStickerSendability, (_, args, returnValue) => {
+	const unpatch = Patcher.after(StickerSendability, "getStickerSendability", (_, args, returnValue) => {
 		if (args[0].type === StickerTypeEnum.GUILD) {
-			const { SENDABLE } = StickerSendability.StickerSendability;
+			const { SENDABLE } = StickerSendability.StickersSendabilityEnum;
 			return returnValue !== SENDABLE ? SENDABLE : returnValue;
 		}
 	});
-};
+
+	Plugin.once(Events.STOP, unpatch);
+});

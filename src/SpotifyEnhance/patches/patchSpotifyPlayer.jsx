@@ -19,10 +19,9 @@ Plugin.on(Events.START, async () => {
 	if (!fluxContainer) return Logger.patchError("SpotifyPlayer");
 
 	const unpatch = Patcher.after(fluxContainer.type.prototype, "render", (_, __, ret) => {
-		/*DEBUG*/
-		console.log(ret);
-		/*DEBUG*/
-
+		DEV:{
+			console.log(ret);
+		}	
 		return [
 			renderListener(
 				<ErrorBoundary id="SpotifyPlayer">

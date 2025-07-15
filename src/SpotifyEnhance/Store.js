@@ -141,7 +141,7 @@ export const Store = Object.assign(
 		init() {
 			SpotifyStore.addChangeListener(onSpotifyStoreChange);
 			ConnectedAccountsStore.addChangeListener(onAccountsChanged);
-			this.idleTimer = new Timer(() => Store.state.setAccount(undefined), 5 * 60 * 1000, Timer.TIMEOUT);
+			this.idleTimer = new Timer(() => Store.state.setDeviceState(false), 5 * 60 * 1000, Timer.TIMEOUT);
 			this.positionInterval = new Timer(Store.state.incrementPosition, 1000, Timer.INTERVAL);
 
 			const account = ConnectedAccountsStore.getAccount(null, "spotify") || {};

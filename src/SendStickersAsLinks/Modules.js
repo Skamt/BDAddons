@@ -1,11 +1,13 @@
-import {  mapExports, Filters } from "@Webpack";
+import {  getMangled, Filters } from "@Webpack";
 
-export const StickerSendability = mapExports(
-	a => typeof a === "object" && "SENDABLE" in a,
+export const StickerSendability = getMangled(
+	/SENDABLE_WITH_BOOSTED_GUILD.{1,3}/,
 	{
-		StickerSendability: Filters.byKeys("SENDABLE_WITH_PREMIUM"),
+		StickersSendabilityEnum: Filters.byKeys("SENDABLE_WITH_PREMIUM"),
 		getStickerSendability: Filters.byStrings("canUseCustomStickersEverywhere"),
 		isSendableSticker: Filters.byStrings("0===")
 	},
-	{ searchExports: true }
+	// { searchExports: true, raw:true }
 );
+
+console.log(StickerSendability)

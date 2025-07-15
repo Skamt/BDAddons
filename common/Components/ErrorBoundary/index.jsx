@@ -1,5 +1,6 @@
 import config from "@Config";
 import { React } from "@Api";
+import Logger from "@Utils/Logger";
 
 export default class ErrorBoundary extends React.Component {
 	state = { hasError: false, error: null, info: null };

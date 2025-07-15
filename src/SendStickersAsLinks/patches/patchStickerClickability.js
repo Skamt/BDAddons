@@ -3,11 +3,15 @@ import Logger from "@Utils/Logger";
 
 import { StickerSendability } from "../Modules";
 
-export default () => {
+import Plugin, { Events } from "@Utils/Plugin";
+
+Plugin.on(Events.START, () => {
 	/**
 	 * Make stickers clickable.
 	 **/
 
 	if (!StickerSendability) return Logger.patchError("StickerClickability");
-	Patcher.after(StickerSendability.module,  StickerSendability.mangledKeys.isSendableSticker, () => true);
-};
+	const unpatch = Patcher.after(StickerSendability, "isSendableSticker", () => true);
+
+	Plugin.once(Events.STOP, unpatch);
+});

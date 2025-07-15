@@ -4,7 +4,7 @@ import { ContextMenu } from "@Api";
 import HoverPopout from "@Components/HoverPopout";
 import ListenIcon from "@Components/icons/ListenIcon";
 import ExternalLinkIcon from "@Components/icons/ExternalLinkIcon";
-// import { Store } from "@/Store";
+import { Store } from "@/Store";
 
 export default function Artist({ artists }) {
 	const menu =

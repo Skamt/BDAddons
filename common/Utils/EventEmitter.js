@@ -1,3 +1,5 @@
+import Logger from "@Utils/Logger";
+
 export default class {
 	constructor() {
 		this.listeners = {};
@@ -40,7 +42,7 @@ export default class {
 			try {
 				listener.apply(null, payload);
 			} catch (err) {
-				console.error(`Could not run listener for ${event}`, err);
+				Logger.error(`Could not run listener for ${event}`, err);
 			}
 		}
 	}

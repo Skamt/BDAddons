@@ -9,7 +9,7 @@ import {StickerSendability} from "./Modules";
 
 const getStickerAssetUrl = getModule(Filters.byStrings("&passthrough=false"), { searchExports: true });
 
-const { StickerSendability: StickersSendabilityEnum, getStickerSendability } = StickerSendability;
+const { StickersSendabilityEnum, getStickerSendability } = StickerSendability;
 const StickerFormatEnum = {
 	"1": "PNG",
 	"2": "APNG",

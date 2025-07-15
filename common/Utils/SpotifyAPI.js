@@ -1,10 +1,11 @@
 import { promiseHandler, buildUrl } from "@Utils";
+import Logger from "@Utils/Logger";
 const API_ENDPOINT = "https://api.spotify.com/v1";
 
 async function wrappedFetch(url, options) {
 	const [fetchError, response] = await promiseHandler(fetch(url, options));
 	if (fetchError) {
-		console.error("Fetch Error", fetchError);
+		Logger.error("Fetch Error", fetchError);
 		throw new Error(`[Network error] ${fetchError}`);
 	}
 

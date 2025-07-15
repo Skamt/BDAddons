@@ -148,7 +148,7 @@ export default () => {
 			].filter(Boolean)
 		}
 	];
-	console.log(shareMenu);
+
 	return (
 		<div className="spotify-player-controls">
 			{playerButtons[PlayerButtonsEnum.SHARE] && (
