@@ -1,33 +1,19 @@
 import "./styles";
-import Logger from "@Utils/Logger";
-import { DOM, Patcher } from "@Api";
-import patchContextMenu from "./patches/patchContextMenu";
-import patchSomething from "./patches/patchSomething";
+import "./patches/*";
+import { Patcher } from "@Api";
 import { Store } from "./Store";
+import Plugin, { Events } from "@Utils/Plugin";
+// import React from "@React";
+// import SettingComponent from "./components/SettingComponent";
 
-/*DEBUG*/
-window.FloatingChannelsStore = Store;
-/*DEBUG*/
+// Plugin.getSettingsPanel = () => <SettingComponent />;
 
-export default class FloatingChannels {
-	start() {
-		try {
-			DOM.addStyle(css);
-			Store.init();
-			patchSomething();
-			this.unpatchContextMenu = patchContextMenu();
-		} catch (e) {
-			Logger.error(e);
-		}
-	}
-
-	stop() {
-		DOM.removeStyle();
-		Store.dispose();
-		Patcher.unpatchAll();
-		this.unpatchContextMenu?.forEach?.(p => p());
-		this.unpatchContextMenu = null;
-	}
+DEV: {
+	window.FloatingChannelsStore = Store;
 }
 
-// const css = "";
+Plugin.on(Events.STOP, () => {
+	Patcher.unpatchAll();
+});
+
+module.exports = () => Plugin;

@@ -2,4 +2,5 @@ release
 /node_modules
 *.TODO
 .env
+_*
 DiscordModules

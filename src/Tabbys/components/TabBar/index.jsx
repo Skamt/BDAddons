@@ -1,75 +1,45 @@
 import "./styles";
-import { Store } from "@/Store";
-import { buildTab } from "@/utils";
+import React, { useEffect, useState } from "@React";
 import { PlusIcon } from "@Components/Icon";
-import React, { useRef } from "@React";
-import Tab from "../Tab";
-import TabsScroller from "../TabsScroller";
+import TabsScroller from "@/components/TabsScroller";
+import Tab from "@/components/Tab";
+import Store from "@/Store";
+import { clsx } from "@Utils";
 
-import Settings from "@Utils/Settings";
-import { concateClassNames } from "@Utils";
-import { DropTarget } from "@Discord/Modules";
+const c = clsx("tabbar");
 
-function DragThis(comp) {
-	return DropTarget(
-		"BOOKMARK",
-		{
-			drop(_, monitor) {
-				const droppedBookmark = monitor.getItem();
-				const path = droppedBookmark.path;
-				if (!path) return;
-				Store.state.newTab(buildTab({ path }));
-			}
-		},
-		(connect, monitor) => {
-			return {
-				isOver: monitor.isOver(),
-				canDrop: monitor.canDrop(),
-				dropRef: connect.dropTarget()
-			};
-		}
-	)(comp);
-}
-
-export default DragThis(function TabBar({ isOver, canDrop, dropRef, leading, trailing }) {
+export default function TabBar() {
 	const tabs = Store(Store.selectors.tabs, (a, b) => a.length === b.length && !a.some((_, i) => a[i].id !== b[i].id));
-	const showTabDivider = Settings(Settings.selectors.showTabDivider);
-	const tabsContainerRef = useRef();
-	dropRef(tabsContainerRef);
+	const selectedId = Store(Store.selectors.selectedId);
+	const selectedIndex = Store.getSelectedTabIndex();
 
 	const newTabHandler = e => {
 		e.preventDefault();
 		e.stopPropagation();
-		Store.state.newTab(buildTab({ path: "/channels/@me" }));
+		Store.newTab();
 	};
 
 	return (
-		<div className="tabbar flex">
-			{leading}
+		<div className={c("container")}>
+			<TabsScroller
+				shouldScroll={selectedId}
+				scrollTo={selectedIndex}
+				containerClassName={c("tabs-scroller-container")}
+				contentClassName={c("tabs-scroller-content")}
+				items={tabs}
+				renderItem={({ id }) => (
+					<Tab
+						key={id}
+						id={id}
+					/>
+				)}
+			/>
+			{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 			<div
-				className={concateClassNames("tabs-container flex-center", canDrop && isOver && "candrop")}
-				ref={tabsContainerRef}
-				onDoubleClick={e => e.stopPropagation()}>
-				<TabsScroller>
-					{tabs.map((a, index, list) => [
-						showTabDivider && index !== 0 && <div className="tab-div" />,
-						<Tab
-							isSingle={list.length === 1}
-							key={a.id}
-							id={a.id}
-						/>
-					])}
-				</TabsScroller>
-				<div className="new-tab-div" />
-				{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-				<div
-					className="new-tab flex-center round"
-					onClick={newTabHandler}>
-					<PlusIcon className="parent-dim" />
-				</div>
+				className={c("new-tab")}
+				onClick={newTabHandler}>
+				<PlusIcon />
 			</div>
-			
-			{trailing}
 		</div>
 	);
-});
+}

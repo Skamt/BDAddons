@@ -1,16 +1,20 @@
-import config from "@Config";
-import { ContextMenu } from "@Api";
 import { Store } from "@/Store";
 import { buildWindow } from "@/utils";
+import { ContextMenu } from "@Api";
+import config from "@Config";
+import Plugin, { Events } from "@Utils/Plugin";
+import { Filters, getModule } from "@Webpack";
 
-import { getModule, Filters } from "@Webpack";
 const ChannelActions = getModule(Filters.byKeys("actions", "fetchMessages"));
 
-export default () => {
-	return [
+Plugin.on(Events.START, () => {
+	let unpatch = [
 		...["thread-context", "user-context", "channel-context"].map(context =>
-			ContextMenu.patch(context, (retVal, { channel }) => {
-				if(!channel) return;
+			ContextMenu.patch(context, (retVal, ag) => {
+				console.log(ag);
+				
+				const channel = ag.channel;
+				if (!channel) return;
 				retVal.props.children.splice(0, 0, [
 					ContextMenu.buildItem({
 						id: `${config.info.name}-open-window`,
@@ -25,4 +29,9 @@ export default () => {
 			})
 		)
 	];
-};
+
+	Plugin.once(Events.STOP, () => {
+		unpatch?.forEach?.(p => p());
+		unpatch = null;
+	});
+});

@@ -1,3 +1,2 @@
 import { getModule } from "@Webpack";
-export default getModule(a => a.defaultProps?.direction, {searchExports:true});
-
+export default getModule(Filters.byKeys("Child", "Align", "Justify"))

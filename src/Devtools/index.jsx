@@ -13,8 +13,6 @@ import { Sources } from "./Sources";
 import { Stores } from "./Stores";
 import webpackRequire from "./webpackRequire";
 
-
-
 const d = (() => {
 	const cache = new WeakMap();
 	const emptyDoc = document.createDocumentFragment();
@@ -90,6 +88,17 @@ const d = (() => {
 	};
 })();
 
+function dispatcherEventInterceptor(eventName, fn) {
+	const index = Dispatcher._interceptors.length;
+	Dispatcher.addInterceptor(e => {
+		if (e.type !== eventName) return;
+		try {
+			fn(e);
+		} catch {}
+	});
+	return () => Dispatcher._interceptors.splice(index, 1);
+}
+
 function init() {
 	["Filters", "getModule", "getModules"].forEach(a => (window[a] = BdApi.Webpack[a]));
 	window.getModuleAndKey = getModuleAndKey;
@@ -98,7 +107,8 @@ function init() {
 		Utils: {
 			ErrorBoundary,
 			...Utils,
-			...d
+			...d,
+			dispatcherEventInterceptor
 		},
 		r: webpackRequire,
 		...Misc,
@@ -132,7 +142,7 @@ function updateStores() {
 }
 
 const enableExp = (() => {
-	let unpatch = ()=>{};
+	let unpatch = () => {};
 	return function enableExp(b) {
 		if (!b) {
 			unpatch?.();

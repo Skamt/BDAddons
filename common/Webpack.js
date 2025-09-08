@@ -1,5 +1,5 @@
 import { Webpack } from "@Api";
-
+import { LazyComponent } from "@React";
 export const getModule = /*@__PURE__*/ (() => Webpack.getModule)();
 export const Filters = /*@__PURE__*/ (() => Webpack.Filters)();
 export const waitForModule = /*@__PURE__*/ (() => Webpack.waitForModule)();
@@ -8,9 +8,21 @@ export const getBySource = /*@__PURE__*/ (() => Webpack.getBySource)();
 export const getMangled = /*@__PURE__*/ (() => Webpack.getMangled)();
 export const getStore = /*@__PURE__*/ (() => Webpack.getStore)();
 
-export function reactRefMemoFilter(type, ...args){
+export function waitForComponent(filter, options) {
+	let myValue = () => {};
+
+	const lazyComponent = LazyComponent(() => myValue);
+	waitForModule(filter, options).then(v => {
+		myValue = v;
+		Object.assign(lazyComponent, v);
+	});
+
+	return lazyComponent;
+}
+
+export function reactRefMemoFilter(type, ...args) {
 	const filter = Filters.byStrings(...args);
-	return target => target[type] && filter(target[type])
+	return target => target[type] && filter(target[type]);
 }
 
 export function getModuleAndKey(filter, options) {

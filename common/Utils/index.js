@@ -1,7 +1,6 @@
 import config from "@Config";
 import { Patcher, getOwnerInstance, ReactDOM, React } from "@Api";
 
-
 export function fit({ width, height, gap = 0.8 }) {
 	const ratio = Math.min(innerWidth / width, innerHeight / height);
 	width = Math.round(width * ratio);
@@ -14,29 +13,16 @@ export function fit({ width, height, gap = 0.8 }) {
 	};
 }
 
-export function isValidString(string) {
-	return string && string.length > 0;
-}
-
-export function getUserName(userObject = {}) {
-	const { global_name, globalName, username } = userObject;
-	if (isValidString(global_name)) return global_name;
-	if (isValidString(globalName)) return globalName;
-	if (isValidString(username)) return username;
-	return "???";
-}
-
-export function getAcronym(string) {
-	if (!isValidString(string)) return "";
-
-	return string
-		.replace(/'s /g, " ")
-		.replace(/\w+/g, e => e[0])
-		.replace(/\s/g, "");
-}
 
 export function concateClassNames(...args) {
 	return args.filter(Boolean).join(" ");
+}
+
+export function clsx(prefix) {
+	return (...args) =>
+		args.filter(Boolean)
+			.map(a => `${prefix}-${a}`)
+			.join(" ");
 }
 
 export function getPathName(url) {

@@ -2,7 +2,7 @@ import { ContextMenu, Patcher, Data, React } from "@Api";
 import { copy, Disposable } from "@Utils";
 import Toast from "@Utils/Toast";
 import Logger from "@Utils/Logger";
-import GuildStore from "@Stores/GuildStore";
+import GuildRoleStore from "@Stores/GuildRoleStore";
 import SelectedGuildStore from "@Stores/SelectedGuildStore";
 import GuildMemberStore from "@Stores/GuildMemberStore";
 
@@ -11,7 +11,7 @@ import MessageHeader from "@Patch/MessageHeader";
 let set = new Set();
 
 function al(a, confirm) {
-	BdApi.showConfirmationModal("", a, {
+	BdApi.UI.showConfirmationModal("", a, {
 		onConfirm: confirm,
 		confirmText: "po"
 	});
@@ -34,7 +34,7 @@ const emojiClickHandler = (e, emoji) => {
 };
 function RolesList({ guild }) {
 
-	const guildRoles = Object.values(GuildStore.getRoles(guild.id)).map(role => {
+	const guildRoles = GuildRoleStore.getSortedRoles(guild.id).map(role => {
 		const { id, colorString ,name } = role;
 		return (
 			<div
@@ -64,13 +64,13 @@ export default class PinRoles extends Disposable {
 					const guildId = channel.guild_id;
 					const rolesForGuild = Data.load(guildId);
 					if (!rolesForGuild) return;
-					const guildRoles = GuildStore.getRoles(guildId);
+					const guildRoles = GuildRoleStore.getSortedRoles(guildId);
 					const memberRoles = GuildMemberStore.getMember(guildId, message.author.id)?.roles;
 					if(!memberRoles) return;
 					for (let i = 0; i < rolesForGuild.length; i++) {
 						const targetRoleId = rolesForGuild[i];
 						if (!memberRoles.includes(targetRoleId)) continue;
-						const role = guildRoles[targetRoleId];
+						const role = guildRoles.find(a => a.id === targetRoleId);
 						ret.props.children.push(<span className="messageRoleHeader">{role.name}</span>);
 					}
 				}),

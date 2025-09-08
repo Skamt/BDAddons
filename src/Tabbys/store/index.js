@@ -1,108 +1,70 @@
-import bookmarksStore from "./bookmarksStore";
-import tabsStore from "./tabsStore";
-import { Data } from "@Api";
-import { buildTab } from "@/utils";
-import { Dispatcher } from "@Discord/Modules";
-import { transitionTo } from "@Discord/Modules";
 import zustand, { subscribeWithSelector } from "@Discord/zustand";
+import TabSlice from "./tabs";
+import BookmarkSlice from "./bookmarks";
+import UserSlice from "./bookmarks";
+import Plugin, { Events } from "@Utils/Plugin";
+import { Data } from "@Api";
+import { getPathName, debounce } from "@Utils";
 import UserStore from "@Stores/UserStore";
-import ChannelStore from "@Stores/ChannelStore";
-import GuildStore from "@Stores/GuildStore";
-import { getPathName } from "@Utils";
+import { transitionTo } from "@Discord/Modules";
 
-// function generateTabs(n = 5) {
-// 	const guildIds = GuildStore.getGuildIds();
-// 	// biome-ignore lint/complexity/useFlatMap: <explanation>
-// 	const paths = guildIds
-// 		.map(guildId =>
-// 			ChannelStore.getChannelIds(guildId)
-// 				.filter(id => ChannelStore.getChannel(id).type === 0)
-// 				.map(channelId => `/channels/${guildId}/${channelId}`)
-// 		)
-// 		.flat();
+const stateFn = () => ({
+	...TabSlice.state,
+	...BookmarkSlice.state,
+	...UserSlice.state
+});
 
-// 	let b = n;
-// 	const res = [];
-// 	while (b--)
-// 		res.push({
-// 			id: crypto.randomUUID(),
-// 			path: paths[Math.floor(Math.random() * paths.length)]
-// 		});
-// 	return res;
-// }
-
-// import { diff } from "deep-object-diff";
-
-export const Store = Object.assign(
-	zustand(
-		subscribeWithSelector((setState, get) => {
-			const set = args => {
-				setState(args);
-				const state = get();
-
-				const user = UserStore.getCurrentUser();
-				const data = Object.entries(state)
-					.filter(([, val]) => typeof val !== "function")
-					.reduce((acc, [key, val]) => {
-						if (key === "user") return acc;
-						acc[key] = val;
-						return acc;
-					}, {});
-				Data.save(user.id, data);
-			};
-
-			return {
-				user: null,
-				setUser(user) {
-					set({ user });
-				},
-				...tabsStore.store(set, get),
-				...bookmarksStore.store(set, get)
-			};
-		})
-	),
-	{
-		init() {
-			hydrateStore();
-			window.navigation.addEventListener("navigate", onLocationChange);
-			Dispatcher.subscribe("CONNECTION_OPEN", hydrateStore);
-		},
-		dispose() {
-			window.navigation.removeEventListener("navigate", onLocationChange);
-			Dispatcher.unsubscribe("CONNECTION_OPEN", hydrateStore);
-		},
-		selectors: {
-			...tabsStore.selectors,
-			...bookmarksStore.selectors
-		}
-	}
-);
+const Store = zustand(subscribeWithSelector(stateFn));
 
 Object.defineProperty(Store, "state", {
 	configurable: false,
 	get: () => Store.getState()
 });
 
+Object.defineProperty(Store, "selectors", { value: {} });
+
+Object.assign(Store, TabSlice.actions, BookmarkSlice.actions, UserSlice.actions);
+Object.assign(Store.selectors, TabSlice.selectors, BookmarkSlice.selectors);
+
+import { addedDiff, deletedDiff, detailedDiff, diff, updatedDiff } from "deep-object-diff";
+
+Store.subscribe(
+	state => state,
+	(p, n) => {
+		console.log(detailedDiff(n, p));
+	}
+);
+
 Store.subscribe(Store.selectors.selectedId, () => {
-	const selectedTab = Store.state.getCurrentlySelectedTab();
+	const selectedTab = Store.getSelectedTab();
 	if (!selectedTab) return;
 	transitionTo(selectedTab.path);
 });
+
+const onLocationChange = debounce(e => {
+	const pathname = getPathName(e.destination.url);
+	if (!pathname) return;
+	Store.setSelectedTab(pathname);
+}, 50);
 
 function hydrateStore() {
 	const user = UserStore.getCurrentUser();
 	if (Store.state.user?.id === user.id) return;
 	const userData = Data.load(user.id) || {};
-	Store.state.setUser(user);
-	Store.state.setTabs(userData.tabs || [buildTab({ path: "/channels/@me" })], userData.selectedId);
-	Store.state.setBookmarks(userData.bookmarks || []);
-	Store.state.setLastSelectedIdAfterNewTab(userData.lastSelectedIdAfterNewTab);
+	Store.setState({ ...userData });
 }
 
-function onLocationChange(e) {
+Plugin.on(Events.START, () => {
+	window.navigation.addEventListener("navigate", onLocationChange);
+	hydrateStore();
+});
 
-	const pathname = getPathName(e.destination.url);
-	if (!pathname) return;
+Plugin.on(Events.STOP, () => {
+	window.navigation.removeEventListener("navigate", onLocationChange);
+});
 
-	Store.state.setTab(Store.state.selectedId, { path: pathname });
+DEV: {
+	window.TabbysStore = Store;
 }
+
+export default Store;

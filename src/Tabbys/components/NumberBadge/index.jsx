@@ -1,6 +1,8 @@
-import "./styles";
+// import "./styles";
 import React from "@React";
-import { concateClassNames } from "@Utils";
+import { clsx } from "@Utils";
+
+const c = clsx("badge");
 
 function m(e) {
 	return e < 10 ? 13 : e < 100 ? 19 : 27;
@@ -11,10 +13,11 @@ function g(e) {
 }
 
 export default ({ count, type }) => {
-	
-	return <div
-		style={{ width: m(count) }}
-		className={concateClassNames("badge flex-center round", type)}>
-		{g(count)}
-	</div>;
+	return (
+		<div
+			style={{ width: m(count) }}
+			className={c("pill", type)}>
+			{g(count)}
+		</div>
+	);
 };

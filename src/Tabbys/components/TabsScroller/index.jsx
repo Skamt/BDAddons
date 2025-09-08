@@ -1,207 +1,103 @@
 import "./styles";
-import { Store } from "@/Store";
+import React, { useEffect, useRef, useState } from "@React";
+import { animate, getElMeta, isScrollable } from "@Utils/HTMLElement";
+import { join } from "@Utils/String";
+import { clsx, debounce } from "@Utils";
 import { ArrowIcon } from "@Components/Icon";
-import { useNumberWatcher, LengthStateEnum } from "@Utils/Hooks";
-import React, { Children, useRef, useEffect, useState } from "@React";
-import { animate, concateClassNames, debounce } from "@Utils";
 
-function getFirstAndLastChild(el) {
-	const tabListChildren = Array.from(el.children);
-	const length = tabListChildren.length;
-	if (length < 1) return [];
-
-	const firstTab = tabListChildren[0];
-	const lastTab = tabListChildren[length - 1];
-
-	return [firstTab, lastTab];
-}
-
-export default function TabsScroller({ children }) {
-	const [leftScrollBtn, setLeftScrollBtn] = useState(false);
-	const [rightScrollBtn, setRightScrollBtn] = useState(false);
-	const displayStartScrollRef = useRef(null);
-	const displayEndScrollRef = useRef(null);
-	const tabsRef = useRef(null);
-	const childrenLengthState = useNumberWatcher(Children.count(children));
-
-	function getTabsMeta(tabIndex) {
-		if (tabIndex == null) return {};
-		const tabsNode = tabsRef.current;
-		const res = {};
-
-		if (tabsNode) {
-			const rect = tabsNode.getBoundingClientRect().toJSON();
-			res.tabsMeta = {
-				...rect,
-				clientWidth: tabsNode.clientWidth,
-				scrollLeft: tabsNode.scrollLeft,
-				scrollTop: tabsNode.scrollTop,
-				scrollWidth: tabsNode.scrollWidth,
-				top: rect.top,
-				bottom: rect.bottom,
-				left: rect.left,
-				right: rect.right
-			};
-		}
-
-		const tabsNodes = tabsNode.querySelectorAll(".tab");
-		const targetTab = tabsNodes[tabIndex];
-		const nextTab = tabsNodes[tabIndex + 1];
-		const previousTab = tabsNodes[tabIndex - 1];
-
-		res.targetTab = !targetTab
-			? {}
-			: {
-					...targetTab.getBoundingClientRect().toJSON(),
-					isFirst: targetTab === tabsNodes[0],
-					isLast: targetTab === tabsNodes[tabsNodes.length - 1]
-				};
-
-		res.nextTab = !nextTab ? {} : { ...nextTab.getBoundingClientRect().toJSON() };
-		res.previousTab = !previousTab ? {} : { ...previousTab.getBoundingClientRect().toJSON() };
-
-		return res;
-	}
-
-	function scroll(scrollValue) {
-		animate("scrollLeft", tabsRef.current, scrollValue);
-	}
-
-	function scrollSelectedIntoView() {
-		const selectedTab = Store.state.getCurrentlySelectedTab();
-		if (!selectedTab) return;
-		const index = Store.state.getTabIndex(selectedTab.id);
-		if (index == null) return;
-		const { tabsMeta, targetTab, nextTab, previousTab } = getTabsMeta(index);
-
-		if (!targetTab || !tabsMeta) return;
-
-		if (targetTab.isFirst) return scroll(tabsRef.current.scrollWidth * -1);
-		if (targetTab.isLast) return scroll(tabsRef.current.scrollWidth);
-
-		tabsMeta.right -= displayEndScrollRef.current.clientWidth;
-		tabsMeta.left += displayStartScrollRef.current.clientWidth;
-
-		if (targetTab.left < tabsMeta.left) {
-			// left side of button is out of view
-			const nextScrollStart = tabsMeta.scrollLeft + (previousTab.right - tabsMeta.left);
-			scroll(nextScrollStart);
-		} else if (targetTab.right > tabsMeta.right) {
-			// right side of button is out of view
-			const nextScrollStart = tabsMeta.scrollLeft + (nextTab.left - tabsMeta.right);
-			scroll(nextScrollStart);
-		}
-	}
+function useIsScrollable() {
+	const [isOverflowing, setIsOverflowing] = useState(false);
+	const scrollerNode = useRef();
 
 	useEffect(() => {
-		// Scroll to newly added and selected tab, this should let us add tabs in the backgound without scrolling to them
-		if (childrenLengthState !== LengthStateEnum.INCREASED) return;
-		scrollSelectedIntoView();
-	}, [children.length]);
-
-	useEffect(() => {
-		// Scroll selected into view
-		return Store.subscribe(Store.selectors.selectedId, scrollSelectedIntoView);
+		const node = scrollerNode.current;
+		if (!node) return;
+		scrollerNode.current = node;
+		setIsOverflowing(isScrollable(node));
 	}, []);
 
 	useEffect(() => {
-		const tabsNode = tabsRef.current;
-		if (!tabsNode) return;
+		const node = scrollerNode.current;
+		if (!node) return;
 
-		const observerOptions = {
-			root: tabsNode,
-			threshold: 0.99
-		};
+		const overflowListener = debounce(() => setIsOverflowing(isScrollable(node)));
 
-		const handleLeftScrollButton = debounce(entries => setLeftScrollBtn(!entries.sort((a, b) => a.time - b.time).pop().isIntersecting));
-		const leftObserver = new IntersectionObserver(handleLeftScrollButton, observerOptions);
+		const resizeObserver = new ResizeObserver(overflowListener);
+		resizeObserver.observe(node);
 
-		const handleRightScrollButton = debounce(entries => setRightScrollBtn(!entries.sort((a, b) => a.time - b.time).pop().isIntersecting));
-		const rightObserver = new IntersectionObserver(handleRightScrollButton, observerOptions);
-
-		function observeFirstAndLastChild() {
-			leftObserver?.disconnect?.();
-			rightObserver?.disconnect?.();
-			const [firstTab, lastTab] = getFirstAndLastChild(tabsNode);
-			if (!firstTab || !lastTab) return;
-			leftObserver.observe(firstTab);
-			rightObserver.observe(lastTab);
-		}
-
-		observeFirstAndLastChild();
-
-		// const resizeMutation = debounce(() => scrollSelectedIntoView());
-		// const resizeObserver = new ResizeObserver(resizeMutation);
-		// resizeObserver.observe(tabsNode);
-
-		const handleMutation = debounce(() => observeFirstAndLastChild());
-		const mutationObserver = new MutationObserver(handleMutation);
-		mutationObserver.observe(tabsNode, { childList: true });
+		const mutationObserver = new MutationObserver(overflowListener);
+		mutationObserver.observe(node, { childList: true });
 
 		return () => {
-			mutationObserver?.disconnect?.();
-			// resizeObserver?.disconnect?.();
-			leftObserver?.disconnect?.();
-			rightObserver?.disconnect?.();
-			handleRightScrollButton.clear();
-			handleLeftScrollButton.clear();
-			handleMutation.clear();
+			overflowListener.clear();
+			mutationObserver?.disconnect();
+			resizeObserver?.disconnect();
 		};
 	}, []);
 
-	const moveTabsScroll = delta => {
-		let scrollValue = tabsRef.current.scrollLeft;
-		scrollValue += delta;
-		scroll(scrollValue);
-	};
+	return [scrollerNode, isOverflowing];
+}
 
-	const getScrollSize = () => {
-		const tabsNode = tabsRef.current;
-		if (!tabsNode) return;
-		const containerSize = tabsNode.clientWidth;
-		let totalSize = 0;
-		const children = Array.from(tabsNode.children);
+const c = clsx("scroller");
 
-		for (let i = 0; i < children.length; i += 1) {
-			const tab = children[i];
-			if (totalSize + tab.clientWidth > containerSize) {
-				if (i === 0) {
-					totalSize = containerSize;
-				}
-				break;
-			}
-			totalSize += tab.clientWidth;
-		}
+export default function TabsScroller({ items, renderItem, shouldScroll, scrollTo, onScrollToEnd, containerClassName, contentClassName, endScrollButtonClassName, scrollButtonClassName, startScrollButtonClassName, getScrollSize }) {
+	const [ref, isOverflowing] = useIsScrollable();
 
-		return totalSize;
-	};
+	useEffect(() => {
+		setTimeout(() => {
+			scrollItemIntoView(scrollTo);
+		}, 0);
+	}, [shouldScroll]);
 
-	const handleStartScrollClick = () => moveTabsScroll(-1 * getScrollSize());
-	const handleEndScrollClick = () => moveTabsScroll(getScrollSize());
+	function scroll(scrollValue) {
+		const scrollerNode = ref.current;
+		if (!scrollerNode) return;
+		animate("scrollLeft", ref.current, scrollerNode.scrollLeft + scrollValue);
+	}
+
+	function scrollDelta() {
+		const scrollerNode = ref.current;
+		if (!scrollerNode) return;
+		return getScrollSize ? getScrollSize(scrollerNode) : scrollerNode.clientWidth / 2;
+	}
+
+	function scrollItemIntoView(index) {
+		if (index == null) return;
+		const scrollerNode = ref.current;
+		if (!scrollerNode) return;
+		const target = scrollerNode.children[index];
+		if (!target) return;
+		const { parentMeta, targetMeta, nextSiblingMeta, previousSiblingMeta } = getElMeta(target);
+
+		if (!nextSiblingMeta) return scroll(targetMeta.right + targetMeta.width - parentMeta.right);
+		if (!previousSiblingMeta) return scroll(targetMeta.left - targetMeta.width - parentMeta.left);
+		if (targetMeta.left < parentMeta.left) return scroll(previousSiblingMeta.right - parentMeta.left);
+		if (targetMeta.right > parentMeta.right) return scroll(nextSiblingMeta.left - parentMeta.right);
+	}
 
 	return (
-		<div className="tabs-scroller flex-center">
-			{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+		<div className={join(" ", c("container"), containerClassName)}>
+			{isOverflowing && (
+				// biome-ignore lint/a11y/useButtonType: <explanation>
+				<button
+					onClick={() => scroll(-1 * scrollDelta())}
+					className={join("", c("btn", "btn-start"), scrollButtonClassName, startScrollButtonClassName)}>
+					<ArrowIcon />
+				</button>
+			)}
 			<div
-				ref={displayStartScrollRef}
-				onClick={handleStartScrollClick}
-				className={concateClassNames("scrollBtn flex-center left-arrow", !leftScrollBtn && "hidden-visually")}>
-				<ArrowIcon className="parent-dim flip" />
+				ref={ref}
+				className={join(" ", c("content"), contentClassName)}>
+				{items.map((item, index) => renderItem(item, index))}
 			</div>
-
-			<div
-				className="tabs-list"
-				ref={tabsRef}>
-				{children}
-			</div>
-
-			{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-			<div
-				ref={displayEndScrollRef}
-				onClick={handleEndScrollClick}
-				className={concateClassNames("scrollBtn flex-center right-arrow", !rightScrollBtn && "hidden-visually")}>
-				<ArrowIcon className="parent-dim" />
-			</div>
+			{isOverflowing && (
+				// biome-ignore lint/a11y/useButtonType: <explanation>
+				<button
+					onClick={() => scroll(scrollDelta())}
+					className={join(" ", c("btn", "btn-end"), scrollButtonClassName, endScrollButtonClassName)}>
+					<ArrowIcon />
+				</button>
+			)}
 		</div>
 	);
 }

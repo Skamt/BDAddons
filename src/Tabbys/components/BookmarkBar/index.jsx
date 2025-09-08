@@ -1,144 +1,98 @@
-import "./styles";
-import { Store } from "@/Store";
-import React, { useEffect, useState, useRef } from "@React";
-import Bookmark from "../Bookmark";
+import Store from "@/Store";
+import Bookmark from "@/components/Bookmark";
+import Folder, { SimpleFolder } from "@/components/Folder";
 import { ArrowIcon } from "@Components/Icon";
-import { DiscordPopout } from "@Discord/Modules";
-import { debounce, concateClassNames } from "@Utils";
-import { useNumberWatcher, LengthStateEnum } from "@Utils/Hooks";
-import { buildTab } from "@/utils";
-import { DropTarget } from "@Discord/Modules";
+import Popout from "@Components/Popout";
+// import "./styles";
+import React, { useRef, useEffect, useState } from "@React";
+import { clsx, shallow } from "@Utils";
+const c = clsx("bookmarkbar");
 
-function DragThis(comp) {
-	return DropTarget(
-		"TAB",
-		{
-			drop(thisComp, monitor) {
-				if(monitor.didDrop()) return;
-				const dropppedTab = monitor.getItem();
-				const path = dropppedTab.path;
-				if(!path) return;
-				Store.state.addBookmark(buildTab({ path }));
-			}
-		},
-		(connect, monitor) => {
-			return {
-				isOver: monitor.isOver({ shallow: true }),
-				canDrop: monitor.canDrop(),
-				dropRef: connect.dropTarget(),
-			};
-		}
-	)(comp);
-}
+export default function BookmarkBar() {
+	const bookmarks = Store(Store.selectors.bookmarks, shallow);
+	const contentRef = useRef();
+	const [overflowedItems, setOverflowedItems] = useState([]);
 
-// function getOverflowIndex(parentEl) {
-// 	const children = Array.from(parentEl.children);
-// 	let widthSum = 0;
-// 	const overflowLimit = window.innerWidth * 0.95;
-// 	for (let i = 0; i < children.length; i++) {
-// 		const child = children[i];
-// 		const tempSum = child.clientWidth + widthSum;
-// 		if (tempSum > overflowLimit) return i;
-// 		widthSum = tempSum;
-// 	}
-// 	return -1;
-// }
-
-function isVisible(el) {
-	const parentRect = el.parentElement.getBoundingClientRect();
-	const childRect = el.getBoundingClientRect();
-
-	return childRect.left >= parentRect.left && childRect.right <= parentRect.right;
-}
-
-
-export default DragThis(function BookmarkBar({isOver, canDrop, dropRef, leading, trailing}) {
-	const bookmarks = Store(Store.selectors.bookmarks, (a, b) => a.length === b.length && !a.some((_, i) => a[i].id !== b[i].id));
-	const popoutRef = useRef();
-	const bookmarksContainerRef = useRef();
-	const [overflowIndex, setOverflowIndex] = useState(-1);
-	const isOverflowing = overflowIndex > -1;
-	const childrenLengthState = useNumberWatcher(bookmarks.length);
-	const overflowBookmarks = isOverflowing ? bookmarks.slice(overflowIndex, bookmarks.length) : [];
-	const bookmarkbarRef = useRef();
-	dropRef(bookmarkbarRef);
 	useEffect(() => {
-		const bookmarksNode = bookmarksContainerRef.current;
-		if (!bookmarksNode) return;
+		const node = contentRef.current;
+		if (!node) return;
 
-		const handleMutation = debounce(() => {
-			if (childrenLengthState === LengthStateEnum.INCREASED && isOverflowing) return;
-			if (childrenLengthState === LengthStateEnum.DECREASED && !isOverflowing) return;
+		const handleIntersection = entries => {
+			setOverflowedItems(p => {
+				const res = new Set(p);
 
-			const childrenNodes = Array.from(bookmarksNode.children);
-			const indexOfFirstNotFullyVisibleChild = childrenNodes.findIndex(a => !isVisible(a));
-			setOverflowIndex(indexOfFirstNotFullyVisibleChild);
-		});
+				for (let i = entries.length - 1; i >= 0; i--) {
+					const id = entries[i].target.dataset.id;
+					if (!id) continue;
+					if (entries[i].isIntersecting) res.delete(id);
+					else res.add(id);
+				}
+				return [...res];
+			});
+		};
 
-		handleMutation();
-		const resizeObserver = new ResizeObserver(handleMutation);
-		resizeObserver.observe(bookmarksNode);
+		const intersectionObserver = new IntersectionObserver(handleIntersection, { root: node, threshold: 1 });
+		for (const child of node.children) child.dataset.id && intersectionObserver.observe(child);
+
+		const mutationObserver = new MutationObserver(records =>
+			records.forEach(record => {
+				record.removedNodes.forEach(node => {
+					intersectionObserver.unobserve(node);
+					const id = node.dataset.id;
+					if (!id) return;
+					setOverflowedItems(p => {
+						const res = new Set(p);
+						if(res.has(id)) res.delete(id);
+						return [...res];
+					});
+				});
+				record.addedNodes.forEach(node => intersectionObserver.observe(node));
+			})
+		);
+		mutationObserver.observe(node, { childList: true });
 
 		return () => {
-			resizeObserver.disconnect();
-			handleMutation.clear();
+			mutationObserver?.disconnect();
+			intersectionObserver?.disconnect();
 		};
-	}, [childrenLengthState]);
+	}, []);
 
 	return (
-		<div className={concateClassNames("bookmarkbar", canDrop && isOver && "candrop")} ref={bookmarkbarRef}>
-			{leading && leading}
+		<div className={c("container")}>
 			<div
-				ref={bookmarksContainerRef}
-				className="bookmarks-container"
-				onDoubleClick={e => e.stopPropagation()}>
-				{bookmarks.map((a, index) => [
-					<Bookmark
-						key={a.id}
-						id={a.id}
-						divider={index !== 0}
-						className={concateClassNames(isOverflowing && index >= overflowIndex && "hidden-visually")}
-					/>
-				])}
+				ref={contentRef}
+				className={c("content")}>
+				{bookmarks.map(({ id, folderId }) => {
+					const isHidden = overflowedItems.find(a => a === (folderId || id));
+					return folderId ? (
+						<Folder
+							className={c(isHidden && "hidden")}
+							id={folderId}
+							key={folderId}
+							bookmarkId={id}
+						/>
+					) : (
+						<Bookmark
+							className={c(isHidden && "hidden")}
+							key={id}
+							id={id}
+						/>
+					);
+				})}
 			</div>
-
-			{isOverflowing && (
-				<DiscordPopout
-					position="bottom"
-					align="right"
-					animation="1"
-					targetElementRef={popoutRef}
-					renderPopout={e => {
+			{!!overflowedItems.length && (
+				<SimpleFolder items={bookmarks.filter(({ id, folderId }) => overflowedItems.find(a => a === (folderId || id)))}>
+					{e => {
 						return (
-							// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
 							<div
-								onClick={e.closePopout}
-								className="bookmarks-overflow-popout Tabbys-vars">
-								{overflowBookmarks.map(a => [
-									<Bookmark
-										key={a.id}
-										id={a.id}
-									/>
-								])}
+								className={c("overflow-button")}
+								onClick={e.onClick}>
+								<ArrowIcon />
 							</div>
 						);
 					}}
-					spacing={8}>
-					{e => (
-						// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-						<div
-							ref={popoutRef}
-							className="bookmarks-overflow flex-center"
-							onClick={e.onClick}>
-							<ArrowIcon className="parent-dim" />
-						</div>
-					)}
-				</DiscordPopout>
+				</SimpleFolder>
 			)}
-			
-			
-			{trailing && trailing}
 		</div>
 	);
-})
-
+}

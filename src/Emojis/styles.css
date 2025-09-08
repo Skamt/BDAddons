@@ -1,4 +1,96 @@
-.CHAT .premiumPromo-1eKAIB {
+.emoji-manager-modal-root {
+	max-height: 75vh;
+	max-width: 80vw;
+	overflow:hidden;
+}
+
+.emoji-manager-modal-content {
+	margin-top: 10px;
+	overflow:hidden;
+}
+
+.emoji-manager-emojis-list {
+	max-height: 100%;
+}
+
+.emoji-manager-emoji-card {
+	border-radius: 8px;
+	padding: 5px;
+	background: #353535;
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+	height: 150px;
+	position: relative;
+}
+
+.emoji-manager-btn-delete > button{
+	background: #333 ;
+	border:1px solid #555;
+}
+
+.emoji-manager-btn-delete {
+	position: absolute;
+	width: 24px;
+	height: 24px;
+	display: flex;
+	top: 0;
+	right: 0;
+	translate: 50% -50%;
+	opacity: 0;
+	z-index: 999;
+	color:rgb(241, 111, 108);
+}
+
+.emoji-manager-emoji-card-deleted .emoji-manager-btn-delete {
+	color:rgb(111, 241,  108);
+}
+
+.emoji-manager-emoji-card:hover > .emoji-manager-btn-delete {
+	opacity: 1;
+}
+
+.emoji-manager-emoji-img {
+	flex: 1 0 0;
+	border-radius: inherit;
+	position: relative;
+	margin:0 auto;
+	max-width:100%;
+	overflow:hidden;
+}
+
+.emoji-manager-emoji-card-animated .emoji-manager-emoji-img:before {
+	content: "";
+	border: 1px dashed orange;
+	inset: 0;
+	position: absolute;
+}
+
+.emoji-manager-emoji-card-deleted .emoji-manager-emoji-img:after {
+	content: "";
+	border: 1px dashed var(--text-danger);
+	inset: 0;
+	position: absolute;
+	background:
+		radial-gradient(circle at center, #000 1px, #fff0 1px) -1px -1px/ 4px 4px,
+		radial-gradient(circle at center, #000 1px, #fff0 1px) 1px 1px/ 4px 4px;
+}
+
+
+.emoji-manager-emoji-img img {
+	width: auto;
+	height: 100%;
+	border-radius: inherit;
+}
+
+
+
+
+
+
+/* ============== */
+/*.CHAT .premiumPromo-1eKAIB {
 	display: none;
 }
 .emojiItemDisabled-3VVnwp {
@@ -13,6 +105,6 @@
 }
 .emojiSizeSlider {
 	line-height: 1;
-}
+}*/
 
 

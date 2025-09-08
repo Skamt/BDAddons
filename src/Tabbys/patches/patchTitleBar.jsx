@@ -1,14 +1,16 @@
 import React from "@React";
 import { Patcher } from "@Api";
 import ErrorBoundary from "@Components/ErrorBoundary";
-// import Settings from "@Utils/Settings";
 import Logger from "@Utils/Logger";
 import { Filters, getModuleAndKey } from "@Webpack";
 import App from "../components/App";
+import { reRender } from "@Utils";
+import Plugin, { Events } from "@Utils/Plugin";
 
-const TitleBar = getModuleAndKey(Filters.byStrings("PlatformTypes","windowKey", "title"), { searchExports: true });
+import { transitionTo } from "@Discord/Modules";
+const TitleBar = getModuleAndKey(Filters.byStrings("PlatformTypes", "windowKey", "title"), { searchExports: true });
 
-export default () => {
+Plugin.on(Events.START, () => {
 	const { module, key } = TitleBar;
 	if (!module || !key) return Logger.patchError("patchTitleBar");
 	Patcher.after(module, key, (_, [props], ret) => {
@@ -24,4 +26,6 @@ export default () => {
 			</ErrorBoundary>
 		);
 	});
-};
+	reRender('.base_c48ade');
+});
+

@@ -17,7 +17,7 @@ export const ErrorBoundary = /*@__PURE__*/ (() => Api.Components.ErrorBoundary)(
 export const Webpack = /*@__PURE__*/ (() => Api.Webpack)();
 
 // Modals
-export const showConfirmationModal = /*@__PURE__*/ (() => Api.showConfirmationModal)();
+export const showConfirmationModal = /*@__PURE__*/ (() => Api.UI.showConfirmationModal)();
 
 // Utils
 export const debounce = /*@__PURE__*/ (() => Api.Utils.debounce)();

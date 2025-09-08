@@ -1,6 +1,6 @@
 /* View Profile Button */
 .VPP-Button {
-	background: hsl(var(--black-500-hsl) / 0.7);
+	background: rgb(1 0 1 / 54%);
 	cursor: pointer;
 	display: flex;
 	border-radius: 50%;
@@ -31,7 +31,7 @@
 }
 
 .VPP-Button:hover {
-	background: hsl(var(--black-500-hsl) / 0.85);
+	background: rgb(1 0 1 / 64%);
 }
 
 /* div replacement if No banner */

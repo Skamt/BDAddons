@@ -3,7 +3,7 @@ import { DOM } from "@Api";
 import ChannelMuteButton from "./mods/ChannelMuteButton";
 import ConsoleToggleButton from "./mods/ConsoleToggleButton";
 import EmojiLetters from "./mods/EmojiLetters";
-import FriendsSince from "./mods/FriendsSince";
+// import FriendsSince from "./mods/FriendsSince";
 import GIFCommandPreviews from "./mods/GIFCommandPreviews";
 import GuildInfo from "./mods/GuildInfo";
 import NoLinkPreview from "./mods/NoLinkPreview";
@@ -30,7 +30,7 @@ const mods = [
 	new EnableModView(),
 	new ShowChannelPerms(),
 	new NoTrack(),
-	new FriendsSince(),
+	// new FriendsSince(),
 	new ShowUserInfo(),
 	// new SpotifyListenAlong(),
 	new GIFCommandPreviews()
@@ -41,9 +41,10 @@ const mods = [
 
 if (console.context) console = console.context();
 
-export default () => ({
-	start() {
-		DOM.addStyle(css);
+import Plugin, { Events } from "@Utils/Plugin";
+
+Plugin.on(Events.START, () => {
+	try {
 		for (const mod of mods) {
 			try {
 				mod.Init?.();
@@ -51,15 +52,28 @@ export default () => ({
 				console.log(mod, "\nInit failed\n", e);
 			}
 		}
-	},
-	stop() {
-		DOM.removeStyle();
-		for (const mod of mods) {
-			try {
-				mod.Dispose?.();
-			} catch (e) {
-				console.log(mod, "\nDispose failed\n", e);
-			}
+	} catch (e) {
+		Logger.error(e);
+	}
+});
+
+Plugin.on(Events.STOP, () => {
+	for (const mod of mods) {
+		try {
+			mod.Dispose?.();
+		} catch (e) {
+			console.log(mod, "\nDispose failed\n", e);
 		}
 	}
 });
+
+module.exports = () => Plugin;
+
+// export default () => ({
+// 	start() {
+// 		DOM.addStyle(css);
+// 	},
+// 	stop() {
+// 		DOM.removeStyle();
+// 	}
+// });

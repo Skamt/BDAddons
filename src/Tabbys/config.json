@@ -5,18 +5,5 @@
 		"description": "Adds Browser like tabs/bookmarks for channels",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/Tabbys/Tabbys.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/Tabbys"
-	},
-	"settings":{
-		"size":20,
-		"tabDividerSize":5,
-		"showTabDivider":true,
-		"showSettingsButton":true,
-		"showTabbar":true,
-		"showBookmarkbar":true,
-		"showUnreads":true,
-		"showDMNames":true,
-		"showPings":true,
-		"showTyping":true,
-		"focusNewTab":true
 	}
 }

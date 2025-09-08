@@ -1,9 +1,23 @@
-const css = require("./plugins/css");
-const componentsAutoLoader = require("./plugins/componentsAutoLoader");
-const modulesAutoLoader = require("./plugins/modulesAutoLoader");
-const configPlugin = require("./plugins/config");
-const houseKeeping = require("./plugins/houseKeeping");
 const globImport = require("esbuild-plugin-import-glob").default;
+const componentsAutoLoader = require("./plugins/componentsAutoLoader");
+const configPlugin = require("./plugins/config");
+const css = require("./plugins/css");
+const houseKeeping = require("./plugins/houseKeeping");
+const modulesAutoLoader = require("./plugins/modulesAutoLoader");
+
+const jsconfig = pluginRoot => ({
+	"compilerOptions": {
+		"paths": {
+			"@/*": [`${pluginRoot}/*`],
+			"@Api": ["./common/Api"],
+			"@Webpack": ["./common/Webpack"],
+			"@React": ["./common/React"],
+			"@Utils": ["./common/Utils"],
+			"@Utils/*": ["./common/Utils/*"],
+			"@Discord/*": ["./common/DiscordModules/*"]
+		}
+	}
+});
 
 module.exports = ({ watch, config, entryPoint, outputFile, pluginRoot }) => {
 	return {
@@ -11,11 +25,17 @@ module.exports = ({ watch, config, entryPoint, outputFile, pluginRoot }) => {
 		bundle: true,
 		dropLabels: [global.dev ? "" : "DEV"],
 		resolveExtensions: [".json", ".js", ".jsx", ".css"],
+		tsconfigRaw: jsconfig(pluginRoot),
 		loader: {
 			".js": "jsx",
 			".css": "css"
 		},
-		external: ['electron'],
+		alias: {
+			"react": "@React",
+			"react-dom": "@React"
+		},
+
+		external: ["electron"],
 		logLevel: !watch ? "silent" : "warning",
 		platform: "browser",
 		jsx: "transform",
@@ -27,28 +47,17 @@ module.exports = ({ watch, config, entryPoint, outputFile, pluginRoot }) => {
 			globImport(),
 			global.watch && {
 				name: "watch",
-
 				setup({ onEnd, onStart, initialOptions }) {
 					let before;
 					onStart(() => {
 						before = performance.now();
 					});
-					onEnd(() => {
+					onEnd(e => {
 						const { outfile } = initialOptions;
 						const after = performance.now();
+						if (e.errors.length) return console.log(`[${(after - before).toFixed(2)}ms] build has errors`);
 						console.log(`[${(after - before).toFixed(2)}ms] ${outfile}`);
 					});
-				}
-			},
-			{
-				name: "pluginRootAlias",
-				setup({ onResolve, resolve }) {
-					onResolve({ filter: /^@\// }, ({ path }) =>
-						resolve(path.replace("@", pluginRoot), {
-							kind: "import-statement",
-							resolveDir: pluginRoot
-						})
-					);
 				}
 			},
 			css(),

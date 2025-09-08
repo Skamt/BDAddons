@@ -1,7 +1,7 @@
 .floating-window-root {
 	position: fixed;
 	inset: 0;
-	z-index: 10001;
+	z-index: 1000;
 	pointer-events: none;
 }
 
@@ -64,6 +64,7 @@
 	color: var(--interactive-hover);
 }
 
+.channelPopout,
 .floating-window-content {
 	grid-area: content;
 	border-radius: 0 0 var(--border-radius) var(--border-radius);

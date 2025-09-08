@@ -1,5 +1,4 @@
 import config from "@Config";
-import { DiscordPopout } from "@Discord/Modules";
 import React, { Children, useEffect, useRef, useState } from "@React";
 import { concateClassNames } from "@Utils";
 import { useTimer } from "@Utils/Hooks";

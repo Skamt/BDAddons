@@ -4,23 +4,23 @@ import { CloseIcon } from "@Components/Icon";
 import { concateClassNames } from "@Utils";
 import Draggabilly from "draggabilly";
 
-
-export default function FloatingWindow({ focused, onMouseDown, title, content, onClose }) {
-	// const handle = useRef();
-	const [fw, handle] = useDraggable();
+export default React.memo(function FloatingWindow({ focused, onMouseDown, title, content, onClose }) {
+	const windowRef = useRef();
+	const handle = useRef();
+	// const [fw, handle] = useDraggable();
 	const { getRootProps, getHandleProps, rootRef } = useResizable({
 		initialWidth: window.innerWidth * 0.5,
 		initialHeight: window.innerHeight * 0.5
 	});
 
-	// useEffect(() => {
-	// 	const draggie = new Draggabilly(rootRef.current, {
-	// 		containment: "html",
-	// 		handle: handle.current
-	// 	});
+	useEffect(() => {
+		const draggie = new Draggabilly(rootRef.current, {
+			containment: "html",
+			handle: handle.current
+		});
 
-	// 	() => draggie.destroy();
-	// }, []);
+		() => draggie.destroy();
+	}, []);
 
 	const { style } = getRootProps();
 
@@ -28,8 +28,8 @@ export default function FloatingWindow({ focused, onMouseDown, title, content, o
 		<div
 			style={style}
 			ref={e => {
+				windowRef.current = e;
 				rootRef.current = e;
-				fw.current = e;
 			}}
 			onMouseDown={onMouseDown}
 			className={concateClassNames("floating-window-container", focused && "focused-window")}>
@@ -118,4 +118,4 @@ export default function FloatingWindow({ focused, onMouseDown, title, content, o
 			/>
 		</div>
 	);
-}
+});

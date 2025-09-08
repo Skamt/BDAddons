@@ -1,5 +1,5 @@
 import config from "@Config";
-import { React } from "@Api";
+import React from "@React";
 import Logger from "@Utils/Logger";
 
 export default class ErrorBoundary extends React.Component {

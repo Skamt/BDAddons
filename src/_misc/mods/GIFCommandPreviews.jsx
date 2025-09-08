@@ -1,12 +1,12 @@
 import ErrorBoundary from "@Components/ErrorBoundary";
-import Popout from "@Components/Popout";
+import HoverPopout from "@Components/HoverPopout";
 import Logger from "@Utils/Logger";
 import { Disposable, nop } from "@Utils";
 import { Patcher, React } from "@Api";
 import { Filters, getModuleAndKey, getModule } from "@Webpack";
 
 const GIFIntegration = getModule(a => a.GIFIntegration).GIFIntegration;
-const b = getModuleAndKey(Filters.byPrototypeKeys("renderGIF"), {searchExports:true});
+const b = getModuleAndKey(Filters.byPrototypeKeys("renderGIF"), { searchExports: true });
 
 export default class GIFCommandPreviews extends Disposable {
 	Init() {
@@ -15,32 +15,35 @@ export default class GIFCommandPreviews extends Disposable {
 				Patcher.after(GIFIntegration.prototype, "renderContent", (_, args, ret) => {
 					return (
 						<ErrorBoundary id="GIF-Stuff">
-							<Popout
-								renderPopout={() => (
+							<HoverPopout
+								popout={() => (
 									<img
 										src={_.props.src}
+										alt={_.props.url}
 										width={_.props.width * 5}
 										height={_.props.height * 5}
 									/>
 								)}
 								align="center"
 								position="top"
-								animation="1">
+								delay={100}>
 								{ret}
-							</Popout>
+							</HoverPopout>
 						</ErrorBoundary>
 					);
 				}),
-				!b?.module ? nop : Patcher.after(b.module, "ZP", (_, __, ret) => {
-					// console.log(ret.props.data);
-					ret.props.data.forEach(a => {
-						const [,segment] = a.src.match(/\.tenor\.com(.+?)\.mp4/) || [];
-						if(!segment) return;
-						a.format = 1;
-						const url = `https://media.tenor.com${segment}.gif`;
-						a.src = url.replace("AAAPo", "AAAAS");
-					});
-				})
+				!b?.module
+					? nop
+					: Patcher.after(b.module, "ZP", (_, __, ret) => {
+							// biome-ignore lint/complexity/noForEach: <explanation>
+							ret.props.data.forEach(a => {
+								const [, segment] = a.src.match(/\.tenor\.com(.+?)\.mp4/) || [];
+								if (!segment) return;
+								a.format = 1;
+								const url = `https://media.tenor.com${segment}.gif`;
+								a.src = url.replace("AAAPo", "AAAAS");
+							});
+						})
 			];
 		else Logger.patchError("GIFIntegration");
 	}

@@ -1,0 +1,9 @@
+{
+	"info": {
+		"name": "HideStuff",
+		"version": "1.0.0",
+		"description": "let's you pick and hide elements",
+		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/HideStuff/HideStuff.plugin.js",
+		"github": "https://github.com/Skamt/BDAddons/tree/main/HideStuff"
+	}
+}

@@ -1,4 +1,8 @@
 import { Children, useCallback, useEffect, useReducer, useRef, useState } from "@React";
+import useStateFromStores from "@Modules/useStateFromStores";
+import UserStore from "@Stores/UserStore";
+import ReadStateStore from "@Stores/ReadStateStore";
+import TypingStore from "@Stores/TypingStore";
 
 export function usePropBasedState(prop) {
 	const [state, setState] = useState(prop);
@@ -62,4 +66,25 @@ export function useTimer(fn, delay) {
 	useEffect(() => clear, []);
 
 	return [start, clear];
+}
+
+
+
+export function useChannelState(channelId) {
+	const [mentionCount, unreadCount, hasUnread] = useStateFromStores(
+		[ReadStateStore],
+		() => {
+			const hasUnread = ReadStateStore.hasUnread(channelId);
+			const mentionCount = ReadStateStore.getMentionCount(channelId);
+			const unreadCount = ReadStateStore.getUnreadCount(channelId);
+			return [mentionCount, unreadCount, hasUnread];
+		},
+		[channelId]
+	);
+
+	const typingUsersIds = useStateFromStores([TypingStore], () => Object.keys(TypingStore.getTypingUsers(channelId)), [channelId]);
+	const currentUser = UserStore.getCurrentUser();
+	const typingUsers = typingUsersIds.filter(id => id !== currentUser?.id).map(UserStore.getUser);
+
+	return { typingUsers, mentionCount, unreadCount, hasUnread };
 }

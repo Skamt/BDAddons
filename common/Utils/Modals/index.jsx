@@ -5,9 +5,6 @@ import { concateClassNames } from "@Utils";
 import { getModule, getMangled, Filters } from "@Webpack";
 import ErrorBoundary from "@Components/ErrorBoundary";
 
-import ModalRoot from "@Modules/ModalRoot";
-import ModalSize from "@Modules/ModalSize";
-
 export const ModalActions = /*@__PURE__*/ getMangled("onCloseRequest:null!=", {
 	openModal: /*@__PURE__*/ Filters.byStrings("onCloseRequest:null!="),
 	closeModal: /*@__PURE__*/ Filters.byStrings(".setState", ".getState()[")
@@ -19,12 +16,13 @@ export const Modals = /*@__PURE__*/ getMangled(/*@__PURE__*/ Filters.bySource("r
 	ModalContent: /*@__PURE__*/ Filters.byStrings(".content"),
 	ModalHeader: /*@__PURE__*/ Filters.byStrings(".header", "separator"),
 	Animations: /*@__PURE__*/ a => a.SUBTLE,
-	Sizes: /*@__PURE__*/ a => a.DYNAMIC
+	Sizes: /*@__PURE__*/ a => a.DYNAMIC,
+	ModalCloseButton: Filters.byStrings(".close]:")
 });
 
 // const _openModal = /*@__PURE__*/ getModule(/*@__PURE__*/Filters.byStrings("onCloseCallback", "onCloseRequest", "modalKey", "backdropStyle"), { searchExports: true });
 
-export const openModal = (children, tag, { className, ...modalRootProps }={}) => {
+export const openModal = (children, tag, { className, ...modalRootProps } = {}) => {
 	const id = `${tag ? `${tag}-` : ""}modal`;
 
 	return ModalActions.openModal(props => {
@@ -32,14 +30,14 @@ export const openModal = (children, tag, { className, ...modalRootProps }={}) =>
 			<ErrorBoundary
 				id={id}
 				plugin={config.info.name}>
-				<ModalRoot
+				<Modals.ModalRoot
 					onClick={props.onClose}
 					transitionState={props.transitionState}
 					className={concateClassNames("transparent-background", className)}
-					size={ModalSize.DYNAMIC}
+					size={Modals.Sizes.DYNAMIC}
 					{...modalRootProps}>
 					{React.cloneElement(children, { ...props })}
-				</ModalRoot>
+				</Modals.ModalRoot>
 			</ErrorBoundary>
 		);
 	});

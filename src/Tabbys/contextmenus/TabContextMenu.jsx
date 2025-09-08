@@ -1,54 +1,43 @@
-import { Store } from "@/Store";
-import { buildTab } from "@/utils";
+import Store from "@/Store";
 import { ContextMenu } from "@Api";
 import { CloseIcon, BookmarkOutlinedIcon, DuplicateIcon, LightiningIcon, PinIcon, VectorIcon } from "@Components/Icon";
-
 import React from "@React";
-import Toast from "@Utils/Toast";
-
-import { createContextMenuItem } from "@/utils";
-
-// const {  Menu } = ContextMenu;
+import { createContextMenuItem } from "./helper";
 
 function newTabRight(id) {
-	Store.state.addTabToRight(id, buildTab({ path: "/channels/@me" }));
+	Store.addTabToRight(id);
 }
 
 function newTabLeft(id) {
-	Store.state.addTabToLeft(id, buildTab({ path: "/channels/@me" }));
+	Store.addTabToLeft(id);
 }
 
 function duplicateTab(id) {
-	Store.state.duplicateTab(id);
+	Store.duplicateTab(id);
 }
 
-// function pinTab(id) {
-// 	Toast.info("Coming soon");
-// 	Store.state.setTab(id, { pinned: true });
-// }
-
 function bookmarkTab(id) {
-	Store.state.addBookmark(buildTab(Store.state.getTab(id)));
+	Store.bookmarkTab(id);
 }
 
 function closeTab(id) {
-	Store.state.removeTab(id);
+	Store.removeTab(id);
 }
 
 function closeTabsToRight(id) {
-	Store.state.removeTabsToRight(id);
+	Store.removeTabsToRight(id);
 }
 
 function closeTabsToLeft(id) {
-	Store.state.removeTabsToLeft(id);
+	Store.removeTabsToLeft(id);
 }
 
 function closeOtherTabs(id) {
-	Store.state.removeOtherTabs(id);
+	Store.removeOtherTabs(id);
 }
 
 export default function (id) {
-	const canClose = Store.state.getTabsCount() > 1;
+	const canClose = Store.getTabsCount() > 1;
 
 	const Menu = ContextMenu.buildMenu(
 		[
@@ -63,10 +52,5 @@ export default function (id) {
 		].filter(Boolean)
 	);
 
-	return props => (
-		<Menu
-			{...props}
-			className="tab-contextmenu"
-		/>
-	);
+	return props => <Menu {...props} />;
 }
