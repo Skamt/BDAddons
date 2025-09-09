@@ -4,7 +4,7 @@ import { join } from "@Utils/String";
 
 export default function FallbackIcon({ className }) {
 	return (
-		<div className={join(" ", "discord-icon", className)}>
+		<div className={join(" ", "discord-icon", "icon-wrapper", className)}>
 			<DiscordIcon />
 		</div>
 	);

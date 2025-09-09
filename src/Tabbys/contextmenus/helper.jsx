@@ -20,12 +20,7 @@ export function createContextMenuItem(type, id = "", action = nop, label = "Unkn
 		id,
 		action,
 		items: children,
-		label: (
-			<MenuLabel
-				label={label}
-				icon={icon}
-			/>
-		)
+		label, icon,
 	};
 
 	if (color) res.color = color;

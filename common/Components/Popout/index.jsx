@@ -10,6 +10,7 @@ export default ({ children, targetElementRef, ...props }) => {
 		<DiscordPopout
 			position={"top"}
 			align={"center"}
+			nudgeAlignIntoViewport={true}
 			animation={DiscordPopout.Animation.FADE}
 			spacing={4}
 			{...props}

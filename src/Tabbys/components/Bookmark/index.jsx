@@ -10,7 +10,7 @@ import ChannelStore from "@Stores/ChannelStore";
 import { transitionTo } from "@Discord/Modules";
 import { ContextMenu } from "@Api";
 import BookmarkContextMenu from "@/contextmenus/BookmarkContextMenu";
-
+import { parsePath } from "@/utils";
 const c = clsx("bookmark");
 
 function Bookmark({ id, folderId, onClose, className }) {
@@ -22,9 +22,9 @@ function Bookmark({ id, folderId, onClose, className }) {
 
 	if (!path) return;
 
-	const [, type, idk, channelId, , threadId] = path.split("/");
-	const channel = ChannelStore.getChannel(threadId || channelId);
-	const channelName = name || getChannelName(channel) || type;
+	const { type, idk, channelId } = parsePath(path);
+	const channel = ChannelStore.getChannel(channelId);
+	const channelName = name || getChannelName(channel) || idk;
 
 	const icon = channel ? (
 		<ChannelIcon
@@ -39,12 +39,12 @@ function Bookmark({ id, folderId, onClose, className }) {
 		e.stopPropagation();
 		onClose?.();
 
-		if (e.ctrlKey) Store.newTab(path);
+		if (e.ctrlKey) Store.addTab(path);
 		else transitionTo(path);
 	};
 
 	const contextmenuHandler = e => {
-		ContextMenu.open(e, BookmarkContextMenu(id), {
+		ContextMenu.open(e, BookmarkContextMenu(id, folderId), {
 			position: "bottom",
 			align: "left"
 		});
@@ -54,9 +54,9 @@ function Bookmark({ id, folderId, onClose, className }) {
 		<div
 			onContextMenu={contextmenuHandler}
 			data-id={id}
-			className={join(" ", c("container"), "card", className)}
+			className={join(" ", c("container"), "no-drag", "box-border", "card", className)}
 			onClick={onClick}>
-			<div className={join(" ", c("icon"), "card-icon")}>{icon}</div>
+			<div className={join(" ", c("icon"), "card-icon", "icon-wrapper")}>{icon}</div>
 			<div className={join(" ", c("name"), "card-name")}>{channelName}</div>
 		</div>
 	);

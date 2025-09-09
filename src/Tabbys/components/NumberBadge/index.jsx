@@ -1,6 +1,7 @@
 // import "./styles";
 import React from "@React";
 import { clsx } from "@Utils";
+import { join } from "@Utils/String";
 
 const c = clsx("badge");
 
@@ -16,7 +17,7 @@ export default ({ count, type }) => {
 	return (
 		<div
 			style={{ width: m(count) }}
-			className={c("pill", type)}>
+			className={join(" ", c("pill", type), "fcc", "rounded-full")}>
 			{g(count)}
 		</div>
 	);

@@ -3,14 +3,16 @@ import { remove, set, add } from "@Utils/Array";
 
 function createFolder(name) {
 	const folderId = crypto.randomUUID();
-	const folder = { id: folderId, name, items:[] };
+	const folder = { id: folderId, name, items: [] };
 	const bookmark = { id: crypto.randomUUID(), folderId };
 	return { folder, bookmark };
 }
 
 function createBookmark(path, name) {
 	const id = crypto.randomUUID();
-	return { id, path, name };
+	const bookmark = { id, path };
+	if(name) bookmark.name = name;
+	return bookmark;
 }
 
 export default {
@@ -23,7 +25,7 @@ export default {
 		folders: state => state.folders
 	},
 	actions: {
-		openBookmark(id){
+		openBookmark(id) {
 			const bookmark = this.getBookmark(id);
 			if (!bookmark) return;
 			this.addTab(bookmark.path);
@@ -39,6 +41,13 @@ export default {
 		getFolderIndex(id) {
 			return this.state.folders.findIndex(a => a.id === id);
 		},
+		setBookmarkName(id, name) {
+			if (!name || !id) return;
+			const bookmarks = this.state.bookmarks;
+			const index = bookmarks.findIndex(a => a.id === id);
+			if (index === -1) return;
+			this.setState({ bookmarks: set(bookmarks, index, Object.assign({}, bookmarks[index], { name })) });
+		},
 		getBookmark(id) {
 			const index = this.getBookmarkIndex(id);
 			if (index === -1) return;
@@ -49,17 +58,47 @@ export default {
 			if (index === -1) return;
 			return this.state.folders[index];
 		},
+		moveBookmarkFromFolderToFolder(id, folderId, parentId) {
+			if (!folderId || !id || !parentId) return;
+			const item = this.getFolderItem(parentId, id);
+			if (!item) return;
+			this.addToFolder(folderId, item.path, item.name);
+			this.removeItemFromFolder(parentId, id);
+		},
+		moveBookmarkToFolder(id, folderId, parentId) {
+			if (!folderId || !id) return;
+			if (parentId) return this.moveBookmarkFromFolderToFolder(id, folderId, parentId);
+			const bookmark = this.getBookmark(id);
+			const folder = this.getFolder(folderId);
+			if (!folder || !bookmark) return;
+			this.removeBookmark(id);
+			this.addToFolder(folderId, bookmark.path, bookmark.name);
+		},
+		removeItemFromFolder(folderId, id) {
+			if (!folderId || !id) return;
+			const { folders } = this.state;
+			const folderIndex = this.state.folders.findIndex(a => a.id === folderId);
+			if (folderIndex === -1) return;
+			const folder = folders[folderIndex];
+			
+			const itemIndex = folder.items.findIndex(a => a.id === id);
+			if (itemIndex === -1) return;
+
+			const nfolder = Object.assign({}, folder, { items: remove(folder.items, itemIndex) });
+			this.setState({ folders: set(this.state.folders, folderIndex, nfolder) });
+		},
 		getFolderItem(folderId, id) {
 			if (!folderId || !id) return;
 			const folders = this.state.folders;
 			const folderIndex = folders.findIndex(a => a.id === folderId);
 			if (folderIndex === -1) return;
 			const folder = folders[folderIndex];
-			const itemIndex = folders.findIndex(a => a.id === folderId);
+			const itemIndex = folder.items.findIndex(a => a.id === id);
 			if (itemIndex === -1) return;
 			return folder.items[itemIndex];
 		},
-		removeBookmark(id) {
+		removeBookmark(id, parentId) {
+			if(parentId) return this.removeItemFromFolder(parentId, id)
 			const bookmarks = this.state.bookmarks;
 			const index = bookmarks.findIndex(a => a.id === id);
 			if (index === -1) return;
@@ -80,16 +119,25 @@ export default {
 			const folderIndex = folders.findIndex(a => a.id === id);
 			if (folderIndex === -1) return;
 
+			const indices = [
+				folderIndex,
+				...folders[folderIndex].items
+					.filter(a => a.folderId)
+					.map(({ folderId }) => {
+						return TabbysStore.state.folders.findIndex(({ id }) => folderId === id);
+					})
+			];
+
 			const bookmarkIndex = bookmarks.findIndex(a => a.folderId === id);
 			if (bookmarkIndex === -1) return;
 
 			this.setState({
-				folders: remove(folders, folderIndex),
+				folders: removeMany(folders, indices),
 				bookmarks: remove(bookmarks, bookmarkIndex)
 			});
 		},
-		addToFolder(id, payload) {
-			if (!payload) return;
+		addToFolder(id, path, name) {
+			if (!id || !path) return;
 			const folders = this.state.folders;
 			const index = folders.findIndex(a => a.id === id);
 			if (index === -1) return;
@@ -97,7 +145,7 @@ export default {
 			const folder = folders[index];
 			if (!folder) return;
 
-			const nfolder = { ...folder, items: add(folder.items, payload) };
+			const nfolder = { ...folder, items: add(folder.items, createBookmark(path, name)) };
 			this.setState({ folders: set(folders, index, nfolder) });
 		},
 		setFolderName(id, name) {

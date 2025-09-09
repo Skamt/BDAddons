@@ -1,11 +1,12 @@
+// import "./styles";
 import Store from "@/Store";
 import Bookmark from "@/components/Bookmark";
 import Folder, { SimpleFolder } from "@/components/Folder";
 import { ArrowIcon } from "@Components/Icon";
 import Popout from "@Components/Popout";
-// import "./styles";
 import React, { useRef, useEffect, useState } from "@React";
 import { clsx, shallow } from "@Utils";
+import { join } from "@Utils/String";
 const c = clsx("bookmarkbar");
 
 export default function BookmarkBar() {
@@ -85,7 +86,7 @@ export default function BookmarkBar() {
 					{e => {
 						return (
 							<div
-								className={c("overflow-button")}
+								className={join(" ", c("overflow-button"),"icon-wrapper")}
 								onClick={e.onClick}>
 								<ArrowIcon />
 							</div>

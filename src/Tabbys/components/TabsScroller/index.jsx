@@ -81,7 +81,7 @@ export default function TabsScroller({ items, renderItem, shouldScroll, scrollTo
 				// biome-ignore lint/a11y/useButtonType: <explanation>
 				<button
 					onClick={() => scroll(-1 * scrollDelta())}
-					className={join("", c("btn", "btn-start"), scrollButtonClassName, startScrollButtonClassName)}>
+					className={join(" ", c("btn", "btn-start"), "no-drag", "box-border","icon-wrapper",scrollButtonClassName, startScrollButtonClassName)}>
 					<ArrowIcon />
 				</button>
 			)}
@@ -94,7 +94,7 @@ export default function TabsScroller({ items, renderItem, shouldScroll, scrollTo
 				// biome-ignore lint/a11y/useButtonType: <explanation>
 				<button
 					onClick={() => scroll(scrollDelta())}
-					className={join(" ", c("btn", "btn-end"), scrollButtonClassName, endScrollButtonClassName)}>
+					className={join(" ", c("btn", "btn-end"), "no-drag", "box-border","icon-wrapper",scrollButtonClassName, endScrollButtonClassName)}>
 					<ArrowIcon />
 				</button>
 			)}

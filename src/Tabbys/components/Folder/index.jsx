@@ -7,6 +7,9 @@ import { join } from "@Utils/String";
 import Popout from "@Components/Popout";
 import Bookmark from "@/components/Bookmark";
 import Heading from "@Modules/Heading";
+import { ContextMenu } from "@Api";
+import FolderContextMenu from "@/contextmenus/FolderContextMenu";
+
 const c = clsx("folder");
 
 export function SimpleFolder({ items, id, children, position = "bottom", align = "left", onClose }) {
@@ -55,6 +58,13 @@ export function SimpleFolder({ items, id, children, position = "bottom", align =
 export default function Folder({ className, id, position, align, onClose }) {
 	const { name, items } = Store(state => Store.getFolder(id), shallow) || {};
 
+	const contextmenuHandler = e => {
+		ContextMenu.open(e, FolderContextMenu(id), {
+			position: "bottom",
+			align: "left"
+		});
+	};
+
 	return (
 		<SimpleFolder
 			position={position}
@@ -65,10 +75,11 @@ export default function Folder({ className, id, position, align, onClose }) {
 				return (
 					// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
 					<div
+						onContextMenu={contextmenuHandler}
 						data-id={id}
-						className={join(" ", c("container"), "card", className)}
+						className={join(" ", c("container"), "box-border", "no-drag", "card", className)}
 						onClick={e.onClick}>
-						<div className={join(" ", c("icon"), "card-icon")}>{<FolderIcon />}</div>
+						<div className={join(" ", c("icon"),"icon-wrapper", "card-icon")}>{<FolderIcon />}</div>
 						<div className={join(" ", c("name"), "card-name")}>{name}</div>
 					</div>
 				);

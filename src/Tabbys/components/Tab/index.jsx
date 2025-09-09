@@ -12,17 +12,17 @@ import TypingDots from "@/components/TypingDots";
 import { join } from "@Utils/String";
 import { shallow, clsx } from "@Utils";
 import useStateFromStores from "@Modules/useStateFromStores";
-
+import Settings from "@Utils/Settings";
 import { ContextMenu } from "@Api";
 import TabContextMenu from "@/contextmenus/TabContextMenu";
+import {parsePath} from "@/utils";
 const c = clsx("tab");
 
-function parsePath(path) {
-	const [, type, idk, channelId, , threadId] = path.split("/");
-	return { type, idk, channelId: threadId || channelId };
-}
+
 
 function Tab({ id }) {
+	const [showDMNames, showPings, showUnreads, showTyping] = Settings(_ => [_.showDMNames, _.showPings, _.showUnreads, _.showTyping], shallow);
+
 	const { path } = Store(state => Store.getTab(id), shallow) || {};
 	const selectedId = Store(Store.selectors.selectedId);
 	const isSelected = selectedId === id;
@@ -65,28 +65,26 @@ function Tab({ id }) {
 		// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
 		<div
 			onContextMenu={contextmenuHandler}
-			className={join(" ", c("container", isSelected && "selected", hasUnread && "unread"), "card")}
+			className={join(" ", c("container", isSelected && "selected", hasUnread && "unread"), "no-drag", "box-border", "rounded-full", "card")}
 			onClick={onClick}>
-			<div className={join(" ", c("icon"), "card-icon")}>{icon}</div>
-			<div className={join(" ", c("name"), "card-name")}>{name}</div>
-			{!!mentionCount && (
+			<div className={join(" ", c("icon"), "icon-wrapper", "card-icon")}>{icon}</div>
+			{(!isDM || (isDM && showDMNames)) && <div className={join(" ", c("name"), "card-name")}>{name}</div>}
+			{showTyping && isTyping && <TypingDots users={typingUsers} />}
+			{showPings && !!mentionCount && (
 				<Badge
 					count={mentionCount}
 					type="ping"
 				/>
 			)}
-			{!isDM && !!unreadCount && (
+			{showUnreads && !isDM && !!unreadCount && (
 				<Badge
 					count={unreadCount}
 					type="unread"
 				/>
 			)}
-
-			{isTyping && <TypingDots users={typingUsers} />}
-
 			{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 			<div
-				className={join(" ", c("close-button"), "card-button")}
+				className={join(" ", c("close-button"), "icon-wrapper", "card-button")}
 				onClick={onCloseClick}>
 				<CloseIcon />
 			</div>

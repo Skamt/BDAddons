@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "@React";
 import { getModule, reactRefMemoFilter } from "@Webpack";
 import { getUserName } from "@Utils/User";
 
+import { join } from "@Utils/String";
 import Tooltip from "@Components/Tooltip";
 const TypingDots = getModule(reactRefMemoFilter("type", "dotRadius", "className"), { searchExports: true });
 
@@ -10,7 +11,7 @@ export default function ({ users }) {
 
 	return (
 		<Tooltip note={typingUsersNames}>
-			<div className="typing-dots">
+			<div className={join(" ", "typing-dots", "fcc")}>
 				<TypingDots dotRadius={2.5} />
 			</div>
 		</Tooltip>

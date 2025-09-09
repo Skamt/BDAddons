@@ -6,6 +6,16 @@ export function remove(array, index) {
 	return array.toSpliced(index, 1);
 }
 
+export function removeMany(array, indices) {
+	let index = array.length;
+	const sum = [];
+	while(index--){
+		if(indices.includes(index))continue;
+		sum.unshift(array[index]);
+	}
+	return sum
+}
+
 export function add(array, item, index) {
 	return array.toSpliced(index ?? array.length, 0, item);
 }

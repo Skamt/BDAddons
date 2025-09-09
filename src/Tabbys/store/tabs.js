@@ -43,19 +43,20 @@ export default {
 			if (!tab) return;
 			this.addTabToRight(id, tab.path);
 		},
-		bookmarkTab(id) {
+		bookmarkTab(id, folderId) {
 			const tab = this.getTab(id);
 			if (!tab) return;
-			this.addBookmark(tab.path);
+			if(folderId) this.addToFolder(folderId, tab.path)
+			else this.addBookmark(tab.path);
 		},
 		addTab(path) {
 			if (!path) return;
 			const tab = createTab(path);
 			this.setState({ tabs: add(this.state.tabs, tab) });
 		},
-		newTab() {
+		newTab(path) {
 			const { selectedId, tabs } = this.state;
-			const tab = createTab();
+			const tab = createTab(path);
 			this.setState({ tabs: add(tabs, tab), selectedId: tab.id, lastSelectedIdAfterNewTab: selectedId });
 		},
 		getTab(id) {
