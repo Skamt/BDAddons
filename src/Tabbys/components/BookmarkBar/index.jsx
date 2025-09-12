@@ -1,12 +1,13 @@
 // import "./styles";
 import Store from "@/Store";
 import Bookmark from "@/components/Bookmark";
-import Folder, { SimpleFolder } from "@/components/Folder";
+import Folder, { SimpleFolder } from "@/components/Bookmark/Folder";
 import { ArrowIcon } from "@Components/Icon";
 import Popout from "@Components/Popout";
 import React, { useRef, useEffect, useState } from "@React";
 import { clsx, shallow } from "@Utils";
 import { join } from "@Utils/String";
+
 const c = clsx("bookmarkbar");
 
 export default function BookmarkBar() {
@@ -32,7 +33,7 @@ export default function BookmarkBar() {
 			});
 		};
 
-		const intersectionObserver = new IntersectionObserver(handleIntersection, { root: node, threshold: 1 });
+		const intersectionObserver = new IntersectionObserver(handleIntersection, { root: node, threshold: 0.97 });
 		for (const child of node.children) child.dataset.id && intersectionObserver.observe(child);
 
 		const mutationObserver = new MutationObserver(records =>
@@ -43,7 +44,7 @@ export default function BookmarkBar() {
 					if (!id) return;
 					setOverflowedItems(p => {
 						const res = new Set(p);
-						if(res.has(id)) res.delete(id);
+						if (res.has(id)) res.delete(id);
 						return [...res];
 					});
 				});
@@ -70,7 +71,9 @@ export default function BookmarkBar() {
 							className={c(isHidden && "hidden")}
 							id={folderId}
 							key={folderId}
+							folder={true}
 							bookmarkId={id}
+							
 						/>
 					) : (
 						<Bookmark
@@ -86,7 +89,7 @@ export default function BookmarkBar() {
 					{e => {
 						return (
 							<div
-								className={join(" ", c("overflow-button"),"icon-wrapper")}
+								className={join(" ", c("overflow-button"), "icon-wrapper")}
 								onClick={e.onClick}>
 								<ArrowIcon />
 							</div>

@@ -1,5 +1,5 @@
 import zustand, { subscribeWithSelector } from "@Discord/zustand";
-import { remove, slice, meta, set, add } from "@Utils/Array";
+import { remove, slice, arrayMove, meta, set, add } from "@Utils/Array";
 
 const initialState = {
 	tabs: [],
@@ -38,6 +38,21 @@ export default {
 			const tab = createTab(path);
 			this.setState({ tabs: add(this.state.tabs, tab, index), selectedId: tab.id });
 		},
+		moveTab(fromId, toId, pos) {
+			if (!fromId || !toId) return;
+
+			const fromIndex = this.state.tabs.findIndex(a => a.id === fromId);
+			let toIndex = this.state.tabs.findIndex(a => a.id === toId);
+			if (fromIndex === -1 || toIndex === -1) return;
+			if (pos === "before" && toIndex > fromIndex) {
+				toIndex--;
+			}
+			if (pos === "after" && toIndex < fromIndex) {
+				toIndex++;
+			}
+
+			this.setState({ tabs: arrayMove(this.state.tabs, fromIndex, toIndex) });
+		},
 		duplicateTab(id) {
 			const tab = this.getTab(id);
 			if (!tab) return;
@@ -46,7 +61,7 @@ export default {
 		bookmarkTab(id, folderId) {
 			const tab = this.getTab(id);
 			if (!tab) return;
-			if(folderId) this.addToFolder(folderId, tab.path)
+			if (folderId) this.addToFolder(folderId, tab.path);
 			else this.addBookmark(tab.path);
 		},
 		addTab(path) {
@@ -63,6 +78,11 @@ export default {
 			const index = this.getTabIndex(id);
 			if (index === -1) return;
 			return this.state.tabs[index];
+		},
+		getTabMeta(id) {
+			const index = this.getTabIndex(id);
+			if (index === -1) return;
+			return meta(tabs, index);
 		},
 		getTabIndex(id) {
 			return this.state.tabs.findIndex(a => a.id === id);

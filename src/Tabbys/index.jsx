@@ -1,4 +1,4 @@
-// import "./styles";
+import "./styles";
 // import Store from "@/Store";
 // import "./patches/*";
 // import ErrorBoundary from "@Components/ErrorBoundary";

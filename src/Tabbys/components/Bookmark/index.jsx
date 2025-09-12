@@ -7,16 +7,32 @@ import ChannelIcon from "@/components/ChannelIcon/Simple";
 import MiscIcon from "@/components/ChannelIcon/MiscIcon";
 import { getChannelName } from "@Utils/Channel";
 import ChannelStore from "@Stores/ChannelStore";
+import { DragSource } from "@Discord/Modules";
+import { DNDTypes } from "@/consts";
 import { transitionTo } from "@Discord/Modules";
 import { ContextMenu } from "@Api";
 import BookmarkContextMenu from "@/contextmenus/BookmarkContextMenu";
 import { parsePath } from "@/utils";
+import Droppable from "./Droppable";
+
 const c = clsx("bookmark");
 
-function Bookmark({ id, folderId, onClose, className }) {
+const DraggableBookmark = DragSource(
+	DNDTypes.BOOKMARK,
+	{
+		beginDrag: a => ({ ...a, bookmark: true })
+	},
+	(props, monitor) => ({
+		isDragging: !!monitor.isDragging(),
+		dragRef: props.dragSource()
+	})
+);
+
+function Bookmark({ id, parentId, submenuItem, onClose, className, ...props }) {
+	const { isDragging, dragRef } = props;
 	const { path, name } =
 		Store(state => {
-			if (folderId) return Store.getFolderItem(folderId, id);
+			if (parentId) return Store.getFolderItem(parentId, id);
 			return Store.getBookmark(id);
 		}, shallow) || {};
 
@@ -44,7 +60,7 @@ function Bookmark({ id, folderId, onClose, className }) {
 	};
 
 	const contextmenuHandler = e => {
-		ContextMenu.open(e, BookmarkContextMenu(id, folderId), {
+		ContextMenu.open(e, BookmarkContextMenu(id, parentId), {
 			position: "bottom",
 			align: "left"
 		});
@@ -52,14 +68,29 @@ function Bookmark({ id, folderId, onClose, className }) {
 
 	return (
 		<div
+			ref={dragRef}
 			onContextMenu={contextmenuHandler}
 			data-id={id}
-			className={join(" ", c("container"), "no-drag", "box-border", "card", className)}
+			className={join(" ", c("container", isDragging && "isDragging"), "no-drag", "box-border", "card", className)}
 			onClick={onClick}>
+			<Droppable
+				id={id}
+				pos="before"
+				parentId={parentId}
+				submenuItem={submenuItem}
+				direction={submenuItem ? "vertical" : "horizontal"}
+			/>
+			<Droppable
+				submenuItem={submenuItem}
+				parentId={parentId}
+				id={id}
+				pos="after"
+				direction={submenuItem ? "vertical" : "horizontal"}
+			/>
 			<div className={join(" ", c("icon"), "card-icon", "icon-wrapper")}>{icon}</div>
 			<div className={join(" ", c("name"), "card-name")}>{channelName}</div>
 		</div>
 	);
 }
 
-export default React.memo(Bookmark);
+export default React.memo(DraggableBookmark(Bookmark));

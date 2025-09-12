@@ -15,7 +15,21 @@ export default ({ children, targetElementRef, ...props }) => {
 			spacing={4}
 			{...props}
 			targetElementRef={targetElementRef || ref}>
-			{p => (targetElementRef ? children(p) : React.cloneElement(children(p), { ref: ref }))}
+			{p => {
+				if (targetElementRef) return children(p);
+
+				const child = children(p);
+
+				return React.cloneElement(child, {
+					ref:(e)=> {
+						ref.current = e;
+						const childRef = child.props.ref;
+						if (!childRef) return e;
+						if (typeof childRef === "function") childRef(e);
+						else if (typeof childRef === "object") childRef.current = e;
+					}
+				});
+			}}
 		</DiscordPopout>
 	);
 };

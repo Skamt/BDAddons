@@ -21,12 +21,12 @@ export default function TabBar() {
 	};
 
 	return (
-		<div className={(c("container"))}>
+		<div className={c("container")}>
 			<TabsScroller
 				shouldScroll={selectedId}
 				scrollTo={selectedIndex}
-				containerClassName={c("tabs-scroller-container")}
-				contentClassName={join(" ", c("tabs-scroller-content"),  "rounded-full")}
+				containerClassName={join(" ", "no-drag", c("tabs-scroller-container"))}
+				contentClassName={c("tabs-scroller-content")}
 				items={tabs}
 				renderItem={({ id }) => (
 					<Tab
@@ -35,9 +35,8 @@ export default function TabBar() {
 					/>
 				)}
 			/>
-			{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 			<div
-				className={join(" ", c("new-tab"), "no-drag", "icon-wrapper",)}
+				className={join(" ", c("new-tab"), "no-drag", "icon-wrapper")}
 				onClick={newTabHandler}>
 				<PlusIcon />
 			</div>

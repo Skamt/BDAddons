@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "@React";
-import { getModule, reactRefMemoFilter } from "@Webpack";
+import {  waitForComponent, reactRefMemoFilter } from "@Webpack";
 import { getUserName } from "@Utils/User";
 
 import { join } from "@Utils/String";
 import Tooltip from "@Components/Tooltip";
-const TypingDots = getModule(reactRefMemoFilter("type", "dotRadius", "className"), { searchExports: true });
+const TypingDots = waitForComponent(reactRefMemoFilter("type", "dotRadius", "className"), { searchExports: true });
 
 export default function ({ users }) {
 	const typingUsersNames = users?.map(getUserName).join(", ");

@@ -9,19 +9,26 @@ export function remove(array, index) {
 export function removeMany(array, indices) {
 	let index = array.length;
 	const sum = [];
-	while(index--){
-		if(indices.includes(index))continue;
+	while (index--) {
+		if (indices.includes(index)) continue;
 		sum.unshift(array[index]);
 	}
-	return sum
+	return sum;
 }
 
 export function add(array, item, index) {
 	return array.toSpliced(index ?? array.length, 0, item);
 }
 
-export function slice(array, from, to){
+export function slice(array, from, to) {
 	return array.slice(from, to);
+}
+
+export function arrayMove(array, from, to) {
+	const newArray = array.slice();
+	newArray.splice(to, 0, newArray.splice(from, 1)[0]);
+
+	return newArray;
 }
 
 export function swap(array, from, to) {
@@ -50,4 +57,3 @@ export function meta(array, index) {
 		previousItem: array[index - 1]
 	};
 }
-
