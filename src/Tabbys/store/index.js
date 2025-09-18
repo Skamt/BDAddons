@@ -1,7 +1,8 @@
 import zustand, { subscribeWithSelector } from "@Discord/zustand";
 import TabSlice from "./tabs";
+import FolderSlice from "./folders";
 import BookmarkSlice from "./bookmarks";
-import UserSlice from "./bookmarks";
+import UserSlice from "./users";
 import Plugin, { Events } from "@Utils/Plugin";
 import { Data } from "@Api";
 import { getPathName, shallow, debounce } from "@Utils";
@@ -11,6 +12,7 @@ import { Dispatcher } from "@Discord/Modules";
 
 const stateFn = () => ({
 	...TabSlice.state,
+	...FolderSlice.state,
 	...BookmarkSlice.state,
 	...UserSlice.state
 });
@@ -24,8 +26,8 @@ Object.defineProperty(Store, "state", {
 
 Object.defineProperty(Store, "selectors", { value: {} });
 
-Object.assign(Store, TabSlice.actions, BookmarkSlice.actions, UserSlice.actions);
-Object.assign(Store.selectors, TabSlice.selectors, BookmarkSlice.selectors);
+Object.assign(Store, TabSlice.actions, BookmarkSlice.actions, UserSlice.actions, FolderSlice.actions);
+Object.assign(Store.selectors, FolderSlice.selectors, TabSlice.selectors, BookmarkSlice.selectors);
 
 Store.subscribe(
 	state => state,
@@ -42,12 +44,13 @@ Store.subscribe(Store.selectors.selectedId, () => {
 	transitionTo(selectedTab.path);
 });
 
+Store.subscribe(() => Store.getSelectedTab()?.path, transitionTo, shallow);
+
 const onLocationChange = debounce(e => {
 	const pathname = getPathName(e.destination.url);
 	if (!pathname) return;
-	Store.setSelectedTab(pathname);
+	Store.setSelectedTab({ path: pathname });
 }, 50);
-
 
 function hydrateStore() {
 	const user = UserStore.getCurrentUser();
@@ -57,8 +60,8 @@ function hydrateStore() {
 }
 
 function ensureTab() {
-	if (Store.state.tabs.length > 0) return;
-	Store.addTab(location.pathname);
+	if (Store.getTabsCount() > 0) return;
+	Store.addTab({ path: location.pathname });
 }
 
 Plugin.on(Events.START, () => {
@@ -73,7 +76,10 @@ Plugin.on(Events.STOP, () => {
 	Dispatcher.unsubscribe("CONNECTION_OPEN", hydrateStore);
 });
 
+import { diff, addedDiff, deletedDiff, updatedDiff, detailedDiff } from "deep-object-diff";
 DEV: {
+	Store.subscribe(state => state, (a,b)=>console.log(detailedDiff(b,a)), shallow);
+
 	window.TabbysStore = Store;
 }
 

@@ -1,14 +1,30 @@
 // import "./styles";
 import Store from "@/Store";
 import Bookmark from "@/components/Bookmark";
-import Folder, { SimpleFolder } from "@/components/Bookmark/Folder";
+import Folder from "@/components/Folder";
 import { ArrowIcon } from "@Components/Icon";
 import Popout from "@Components/Popout";
 import React, { useRef, useEffect, useState } from "@React";
-import { clsx, shallow } from "@Utils";
-import { join } from "@Utils/String";
+import { shallow } from "@Utils";
+import { classNameFactory, join } from "@Utils/css";
+const c = classNameFactory("bookmarkbar");
 
-const c = clsx("bookmarkbar");
+function getItem(props, id, folderId) {
+	return folderId ? (
+		<Folder
+			folderId={folderId}
+			key={id}
+			id={id}
+			{...props}
+		/>
+	) : (
+		<Bookmark
+			key={id}
+			id={id}
+			{...props}
+		/>
+	);
+}
 
 export default function BookmarkBar() {
 	const bookmarks = Store(Store.selectors.bookmarks, shallow);
@@ -59,44 +75,42 @@ export default function BookmarkBar() {
 		};
 	}, []);
 
+	const content = bookmarks.map(({ id, folderId }, index) => {
+		const hidden = overflowedItems.find(a => a === id);
+		return getItem({ className: c({ hidden }) }, id, folderId);
+	});
+
 	return (
 		<div className={c("container")}>
 			<div
 				ref={contentRef}
 				className={c("content")}>
-				{bookmarks.map(({ id, folderId }) => {
-					const isHidden = overflowedItems.find(a => a === (folderId || id));
-					return folderId ? (
-						<Folder
-							className={c(isHidden && "hidden")}
-							id={folderId}
-							key={folderId}
-							folder={true}
-							bookmarkId={id}
-							
-						/>
-					) : (
-						<Bookmark
-							className={c(isHidden && "hidden")}
-							key={id}
-							id={id}
-						/>
-					);
-				})}
+				{content}
 			</div>
-			{!!overflowedItems.length && (
-				<SimpleFolder items={bookmarks.filter(({ id, folderId }) => overflowedItems.find(a => a === (folderId || id)))}>
-					{e => {
-						return (
-							<div
-								className={join(" ", c("overflow-button"), "icon-wrapper")}
-								onClick={e.onClick}>
-								<ArrowIcon />
-							</div>
-						);
-					}}
-				</SimpleFolder>
-			)}
+			{!!overflowedItems.length && <OverflowMenu items={bookmarks.filter(({ id }) => overflowedItems.find(a => a === id))} />}
 		</div>
+	);
+}
+
+function OverflowMenu({ items }) {
+	return (
+		<Popout
+			position="bottom"
+			align="right"
+			spacing={12}
+			renderPopout={e => {
+				const content = items.map(({ id, folderId }) => getItem({ className:"folder-item",onClick: e.closePopout }, id, folderId));
+				return <div className="overflow-popout">{content}</div>;
+			}}>
+			{e => {
+				return (
+					<div
+						className={join(c("overflow-button"), "icon-wrapper")}
+						onClick={e.onClick}>
+						<ArrowIcon />
+					</div>
+				);
+			}}
+		</Popout>
 	);
 }

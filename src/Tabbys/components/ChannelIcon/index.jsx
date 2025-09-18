@@ -1,5 +1,5 @@
 import React from "@React";
-import { getChannelIcon } from "@Utils/Channel";
+import { getChannelIconURL } from "@Utils/Channel";
 import { Filters, reactRefMemoFilter, waitForComponent } from "@Webpack";
 import Fallback from "./Fallback";
 import UserAvatar from "@Components/UserAvatar";
@@ -28,7 +28,7 @@ export default function ChannelIcon({ name, channel, size = 24 }) {
 			/>
 		);
 
-	const src = getChannelIcon(channel, size);
+	const src = getChannelIconURL(channel, size);
 
 	if (channel.isDM())
 		return (

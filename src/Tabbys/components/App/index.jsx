@@ -1,12 +1,12 @@
 import "./styles";
 import React from "@React";
-import { shallow, clsx } from "@Utils";
-import { join } from "@Utils/String";
+import { shallow } from "@Utils";
+import { classNameFactory, join } from "@Utils/css";
 import Settings from "@Utils/Settings";
 import TabBar from "@/components/TabBar";
 import BookmarkBar from "@/components/BookmarkBar";
 import SettingsButton from "@/components/SettingsButton";
-const c = clsx("tabbys-app");
+const c = classNameFactory("tabbys-app");
 
 export default function App({ leading, trailing }) {
 	const [privacyMode, showTabbar, showBookmarkbar, showSettingsButton] = Settings(_ => [_.privacyMode, _.showTabbar, _.showBookmarkbar, _.showSettingsButton], shallow);
@@ -26,8 +26,7 @@ export default function App({ leading, trailing }) {
 				})}
 			</div>
 			{showBookmarkbar && (
-				<div className={join(" ", c("bookmarkbar"), "no-drag")}>
-					{" "}
+				<div className={join(c("bookmarkbar"), "no-drag")}>
 					<BookmarkBar />
 				</div>
 			)}

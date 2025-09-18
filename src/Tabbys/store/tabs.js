@@ -7,10 +7,33 @@ const initialState = {
 	lastSelectedIdAfterNewTab: null
 };
 
-function createTab(path = "/channels/@me") {
+function createTab(payload = {}) {
 	const id = crypto.randomUUID();
-	return { id, path };
+	const tab = { ...payload, id };
+	if (!tab.path) tab.path = "/channels/@me";
+	return tab;
 }
+
+const getters = {
+	getTabIndex(id) {
+		return this.state.tabs.findIndex(tab => tab.id === id);
+	},
+	getSelectedTabIndex() {
+		return this.getTabIndex(this.state.selectedId);
+	},
+	getTab(id) {
+		return this.state.tabs[this.getTabIndex(id)];
+	},
+	getSelectedTab() {
+		return this.state.tabs[this.getSelectedTabIndex()];
+	},
+	getTabMeta(id) {
+		return meta(this.state.tabs, tab => tab.id === id);
+	},
+	getTabsCount() {
+		return this.state.tabs.length;
+	}
+};
 
 export default {
 	state: { ...initialState },
@@ -21,22 +44,62 @@ export default {
 		lastSelectedIdAfterNewTab: state => state.lastSelectedIdAfterNewTab
 	},
 	actions: {
-		getTabsCount() {
-			return this.state.tabs.length;
+		...getters,
+		addTabBy(targetId, payload, fn = a => a) {
+			const tab = createTab(payload);
+			const targetIndex = targetId ? this.getTabIndex(targetId) : this.state.tabs.length;
+			if (targetIndex === -1) return;
+			this.setState({ tabs: add(this.state.tabs, tab, fn(targetIndex)) });
 		},
-		addTabToRight(id, path) {
-			if (!id) return;
-			const index = this.getTabIndex(id);
-			if (index === -1) return;
-			const tab = createTab(path);
-			this.setState({ tabs: add(this.state.tabs, tab, index + 1), selectedId: tab.id });
+		addTab(payload) {
+			this.addTabBy(null, payload);
 		},
-		addTabToLeft(id, path) {
-			if (!id) return;
-			const index = this.getTabIndex(id);
+		addTabToRight(targetId) {
+			this.addTabBy(targetId, null, a => a + 1);
+		},
+		addTabToLeft(targetId) {
+			this.addTabBy(targetId, null);
+		},
+		duplicateTab(tabId) {
+			const tab = this.getTab(tabId);
+			if (tab) this.addTabToRight(tabId, tab);
+		},
+
+		newTab(payload = {}) {
+			const { selectedId, tabs } = this.state;
+			const tab = createTab(payload);
+			this.setState({ tabs: add(tabs, tab), selectedId: tab.id, lastSelectedIdAfterNewTab: selectedId });
+		},
+
+		setTabPath(tabId, payload = {}) {
+			if (!tabId) return;
+			const index = this.getTabIndex(tabId);
 			if (index === -1) return;
-			const tab = createTab(path);
-			this.setState({ tabs: add(this.state.tabs, tab, index), selectedId: tab.id });
+			const tab = this.state.tabs[index];
+
+			const nTab = Object.assign({}, tab, payload);
+			this.setState({ tabs: set(this.state.tabs, index, nTab) });
+		},
+
+		setTabFromBookmark(tabId, bookmarkId) {
+			const bookmark = this.getBookmark(bookmarkId);
+			if (bookmark) this.setTabPath(tabId, bookmark);
+		},
+
+		setSelectedTab(payload) {
+			this.setTabPath(this.state.selectedId, payload);
+		},
+
+		bookmarkTab(id, folderId) {
+			const tab = this.getTab(id);
+			if (!tab) return;
+			// if (folderId) this.addToFolder(folderId, tab.path);
+			else this.addBookmark(tab);
+		},
+
+		setSelectedId(id) {
+			if (this.getTabIndex(id) === -1) return;
+			this.setState({ selectedId: id, lastSelectedIdAfterNewTab: null });
 		},
 		moveTab(fromId, toId, pos) {
 			if (!fromId || !toId) return;
@@ -53,108 +116,48 @@ export default {
 
 			this.setState({ tabs: arrayMove(this.state.tabs, fromIndex, toIndex) });
 		},
-		duplicateTab(id) {
-			const tab = this.getTab(id);
-			if (!tab) return;
-			this.addTabToRight(id, tab.path);
-		},
-		bookmarkTab(id, folderId) {
-			const tab = this.getTab(id);
-			if (!tab) return;
-			if (folderId) this.addToFolder(folderId, tab.path);
-			else this.addBookmark(tab.path);
-		},
-		addTab(path) {
-			if (!path) return;
-			const tab = createTab(path);
-			this.setState({ tabs: add(this.state.tabs, tab) });
-		},
-		newTab(path) {
-			const { selectedId, tabs } = this.state;
-			const tab = createTab(path);
-			this.setState({ tabs: add(tabs, tab), selectedId: tab.id, lastSelectedIdAfterNewTab: selectedId });
-		},
-		getTab(id) {
-			const index = this.getTabIndex(id);
-			if (index === -1) return;
-			return this.state.tabs[index];
-		},
-		getTabMeta(id) {
-			const index = this.getTabIndex(id);
-			if (index === -1) return;
-			return meta(tabs, index);
-		},
-		getTabIndex(id) {
-			return this.state.tabs.findIndex(a => a.id === id);
-		},
-		setSelectedId(id) {
-			if (this.getTabIndex(id) === -1) return;
-			this.setState({ selectedId: id, lastSelectedIdAfterNewTab: null });
-		},
+
 		removeTab(id) {
 			const { selectedId, lastSelectedIdAfterNewTab, tabs } = this.state;
 			if (tabs.length === 1) return; // keep at least one tab
-			const index = this.getTabIndex(id);
-			if (index === -1) return; // can't remove what you don't have
 
-			const { nextItem: next, previousItem: previous, isSingle } = meta(tabs, index);
+			const { index, nextItem: next, previousItem: previous, isSingle } = this.getTabMeta(id);
 			const isSelected = selectedId === id;
 			const newSelected = !isSelected ? selectedId : lastSelectedIdAfterNewTab ? lastSelectedIdAfterNewTab : next ? next.id : previous.id;
 			this.setState({ tabs: remove(tabs, index), selectedId: newSelected, lastSelectedIdAfterNewTab: null });
 		},
 		removeTabsToRight(id) {
 			if (!id) return;
-			const index = this.getTabIndex(id);
+			const { index, isLast, isSingle } = this.getTabMeta(id);
 			if (index === -1) return;
-			const { selectedId, tabs } = this.state;
-			const tabMeta = meta(tabs, index);
+			if (isLast || isSingle) return;
 
-			if (tabMeta.isLast || tabMeta.isSingle) return;
+			const { selectedId, tabs } = this.state;
+
 			const selectedTabIndex = this.getSelectedTabIndex();
-			const to = tabMeta.index + 1;
+			const to = index + 1;
 			const newList = slice(tabs, 0, to);
 			const newSelected = selectedTabIndex < to ? selectedId : id;
 
 			this.setState({ tabs: newList, selectedId: newSelected });
 		},
-
 		removeTabsToLeft(id) {
 			if (!id) return;
-			const index = this.getTabIndex(id);
+			const { index, isFirst, isSingle } = this.getTabMeta(id);
 			if (index === -1) return;
-			const { selectedId, tabs } = this.state;
-			const tabMeta = meta(tabs, index);
+			if (isFirst || isSingle) return;
 
-			if (tabMeta.isFirst || tabMeta.isSingle) return;
+			const { selectedId, tabs } = this.state;
 
 			const selectedTabIndex = this.getSelectedTabIndex();
-			const newList = slice(tabs, tabMeta.index, tabs.length);
-			const newSelected = selectedTabIndex > tabMeta.index ? selectedId : id;
+			const newList = slice(tabs, index, tabs.length);
+			const newSelected = selectedTabIndex > index ? selectedId : id;
 
 			this.setState({ tabs: newList, selectedId: newSelected });
 		},
 		removeOtherTabs(id) {
 			const tab = this.getTab(id);
-			if (!tab) return;
-
-			this.setState({ tabs: [tab], selectedId: tab.id, lastSelectedIdAfterNewTab: null });
-		},
-		getSelectedTabIndex() {
-			const index = this.state.tabs.findIndex(a => a.id === this.state.selectedId);
-			return index;
-		},
-		getSelectedTab() {
-			const index = this.state.tabs.findIndex(a => a.id === this.state.selectedId);
-			if (index === -1) return;
-			return this.state.tabs[index];
-		},
-		setSelectedTab(path) {
-			if (!path) return;
-			const { tabs, selectedId } = this.state;
-			const index = tabs.findIndex(a => a.id === selectedId);
-			if (index === -1) return;
-			const nTab = Object.assign({}, tabs[index], { path });
-			this.setState({ tabs: set(tabs, index, nTab) });
+			if (tab) this.setState({ tabs: [tab], selectedId: tab.id, lastSelectedIdAfterNewTab: null });
 		}
 	}
 };

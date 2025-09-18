@@ -40,13 +40,13 @@ function menu(path) {
 	const menu = [ContextMenu.buildItem({ type: "separator" })];
 
 	const bookmark = {
-		action: () => Store.addBookmark(path),
+		action: () => Store.addBookmark({ path }),
 		icon: BookmarkOutlinedIcon,
 		label: "Bookmark channel"
 	};
 
 	const tab = {
-		action: () => Store.newTab(path),
+		action: () => Store.newTab({path}),
 		icon: PlusIcon,
 		label: "Open in new Tab"
 	};

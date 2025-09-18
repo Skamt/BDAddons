@@ -5,7 +5,7 @@ import { openValueModal } from "@/components/ValueModal";
 import Store from "@/Store";
 import { createContextMenuItem } from "./helper";
 
-export default function (id) {
+export default function (bookmarkId, folderId, parentId) {
 	const Menu = ContextMenu.buildMenu([
 		createContextMenuItem(
 			null,
@@ -23,14 +23,14 @@ export default function (id) {
 			null,
 			"edit-folder",
 			() => {
-				const folder = Store.getFolder(id);
+				const folder = Store.getFolder(folderId);
 				if (!folder) return;
 				openValueModal({
 					title: "Edit Folder Name",
 					label: "Folder Name",
 					placeholder: folder.name,
 					initialValue: folder.name,
-					onSubmit: name => name && Store.setFolderName(id, name)
+					onSubmit: name => name && Store.setFolderName(folderId, name)
 				});
 			},
 			"Edit Folder",
@@ -39,7 +39,7 @@ export default function (id) {
 		{
 			type: "separator"
 		},
-		createContextMenuItem(null, "delete-folder", () => Store.removeFolder(id), "Delete Folder", TrashBinIcon, "danger")
+		createContextMenuItem(null, "delete-folder", () => (!parentId ? Store.removeFolderFromBookmarkBar(folderId, bookmarkId) : Store.removeFolderFromFolder(folderId, parentId)), "Delete Folder", TrashBinIcon, "danger")
 	]);
 
 	return props => <Menu {...props} />;

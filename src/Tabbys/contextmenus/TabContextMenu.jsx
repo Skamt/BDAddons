@@ -9,7 +9,7 @@ export default function (id) {
 	const canClose = Store.getTabsCount() > 1;
 
 	const folders = Store.state.folders.map(({ id: folderId, name }) => {
-		return createContextMenuItem(null, `bookmark-tab-${folderId}`, () => Store.bookmarkTab(id, folderId), name, BookmarkOutlinedIcon);
+		return createContextMenuItem(null, `bookmark-tab-${folderId}`, () => Store.addTabToFolder(id, folderId), name, BookmarkOutlinedIcon);
 	});
 
 	const Menu = ContextMenu.buildMenu(
