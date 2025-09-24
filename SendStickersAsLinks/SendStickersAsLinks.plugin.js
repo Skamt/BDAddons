@@ -1,7 +1,7 @@
 /**
  * @name SendStickersAsLinks
  * @description Enables you to send custom Stickers as links
- * @version 2.3.0
+ * @version 2.3.1
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/SendStickersAsLinks
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/SendStickersAsLinks/SendStickersAsLinks.plugin.js
@@ -11,7 +11,7 @@
 var Config_default = {
 	"info": {
 		"name": "SendStickersAsLinks",
-		"version": "2.3.0",
+		"version": "2.3.1",
 		"description": "Enables you to send custom Stickers as links",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SendStickersAsLinks/SendStickersAsLinks.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SendStickersAsLinks",
@@ -136,6 +136,9 @@ StylesLoader_default.push(`.animatedSticker{
 	line-height: 1;
 }`);
 
+// common/React.jsx
+var React_default = /* @__PURE__ */ (() => React)();
+
 // common/Webpack.js
 var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
 var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
@@ -167,9 +170,6 @@ Plugin_default.on(Events.START, () => {
 	const unpatch = Patcher.after(DiscordPermissions_default, "can", (_, [permission], ret) => ret || DiscordPermissionsEnum_default.USE_EXTERNAL_EMOJIS === permission);
 	Plugin_default.once(Events.STOP, unpatch);
 });
-
-// common/React.js
-var React_default = /* @__PURE__ */ (() => React)();
 
 // common/DiscordModules/zustand.js
 var { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
@@ -460,9 +460,6 @@ var Heading_default = getModule((a) => a?.render?.toString().includes("data-exce
 // MODULES-AUTO-LOADER:@Modules/Slider
 var Slider_default = getModule(Filters.byPrototypeKeys("renderMark"), { searchExports: true });
 
-// MODULES-AUTO-LOADER:@Modules/FormText
-var FormText_default = getModule((a) => a?.Types?.LABEL_DESCRIPTOR, { searchExports: true });
-
 // common/Utils/index.js
 var nop = () => {};
 
@@ -547,7 +544,7 @@ function StickerSize() {
 			initialValue: val,
 			onValueChange: set
 		}
-	), /* @__PURE__ */ React_default.createElement(FormText_default, { type: "description" }, "The size of the sticker in pixels. 160 is recommended"));
+	), /* @__PURE__ */ React_default.createElement(Heading_default, { variant: "text-sm/normal" }, "The size of the sticker in pixels. 160 is recommended"));
 }
 
 // src/SendStickersAsLinks/index.jsx

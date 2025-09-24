@@ -1,7 +1,7 @@
 /**
  * @name SpotifyEnhance
  * @description All in one better spotify-discord experience.
- * @version 1.1.2
+ * @version 1.1.3
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js
@@ -11,7 +11,7 @@
 var Config_default = {
 	"info": {
 		"name": "SpotifyEnhance",
-		"version": "1.1.2",
+		"version": "1.1.3",
 		"description": "All in one better spotify-discord experience.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance",
@@ -184,15 +184,24 @@ StylesLoader_default.push(`:root {
 	box-sizing: border-box;
 }`);
 
+// common/React.jsx
+var useState = /* @__PURE__ */ (() => React.useState)();
+var useEffect = /* @__PURE__ */ (() => React.useEffect)();
+var useRef = /* @__PURE__ */ (() => React.useRef)();
+var useCallback = /* @__PURE__ */ (() => React.useCallback)();
+var useMemo = /* @__PURE__ */ (() => React.useMemo)();
+var Children = /* @__PURE__ */ (() => React.Children)();
+var React_default = /* @__PURE__ */ (() => React)();
+
 // common/Webpack.js
 var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
-var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
+var Filters2 = /* @__PURE__ */ (() => Webpack.Filters)();
 var getBySource = /* @__PURE__ */ (() => Webpack.getBySource)();
 var getMangled = /* @__PURE__ */ (() => Webpack.getMangled)();
 var getStore = /* @__PURE__ */ (() => Webpack.getStore)();
 
 function reactRefMemoFilter(type, ...args) {
-	const filter = Filters.byStrings(...args);
+	const filter = Filters2.byStrings(...args);
 	return (target) => target[type] && filter(target[type]);
 }
 
@@ -207,11 +216,11 @@ function getModuleAndKey(filter, options) {
 }
 
 // common/DiscordModules/zustand.js
-var { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
-	_: Filters.byStrings("subscribe"),
+var { zustand } = getMangled(Filters2.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
+	_: Filters2.byStrings("subscribe"),
 	zustand: () => true
 });
-var subscribeWithSelector = getModule(Filters.byStrings("equalityFn", "fireImmediately"), { searchExports: true });
+var subscribeWithSelector = getModule(Filters2.byStrings("equalityFn", "fireImmediately"), { searchExports: true });
 var zustand_default = zustand;
 
 // MODULES-AUTO-LOADER:@Stores/ConnectedAccountsStore
@@ -274,10 +283,10 @@ function buildUrl(endpoint, path, params) {
 }
 
 // MODULES-AUTO-LOADER:@Modules/MessageActions
-var MessageActions_default = getModule(Filters.byKeys("jumpToMessage", "_sendMessage"), { searchExports: false });
+var MessageActions_default = getModule(Filters2.byKeys("jumpToMessage", "_sendMessage"), { searchExports: false });
 
 // MODULES-AUTO-LOADER:@Modules/Dispatcher
-var Dispatcher_default = getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: false });
+var Dispatcher_default = getModule(Filters2.byKeys("dispatch", "_dispatch"), { searchExports: false });
 
 // MODULES-AUTO-LOADER:@Stores/PendingReplyStore
 var PendingReplyStore_default = getStore("PendingReplyStore");
@@ -515,7 +524,7 @@ var SpotifyClientAPI = class {
 var SpotifyAPI_default = new SpotifyClientAPI();
 
 // MODULES-AUTO-LOADER:@Modules/RefreshToken
-var RefreshToken_default = getModule(Filters.byStrings("CONNECTION_ACCESS_TOKEN"), { searchExports: true });
+var RefreshToken_default = getModule(Filters2.byStrings("CONNECTION_ACCESS_TOKEN"), { searchExports: true });
 
 // src/SpotifyEnhance/DB.js
 var DB = new class {
@@ -614,7 +623,7 @@ function isSpotifyUrl(url) {
 		return false;
 	}
 }
-var activityPanelClasses = getModule(Filters.byKeys("activityPanel", "panels"), { searchExports: false });
+var activityPanelClasses = getModule(Filters2.byKeys("activityPanel", "panels"), { searchExports: false });
 var getFluxContainer = /* @__PURE__ */ (() => {
 	let userAreaFluxContainer = void 0;
 
@@ -1039,7 +1048,7 @@ function onAccountsChanged() {
 }
 
 // common/Components/Flex/index.jsx
-var Flex_default = getModule((a) => a.defaultProps?.direction, { searchExports: true });
+var Flex_default = getModule(Filters.byKeys("Child", "Align", "Justify"));
 
 // common/Components/icons/ImageIcon/index.jsx
 function ImageIcon(props) {
@@ -1072,7 +1081,7 @@ function ListenIcon() {
 
 // src/SpotifyEnhance/patches/patchChannelAttach.jsx
 var { Item: MenuItem } = ContextMenu;
-var ChannelAttachMenu = getModule(Filters.byStrings("Plus Button"), { defaultExport: false });
+var ChannelAttachMenu = getModule(Filters2.byStrings("Plus Button"), { defaultExport: false });
 
 function MenuLabel({ label, icon }) {
 	return /* @__PURE__ */ React.createElement(
@@ -1239,15 +1248,6 @@ StylesLoader_default.push(`.spotify-player-container {
 	rotate:-90deg;
 }`);
 
-// common/React.js
-var useState = /* @__PURE__ */ (() => React.useState)();
-var useEffect = /* @__PURE__ */ (() => React.useEffect)();
-var useRef = /* @__PURE__ */ (() => React.useRef)();
-var useCallback = /* @__PURE__ */ (() => React.useCallback)();
-var useMemo = /* @__PURE__ */ (() => React.useMemo)();
-var Children = /* @__PURE__ */ (() => React.Children)();
-var React_default = /* @__PURE__ */ (() => React)();
-
 // src/SpotifyEnhance/components/SpotifyPlayerControls/styles.css
 StylesLoader_default.push(`.spotify-player-controls {
 	display: flex;
@@ -1312,12 +1312,16 @@ StylesLoader_default.push(`.spotify-player-controls {
 var Button_default = getModule((a) => a && a.Link && a.Colors, { searchExports: true });
 
 // common/Components/Button/index.jsx
-var Button_default2 = Button_default || function ButtonComponentFallback(props) {
+function ButtonComponentFallback(props) {
 	return /* @__PURE__ */ React.createElement("button", { ...props });
-};
+}
+var ManaButton = /* @__PURE__ */ getModule(Filters2.byStrings(`"data-mana-component":"button"`), { searchExports: true }) || ButtonComponentFallback;
+var ManaTextButton = /* @__PURE__ */ getModule(Filters2.byStrings(`"data-mana-component":"text-button"`), { searchExports: true }) || ButtonComponentFallback;
+var Button_default2 = Button_default || ButtonComponentFallback;
 
 // common/DiscordModules/Modules.js
 var DiscordPopout = /* @__PURE__ */ (() => getModule((a) => a?.prototype?.render && a.Animation, { searchExports: true }))();
+var RadioGroup = /* @__PURE__ */ (() => getMangled("radioIndicatorChecked", { radioGroup: Filters2.byStrings("label", "required") }).radioGroup)();
 
 // common/Components/Popout/index.jsx
 var Popout_default = ({ children, targetElementRef, ...props }) => {
@@ -1326,14 +1330,48 @@ var Popout_default = ({ children, targetElementRef, ...props }) => {
 		DiscordPopout, {
 			position: "top",
 			align: "center",
+			nudgeAlignIntoViewport: true,
 			animation: DiscordPopout.Animation.FADE,
 			spacing: 4,
 			...props,
 			targetElementRef: targetElementRef || ref
 		},
-		(p) => targetElementRef ? children(p) : React_default.cloneElement(children(p), { ref })
+		(p) => {
+			if (targetElementRef) return children(p);
+			const child = children(p);
+			return React_default.cloneElement(child, {
+				ref: (e) => {
+					ref.current = e;
+					const childRef = child.props.ref;
+					if (!childRef) return e;
+					if (typeof childRef === "function") childRef(e);
+					else if (typeof childRef === "object") childRef.current = e;
+				}
+			});
+		}
 	);
 };
+
+// MODULES-AUTO-LOADER:@Modules/useStateFromStores
+var useStateFromStores_default = getModule(Filters2.byStrings("getStateFromStores"), { searchExports: true });
+
+// MODULES-AUTO-LOADER:@Stores/UserStore
+var UserStore_default = getStore("UserStore");
+
+// MODULES-AUTO-LOADER:@Stores/ReadStateStore
+var ReadStateStore_default = getStore("ReadStateStore");
+
+// MODULES-AUTO-LOADER:@Stores/TypingStore
+var TypingStore_default = getStore("TypingStore");
+
+// MODULES-AUTO-LOADER:@Stores/ChannelStore
+var ChannelStore_default = getStore("ChannelStore");
+
+// MODULES-AUTO-LOADER:@Stores/GuildStore
+var GuildStore_default = getStore("GuildStore");
+
+// common/Utils/Channel.js
+var ChannelIconsUtils = getModule((a) => a.getChannelIconURL);
 
 // common/Utils/Hooks.js
 function useTimer(fn, delay) {
@@ -1404,7 +1442,7 @@ function HoverPopout({ children, popout, delay = 150, popoutWrapperClassName, ..
 }
 
 // MODULES-AUTO-LOADER:@Modules/Tooltip
-var Tooltip_default = getModule(Filters.byPrototypeKeys("renderTooltip"), { searchExports: true });
+var Tooltip_default = getModule(Filters2.byPrototypeKeys("renderTooltip"), { searchExports: true });
 
 // common/Components/Tooltip/index.jsx
 var Tooltip_default2 = ({ note, position, children }) => {
@@ -1909,7 +1947,7 @@ StylesLoader_default.push(`.spotify-player-media {
 `);
 
 // MODULES-AUTO-LOADER:@Modules/Anchor
-var Anchor_default = getModule(Filters.byStrings("anchor", "noreferrer noopener"), { searchExports: true });
+var Anchor_default = getModule(Filters2.byStrings("anchor", "noreferrer noopener"), { searchExports: true });
 
 // common/Components/icons/ExternalLinkIcon/index.jsx
 function ExternalLinkIcon() {
@@ -1993,7 +2031,7 @@ function h(e, t) {
 	let n = arguments.length > 2 && void 0 !== arguments[2] && arguments[2];
 	true === n || AccessibilityStore_default.useReducedMotion ? e.set(t) : e.start(t);
 }
-var useSomeScalingHook = getModule(Filters.byStrings("reducedMotion.enabled", "useSpring", "respect-motion-settings"), { searchExports: true });
+var useSomeScalingHook = getModule(Filters2.byStrings("reducedMotion.enabled", "useSpring", "respect-motion-settings"), { searchExports: true });
 var context = getModule((a) => a?._currentValue?.scale, { searchExports: true });
 var ImageComponent = ({ url, ...rest }) => {
 	const [x, P] = useState(false);
@@ -2051,7 +2089,7 @@ StylesLoader_default.push(`.transparent-background.transparent-background{
 }`);
 
 // common/Components/ErrorBoundary/index.jsx
-var ErrorBoundary = class extends React.Component {
+var ErrorBoundary = class extends React_default.Component {
 	state = { hasError: false, error: null, info: null };
 	componentDidCatch(error, info) {
 		this.setState({ error, info, hasError: true });
@@ -2061,10 +2099,10 @@ var ErrorBoundary = class extends React.Component {
 `, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
 	}
 	renderErrorBoundary() {
-		return /* @__PURE__ */ React.createElement("div", { style: { background: "#292c2c", padding: "20px", borderRadius: "10px" } }, /* @__PURE__ */ React.createElement("b", { style: { color: "#e0e1e5" } }, "An error has occured while rendering ", /* @__PURE__ */ React.createElement("span", { style: { color: "orange" } }, this.props.id)));
+		return /* @__PURE__ */ React_default.createElement("div", { style: { background: "#292c2c", padding: "20px", borderRadius: "10px" } }, /* @__PURE__ */ React_default.createElement("b", { style: { color: "#e0e1e5" } }, "An error has occured while rendering ", /* @__PURE__ */ React_default.createElement("span", { style: { color: "orange" } }, this.props.id)));
 	}
 	renderFallback() {
-		if (React.isValidElement(this.props.fallback)) {
+		if (React_default.isValidElement(this.props.fallback)) {
 			if (this.props.passMetaProps)
 				this.props.fallback.props = {
 					id: this.props.id,
@@ -2073,7 +2111,7 @@ var ErrorBoundary = class extends React.Component {
 				};
 			return this.props.fallback;
 		}
-		return /* @__PURE__ */ React.createElement(
+		return /* @__PURE__ */ React_default.createElement(
 			this.props.fallback, {
 				id: this.props.id,
 				plugin: Config_default?.info?.name || "Unknown Plugin"
@@ -2086,16 +2124,19 @@ var ErrorBoundary = class extends React.Component {
 	}
 };
 
-// MODULES-AUTO-LOADER:@Modules/ModalRoot
-var ModalRoot_default = getModule(Filters.byStrings("rootWithShadow", "MODAL"), { searchExports: true });
-
-// MODULES-AUTO-LOADER:@Modules/ModalSize
-var ModalSize_default = getModule(Filters.byKeys("DYNAMIC", "SMALL", "LARGE"), { searchExports: true });
-
 // common/Utils/Modals/index.jsx
 var ModalActions = /* @__PURE__ */ getMangled("onCloseRequest:null!=", {
-	openModal: /* @__PURE__ */ Filters.byStrings("onCloseRequest:null!="),
-	closeModal: /* @__PURE__ */ Filters.byStrings(".setState", ".getState()[")
+	openModal: /* @__PURE__ */ Filters2.byStrings("onCloseRequest:null!="),
+	closeModal: /* @__PURE__ */ Filters2.byStrings(".setState", ".getState()[")
+});
+var Modals = /* @__PURE__ */ getMangled( /* @__PURE__ */ Filters2.bySource("root", "headerIdIsManaged"), {
+	ModalRoot: /* @__PURE__ */ Filters2.byStrings("rootWithShadow"),
+	ModalFooter: /* @__PURE__ */ Filters2.byStrings(".footer"),
+	ModalContent: /* @__PURE__ */ Filters2.byStrings(".content"),
+	ModalHeader: /* @__PURE__ */ Filters2.byStrings(".header", "separator"),
+	Animations: (a) => a.SUBTLE,
+	Sizes: (a) => a.DYNAMIC,
+	ModalCloseButton: Filters2.byStrings(".close]:")
 });
 var openModal = (children, tag, { className, ...modalRootProps } = {}) => {
 	const id = `${tag ? `${tag}-` : ""}modal`;
@@ -2107,11 +2148,11 @@ var openModal = (children, tag, { className, ...modalRootProps } = {}) => {
 			},
 			/* @__PURE__ */
 			React.createElement(
-				ModalRoot_default, {
+				Modals.ModalRoot, {
 					onClick: props.onClose,
 					transitionState: props.transitionState,
 					className: concateClassNames("transparent-background", className),
-					size: ModalSize_default.DYNAMIC,
+					size: Modals.Sizes.DYNAMIC,
 					...modalRootProps
 				},
 				React.cloneElement(children, { ...props })
@@ -2224,7 +2265,7 @@ StylesLoader_default.push(`.spotify-player-timeline {
 }`);
 
 // MODULES-AUTO-LOADER:@Modules/Slider
-var Slider_default = getModule(Filters.byPrototypeKeys("renderMark"), { searchExports: true });
+var Slider_default = getModule(Filters2.byPrototypeKeys("renderMark"), { searchExports: true });
 
 // src/SpotifyEnhance/components/TrackTimeLine/index.jsx
 function formatMsToTime(ms) {
@@ -2374,7 +2415,7 @@ Plugin_default.on(Events.START, () => {
 });
 
 // src/SpotifyEnhance/patches/patchMessageComponentAccessories.jsx
-var MessageComponentAccessories = getModule(Filters.byPrototypeKeys("renderPoll"), { searchExports: true });
+var MessageComponentAccessories = getModule(Filters2.byPrototypeKeys("renderPoll"), { searchExports: true });
 var urlRegex = /((?:https?|steam):\/\/[^\s<]+[^<.,:;"'\]\s])/g;
 var MessageStateContext = React.createContext(null);
 Plugin_default.on(Events.START, () => {
@@ -2406,10 +2447,7 @@ Plugin_default.on(Events.START, () => {
 });
 
 // MODULES-AUTO-LOADER:@Patch/MessageHeader
-var MessageHeader_default = getModuleAndKey(Filters.byStrings("userOverride", "withMentionPrefix"), { searchExports: false }) || {};
-
-// MODULES-AUTO-LOADER:@Modules/useStateFromStores
-var useStateFromStores_default = getModule(Filters.byStrings("getStateFromStores"), { searchExports: true });
+var MessageHeader_default = getModuleAndKey(Filters2.byStrings("userOverride", "withMentionPrefix"), { searchExports: false }) || {};
 
 // MODULES-AUTO-LOADER:@Stores/PresenceStore
 var PresenceStore_default = getStore("PresenceStore");
@@ -2538,9 +2576,9 @@ function Play({ userPlayActivityState }) {
 
 // src/SpotifyEnhance/components/SpotifyActivityControls/index.jsx
 var { useSpotifyPlayAction, useSpotifySyncAction } = getMangled(
-	Filters.byStrings("USER_ACTIVITY_PLAY", "spotifyData", "tooltip"), {
-		useSpotifyPlayAction: Filters.byStrings("USER_ACTIVITY_PLAY"),
-		useSpotifySyncAction: Filters.byStrings("USER_ACTIVITY_SYNC")
+	Filters2.byStrings("USER_ACTIVITY_PLAY", "spotifyData", "tooltip"), {
+		useSpotifyPlayAction: Filters2.byStrings("USER_ACTIVITY_PLAY"),
+		useSpotifySyncAction: Filters2.byStrings("USER_ACTIVITY_SYNC")
 	}, { searchExports: true, raw: true }
 );
 var SpotifyActivityControls_default = ({ activity, user }) => {
@@ -2564,7 +2602,7 @@ var SpotifyActivityControls_default = ({ activity, user }) => {
 };
 
 // src/SpotifyEnhance/patches/patchSpotifyActivity.jsx
-var ActivityComponent = getModuleAndKey(Filters.byStrings("PRESS_LISTEN_ALONG_ON_SPOTIFY_BUTTON", "PRESS_PLAY_ON_SPOTIFY_BUTTON"));
+var ActivityComponent = getModuleAndKey(Filters2.byStrings("PRESS_LISTEN_ALONG_ON_SPOTIFY_BUTTON", "PRESS_PLAY_ON_SPOTIFY_BUTTON"));
 Plugin_default.on(Events.START, () => {
 	const { module: module2, key } = ActivityComponent;
 	if (!module2 || !key) return Logger_default.patchError("SpotifyActivityComponent");
@@ -3026,7 +3064,7 @@ function SpotifyEmbedWrapper({ id, type, embedObject, embedComponent }) {
 }
 
 // src/SpotifyEnhance/patches/patchSpotifyEmbed.jsx
-var SpotifyEmbed = getModule(Filters.byStrings("iframe", "playlist", "track"), { defaultExport: false });
+var SpotifyEmbed = getModule(Filters2.byStrings("iframe", "playlist", "track"), { defaultExport: false });
 Plugin_default.on(Events.START, () => {
 	if (!SpotifyEmbed) return Logger_default.patchError("SpotifyEmbed");
 	const unpatch = Patcher.after(SpotifyEmbed, "Z", (_, [{ embed }], ret) => {
@@ -3221,7 +3259,7 @@ Gap.direction = {
 };
 
 // MODULES-AUTO-LOADER:@Modules/FormSwitch
-var FormSwitch_default = getModule(Filters.byStrings("note", "tooltipNote"), { searchExports: true });
+var FormSwitch_default = getModule(Filters2.byStrings("note", "tooltipNote"), { searchExports: true });
 
 // common/Components/Switch/index.jsx
 var Switch_default = FormSwitch_default || function SwitchComponentFallback(props) {
@@ -3252,14 +3290,11 @@ function SettingSwtich({ settingKey, note, onChange = nop, hideBorder = false, d
 	);
 }
 
-// MODULES-AUTO-LOADER:@Modules/RadioGroup
-var RadioGroup_default = getModule((a) => a?.Sizes?.NOT_SET === "", { searchExports: true });
-
 // src/SpotifyEnhance/components/SettingComponent/index.jsx
 function SpotifyEmbedOptions() {
 	const [val, set] = Settings_default.useSetting("spotifyEmbed");
 	return /* @__PURE__ */ React_default.createElement(
-		RadioGroup_default, {
+		RadioGroup, {
 			options: [{
 					value: EmbedStyleEnum.KEEP,
 					name: "Keep: Use original Spotify Embed"
@@ -3283,7 +3318,7 @@ function SpotifyEmbedOptions() {
 function SpotifyPLayerOptions() {
 	const [val, set] = Settings_default.useSetting("spotifyPlayerPlace;");
 	return /* @__PURE__ */ React_default.createElement(
-		RadioGroup_default, {
+		RadioGroup, {
 			options: [{
 					value: PlayerPlaceEnum.PIP,
 					name: "PIP: place the player in a draggable picture-in-picture"
