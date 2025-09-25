@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "@React";
 import SubFolder from "./SubFolder";
-import FolderBookmark from "@/components/Bookmark/FolderBookmark";
+import {SubBookmark} from "@/components/Bookmark";
 
 import { classNameFactory, join } from "@Utils/css";
 const c = classNameFactory("folder");
@@ -23,7 +23,7 @@ export default function FolderPopoutMenu({ folderId, items, onClose }) {
 							key={item.id}
 						/>
 					) : (
-						<FolderBookmark
+						<SubBookmark
 							onClose={onClose || e.closePopout}
 							parentId={folderId}
 							id={item.id}

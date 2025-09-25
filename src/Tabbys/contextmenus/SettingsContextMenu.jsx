@@ -7,6 +7,7 @@ import { createContextMenuItem } from "./helper";
 import Settings from "@Utils/Settings";
 
 const { Menu } = ContextMenu;
+import Slider from "@Modules/Slider";
 
 function buildToggle({ key, label, color }) {
 	return ContextMenu.buildItem({
@@ -18,10 +19,41 @@ function buildToggle({ key, label, color }) {
 	});
 }
 
+const sizes = [24, 28, 32];
+
+function SizeSlider() {
+	const [val, set] = Settings.useSetting("size");
+	return (
+		<div style={{padding:"0 8px"}}>
+			<Slider
+				mini={true}
+				stickToMarkers={true}
+				sortedMarkers={true}
+				equidistant={true}
+				markers={sizes}
+				minValue={sizes[0]}
+				maxValue={sizes[sizes.length - 1]}
+				initialValue={val}
+				// onValueChange={console.log}
+				onValueChange={set}
+			/>
+		</div>
+	);
+}
+
 export default function () {
 	return (
 		<Menu>
 			{[
+				ContextMenu.buildItem({
+					type: "control",
+					id: "tabSize",
+					label: "Size",
+					control: () => {
+						return <SizeSlider />;
+					}
+				}),
+				ContextMenu.buildItem({ type: "separator" }),
 				...[
 					{
 						key: "showTabbar",
@@ -39,10 +71,7 @@ export default function () {
 				].map(buildToggle),
 				ContextMenu.buildItem({ type: "separator" }),
 				...[
-					{
-						key: "showDMNames",
-						label: "Show DM name"
-					},
+					
 					{
 						key: "showPings",
 						label: "Show Pings"

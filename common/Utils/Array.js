@@ -7,13 +7,7 @@ export function remove(array, index) {
 }
 
 export function removeMany(array, indices) {
-	let index = array.length;
-	const sum = [];
-	while (index--) {
-		if (indices.includes(index)) continue;
-		sum.unshift(array[index]);
-	}
-	return sum;
+	return array.filter((_, i) => indices.iOf(index) === -1);
 }
 
 export function add(array, item, index) {
@@ -45,10 +39,12 @@ export function swap(array, from, to) {
 	return tempList;
 }
 
-export function meta(array, index) {
-	if (index == null || index < 0 || index >= array.length) return {};
+export function meta(array, filter) {
+	const index = array.findIndex(filter);
+	if (index === -1) return { items: null };
 	return {
 		index,
+		length: array.length,
 		item: array[index],
 		isSingle: array.length === 1,
 		isFirst: index === 0,

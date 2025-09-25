@@ -7,7 +7,7 @@ export default function DroppableMarkup({ isOver, canDrop, dropRef, draggedIsMe,
 	return (
 		<div
 			ref={dropRef}
-			className={c("droppable", pos, !draggedIsMe && isOver && "over", canDrop && dragInProgress && "dragInProgress")}
+			className={c("droppable", pos, !draggedIsMe && canDrop && isOver && "over", canDrop && dragInProgress && "dragInProgress")}
 		/>
 	);
 }

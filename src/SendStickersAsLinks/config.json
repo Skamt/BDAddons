@@ -1,7 +1,7 @@
 {
 	"info": {
 		"name": "SendStickersAsLinks",
-		"version": "2.3.0",
+		"version": "2.3.1",
 		"description": "Enables you to send custom Stickers as links",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SendStickersAsLinks/SendStickersAsLinks.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SendStickersAsLinks"

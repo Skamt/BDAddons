@@ -3,49 +3,42 @@ import Store from "@/Store";
 import { FolderIcon } from "@Components/Icon";
 import React, { useEffect, useState } from "@React";
 import { shallow } from "@Utils";
-import { classNameFactory, join } from "@Utils/css";
 import Popout from "@Components/Popout";
 import FolderPopoutMenu from "./FolderPopoutMenu";
 import BaseFolder from "./BaseFolder";
-const c = classNameFactory("folder");
 import { makeDraggable } from "@/components/DND/shared";
-import { SubBookmarkSortable, FolderDroppable } from "@/components/DND";
+import { BookmarkSortable, FolderDroppable } from "@/components/DND";
 import { DNDTypes } from "@/consts";
 
-function SubFolder({ id, folderId, parentId, dragRef, dropRef, onClose, ...props }) {
-	// const { isDragging, isOver, canDrop, folderDropRef, dragRef } = props;
+function Folder({ id, folderId, dropRef, dragRef, ...props }) {
 	const { name, items } = Store(state => Store.getFolder(folderId), shallow) || {};
-
 	return (
 		<Popout
-			position="right"
-			align="top"
-			spacing={20}
+			position="bottom"
+			align="left"
+			spacing={12}
 			renderPopout={e => (
 				<FolderPopoutMenu
 					folderId={folderId}
 					items={items}
-					onClose={onClose || e.closePopout}
+					onClose={e.closePopout}
 				/>
 			)}>
 			{e => (
 				<BaseFolder
 					{...props}
-					id={id}
 					ref={e => dragRef(dropRef(e))}
+					id={id}
 					folderId={folderId}
-					className={c("item")}
+					data-id={id}
 					onClick={e.onClick}
-					parentId={parentId}
 					name={name}>
-					<SubBookmarkSortable
-						id={id}
-						parentId={parentId}
-					/>
+					<BookmarkSortable id={id} />
 				</BaseFolder>
 			)}
 		</Popout>
 	);
 }
 
-export default makeDraggable(DNDTypes.SUB_FOLDER)(FolderDroppable(SubFolder));
+export default React.memo(makeDraggable(DNDTypes.FOLDER)(FolderDroppable(Folder)));
+

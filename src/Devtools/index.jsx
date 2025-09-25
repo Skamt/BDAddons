@@ -100,10 +100,13 @@ function dispatcherEventInterceptor(eventName, fn) {
 }
 
 function init() {
-	["Filters", "getModule", "getModules"].forEach(a => (window[a] = BdApi.Webpack[a]));
-	window.getModuleAndKey = getModuleAndKey;
-
+	
+	
 	window.s = Object.assign(id => Modules.moduleById(id), {
+		bd:{
+			...BdApi.Webpack,
+			getModuleAndKey
+		},
 		Utils: {
 			ErrorBoundary,
 			...Utils,
@@ -121,6 +124,7 @@ function init() {
 			DiscordPermissionsEnum
 		}
 	});
+
 }
 
 const settings = {

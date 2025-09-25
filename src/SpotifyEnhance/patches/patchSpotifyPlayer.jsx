@@ -19,18 +19,21 @@ Plugin.on(Events.START, async () => {
 	if (!fluxContainer) return Logger.patchError("SpotifyPlayer");
 
 	const unpatch = Patcher.after(fluxContainer.type.prototype, "render", (_, __, ret) => {
-		DEV:{
+		DEV: {
 			console.log(ret);
-		}	
+		}
 		return [
-			renderListener(
-				<ErrorBoundary id="SpotifyPlayer">
-					<SpotifyPlayer />
-				</ErrorBoundary>,
-				[_ => [_.player, _.spotifyPlayerPlace], shallow],
-				([player, place]) => place === PlayerPlaceEnum.USERAREA && player,
-				true
-			),
+			// renderListener(
+			<ErrorBoundary
+				key="SpotifyPlayer"
+				id="SpotifyPlayer">
+				<SpotifyPlayer />
+			</ErrorBoundary>,
+			// 	[_ => [_.player, _.spotifyPlayerPlace], shallow],
+			// 	([player, place]) => place === PlayerPlaceEnum.USERAREA && player,
+			// 	true
+			// ),
+
 			ret
 		];
 	});

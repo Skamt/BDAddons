@@ -1,7 +1,7 @@
 // import "./styles";
 import Store from "@/Store";
-import Bookmark from "@/components/Bookmark";
-import Folder from "@/components/Folder";
+import { Bookmark } from "@/components/Bookmark";
+import { Folder } from "@/components/Folder";
 import { ArrowIcon } from "@Components/Icon";
 import Popout from "@Components/Popout";
 import React, { useRef, useEffect, useState } from "@React";
@@ -99,7 +99,7 @@ function OverflowMenu({ items }) {
 			align="right"
 			spacing={12}
 			renderPopout={e => {
-				const content = items.map(({ id, folderId }) => getItem({ className:"folder-item",onClick: e.closePopout }, id, folderId));
+				const content = items.map(({ id, folderId }) => getItem({ className: "folder-item", onClick: e.closePopout }, id, folderId));
 				return <div className="overflow-popout">{content}</div>;
 			}}>
 			{e => {

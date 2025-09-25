@@ -5,7 +5,7 @@ import TabsScroller from "@/components/TabsScroller";
 import Tab from "@/components/Tab";
 import Store from "@/Store";
 import { clsx } from "@Utils";
-import { join } from "@Utils/String";
+import { join } from "@Utils/css";
 
 const c = clsx("tabbar");
 
@@ -25,7 +25,7 @@ export default function TabBar() {
 			<TabsScroller
 				shouldScroll={selectedId}
 				scrollTo={selectedIndex}
-				containerClassName={join(" ", "no-drag", c("tabs-scroller-container"))}
+				containerClassName={join("no-drag", c("tabs-scroller-container"))}
 				contentClassName={c("tabs-scroller-content")}
 				items={tabs}
 				renderItem={({ id }) => (
@@ -36,7 +36,7 @@ export default function TabBar() {
 				)}
 			/>
 			<div
-				className={join(" ", c("new-tab"), "no-drag", "icon-wrapper")}
+				className={join(c("new-tab"), "no-drag", "icon-wrapper")}
 				onClick={newTabHandler}>
 				<PlusIcon />
 			</div>

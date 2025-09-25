@@ -1,6 +1,6 @@
 import zustand, { subscribeWithSelector } from "@Discord/zustand";
 import { remove, removeMany, set, arrayMove, add } from "@Utils/Array";
-import { createBookmark } from "./bookmarks";
+import { addBy, mergeArrayItem, setArrayItem, createSubBookmark, createBookmarkFolder, reOrder } from "./shared";
 
 const getters = {
 	getFolderIndex(folderId) {
@@ -14,33 +14,44 @@ const getters = {
 		if (!folder) return -1;
 		return folder.items.findIndex(a => a.id === itemId);
 	},
+	getFolderItems(folderId) {
+		const folder = this.getFolder(folderId);
+		if (!folder) return;
+		return folder.items;
+	},
 	getFolderItem(folderId, itemId) {
 		const folder = this.getFolder(folderId);
 		if (!folder) return;
 		const itemIndex = this.getFolderItemIndex(folderId, itemId);
 		return folder.items[itemIndex];
-	},
-	getFolderIndexInFolder(folderId) {}
+	}
 };
 
-export function createFolderBookmark(folderId, payload) {
-	const id = crypto.randomUUID();
-	return { ...payload, id, parentId: folderId };
-}
-
-function move(arr, fromId, toId, pos) {
-	const fromIndex = arr.findIndex(a => a.id === fromId);
-	let toIndex = arr.findIndex(a => a.id === toId);
-	if (fromIndex === -1 || toIndex === -1) return;
-	if (pos === "before" && toIndex > fromIndex) {
-		toIndex--;
+const setters = {
+	setFolders(folders) {
+		if (folders && Array.isArray(folders)) this.setState({ folders });
+	},
+	setFolder(folderId, payload) {
+		this.setState({ folders: setArrayItem(this.state.folders, folderId, payload) });
+	},
+	updateFolder(folderId, payload) {
+		this.setState({ folders: mergeArrayItem(this.state.folders, folderId, payload) });
+	},
+	setFolderName(folderId, name) {
+		if (name) this.updateFolder(folderId, { name });
+	},
+	setFolderItems(folderId, items) {
+		if (items && Array.isArray(items)) this.updateFolder(folderId, { items });
+	},
+	setFolderItem(folderId, itemId, payload) {
+		const items = this.getFolderItems(folderId);
+		this.setFolderItems(folderId, setArrayItem(items, itemId, payload));
+	},
+	updateFolderItem(folderId, itemId, payload) {
+		const items = this.getFolderItems(folderId);
+		this.setFolderItems(folderId, mergeArrayItem(items, itemId, payload));
 	}
-	if (pos === "after" && toIndex < fromIndex) {
-		toIndex++;
-	}
-
-	return { fromIndex, toIndex };
-}
+};
 
 export default {
 	state: {
@@ -51,43 +62,33 @@ export default {
 	},
 	actions: {
 		...getters,
-		setFolder(folderId, payload) {
-			const { folders } = this.state;
-			const folderIndex = this.getFolderIndex(folderId);
-			const folder = folders[folderIndex];
-			if (!folder) return;
+		...setters,
 
-			const nfolder = Object.assign({}, folder, payload);
-
-			this.setState({ folders: set(folders, folderIndex, nfolder) });
-		},
-		addToFolderBy(folderId, payload, targetId, fn = a => a) {
-			const folder = this.getFolder(folderId);
-			if (!folder) return;
-
-			const targetIndex = targetId ? this.getFolderItemIndex(folderId, targetId) : folder.items.length;
-			if (targetIndex === -1) return;
-
-			this.setFolder(folderId, {
-				items: add(folder.items, createFolderBookmark(folderId, payload), fn(targetIndex))
+		addFolder(name) {
+			const { folder, bookmark } = createFolder(name);
+			this.setState({
+				folders: add(this.state.folders, folder)
 			});
 		},
-		addToFolder(folderId, payload) {
-			this.addToFolderBy(folderId, payload);
+		reOrderFolder(folderId, fromId, toId, pos) {
+			const items = this.getFolderItems(folderId);
+			this.setFolderItems(folderId, reOrder(items, fromId, toId, pos));
 		},
-		addToFolderAt(folderId, payload, index) {
-			this.addToFolderBy(folderId, payload, null, () => index);
+		
+
+		addToFolderBy(targetId, folderId, bookmark, fn) {
+			const items = this.getFolderItems(folderId);
+			if (items) this.updateFolder(folderId, { items: addBy(items, targetId, bookmark, fn) });
 		},
-		addToFolderAfter(folderId, targetId, payload) {
-			this.addToFolderBy(folderId, payload, targetId, i => i + 1);
+
+		addToFolder(folderId, path) {
+			this.addToFolderBy(null, folderId, createSubBookmark(folderId, path));
 		},
-		addToFolderBefore(folderId, targetId, payload) {
-			this.addToFolderBy(folderId, payload, targetId);
+
+		addFolderToFolder(parentId, folderId) {
+			this.addToFolderBy(null, parentId, createBookmarkFolder(folderId, parentId));
 		},
-		addTabToFolder(tabId, folderId) {
-			const tab = this.getTab(tabId);
-			if (tab) this.addToFolder(folderId, tab);
-		},
+
 		removeItemFromFolder(folderId, itemId) {
 			const folder = this.getFolder(folderId);
 			if (!folder) return;
@@ -95,8 +96,8 @@ export default {
 			const itemIndex = this.getFolderItemIndex(folderId, itemId);
 			if (itemIndex === -1) return;
 			const item = folder.items[itemIndex];
-			// if (item.folderId) this.removeFolder(item.folderId);
-			this.setFolder(folderId, { items: remove(folder.items, itemIndex) });
+
+			this.updateFolder(folderId, { items: remove(folder.items, itemIndex) });
 		},
 
 		removeFolder(folderId) {
@@ -153,26 +154,6 @@ export default {
 			this.removeFolder(folderId);
 		},
 
-		moveBookmarkToFolder(folderId, bookmarkId) {
-			const bookmark = this.getBookmark(bookmarkId);
-			const folder = this.getFolder(folderId);
-			if (!folder || !bookmark) return;
-			this.removeBookmark(bookmarkId);
-			this.addToFolder(folderId, bookmark);
-		},
-
-		moveBookmarkbarFolderToFolder(folderId, bookmarkId, targetFolderId) {
-			this.removeBookmark(bookmarkId);
-			this.addToFolder(targetFolderId, { folderId });
-		},
-
-		moveFolderBookmark(folderId, fromId, toId, pos) {
-			const folder = this.getFolder(folderId);
-			if (!folder) return;
-
-			const { fromIndex, toIndex } = move(folder.items, fromId, toId, pos);
-
-			this.setFolder(folderId, { items: arrayMove(folder.items, fromIndex, toIndex) });
-		}
+		
 	}
 };

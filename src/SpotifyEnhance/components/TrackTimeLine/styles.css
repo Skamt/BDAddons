@@ -1,7 +1,7 @@
 .spotify-player-timeline {
 	user-select: none;
 	margin-bottom: 2px;
-	color:white;
+	color: white;
 	display: flex;
 	flex-wrap: wrap;
 	font-size: 0.8rem;
@@ -10,6 +10,10 @@
 
 .spotify-player-timeline-progress {
 	flex: 1;
+}
+
+.spotify-player-timeline > :first-child {
+	flex: 1 0 100%;
 }
 
 .spotify-player-timeline-trackbar {
@@ -22,7 +26,7 @@
 
 .spotify-player-timeline .spotify-player-timeline-trackbar-grabber {
 	opacity: 0;
-	--grabber-size:12px;
+	--grabber-size: 12px;
 	cursor: grab;
 }
 
@@ -33,7 +37,7 @@
 .spotify-player-timeline .spotify-player-timeline-trackbar-bar > div {
 	background: #fff;
 	border-radius: 4px;
-	box-sizing:border-box;
+	box-sizing: border-box;
 }
 
 .spotify-player-timeline:hover .spotify-player-timeline-trackbar-bar > div {

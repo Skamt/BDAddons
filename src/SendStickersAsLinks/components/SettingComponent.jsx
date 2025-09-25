@@ -2,7 +2,6 @@ import React from "@React";
 import Settings from "@Utils/Settings";
 import Heading from "@Modules/Heading";
 import Slider from "@Modules/Slider";
-import FormText from "@Modules/FormText";
 import SettingSwtich from "@Components/SettingSwtich";
 
 export default () => {
@@ -53,7 +52,7 @@ function StickerSize() {
 				initialValue={val}
 				onValueChange={set}
 			/>
-			<FormText type="description">The size of the sticker in pixels. 160 is recommended</FormText>
+			<Heading variant="text-sm/normal">The size of the sticker in pixels. 160 is recommended</Heading>
 		</>
 	);
 }

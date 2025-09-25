@@ -1,9 +1,9 @@
 import { getModule } from "@Webpack";
+import { getUserAvatar, getUserName } from "@Utils/User";
 import GuildStore from "@Stores/GuildStore";
 
 const ChannelIconsUtils = getModule(a => a.getChannelIconURL);
 
-import { getUserAvatar, getUserName } from "@Utils/User";
 
 export function getChannelName(channel) {
 	if (!channel) return;
@@ -16,7 +16,7 @@ export function getDmAvatar(channel, size) {
 	return getUserAvatar({ id: recipientId, size });
 }
 
-export function getChannelIcon(channel, size) {
+export function getChannelIconURL(channel, size) {
 	if (!channel) return;
 	if (channel.isDM()) return getDmAvatar(channel, size);
 

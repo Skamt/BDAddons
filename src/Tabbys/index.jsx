@@ -11,16 +11,11 @@ import { reRender } from "@Utils";
 
 
 
-
-
-
-Plugin.on(Events.START, () => {
-
-});
+Plugin.on(Events.START, () => {});
 
 Plugin.on(Events.STOP, () => {
 	Patcher.unpatchAll();
-	reRender('.base_c48ade'); // temp
+	reRender(".base_c48ade"); // temp
 });
 
 module.exports = () => Plugin;

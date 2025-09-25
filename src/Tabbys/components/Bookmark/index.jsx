@@ -1,37 +1,44 @@
-// import "./styles";
 import Store from "@/Store";
 import React from "@React";
-import { shallow } from "@Utils";
-import { BookmarkDroppable } from "@/components/Droppable";
 import BaseBookmark from "./BaseBookmark";
-import { DragSource } from "@Discord/Modules";
+import ChannelBookmark from "./ChannelBookmark";
+import { makeDraggable } from "@/components/DND/shared";
 import { DNDTypes } from "@/consts";
+import MiscIcon from "@/components/ChannelIcon/MiscIcon";
+import { SubBookmarkSortable, BookmarkSortable } from "@/components/DND";
+import { shallow } from "@Utils";
 
+function BookmarkSwitch({ id, parentId, dragRef, ...rest }) {
+	const { type, ...bookmark } = Store(state => (parentId ? Store.getFolderItem(parentId, id) : Store.getBookmark(id)), shallow) || {};
 
-const DraggableBookmark = DragSource(
-	DNDTypes.BOOKMARK,
-	{
-		beginDrag: a => a
-	},
-	(props, monitor) => ({
-		isDragging: !!monitor.isDragging(),
-		dragRef: props.dragSource()
-	})
-);
+	let props = { ...bookmark, ...rest, id, ref: dragRef };
 
-function Bookmark({ id, dragRef, ...rest }) {
-	
-	const bookmark = Store(state => Store.getBookmark(id), shallow) || {};
-	return (
+	if (parentId)
+		props = Object.assign(props, {
+			parentId,
+			className: "folder-item",
+			children: (
+				<SubBookmarkSortable
+					id={id}
+					parentId={parentId}
+				/>
+			)
+		});
+	else
+		props = Object.assign(props, {
+			"data-id": id,
+			children: <BookmarkSortable id={id} />
+		});
+
+	return type === "CHANNEL" ? (
+		<ChannelBookmark {...props} />
+	) : (
 		<BaseBookmark
-			{...bookmark}
-			{...rest}
-			id={id}
-			data-id={id}
-			ref={dragRef}>
-			<BookmarkDroppable id={id} />
-		</BaseBookmark>
+			{...props}
+			icon={<MiscIcon type={type} />}
+		/>
 	);
 }
 
-export default React.memo(DraggableBookmark(Bookmark));
+export const Bookmark = React.memo(makeDraggable(DNDTypes.BOOKMARK)(props => <BookmarkSwitch {...props} />));
+export const SubBookmark = React.memo(makeDraggable(DNDTypes.SUB_BOOKMARK)(props => <BookmarkSwitch {...props} />));

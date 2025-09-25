@@ -152,10 +152,11 @@ export default () => {
 	return (
 		<div className="spotify-player-controls">
 			{playerButtons[PlayerButtonsEnum.SHARE] && (
-				<HoverPopout
-					className="spotify-player-controls-share"
-					popout={e => <ContextMenu.Menu onClose={e.closePopout}>{ContextMenu.buildMenuChildren(shareMenu)}</ContextMenu.Menu>}>
-					<SpotifyPlayerButton value={<ShareIcon />} />
+				<HoverPopout popout={e => <ContextMenu.Menu onClose={e.closePopout}>{ContextMenu.buildMenuChildren(shareMenu)}</ContextMenu.Menu>}>
+					<SpotifyPlayerButton
+						className="spotify-player-controls-share"
+						value={<ShareIcon />}
+					/>
 				</HoverPopout>
 			)}
 			{[playerButtons[PlayerButtonsEnum.SHUFFLE] && { name: "Shuffle", value: <ShuffleIcon />, className: "spotify-player-controls-shuffle", disabled: toggling_shuffle, active: shuffle, onClick: shuffleHandler }, playerButtons[PlayerButtonsEnum.PREVIOUS] && { name: "Previous", value: <PreviousIcon />, className: "spotify-player-controls-previous", disabled: skipping_prev, onClick: previousHandler }, { name: playPauseTooltip, value: playPauseIcon, className: playPauseClassName, disabled: false, onClick: playPauseHandler }, playerButtons[PlayerButtonsEnum.NEXT] && { name: "Next", value: <NextIcon />, className: "spotify-player-controls-next", disabled: skipping_next, onClick: nextHandler }, playerButtons[PlayerButtonsEnum.REPEAT] && { name: repeatTooltip, value: repeatIcon, className: "spotify-player-controls-repeat", disabled: toggling_repeat_track, active: repeatActive, onClick: repeatHandler }].filter(Boolean).map(SpotifyPlayerButton)}
@@ -168,13 +169,13 @@ function SpotifyPlayerButton({ className, ref, active, name, value, ...rest }) {
 	return (
 		<Tooltip note={name}>
 			<Button
+				{...rest}
 				buttonRef={ref}
 				innerClassName="flexCenterCenter"
 				className={`spotify-player-controls-btn ${className} ${active ? "enabled" : ""}`}
 				size={Button.Sizes.NONE}
 				color={Button.Colors.PRIMARY}
-				look={Button.Looks.BLANK}
-				{...rest}>
+				look={Button.Looks.BLANK}>
 				{value}
 			</Button>
 		</Tooltip>
@@ -226,9 +227,9 @@ function Volume({ volume }) {
 			position="top"
 			align="center"
 			animation="1"
-			className="spotify-player-controls-volume"
 			spacing={8}>
 			<SpotifyPlayerButton
+				className="spotify-player-controls-volume"
 				onClick={volumeMuteHandler}
 				value={val ? <VolumeIcon /> : <MuteVolumeIcon />}
 			/>

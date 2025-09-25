@@ -22,7 +22,7 @@ export default function BaseFolder({ id, folderId, parentId, name, className, ch
 			onContextMenu={contextmenuHandler}
 			className={join(c("container", isOver && canDrop && "canDrop"), "box-border", "no-drag", "card", className)}>
 			<div className={join(c("icon"), "icon-wrapper", "card-icon")}>{<FolderIcon />}</div>
-			<div className={join(c("name"), "card-name")}>{name}</div>
+			<div className={join(c("title"), "card-title")}>{name}</div>
 			{children}
 		</div>
 	);

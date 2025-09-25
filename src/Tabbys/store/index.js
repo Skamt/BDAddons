@@ -1,5 +1,6 @@
 import zustand, { subscribeWithSelector } from "@Discord/zustand";
 import TabSlice from "./tabs";
+import { ensureTab } from "./methods";
 import FolderSlice from "./folders";
 import BookmarkSlice from "./bookmarks";
 import UserSlice from "./users";
@@ -49,7 +50,7 @@ Store.subscribe(() => Store.getSelectedTab()?.path, transitionTo, shallow);
 const onLocationChange = debounce(e => {
 	const pathname = getPathName(e.destination.url);
 	if (!pathname) return;
-	Store.setSelectedTab({ path: pathname });
+	Store.setTabPath(Store.state.selectedId, pathname);
 }, 50);
 
 function hydrateStore() {
@@ -59,10 +60,7 @@ function hydrateStore() {
 	Store.setState({ ...userData });
 }
 
-function ensureTab() {
-	if (Store.getTabsCount() > 0) return;
-	Store.addTab({ path: location.pathname });
-}
+
 
 Plugin.on(Events.START, () => {
 	hydrateStore();
@@ -78,7 +76,11 @@ Plugin.on(Events.STOP, () => {
 
 import { diff, addedDiff, deletedDiff, updatedDiff, detailedDiff } from "deep-object-diff";
 DEV: {
-	Store.subscribe(state => state, (a,b)=>console.log(detailedDiff(b,a)), shallow);
+	Store.subscribe(
+		state => state,
+		(a, b) => console.log(detailedDiff(b, a)),
+		shallow
+	);
 
 	window.TabbysStore = Store;
 }

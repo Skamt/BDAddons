@@ -1,6 +1,6 @@
 import { Patcher } from "@Api";
 import { getNestedProp, concateClassNames } from "@Utils";
-import { getModuleAndKey } from "@Webpack";
+import { Filters, getModuleAndKey } from "@Webpack";
 import React from "@React";
 import Logger from "@Utils/Logger";
 import Plugin, { Events } from "@Utils/Plugin";

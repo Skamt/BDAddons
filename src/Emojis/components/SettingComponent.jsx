@@ -3,7 +3,6 @@ import SettingSwtich from "@Components/SettingSwtich";
 import Settings from "@Utils/Settings";
 import Heading from "@Modules/Heading";
 import Slider from "@Modules/Slider";
-import FormText from "@Modules/FormText";
 
 export default () => {
 	return (
@@ -62,7 +61,7 @@ function StickerSize() {
 				initialValue={val}
 				onValueChange={e => set(emojiSizes.find(s => e <= s) ?? emojiSizes[emojiSizes.length - 1])}
 			/>
-			<FormText type="description">The size of the Emoji in pixels</FormText>
+			<Heading variant="text-sm/normal">The size of the Emoji in pixels</Heading>
 		</>
 	);
 }

@@ -9,10 +9,12 @@ import SettingsButton from "@/components/SettingsButton";
 const c = classNameFactory("tabbys-app");
 
 export default function App({ leading, trailing }) {
-	const [privacyMode, showTabbar, showBookmarkbar, showSettingsButton] = Settings(_ => [_.privacyMode, _.showTabbar, _.showBookmarkbar, _.showSettingsButton], shallow);
+	const [size,privacyMode, showTabbar, showBookmarkbar, showSettingsButton] = Settings(_ => [_.size,_.privacyMode, _.showTabbar, _.showBookmarkbar, _.showSettingsButton], shallow);
 
 	return (
-		<div className={c("container", !showTabbar && "noTabbar", !showBookmarkbar && "noBookmark", privacyMode && "privacy-mode")}>
+		<div style={{
+			"--size":`${size}px`
+		}} className={c("container", !showTabbar && "noTabbar", !showBookmarkbar && "noBookmark", privacyMode && "privacy-mode")}>
 			{!showTabbar && !showBookmarkbar && <div className={c("leading")}>{leading}</div>}
 			{showTabbar && (
 				<div className={c("tabbar")}>

@@ -3,6 +3,8 @@ import useStateFromStores from "@Modules/useStateFromStores";
 import UserStore from "@Stores/UserStore";
 import ReadStateStore from "@Stores/ReadStateStore";
 import TypingStore from "@Stores/TypingStore";
+import ChannelStore from "@Stores/ChannelStore";
+import { getChannelName } from "@Utils/Channel";
 
 export function usePropBasedState(prop) {
 	const [state, setState] = useState(prop);
@@ -68,9 +70,9 @@ export function useTimer(fn, delay) {
 	return [start, clear];
 }
 
-
-
 export function useChannelState(channelId) {
+	const channel = useStateFromStores([ChannelStore], () => ChannelStore.getChannel(channelId), [channelId]);
+	const name = getChannelName(channel);
 	const [mentionCount, unreadCount, hasUnread] = useStateFromStores(
 		[ReadStateStore],
 		() => {
@@ -86,5 +88,18 @@ export function useChannelState(channelId) {
 	const currentUser = UserStore.getCurrentUser();
 	const typingUsers = typingUsersIds.filter(id => id !== currentUser?.id).map(UserStore.getUser);
 
-	return { typingUsers, mentionCount, unreadCount, hasUnread };
+	return {
+		name,
+		channel,
+		get isDM() {
+			return channel?.isDM();
+		},
+		get isTyping() {
+			return !!typingUsers.length;
+		},
+		typingUsers,
+		mentionCount,
+		unreadCount,
+		hasUnread
+	};
 }

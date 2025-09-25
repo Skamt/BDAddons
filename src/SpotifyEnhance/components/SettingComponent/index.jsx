@@ -3,7 +3,7 @@ import React from "@React";
 import Collapsible from "@Components/Collapsible";
 import Gap from "@Components/Gap";
 import SettingSwtich from "@Components/SettingSwtich";
-import RadioGroup from "@Modules/RadioGroup";
+import { RadioGroup } from "@Discord/Modules";
 import Settings from "@Utils/Settings";
 import { PlayerButtonsEnum, PlayerPlaceEnum, EmbedStyleEnum } from "@/consts.js";
 import Plugin from "@Utils/Plugin";
@@ -34,7 +34,7 @@ function SpotifyEmbedOptions() {
 }
 
 function SpotifyPLayerOptions() {
-	const [val, set] = Settings.useSetting("spotifyPlayerPlace;");
+	const [val, set] = Settings.useSetting("spotifyPlayerPlace");
 	return (
 		<RadioGroup
 			options={[
