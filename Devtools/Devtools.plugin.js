@@ -7,7 +7,33 @@
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/Devtools/Devtools.plugin.js
  */
 
-const config = {
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+	for (var name in all)
+		__defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+	if (from && typeof from === "object" || typeof from === "function") {
+		for (let key of __getOwnPropNames(from))
+			if (!__hasOwnProp.call(to, key) && key !== except)
+				__defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+	}
+	return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+
+// src/Devtools/index.jsx
+var index_exports = {};
+__export(index_exports, {
+	default: () => Devtools
+});
+module.exports = __toCommonJS(index_exports);
+
+// config:@Config
+var Config_default = {
 	"info": {
 		"name": "Devtools",
 		"version": "1.0.0",
@@ -18,97 +44,128 @@ const config = {
 			"name": "Skamt"
 		}]
 	}
-}
+};
 
-// common\Api.js
-const Api = new BdApi(config.info.name);
-const React = Api.React;
-const ReactDOM = Api.ReactDOM;
-const Patcher = Api.Patcher;
-const Logger = Api.Logger;
-const Webpack = Api.Webpack;
-/* annoying */
-const getOwnerInstance = Api.ReactUtils.getOwnerInstance.bind(Api.ReactUtils);
+// common/Api.js
+var Api = new BdApi(Config_default.info.name);
+var React = /* @__PURE__ */ (() => Api.React)();
+var ReactDOM = /* @__PURE__ */ (() => Api.ReactDOM)();
+var Patcher = /* @__PURE__ */ (() => Api.Patcher)();
+var Logger = /* @__PURE__ */ (() => Api.Logger)();
+var Webpack = /* @__PURE__ */ (() => Api.Webpack)();
+var getOwnerInstance = /* @__PURE__ */ (() => Api.ReactUtils.getOwnerInstance.bind(Api.ReactUtils))();
 
-// common\Components\ErrorBoundary\index.jsx
-class ErrorBoundary extends React.Component {
+// common/React.jsx
+var React_default = /* @__PURE__ */ (() => React)();
+
+// common/Utils/Logger.js
+Logger.patchError = (patchId) => {
+	console.error(`%c[${Config_default.info.name}] %cCould not find module for %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
+};
+var Logger_default = Logger;
+
+// common/Components/ErrorBoundary/index.jsx
+var ErrorBoundary = class extends React_default.Component {
 	state = { hasError: false, error: null, info: null };
 	componentDidCatch(error, info) {
 		this.setState({ error, info, hasError: true });
-		const errorMessage = `\n\t${error?.message || ""}${(info?.componentStack || "").split("\n").slice(0, 20).join("\n")}`;
-		console.error(`%c[${config?.info?.name || "Unknown Plugin"}] %cthrew an exception at %c[${this.props.id}]\n`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
+		const errorMessage = `
+	${error?.message || ""}${(info?.componentStack || "").split("\n").slice(0, 20).join("\n")}`;
+		console.error(`%c[${Config_default?.info?.name || "Unknown Plugin"}] %cthrew an exception at %c[${this.props.id}]
+`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
 	}
 	renderErrorBoundary() {
-		return (
-			React.createElement('div', { style: { background: "#292c2c", padding: "20px", borderRadius: "10px" }, }, React.createElement('b', { style: { color: "#e0e1e5" }, }, "An error has occured while rendering ", React.createElement('span', { style: { color: "orange" }, }, this.props.id)))
-		);
+		return /* @__PURE__ */ React_default.createElement("div", { style: { background: "#292c2c", padding: "20px", borderRadius: "10px" } }, /* @__PURE__ */ React_default.createElement("b", { style: { color: "#e0e1e5" } }, "An error has occured while rendering ", /* @__PURE__ */ React_default.createElement("span", { style: { color: "orange" } }, this.props.id)));
 	}
 	renderFallback() {
-		if (React.isValidElement(this.props.fallback)) {
+		if (React_default.isValidElement(this.props.fallback)) {
 			if (this.props.passMetaProps)
 				this.props.fallback.props = {
 					id: this.props.id,
-					plugin: config?.info?.name || "Unknown Plugin",
+					plugin: Config_default?.info?.name || "Unknown Plugin",
 					...this.props.fallback.props
 				};
 			return this.props.fallback;
 		}
-		return (
-			React.createElement(this.props.fallback, {
+		return /* @__PURE__ */ React_default.createElement(
+			this.props.fallback, {
 				id: this.props.id,
-				plugin: config?.info?.name || "Unknown Plugin",
-			})
+				plugin: Config_default?.info?.name || "Unknown Plugin"
+			}
 		);
 	}
 	render() {
 		if (!this.state.hasError) return this.props.children;
 		return this.props.fallback ? this.renderFallback() : this.renderErrorBoundary();
 	}
-}
+};
 
-// common\Webpack.js
-const getModule$1 = Webpack.getModule;
-const Filters = Webpack.Filters;
+// common/Webpack.js
+var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
+var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
 
 function getModuleAndKey(filter, options) {
-	let module;
-	const target = getModule$1((entry, m) => (filter(entry) ? (module = m) : false), options);
-	module = module?.exports;
-	if (!module) return;
-	const key = Object.keys(module).find(k => module[k] === target);
+	let module2;
+	const target = getModule((entry, m) => filter(entry) ? module2 = m : false, options);
+	module2 = module2?.exports;
+	if (!module2) return;
+	const key = Object.keys(module2).find((k) => module2[k] === target);
 	if (!key) return;
-	return { module, key };
+	return { module: module2, key };
 }
 
-// @Modules\Dispatcher
-const Dispatcher = getModule$1(Filters.byKeys("dispatch", "_dispatch"), { searchExports: false });
+// MODULES-AUTO-LOADER:@Modules/Dispatcher
+var Dispatcher_default = getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: false });
 
-// @Modules\TheBigBoyBundle
-const TheBigBoyBundle = getModule$1(Filters.byKeys("openModal", "FormSwitch", "Anchor"), { searchExports: false });
+// MODULES-AUTO-LOADER:@Modules/TheBigBoyBundle
+var TheBigBoyBundle_default = getModule(Filters.byKeys("openModal", "FormSwitch", "Anchor"), { searchExports: false });
 
-// common\Utils.jsx
-function isValidString(string) {
-	return string && string.length > 0;
-}
+// common/Utils/index.js
+var Utils_exports = {};
+__export(Utils_exports, {
+	BrokenAddon: () => BrokenAddon,
+	Disposable: () => Disposable,
+	animate: () => animate,
+	buildUrl: () => buildUrl,
+	clsx: () => clsx,
+	concateClassNames: () => concateClassNames,
+	copy: () => copy,
+	debounce: () => debounce,
+	exceptionWrapper: () => exceptionWrapper,
+	fit: () => fit,
+	genUrlParamsFromArray: () => genUrlParamsFromArray,
+	getImageDimensions: () => getImageDimensions,
+	getNestedProp: () => getNestedProp,
+	getPathName: () => getPathName,
+	hook: () => hook,
+	isSnowflake: () => isSnowflake,
+	nop: () => nop,
+	parseSnowflake: () => parseSnowflake,
+	prettyfiyBytes: () => prettyfiyBytes,
+	promiseHandler: () => promiseHandler,
+	reRender: () => reRender,
+	shallow: () => shallow,
+	sleep: () => sleep
+});
 
-function getUserName(userObject = {}) {
-	const { global_name, globalName, username } = userObject;
-	if (isValidString(global_name)) return global_name;
-	if (isValidString(globalName)) return globalName;
-	if (isValidString(username)) return username;
-	return "???";
-}
-
-function getAcronym(string) {
-	if (!isValidString(string)) return "";
-	return string
-		.replace(/'s /g, " ")
-		.replace(/\w+/g, e => e[0])
-		.replace(/\s/g, "");
+function fit({ width, height, gap = 0.8 }) {
+	const ratio = Math.min(innerWidth / width, innerHeight / height);
+	width = Math.round(width * ratio);
+	height = Math.round(height * ratio);
+	return {
+		width,
+		height,
+		maxHeight: height * gap,
+		maxWidth: width * gap
+	};
 }
 
 function concateClassNames(...args) {
 	return args.filter(Boolean).join(" ");
+}
+
+function clsx(prefix) {
+	return (...args) => args.filter(Boolean).map((a) => `${prefix}-${a}`).join(" ");
 }
 
 function getPathName(url) {
@@ -125,6 +182,7 @@ function animate(property, element, to, options = {}, cb = () => {}) {
 	const {
 		ease = easeInOutSin,
 			duration = 300
+		// standard
 	} = options;
 	let start = null;
 	const from = element[property];
@@ -132,7 +190,7 @@ function animate(property, element, to, options = {}, cb = () => {}) {
 	const cancel = () => {
 		cancelled = true;
 	};
-	const step = timestamp => {
+	const step = (timestamp) => {
 		if (cancelled) {
 			cb(new Error("Animation cancelled"));
 			return;
@@ -177,13 +235,13 @@ function debounce(func, wait = 166) {
 function shallow(objA, objB) {
 	if (Object.is(objA, objB)) return true;
 	if (typeof objA !== "object" || objA === null || typeof objB !== "object" || objB === null) return false;
-	var keysA = Object.keys(objA);
+	const keysA = Object.keys(objA);
 	if (keysA.length !== Object.keys(objB).length) return false;
-	for (var i = 0; i < keysA.length; i++)
+	for (let i = 0; i < keysA.length; i++)
 		if (!Object.prototype.hasOwnProperty.call(objB, keysA[i]) || !Object.is(objA[keysA[i]], objB[keysA[i]])) return false;
 	return true;
 }
-const promiseHandler = promise => promise.then(data => [undefined, data]).catch(err => [err]);
+var promiseHandler = (promise) => promise.then((data) => [void 0, data]).catch((err) => [err]);
 
 function copy(data) {
 	DiscordNative.clipboard.copy(data);
@@ -192,21 +250,21 @@ function copy(data) {
 function getNestedProp(obj, path) {
 	return path.split(".").reduce((ob, prop) => ob?.[prop], obj);
 }
-class BrokenAddon {
+var BrokenAddon = class {
 	stop() {}
 	start() {
-		BdApi.alert(config.info.name, "Plugin is broken, Notify the dev.");
+		BdApi.alert(Config_default.info.name, "Plugin is broken, Notify the dev.");
 	}
-}
-class Disposable {
+};
+var Disposable = class {
 	constructor() {
 		this.patches = [];
 	}
 	Dispose() {
-		this.patches?.forEach(p => p?.());
+		this.patches?.forEach((p) => p?.());
 		this.patches = [];
 	}
-}
+};
 
 function reRender(selector) {
 	const target = document.querySelector(selector)?.parentElement;
@@ -215,14 +273,14 @@ function reRender(selector) {
 	const unpatch = Patcher.instead(instance, "render", () => unpatch());
 	instance.forceUpdate(() => instance.forceUpdate());
 }
-const nop = () => {};
+var nop = () => {};
 
 function sleep(delay) {
-	return new Promise(done => setTimeout(() => done(), delay * 1000));
+	return new Promise((done) => setTimeout(() => done(), delay * 1e3));
 }
 
 function prettyfiyBytes(bytes, si = false, dp = 1) {
-	const thresh = si ? 1000 : 1024;
+	const thresh = si ? 1e3 : 1024;
 	if (Math.abs(bytes) < thresh) {
 		return `${bytes} B`;
 	}
@@ -237,7 +295,7 @@ function prettyfiyBytes(bytes, si = false, dp = 1) {
 }
 
 function parseSnowflake(snowflake) {
-	return snowflake / 4194304 + 1420070400000;
+	return snowflake / 4194304 + 14200704e5;
 }
 
 function isSnowflake(id) {
@@ -268,76 +326,54 @@ function buildUrl(endpoint, path, params) {
 function getImageDimensions(url) {
 	return new Promise((resolve, reject) => {
 		const img = new Image();
-		img.onload = () =>
-			resolve({
-				width: img.width,
-				height: img.height
-			});
+		img.onload = () => resolve({
+			width: img.width,
+			height: img.height
+		});
 		img.onerror = reject;
 		img.src = url;
 	});
 }
 
-function hook(hook, ...args) {
+function hook(hook2, ...args) {
 	let v;
 	const b = document.createElement("div");
 	const root = ReactDOM.createRoot(b);
-	root.render(React.createElement(() => ((v = hook(...args)), null)));
+	root.render(React.createElement(() => (v = hook2(...args), null)));
 	root.unmount(b);
 	return v;
 }
 
-const Utils = /*#__PURE__*/ Object.freeze({
-	__proto__: null,
-	BrokenAddon,
-	Disposable,
-	animate,
-	buildUrl,
-	concateClassNames,
-	copy,
-	debounce,
-	genUrlParamsFromArray,
-	getAcronym,
-	getImageDimensions,
-	getNestedProp,
-	getPathName,
-	getUserName,
-	hook,
-	isSnowflake,
-	isValidString,
-	nop,
-	parseSnowflake,
-	prettyfiyBytes,
-	promiseHandler,
-	reRender,
-	shallow,
-	sleep
-});
+function exceptionWrapper(fn, exp, fin) {
+	return () => {
+		try {
+			fn?.();
+		} catch (e) {
+			exp?.(e);
+		} finally {
+			fin?.();
+		}
+	};
+}
 
-// common\Utils\Logger.js
-Logger.patchError = patchId => {
-	console.error(`%c[${config.info.name}] %cCould not find module for %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
-};
-
-// @Enums\DiscordPermissionsEnum
-const DiscordPermissionsEnum = getModule$1(Filters.byKeys("ADD_REACTIONS"), { searchExports: true }) || {
+// MODULES-AUTO-LOADER:@Enums/DiscordPermissionsEnum
+var DiscordPermissionsEnum_default = getModule(Filters.byKeys("ADD_REACTIONS"), { searchExports: true }) || {
 	"EMBED_LINKS": "16384n",
 	"USE_EXTERNAL_EMOJIS": "262144n"
 };
 
-// src\Devtools\webpackRequire.js
-const chunkName = Object.keys(window).find(key => key.startsWith("webpackChunk"));
-const chunk = window[chunkName];
-let webpackreq;
+// src/Devtools/webpackRequire.js
+var chunkName = Object.keys(window).find((key) => key.startsWith("webpackChunk"));
+var chunk = window[chunkName];
+var webpackreq;
 chunk.push([
-	[Symbol()], {},
-	r => (webpackreq = r.b ? r : webpackreq)
+	[Symbol()], {}, (r) => webpackreq = r.b ? r : webpackreq
 ]);
 chunk.pop();
-const webpackRequire = webpackreq;
+var webpackRequire_default = webpackreq;
 
-// src\Devtools\Sources.js
-class Source {
+// src/Devtools/Sources.js
+var Source = class {
 	constructor(id, loader) {
 		this.id = id;
 		this.loader = loader;
@@ -358,18 +394,18 @@ class Source {
 			return e;
 		}
 	}
-}
+};
 
 function sourceById(id) {
-	return new Source(id, webpackRequire.m[id]);
+	return new Source(id, webpackRequire_default.m[id]);
 }
 
 function* sourceLookup(...args) {
 	const strArr = args;
 	const invert = typeof args[args.length - 1] === "boolean" ? args.pop() : false;
-	for (const [id, source] of Object.entries(webpackRequire.m)) {
+	for (const [id, source] of Object.entries(webpackRequire_default.m)) {
 		const sourceCode = source.toString();
-		const result = strArr.every(str => sourceCode.includes(str));
+		const result = strArr.every((str) => sourceCode.includes(str));
 		if (invert ^ result) yield new Source(id, source);
 	}
 }
@@ -384,28 +420,27 @@ function getSource(...args) {
 	b.return();
 	return res;
 }
-const Sources = {
+var Sources = {
 	getWebpackSources() {
-		return webpackRequire.m;
+		return webpackRequire_default.m;
 	},
 	sourceById,
 	getSource,
 	getSources
 };
 
-// src\Devtools\Modules.js
-const defineModuleGetter = (obj, id) =>
-	Object.defineProperty(obj, id, {
-		enumerable: true,
-		get() {
-			return Modules.moduleById(id);
-		}
-	});
-class Module {
-	constructor(id, module) {
+// src/Devtools/Modules.js
+var defineModuleGetter = (obj, id) => Object.defineProperty(obj, id, {
+	enumerable: true,
+	get() {
+		return Modules.moduleById(id);
+	}
+});
+var Module = class {
+	constructor(id, module2) {
 		this.id = id;
-		this.rawModule = module;
-		this.exports = module.exports;
+		this.rawModule = module2;
+		this.exports = module2.exports;
 		const source = Sources.sourceById(id);
 		this.loader = source.loader;
 	}
@@ -420,7 +455,7 @@ class Module {
 				get() {
 					return Object.keys(t.modulesUsingThisModule).filter((id) => {
 						const code = t.modulesUsingThisModule[id].code;
-						return exportInModule(code, t.id, key)
+						return exportInModule(code, t.id, key);
 					}).reduce((acc, id) => defineModuleGetter(acc, id), {});
 				}
 			});
@@ -453,18 +488,19 @@ class Module {
 			if (!fs.existsSync(path)) fs.mkdirSync(path);
 			fs.writeFileSync(`${path}\\__MAIN-${this.id}.js`, this.code, "utf8");
 			fs.mkdirSync(`${path}\\modulesUsingThisModule`);
-			fs.mkdirSync(`${path}\\imports`); {
+			fs.mkdirSync(`${path}\\imports`);
+			{
 				const modules = Object.entries(this.modulesUsingThisModule);
 				for (let i = modules.length - 1; i >= 0; i--) {
-					const [id, module] = modules[i];
-					const code = module.code;
+					const [id, module2] = modules[i];
+					const code = module2.code;
 					fs.writeFileSync(`${path}\\modulesUsingThisModule\\${id}.js`, code, "utf8");
 				}
 			} {
 				const modules = Object.entries(this.imports);
 				for (let i = modules.length - 1; i >= 0; i--) {
-					const [id, module] = modules[i];
-					const code = module.code;
+					const [id, module2] = modules[i];
+					const code = module2.code;
 					fs.writeFileSync(`${path}\\imports\\${id}.js`, code, "utf8");
 				}
 			}
@@ -473,16 +509,16 @@ class Module {
 			return e;
 		}
 	}
-}
+};
 
 function getWebpackModules() {
-	return webpackRequire.c;
+	return webpackRequire_default.c;
 }
 
 function moduleById(id) {
-	const module = webpackRequire.c[id];
-	if (!module) return;
-	return new Module(id, module);
+	const module2 = webpackRequire_default.c[id];
+	if (!module2) return;
+	return new Module(id, module2);
 }
 
 function modulesImportedInModuleById(id) {
@@ -492,7 +528,7 @@ function modulesImportedInModuleById(id) {
 	const req = args.split(",")[2];
 	const re = new RegExp(`(?:\\s|\\(|,|=)${req}\\("?(\\d+)"?\\)`, "g");
 	const imports = Array.from(code.matchAll(re));
-	return imports.map(id => id[1]);
+	return imports.map((id2) => id2[1]);
 }
 
 function exportInModule(code, id, key) {
@@ -505,14 +541,14 @@ function exportInModule(code, id, key) {
 }
 
 function modulesImportingModuleById(id) {
-	return Object.keys(Sources.getWebpackSources()).filter(sourceId => modulesImportedInModuleById(sourceId).includes(`${id}`));
+	return Object.keys(Sources.getWebpackSources()).filter((sourceId) => modulesImportedInModuleById(sourceId).includes(`${id}`));
 }
 
-function noExports(filter, module, exports) {
-	if (filter(exports, module, module.id)) return new Module(module.id, module);
+function noExports(filter, module2, exports) {
+	if (filter(exports, module2, module2.id)) return new Module(module2.id, module2);
 }
 
-function doExports(filter, module, exports) {
+function doExports(filter, module2, exports) {
 	if (typeof exports !== "object" && typeof exports !== "function") return;
 	for (const entryKey in exports) {
 		let target = null;
@@ -522,7 +558,7 @@ function doExports(filter, module, exports) {
 			continue;
 		}
 		if (sanitizeExports(target)) continue;
-		if (filter(target, module, module.id)) return { target, entryKey, module: new Module(module.id, module) };
+		if (filter(target, module2, module2.id)) return { target, entryKey, module: new Module(module2.id, module2) };
 	}
 }
 
@@ -540,12 +576,12 @@ function sanitizeExports(exports) {
 function* moduleLookup(filter, options = {}) {
 	const { searchExports = false } = options;
 	const gauntlet = searchExports ? doExports : noExports;
-	const keys = Object.keys(webpackRequire.c);
+	const keys = Object.keys(webpackRequire_default.c);
 	for (let index = keys.length - 1; index >= 0; index--) {
-		const module = webpackRequire.c[keys[index]];
-		const { exports } = module;
+		const module2 = webpackRequire_default.c[keys[index]];
+		const { exports } = module2;
 		if (sanitizeExports(exports)) continue;
-		const match = gauntlet(filter, module, exports);
+		const match = gauntlet(filter, module2, exports);
 		if (match) yield match;
 	}
 }
@@ -554,96 +590,95 @@ function getModules(filter, options) {
 	return [...moduleLookup(filter, options)];
 }
 
-function getModule(filter, options) {
+function getModule2(filter, options) {
 	const b = moduleLookup(filter, options);
 	const res = b.next().value;
 	b.return();
 	return res;
 }
-const Modules = {
+var Modules = {
 	moduleById,
 	moduleLookup,
 	getWebpackModules,
 	modulesImportedInModuleById,
 	modulesImportingModuleById,
 	getModules,
-	getModule
+	getModule: getModule2
 };
 
-// src\Devtools\Misc.js
-const Misc = {
+// src/Devtools/Misc.js
+var Misc = {
+	// getAllCssModules(){
+	// 	return cssModulesId.map(Modules.moduleById);
+	// },
 	getAllAssets() {
-		return Modules.getModules(a => typeof a.exports === "string" && a.exports.match(/\/assets\/.+/)).map(a => a.exports);
+		return Modules.getModules((a) => typeof a.exports === "string" && a.exports.match(/\/assets\/.+/)).map((a) => a.exports);
 	},
 	getEventListeners(eventName) {
-		const nodes = Dispatcher._actionHandlers._dependencyGraph.nodes;
-		const subs = Dispatcher._subscriptions;
+		const nodes = Dispatcher_default._actionHandlers._dependencyGraph.nodes;
+		const subs = Dispatcher_default._subscriptions;
 		return {
-			stores: Object.values(nodes)
-				.map(a => a.actionHandler[eventName] && a)
-				.filter(Boolean),
+			stores: Object.values(nodes).map((a) => a.actionHandler[eventName] && a).filter(Boolean),
 			subs: [eventName, subs[eventName]]
 		};
 	},
 	getEventListenersFuzzy(str = "") {
 		str = str.toLowerCase();
-		const nodes = Dispatcher._actionHandlers._dependencyGraph.nodes;
-		const subs = Dispatcher._subscriptions;
+		const nodes = Dispatcher_default._actionHandlers._dependencyGraph.nodes;
+		const subs = Dispatcher_default._subscriptions;
 		return {
-			stores: Object.values(nodes).filter(a => Object.keys(a.actionHandler).some(key => key.toLowerCase().includes(str))),
-			subs: Object.entries(subs)
-				.filter(([key]) => key.toLowerCase().includes(str))
-				.map(a => a)
+			stores: Object.values(nodes).filter((a) => Object.keys(a.actionHandler).some((key) => key.toLowerCase().includes(str))),
+			subs: Object.entries(subs).filter(([key]) => key.toLowerCase().includes(str)).map((a) => a)
 		};
 	},
-	getGraph: (() => {
+	getGraph: /* @__PURE__ */ (() => {
 		let graph = null;
 		return function getGraph(refresh = false) {
-			if (graph === null || refresh) graph = Object.keys(Modules.getWebpackModules()).map(a => ({ id: a, modules: Modules.modulesImportedInModuleById(a) }));
+			if (graph === null || refresh) graph = Object.keys(Modules.getWebpackModules()).map((a) => ({ id: a, modules: Modules.modulesImportedInModuleById(a) }));
 			return graph;
 		};
 	})()
 };
 
-// @Modules\FormSwitch
-const FormSwitch = getModule$1(Filters.byStrings("note", "tooltipNote"), { searchExports: true });
+// MODULES-AUTO-LOADER:@Modules/FormSwitch
+var FormSwitch_default = getModule(Filters.byStrings("note", "tooltipNote"), { searchExports: true });
 
-// common\Components\Switch\index.jsx
-const Switch = FormSwitch ||
-	function SwitchComponentFallback(props) {
-		return (
-			React.createElement('div', { style: { color: "#fff" }, }, props.children, React.createElement('input', {
-				type: "checkbox",
-				checked: props.value,
-				onChange: e => props.onChange(e.target.checked),
-			}))
-		);
-	};
+// common/Components/Switch/index.jsx
+var Switch_default = FormSwitch_default || function SwitchComponentFallback(props) {
+	return /* @__PURE__ */ React.createElement("div", { style: { color: "#fff" } }, props.children, /* @__PURE__ */ React.createElement(
+		"input", {
+			type: "checkbox",
+			checked: props.value,
+			onChange: (e) => props.onChange(e.target.checked)
+		}
+	));
+};
 
-// src\Devtools\SettingComponent.jsx
-function SettingComponent({ settings, enableExp }) {
-	const [enabled, setEnabled] = React.useState(settings.expEnabled);
-	return (
-		React.createElement(Switch, {
+// src/Devtools/SettingComponent.jsx
+function SettingComponent_default({ settings: settings2, enableExp: enableExp2 }) {
+	const [enabled, setEnabled] = React_default.useState(settings2.expEnabled);
+	return /* @__PURE__ */ React_default.createElement(
+		Switch_default, {
 			value: enabled,
 			hideBorder: false,
-			onChange: e => {
-				settings.expEnabled = e;
+			onChange: (e) => {
+				settings2.expEnabled = e;
 				setEnabled(e);
-				enableExp(e);
-			},
-		}, "enableExperiments")
+				enableExp2(e);
+			}
+		},
+		"enableExperiments"
 	);
 }
 
-// src\Devtools\Stores.js
-class Store {
-	constructor(module) {
-		this.module = module;
+// src/Devtools/Stores.js
+var Store = class {
+	constructor(module2) {
+		this.module = module2;
 		this.name = this.store.getName();
 		this.methods = {};
 		const _this = this;
-		Object.getOwnPropertyNames(this.store.__proto__).forEach(key => {
+		Object.getOwnPropertyNames(this.store.__proto__).forEach((key) => {
 			if (key === "constructor") return;
 			const func = this.store[key];
 			if (typeof func !== "function") return;
@@ -660,36 +695,36 @@ class Store {
 		for (const key of ["Z", "ZP", "default"])
 			if (key in this.module.exports) return this.module.exports[key];
 	}
+	// get localVars() {
+	// 	return this.store.__getLocalVars();
+	// }
 	get events() {
 		return Stores.getStoreListeners(this.name);
 	}
-}
-const Zustand = Sources.getSource("/ServerSideRendering|^Deno\\//");
-const Stores = {
+};
+var Zustand = Sources.getSource("/ServerSideRendering|^Deno\\//");
+var Stores = {
 	getStore(storeName) {
-		const storeFilter = exp => exp && ["Z", "ZP", "default"].some(k => exp[k]?._dispatchToken && exp[k]?._changeCallbacks && exp[k]?.getName() === storeName);
-		const module = Modules.getModule(storeFilter);
-		if (!module) return undefined;
-		return new Store(module);
+		const storeFilter = (exp) => exp && ["Z", "ZP", "default"].some((k) => exp[k]?._dispatchToken && exp[k]?._changeCallbacks && exp[k]?.getName() === storeName);
+		const module2 = Modules.getModule(storeFilter);
+		if (!module2) return void 0;
+		return new Store(module2);
 	},
 	getStoreFuzzy(str = "") {
-		const storeFilter = exp => exp && ["Z", "ZP", "default"].some(k => exp[k]?._dispatchToken && exp[k]?._changeCallbacks && exp[k]?.getName()?.toLowerCase?.().includes(str));
-		return Modules.getModules(storeFilter).map(module => new Store(module));
+		const storeFilter = (exp) => exp && ["Z", "ZP", "default"].some((k) => exp[k]?._dispatchToken && exp[k]?._changeCallbacks && exp[k]?.getName()?.toLowerCase?.().includes(str));
+		return Modules.getModules(storeFilter).map((module2) => new Store(module2));
 	},
 	getStoreListeners(storeName) {
-		const nodes = Dispatcher._actionHandlers._dependencyGraph.nodes;
+		const nodes = Dispatcher_default._actionHandlers._dependencyGraph.nodes;
 		const storeHandlers = Object.values(nodes).filter(({ name }) => name === storeName);
 		return storeHandlers[0];
 	},
-	getSortedStores: (() => {
+	getSortedStores: /* @__PURE__ */ (() => {
 		let stores = null;
 		return function getSortedStores(force) {
 			if (!stores || force) {
-				stores = Modules.getModule(a => a?.Store, { searchExports: true }).target.Store.getAll()
-					.map(store => [store.getName(), store])
-					.sort((a, b) => a[0].localeCompare(b[0]))
-					.map(([a, b]) => ({
-						[a]: b }));
+				stores = Modules.getModule((a) => a?.Store, { searchExports: true }).target.Store.getAll().map((store) => [store.getName(), store]).sort((a, b) => a[0].localeCompare(b[0])).map(([a, b]) => ({
+					[a]: b }));
 			}
 			return stores;
 		};
@@ -699,9 +734,9 @@ const Stores = {
 	}
 };
 
-// src\Devtools\index.jsx
-const d = (() => {
-	const cache = new WeakMap();
+// src/Devtools/index.jsx
+var d = (() => {
+	const cache = /* @__PURE__ */ new WeakMap();
 	const emptyDoc = document.createDocumentFragment();
 
 	function isValidCSSSelector(selector) {
@@ -716,7 +751,7 @@ const d = (() => {
 	function getElement(target) {
 		if (typeof target === "string" && isValidCSSSelector(target)) return document.querySelector(target);
 		if (target instanceof HTMLElement) return target;
-		return undefined;
+		return void 0;
 	}
 
 	function getCssRules(el) {
@@ -726,7 +761,7 @@ const d = (() => {
 			const { rules } = stylesheet;
 			const ID = stylesheet.href || stylesheet.ownerNode.id || i;
 			output[ID] = {};
-			el.classList.forEach(c => {
+			el.classList.forEach((c) => {
 				output[ID][c] = [];
 				for (let j = 0; j < rules.length; j++) {
 					const rule = rules[j];
@@ -767,33 +802,47 @@ const d = (() => {
 	};
 })();
 
+function dispatcherEventInterceptor(eventName, fn) {
+	const index = Dispatcher_default._interceptors.length;
+	Dispatcher_default.addInterceptor((e) => {
+		if (e.type !== eventName) return;
+		try {
+			fn(e);
+		} catch {}
+	});
+	return () => Dispatcher_default._interceptors.splice(index, 1);
+}
+
 function init() {
-	["Filters", "getModule", "getModules"].forEach(a => (window[a] = BdApi.Webpack[a]));
-	window.getModuleAndKey = getModuleAndKey;
-	window.s = Object.assign(id => Modules.moduleById(id), {
+	window.s = Object.assign((id) => Modules.moduleById(id), {
+		bd: {
+			...BdApi.Webpack,
+			getModuleAndKey
+		},
 		Utils: {
 			ErrorBoundary,
-			...Utils,
-			...d
+			...Utils_exports,
+			...d,
+			dispatcherEventInterceptor
 		},
-		r: webpackRequire,
+		r: webpackRequire_default,
 		...Misc,
 		...Stores,
 		...Sources,
 		...Modules,
 		DiscordModules: {
-			Dispatcher,
-			TheBigBoyBundle,
-			DiscordPermissionsEnum
+			Dispatcher: Dispatcher_default,
+			TheBigBoyBundle: TheBigBoyBundle_default,
+			DiscordPermissionsEnum: DiscordPermissionsEnum_default
 		}
 	});
 }
-const settings = {
+var settings = {
 	expEnabled: false
 };
-const DeveloperExperimentStore = Stores.getStore("DeveloperExperimentStore");
-const ExperimentStore = Stores.getStore("ExperimentStore");
-const UserStore = Stores.getStore("UserStore").store;
+var DeveloperExperimentStore = Stores.getStore("DeveloperExperimentStore");
+var ExperimentStore = Stores.getStore("ExperimentStore");
+var UserStore = Stores.getStore("UserStore").store;
 
 function updateStores() {
 	try {
@@ -804,9 +853,9 @@ function updateStores() {
 		ExperimentStore.events.storeDidChange();
 	} catch {}
 }
-const enableExp = (() => {
+var enableExp = /* @__PURE__ */ (() => {
 	let unpatch = () => {};
-	return function enableExp(b) {
+	return function enableExp2(b) {
 		if (!b) {
 			unpatch?.();
 			UserStore.getCurrentUser().flags = 256;
@@ -819,12 +868,12 @@ const enableExp = (() => {
 		updateStores();
 	};
 })();
-class Devtools {
+var Devtools = class {
 	start() {
 		try {
 			init();
 		} catch (e) {
-			Logger.error(e);
+			Logger_default.error(e);
 		}
 	}
 	stop() {
@@ -832,15 +881,11 @@ class Devtools {
 		enableExp(false);
 	}
 	getSettingsPanel() {
-		return (
-			React.createElement(SettingComponent, {
-				settings: settings,
-				enableExp: enableExp,
-			})
+		return /* @__PURE__ */ React.createElement(
+			SettingComponent_default, {
+				settings,
+				enableExp
+			}
 		);
 	}
-}
-
-module.exports = Devtools;
-
-const css = ``;
+};
