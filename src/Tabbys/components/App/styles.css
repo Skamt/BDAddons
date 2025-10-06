@@ -1,0 +1,97 @@
+div:has(> .tabbys-app-container):not(#a) {
+	grid-template-rows: [top] auto [titleBarEnd] min-content [noticeEnd] 1fr [end];
+	padding-top: 0;
+}
+
+.tabbys-app-container {
+	--custom-app-top-bar-height: calc(var(--size));
+	--space-32: calc(var(--size));
+}
+
+.tabbys-app-container * {
+	box-sizing: border-box;
+}
+
+.tabbys-app-container {
+	grid-column: 1/-1;
+	display: grid;
+	grid-template-areas: "leading trailing";
+	grid-template-columns: minmax(0, 1fr) auto auto;
+	transform: translate(0);
+	gap: calc(var(--size) * 0.1) 0;
+}
+
+.tabbys-app-showTabbar.tabbys-app-showBookmarkbar.tabbys-app-keepTitle {
+	grid-template-areas:
+		"leading trailing"
+		"tabbar tabbar"
+		"bookmarkbar bookmarkbar";
+	margin-bottom: 3px;
+}
+
+.tabbys-app-showTabbar.tabbys-app-showBookmarkbar {
+	grid-template-areas:
+		"tabbar trailing"
+		"bookmarkbar bookmarkbar";
+	margin-bottom: 3px;
+}
+
+.tabbys-app-showBookmarkbar {
+	grid-template-areas: "bookmarkbar trailing";
+}
+
+.tabbys-app-showTabbar {
+	grid-template-areas: "tabbar trailing";
+}
+
+.tabbys-app-showTabbar.tabbys-app-keepTitle {
+	grid-template-areas:
+		"leading trailing"
+		"tabbar tabbar";
+	margin-bottom: 3px;
+}
+
+.tabbys-app-showBookmarkbar.tabbys-app-keepTitle {
+	grid-template-areas:
+		"leading trailing"
+		"bookmarkbar bookmarkbar";
+	margin-bottom: 3px;
+}
+
+.tabbys-app-leading {
+	grid-area: leading;
+	position: relative;
+	-webkit-app-region: drag;
+}
+
+.tabbys-app-tabbar {
+	grid-area: tabbar;
+	overflow: hidden;
+	margin-right: 3px;
+}
+
+.tabbys-app-bookmarkbar {
+	grid-area: bookmarkbar;
+}
+
+.tabbys-app-trailing {
+	grid-area: trailing;
+}
+
+.tabbys-app-settings-button {
+	color: var(--icon-tertiary);
+	cursor: pointer;
+}
+
+.tabbys-app-settings-button:hover {
+	color: var(--icon-secondary);
+}
+
+.tabbys-app-privacy-mode .card-icon{
+	opacity:.1;
+	filter:blur(5px);
+}
+
+.tabbys-app-privacy-mode .card-title{
+	background:currentColor;
+}

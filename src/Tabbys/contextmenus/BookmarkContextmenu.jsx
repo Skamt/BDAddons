@@ -1,52 +1,90 @@
 import { ContextMenu } from "@Api";
 import React from "@React";
 import { TrashBinIcon, PenIcon, PlusIcon } from "@Components/Icon";
-import { openValueModal } from "@/components/ValueModal";
+import { openPromptModal } from "@/components/PromptModal";
 import Store from "@/Store";
 import { nop } from "@Utils";
-import { createContextMenuItem } from "./helper";
+import { wrapMenuItem } from "./helper";
+import { deleteBookmark, moveSubBookmarkToBookmarksAt, moveBookmarkToFolderAt, addFolder, getBookmark, openBookmarkAt, setBookmarkName, toggleBookmarkNameState, getBookmarkNameState } from "@/Store/methods";
+import { createFolder, MarkAsReadItem } from "./shared";
 
-function createFolder() {
-	openValueModal({
-		title: "Create Folder",
-		placeholder: "New Folder Name",
-		label: "New Folder Name",
-		onSubmit: name => name && Store.addFolder(name)
-	});
-}
-
-function renameBookmark(id) {
-	const bookmark = Store.getBookmark(id);
+function renameBookmark(id, parentId) {
+	const bookmark = getBookmark(id, parentId);
 	if (!bookmark) return;
-	openValueModal({
+	openPromptModal({
 		title: "Bookmark Name",
 		label: "Bookmark Name",
 		placeholder: bookmark.name,
 		initialValue: bookmark.name,
-		onSubmit: name => name && Store.setBookmarkName(id, name)
+		onSubmit: name => setBookmarkName(id, name, parentId)
 	});
 }
 
-export default function (id, parentId) {
+export default function (id, { parentId, channelId, hasUnread }) {
+	const folders = Store.state.folders
+		.map(({ id: folderId, name }) => {
+			if (folderId === parentId) return;
+			return {
+				action: () => moveBookmarkToFolderAt(id, folderId, parentId),
+				label: name
+			};
+		})
+		.filter(Boolean)
+		.map(wrapMenuItem);
 
-	const folders = Store.state.folders.map(({ id:folderId, name }) => {
-		if(parentId === folderId) return null;
-		return createContextMenuItem(null, `move-to-folder-${folderId}`, () => Store.moveBookmarkToFolder(id, folderId, parentId), name)
-	}).filter(Boolean);
+	if (parentId) {
+		if (folders.length) folders.push({ type: "separator" });
+		folders.push({
+			action: () => moveSubBookmarkToBookmarksAt(id, parentId),
+			label: "Move To BookmarkBar"
+		});
+	}
 
-	const Menu = ContextMenu.buildMenu([
-		createContextMenuItem(null, "open-bookmark-in-new-tab", () => Store.openBookmark(id), "Open in new Tab", PlusIcon),
-		createContextMenuItem(null, "rename-bookmark", () => renameBookmark(id), "Rename", PenIcon),
-		{
-			type: "separator"
-		},
-		folders.length > 0 && createContextMenuItem("submenu", "move-to-folder", createFolder, "Move To Folder", nop,null,folders),
-		createContextMenuItem(null, "create-folder", createFolder, "Create Folder", PlusIcon),
-		{
-			type: "separator"
-		},
-		createContextMenuItem(null, "delete-bookmark", () => Store.removeBookmark(id, parentId), "Delete Bookmark", TrashBinIcon, "danger")
-	].filter(Boolean));
+	const hasFolders = folders.length > 0;
+
+	const Menu = ContextMenu.buildMenu(
+		[
+			MarkAsReadItem(channelId, hasUnread),
+			{
+				action: () => openBookmarkAt(id),
+				label: "Open in new Tab",
+				icon: PlusIcon
+			},
+			{
+				action: () => renameBookmark(id, parentId),
+				label: "Rename",
+				icon: PenIcon
+			},
+			{
+				type: "toggle",
+				label: "Hide Name",
+				active: getBookmarkNameState(id, parentId),
+				action: () => toggleBookmarkNameState(id, parentId)
+			},
+			{ type: "separator" },
+
+			hasFolders && {
+				type: "submenu",
+				label: "Move",
+				items: folders
+			},
+			{
+				action: createFolder,
+				label: "Create Folder",
+				icon: PlusIcon
+			},
+
+			{ type: "separator" },
+			{
+				color: "danger",
+				label: "Delete Bookmark",
+				icon: TrashBinIcon,
+				action: () => deleteBookmark(id, parentId)
+			}
+		]
+			.filter(Boolean)
+			.map(wrapMenuItem)
+	);
 
 	return props => <Menu {...props} />;
 }

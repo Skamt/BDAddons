@@ -1,0 +1,93 @@
+.dnd-droppable.dnd-dragInProgress {
+	z-index: 999;
+	pointer-events: all;
+}
+
+.dnd-droppable.dnd-over {
+	color: orange;
+}
+
+.dnd-droppable {
+	position: absolute;
+	height: 100%;
+	width: calc(50% + 1px + (var(--droppable-gap) / 2));
+	color: #0000;
+	z-index: -1;
+	pointer-events: none;
+}
+
+.dnd-droppable.dnd-before {
+	/* background:#f005; */
+	left: calc(-1px + (var(--droppable-gap) / 2) * -1);
+}
+
+.dnd-droppable.dnd-after {
+	/* background:#ff05; */
+	right: calc(-1px + (var(--droppable-gap) / 2) * -1);
+}
+
+.dnd-droppable:after {
+	content: "";
+	position: absolute;
+	width: 2px;
+	background: currentColor;
+	height: 100%;
+	z-index: -1;
+}
+
+.dnd-droppable.dnd-before:after {
+	translate: 50% 0;
+	right: 100%;
+}
+
+.dnd-droppable.dnd-after:after {
+	left: 100%;
+	translate: -50% 0;
+}
+
+/* overrides */
+
+.tab-container > .dnd-droppable,
+.folder-container .dnd-droppable {
+	width: calc(100% / 6);
+}
+
+/* menu */
+
+.overflow-popout .dnd-droppable {
+	position: absolute;
+	height: calc(50% + 1px + (var(--droppable-gap) / 2));
+	width: 100%;
+	left: 0;
+	right: unset;
+}
+
+.overflow-popout .dnd-droppable.dnd-before {
+	top: calc(-1px + (var(--droppable-gap) / 2) * -1);
+}
+
+.overflow-popout .dnd-droppable.dnd-after {
+	bottom: calc(-1px + (var(--droppable-gap) / 2) * -1);
+}
+
+.overflow-popout .dnd-droppable:after {
+	width: 100%;
+	height: 2px;
+	left: 0;
+	right: unset;
+	translate: 0;
+}
+
+.overflow-popout .dnd-droppable.dnd-before:after {
+	translate: 0 50%;
+	bottom: 100%;
+}
+
+.overflow-popout .dnd-droppable.dnd-after:after {
+	top: 100%;
+	translate: 0 -50%;
+}
+
+.overflow-popout .folder-container .dnd-droppable {
+	height: calc(100% / 6);
+}

@@ -1,27 +1,39 @@
-// import "./styles";
+import "./styles";
 import Store from "@/Store";
+import { openBookmark } from "@/Store/methods";
 import React from "@React";
 import { transitionTo } from "@Discord/Modules";
 import { classNameFactory, join } from "@Utils/css";
+import BookmarkContextMenu from "@/contextmenus/BookmarkContextMenu";
+import { ContextMenu } from "@Api";
+import useStateFromStores from "@Modules/useStateFromStores";
+import ReadStateStore from "@Stores/ReadStateStore";
 
 const c = classNameFactory("bookmark");
-
 export default function BaseBookmark(props) {
-	const { id, icon, title, onClose, path, noName, className, children, ...rest } = props;
-	// const { isOver, canDrop, isDragging, dropRef, dragRef } = props;
+	const { id, icon, title, onClose, parentId, channelId, path, noName, className, children, ...rest } = props;
+	const hasUnread = useStateFromStores([ReadStateStore], () => ReadStateStore.hasUnread(channelId), [channelId]);
 
 	const onClick = e => {
 		e.stopPropagation();
 		onClose?.();
 
 		if (e.ctrlKey) Store.newTab(path);
-		else transitionTo(path);
+		else openBookmark(id, parentId);
+	};
+
+	const contextmenuHandler = e => {
+		ContextMenu.open(e, BookmarkContextMenu(id,{ parentId, channelId, hasUnread }), {
+			position: "bottom",
+			align: "left"
+		});
 	};
 
 	return (
 		<div
 			{...rest}
-			className={join(c("container"), "no-drag", "box-border", "card", className)}
+			onContextMenu={contextmenuHandler}
+			className={join(c("container"), { hasUnread }, "card", className)}
 			onClick={onClick}>
 			{icon}
 			{!noName && title && <div className={join(c("title"), "card-title")}>{title}</div>}

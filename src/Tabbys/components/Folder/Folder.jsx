@@ -9,6 +9,7 @@ import BaseFolder from "./BaseFolder";
 import { makeDraggable } from "@/components/DND/shared";
 import { BookmarkSortable, FolderDroppable } from "@/components/DND";
 import { DNDTypes } from "@/consts";
+import { SettingsButtonStore } from "@/components/SettingsButton";
 
 function Folder({ id, folderId, dropRef, dragRef, ...props }) {
 	const { name, items } = Store(state => Store.getFolder(folderId), shallow) || {};
@@ -16,6 +17,8 @@ function Folder({ id, folderId, dropRef, dragRef, ...props }) {
 		<Popout
 			position="bottom"
 			align="left"
+			onRequestOpen={() => SettingsButtonStore.getState().open()}
+			onRequestClose={() => SettingsButtonStore.getState().close()}
 			spacing={12}
 			renderPopout={e => (
 				<FolderPopoutMenu
@@ -29,10 +32,12 @@ function Folder({ id, folderId, dropRef, dragRef, ...props }) {
 					{...props}
 					ref={e => dragRef(dropRef(e))}
 					id={id}
+					channelIds={items.map(a => a.channelId).filter(Boolean)}
 					folderId={folderId}
 					data-id={id}
 					onClick={e.onClick}
 					name={name}>
+					
 					<BookmarkSortable id={id} />
 				</BaseFolder>
 			)}
@@ -41,4 +46,3 @@ function Folder({ id, folderId, dropRef, dragRef, ...props }) {
 }
 
 export default React.memo(makeDraggable(DNDTypes.FOLDER)(FolderDroppable(Folder)));
-

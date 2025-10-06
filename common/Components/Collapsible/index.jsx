@@ -1,26 +1,30 @@
 import "./styles";
-import { React } from "@Api";
+import React from "@React";
+import { classNameFactory } from "@Utils/css";
 import Heading from "@Modules/Heading";
-import ArrowIcon from "@Components/icons/ArrowIcon";
+import {ArrowIcon}from "@Components/Icon";
+
+const c = classNameFactory("collapsible");
 
 export default function Collapsible({ title, children }) {
 	const [open, setOpen] = React.useState(false);
 
 	return (
-		<div className={open ? "collapsible-container collapsible-open" : "collapsible-container"}>
+		<div className={c("container", { open })}>
 			<div
-				className="collapsible-header"
+				className={c("header")}
 				onClick={() => setOpen(!open)}>
-				<div className="collapsible-icon">
-					<ArrowIcon />
-				</div>
+				
 				<Heading
-					className="collapsible-title"
+					className={c("title")}
 					tag="h5">
 					{title}
 				</Heading>
+				<div className={c("icon")}>
+					<ArrowIcon />
+				</div>
 			</div>
-			<div className="collapsible-body">{children}</div>
+			<div className={c("body")}>{children}</div>
 		</div>
 	);
 }

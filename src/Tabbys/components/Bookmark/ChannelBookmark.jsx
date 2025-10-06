@@ -1,22 +1,19 @@
-import Store from "@/Store";
-import ChannelIcon from "@/components/ChannelIcon";
-import Badge from "@/components/NumberBadge";
-import TypingDots from "@/components/TypingDots";
-import React from "@React";
-import { useChannelState } from "@Utils/Hooks";
-import Settings from "@Utils/Settings";
+import ChannelStatus from "@/components/ChannelStatus";
 import BaseBookmark from "./BaseBookmark";
-import { shallow } from "@Utils";
+import useStateFromStores from "@Modules/useStateFromStores";
+import ChannelStore from "@Stores/ChannelStore";
+import React from "@React";
+import { ChannelIcon } from "@/components/Icons";
+import { getChannelName } from "@Utils/Channel";
 
 export default function ChannelBookmark({ name, guildId, path, channelId, children, ...rest }) {
-	const [showPings, showUnreads, showTyping] = Settings(_ => [_.showPings, _.showUnreads, _.showTyping], shallow);
-	const { name: channelName, isDM, isTyping, channel, typingUsers, mentionCount, unreadCount, hasUnread } = useChannelState(channelId);
+	const channel = useStateFromStores([ChannelStore], () => ChannelStore.getChannel(channelId), [channelId]);
+	const title = name|| getChannelName(channel) || channelId;
 
-	const title = name || channelName || path;
 	return (
 		<BaseBookmark
 			{...rest}
-			hasUnread={hasUnread}
+			channelId={channelId}
 			path={path}
 			title={title}
 			icon={
@@ -27,19 +24,10 @@ export default function ChannelBookmark({ name, guildId, path, channelId, childr
 				/>
 			}>
 			{children}
-			{showTyping && isTyping && <TypingDots users={typingUsers} />}
-			{showPings && !!mentionCount && (
-				<Badge
-					count={mentionCount}
-					type="ping"
-				/>
-			)}
-			{showUnreads && !isDM && !!unreadCount && (
-				<Badge
-					count={unreadCount}
-					type="unread"
-				/>
-			)}
+			<ChannelStatus
+				type="Bookmark"
+				channelIds={[channelId]}
+			/>
 		</BaseBookmark>
 	);
 }

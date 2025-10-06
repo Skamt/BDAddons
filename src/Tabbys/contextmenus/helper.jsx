@@ -1,28 +1,14 @@
 import React from "@React";
-import {clsx} from "@Utils";
+import config from "@Config";
+import { classNameFactory } from "@Utils/css";
+const c = classNameFactory(`${config.info.name}-menuitem`);
 
-const c = clsx("menu-label")
-function MenuLabel({ label, icon }) {
-	return (
-		<div
-			className={c("container")}>
-			
-			<div className={c("icon")}>{icon}</div>
-			<div className={c("label")}>{label}</div>
-		</div>
-	);
-}
-
-export function createContextMenuItem(type, id = "", action = nop, label = "Unknown", icon = null, color = "", children) {
-	const res = {
-		className: `tabbys-${id}-menuitem`,
-		type,
-		id,
-		action,
-		items: children,
-		label, icon,
-	};
-
-	if (color) res.color = color;
-	return res;
+export function wrapMenuItem(item){
+	if(!item?.label) return item;
+	const tag = item.label.toLowerCase().replace(/^[^a-z]+|[^\w-]+/gi, "-");
+	return {
+		id:c(tag),
+		className:c(tag),
+		...item,
+	}
 }

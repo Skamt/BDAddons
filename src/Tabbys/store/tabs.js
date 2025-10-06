@@ -1,14 +1,7 @@
 import zustand, { subscribeWithSelector } from "@Discord/zustand";
 import { remove, slice, arrayMove, meta, set, add } from "@Utils/Array";
-import { createFrom, createObjFromPath, addBy, mergeArrayItem, setArrayItem, reOrder } from "./shared";
+import { createFrom, createFromPath, addBy, mergeArrayItem, setArrayItem, reOrder } from "./shared";
 import { parsePath } from "@/utils";
-
-const initialState = {
-	tabs: [],
-	selectedId: null,
-	lastSelectedIdAfterNewTab: null
-};
-
 
 const getters = {
 	getTabIndex(id) {
@@ -51,7 +44,11 @@ const setters = {
 };
 
 export default {
-	state: { ...initialState },
+	state: {
+		tabs: [],
+		selectedId: null,
+		lastSelectedIdAfterNewTab: null
+	},
 	selectors: {
 		tabs: state => state.tabs,
 		// isSingleTab: state => state.tabs.length === 1,
@@ -64,7 +61,7 @@ export default {
 
 		newTab(path) {
 			const { selectedId, tabs } = this.state;
-			const tab = createObjFromPath(path);
+			const tab = createFromPath(path);
 			this.setState({
 				tabs: add(tabs, tab),
 				selectedId: tab.id,
@@ -75,27 +72,25 @@ export default {
 			this.setTabs(reOrder(this.state.tabs, fromId, toId, pos));
 		},
 
-		addTabBy(targetId, tab, fn) {
-			this.setState({
-				tabs: addBy(this.state.tabs, targetId, tab, fn)
-			});
+		addTabBy(tab, targetId, fn) {
+			this.setState({ tabs: addBy(this.state.tabs, targetId, tab, fn) });
 		},
 
 		addTab(path) {
-			this.addTabBy(null, createObjFromPath(path));
+			this.addTabBy(createFromPath(path));
 		},
 
 		addTabToRight(tabId) {
-			this.addTabBy(tabId, createObjFromPath(), a => a + 1);
+			this.addTabBy(createFromPath(), tabId, a => a + 1);
 		},
 
 		addTabToLeft(tabId) {
-			this.addTabBy(tabId, createObjFromPath());
+			this.addTabBy(createFromPath(), tabId);
 		},
 
 		duplicateTab(tabId) {
 			const tab = this.getTab(tabId);
-			if (tab) this.addTabBy(tabId, createFrom(tab), a => a + 1);
+			if (tab) this.addTabBy(createFrom(tab), tabId, a => a + 1);
 		},
 
 		removeTab(id) {
@@ -110,15 +105,6 @@ export default {
 				selectedId: newSelected,
 				lastSelectedIdAfterNewTab: null
 			});
-		},
-
-		setTabFromBookmark(tabId, bookmarkId) {
-			const bookmark = this.getBookmark(bookmarkId);
-			if (bookmark) this.setTabPath(tabId, bookmark);
-		},
-		setTabFromSubBookmark(tabId, folderId, bookmarkId) {
-			const bookmark = this.getFolderItem(folderId, bookmarkId);
-			if (bookmark) this.setTabPath(tabId, bookmark);
 		}
 	}
 };

@@ -1,0 +1,71 @@
+.folder-container {
+	border-radius: calc(var(--size) * 0.3);
+	font-size: calc(var(--size) * 0.45);
+	max-width: 250px;
+}
+
+.folder-canDrop {
+	background: dodgerblue !important;
+	color: white !important;
+}
+
+.folder-container:hover {
+	background: var(--tabbys-bg-hover);
+}
+
+.folder-container:active {
+	background: var(--tabbys-bg-selected);
+}
+
+.folder-empty {
+	color: var(--tabbys-text);
+	font-size: calc(var(--size) * 0.45);
+	padding: 4px;
+	text-align: center;
+}
+
+.overflow-popout>.folder-item{
+	max-width:100%;
+	flex:0 0 auto;
+}
+
+
+
+.overflow-popout{
+	background:var(--tabbys-folder-menu-bg);
+	border:1px solid var(--tabbys-border-subtle);
+	max-height:75vh;
+	overflow: hidden auto;
+	width:200px;
+	min-width:250px;
+	max-width:75vw;
+	border-radius:8px;
+	padding:8px;
+	gap:var(--folder-gap);
+	display:flex;
+	flex-direction:column;
+	box-shadow:0px 0px 8px 1px #0005;
+	--droppable-gap:var(--folder-gap);
+}
+
+.overflow-popout::-webkit-scrollbar {
+	height: 8px;
+	width: 8px;
+}
+
+.overflow-popout::-webkit-scrollbar-track {
+	background-color: var(--scrollbar-thin-track);
+	border-color: var(--scrollbar-thin-track);
+}
+
+.overflow-popout::-webkit-scrollbar-thumb {
+	background-clip: padding-box;
+	background-color: var(--scrollbar-thin-thumb);
+	border: 2px solid transparent;
+	border-radius: 4px;
+	min-height: 40px;
+}
+
+.overflow-popout::-webkit-scrollbar-corner {
+	background-color: transparent;
+}

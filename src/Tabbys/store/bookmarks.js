@@ -1,11 +1,6 @@
 import zustand, { subscribeWithSelector } from "@Discord/zustand";
 import { remove, removeMany, set, arrayMove, add } from "@Utils/Array";
-import { createObjFromPath, addBy, mergeArrayItem, setArrayItem, reOrder } from "./shared";
-import { parsePath } from "@/utils";
-
-function createFromBookmark(bookmark) {
-	return Object.assign({}, bookmark, { id: crypto.randomUUID() });
-}
+import { createFromPath, addBy, mergeArrayItem, setArrayItem, reOrder } from "./shared";
 
 const getters = {
 	getBookmarkIndex(id) {
@@ -30,7 +25,7 @@ const setters = {
 		this.setState({ bookmarks: setArrayItem(this.state.bookmarks, bookmarkId, payload) });
 	},
 	updateBookmark(bookmarkId, payload) {
-		this.setState({ tabs: mergeArrayItem(this.state.bookmarks, bookmarkId, payload) });
+		this.setState({ bookmarks: mergeArrayItem(this.state.bookmarks, bookmarkId, payload) });
 	},
 	setBookmarkName(bookmarkId, name) {
 		if (name) this.updateBookmark(bookmarkId, { name });
@@ -52,13 +47,12 @@ export default {
 			this.setBookmarks(reOrder(this.state.bookmarks, fromId, toId, pos));
 		},
 
-		addBookmarkBy(targetId, bookmark, fn = a => a) {
+		addBookmarkBy(bookmark, targetId, fn = a => a) {
 			this.setState({ bookmarks: addBy(this.state.bookmarks, targetId, bookmark, fn) });
 		},
 
 		addBookmark(path) {
-			const bookmark = createObjFromPath(path);
-			this.addBookmarkBy(null, bookmark);
+			this.addBookmarkBy(createFromPath(path));
 		},
 
 		removeBookmark(id) {
@@ -66,18 +60,6 @@ export default {
 			const index = bookmarks.findIndex(a => a.id === id);
 			if (index === -1) return;
 			this.setState({ bookmarks: remove(bookmarks, index) });
-		},
-
-		/*===============*/
-		/*===============*/
-		/*===============*/
-
-		setBookmarkName(id, name) {
-			if (!name || !id) return;
-			const bookmarks = this.state.bookmarks;
-			const index = bookmarks.findIndex(a => a.id === id);
-			if (index === -1) return;
-			this.setState({ bookmarks: set(bookmarks, index, Object.assign({}, bookmarks[index], { name })) });
 		}
 	}
 };

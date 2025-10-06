@@ -1,0 +1,16 @@
+.create-folder-modal-content {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: var(--modal-vertical-padding) var(--modal-horizontal-padding);
+}
+
+.create-folder-modal-footer {
+	gap: 12px;
+	align-items: center;
+}
+
+.transparent-background.transparent-background {
+	background: transparent;
+	border: unset;
+}

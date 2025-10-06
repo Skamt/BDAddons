@@ -1,0 +1,21 @@
+.badge-pill {
+	width: 16px;
+	height: 16px;
+	min-height: 16px;
+	min-width: 16px;
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.02em;
+	line-height: 1.4;
+	text-transform: uppercase;
+	flex: 0 0 auto;
+	color: white;
+}
+
+.badge-ping {
+	background-color: var(--ping);
+}
+
+.badge-unread {
+	background-color: var(--unread);
+}

@@ -1,20 +1,19 @@
-import { React } from "@Api";
+import "./styles";
+import React from "@React";
+import { classNameFactory } from "@Utils/css";
 
-export default function Gap({ direction, gap, className}) {
-	const style = {
-		VERTICAL: {
-			width: gap,
-			height: "100%"
-		},
-		HORIZONTAL: {
-			height: gap,
-			width: "100%"
-		}
-	}[direction];
-	return <div style={style} className={className} />;
+const c = classNameFactory("gap");
+
+export default function Gap({ direction = "horizontal", gap, className }) {
+	return (
+		<div
+			style={{ marginTop: gap }}
+			className={c("base", { direction })}
+		/>
+	);
 }
 
 Gap.direction = {
-	HORIZONTAL:"HORIZONTAL", 
-	VERTICAL:"VERTICAL", 
-}
+	HORIZONTAL: "horizontal",
+	VERTICAL: "vertical"
+};

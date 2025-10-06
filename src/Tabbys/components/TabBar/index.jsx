@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "@React";
 import { PlusIcon } from "@Components/Icon";
 import TabsScroller from "@/components/TabsScroller";
 import Tab from "@/components/Tab";
+import DragHandle from "@/components/DragHandle";
 import Store from "@/Store";
 import { clsx } from "@Utils";
 import { join } from "@Utils/css";
@@ -25,7 +26,7 @@ export default function TabBar() {
 			<TabsScroller
 				shouldScroll={selectedId}
 				scrollTo={selectedIndex}
-				containerClassName={join("no-drag", c("tabs-scroller-container"))}
+				containerClassName={c("tabs-scroller-container")}
 				contentClassName={c("tabs-scroller-content")}
 				items={tabs}
 				renderItem={({ id }) => (
@@ -36,10 +37,11 @@ export default function TabBar() {
 				)}
 			/>
 			<div
-				className={join(c("new-tab"), "no-drag", "icon-wrapper")}
+				className={join(c("new-tab"),"icon-wrapper")}
 				onClick={newTabHandler}>
 				<PlusIcon />
 			</div>
+			<DragHandle />
 		</div>
 	);
 }

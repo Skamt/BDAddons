@@ -1,29 +1,62 @@
 import Store from "@/store";
-import { remove, slice, arrayMove, meta, set, add } from "@Utils/Array";
-import { sort, createFrom, createSubBookmark, createFolder, createBookmarkFolder, createObjFromPath } from "./shared";
+import { slice, add } from "@Utils/Array";
+import { sort, createFrom, createFolder, createBookmarkFolder, createFromPath } from "./shared";
+import { navigate } from "@/utils";
+
+export function isDescendent(parentId, childId) {
+	const child = Store.getFolder(childId);
+	if (!child.parentId) return false;
+	if (child.parentId === parentId) return true;
+	return isDescendent(parentId, child.parentId);
+}
+
+export function deleteBookmark(itemId, parentId) {
+	if (parentId) Store.removeItemFromFolder(parentId, itemId);
+	else Store.removeBookmark(itemId);
+}
+
+export function deleteFolder(folderId, itemId, parentId) {
+	Store.deleteFolder(folderId);
+	deleteBookmark(itemId, parentId);
+}
+
+export function getBookmark(bookmarkId, folderId) {
+	return folderId ? Store.getFolderItem(folderId, bookmarkId) : Store.getBookmark(bookmarkId);
+}
+
+export function setBookmarkName(bookmarkId, name, parentId) {
+	const bookmark = getBookmark(bookmarkId, parentId);
+	if (!bookmark) return;
+	if (parentId) Store.updateFolderItem(parentId, bookmarkId, { name: name });
+	else Store.updateBookmark(bookmarkId, { name: name });
+}
+
+export function getBookmarkNameState(bookmarkId, parentId) {
+	const bookmark = getBookmark(bookmarkId, parentId);
+	return bookmark?.noName;
+}
+
+export function toggleBookmarkNameState(bookmarkId, parentId) {
+	const bookmark = getBookmark(bookmarkId, parentId);
+	if (!bookmark) return;
+	if (parentId) Store.updateFolderItem(parentId, bookmarkId, { noName: !bookmark.noName });
+	else Store.updateBookmark(bookmarkId, { noName: !bookmark.noName });
+}
 
 export function ensureTab() {
 	if (Store.getTabsCount() > 0) return;
-	const tab = createObjFromPath(location.pathname);
+	const tab = createFromPath(location.pathname);
 	Store.setState({ tabs: [tab], selectedId: tab.id });
 }
 
-export function cloneBookmark({ path, name }) {
-	const bookmark = { path };
-	if (name) bookmark.name = name;
-	return bookmark;
+export function openBookmark(bookmarkId, folderId) {
+	const bookmark = getBookmark(bookmarkId, folderId);
+	if (bookmark) navigate(bookmark);
 }
 
-// export function createFolder(name) {
-// 	const id = crypto.randomUUID();
-// 	const folder = { id, name, items: [] };
-// 	const bookmark = { id: crypto.randomUUID(), folderId: id };
-// 	return { folder, bookmark };
-// }
-
-export function bookmarkTab(tabId, folderId) {
-	const tab = Store.getTab(tabId);
-	if (tab?.path) Store.addBookmark({ path: tab.path });
+export function setTabFromBookmark(tabId, bookmarkId, folderId) {
+	const { noName, id, ...bookmark } = getBookmark(bookmarkId, folderId) || {};
+	if (bookmark) Store.updateTab(tabId, bookmark);
 }
 
 export function addFolder(name) {
@@ -36,14 +69,16 @@ export function addFolder(name) {
 	});
 }
 
-window.t = addFolder;
-
 export function removeTabsToRight(id) {
 	const { item, index, isLast, isSingle } = Store.getTabMeta(id);
 	if (!item || isLast || isSingle) return;
 
 	const newSelected = Store.getSelectedTabIndex() < index + 1 ? Store.state.selectedId : id;
-	Store.setState({ tabs: slice(Store.state.tabs, 0, index + 1), selectedId: newSelected, lastSelectedIdAfterNewTab: null });
+	Store.setState({
+		tabs: slice(Store.state.tabs, 0, index + 1),
+		selectedId: newSelected,
+		lastSelectedIdAfterNewTab: null
+	});
 }
 
 export function removeTabsToLeft(id) {
@@ -51,7 +86,11 @@ export function removeTabsToLeft(id) {
 	if (!item || isFirst || isSingle) return;
 
 	const newSelected = Store.getSelectedTabIndex() > index ? Store.state.selectedId : id;
-	Store.setState({ tabs: slice(Store.state.tabs, index, length), selectedId: newSelected, lastSelectedIdAfterNewTab: null });
+	Store.setState({
+		tabs: slice(Store.state.tabs, index, length),
+		selectedId: newSelected,
+		lastSelectedIdAfterNewTab: null
+	});
 }
 
 export function removeOtherTabs(id) {
@@ -59,69 +98,45 @@ export function removeOtherTabs(id) {
 	if (tab) Store.setState({ tabs: [tab], selectedId: tab.id, lastSelectedIdAfterNewTab: null });
 }
 
-export function openBookmark(bookmarkId, folderId) {
-	const bookmark = folderId ? Store.getFolderItem(folderId, bookmarkId) : Store.getBookmark(bookmarkId);
-	if (bookmark?.path) Store.addTab(bookmark.path);
+export function openBookmarkAt(bookmarkId, targetId, pos, folderId) {
+	const bookmark = getBookmark(bookmarkId, folderId);
+	if (bookmark?.path) Store.addTabBy(createFromPath(bookmark.path), targetId, sort(pos));
 }
 
-export function openBookmarkAt(targetId, bookmarkId, folderId, pos) {
-	const bookmark = folderId ? Store.getFolderItem(folderId, bookmarkId) : Store.getBookmark(bookmarkId);
-	if (bookmark?.path) Store.addTabBy(targetId, createObjFromPath(bookmark.path), sort(pos));
-}
-
-export function bookmarkTabAt(targetId, tabId, pos) {
+export function bookmarkTabAt(tabId, targetId, pos) {
 	const tab = Store.getTab(tabId);
-	if (tab?.path) Store.addBookmarkBy(targetId, createObjFromPath(tab.path), sort(pos));
+	if (tab?.path) Store.addBookmarkBy(createFromPath(tab.path), targetId, sort(pos));
 }
 
-export function moveSubBookmarkToBookmarksAt(targetId, itemId, parentId, pos) {
+export function moveSubBookmarkToBookmarksAt(itemId, parentId, targetId, pos) {
 	const subBookmark = Store.getFolderItem(parentId, itemId);
 	if (!subBookmark) return;
-	Store.addBookmarkBy(targetId, createFrom(subBookmark, { parentId: null }), sort(pos));
+	Store.addBookmarkBy(createFrom(subBookmark, { parentId: null }), targetId, sort(pos));
 	Store.removeItemFromFolder(parentId, itemId);
 }
 
-export function moveSubFolderToBookmarksAt(targetId, subFolderId, itemId, parentId, pos) {
+export function moveSubFolderToBookmarksAt(subFolderId, itemId, parentId, targetId, pos) {
 	const folder = createBookmarkFolder(subFolderId);
-	Store.addBookmarkBy(targetId, folder, sort(pos));
+	Store.addBookmarkBy(folder, targetId, sort(pos));
 	Store.removeItemFromFolder(parentId, itemId);
 	Store.updateFolder(subFolderId, { parentId: null });
 }
 
-// export function moveToBookmarks(targetId, bookmarkId, parentId) {
-// 	const subBookmark = Store.getFolderItem(parentId, bookmarkId);
-// 	if (!subBookmark) return;
-// 	Store.addBookmarkBy(null, cloneBookmark(subBookmark));
-// 	Store.removeItemFromFolder(parentId, bookmarkId);
-// }
-
-
-export function addTabToFolderAt(tabId, folderId, target, pos) {
+export function addTabToFolderAt(tabId, folderId, targetId, pos) {
 	const tab = Store.getTab(tabId);
-	Store.addToFolderBy(target, folderId, createFrom(tab, { parentId: folderId }), sort(pos));
+	Store.addToFolderBy(folderId, createFrom(tab, { parentId: folderId }), targetId, sort(pos));
 }
 
-export function moveSubBookmarkToFolderAt(itemId, targetFolderId, parentId, targetId, pos) {
-	const bookmark = parentId ? Store.getFolderItem(parentId, itemId) : Store.getBookmark(itemId);
-	if (parentId) Store.removeItemFromFolder(parentId, itemId);
-	else Store.removeBookmark(itemId);
-	Store.addToFolderBy(targetId, targetFolderId, createFrom(bookmark, { parentId: targetFolderId }), sort(pos));
-}
-
-function isDescendent(parentId, childId) {
-	const child = Store.getFolder(childId);
-	if (!child.parentId) return false;
-	if (child.parentId === parentId) return true;
-	return isDescendent(parentId, child.parentId);
+export function moveBookmarkToFolderAt(itemId, targetFolderId, parentId, targetId, pos) {
+	const bookmark = getBookmark(itemId, parentId);
+	deleteBookmark(itemId, parentId);
+	Store.addToFolderBy(targetFolderId, createFrom(bookmark, { parentId: targetFolderId }), targetId, sort(pos));
 }
 
 export function moveFolderToFolderAt(folderId, itemId, targetFolderId, parentId, targetId, pos) {
 	if (isDescendent(folderId, targetFolderId)) return;
+	deleteBookmark(itemId, parentId);
 
-	if (parentId) Store.removeItemFromFolder(parentId, itemId);
-	else Store.removeBookmark(itemId);
-
-	Store.addToFolderBy(targetId, targetFolderId, createBookmarkFolder(folderId, targetFolderId), sort(pos));
-
+	Store.addToFolderBy(targetFolderId, createBookmarkFolder(folderId, targetFolderId), targetId, sort(pos));
 	Store.updateFolder(folderId, { parentId: targetFolderId });
 }

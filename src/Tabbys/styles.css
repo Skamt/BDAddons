@@ -1,0 +1,152 @@
+
+
+
+
+.no-drag{
+	-webkit-app-region: no-drag;
+}
+
+.df{
+	display:flex;
+}
+
+.fcc{
+	display:flex;
+	align-items:center;
+	justify-content:center;
+}
+
+
+.rounded-full{
+	border-radius: var(--radius-round);
+}
+
+.box-border{
+	box-sizing:border-box;
+}
+
+.pointer-pointer{
+	cursor:pointer;
+}
+
+
+.ellipsis{
+	
+}
+
+:root{
+	/* overrides */
+	
+	--tabbys-bookmarkbar-height: calc(var(--custom-app-top-bar-height) - 5px);
+	
+	/* Sizes */
+	--size:32px;
+	--tabbys-btn-size:calc(var(--size) * .8);
+	--tabbys-tab-btn-size:calc(var(--size) * .6);
+	--radius-round: calc(infinity * 1px);
+	--tabs-gap:8px;
+	--bookmarks-gap:8px;
+	--folder-gap:8px;
+	
+	/* Cosmetiques */
+	--ping: rgb(218, 62, 68);
+	--unread: rgb(88, 101, 242);
+	--svg-color:#fff;
+}
+
+:root{ 
+	/* --tabbys-bg:var(--neutral-5); */
+	--tabbys-bg-hover: var(--background-mod-normal);
+	--tabbys-bg-selected: var(--background-mod-strong);
+	
+	--tabbys-text: var(--interactive-normal);
+	--tabbys-text-unread:var(--interactive-active);
+	
+	--tabbys-btn-color:var(--interactive-normal);
+	--tabbys-btn-color-hover:var(--interactive-hover);
+	--tabbys-btn-color-active:var(--interactive-active);
+
+	--tabbys-btn-bg:var(--background-accent);
+	--tabbys-btn-bg-hover:var(--interactive-muted);
+	--tabbys-btn-bg-active:var(--background-mod-strong);
+	
+	--tabbys-folder-menu-bg:var(--background-surface-highest);
+}
+
+.Tabbys-menuitem-new-tab-to-left svg,
+.Tabbys-menuitem-close-tabs-to-left svg {
+	rotate: 180deg;
+}
+
+.card {
+	display: flex;
+	line-height: 150%;
+	align-items: center;
+	height: var(--size);
+	transform: translate(0);
+	gap: 8px;
+	padding: 0 4px;
+	font-size: calc(var(--size) * 0.5);
+	color: var(--tabbys-text);
+	border-radius: calc(var(--size) * 0.2);
+}
+
+.card-title{
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	flex: 1 1 0;
+}
+
+.card:hover {
+	background: var(--tabbys-bg-hover);
+}
+
+.card.hasUnread {
+	color: var(--tabbys-text-unread);
+}
+
+.card:active,
+.card.isSelected {
+	background: var(--tabbys-bg-selected);
+}
+
+.card-icon {
+	pointer-events: none;
+	flex: 0 0 auto;
+	width: calc(var(--size) * 0.75);
+	height: calc(var(--size) * 0.75);
+	border-radius: var(--radius-round);
+}
+
+.user-avatar {
+	/* flex:0 0 auto; */
+}
+
+.card img {
+	border-radius: inherit;
+}
+
+.icon-wrapper img,
+.icon-wrapper svg {
+	height: 100%;
+	width: 100%;
+}
+
+.icon-wrapper {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-sizing: border-box;
+	overflow: hidden;
+}
+
+.discord-icon {
+	color: white;
+	background: #6361f8;
+	padding: 4px;
+}
+
+.typing-dots {
+	flex: 0 0 auto;
+}

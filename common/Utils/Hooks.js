@@ -5,6 +5,7 @@ import ReadStateStore from "@Stores/ReadStateStore";
 import TypingStore from "@Stores/TypingStore";
 import ChannelStore from "@Stores/ChannelStore";
 import { getChannelName } from "@Utils/Channel";
+import { getUserName } from "@Utils/User";
 
 export function usePropBasedState(prop) {
 	const [state, setState] = useState(prop);
@@ -60,7 +61,7 @@ export function useTimer(fn, delay) {
 
 	const start = useCallback(() => {
 		hideTimeoutId.current = setTimeout(() => {
-			clear(); // clean first in case of exception
+			clear();
 			fn();
 		}, delay);
 	}, [fn, delay]);
@@ -70,33 +71,56 @@ export function useTimer(fn, delay) {
 	return [start, clear];
 }
 
+function getChannelState(channelId) {
+	const hasUnread = ReadStateStore.hasUnread(channelId);
+	const mentionCount = ReadStateStore.getMentionCount(channelId);
+	const unreadCount = ReadStateStore.getUnreadCount(channelId);
+	return [mentionCount, unreadCount, hasUnread];
+}
+
 export function useChannelState(channelId) {
-	const channel = useStateFromStores([ChannelStore], () => ChannelStore.getChannel(channelId), [channelId]);
-	const name = getChannelName(channel);
-	const [mentionCount, unreadCount, hasUnread] = useStateFromStores(
-		[ReadStateStore],
-		() => {
-			const hasUnread = ReadStateStore.hasUnread(channelId);
-			const mentionCount = ReadStateStore.getMentionCount(channelId);
-			const unreadCount = ReadStateStore.getUnreadCount(channelId);
-			return [mentionCount, unreadCount, hasUnread];
-		},
-		[channelId]
-	);
+	const [mentionCount, unreadCount, hasUnread] = useStateFromStores([ReadStateStore], () => getChannelState(channelId), [channelId]);
 
 	const typingUsersIds = useStateFromStores([TypingStore], () => Object.keys(TypingStore.getTypingUsers(channelId)), [channelId]);
 	const currentUser = UserStore.getCurrentUser();
 	const typingUsers = typingUsersIds.filter(id => id !== currentUser?.id).map(UserStore.getUser);
 
 	return {
-		name,
-		channel,
-		get isDM() {
-			return channel?.isDM();
+		isTyping: !!typingUsers.length,
+		typingUsers,
+		mentionCount,
+		unreadCount,
+		hasUnread
+	};
+}
+
+export function useChannelsState(channelIds = []) {
+	const [mentionCount, unreadCount, hasUnread] = useStateFromStores(
+		[ReadStateStore],
+		() => {
+			return channelIds.map(getChannelState).reduce((acc,item) => {
+				const [mentionCount, unreadCount, hasUnread] = item;
+				acc[0] += mentionCount;
+				acc[1] += unreadCount;
+				acc[2] = acc[2] || hasUnread;
+				return acc;
+			}, [0,0,false]);
 		},
-		get isTyping() {
-			return !!typingUsers.length;
+		[...channelIds]
+	);
+
+	const typingUsersIds = useStateFromStores(
+		[TypingStore],
+		() => {
+			return channelIds.flatMap(channelId => Object.keys(TypingStore.getTypingUsers(channelId)));
 		},
+		[...channelIds]
+	);
+	const currentUser = UserStore.getCurrentUser();
+	const typingUsers = typingUsersIds.filter(id => id !== currentUser?.id).map(UserStore.getUser);
+
+	return {
+		isTyping: !!typingUsers.length,
 		typingUsers,
 		mentionCount,
 		unreadCount,

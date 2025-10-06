@@ -1,13 +1,11 @@
 import { getModule } from "@Webpack";
 import { getUserAvatar, getUserName } from "@Utils/User";
 import GuildStore from "@Stores/GuildStore";
-
-const ChannelIconsUtils = getModule(a => a.getChannelIconURL);
-
+import { IconsUtils } from "@Discord/Modules";
 
 export function getChannelName(channel) {
-	if (!channel) return;
-	if (channel.isDM() || channel.isGroupDM()) return channel.rawRecipients.map(getUserName).join(", ");
+	if (!channel) return "";
+	if (channel.isGroupDM()) return channel.rawRecipients.map(getUserName).join(", ");
 	return channel.name;
 }
 
@@ -17,11 +15,10 @@ export function getDmAvatar(channel, size) {
 }
 
 export function getChannelIconURL(channel, size) {
-	if (!channel) return;
-	if (channel.isDM()) return getDmAvatar(channel, size);
+	if (!channel) return "";
 
 	if (channel.isGroupDM())
-		return ChannelIconsUtils.getChannelIconURL({
+		return IconsUtils.getChannelIconURL({
 			id: channel.id,
 			icon: channel.icon,
 			applicationId: channel.getApplicationId(),
@@ -29,9 +26,9 @@ export function getChannelIconURL(channel, size) {
 		});
 
 	const guild = GuildStore.getGuild(channel.guild_id);
-	return ChannelIconsUtils.getGuildIconURL({
-			id: guild.id,
-			icon: guild.icon,
-			size
-		});
+	return IconsUtils.getGuildIconURL({
+		id: guild.id,
+		icon: guild.icon,
+		size
+	});
 }

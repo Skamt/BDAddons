@@ -76,17 +76,17 @@ export default {
 		},
 		
 
-		addToFolderBy(targetId, folderId, bookmark, fn) {
+		addToFolderBy(folderId, bookmark, targetId, fn) {
 			const items = this.getFolderItems(folderId);
 			if (items) this.updateFolder(folderId, { items: addBy(items, targetId, bookmark, fn) });
 		},
 
 		addToFolder(folderId, path) {
-			this.addToFolderBy(null, folderId, createSubBookmark(folderId, path));
+			this.addToFolderBy(folderId, createSubBookmark(folderId, path));
 		},
 
 		addFolderToFolder(parentId, folderId) {
-			this.addToFolderBy(null, parentId, createBookmarkFolder(folderId, parentId));
+			this.addToFolderBy(parentId, createBookmarkFolder(folderId, parentId));
 		},
 
 		removeItemFromFolder(folderId, itemId) {
@@ -100,7 +100,7 @@ export default {
 			this.updateFolder(folderId, { items: remove(folder.items, itemIndex) });
 		},
 
-		removeFolder(folderId) {
+		deleteFolder(folderId) {
 			const { folders } = this.state;
 
 			const folderIndex = this.getFolderIndex(folderId);
@@ -123,37 +123,6 @@ export default {
 			const indices = getIndices(folderId);
 
 			this.setState({ folders: removeMany(folders, [folderIndex, ...indices]) });
-		},
-
-		removeFolderFromBookmarkBar(folderId, bookmarkId) {
-			const folderIndex = this.getFolderIndex(folderId);
-			if (folderIndex === -1) return;
-			const bookmarkIndex = this.getBookmarkIndex(bookmarkId);
-			if (bookmarkIndex === -1) return;
-
-			this.setState({ bookmarks: remove(this.state.bookmarks, bookmarkIndex) });
-			// this.removeFolder(folderId);
-		},
-
-		removeFolderFromFolder(folderId, parentId) {
-			const folderIndex = this.getFolderIndex(folderId);
-			if (folderIndex === -1) return;
-
-			const parentIndex = this.getFolderIndex(parentId);
-			if (parentIndex === -1) return;
-
-			const parentFolder = this.state.folders[parentIndex];
-			const folderIndexInParent = parentFolder.items.findIndex(a => a.folderId === folderId);
-			if (folderIndexInParent === -1) return;
-
-			const nfolder = Object.assign({}, parentFolder, {
-				items: remove(parentFolder.items, folderIndexInParent)
-			});
-
-			this.setState({ folders: set(this.state.folders, parentIndex, nfolder) });
-			this.removeFolder(folderId);
-		},
-
-		
+		}	
 	}
 };

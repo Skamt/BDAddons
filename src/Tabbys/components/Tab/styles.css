@@ -1,0 +1,34 @@
+.tab-container {
+	width: var(--tab-width, 250px);
+	min-width: var(--tab-min-width, 150px);
+	flex: 0 1 auto;
+}
+
+.tab-title {
+	
+}
+
+.tab-canDrop {
+	background: #ff0 !important;
+}
+
+.tab-close-button {
+	z-index: 5;
+	padding: 2px;
+	cursor: pointer;
+	color: var(--tabbys-btn-color);
+	border-radius: inherit;
+
+	width: var(--tabbys-tab-btn-size);
+	height: var(--tabbys-tab-btn-size);
+}
+
+.tab-close-button:hover {
+	background: var(--tabbys-btn-bg-hover);
+	color: var(--tabbys-btn-color-hover);
+}
+
+.tab-close-button:active {
+	background: var(--tabbys-btn-bg-active);
+	color: var(--tabbys-btn-color-active);
+}

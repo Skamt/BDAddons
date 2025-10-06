@@ -1,7 +1,8 @@
 import { React } from "@Api";
+import { getModule, Filters } from "@Webpack";
 import FormSwitch from "@Modules/FormSwitch";
 
-export default FormSwitch ||
+export default getModule(Filters.byStrings('"data-toggleable-component":"switch"', 'layout:"horizontal"'), { searchExports: true }) ||
 	function SwitchComponentFallback(props) {
 		return (
 			<div style={{ color: "#fff" }}>

@@ -2,7 +2,7 @@ import React from "@React";
 import { join } from "@Utils/css";
 import { AppsIcon, ShopIcon, QuestsIcon, NitroIcon, ServersIcon } from "@Components/Icon";
 import Fallback from "./Fallback";
-import { pathTypes } from "@/utils";
+import { pathTypes } from "@/consts";
 
 export default function MiscIcon({ type }) {
 	let icon = null;

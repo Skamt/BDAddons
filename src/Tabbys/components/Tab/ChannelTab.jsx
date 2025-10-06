@@ -1,22 +1,20 @@
 import React from "@React";
 import BaseTab from "./BaseTab";
-import { useChannelState } from "@Utils/Hooks";
-import Settings from "@Utils/Settings";
-import Badge from "@/components/NumberBadge";
-import TypingDots from "@/components/TypingDots";
-import ChannelIcon from "@/components/ChannelIcon";
-import { shallow } from "@Utils";
+import ChannelStatus from "@/components/ChannelStatus";
+import { ChannelIcon } from "@/components/Icons";
+import useStateFromStores from "@Modules/useStateFromStores";
+import ChannelStore from "@Stores/ChannelStore";
+import { getChannelName } from "@Utils/Channel";
 
 export default function ChannelTab({ id, path, guildId, channelId }) {
-	const [showPings, showUnreads, showTyping] = Settings(_ => [_.showPings, _.showUnreads, _.showTyping], shallow);
-	const { name: channelName, isDM, isTyping, channel, typingUsers, mentionCount, unreadCount, hasUnread } = useChannelState(channelId);
+	const channel = useStateFromStores([ChannelStore], () => ChannelStore.getChannel(channelId), [channelId]);
+	const name = getChannelName(channel);
 
 	return (
 		<BaseTab
 			id={id}
-			
-			hasUnread={hasUnread}
-			title={channelName || path}
+			channelId={channelId}
+			title={name || channelId}
 			icon={
 				<ChannelIcon
 					guildId={guildId}
@@ -24,19 +22,10 @@ export default function ChannelTab({ id, path, guildId, channelId }) {
 					channel={channel}
 				/>
 			}>
-			{showTyping && isTyping && <TypingDots users={typingUsers} />}
-			{showPings && !!mentionCount && (
-				<Badge
-					count={mentionCount}
-					type="ping"
-				/>
-			)}
-			{showUnreads && !isDM && !!unreadCount && (
-				<Badge
-					count={unreadCount}
-					type="unread"
-				/>
-			)}
+			<ChannelStatus
+				type="Tab"
+				channelIds={[channelId]}
+			/>
 		</BaseTab>
 	);
 }

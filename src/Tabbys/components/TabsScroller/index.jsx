@@ -1,7 +1,7 @@
 import "./styles";
 import React, { useEffect, useRef, useState } from "@React";
 import { animate, getElMeta, isScrollable } from "@Utils/HTMLElement";
-import { join } from "@Utils/String";
+import { join } from "@Utils/css";
 import { clsx, debounce } from "@Utils";
 import { ArrowIcon } from "@Components/Icon";
 
@@ -76,30 +76,26 @@ export default function TabsScroller({ items, renderItem, shouldScroll, scrollTo
 	}
 
 	return (
-		<div className={join(" ", c("container"), containerClassName)}>
+		<div className={join(c("container"), containerClassName)}>
 			{isOverflowing && (
 				// biome-ignore lint/a11y/useButtonType: <explanation>
 				<button
 					onClick={() => scroll(-1 * scrollDelta())}
-					className={join(" ", c("btn", "btn-start"), "no-drag", "icon-wrapper","box-border", "rounded-full", scrollButtonClassName, startScrollButtonClassName)}>
-					
-						<ArrowIcon />
-					
+					className={join(c("btn", "btn-start"), "icon-wrapper", "rounded-full", scrollButtonClassName, startScrollButtonClassName)}>
+					<ArrowIcon />
 				</button>
 			)}
 			<div
 				ref={ref}
-				className={join(" ", c("content"), contentClassName)}>
+				className={join(c("content"), contentClassName)}>
 				{items.map((item, index) => renderItem(item, index))}
 			</div>
 			{isOverflowing && (
 				// biome-ignore lint/a11y/useButtonType: <explanation>
 				<button
 					onClick={() => scroll(scrollDelta())}
-					className={join(" ", c("btn", "btn-end"), "no-drag", "box-border", "icon-wrapper","rounded-full", scrollButtonClassName, endScrollButtonClassName)}>
-					
-						<ArrowIcon />
-					
+					className={join(c("btn", "btn-end"), "icon-wrapper", "rounded-full", scrollButtonClassName, endScrollButtonClassName)}>
+					<ArrowIcon />
 				</button>
 			)}
 		</div>

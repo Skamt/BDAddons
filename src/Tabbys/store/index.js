@@ -3,32 +3,31 @@ import TabSlice from "./tabs";
 import { ensureTab } from "./methods";
 import FolderSlice from "./folders";
 import BookmarkSlice from "./bookmarks";
-import UserSlice from "./users";
 import Plugin, { Events } from "@Utils/Plugin";
 import { Data } from "@Api";
 import { getPathName, shallow, debounce } from "@Utils";
 import UserStore from "@Stores/UserStore";
-import { transitionTo } from "@Discord/Modules";
+import { navigate } from "@/utils";
 import { Dispatcher } from "@Discord/Modules";
 
-const stateFn = () => ({
+const initialState = {
 	...TabSlice.state,
 	...FolderSlice.state,
-	...BookmarkSlice.state,
-	...UserSlice.state
-});
+	...BookmarkSlice.state
+};
 
-const Store = zustand(subscribeWithSelector(stateFn));
+const Store = zustand(subscribeWithSelector(() => initialState));
 
 Object.defineProperty(Store, "state", {
 	configurable: false,
 	get: () => Store.getState()
 });
 
-Object.defineProperty(Store, "selectors", { value: {} });
+Object.defineProperty(Store, "selectors", {
+	value: Object.assign({}, FolderSlice.selectors, TabSlice.selectors, BookmarkSlice.selectors)
+});
 
-Object.assign(Store, TabSlice.actions, BookmarkSlice.actions, UserSlice.actions, FolderSlice.actions);
-Object.assign(Store.selectors, FolderSlice.selectors, TabSlice.selectors, BookmarkSlice.selectors);
+Object.assign(Store, TabSlice.actions, BookmarkSlice.actions, FolderSlice.actions);
 
 Store.subscribe(
 	state => state,
@@ -42,29 +41,36 @@ Store.subscribe(
 Store.subscribe(Store.selectors.selectedId, () => {
 	const selectedTab = Store.getSelectedTab();
 	if (!selectedTab) return;
-	transitionTo(selectedTab.path);
+	if (selectedTab?.path === location.pathname) return;
+	navigate(selectedTab);
 });
 
-Store.subscribe(() => Store.getSelectedTab()?.path, transitionTo, shallow);
+Store.subscribe(() => Store.getSelectedTab(), (tab,o) => {
+	if(tab?.path === o?.path) return;
+	if (tab?.path === location.pathname) return;
+	navigate(tab)
+}, shallow);
+
 
 const onLocationChange = debounce(e => {
 	const pathname = getPathName(e.destination.url);
 	if (!pathname) return;
+	const selectedTab = Store.getSelectedTab();
+	if (selectedTab?.path === pathname) return;
 	Store.setTabPath(Store.state.selectedId, pathname);
 }, 50);
 
 function hydrateStore() {
 	const user = UserStore.getCurrentUser();
 	if (Store.state.user?.id === user.id) return;
-	const userData = Data.load(user.id) || {};
+	const userData = Data.load(user.id) || initialState;
 	Store.setState({ ...userData });
+	ensureTab();
 }
-
-
 
 Plugin.on(Events.START, () => {
 	hydrateStore();
-	ensureTab();
+
 	window.navigation.addEventListener("navigate", onLocationChange);
 	Dispatcher.subscribe("CONNECTION_OPEN", hydrateStore);
 });

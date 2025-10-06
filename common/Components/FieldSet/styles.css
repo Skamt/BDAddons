@@ -1,0 +1,25 @@
+.fieldset-container {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.fieldset-label {
+	margin-bottom: 12px;
+}
+
+.fieldset-description {
+	margin-bottom: 12px;
+}
+
+.fieldset-label + .fieldset-description{
+	margin-top:-8px;
+	margin-bottom: 0;
+}
+
+.fieldset-content {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	justify-content: flex-start;
+}

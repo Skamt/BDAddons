@@ -5,3 +5,14 @@ export const DNDTypes = {
 	SUB_FOLDER: "SUB_FOLDER",
 	FOLDER: "FOLDER"
 };
+
+export const pathTypes = {
+	QUESTS: "QUESTS",
+	APPS: "APPS",
+	SERVERS: "SERVERS",
+	SHOP: "SHOP",
+	NITRO: "NITRO",
+	HOME: "HOME",
+	CHANNEL: "CHANNEL",
+	DM: "DM"
+};

@@ -1,0 +1,33 @@
+.tabbar-container {
+	display: flex;
+	height: 100%;
+	max-height: 100%;
+	--droppable-gap: var(--tabs-gap);
+}
+
+.tabbar-tabs-scroller-content {
+	gap: var(--tabs-gap);
+	padding: 0 var(--tabs-gap);
+}
+
+.tabbar-new-tab {
+	height: var(--tabbys-btn-size);
+	width: var(--tabbys-btn-size);
+	flex: 0 0 var(--tabbys-btn-size);
+	margin: 0 5px;
+	border-radius: var(--radius-round);
+	padding: 3px;
+	align-self: center;
+	cursor: pointer;
+	color: var(--tabbys-btn-color);
+}
+
+.tabbar-new-tab:hover {
+	background: var(--tabbys-btn-bg-hover);
+	color: var(--tabbys-btn-color-hover);
+}
+
+.tabbar-new-tab:active {
+	background: var(--tabbys-btn-bg-active);
+	color: var(--tabbys-btn-color-active);
+}

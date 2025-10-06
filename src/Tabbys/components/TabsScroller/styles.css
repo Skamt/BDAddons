@@ -1,0 +1,44 @@
+.scroller-container {
+	display: inline-flex;
+	overflow: hidden;
+	box-sizing: border-box;
+	max-width: 100%;
+	max-height: 100%;
+	gap: 5px;
+}
+
+.scroller-content {
+	display: flex;
+	overflow: auto hidden;
+	min-width: 0;
+	flex: 1 0 0;
+	scrollbar-width: none;
+	box-sizing: border-box;
+}
+
+.scroller-btn-start {
+	rotate: 180deg;
+}
+
+.scroller-btn {
+	height: var(--tabbys-btn-size);
+	width: var(--tabbys-btn-size);
+	aspect-ratio: 1;
+
+	padding: 2px;
+	align-self: center;
+	cursor: pointer;
+	background: #0000;
+	color: var(--tabbys-btn-color);
+	/* border: 1px solid var(--tabbys-border-subtle); */
+}
+
+.scroller-btn:hover {
+	background: var(--tabbys-btn-bg-hover);
+	color: var(--tabbys-btn-color-hover);
+}
+
+.scroller-btn:active {
+	background: var(--tabbys-btn-bg-active);
+	color: var(--tabbys-btn-color-active);
+}

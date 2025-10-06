@@ -1,32 +1,86 @@
-import Store from "@/Store";
 import { ContextMenu } from "@Api";
-import { CloseIcon, BookmarkOutlinedIcon, DuplicateIcon, LightiningIcon, PinIcon, VectorIcon } from "@Components/Icon";
+import Store from "@/Store";
+import { Dispatcher } from "@Discord/Modules";
+import { BookmarkOutlinedIcon, DuplicateIcon, LightiningIcon, VectorIcon } from "@Components/Icon";
 import React from "@React";
-import { createContextMenuItem } from "./helper";
+import { wrapMenuItem } from "./helper";
 import { nop } from "@Utils";
+import { bookmarkTabAt, removeTabsToRight, removeOtherTabs, removeTabsToLeft, addTabToFolderAt } from "@/Store/methods";
+import { MarkAsReadItem } from "./shared";
 
-export default function (id) {
+export default function (id, { channelId, hasUnread }) {
 	const canClose = Store.getTabsCount() > 1;
 
-	const folders = Store.state.folders.map(({ id: folderId, name }) => {
-		return createContextMenuItem(null, `bookmark-tab-${folderId}`, () => Store.addTabToFolder(id, folderId), name, BookmarkOutlinedIcon);
-	});
+	const folders = Store.state.folders
+		.map(({ id: folderId, name }) => {
+			return {
+				action: () => addTabToFolderAt(id, folderId),
+				label: name,
+				icon: BookmarkOutlinedIcon
+			};
+		})
+		.map(wrapMenuItem);
 
 	const Menu = ContextMenu.buildMenu(
 		[
-			createContextMenuItem(null, "new-tab-right", () => Store.addTabToRight(id), "New Tab to Right", VectorIcon),
-			createContextMenuItem(null, "new-tab-left", () => Store.addTabToLeft(id), "New Tab to Left", VectorIcon),
+			MarkAsReadItem(channelId, hasUnread),
+			{ type: "separator" },
 			{
-				type: "separator"
+				action: () => Store.addTabToRight(id),
+				label: "New tab to right",
+				icon: VectorIcon
 			},
-			createContextMenuItem(null, "duplicate-tab", () => Store.duplicateTab(id), "Duplicate Tab", DuplicateIcon),
-			// createContextMenuItem(null, "pin-tab", () => pinTab(id), "Pin Tab", <PinIcon />),
-			createContextMenuItem(folders.length > 0 ? "submenu" : null, "bookmark-tab", () => Store.bookmarkTab(id), "Bookmark Tab", folders.length > 0 ? nop : BookmarkOutlinedIcon, null, folders),
+			{
+				action: () => Store.addTabToLeft(id),
+				label: "New tab to left",
+				icon: VectorIcon
+			},
+			{ type: "separator" },
+			{
+				action: () => Store.duplicateTab(id),
+				label: "Duplicate tab",
+				icon: DuplicateIcon
+			},
+			{
+				label: "Bookmark tab",
+				action: () => bookmarkTabAt(id),
+				type: folders.length > 0 ? "submenu" : null,
+				icon: folders.length > 0 ? nop : BookmarkOutlinedIcon,
+				items: folders
+			},
+			canClose && { type: "separator" },
+
 			canClose && {
-				type: "separator"
-			},
-			canClose && createContextMenuItem("submenu", "close", () => Store.removeTab(id), "Close", nop, "danger", [createContextMenuItem(null, "close-tabs-to-right", () => Store.removeTabsToRight(id), "Close Tabs to Right", VectorIcon, "danger"), createContextMenuItem(null, "close-tabs-to-left", () => Store.removeTabsToLeft(id), "Close Tabs to Left", VectorIcon, "danger"), createContextMenuItem(null, "close-other-tabs", () => Store.removeOtherTabs(id), "Close Other Tabs", LightiningIcon, "danger")])
-		].filter(Boolean)
+				type: "submenu",
+				label: "Close",
+				action: () => Store.removeTab(id),
+				color: "danger",
+				items: [
+					{
+						action: () => removeTabsToRight(id),
+						label: "Close Tabs to Right",
+						icon: VectorIcon,
+						color: "danger"
+					},
+					{
+						action: () => removeTabsToLeft(id),
+						label: "Close Tabs to Left",
+						icon: VectorIcon,
+						color: "danger"
+					},
+					{
+						action: () => removeOtherTabs(id),
+						label: "Close Other Tabs",
+						icon: LightiningIcon,
+						color: "danger"
+					}
+				]
+					.filter(Boolean)
+					.map(wrapMenuItem)
+			}
+		]
+			.filter(Boolean)
+			.map(wrapMenuItem)
 	);
 
 	return props => <Menu {...props} />;

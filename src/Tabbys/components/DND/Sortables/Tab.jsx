@@ -1,6 +1,7 @@
 import DroppableMarkup from "./DroppableMarkup";
 import { DropTarget } from "@Discord/Modules";
 import { DNDTypes } from "@/consts";
+import Store from "@/Store";
 import { openBookmarkAt } from "@/Store/methods";
 import { makeDroppable } from "../shared";
 import React from "@React";
@@ -17,9 +18,9 @@ const Tab = makeDroppable(
 			case DNDTypes.TAB:
 				return Store.reOrderTabs(dropped.id, me.id, me.pos);
 			case DNDTypes.BOOKMARK:
-				return openBookmarkAt(me.id, dropped.id, null, me.pos);
+				return openBookmarkAt(dropped.id, me.id, me.pos);
 			case DNDTypes.SUB_BOOKMARK:
-				return openBookmarkAt(me.id, dropped.id, dropped.parentId, me.pos);
+				return openBookmarkAt(dropped.id, me.id, me.pos, dropped.parentId);
 		}
 	}
 )(DroppableMarkup);

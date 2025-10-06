@@ -7,7 +7,7 @@ export function remove(array, index) {
 }
 
 export function removeMany(array, indices) {
-	return array.filter((_, i) => indices.iOf(index) === -1);
+	return array.filter((_, i) => indices.indexOf(i) === -1);
 }
 
 export function add(array, item, index) {

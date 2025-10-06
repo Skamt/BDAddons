@@ -49,11 +49,7 @@ export function createSubBookmark(folderId, path) {
 	return Object.assign({ parentId: folderId }, bookmark);
 }
 
-export function dupSubBookmark({ id, parentId: a, ...bookmark }, parentId) {
-	return Object.assign({ id: crypto.randomUUID(), parentId }, bookmark);
-}
-
-export function createObjFromPath(path = "/channels/@me") {
+export function createFromPath(path = "/channels/@me") {
 	return Object.assign({ id: crypto.randomUUID(), path }, parsePath(path));
 }
 

@@ -1,0 +1,44 @@
+.bookmarkbar-container {
+	display: flex;
+	max-width: 100%;
+	overflow: hidden;
+	--droppable-gap: var(--bookmarks-gap);
+}
+
+.bookmarkbar-content {
+	display: flex;
+	flex: 0 1 auto;
+	max-width: 100%;
+	gap: var(--bookmarks-gap);
+	overflow: hidden;
+	padding: 0 var(--bookmarks-gap);
+}
+
+.bookmarkbar-hidden {
+	opacity: 0;
+	pointer-events: none;
+}
+
+.bookmarkbar-overflow-button {
+	display: flex;
+	flex: 0 0 calc(var(--size) * 0.85);
+	height: calc(var(--size) * 0.85);
+	aspect-ratio: 1;
+	margin: 0 5px;
+	padding: 3px;
+	align-self: center;
+	cursor: pointer;
+	background: var(--tabbys-btn-bg);
+	color: var(--tabbys-text);
+	border-radius: var(--radius-round);
+}
+
+.bookmarkbar-empty {
+	font-size: calc(var(--size) * 0.5);
+	color: var(--tabbys-text);
+	height: var(--size);
+	display: flex;
+	align-items: center;
+}
+
+

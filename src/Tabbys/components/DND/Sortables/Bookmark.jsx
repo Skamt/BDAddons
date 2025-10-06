@@ -18,11 +18,11 @@ const Bookmark = makeDroppable(
 			case DNDTypes.FOLDER:
 				return Store.reOrderBookmarks(dropped.id, me.id, me.pos);
 			case DNDTypes.TAB:
-				return bookmarkTabAt(me.id, dropped.id, me.pos);
+				return bookmarkTabAt(dropped.id, me.id, me.pos);
 			case DNDTypes.SUB_BOOKMARK:
-				return moveSubBookmarkToBookmarksAt(me.id, dropped.id, dropped.parentId, me.pos);
-			case DNDTypes.SUB_FOLDER: 
-				return moveSubFolderToBookmarksAt(me.id, dropped.folderId, dropped.id, dropped.parentId, me.pos);			
+				return moveSubBookmarkToBookmarksAt(dropped.id, dropped.parentId, me.id, me.pos);
+			case DNDTypes.SUB_FOLDER:
+				return moveSubFolderToBookmarksAt(dropped.folderId, dropped.id, dropped.parentId, me.id, me.pos);
 		}
 	}
 )(DroppableMarkup);

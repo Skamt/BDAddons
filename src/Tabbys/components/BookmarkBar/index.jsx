@@ -1,4 +1,4 @@
-// import "./styles";
+import "./styles";
 import Store from "@/Store";
 import { Bookmark } from "@/components/Bookmark";
 import { Folder } from "@/components/Folder";
@@ -7,6 +7,7 @@ import Popout from "@Components/Popout";
 import React, { useRef, useEffect, useState } from "@React";
 import { shallow } from "@Utils";
 import { classNameFactory, join } from "@Utils/css";
+import DragHandle from "@/components/DragHandle";
 const c = classNameFactory("bookmarkbar");
 
 function getItem(props, id, folderId) {
@@ -85,9 +86,10 @@ export default function BookmarkBar() {
 			<div
 				ref={contentRef}
 				className={c("content")}>
-				{content}
+				{content.length > 0 ? content : <div className={c("empty")}>You have no bookmarks yet</div>}
 			</div>
 			{!!overflowedItems.length && <OverflowMenu items={bookmarks.filter(({ id }) => overflowedItems.find(a => a === id))} />}
+			<DragHandle />
 		</div>
 	);
 }
@@ -96,7 +98,7 @@ function OverflowMenu({ items }) {
 	return (
 		<Popout
 			position="bottom"
-			align="right"
+			align="left"
 			spacing={12}
 			renderPopout={e => {
 				const content = items.map(({ id, folderId }) => getItem({ className: "folder-item", onClick: e.closePopout }, id, folderId));

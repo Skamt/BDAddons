@@ -1,0 +1,8 @@
+.bookmark-container {
+	font-size: calc(var(--size) * 0.45);
+	max-width: 250px;
+}
+
+.bookmark-title {
+	white-space: nowrap;
+}

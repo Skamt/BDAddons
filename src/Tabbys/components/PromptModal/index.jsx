@@ -1,3 +1,4 @@
+import "./styles";
 import { getModule } from "@Webpack";
 import React, { useEffect, useRef, useState } from "@React";
 import { UndoIcon, TrashBinIcon } from "@Components/icon";
@@ -11,11 +12,11 @@ import { FieldWrapper } from "@Discord/Modules";
 
 const c = clsx("create-folder-modal");
 
-export default function ValueModal({ modalProps, title, placeholder, label, initialValue = "", onSubmit }) {
+export default function PromptModal({ modalProps, required, title, placeholder, label, initialValue = "", onSubmit }) {
 	const [val, setVal] = useState(initialValue);
 
 	const saveHandler = e => {
-		onSubmit(val);
+		onSubmit?.(val);
 		modalProps.onClose?.();
 	};
 
@@ -38,6 +39,7 @@ export default function ValueModal({ modalProps, title, placeholder, label, init
 						value={val}
 						onChange={setVal}
 						fullWidth={true}
+						required={required}
 						placeholder={initialValue || placeholder}
 						autoFocus={true}
 					/>
@@ -65,10 +67,10 @@ export default function ValueModal({ modalProps, title, placeholder, label, init
 	);
 }
 
-export function openValueModal(props) {
+export function openPromptModal(props) {
 	ModalActions.openModal(e => (
 		<ErrorBoundary>
-			<ValueModal
+			<PromptModal
 				modalProps={e}
 				{...props}
 			/>

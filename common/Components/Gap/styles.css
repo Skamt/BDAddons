@@ -1,0 +1,11 @@
+.gap-base {
+	flex:1 0 0;
+}
+
+.gap-horizontal {
+	width: 100%;
+}
+
+.gap-vertical {
+	height: 100%;
+}
