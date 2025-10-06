@@ -1,7 +1,7 @@
 /**
  * @name SendStickersAsLinks
  * @description Enables you to send custom Stickers as links
- * @version 2.3.1
+ * @version 2.3.2
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/SendStickersAsLinks
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/SendStickersAsLinks/SendStickersAsLinks.plugin.js
@@ -11,7 +11,7 @@
 var Config_default = {
 	"info": {
 		"name": "SendStickersAsLinks",
-		"version": "2.3.1",
+		"version": "2.3.2",
 		"description": "Enables you to send custom Stickers as links",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SendStickersAsLinks/SendStickersAsLinks.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SendStickersAsLinks",
@@ -467,7 +467,7 @@ var nop = () => {};
 var FormSwitch_default = getModule(Filters.byStrings("note", "tooltipNote"), { searchExports: true });
 
 // common/Components/Switch/index.jsx
-var Switch_default = FormSwitch_default || function SwitchComponentFallback(props) {
+var Switch_default = getModule(Filters.byStrings('"data-toggleable-component":"switch"', 'layout:"horizontal"'), { searchExports: true }) || function SwitchComponentFallback(props) {
 	return /* @__PURE__ */ React.createElement("div", { style: { color: "#fff" } }, props.children, /* @__PURE__ */ React.createElement(
 		"input", {
 			type: "checkbox",
@@ -478,63 +478,126 @@ var Switch_default = FormSwitch_default || function SwitchComponentFallback(prop
 };
 
 // common/Components/SettingSwtich/index.jsx
-function SettingSwtich({ settingKey, note, onChange = nop, hideBorder = false, description, ...rest }) {
+function SettingSwtich({ settingKey, note, onChange = nop, description, ...rest }) {
 	const [val, set] = Settings_default.useSetting(settingKey);
 	return /* @__PURE__ */ React.createElement(
 		Switch_default, {
 			...rest,
-			value: val,
-			note,
-			hideBorder,
+			checked: val,
+			label: description || settingKey,
+			description: note,
 			onChange: (e) => {
 				set(e);
 				onChange(e);
 			}
-		},
-		description || settingKey
+		}
 	);
 }
 
-// src/SendStickersAsLinks/components/SettingComponent.jsx
-var SettingComponent_default = () => {
-	return [
-		...[{
-				settingKey: "sendDirectly",
-				description: "Send Directly",
-				note: "Send the sticker link in a message directly instead of putting it in the chat box."
-			},
-			{
-				settingKey: "ignoreEmbedPermissions",
-				description: "Ignore Embed Permissions",
-				note: "Send sticker links regardless of embed permissions, meaning links will not turn into images."
-			},
-			{
-				settingKey: "shouldSendAnimatedStickers",
-				description: "Send animated stickers",
-				note: "Animated stickers do not animate, sending them will only send the first picture of the animation. (still useful)"
-			},
-			{
-				settingKey: "shouldHighlightAnimated",
-				description: "Highlight animated stickers"
-			}
-		].map(SettingSwtich),
-		// eslint-disable-next-line react/jsx-key
-		/* @__PURE__ */
-		React_default.createElement(StickerSize, null)
-	];
+// common/Components/FieldSet/styles.css
+StylesLoader_default.push(`.fieldset-container {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.fieldset-label {
+	margin-bottom: 12px;
+}
+
+.fieldset-description {
+	margin-bottom: 12px;
+}
+
+.fieldset-label + .fieldset-description{
+	margin-top:-8px;
+	margin-bottom: 0;
+}
+
+.fieldset-content {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	justify-content: flex-start;
+}
+`);
+
+// common/Utils/css.js
+var classNameFactory = (prefix = "", connector = "-") => (...args) => {
+	const classNames = /* @__PURE__ */ new Set();
+	for (const arg of args) {
+		if (arg && typeof arg === "string") classNames.add(arg);
+		else if (Array.isArray(arg)) arg.forEach((name) => classNames.add(name));
+		else if (arg && typeof arg === "object") Object.entries(arg).forEach(([name, value]) => value && classNames.add(name));
+	}
+	return Array.from(classNames, (name) => `${prefix}${connector}${name}`).join(" ");
 };
 
+// common/Components/FieldSet/index.jsx
+var c = classNameFactory("fieldset");
+
+function FieldSet({ label, description, children, contentGap = 16 }) {
+	return /* @__PURE__ */ React_default.createElement("fieldset", { className: c("container") }, label && /* @__PURE__ */ React_default.createElement(
+		Heading_default, {
+			className: c("label"),
+			tag: "legend",
+			variant: "text-lg/medium"
+		},
+		label
+	), description && /* @__PURE__ */ React_default.createElement(
+		Heading_default, {
+			className: c("description"),
+			variant: "text-sm/normal",
+			color: "text-secondary"
+		},
+		description
+	), /* @__PURE__ */ React_default.createElement("div", { className: c("content"), style: { gap: contentGap } }, children));
+}
+
+// common/Components/Divider/styles.css
+StylesLoader_default.push(`.divider-base {
+	border-top: thin solid var(--border-subtle);
+	flex:1 0 0;
+}
+
+.divider-horizontal {
+	width: 100%;
+	height: 1px;
+}
+
+.divider-vertical {
+	width: 1px;
+	height: 100%;
+}
+`);
+
+// common/Components/Divider/index.jsx
+var c2 = classNameFactory("divider");
+
+function Divider({ direction = "horizontal", gap }) {
+	return /* @__PURE__ */ React_default.createElement(
+		"div", {
+			style: {
+				marginTop: gap,
+				marginBottom: gap
+			},
+			className: c2("base", { direction })
+		}
+	);
+}
+Divider.direction = {
+	HORIZONTAL: "horizontal",
+	VERTICAL: "vertical"
+};
+
+// src/SendStickersAsLinks/components/SettingComponent.jsx
 function StickerSize() {
 	const [val, set] = Settings_default.useSetting("stickerSize");
-	return /* @__PURE__ */ React_default.createElement(React_default.Fragment, null, /* @__PURE__ */ React_default.createElement(
-		Heading_default, {
-			style: { marginBottom: 20 },
-			tag: "h5"
-		},
-		"Sticker Size"
-	), /* @__PURE__ */ React_default.createElement(
+	return /* @__PURE__ */ React_default.createElement(
 		Slider_default, {
 			className: "stickerSizeSlider",
+			label: "Sticker Size",
+			description: "The size of the sticker in pixels. 160 is recommended",
 			stickToMarkers: true,
 			sortedMarkers: true,
 			equidistant: true,
@@ -544,8 +607,30 @@ function StickerSize() {
 			initialValue: val,
 			onValueChange: set
 		}
-	), /* @__PURE__ */ React_default.createElement(Heading_default, { variant: "text-sm/normal" }, "The size of the sticker in pixels. 160 is recommended"));
+	);
 }
+var SettingComponent_default = () => {
+	return /* @__PURE__ */ React_default.createElement(FieldSet, { contentGap: 8 }, [{
+			settingKey: "sendDirectly",
+			description: "Send Directly",
+			note: "Send the sticker link in a message directly instead of putting it in the chat box."
+		},
+		{
+			settingKey: "ignoreEmbedPermissions",
+			description: "Ignore Embed Permissions",
+			note: "Send sticker links regardless of embed permissions, meaning links will not turn into images."
+		},
+		{
+			settingKey: "shouldSendAnimatedStickers",
+			description: "Send animated stickers",
+			note: "Animated stickers do not animate, sending them will only send the first picture of the animation. (still useful)"
+		},
+		{
+			settingKey: "shouldHighlightAnimated",
+			description: "Highlight animated stickers"
+		}
+	].map(SettingSwtich), /* @__PURE__ */ React_default.createElement(Divider, { gap: 15 }), /* @__PURE__ */ React_default.createElement(StickerSize, null));
+};
 
 // src/SendStickersAsLinks/index.jsx
 Plugin_default.getSettingsPanel = () => /* @__PURE__ */ React_default.createElement(SettingComponent_default, null);

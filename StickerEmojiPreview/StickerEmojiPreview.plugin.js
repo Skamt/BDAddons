@@ -1,11 +1,44 @@
 /**
  * @name StickerEmojiPreview
  * @description Adds a zoomed preview to those tiny Stickers and Emojis
- * @version 1.3.1
+ * @version 1.3.2
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/StickerEmojiPreview
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/StickerEmojiPreview/StickerEmojiPreview.plugin.js
  */
+
+// config:@Config
+var Config_default = {
+	"info": {
+		"name": "StickerEmojiPreview",
+		"version": "1.3.2",
+		"description": "Adds a zoomed preview to those tiny Stickers and Emojis",
+		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/StickerEmojiPreview/StickerEmojiPreview.plugin.js",
+		"github": "https://github.com/Skamt/BDAddons/tree/main/StickerEmojiPreview",
+		"authors": [{
+			"name": "Skamt"
+		}]
+	},
+	"settings": {
+		"previewState": false,
+		"previewDefaultState": false
+	}
+};
+
+// common/Api.js
+var Api = new BdApi(Config_default.info.name);
+var DOM = /* @__PURE__ */ (() => Api.DOM)();
+var Data = /* @__PURE__ */ (() => Api.Data)();
+var React = /* @__PURE__ */ (() => Api.React)();
+var Patcher = /* @__PURE__ */ (() => Api.Patcher)();
+var Logger = /* @__PURE__ */ (() => Api.Logger)();
+var Webpack = /* @__PURE__ */ (() => Api.Webpack)();
+
+// common/Utils/Logger.js
+Logger.patchError = (patchId) => {
+	console.error(`%c[${Config_default.info.name}] %cCould not find module for %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
+};
+var Logger_default = Logger;
 
 // common/Utils/EventEmitter.js
 var EventEmitter_default = class {
@@ -43,7 +76,7 @@ var EventEmitter_default = class {
 			try {
 				listener.apply(null, payload);
 			} catch (err) {
-				console.error(`Could not run listener for ${event}`, err);
+				Logger_default.error(`Could not run listener for ${event}`, err);
 			}
 		}
 	}
@@ -62,33 +95,6 @@ var Plugin_default = new class extends EventEmitter_default {
 		this.emit(Events.STOP);
 	}
 }();
-
-// config:@Config
-var Config_default = {
-	"info": {
-		"name": "StickerEmojiPreview",
-		"version": "1.3.1",
-		"description": "Adds a zoomed preview to those tiny Stickers and Emojis",
-		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/StickerEmojiPreview/StickerEmojiPreview.plugin.js",
-		"github": "https://github.com/Skamt/BDAddons/tree/main/StickerEmojiPreview",
-		"authors": [{
-			"name": "Skamt"
-		}]
-	},
-	"settings": {
-		"previewState": false,
-		"previewDefaultState": false
-	}
-};
-
-// common/Api.js
-var Api = new BdApi(Config_default.info.name);
-var DOM = /* @__PURE__ */ (() => Api.DOM)();
-var Data = /* @__PURE__ */ (() => Api.Data)();
-var React = /* @__PURE__ */ (() => Api.React)();
-var Patcher = /* @__PURE__ */ (() => Api.Patcher)();
-var Logger = /* @__PURE__ */ (() => Api.Logger)();
-var Webpack = /* @__PURE__ */ (() => Api.Webpack)();
 
 // common/Utils/StylesLoader.js
 var styleLoader = {
@@ -127,11 +133,9 @@ StylesLoader_default.push(`.stickersPreview {
 }
 `);
 
-// common/Utils/Logger.js
-Logger.patchError = (patchId) => {
-	console.error(`%c[${Config_default.info.name}] %cCould not find module for %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
-};
-var Logger_default = Logger;
+// common/React.jsx
+var useRef = /* @__PURE__ */ (() => React.useRef)();
+var React_default = /* @__PURE__ */ (() => React)();
 
 // common/Webpack.js
 var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
@@ -150,10 +154,6 @@ function getModuleAndKey(filter, options) {
 
 // MODULES-AUTO-LOADER:@Patch/CloseExpressionPicker
 var CloseExpressionPicker_default = getModuleAndKey(Filters.byStrings("activeView:null,activeViewType:null"), { searchExports: true }) || {};
-
-// common/React.js
-var useRef = /* @__PURE__ */ (() => React.useRef)();
-var React_default = /* @__PURE__ */ (() => React)();
 
 // common/DiscordModules/zustand.js
 var { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
@@ -261,7 +261,7 @@ var PreviewComponent_default = ({ target, previewComponent }) => {
 };
 
 // common/Components/ErrorBoundary/index.jsx
-var ErrorBoundary = class extends React.Component {
+var ErrorBoundary = class extends React_default.Component {
 	state = { hasError: false, error: null, info: null };
 	componentDidCatch(error, info) {
 		this.setState({ error, info, hasError: true });
@@ -271,10 +271,10 @@ var ErrorBoundary = class extends React.Component {
 `, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
 	}
 	renderErrorBoundary() {
-		return /* @__PURE__ */ React.createElement("div", { style: { background: "#292c2c", padding: "20px", borderRadius: "10px" } }, /* @__PURE__ */ React.createElement("b", { style: { color: "#e0e1e5" } }, "An error has occured while rendering ", /* @__PURE__ */ React.createElement("span", { style: { color: "orange" } }, this.props.id)));
+		return /* @__PURE__ */ React_default.createElement("div", { style: { background: "#292c2c", padding: "20px", borderRadius: "10px" } }, /* @__PURE__ */ React_default.createElement("b", { style: { color: "#e0e1e5" } }, "An error has occured while rendering ", /* @__PURE__ */ React_default.createElement("span", { style: { color: "orange" } }, this.props.id)));
 	}
 	renderFallback() {
-		if (React.isValidElement(this.props.fallback)) {
+		if (React_default.isValidElement(this.props.fallback)) {
 			if (this.props.passMetaProps)
 				this.props.fallback.props = {
 					id: this.props.id,
@@ -283,7 +283,7 @@ var ErrorBoundary = class extends React.Component {
 				};
 			return this.props.fallback;
 		}
-		return /* @__PURE__ */ React.createElement(
+		return /* @__PURE__ */ React_default.createElement(
 			this.props.fallback, {
 				id: this.props.id,
 				plugin: Config_default?.info?.name || "Unknown Plugin"
@@ -340,7 +340,7 @@ Plugin_default.on(Events.START, () => {
 var FormSwitch_default = getModule(Filters.byStrings("note", "tooltipNote"), { searchExports: true });
 
 // common/Components/Switch/index.jsx
-var Switch_default = FormSwitch_default || function SwitchComponentFallback(props) {
+var Switch_default = getModule(Filters.byStrings('"data-toggleable-component":"switch"', 'layout:"horizontal"'), { searchExports: true }) || function SwitchComponentFallback(props) {
 	return /* @__PURE__ */ React.createElement("div", { style: { color: "#fff" } }, props.children, /* @__PURE__ */ React.createElement(
 		"input", {
 			type: "checkbox",
@@ -351,20 +351,19 @@ var Switch_default = FormSwitch_default || function SwitchComponentFallback(prop
 };
 
 // common/Components/SettingSwtich/index.jsx
-function SettingSwtich({ settingKey, note, onChange = nop, hideBorder = false, description, ...rest }) {
+function SettingSwtich({ settingKey, note, onChange = nop, description, ...rest }) {
 	const [val, set] = Settings_default.useSetting(settingKey);
 	return /* @__PURE__ */ React.createElement(
 		Switch_default, {
 			...rest,
-			value: val,
-			note,
-			hideBorder,
+			checked: val,
+			label: description || settingKey,
+			description: note,
 			onChange: (e) => {
 				set(e);
 				onChange(e);
 			}
-		},
-		description || settingKey
+		}
 	);
 }
 

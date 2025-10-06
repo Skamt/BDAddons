@@ -1,7 +1,7 @@
 /**
  * @name LazyLoadChannels
  * @description Lets you choose whether to load a channel
- * @version 1.2.14
+ * @version 1.2.15
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "LazyLoadChannels",
-		"version": "1.2.14",
+		"version": "1.2.15",
 		"description": "Lets you choose whether to load a channel",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels",
@@ -43,48 +43,42 @@ const getModule = Webpack.getModule;
 const Filters = Webpack.Filters;
 const getMangled = Webpack.getMangled;
 
-function getModuleAndKey(filter, options) {
-	let module;
-	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
-	module = module?.exports;
-	if (!module) return {};
-	const key = Object.keys(module).find(k => module[k] === target);
-	if (!key) return {};
-	return { module, key };
-}
-
-// common\DiscordModules\Modules.js
+// common\DiscordModules\zustand.js
 const { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
 	_: Filters.byStrings("subscribe"),
 	zustand: () => true
 });
+const subscribeWithSelector = getModule(Filters.byStrings("equalityFn", "fireImmediately"), { searchExports: true });
+const zustand$1 = zustand;
 
 // common\Utils\Settings.js
 const SettingsStoreSelectors = {};
 const persistMiddleware = config => (set, get, api) => config(args => (set(args), Data.save("settings", get().getRawState())), get, api);
 const SettingsStore = Object.assign(
-	zustand(
-		persistMiddleware((set, get) => {
-			const settingsObj = Object.create(null);
-			for (const [key, value] of Object.entries({
-					...config.settings,
-					...Data.load("settings")
-				})) {
-				settingsObj[key] = value;
-				settingsObj[`set${key}`] = newValue => set({
-					[key]: newValue });
-				SettingsStoreSelectors[key] = state => state[key];
-			}
-			settingsObj.getRawState = () => {
-				return Object.entries(get())
-					.filter(([, val]) => typeof val !== "function")
-					.reduce((acc, [key, val]) => {
-						acc[key] = val;
-						return acc;
-					}, {});
-			};
-			return settingsObj;
-		})
+	zustand$1(
+		persistMiddleware(
+			subscribeWithSelector((set, get) => {
+				const settingsObj = Object.create(null);
+				for (const [key, value] of Object.entries({
+						...config.settings,
+						...Data.load("settings")
+					})) {
+					settingsObj[key] = value;
+					settingsObj[`set${key}`] = newValue => set({
+						[key]: newValue });
+					SettingsStoreSelectors[key] = state => state[key];
+				}
+				settingsObj.getRawState = () => {
+					return Object.entries(get())
+						.filter(([, val]) => typeof val !== "function")
+						.reduce((acc, [key, val]) => {
+							acc[key] = val;
+							return acc;
+						}, {});
+				};
+				return settingsObj;
+			})
+		)
 	), {
 		useSetting: function(key) {
 			return this(state => [state[key], state[`set${key}`]]);
@@ -93,7 +87,6 @@ const SettingsStore = Object.assign(
 	}
 );
 Object.defineProperty(SettingsStore, "state", {
-	writeable: false,
 	configurable: false,
 	get() {
 		return this.getState();
@@ -182,11 +175,8 @@ function reRender(selector) {
 }
 const nop = () => {};
 
-// @Modules\FormSwitch
-const FormSwitch = getModule(Filters.byStrings("note", "tooltipNote"), { searchExports: true });
-
 // common\Components\Switch\index.jsx
-const Switch = FormSwitch ||
+const Switch = getModule(Filters.byStrings('"data-toggleable-component":"switch"', 'layout:"horizontal"'), { searchExports: true }) ||
 	function SwitchComponentFallback(props) {
 		return (
 			React.createElement('div', { style: { color: "#fff" }, }, props.children, React.createElement('input', {
@@ -198,19 +188,19 @@ const Switch = FormSwitch ||
 	};
 
 // common\Components\SettingSwtich\index.jsx
-function SettingSwtich({ settingKey, note, onChange = nop, hideBorder = false, description, ...rest }) {
+function SettingSwtich({ settingKey, note, onChange = nop, description, ...rest }) {
 	const [val, set] = Settings.useSetting(settingKey);
 	return (
 		React.createElement(Switch, {
 			...rest,
-			value: val,
-			note: note,
-			hideBorder: hideBorder,
+			checked: val,
+			label: description || settingKey,
+			description: note,
 			onChange: e => {
 				set(e);
 				onChange(e);
 			},
-		}, description || settingKey)
+		})
 	);
 }
 
@@ -229,14 +219,14 @@ const SettingComponent = () => {
 	].map(SettingSwtich);
 };
 
-// @Patch\ChannelComponent
-const ChannelComponent = getModuleAndKey(Filters.byStrings("hasActiveThreads", "channelTypeOverride"), { searchExports: true }) || {};
+// common\DiscordModules\Modules.js
+const ChannelComponentFilter = Filters.byStrings("hasActiveThreads", "favoritesSuggestion");
+const ChannelComponent = getModule(a => a.render && ChannelComponentFilter(a.render), { searchExports: true });
 
 // src\LazyLoadChannels\patches\patchChannel.js
 const patchChannel = () => {
-	const { module, key } = ChannelComponent;
-	if (!module || !key) return Logger.patchError("Channel");
-	Patcher.after(module, key, (_, [{ channel }], returnValue) => {
+	if (!ChannelComponent) return Logger.patchError("Channel");
+	Patcher.after(ChannelComponent, "render", (_, [{ channel }], returnValue) => {
 		if (!Settings.state.autoloadedChannelIndicator) return;
 		if (ChannelsStateManager.getChannelstate(channel.guild_id, channel.id)) returnValue.props.children.props.children[1].props.className += " autoload";
 	});
@@ -430,11 +420,12 @@ const LazyLoaderComponent = ({ channel, loadChannel, messages }) => {
 			look: Button?.Looks?.OUTLINED,
 			size: Button?.Sizes?.LARGE,
 		}, "Load Messages")), React.createElement(Switch, {
+			label: "Auto load",
 			className: `${checked} switch`,
 			hideBorder: "true",
 			value: checked,
 			onChange: setChecked,
-		}, "Auto load")), !channelStats.messages || (
+		})), !channelStats.messages || (
 			React.createElement('div', { className: `stats ${blink}`, }, Object.entries(channelStats).map(([label, stat], index) => (
 				React.createElement('div', { key: `${label}-${index}`, }, label, ": ", stat)
 			)))
@@ -737,6 +728,7 @@ const css = `#lazyLoader {
 #lazyLoader > .controls > .buttons-container {
 	display: flex;
 	gap: 10px;
+	margin-bottom:15px;
 }
 
 #lazyLoader > .controls > .switch {
