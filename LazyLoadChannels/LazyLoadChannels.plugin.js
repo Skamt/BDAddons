@@ -423,7 +423,7 @@ const LazyLoaderComponent = ({ channel, loadChannel, messages }) => {
 			label: "Auto load",
 			className: `${checked} switch`,
 			hideBorder: "true",
-			value: checked,
+			checked: checked,
 			onChange: setChecked,
 		})), !channelStats.messages || (
 			React.createElement('div', { className: `stats ${blink}`, }, Object.entries(channelStats).map(([label, stat], index) => (
