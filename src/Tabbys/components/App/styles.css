@@ -87,11 +87,16 @@ div:has(> .tabbys-app-container):not(#a) {
 	color: var(--icon-secondary);
 }
 
-.tabbys-app-privacy-mode .card-icon{
-	opacity:.1;
-	filter:blur(5px);
+.tabbys-app-privacyMode .card-icon,
+.tabbys-app-privacyMode .card-title{
+	position:relative;
 }
 
-.tabbys-app-privacy-mode .card-title{
+.tabbys-app-privacyMode .card-icon:after,
+.tabbys-app-privacyMode .card-title:after{
+	content:"";
+	inset:0;
+	position:absolute;
 	background:currentColor;
+	pointer-events
 }
