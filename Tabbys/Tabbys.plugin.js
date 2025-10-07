@@ -352,6 +352,56 @@ Plugin_default.on(Events.START, () => {
 	});
 });
 
+// common/Utils/index.js
+function clsx(prefix) {
+	return (...args) => args.filter(Boolean).map((a) => `${prefix}-${a}`).join(" ");
+}
+
+function getPathName(url) {
+	try {
+		return new URL(url).pathname;
+	} catch {}
+}
+
+function debounce(func, wait = 166) {
+	let timeout;
+
+	function debounced(...args) {
+		const later = () => {
+			func.apply(this, args);
+		};
+		clearTimeout(timeout);
+		timeout = setTimeout(later, wait);
+	}
+	debounced.clear = () => {
+		clearTimeout(timeout);
+	};
+	return debounced;
+}
+
+function shallow(objA, objB) {
+	if (Object.is(objA, objB)) return true;
+	if (typeof objA !== "object" || objA === null || typeof objB !== "object" || objB === null) return false;
+	const keysA = Object.keys(objA);
+	if (keysA.length !== Object.keys(objB).length) return false;
+	for (let i = 0; i < keysA.length; i++)
+		if (!Object.prototype.hasOwnProperty.call(objB, keysA[i]) || !Object.is(objA[keysA[i]], objB[keysA[i]])) return false;
+	return true;
+}
+
+function getNestedProp(obj, path2) {
+	return path2.split(".").reduce((ob, prop) => ob?.[prop], obj);
+}
+
+function reRender(selector) {
+	const target = document.querySelector(selector)?.parentElement;
+	if (!target) return;
+	const instance = getOwnerInstance(target);
+	const unpatch = Patcher.instead(instance, "render", () => unpatch());
+	instance.forceUpdate(() => instance.forceUpdate());
+}
+var nop = () => {};
+
 // common/DiscordModules/zustand.js
 var { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
 	_: Filters.byStrings("subscribe"),
@@ -359,47 +409,6 @@ var { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector"
 });
 var subscribeWithSelector = getModule(Filters.byStrings("equalityFn", "fireImmediately"), { searchExports: true });
 var zustand_default = zustand;
-
-// common/Utils/Settings.js
-var SettingsStoreSelectors = {};
-var persistMiddleware = (config) => (set2, get, api) => config((args) => (set2(args), Data.save("settings", get().getRawState())), get, api);
-var SettingsStore = Object.assign(
-	zustand_default(
-		persistMiddleware(
-			subscribeWithSelector((set2, get) => {
-				const settingsObj = /* @__PURE__ */ Object.create(null);
-				for (const [key, value] of Object.entries({
-						...Config_default.settings,
-						...Data.load("settings")
-					})) {
-					settingsObj[key] = value;
-					settingsObj[`set${key}`] = (newValue) => set2({
-						[key]: newValue });
-					SettingsStoreSelectors[key] = (state) => state[key];
-				}
-				settingsObj.getRawState = () => {
-					return Object.entries(get()).filter(([, val]) => typeof val !== "function").reduce((acc, [key, val]) => {
-						acc[key] = val;
-						return acc;
-					}, {});
-				};
-				return settingsObj;
-			})
-		)
-	), {
-		useSetting: function(key) {
-			return this((state) => [state[key], state[`set${key}`]]);
-		},
-		selectors: SettingsStoreSelectors
-	}
-);
-Object.defineProperty(SettingsStore, "state", {
-	configurable: false,
-	get() {
-		return this.getState();
-	}
-});
-var Settings_default = SettingsStore;
 
 // common/Utils/Array.js
 function set(array, index, item) {
@@ -478,12 +487,16 @@ var pathTypes = {
 	QUESTS: "QUESTS",
 	APPS: "APPS",
 	SERVERS: "SERVERS",
+	VERIFICATION: "VERIFICATION",
 	SHOP: "SHOP",
 	NITRO: "NITRO",
 	HOME: "HOME",
 	CHANNEL: "CHANNEL",
 	DM: "DM"
 };
+
+// MODULES-AUTO-LOADER:@Stores/UserGuildJoinRequestStore
+var UserGuildJoinRequestStore_default = getStore("UserGuildJoinRequestStore");
 
 // common/DiscordModules/Enums.js
 var GuildFeaturesEnum = getModule(Filters.byKeys("CLYDE_ENABLED"), { searchExports: true }) || {
@@ -539,11 +552,20 @@ var types = {
 	"applications": { title: "Applications", type: pathTypes.APPS },
 	"quests": { title: "Quests", type: pathTypes.QUESTS },
 	"home": { title: "Home", type: pathTypes.HOME },
-	"unknown": { type: null }
+	"unknown": { type: null, title: "Unknown" }
 };
 var channelRegex = /\/channels\/(@me|@favorites|\d+)\/(\d+)\/?(?:threads\/(\d+))?/;
 
 function parsePath(path2) {
+	if (path2.startsWith("/member-verification")) {
+		const id = path2.split("/").pop();
+		const guild = UserGuildJoinRequestStore_default.getJoinRequestGuild(id);
+		if (!guild) return types.unknown;
+		return {
+			title: guild.name,
+			type: null
+		};
+	}
 	if (path2 === "/shop") return types.shop;
 	if (path2 === "/store") return types.store;
 	if (path2 === "/channels/@me") return types.home;
@@ -559,7 +581,7 @@ function parsePath(path2) {
 	const channel = ChannelStore_default.getChannel(threadId || channelId);
 	if (!channel) return types.unknown;
 	if (channel.isDM()) {
-		const user = UserStore_default.getUser(channel.recipients[0]);;
+		const user = UserStore_default.getUser(channel.recipients[0]);
 		if (!user) return types.unknown;
 		return {
 			type: pathTypes.DM,
@@ -803,6 +825,7 @@ function openBookmark(bookmarkId, folderId) {
 function setTabFromBookmark(tabId, bookmarkId, folderId) {
 	const { noName, id, ...bookmark } = getBookmark(bookmarkId, folderId) || {};
 	if (bookmark) Store_default.updateTab(tabId, bookmark);
+	Store_default.setSelectedId(tabId);
 }
 
 function addFolder(name) {
@@ -1050,52 +1073,6 @@ var bookmarks_default = {
 	}
 };
 
-// common/Utils/index.js
-function clsx(prefix) {
-	return (...args) => args.filter(Boolean).map((a) => `${prefix}-${a}`).join(" ");
-}
-
-function getPathName(url) {
-	try {
-		return new URL(url).pathname;
-	} catch {}
-}
-
-function debounce(func, wait = 166) {
-	let timeout;
-
-	function debounced(...args) {
-		const later = () => {
-			func.apply(this, args);
-		};
-		clearTimeout(timeout);
-		timeout = setTimeout(later, wait);
-	}
-	debounced.clear = () => {
-		clearTimeout(timeout);
-	};
-	return debounced;
-}
-
-function shallow(objA, objB) {
-	if (Object.is(objA, objB)) return true;
-	if (typeof objA !== "object" || objA === null || typeof objB !== "object" || objB === null) return false;
-	const keysA = Object.keys(objA);
-	if (keysA.length !== Object.keys(objB).length) return false;
-	for (let i = 0; i < keysA.length; i++)
-		if (!Object.prototype.hasOwnProperty.call(objB, keysA[i]) || !Object.is(objA[keysA[i]], objB[keysA[i]])) return false;
-	return true;
-}
-
-function reRender(selector) {
-	const target = document.querySelector(selector)?.parentElement;
-	if (!target) return;
-	const instance = getOwnerInstance(target);
-	const unpatch = Patcher.instead(instance, "render", () => unpatch());
-	instance.forceUpdate(() => instance.forceUpdate());
-}
-var nop = () => {};
-
 // src/Tabbys/Store/index.js
 var initialState = {
 	...tabs_default.state,
@@ -1155,6 +1132,64 @@ Plugin_default.on(Events.STOP, () => {
 	Dispatcher.unsubscribe("CONNECTION_OPEN", hydrateStore);
 });
 var Store_default = Store;
+
+// src/Tabbys/patches/patchChannelClick.js
+var channelFilter = Filters.byStrings("href", "children", "onClick", "onKeyPress", "focusProps");
+var channelComponent = getModule((a) => a.render && channelFilter(a.render), { searchExports: true });
+Plugin_default.on(Events.START, () => {
+	if (!channelComponent) return Logger_default.patchError("channelComponent");
+	Patcher.after(channelComponent, "render", (_, [props], ret) => {
+		const origClick = getNestedProp(ret, "props.children.props.onClick");
+		const path2 = props.href;
+		if (!path2 || !origClick) return ret;
+		ret.props.children.props.onClick = (e2) => {
+			e2.preventDefault();
+			if (e2.ctrlKey) Store_default.newTab(path2);
+			else origClick?.(e2);
+		};
+	});
+});
+
+// common/Utils/Settings.js
+var SettingsStoreSelectors = {};
+var persistMiddleware = (config) => (set2, get, api) => config((args) => (set2(args), Data.save("settings", get().getRawState())), get, api);
+var SettingsStore = Object.assign(
+	zustand_default(
+		persistMiddleware(
+			subscribeWithSelector((set2, get) => {
+				const settingsObj = /* @__PURE__ */ Object.create(null);
+				for (const [key, value] of Object.entries({
+						...Config_default.settings,
+						...Data.load("settings")
+					})) {
+					settingsObj[key] = value;
+					settingsObj[`set${key}`] = (newValue) => set2({
+						[key]: newValue });
+					SettingsStoreSelectors[key] = (state) => state[key];
+				}
+				settingsObj.getRawState = () => {
+					return Object.entries(get()).filter(([, val]) => typeof val !== "function").reduce((acc, [key, val]) => {
+						acc[key] = val;
+						return acc;
+					}, {});
+				};
+				return settingsObj;
+			})
+		)
+	), {
+		useSetting: function(key) {
+			return this((state) => [state[key], state[`set${key}`]]);
+		},
+		selectors: SettingsStoreSelectors
+	}
+);
+Object.defineProperty(SettingsStore, "state", {
+	configurable: false,
+	get() {
+		return this.getState();
+	}
+});
+var Settings_default = SettingsStore;
 
 // common/Components/Icon/index.jsx
 function svg(svgProps, ...paths) {
@@ -1321,6 +1356,43 @@ Plugin_default.on(Events.START, () => {
 	});
 });
 
+// src/Tabbys/patches/patchDMClick.js
+var DMChannelFilter = Filters.byStrings("navigate", "location", "href", "createHref");
+var DMChannel = getModule((a) => a.render && DMChannelFilter(a.render), { searchExports: true });
+Plugin_default.on(Events.START, () => {
+	if (!DMChannel) return Logger_default.patchError("DMChannel");
+	Patcher.before(DMChannel, "render", (_, [props]) => {
+		const path2 = props.to;
+		if (!path2) return;
+		props.onClick = (e2) => {
+			if (e2.ctrlKey) {
+				e2.preventDefault();
+				Store_default.newTab(path2);
+			}
+		};
+	});
+});
+
+// MODULES-AUTO-LOADER:@Stores/SelectedChannelStore
+var SelectedChannelStore_default = getStore("SelectedChannelStore");
+
+// src/Tabbys/patches/patchGuildClick.js
+var B = s(325257).exports.Z;
+Plugin_default.on(Events.START, () => {
+	if (!B) return Logger_default.patchError("GuildComponent");
+	Patcher.after(B, "type", (_, [{ guild }], ret) => {
+		const targetProps = getNestedProp(ret, "props.children.1.props.children.props.children.props.children.props");
+		if (!targetProps) return ret;
+		const selectedChannelId = SelectedChannelStore_default.getChannelId(guild.id);
+		const origClick = targetProps.onClick;
+		targetProps.onClick = (e2) => {
+			e2.preventDefault();
+			if (e2.ctrlKey) Store_default.newTab(`/channels/${guild.id}/${selectedChannelId}`);
+			else origClick?.(e2);
+		};
+	});
+});
+
 // common/Components/ErrorBoundary/index.jsx
 var ErrorBoundary = class extends React_default.Component {
 	state = { hasError: false, error: null, info: null };
@@ -1447,13 +1519,18 @@ StylesLoader_default.push(`div:has(> .tabbys-app-container):not(#a) {
 	color: var(--icon-secondary);
 }
 
-.tabbys-app-privacy-mode .card-icon{
-	opacity:.1;
-	filter:blur(5px);
+.tabbys-app-privacyMode .card-icon,
+.tabbys-app-privacyMode .card-title{
+	position:relative;
 }
 
-.tabbys-app-privacy-mode .card-title{
+.tabbys-app-privacyMode .card-icon:after,
+.tabbys-app-privacyMode .card-title:after{
+	content:"";
+	inset:0;
+	position:absolute;
 	background:currentColor;
+	pointer-events
 }`);
 
 // common/Utils/css.js
@@ -1725,12 +1802,9 @@ StylesLoader_default.push(`.tab-container {
 	flex: 0 1 auto;
 }
 
-.tab-title {
-	
-}
-
 .tab-canDrop {
-	background: #ff0 !important;
+	background: dodgerblue !important;
+	color: white !important;
 }
 
 .tab-close-button {
@@ -1762,7 +1836,7 @@ StylesLoader_default.push(`.dnd-droppable.dnd-dragInProgress {
 }
 
 .dnd-droppable.dnd-over {
-	color: orange;
+	color: dodgerblue;
 }
 
 .dnd-droppable {
@@ -1775,22 +1849,23 @@ StylesLoader_default.push(`.dnd-droppable.dnd-dragInProgress {
 }
 
 .dnd-droppable.dnd-before {
-	/* background:#f005; */
-	left: calc(-1px + (var(--droppable-gap) / 2) * -1);
+	/* background:#f005;  */
+	left: calc((var(--droppable-gap) / 2) * -1);
 }
 
 .dnd-droppable.dnd-after {
-	/* background:#ff05; */
-	right: calc(-1px + (var(--droppable-gap) / 2) * -1);
+	/* background:#ff05;  */
+	right: calc((var(--droppable-gap) / 2) * -1);
 }
 
 .dnd-droppable:after {
 	content: "";
 	position: absolute;
-	width: 2px;
+	width: 4px;
 	background: currentColor;
 	height: 100%;
 	z-index: -1;
+	border-radius: var(--radius-round);
 }
 
 .dnd-droppable.dnd-before:after {
@@ -1821,11 +1896,11 @@ StylesLoader_default.push(`.dnd-droppable.dnd-dragInProgress {
 }
 
 .overflow-popout .dnd-droppable.dnd-before {
-	top: calc(-1px + (var(--droppable-gap) / 2) * -1);
+	top: calc((var(--droppable-gap) / 2) * -1);
 }
 
 .overflow-popout .dnd-droppable.dnd-after {
-	bottom: calc(-1px + (var(--droppable-gap) / 2) * -1);
+	bottom: calc((var(--droppable-gap) / 2) * -1);
 }
 
 .overflow-popout .dnd-droppable:after {
