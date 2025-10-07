@@ -4,7 +4,7 @@
 }
 
 .dnd-droppable.dnd-over {
-	color: orange;
+	color: dodgerblue;
 }
 
 .dnd-droppable {
@@ -17,22 +17,23 @@
 }
 
 .dnd-droppable.dnd-before {
-	/* background:#f005; */
-	left: calc(-1px + (var(--droppable-gap) / 2) * -1);
+	/* background:#f005;  */
+	left: calc((var(--droppable-gap) / 2) * -1);
 }
 
 .dnd-droppable.dnd-after {
-	/* background:#ff05; */
-	right: calc(-1px + (var(--droppable-gap) / 2) * -1);
+	/* background:#ff05;  */
+	right: calc((var(--droppable-gap) / 2) * -1);
 }
 
 .dnd-droppable:after {
 	content: "";
 	position: absolute;
-	width: 2px;
+	width: 4px;
 	background: currentColor;
 	height: 100%;
 	z-index: -1;
+	border-radius: var(--radius-round);
 }
 
 .dnd-droppable.dnd-before:after {
@@ -63,11 +64,11 @@
 }
 
 .overflow-popout .dnd-droppable.dnd-before {
-	top: calc(-1px + (var(--droppable-gap) / 2) * -1);
+	top: calc((var(--droppable-gap) / 2) * -1);
 }
 
 .overflow-popout .dnd-droppable.dnd-after {
-	bottom: calc(-1px + (var(--droppable-gap) / 2) * -1);
+	bottom: calc((var(--droppable-gap) / 2) * -1);
 }
 
 .overflow-popout .dnd-droppable:after {

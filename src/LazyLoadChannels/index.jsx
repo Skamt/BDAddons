@@ -1,5 +1,7 @@
 import "./styles";
-import { DOM, React, Patcher } from "@Api";
+import "./patches/*";
+import React from "@React";
+import { DOM, Patcher } from "@Api";
 import Settings from "@Utils/Settings";
 import ControlKeys from "@Utils/ControlKeys";
 import Logger from "@Utils/Logger";
@@ -7,13 +9,23 @@ import ChannelsStateManager from "./ChannelsStateManager";
 import Dispatcher from "@Modules/Dispatcher";
 import ChannelActions from "@Modules/ChannelActions";
 import SettingComponent from "./components/SettingComponent";
-import patchChannel from "./patches/patchChannel";
-import patchThread from "./patches/patchThread";
-import patchCreateChannel from "./patches/patchCreateChannel";
-import patchChannelContent from "./patches/patchChannelContent";
-import patchContextMenu from "./patches/patchContextMenu";
-
 import { EVENTS } from "./Constants";
+import Plugin, { Events } from "@Utils/Plugin";
+
+Plugin.getSettingsPanel = () => <SettingComponent />;
+
+
+Plugin.on(Events.START, () => {
+	this.setupHandlers();
+	EVENTS.forEach(event => Dispatcher.unsubscribe(event, ChannelActions.actions[event]));
+	
+});
+
+Plugin.on(Events.STOP, () => {
+	Patcher.unpatchAll();
+
+	EVENTS.forEach(event => Dispatcher.subscribe(event, ChannelActions.actions[event]));
+});
 
 export default class LazyLoadChannels {
 	constructor() {
@@ -87,35 +99,7 @@ export default class LazyLoadChannels {
 		});
 	}
 
-	start() {
-		try {
-			ControlKeys.init();
-			// eslint-disable-next-line no-undef
-			DOM.addStyle(css);
-			this.setupHandlers();
-			patchChannel();
-			patchThread();
-			patchCreateChannel();
-			patchChannelContent(this);
-			this.unpatchContextMenu = patchContextMenu();
-			EVENTS.forEach(event => Dispatcher.unsubscribe(event, ChannelActions.actions[event]));
-		} catch (e) {
-			Logger.error(e);
-		}
-	}
+	
 
-	stop() {
-		ControlKeys.clean();
-		DOM.removeStyle();
-		Patcher.unpatchAll();
-		this.unpatchContextMenu?.forEach?.(p => p());
-		this.handlers?.forEach?.(h => h());
-		this.unpatchContextMenu = null;
-		this.handlers = null;
-		EVENTS.forEach(event => Dispatcher.subscribe(event, ChannelActions.actions[event]));
-	}
 
-	getSettingsPanel() {
-		return <SettingComponent />;
-	}
 }

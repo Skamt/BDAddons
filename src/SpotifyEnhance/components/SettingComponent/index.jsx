@@ -2,6 +2,9 @@ import config from "@Config";
 import React from "@React";
 import Collapsible from "@Components/Collapsible";
 import Gap from "@Components/Gap";
+
+import FieldSet from "@Components/FieldSet";
+import Divider from "@Components/Divider";
 import SettingSwtich from "@Components/SettingSwtich";
 import { RadioGroup } from "@Discord/Modules";
 import Settings from "@Utils/Settings";
@@ -60,71 +63,58 @@ export default function SettingComponent() {
 	return (
 		<div className={`${config.info.name}-settings`}>
 			<Collapsible title="miscellaneous">
-				{[
-					{
-						settingKey: "player",
-						description: "Enable/Disable player.",
-						hideBorder: true
-					},
-					{
-						settingKey: "enableListenAlong",
-						description: "Enables/Disable listen along without premium.",
-						hideBorder: true
-					},
-					{
-						settingKey: "activity",
-						description: "Modify Spotify activity.",
-						hideBorder: true
-					},
-					{
-						settingKey: "activityIndicator",
-						description: "Show user's Spotify activity in chat.",
-						hideBorder: true
-					},
-					{
-						settingKey: "playerCompactMode",
-						description: "Player compact mode",
-						hideBorder: true
-					},
-					{
-						settingKey: "playerBannerBackground",
-						description: "Use the banner as background for the player.",
-						hideBorder: true
-					},
-					{
-						settingKey: "embedBannerBackground",
-						description: "Use the banner as background for the embed.",
-						hideBorder: true,
-						style: { marginBottom: 0 }
-					}
-				].map(SettingSwtich)}
+				<FieldSet contentGap={8}>
+					{[
+						{
+							settingKey: "player",
+							description: "Enable/Disable player."
+						},
+						{
+							settingKey: "enableListenAlong",
+							description: "Enables/Disable listen along without premium."
+						},
+						{
+							settingKey: "activity",
+							description: "Modify Spotify activity."
+						},
+						{
+							settingKey: "activityIndicator",
+							description: "Show user's Spotify activity in chat."
+						},
+						{
+							settingKey: "playerCompactMode",
+							description: "Player compact mode"
+						},
+						{
+							settingKey: "playerBannerBackground",
+							description: "Use the banner as background for the player."
+						},
+						{
+							settingKey: "embedBannerBackground",
+							description: "Use the banner as background for the embed."
+						}
+					].map(SettingSwtich)}
+				</FieldSet>
 			</Collapsible>
-			<Gap
-				direction={Gap.direction.HORIZONTAL}
-				gap={5}
-			/>
+			<Gap gap={15} />
 			<Collapsible title="Show/Hide Player buttons">
-				{[
-					{ settingKey: PlayerButtonsEnum.SHARE, hideBorder: true },
-					{ settingKey: PlayerButtonsEnum.SHUFFLE, hideBorder: true },
-					{ settingKey: PlayerButtonsEnum.PREVIOUS, hideBorder: true },
-					{ settingKey: PlayerButtonsEnum.PLAY, hideBorder: true },
-					{ settingKey: PlayerButtonsEnum.NEXT, hideBorder: true },
-					{ settingKey: PlayerButtonsEnum.REPEAT, hideBorder: true },
-					{ settingKey: PlayerButtonsEnum.VOLUME, hideBorder: true, style: { marginBottom: 0 } }
-				].map(SettingSwtich)}
+				<FieldSet contentGap={8}>
+					{[
+						{ settingKey: PlayerButtonsEnum.SHARE, hideBorder: true },
+						{ settingKey: PlayerButtonsEnum.SHUFFLE, hideBorder: true },
+						{ settingKey: PlayerButtonsEnum.PREVIOUS, hideBorder: true },
+						{ settingKey: PlayerButtonsEnum.PLAY, hideBorder: true },
+						{ settingKey: PlayerButtonsEnum.NEXT, hideBorder: true },
+						{ settingKey: PlayerButtonsEnum.REPEAT, hideBorder: true },
+						{ settingKey: PlayerButtonsEnum.VOLUME, hideBorder: true, style: { marginBottom: 0 } }
+					].map(SettingSwtich)}
+				</FieldSet>
 			</Collapsible>
-			<Gap
-				direction={Gap.direction.HORIZONTAL}
-				gap={5}
-			/>
+			<Gap gap={15} />
 			<Collapsible title="Spotify embed style">
 				<SpotifyEmbedOptions />
 			</Collapsible>
-			<Gap
-				direction={Gap.direction.HORIZONTAL}
-				gap={5}
-			/>
+			<Gap gap={15} />
 			<Collapsible title="Spotify player placement">
 				<SpotifyPLayerOptions />
 			</Collapsible>

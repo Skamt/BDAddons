@@ -57,6 +57,8 @@ export function openBookmark(bookmarkId, folderId) {
 export function setTabFromBookmark(tabId, bookmarkId, folderId) {
 	const { noName, id, ...bookmark } = getBookmark(bookmarkId, folderId) || {};
 	if (bookmark) Store.updateTab(tabId, bookmark);
+
+	Store.setSelectedId(tabId);
 }
 
 export function addFolder(name) {

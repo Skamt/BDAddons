@@ -1,7 +1,8 @@
-export default {
+import Plugin, { Events } from "@Utils/Plugin";
+const ControlKeys = {
 	init() {
 		this.subs = ["keydown", "keyup"].map(event => {
-			const handler = e => this.e = e;
+			const handler = e => (this.e = e);
 			document.addEventListener(event, handler);
 			return () => document.removeEventListener(event, handler);
 		});
@@ -19,3 +20,13 @@ export default {
 		return this.e?.metaKey;
 	}
 };
+
+Plugin.on(Events.START, () => {
+	ControlKeys.init();
+});
+
+Plugin.on(Events.STOP, () => {
+	ControlKeys.clean();
+});
+
+export default ControlKeys;

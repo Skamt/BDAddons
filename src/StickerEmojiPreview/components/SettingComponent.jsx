@@ -1,3 +1,4 @@
+import React from "@React";
 import SettingSwtich from "@Components/SettingSwtich";
 import Settings from "@Utils/Settings";
 

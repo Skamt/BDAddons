@@ -98,11 +98,11 @@ export default ({ channel, loadChannel, messages }) => {
 					</Button>
 				</div>
 				<Switch
+					label="Auto load"
 					className={`${checked} switch`}
-					hideBorder="true"
 					value={checked}
 					onChange={setChecked}>
-					Auto load
+					
 				</Switch>
 			</div>
 			{!channelStats.messages || (

@@ -2,6 +2,7 @@ import { getUserFromDM } from "@Utils/User";
 import { pathTypes } from "@/consts";
 import ChannelStore from "@Stores/ChannelStore";
 import UserStore from "@Stores/UserStore";
+import UserGuildJoinRequestStore from "@Stores/UserGuildJoinRequestStore";
 import { ChannelTypeEnum } from "@Discord/Enums";
 import { transitionTo, ChannelUtils } from "@Discord/Modules";
 
@@ -12,12 +13,21 @@ const types = {
 	"applications": { title: "Applications", type: pathTypes.APPS },
 	"quests": { title: "Quests", type: pathTypes.QUESTS },
 	"home": { title: "Home", type: pathTypes.HOME },
-	"unknown": { type: null }
+	"unknown": { type: null, title: "Unknown" }
 };
 
 const channelRegex = /\/channels\/(@me|@favorites|\d+)\/(\d+)\/?(?:threads\/(\d+))?/;
 
 export function parsePath(path) {
+	if (path.startsWith("/member-verification")) {
+		const id = path.split("/").pop();
+		const guild = UserGuildJoinRequestStore.getJoinRequestGuild(id);
+		if (!guild) return types.unknown;
+		return {
+			title: guild.name,
+			type: null
+		};
+	}
 	if (path === "/shop") return types.shop;
 	if (path === "/store") return types.store;
 	if (path === "/channels/@me") return types.home;
@@ -36,11 +46,11 @@ export function parsePath(path) {
 	if (!channel) return types.unknown;
 
 	if (channel.isDM()) {
-		const user = UserStore.getUser(channel.recipients[0]);;
+		const user = UserStore.getUser(channel.recipients[0]);
 		if (!user) return types.unknown;
 		return {
 			type: pathTypes.DM,
-			channelId:channel.id,
+			channelId: channel.id,
 			path: constructPath("@me", channelId),
 			username: user.username,
 			avatar: user.avatar,

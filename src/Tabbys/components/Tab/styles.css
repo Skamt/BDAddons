@@ -4,12 +4,9 @@
 	flex: 0 1 auto;
 }
 
-.tab-title {
-	
-}
-
 .tab-canDrop {
-	background: #ff0 !important;
+	background: dodgerblue !important;
+	color: white !important;
 }
 
 .tab-close-button {

@@ -10,6 +10,7 @@ export const pathTypes = {
 	QUESTS: "QUESTS",
 	APPS: "APPS",
 	SERVERS: "SERVERS",
+	VERIFICATION: "VERIFICATION",
 	SHOP: "SHOP",
 	NITRO: "NITRO",
 	HOME: "HOME",
