@@ -53,6 +53,7 @@ var getOwnerInstance = /* @__PURE__ */ (() => Api.ReactUtils.getOwnerInstance.bi
 
 // common/React.jsx
 var useState = /* @__PURE__ */ (() => React.useState)();
+var useContext = /* @__PURE__ */ (() => React.useContext)();
 var useEffect = /* @__PURE__ */ (() => React.useEffect)();
 var useRef = /* @__PURE__ */ (() => React.useRef)();
 var React_default = /* @__PURE__ */ (() => React)();
@@ -2215,7 +2216,8 @@ StylesLoader_default.push(`.transparent-background.transparent-background{
 // common/Utils/Modals/index.jsx
 var ModalActions = /* @__PURE__ */ getMangled("onCloseRequest:null!=", {
 	openModal: /* @__PURE__ */ Filters.byStrings("onCloseRequest:null!="),
-	closeModal: /* @__PURE__ */ Filters.byStrings(".setState", ".getState()[")
+	closeModal: /* @__PURE__ */ Filters.byStrings(".setState", ".getState()["),
+	ModalStore: /* @__PURE__ */ Filters.byKeys("getState")
 });
 var Modals = /* @__PURE__ */ getMangled( /* @__PURE__ */ Filters.bySource("root", "headerIdIsManaged"), {
 	ModalRoot: /* @__PURE__ */ Filters.byStrings("rootWithShadow"),
@@ -2818,184 +2820,44 @@ var ContextMenuStore_default = getStore("ContextMenuStore");
 // MODULES-AUTO-LOADER:@Stores/LayerStore
 var LayerStore_default = getStore("LayerStore");
 
-// common/Components/Popout/index.jsx
-var Popout_default = ({ children, targetElementRef, ...props }) => {
-	const ref = useRef();
-	return /* @__PURE__ */ React_default.createElement(
-		DiscordPopout, {
-			position: "top",
-			align: "center",
-			nudgeAlignIntoViewport: true,
-			animation: DiscordPopout.Animation.FADE,
-			spacing: 4,
-			...props,
-			targetElementRef: targetElementRef || ref
-		},
-		(p) => {
-			if (targetElementRef) return children(p);
-			const child = children(p);
-			return React_default.cloneElement(child, {
-				ref: (e2) => {
-					ref.current = e2;
-					const childRef = child.props.ref;
-					if (!childRef) return e2;
-					if (typeof childRef === "function") childRef(e2);
-					else if (typeof childRef === "object") childRef.current = e2;
-				}
-			});
-		}
-	);
-};
-
-// MODULES-AUTO-LOADER:@Modules/Slider
-var Slider_default = getModule(Filters.byPrototypeKeys("renderMark"), { searchExports: true });
-
-// src/Tabbys/contextmenus/SettingsContextMenu.jsx
-var c7 = classNameFactory(`${Config_default.info.name}-menuitem`);
-var { Separator, CheckboxItem, RadioItem, ControlItem, Group, Item, Menu } = ContextMenu;
-
-function buildToggle({ key, label, color }) {
-	const [state, setState] = useState(Settings_default.state[key]);
-	return /* @__PURE__ */ React_default.createElement(
-		CheckboxItem, {
-			color,
-			label,
-			id: c7(label, key),
-			checked: state,
-			action: () => {
-				setState(!state);
-				Settings_default.state[`set${key}`](!Settings_default.state[key]);
-			}
-		}
-	);
-}
-
-function ContextMenuSlider({ key, label, ...rest }) {
-	const [val, set2] = Settings_default.useSetting(key);
-	const beautify = (e2) => `${Math.round(e2)}px`;
-	return /* @__PURE__ */ React_default.createElement(
-		ControlItem, {
-			id: c7(key),
-			label: `${label}: ${val}px`,
-			control: () => /* @__PURE__ */ React_default.createElement("div", { style: { padding: "0 8px" } }, /* @__PURE__ */ React_default.createElement(
-				Slider_default, {
-					...rest,
-					mini: true,
-					initialValue: val,
-					onValueChange: (e2) => set2(Math.round(e2)),
-					onValueRender: beautify
-				}
-			))
-		}
-	);
-}
-
-function status() {
-	function d(type) {
-		return /* @__PURE__ */ React_default.createElement(React_default.Fragment, null, /* @__PURE__ */ React_default.createElement(
-			Item, {
-				label: `${type}:`,
-				id: c7(type),
-				disabled: true
-			}
-		), [
-			{ key: `show${type}Pings`, label: "Pings" },
-			{ key: `show${type}Unreads`, label: "Unreads" },
-			{ key: `show${type}Typing`, label: "Typings" }
-		].map(buildToggle));
-	}
-	return /* @__PURE__ */ React_default.createElement(React_default.Fragment, null, d("Tab"), /* @__PURE__ */ React_default.createElement(Separator, null), d("Bookmark"), /* @__PURE__ */ React_default.createElement(Separator, null), d("Folder"));
-}
-
-function appearence() {
-	return /* @__PURE__ */ React_default.createElement(
-		Item, {
-			label: "Appearence",
-			id: c7("appearence")
-		},
-		[{
-				key: "size",
-				label: "UI Size",
-				minValue: 24,
-				maxValue: 32
-			},
-			{
-				label: "Tab width",
-				key: "tabWidth",
-				minValue: 50,
-				maxValue: 250
-			},
-			{
-				label: "Tab min width",
-				key: "tabMinWidth",
-				minValue: 50,
-				maxValue: 250
-			}
-		].map(ContextMenuSlider),
-		/* @__PURE__ */
-		React_default.createElement(Separator, null),
-		[
-			{ key: "showTabbar", label: "Show Tabbar" },
-			{ key: "showBookmarkbar", label: "Show Bookmarks" },
-			{ key: "keepTitle", label: "Keep TitleBar" },
-			{ key: "privacyMode", label: "Privacy Mode" },
-			{ key: "showSettingsButton", label: "Show Settings button", color: "danger" }
-		].map(buildToggle)
-	);
-}
-
-function SettingsContextMenu_default() {
-	return /* @__PURE__ */ React_default.createElement(Menu, null, appearence(), /* @__PURE__ */ React_default.createElement(
-		Item, {
-			label: "Status",
-			id: c7("status")
-		},
-		status()
-	));
-}
-
-// src/Tabbys/components/SettingsButton/index.jsx
-var SettingsButtonStore = zustand_default((set2, get) => ({
-	isOpen: false,
-	open: () => set2({ isOpen: true }),
-	close: () => set2({ isOpen: false })
-}));
-
-function SettingsButton() {
-	return /* @__PURE__ */ React_default.createElement(
-		Popout_default, {
-			position: "bottom",
-			align: "center",
-			spacing: 12,
-			onRequestOpen: () => SettingsButtonStore.getState().open(),
-			onRequestClose: () => SettingsButtonStore.getState().close(),
-			renderPopout: (e2) => /* @__PURE__ */ React_default.createElement(SettingsContextMenu_default, { ...e2 })
-		},
-		(e2) => {
-			return /* @__PURE__ */ React_default.createElement(
-				"div", {
-					...e2,
-					className: join(" ", "icon-wrapper", "tabbys-app-settings-button")
-				},
-				/* @__PURE__ */
-				React_default.createElement(Tooltip_default2, { note: "Settings" }, /* @__PURE__ */ React_default.createElement(SettingIcon, null))
-			);
-		}
-	);
-}
-
 // src/Tabbys/components/DragHandle/index.jsx
+var { BasePopout } = getMangled(Filters.bySource("renderLayer", "POPOUT_PREVENT_CLOSE"), {
+	BasePopout: (a) => a.contextType
+});
+
+function usePopoutListener() {
+	const [hasPopout, setHasPopout] = useState(false);
+	const { windowDispatch } = useContext(BasePopout.contextType);
+	useEffect(() => {
+		function show() {
+			setHasPopout(true);
+		}
+
+		function hide() {
+			setHasPopout(false);
+		}
+		windowDispatch.subscribe("POPOUT_SHOW", show);
+		windowDispatch.subscribe("POPOUT_HIDE", hide);
+		return () => {
+			windowDispatch.unsubscribe("POPOUT_SHOW", show);
+			windowDispatch.unsubscribe("POPOUT_HIDE", hide);
+		};
+	}, [windowDispatch]);
+	return hasPopout;
+}
+
 function DragHandle() {
-	const open = SettingsButtonStore((a) => a.isOpen);
+	const hasPopout = usePopoutListener();
+	const hasAny = ModalActions.ModalStore((a) => a.default?.length > 0 || a.popout?.length > 0);
 	const hasLayers = useStateFromStores_default([LayerStore_default], () => LayerStore_default.hasLayers());
 	const isOpen = useStateFromStores_default([ContextMenuStore_default], () => ContextMenuStore_default.isOpen());
 	const style = { "width": "100%", "flex": "1 0 0" };
-	if (!isOpen && !hasLayers && !open) style["-webkit-app-region"] = "drag";
+	if (!hasAny && !isOpen && !hasLayers && !hasPopout) style["-webkit-app-region"] = "drag";
 	return /* @__PURE__ */ React_default.createElement("div", { style });
 }
 
 // src/Tabbys/components/TabBar/index.jsx
-var c8 = clsx("tabbar");
+var c7 = clsx("tabbar");
 
 function TabBar() {
 	const tabs = Store_default(Store_default.selectors.tabs, (a, b) => a.length === b.length && !a.some((_, i) => a[i].id !== b[i].id));
@@ -3006,12 +2868,12 @@ function TabBar() {
 		e2.stopPropagation();
 		Store_default.newTab();
 	};
-	return /* @__PURE__ */ React_default.createElement("div", { className: c8("container") }, /* @__PURE__ */ React_default.createElement(
+	return /* @__PURE__ */ React_default.createElement("div", { className: c7("container") }, /* @__PURE__ */ React_default.createElement(
 		TabsScroller, {
 			shouldScroll: selectedId,
 			scrollTo: selectedIndex,
-			containerClassName: c8("tabs-scroller-container"),
-			contentClassName: c8("tabs-scroller-content"),
+			containerClassName: c7("tabs-scroller-container"),
+			contentClassName: c7("tabs-scroller-content"),
 			items: tabs,
 			renderItem: ({ id }) => /* @__PURE__ */ React_default.createElement(
 				Tab_default3, {
@@ -3022,7 +2884,7 @@ function TabBar() {
 		}
 	), /* @__PURE__ */ React_default.createElement(
 		"div", {
-			className: join2(c8("new-tab"), "icon-wrapper"),
+			className: join2(c7("new-tab"), "icon-wrapper"),
 			onClick: newTabHandler
 		},
 		/* @__PURE__ */
@@ -3168,7 +3030,7 @@ function BookmarkContextMenu_default(id, { path: path2, channelId, userId, guild
 }
 
 // src/Tabbys/components/Bookmark/BaseBookmark.jsx
-var c9 = classNameFactory("bookmark");
+var c8 = classNameFactory("bookmark");
 
 function BaseBookmark(props) {
 	const { id, icon, title, onClose, parentId, channelId, guildId, userId, path: path2, noName, className, children, ...rest } = props;
@@ -3189,11 +3051,11 @@ function BaseBookmark(props) {
 		"div", {
 			...rest,
 			onContextMenu: contextmenuHandler,
-			className: join2(c9("container"), { hasUnread }, "card", className),
+			className: join2(c8("container"), { hasUnread }, "card", className),
 			onClick
 		},
 		icon,
-		!noName && title && /* @__PURE__ */ React_default.createElement("div", { className: join2(c9("title"), "card-title") }, title),
+		!noName && title && /* @__PURE__ */ React_default.createElement("div", { className: join2(c8("title"), "card-title") }, title),
 		children
 	);
 }
@@ -3293,6 +3155,35 @@ function BookmarkSwitch({ id, parentId, dragRef, ...rest }) {
 }
 var Bookmark2 = React_default.memo(makeDraggable(DNDTypes.BOOKMARK)((props) => /* @__PURE__ */ React_default.createElement(BookmarkSwitch, { ...props })));
 var SubBookmark2 = React_default.memo(makeDraggable(DNDTypes.SUB_BOOKMARK)((props) => /* @__PURE__ */ React_default.createElement(BookmarkSwitch, { ...props })));
+
+// common/Components/Popout/index.jsx
+var Popout_default = ({ children, targetElementRef, ...props }) => {
+	const ref = useRef();
+	return /* @__PURE__ */ React_default.createElement(
+		DiscordPopout, {
+			position: "top",
+			align: "center",
+			nudgeAlignIntoViewport: true,
+			animation: DiscordPopout.Animation.FADE,
+			spacing: 4,
+			...props,
+			targetElementRef: targetElementRef || ref
+		},
+		(p) => {
+			if (targetElementRef) return children(p);
+			const child = children(p);
+			return React_default.cloneElement(child, {
+				ref: (e2) => {
+					ref.current = e2;
+					const childRef = child.props.ref;
+					if (!childRef) return e2;
+					if (typeof childRef === "function") childRef(e2);
+					else if (typeof childRef === "object") childRef.current = e2;
+				}
+			});
+		}
+	);
+};
 
 // src/Tabbys/components/Folder/styles.css
 StylesLoader_default.push(`.folder-container {
@@ -3428,7 +3319,7 @@ function FolderContextMenu_default(id, { folderId, parentId }) {
 }
 
 // src/Tabbys/components/Folder/BaseFolder.jsx
-var c10 = classNameFactory("folder");
+var c9 = classNameFactory("folder");
 
 function BaseFolder({ id, channelIds, folderId, parentId, name, className, children, canDrop, isOver, ...rest }) {
 	const contextmenuHandler = (e2) => {
@@ -3441,12 +3332,12 @@ function BaseFolder({ id, channelIds, folderId, parentId, name, className, child
 		"div", {
 			...rest,
 			onContextMenu: contextmenuHandler,
-			className: join2(c10("container", isOver && canDrop && "canDrop"), "box-border", "no-drag", "card", className)
+			className: join2(c9("container", isOver && canDrop && "canDrop"), "box-border", "no-drag", "card", className)
 		},
 		/* @__PURE__ */
-		React_default.createElement("div", { className: join2(c10("icon"), "icon-wrapper", "card-icon") }, /* @__PURE__ */ React_default.createElement(FolderIcon, null)),
+		React_default.createElement("div", { className: join2(c9("icon"), "icon-wrapper", "card-icon") }, /* @__PURE__ */ React_default.createElement(FolderIcon, null)),
 		/* @__PURE__ */
-		React_default.createElement("div", { className: join2(c10("title"), "card-title") }, name),
+		React_default.createElement("div", { className: join2(c9("title"), "card-title") }, name),
 		/* @__PURE__ */
 		React_default.createElement(
 			ChannelStatus, {
@@ -3459,7 +3350,7 @@ function BaseFolder({ id, channelIds, folderId, parentId, name, className, child
 }
 
 // src/Tabbys/components/Folder/SubFolder.jsx
-var c11 = classNameFactory("folder");
+var c10 = classNameFactory("folder");
 
 function SubFolder({ id, folderId, parentId, dragRef, dropRef, onClose, ...props }) {
 	const { name, items } = Store_default((state) => Store_default.getFolder(folderId), shallow) || {};
@@ -3484,7 +3375,7 @@ function SubFolder({ id, folderId, parentId, dragRef, dropRef, onClose, ...props
 				channelIds: items.map((a) => a.channelId).filter(Boolean),
 				folderId,
 				parentId,
-				className: c11("item"),
+				className: c10("item"),
 				onClick: e2.onClick,
 				name
 			},
@@ -3501,11 +3392,11 @@ function SubFolder({ id, folderId, parentId, dragRef, dropRef, onClose, ...props
 var SubFolder_default = makeDraggable(DNDTypes.SUB_FOLDER)(Folder_default(SubFolder));
 
 // src/Tabbys/components/Folder/FolderPopoutMenu.jsx
-var c12 = classNameFactory("folder");
+var c11 = classNameFactory("folder");
 
 function FolderPopoutMenu({ folderId, items, onClose }) {
 	const isEmpty2 = items.length === 0;
-	return /* @__PURE__ */ React_default.createElement("div", { className: "overflow-popout" }, isEmpty2 ? /* @__PURE__ */ React_default.createElement("div", { className: c12("empty") }, "(Empty)") : items.map((item) => {
+	return /* @__PURE__ */ React_default.createElement("div", { className: "overflow-popout" }, isEmpty2 ? /* @__PURE__ */ React_default.createElement("div", { className: c11("empty") }, "(Empty)") : items.map((item) => {
 		return item.folderId ? /* @__PURE__ */ React_default.createElement(
 			SubFolder_default, {
 				onClose: onClose || e.closePopout,
@@ -3532,8 +3423,6 @@ function Folder({ id, folderId, dropRef, dragRef, ...props }) {
 		Popout_default, {
 			position: "bottom",
 			align: "left",
-			onRequestOpen: () => SettingsButtonStore.getState().open(),
-			onRequestClose: () => SettingsButtonStore.getState().close(),
 			spacing: 12,
 			renderPopout: (e2) => /* @__PURE__ */ React_default.createElement(
 				FolderPopoutMenu, {
@@ -3562,7 +3451,7 @@ function Folder({ id, folderId, dropRef, dragRef, ...props }) {
 var Folder_default2 = React_default.memo(makeDraggable(DNDTypes.FOLDER)(Folder_default(Folder)));
 
 // src/Tabbys/components/BookmarkBar/index.jsx
-var c13 = classNameFactory("bookmarkbar");
+var c12 = classNameFactory("bookmarkbar");
 
 function getItem(props, id, folderId) {
 	return folderId ? /* @__PURE__ */ React_default.createElement(
@@ -3625,14 +3514,14 @@ function BookmarkBar() {
 	}, []);
 	const content = bookmarks.map(({ id, folderId }, index) => {
 		const hidden = overflowedItems.find((a) => a === id);
-		return getItem({ className: c13({ hidden }) }, id, folderId);
+		return getItem({ className: c12({ hidden }) }, id, folderId);
 	});
-	return /* @__PURE__ */ React_default.createElement("div", { className: c13("container") }, /* @__PURE__ */ React_default.createElement(
+	return /* @__PURE__ */ React_default.createElement("div", { className: c12("container") }, /* @__PURE__ */ React_default.createElement(
 		"div", {
 			ref: contentRef,
-			className: c13("content")
+			className: c12("content")
 		},
-		content.length > 0 ? content : /* @__PURE__ */ React_default.createElement("div", { className: c13("empty") }, "You have no bookmarks yet")
+		content.length > 0 ? content : /* @__PURE__ */ React_default.createElement("div", { className: c12("empty") }, "You have no bookmarks yet")
 	), !!overflowedItems.length && /* @__PURE__ */ React_default.createElement(OverflowMenu, { items: bookmarks.filter(({ id }) => overflowedItems.find((a) => a === id)) }), /* @__PURE__ */ React_default.createElement(DragHandle, null));
 }
 
@@ -3650,11 +3539,140 @@ function OverflowMenu({ items }) {
 		(e2) => {
 			return /* @__PURE__ */ React_default.createElement(
 				"div", {
-					className: join2(c13("overflow-button"), "icon-wrapper"),
+					className: join2(c12("overflow-button"), "icon-wrapper"),
 					onClick: e2.onClick
 				},
 				/* @__PURE__ */
 				React_default.createElement(ArrowIcon, null)
+			);
+		}
+	);
+}
+
+// MODULES-AUTO-LOADER:@Modules/Slider
+var Slider_default = getModule(Filters.byPrototypeKeys("renderMark"), { searchExports: true });
+
+// src/Tabbys/contextmenus/SettingsContextMenu.jsx
+var c13 = classNameFactory(`${Config_default.info.name}-menuitem`);
+var { Separator, CheckboxItem, RadioItem, ControlItem, Group, Item, Menu } = ContextMenu;
+
+function buildToggle({ key, label, color }) {
+	const [state, setState] = useState(Settings_default.state[key]);
+	return /* @__PURE__ */ React_default.createElement(
+		CheckboxItem, {
+			color,
+			label,
+			id: c13(label, key),
+			checked: state,
+			action: () => {
+				setState(!state);
+				Settings_default.state[`set${key}`](!Settings_default.state[key]);
+			}
+		}
+	);
+}
+
+function ContextMenuSlider({ key, label, ...rest }) {
+	const [val, set2] = Settings_default.useSetting(key);
+	const beautify = (e2) => `${Math.round(e2)}px`;
+	return /* @__PURE__ */ React_default.createElement(
+		ControlItem, {
+			id: c13(key),
+			label: `${label}: ${val}px`,
+			control: () => /* @__PURE__ */ React_default.createElement("div", { style: { padding: "0 8px" } }, /* @__PURE__ */ React_default.createElement(
+				Slider_default, {
+					...rest,
+					mini: true,
+					initialValue: val,
+					onValueChange: (e2) => set2(Math.round(e2)),
+					onValueRender: beautify
+				}
+			))
+		}
+	);
+}
+
+function status() {
+	function d(type) {
+		return /* @__PURE__ */ React_default.createElement(React_default.Fragment, null, /* @__PURE__ */ React_default.createElement(
+			Item, {
+				label: `${type}:`,
+				id: c13(type),
+				disabled: true
+			}
+		), [
+			{ key: `show${type}Pings`, label: "Pings" },
+			{ key: `show${type}Unreads`, label: "Unreads" },
+			{ key: `show${type}Typing`, label: "Typings" }
+		].map(buildToggle));
+	}
+	return /* @__PURE__ */ React_default.createElement(React_default.Fragment, null, d("Tab"), /* @__PURE__ */ React_default.createElement(Separator, null), d("Bookmark"), /* @__PURE__ */ React_default.createElement(Separator, null), d("Folder"));
+}
+
+function appearence() {
+	return /* @__PURE__ */ React_default.createElement(
+		Item, {
+			label: "Appearence",
+			id: c13("appearence")
+		},
+		[{
+				key: "size",
+				label: "UI Size",
+				minValue: 24,
+				maxValue: 32
+			},
+			{
+				label: "Tab width",
+				key: "tabWidth",
+				minValue: 50,
+				maxValue: 250
+			},
+			{
+				label: "Tab min width",
+				key: "tabMinWidth",
+				minValue: 50,
+				maxValue: 250
+			}
+		].map(ContextMenuSlider),
+		/* @__PURE__ */
+		React_default.createElement(Separator, null),
+		[
+			{ key: "showTabbar", label: "Show Tabbar" },
+			{ key: "showBookmarkbar", label: "Show Bookmarks" },
+			{ key: "keepTitle", label: "Keep TitleBar" },
+			{ key: "privacyMode", label: "Privacy Mode" },
+			{ key: "showSettingsButton", label: "Show Settings button", color: "danger" }
+		].map(buildToggle)
+	);
+}
+
+function SettingsContextMenu_default() {
+	return /* @__PURE__ */ React_default.createElement(Menu, null, appearence(), /* @__PURE__ */ React_default.createElement(
+		Item, {
+			label: "Status",
+			id: c13("status")
+		},
+		status()
+	));
+}
+
+// src/Tabbys/components/SettingsButton/index.jsx
+function SettingsButton() {
+	return /* @__PURE__ */ React_default.createElement(
+		Popout_default, {
+			position: "bottom",
+			align: "center",
+			spacing: 12,
+			renderPopout: (e2) => /* @__PURE__ */ React_default.createElement(SettingsContextMenu_default, { ...e2 })
+		},
+		(e2) => {
+			return /* @__PURE__ */ React_default.createElement(
+				"div", {
+					...e2,
+					className: join(" ", "icon-wrapper", "tabbys-app-settings-button")
+				},
+				/* @__PURE__ */
+				React_default.createElement(Tooltip_default2, { note: "Settings" }, /* @__PURE__ */ React_default.createElement(SettingIcon, null))
 			);
 		}
 	);
