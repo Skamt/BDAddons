@@ -389,6 +389,10 @@ function shallow(objA, objB) {
 	return true;
 }
 
+function copy(data) {
+	DiscordNative.clipboard.copy(data);
+}
+
 function getNestedProp(obj, path2) {
 	return path2.split(".").reduce((ob, prop) => ob?.[prop], obj);
 }
@@ -481,6 +485,7 @@ var DNDTypes = {
 	BOOKMARK: "BOOKMARK",
 	SUB_BOOKMARK: "SUB_BOOKMARK",
 	SUB_FOLDER: "SUB_FOLDER",
+	DRAGGABLE_GUILD_CHANNEL: "DRAGGABLE_GUILD_CHANNEL",
 	FOLDER: "FOLDER"
 };
 var pathTypes = {
@@ -544,7 +549,14 @@ var ChannelTypeEnum = getModule(Filters.byKeys("GUILD_TEXT", "DM"), { searchExpo
 	"10000": "UNKNOWN"
 };
 
+// MODULES-AUTO-LOADER:@Stores/SelectedChannelStore
+var SelectedChannelStore_default = getStore("SelectedChannelStore");
+
 // src/Tabbys/utils.js
+function getGuildChannelPath(guildId) {
+	const selectedChannelId = SelectedChannelStore_default.getChannelId(guildId);
+	return `/channels/${guildId}/${selectedChannelId}`;
+}
 var types = {
 	"store": { title: "Nitro", type: pathTypes.NITRO },
 	"shop": { title: "Shop", type: pathTypes.SHOP },
@@ -657,7 +669,7 @@ function createBookmarkFolder(folderId, parentId) {
 }
 
 function createSubBookmark(folderId, path2) {
-	const bookmark = createObjFromPath(path2);
+	const bookmark = createFromPath(path2);
 	return Object.assign({ parentId: folderId }, bookmark);
 }
 
@@ -865,14 +877,22 @@ function removeOtherTabs(id) {
 	if (tab) Store_default.setState({ tabs: [tab], selectedId: tab.id, lastSelectedIdAfterNewTab: null });
 }
 
+function openTabAt(path2, targetId, pos) {
+	Store_default.addTabBy(createFromPath(path2), targetId, sort(pos));
+}
+
 function openBookmarkAt(bookmarkId, targetId, pos, folderId) {
-	const bookmark = getBookmark(bookmarkId, folderId);
-	if (bookmark?.path) Store_default.addTabBy(createFromPath(bookmark.path), targetId, sort(pos));
+	const { path: path2 } = getBookmark(bookmarkId, folderId) || {};
+	if (path2) openTabAt(path2, targetId, pos);
+}
+
+function addBookmarkAt(path2, targetId, pos) {
+	Store_default.addBookmarkBy(createFromPath(path2), targetId, sort(pos));
 }
 
 function bookmarkTabAt(tabId, targetId, pos) {
-	const tab = Store_default.getTab(tabId);
-	if (tab?.path) Store_default.addBookmarkBy(createFromPath(tab.path), targetId, sort(pos));
+	const { path: path2 } = Store_default.getTab(tabId) || {};
+	if (path2) addBookmarkAt(path2, targetId, pos);
 }
 
 function moveSubBookmarkToBookmarksAt(itemId, parentId, targetId, pos) {
@@ -889,9 +909,13 @@ function moveSubFolderToBookmarksAt(subFolderId, itemId, parentId, targetId, pos
 	Store_default.updateFolder(subFolderId, { parentId: null });
 }
 
+function addToFolderAt(path2, folderId, targetId, pos) {
+	return Store_default.addToFolderBy(folderId, createSubBookmark(folderId, path2), targetId, sort(pos));
+}
+
 function addTabToFolderAt(tabId, folderId, targetId, pos) {
-	const tab = Store_default.getTab(tabId);
-	Store_default.addToFolderBy(folderId, createFrom(tab, { parentId: folderId }), targetId, sort(pos));
+	const { path: path2 } = Store_default.getTab(tabId) || {};
+	if (path2) addToFolderAt(path2, folderId, targetId, pos);
 }
 
 function moveBookmarkToFolderAt(itemId, targetFolderId, parentId, targetId, pos) {
@@ -1102,11 +1126,15 @@ Store.subscribe(Store.selectors.selectedId, () => {
 	if (selectedTab?.path === location.pathname) return;
 	navigate(selectedTab);
 });
-Store.subscribe(() => Store.getSelectedTab(), (tab, o) => {
-	if (tab?.path === o?.path) return;
-	if (tab?.path === location.pathname) return;
-	navigate(tab);
-}, shallow);
+Store.subscribe(
+	() => Store.getSelectedTab(),
+	(tab, o) => {
+		if (tab?.path === o?.path) return;
+		if (tab?.path === location.pathname) return;
+		navigate(tab);
+	},
+	shallow
+);
 var onLocationChange = debounce((e2) => {
 	const pathname = getPathName(e2.destination.url);
 	if (!pathname) return;
@@ -1276,6 +1304,7 @@ var FolderIcon = svg({ fill: "none" },
 );
 var ShopIcon = svg(null, "M21 11.42V19a3 3 0 0 1-3 3h-2.75a.25.25 0 0 1-.25-.25V16a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v5.75c0 .14-.11.25-.25.25H6a3 3 0 0 1-3-3v-7.58c0-.18.2-.3.37-.24a4.46 4.46 0 0 0 4.94-1.1c.1-.12.3-.12.4 0a4.49 4.49 0 0 0 6.58 0c.1-.12.3-.12.4 0a4.45 4.45 0 0 0 4.94 1.1c.17-.07.37.06.37.24Z", "M2.63 4.19A3 3 0 0 1 5.53 2H7a1 1 0 0 1 1 1v3.98a3.07 3.07 0 0 1-.3 1.35A2.97 2.97 0 0 1 4.98 10c-2 0-3.44-1.9-2.9-3.83l.55-1.98ZM10 2a1 1 0 0 0-1 1v4a3 3 0 0 0 3 3 3 3 0 0 0 3-2.97V3a1 1 0 0 0-1-1h-4ZM17 2a1 1 0 0 0-1 1v3.98a2.43 2.43 0 0 0 0 .05A2.95 2.95 0 0 0 19.02 10c2 0 3.44-1.9 2.9-3.83l-.55-1.98A3 3 0 0 0 18.47 2H17Z");
 var NitroIcon = svg(null, "M16.23 12c0 1.29-.95 2.25-2.22 2.25A2.18 2.18 0 0 1 11.8 12c0-1.29.95-2.25 2.22-2.25 1.27 0 2.22.96 2.22 2.25ZM23 12c0 5.01-4 9-8.99 9a8.93 8.93 0 0 1-8.75-6.9H3.34l-.9-4.2H5.3c.26-.96.68-1.89 1.21-2.7H1.89L1 3h12.74C19.13 3 23 6.99 23 12Zm-4.26 0c0-2.67-2.1-4.8-4.73-4.8A4.74 4.74 0 0 0 9.28 12c0 2.67 2.1 4.8 4.73 4.8a4.74 4.74 0 0 0 4.73-4.8Z");
+var IdIcon = svg(null, "M15.3 14.48c-.46.45-1.08.67-1.86.67h-1.39V9.2h1.39c.78 0 1.4.22 1.86.67.46.45.68 1.22.68 2.31 0 1.1-.22 1.86-.68 2.31Z", path({ fillRule: "evenodd" }, "M5 2a3 3 0 0 0-3 3v14a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3V5a3 3 0 0 0-3-3H5Zm1 15h2.04V7.34H6V17Zm4-9.66V17h3.44c1.46 0 2.6-.42 3.38-1.25.8-.83 1.2-2.02 1.2-3.58s-.4-2.75-1.2-3.58c-.79-.83-1.92-1.25-3.38-1.25H10Z"));
 
 // src/Tabbys/patches/patchContextMenu.jsx
 function channelPath(...args) {
@@ -1373,9 +1402,6 @@ Plugin_default.on(Events.START, () => {
 	});
 });
 
-// MODULES-AUTO-LOADER:@Stores/SelectedChannelStore
-var SelectedChannelStore_default = getStore("SelectedChannelStore");
-
 // src/Tabbys/patches/patchGuildClick.js
 var B = s(325257).exports.Z;
 Plugin_default.on(Events.START, () => {
@@ -1383,11 +1409,11 @@ Plugin_default.on(Events.START, () => {
 	Patcher.after(B, "type", (_, [{ guild }], ret) => {
 		const targetProps = getNestedProp(ret, "props.children.1.props.children.props.children.props.children.props");
 		if (!targetProps) return ret;
-		const selectedChannelId = SelectedChannelStore_default.getChannelId(guild.id);
 		const origClick = targetProps.onClick;
+		const path2 = getGuildChannelPath(guild.id);
 		targetProps.onClick = (e2) => {
 			e2.preventDefault();
-			if (e2.ctrlKey) Store_default.newTab(`/channels/${guild.id}/${selectedChannelId}`);
+			if (e2.ctrlKey) Store_default.newTab(path2);
 			else origClick?.(e2);
 		};
 	});
@@ -1963,7 +1989,7 @@ function makeDroppable(types2, drop) {
 
 // src/Tabbys/components/DND/Sortables/Tab.jsx
 var Tab = makeDroppable(
-	[DNDTypes.TAB, DNDTypes.BOOKMARK, DNDTypes.SUB_BOOKMARK],
+	[DNDTypes.DRAGGABLE_GUILD_CHANNEL, DNDTypes.TAB, DNDTypes.BOOKMARK, DNDTypes.SUB_BOOKMARK],
 	(me, monitor) => {
 		const dropped = monitor.getItem();
 		if (me.id === dropped.id) return;
@@ -1975,6 +2001,8 @@ var Tab = makeDroppable(
 				return openBookmarkAt(dropped.id, me.id, me.pos);
 			case DNDTypes.SUB_BOOKMARK:
 				return openBookmarkAt(dropped.id, me.id, me.pos, dropped.parentId);
+			case DNDTypes.DRAGGABLE_GUILD_CHANNEL:
+				return openTabAt(`/channels/${dropped.guildId}/${dropped.id}`, me.id, me.pos);
 		}
 	}
 )(DroppableMarkup);
@@ -1995,7 +2023,7 @@ function Tab_default({ id }) {
 
 // src/Tabbys/components/DND/Sortables/Bookmark.jsx
 var Bookmark = makeDroppable(
-	[DNDTypes.BOOKMARK, DNDTypes.TAB, DNDTypes.FOLDER, DNDTypes.SUB_BOOKMARK, DNDTypes.SUB_FOLDER],
+	[DNDTypes.DRAGGABLE_GUILD_CHANNEL, DNDTypes.BOOKMARK, DNDTypes.TAB, DNDTypes.FOLDER, DNDTypes.SUB_BOOKMARK, DNDTypes.SUB_FOLDER],
 	(me, monitor) => {
 		const dropped = monitor.getItem();
 		if (me.id === dropped.id) return;
@@ -2010,6 +2038,8 @@ var Bookmark = makeDroppable(
 				return moveSubBookmarkToBookmarksAt(dropped.id, dropped.parentId, me.id, me.pos);
 			case DNDTypes.SUB_FOLDER:
 				return moveSubFolderToBookmarksAt(dropped.folderId, dropped.id, dropped.parentId, me.id, me.pos);
+			case DNDTypes.DRAGGABLE_GUILD_CHANNEL:
+				return addBookmarkAt(`/channels/${dropped.guildId}/${dropped.id}`, me.id, me.pos);
 		}
 	}
 )(DroppableMarkup);
@@ -2030,7 +2060,7 @@ function Bookmark_default({ id }) {
 
 // src/Tabbys/components/DND/Sortables/SubBookmark.jsx
 var SubBookmark = makeDroppable(
-	[DNDTypes.SUB_BOOKMARK, DNDTypes.SUB_FOLDER, DNDTypes.FOLDER, DNDTypes.TAB, DNDTypes.BOOKMARK],
+	[DNDTypes.SUB_BOOKMARK, DNDTypes.DRAGGABLE_GUILD_CHANNEL, DNDTypes.SUB_FOLDER, DNDTypes.FOLDER, DNDTypes.TAB, DNDTypes.BOOKMARK],
 	(me, monitor) => {
 		const dropped = monitor.getItem();
 		if (me.id === dropped.id) return;
@@ -2054,6 +2084,8 @@ var SubBookmark = makeDroppable(
 			case DNDTypes.FOLDER: {
 				return moveFolderToFolderAt(dropped.folderId, dropped.id, me.parentId, dropped.parentId, me.id, me.pos);
 			}
+			case DNDTypes.DRAGGABLE_GUILD_CHANNEL:
+				return addToFolderAt(`/channels/${dropped.guildId}/${dropped.id}`, me.parentId, me.id, me.pos);
 		}
 	}
 )(DroppableMarkup);
@@ -2075,18 +2107,25 @@ function SubBookmark_default(props) {
 // src/Tabbys/components/DND/Droppables/Tab.js
 var DraggableTab = makeDraggable(DNDTypes.TAB);
 var DroppableTab = makeDroppable(
-	[DNDTypes.BOOKMARK, DNDTypes.SUB_BOOKMARK],
+	[DNDTypes.BOOKMARK, DNDTypes.DRAGGABLE_GUILD_CHANNEL, DNDTypes.SUB_BOOKMARK],
 	(me, monitor) => {
 		if (!monitor.isOver({ shallow: true })) return;
 		const dropped = monitor.getItem();
-		setTabFromBookmark(me.id, dropped.id, dropped.parentId);
+		const itemType = monitor.getItemType();
+		switch (itemType) {
+			case DNDTypes.BOOKMARK:
+			case DNDTypes.SUB_BOOKMARK:
+				return setTabFromBookmark(me.id, dropped.id, dropped.parentId);
+			case DNDTypes.DRAGGABLE_GUILD_CHANNEL:
+				return Store_default.setTabPath(me.id, `/channels/${dropped.guildId}/${dropped.id}`);
+		}
 	}
 );
 var Tab_default2 = (comp) => DraggableTab(DroppableTab(comp));
 
 // src/Tabbys/components/DND/Droppables/Folder.js
 var Folder_default = (comp) => makeDroppable(
-	[DNDTypes.BOOKMARK, DNDTypes.SUB_BOOKMARK, DNDTypes.TAB, DNDTypes.FOLDER, DNDTypes.SUB_FOLDER],
+	[DNDTypes.DRAGGABLE_GUILD_CHANNEL, DNDTypes.BOOKMARK, DNDTypes.SUB_BOOKMARK, DNDTypes.TAB, DNDTypes.FOLDER, DNDTypes.SUB_FOLDER],
 	(me, monitor) => {
 		if (!monitor.isOver({ shallow: true })) return;
 		const dropped = monitor.getItem();
@@ -2104,6 +2143,8 @@ var Folder_default = (comp) => makeDroppable(
 				return moveBookmarkToFolderAt(dropped.id, me.folderId, dropped.parentId);
 			case DNDTypes.SUB_FOLDER:
 				return moveFolderToFolderAt(dropped.folderId, dropped.id, me.folderId, dropped.parentId);
+			case DNDTypes.DRAGGABLE_GUILD_CHANNEL:
+				return addToFolderAt(`/channels/${dropped.guildId}/${dropped.id}`, me.folderId);
 		}
 	}
 )(comp);
@@ -2282,8 +2323,32 @@ function createFolder3() {
 	});
 }
 
+function CopyChannelIdItem(id) {
+	return {
+		action: () => copy(id),
+		label: "Copy Channel ID",
+		icon: IdIcon
+	};
+}
+
+function CopyUserIdItem(id) {
+	return {
+		action: () => copy(id),
+		label: "Copy User ID",
+		icon: IdIcon
+	};
+}
+
+function CopyGuildIdItem(id) {
+	return {
+		action: () => copy(id),
+		label: "Copy Server ID",
+		icon: IdIcon
+	};
+}
+
 // src/Tabbys/contextmenus/TabContextMenu.jsx
-function TabContextMenu_default(id, { channelId, hasUnread }) {
+function TabContextMenu_default(id, { channelId, userId, guildId, hasUnread }) {
 	const canClose = Store_default.getTabsCount() > 1;
 	const folders = Store_default.state.folders.map(({ id: folderId, name }) => {
 		return {
@@ -2292,6 +2357,12 @@ function TabContextMenu_default(id, { channelId, hasUnread }) {
 			icon: BookmarkOutlinedIcon
 		};
 	}).map(wrapMenuItem);
+	const copies = [
+		channelId && CopyChannelIdItem(channelId),
+		guildId && CopyGuildIdItem(guildId),
+		userId && CopyUserIdItem(userId)
+	].filter(Boolean).map(wrapMenuItem);
+	const canCopy = copies.length > 0;
 	const Menu2 = ContextMenu.buildMenu(
 		[
 			MarkAsReadItem(channelId, hasUnread),
@@ -2319,6 +2390,8 @@ function TabContextMenu_default(id, { channelId, hasUnread }) {
 				icon: folders.length > 0 ? nop : BookmarkOutlinedIcon,
 				items: folders
 			},
+			canCopy && { type: "separator" },
+			...copies,
 			canClose && { type: "separator" },
 			canClose && {
 				type: "submenu",
@@ -2359,7 +2432,7 @@ var ReadStateStore_default = getStore("ReadStateStore");
 // src/Tabbys/components/Tab/BaseTab.jsx
 var c5 = classNameFactory("tab");
 
-function BaseTab({ id, icon, title, channelId, children, ...props }) {
+function BaseTab({ id, icon, title, guildId, userId, channelId, children, ...props }) {
 	const { isOver, canDrop, isDragging, dragRef, dropRef } = props;
 	const hasUnread = useStateFromStores_default([ReadStateStore_default], () => ReadStateStore_default.hasUnread(channelId), [channelId]);
 	const [tabMinWidth, tabWidth] = Settings_default((_) => [_.tabMinWidth, _.tabWidth], shallow);
@@ -2374,7 +2447,7 @@ function BaseTab({ id, icon, title, channelId, children, ...props }) {
 		Store_default.removeTab(id);
 	};
 	const contextmenuHandler = (e2) => {
-		ContextMenu.open(e2, TabContextMenu_default(id, { channelId, hasUnread }), {
+		ContextMenu.open(e2, TabContextMenu_default(id, { userId, guildId, channelId, hasUnread }), {
 			position: "bottom",
 			align: "left"
 		});
@@ -2663,6 +2736,7 @@ function ChannelTab({ id, path: path2, guildId, channelId }) {
 		BaseTab_default, {
 			id,
 			channelId,
+			guildId,
 			title: name || channelId,
 			icon: /* @__PURE__ */ React_default.createElement(
 				ChannelIcon, {
@@ -2690,6 +2764,7 @@ function DMTab({ id, userId, avatar, username, path: path2, channelId }) {
 		BaseTab_default, {
 			id,
 			channelId,
+			userId,
 			title: name,
 			icon: /* @__PURE__ */ React_default.createElement(
 				DMIcon, {
@@ -3017,7 +3092,7 @@ function renameBookmark(id, parentId) {
 	});
 }
 
-function BookmarkContextMenu_default(id, { parentId, channelId, hasUnread }) {
+function BookmarkContextMenu_default(id, { channelId, userId, guildId, parentId, hasUnread }) {
 	const folders = Store_default.state.folders.map(({ id: folderId, name }) => {
 		if (folderId === parentId) return;
 		return {
@@ -3033,6 +3108,12 @@ function BookmarkContextMenu_default(id, { parentId, channelId, hasUnread }) {
 		});
 	}
 	const hasFolders = folders.length > 0;
+	const copies = [
+		channelId && CopyChannelIdItem(channelId),
+		guildId && CopyGuildIdItem(guildId),
+		userId && CopyUserIdItem(userId)
+	].filter(Boolean).map(wrapMenuItem);
+	const canCopy = copies.length > 0;
 	const Menu2 = ContextMenu.buildMenu(
 		[
 			MarkAsReadItem(channelId, hasUnread),
@@ -3063,6 +3144,8 @@ function BookmarkContextMenu_default(id, { parentId, channelId, hasUnread }) {
 				label: "Create Folder",
 				icon: PlusIcon
 			},
+			canCopy && { type: "separator" },
+			...copies,
 			{ type: "separator" },
 			{
 				color: "danger",
@@ -3079,7 +3162,7 @@ function BookmarkContextMenu_default(id, { parentId, channelId, hasUnread }) {
 var c9 = classNameFactory("bookmark");
 
 function BaseBookmark(props) {
-	const { id, icon, title, onClose, parentId, channelId, path: path2, noName, className, children, ...rest } = props;
+	const { id, icon, title, onClose, parentId, channelId, guildId, userId, path: path2, noName, className, children, ...rest } = props;
 	const hasUnread = useStateFromStores_default([ReadStateStore_default], () => ReadStateStore_default.hasUnread(channelId), [channelId]);
 	const onClick = (e2) => {
 		e2.stopPropagation();
@@ -3088,7 +3171,7 @@ function BaseBookmark(props) {
 		else openBookmark(id, parentId);
 	};
 	const contextmenuHandler = (e2) => {
-		ContextMenu.open(e2, BookmarkContextMenu_default(id, { parentId, channelId, hasUnread }), {
+		ContextMenu.open(e2, BookmarkContextMenu_default(id, { guildId, userId, parentId, channelId, hasUnread }), {
 			position: "bottom",
 			align: "left"
 		});
@@ -3114,6 +3197,7 @@ function ChannelBookmark({ name, guildId, path: path2, channelId, children, ...r
 		BaseBookmark, {
 			...rest,
 			channelId,
+			guildId,
 			path: path2,
 			title,
 			icon: /* @__PURE__ */ React_default.createElement(
@@ -3144,6 +3228,7 @@ function DMBookmark({ name, userId, avatar, username, channelId, children, ...re
 			...rest,
 			title,
 			channelId,
+			userId,
 			icon: /* @__PURE__ */ React_default.createElement(
 				DMIcon, {
 					userId,
