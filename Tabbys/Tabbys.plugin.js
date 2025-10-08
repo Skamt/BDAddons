@@ -2347,8 +2347,15 @@ function CopyGuildIdItem(id) {
 	};
 }
 
+function CopyPathItem(path2) {
+	return {
+		action: () => copy(path2),
+		label: "Copy Path"
+	};
+}
+
 // src/Tabbys/contextmenus/TabContextMenu.jsx
-function TabContextMenu_default(id, { channelId, userId, guildId, hasUnread }) {
+function TabContextMenu_default(id, { path: path2, channelId, userId, guildId, hasUnread }) {
 	const canClose = Store_default.getTabsCount() > 1;
 	const folders = Store_default.state.folders.map(({ id: folderId, name }) => {
 		return {
@@ -2358,11 +2365,11 @@ function TabContextMenu_default(id, { channelId, userId, guildId, hasUnread }) {
 		};
 	}).map(wrapMenuItem);
 	const copies = [
+		CopyPathItem(path2),
 		channelId && CopyChannelIdItem(channelId),
 		guildId && CopyGuildIdItem(guildId),
 		userId && CopyUserIdItem(userId)
 	].filter(Boolean).map(wrapMenuItem);
-	const canCopy = copies.length > 0;
 	const Menu2 = ContextMenu.buildMenu(
 		[
 			MarkAsReadItem(channelId, hasUnread),
@@ -2390,7 +2397,7 @@ function TabContextMenu_default(id, { channelId, userId, guildId, hasUnread }) {
 				icon: folders.length > 0 ? nop : BookmarkOutlinedIcon,
 				items: folders
 			},
-			canCopy && { type: "separator" },
+			{ type: "separator" },
 			...copies,
 			canClose && { type: "separator" },
 			canClose && {
@@ -2432,7 +2439,7 @@ var ReadStateStore_default = getStore("ReadStateStore");
 // src/Tabbys/components/Tab/BaseTab.jsx
 var c5 = classNameFactory("tab");
 
-function BaseTab({ id, icon, title, guildId, userId, channelId, children, ...props }) {
+function BaseTab({ id, icon, path: path2, title, guildId, userId, channelId, children, ...props }) {
 	const { isOver, canDrop, isDragging, dragRef, dropRef } = props;
 	const hasUnread = useStateFromStores_default([ReadStateStore_default], () => ReadStateStore_default.hasUnread(channelId), [channelId]);
 	const [tabMinWidth, tabWidth] = Settings_default((_) => [_.tabMinWidth, _.tabWidth], shallow);
@@ -2447,7 +2454,7 @@ function BaseTab({ id, icon, title, guildId, userId, channelId, children, ...pro
 		Store_default.removeTab(id);
 	};
 	const contextmenuHandler = (e2) => {
-		ContextMenu.open(e2, TabContextMenu_default(id, { userId, guildId, channelId, hasUnread }), {
+		ContextMenu.open(e2, TabContextMenu_default(id, { userId, path: path2, guildId, channelId, hasUnread }), {
 			position: "bottom",
 			align: "left"
 		});
@@ -2737,6 +2744,7 @@ function ChannelTab({ id, path: path2, guildId, channelId }) {
 			id,
 			channelId,
 			guildId,
+			path: path2,
 			title: name || channelId,
 			icon: /* @__PURE__ */ React_default.createElement(
 				ChannelIcon, {
@@ -2757,7 +2765,7 @@ function ChannelTab({ id, path: path2, guildId, channelId }) {
 }
 
 // src/Tabbys/components/Tab/DMTab.jsx
-function DMTab({ id, userId, avatar, username, path: path2, channelId }) {
+function DMTab({ id, userId, path: path2, avatar, username, channelId }) {
 	const user = useStateFromStores_default([UserStore_default], () => UserStore_default.getUser(userId), [userId]);
 	const name = getUserName(user) || username || userId;
 	return /* @__PURE__ */ React_default.createElement(
@@ -2765,6 +2773,7 @@ function DMTab({ id, userId, avatar, username, path: path2, channelId }) {
 			id,
 			channelId,
 			userId,
+			path: path2,
 			title: name,
 			icon: /* @__PURE__ */ React_default.createElement(
 				DMIcon, {
@@ -3092,7 +3101,7 @@ function renameBookmark(id, parentId) {
 	});
 }
 
-function BookmarkContextMenu_default(id, { channelId, userId, guildId, parentId, hasUnread }) {
+function BookmarkContextMenu_default(id, { path: path2, channelId, userId, guildId, parentId, hasUnread }) {
 	const folders = Store_default.state.folders.map(({ id: folderId, name }) => {
 		if (folderId === parentId) return;
 		return {
@@ -3109,11 +3118,11 @@ function BookmarkContextMenu_default(id, { channelId, userId, guildId, parentId,
 	}
 	const hasFolders = folders.length > 0;
 	const copies = [
+		CopyPathItem(path2),
 		channelId && CopyChannelIdItem(channelId),
 		guildId && CopyGuildIdItem(guildId),
 		userId && CopyUserIdItem(userId)
 	].filter(Boolean).map(wrapMenuItem);
-	const canCopy = copies.length > 0;
 	const Menu2 = ContextMenu.buildMenu(
 		[
 			MarkAsReadItem(channelId, hasUnread),
@@ -3144,7 +3153,7 @@ function BookmarkContextMenu_default(id, { channelId, userId, guildId, parentId,
 				label: "Create Folder",
 				icon: PlusIcon
 			},
-			canCopy && { type: "separator" },
+			{ type: "separator" },
 			...copies,
 			{ type: "separator" },
 			{
@@ -3171,7 +3180,7 @@ function BaseBookmark(props) {
 		else openBookmark(id, parentId);
 	};
 	const contextmenuHandler = (e2) => {
-		ContextMenu.open(e2, BookmarkContextMenu_default(id, { guildId, userId, parentId, channelId, hasUnread }), {
+		ContextMenu.open(e2, BookmarkContextMenu_default(id, { path: path2, guildId, userId, parentId, channelId, hasUnread }), {
 			position: "bottom",
 			align: "left"
 		});
@@ -3190,7 +3199,7 @@ function BaseBookmark(props) {
 }
 
 // src/Tabbys/components/Bookmark/ChannelBookmark.jsx
-function ChannelBookmark({ name, guildId, path: path2, channelId, children, ...rest }) {
+function ChannelBookmark({ name, guildId, channelId, children, ...rest }) {
 	const channel = useStateFromStores_default([ChannelStore_default], () => ChannelStore_default.getChannel(channelId), [channelId]);
 	const title = name || getChannelName(channel) || channelId;
 	return /* @__PURE__ */ React_default.createElement(
@@ -3198,7 +3207,6 @@ function ChannelBookmark({ name, guildId, path: path2, channelId, children, ...r
 			...rest,
 			channelId,
 			guildId,
-			path: path2,
 			title,
 			icon: /* @__PURE__ */ React_default.createElement(
 				ChannelIcon, {
