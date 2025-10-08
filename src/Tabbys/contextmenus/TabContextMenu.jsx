@@ -6,9 +6,9 @@ import React from "@React";
 import { wrapMenuItem } from "./helper";
 import { nop } from "@Utils";
 import { bookmarkTabAt, removeTabsToRight, removeOtherTabs, removeTabsToLeft, addTabToFolderAt } from "@/Store/methods";
-import { CopyUserIdItem, CopyGuildIdItem, CopyChannelIdItem, MarkAsReadItem } from "./shared";
+import { CopyPathItem, CopyUserIdItem, CopyGuildIdItem, CopyChannelIdItem, MarkAsReadItem } from "./shared";
 
-export default function (id, { channelId, userId, guildId, hasUnread }) {
+export default function (id, { path, channelId, userId, guildId, hasUnread }) {
 	const canClose = Store.getTabsCount() > 1;
 
 	const folders = Store.state.folders
@@ -22,12 +22,12 @@ export default function (id, { channelId, userId, guildId, hasUnread }) {
 		.map(wrapMenuItem);
 
 	const copies = [
+		CopyPathItem(path),
 		channelId && CopyChannelIdItem(channelId), 
 		guildId && CopyGuildIdItem(guildId), 
 		userId && CopyUserIdItem(userId)
 	].filter(Boolean).map(wrapMenuItem);
 
-	const canCopy = copies.length > 0;
 
 	const Menu = ContextMenu.buildMenu(
 		[
@@ -56,8 +56,8 @@ export default function (id, { channelId, userId, guildId, hasUnread }) {
 				icon: folders.length > 0 ? nop : BookmarkOutlinedIcon,
 				items: folders
 			},
-			
-			canCopy && { type: "separator" },
+
+			{ type: "separator" },
 			...copies,
 
 			canClose && { type: "separator" },

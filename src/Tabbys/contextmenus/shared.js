@@ -50,3 +50,10 @@ export function CopyGuildIdItem(id) {
 		icon: IdIcon
 	};
 }
+
+export function CopyPathItem(path) {
+	return {
+		action: () => copy(path),
+		label: "Copy Path",
+	};
+}

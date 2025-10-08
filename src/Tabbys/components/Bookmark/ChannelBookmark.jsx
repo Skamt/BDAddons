@@ -6,16 +6,15 @@ import React from "@React";
 import { ChannelIcon } from "@/components/Icons";
 import { getChannelName } from "@Utils/Channel";
 
-export default function ChannelBookmark({ name, guildId, path, channelId, children, ...rest }) {
+export default function ChannelBookmark({ name, guildId, channelId, children, ...rest }) {
 	const channel = useStateFromStores([ChannelStore], () => ChannelStore.getChannel(channelId), [channelId]);
-	const title = name|| getChannelName(channel) || channelId;
+	const title = name || getChannelName(channel) || channelId;
 
 	return (
 		<BaseBookmark
 			{...rest}
 			channelId={channelId}
 			guildId={guildId}
-			path={path}
 			title={title}
 			icon={
 				<ChannelIcon

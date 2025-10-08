@@ -9,7 +9,6 @@ import BaseFolder from "./BaseFolder";
 import { makeDraggable } from "@/components/DND/shared";
 import { BookmarkSortable, FolderDroppable } from "@/components/DND";
 import { DNDTypes } from "@/consts";
-import { SettingsButtonStore } from "@/components/SettingsButton";
 
 function Folder({ id, folderId, dropRef, dragRef, ...props }) {
 	const { name, items } = Store(state => Store.getFolder(folderId), shallow) || {};
@@ -17,8 +16,6 @@ function Folder({ id, folderId, dropRef, dragRef, ...props }) {
 		<Popout
 			position="bottom"
 			align="left"
-			onRequestOpen={() => SettingsButtonStore.getState().open()}
-			onRequestClose={() => SettingsButtonStore.getState().close()}
 			spacing={12}
 			renderPopout={e => (
 				<FolderPopoutMenu

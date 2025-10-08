@@ -12,7 +12,7 @@ import UserStore from "@Stores/UserStore";
 
 import ChannelStatus from "@/components/ChannelStatus";
 
-export default function DMTab({ id, userId, avatar, username, path, channelId }) {
+export default function DMTab({ id, userId, path, avatar, username,  channelId }) {
 	const user = useStateFromStores([UserStore], () => UserStore.getUser(userId), [userId]);
 	const name = getUserName(user) || username || userId;
 
@@ -21,6 +21,7 @@ export default function DMTab({ id, userId, avatar, username, path, channelId })
 			id={id}
 			channelId={channelId}
 			userId={userId}
+			path={path}
 			title={name}
 			icon={
 				<DMIcon

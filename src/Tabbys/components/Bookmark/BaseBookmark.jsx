@@ -23,7 +23,7 @@ export default function BaseBookmark(props) {
 	};
 
 	const contextmenuHandler = e => {
-		ContextMenu.open(e, BookmarkContextMenu(id,{ guildId, userId, parentId, channelId, hasUnread }), {
+		ContextMenu.open(e, BookmarkContextMenu(id,{  path,guildId, userId, parentId, channelId, hasUnread }), {
 			position: "bottom",
 			align: "left"
 		});

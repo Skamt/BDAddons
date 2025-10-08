@@ -7,13 +7,6 @@ import { join } from "@Utils/String";
 import Popout from "@Components/Popout";
 import { ContextMenu } from "@Api";
 import SettingsContextMenu from "@/contextmenus/SettingsContextMenu";
-import zustand from "@Discord/zustand";
-
-export const SettingsButtonStore = zustand((set, get) => ({
-	isOpen: false,
-	open: () => set({ isOpen: true }),
-	close: () => set({ isOpen: false })
-}));
 
 export default function SettingsButton() {
 	return (
@@ -21,8 +14,6 @@ export default function SettingsButton() {
 			position="bottom"
 			align="center"
 			spacing={12}
-			onRequestOpen={()=> SettingsButtonStore.getState().open()}
-			onRequestClose={()=> SettingsButtonStore.getState().close()}
 			renderPopout={e => <SettingsContextMenu {...e} />}>
 			{e => {
 				return (

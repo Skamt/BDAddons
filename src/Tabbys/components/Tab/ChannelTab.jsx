@@ -15,6 +15,7 @@ export default function ChannelTab({ id, path, guildId, channelId }) {
 			id={id}
 			channelId={channelId}
 			guildId={guildId}
+			path={path}
 			title={name || channelId}
 			icon={
 				<ChannelIcon

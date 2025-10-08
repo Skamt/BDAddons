@@ -7,7 +7,8 @@ import ErrorBoundary from "@Components/ErrorBoundary";
 
 export const ModalActions = /*@__PURE__*/ getMangled("onCloseRequest:null!=", {
 	openModal: /*@__PURE__*/ Filters.byStrings("onCloseRequest:null!="),
-	closeModal: /*@__PURE__*/ Filters.byStrings(".setState", ".getState()[")
+	closeModal: /*@__PURE__*/ Filters.byStrings(".setState", ".getState()["),
+	ModalStore: /*@__PURE__*/ Filters.byKeys("getState"),
 });
 
 export const Modals = /*@__PURE__*/ getMangled(/*@__PURE__*/ Filters.bySource("root", "headerIdIsManaged"), {
