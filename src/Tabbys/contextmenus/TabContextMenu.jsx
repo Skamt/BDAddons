@@ -1,14 +1,14 @@
 import { ContextMenu } from "@Api";
 import Store from "@/Store";
 import { Dispatcher } from "@Discord/Modules";
-import { BookmarkOutlinedIcon, DuplicateIcon, LightiningIcon, VectorIcon } from "@Components/Icon";
+import { BookmarkOutlinedIcon, DuplicateIcon, LightiningIcon,  VectorIcon } from "@Components/Icon";
 import React from "@React";
 import { wrapMenuItem } from "./helper";
 import { nop } from "@Utils";
 import { bookmarkTabAt, removeTabsToRight, removeOtherTabs, removeTabsToLeft, addTabToFolderAt } from "@/Store/methods";
-import { MarkAsReadItem } from "./shared";
+import { CopyUserIdItem, CopyGuildIdItem, CopyChannelIdItem, MarkAsReadItem } from "./shared";
 
-export default function (id, { channelId, hasUnread }) {
+export default function (id, { channelId, userId, guildId, hasUnread }) {
 	const canClose = Store.getTabsCount() > 1;
 
 	const folders = Store.state.folders
@@ -20,6 +20,14 @@ export default function (id, { channelId, hasUnread }) {
 			};
 		})
 		.map(wrapMenuItem);
+
+	const copies = [
+		channelId && CopyChannelIdItem(channelId), 
+		guildId && CopyGuildIdItem(guildId), 
+		userId && CopyUserIdItem(userId)
+	].filter(Boolean).map(wrapMenuItem);
+
+	const canCopy = copies.length > 0;
 
 	const Menu = ContextMenu.buildMenu(
 		[
@@ -48,6 +56,10 @@ export default function (id, { channelId, hasUnread }) {
 				icon: folders.length > 0 ? nop : BookmarkOutlinedIcon,
 				items: folders
 			},
+			
+			canCopy && { type: "separator" },
+			...copies,
+
 			canClose && { type: "separator" },
 
 			canClose && {

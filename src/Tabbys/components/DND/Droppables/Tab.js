@@ -6,12 +6,20 @@ import { setTabFromBookmark } from "@/Store/methods";
 const DraggableTab = makeDraggable(DNDTypes.TAB);
 
 const DroppableTab = makeDroppable(
-	[DNDTypes.BOOKMARK, DNDTypes.SUB_BOOKMARK],
+	[DNDTypes.BOOKMARK, DNDTypes.DRAGGABLE_GUILD_CHANNEL, DNDTypes.SUB_BOOKMARK],
 
 	(me, monitor) => {
 		if (!monitor.isOver({ shallow: true })) return;
 		const dropped = monitor.getItem();
-		setTabFromBookmark(me.id, dropped.id, dropped.parentId);
+
+		const itemType = monitor.getItemType();
+		switch (itemType) {
+			case DNDTypes.BOOKMARK:
+			case DNDTypes.SUB_BOOKMARK:
+				return setTabFromBookmark(me.id, dropped.id, dropped.parentId);
+			case DNDTypes.DRAGGABLE_GUILD_CHANNEL:
+				return Store.setTabPath(me.id, `/channels/${dropped.guildId}/${dropped.id}`);
+		}
 	}
 );
 

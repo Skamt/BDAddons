@@ -20,6 +20,7 @@ export default function DMTab({ id, userId, avatar, username, path, channelId })
 		<BaseTab
 			id={id}
 			channelId={channelId}
+			userId={userId}
 			title={name}
 			icon={
 				<DMIcon

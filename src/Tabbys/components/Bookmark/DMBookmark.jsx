@@ -15,6 +15,7 @@ export default function DMBookmark({  name, userId, avatar, username, channelId,
 			{...rest}
 			title={title}
 			channelId={channelId}
+			userId={userId}
 			icon={
 				<DMIcon
 					userId={userId}

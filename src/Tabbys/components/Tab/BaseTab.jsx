@@ -13,7 +13,7 @@ import ReadStateStore from "@Stores/ReadStateStore";
 
 const c = classNameFactory("tab");
 
-function BaseTab({ id, icon, title, channelId, children, ...props }) {
+function BaseTab({ id, icon, title, guildId, userId, channelId, children, ...props }) {
 	const { isOver, canDrop, isDragging, dragRef, dropRef } = props;
 	const hasUnread = useStateFromStores([ReadStateStore], () => ReadStateStore.hasUnread(channelId), [channelId]);
 	const [tabMinWidth, tabWidth] = Settings(_ => [_.tabMinWidth, _.tabWidth], shallow);
@@ -31,7 +31,7 @@ function BaseTab({ id, icon, title, channelId, children, ...props }) {
 	};
 
 	const contextmenuHandler = e => {
-		ContextMenu.open(e, TabContextMenu(id, { channelId, hasUnread }), {
+		ContextMenu.open(e, TabContextMenu(id, { userId, guildId, channelId, hasUnread }), {
 			position: "bottom",
 			align: "left"
 		});

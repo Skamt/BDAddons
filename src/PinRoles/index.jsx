@@ -1,5 +1,5 @@
+// import "./styles";
 import React from "@React";
-import "./styles";
 import "./patches/*";
 import Plugin, { Events } from "@Utils/Plugin";
 import { Patcher } from "@Api";

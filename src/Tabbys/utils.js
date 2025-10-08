@@ -5,6 +5,13 @@ import UserStore from "@Stores/UserStore";
 import UserGuildJoinRequestStore from "@Stores/UserGuildJoinRequestStore";
 import { ChannelTypeEnum } from "@Discord/Enums";
 import { transitionTo, ChannelUtils } from "@Discord/Modules";
+import SelectedChannelStore from "@Stores/SelectedChannelStore";
+
+export function getGuildChannelPath(guildId){
+	const selectedChannelId = SelectedChannelStore.getChannelId(guildId);
+	return `/channels/${guildId}/${selectedChannelId}`;
+}
+
 
 const types = {
 	"store": { title: "Nitro", type: pathTypes.NITRO },

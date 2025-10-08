@@ -74,18 +74,7 @@ export default class PinRoles extends Disposable {
 						ret.props.children.push(<span className="messageRoleHeader">{role.name}</span>);
 					}
 				}),
-				ContextMenu.patch("guild-context", (retVal, { guild }) => {
-					if (!guild) return;
-
-					retVal.props.children.splice(
-						1,
-						0,
-						ContextMenu.buildItem({
-							label: "Pin Roles",
-							action: () => al(<RolesList guild={guild} />, () => confirm(guild.id))
-						})
-					);
-				})
+				
 			];
 		else Logger.patchError("ShowUserId");
 	}

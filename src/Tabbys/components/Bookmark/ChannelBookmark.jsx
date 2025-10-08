@@ -14,6 +14,7 @@ export default function ChannelBookmark({ name, guildId, path, channelId, childr
 		<BaseBookmark
 			{...rest}
 			channelId={channelId}
+			guildId={guildId}
 			path={path}
 			title={title}
 			icon={

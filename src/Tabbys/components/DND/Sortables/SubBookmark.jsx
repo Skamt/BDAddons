@@ -2,11 +2,11 @@ import DroppableMarkup from "./DroppableMarkup";
 import Store from "@/Store";
 import React from "@React";
 import { makeDroppable } from "../shared";
-import { addTabToFolderAt, moveFolderToFolderAt, moveBookmarkToFolderAt } from "@/Store/methods";
+import { addTabToFolderAt, moveFolderToFolderAt, moveBookmarkToFolderAt, addToFolderAt } from "@/Store/methods";
 import { DNDTypes } from "@/consts";
 
 const SubBookmark = makeDroppable(
-	[DNDTypes.SUB_BOOKMARK, DNDTypes.SUB_FOLDER, DNDTypes.FOLDER, DNDTypes.TAB, DNDTypes.BOOKMARK],
+	[DNDTypes.SUB_BOOKMARK, DNDTypes.DRAGGABLE_GUILD_CHANNEL, DNDTypes.SUB_FOLDER, DNDTypes.FOLDER, DNDTypes.TAB, DNDTypes.BOOKMARK],
 
 	(me, monitor) => {
 		const dropped = monitor.getItem();
@@ -32,6 +32,8 @@ const SubBookmark = makeDroppable(
 			case DNDTypes.FOLDER: {
 				return moveFolderToFolderAt(dropped.folderId, dropped.id, me.parentId, dropped.parentId, me.id, me.pos);
 			}
+			case DNDTypes.DRAGGABLE_GUILD_CHANNEL:
+				return addToFolderAt(`/channels/${dropped.guildId}/${dropped.id}`, me.parentId, me.id, me.pos);
 		}
 	}
 )(DroppableMarkup);

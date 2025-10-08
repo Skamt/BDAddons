@@ -45,7 +45,7 @@ export function createBookmarkFolder(folderId, parentId) {
 }
 
 export function createSubBookmark(folderId, path) {
-	const bookmark = createObjFromPath(path);
+	const bookmark = createFromPath(path);
 	return Object.assign({ parentId: folderId }, bookmark);
 }
 

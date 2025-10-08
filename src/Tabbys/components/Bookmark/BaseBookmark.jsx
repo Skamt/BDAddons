@@ -11,7 +11,7 @@ import ReadStateStore from "@Stores/ReadStateStore";
 
 const c = classNameFactory("bookmark");
 export default function BaseBookmark(props) {
-	const { id, icon, title, onClose, parentId, channelId, path, noName, className, children, ...rest } = props;
+	const { id, icon, title, onClose, parentId, channelId, guildId, userId, path, noName, className, children, ...rest } = props;
 	const hasUnread = useStateFromStores([ReadStateStore], () => ReadStateStore.hasUnread(channelId), [channelId]);
 
 	const onClick = e => {
@@ -23,7 +23,7 @@ export default function BaseBookmark(props) {
 	};
 
 	const contextmenuHandler = e => {
-		ContextMenu.open(e, BookmarkContextMenu(id,{ parentId, channelId, hasUnread }), {
+		ContextMenu.open(e, BookmarkContextMenu(id,{ guildId, userId, parentId, channelId, hasUnread }), {
 			position: "bottom",
 			align: "left"
 		});

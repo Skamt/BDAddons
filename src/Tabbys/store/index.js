@@ -45,12 +45,15 @@ Store.subscribe(Store.selectors.selectedId, () => {
 	navigate(selectedTab);
 });
 
-Store.subscribe(() => Store.getSelectedTab(), (tab,o) => {
-	if(tab?.path === o?.path) return;
-	if (tab?.path === location.pathname) return;
-	navigate(tab)
-}, shallow);
-
+Store.subscribe(
+	() => Store.getSelectedTab(),
+	(tab, o) => {
+		if (tab?.path === o?.path) return;
+		if (tab?.path === location.pathname) return;
+		navigate(tab);
+	},
+	shallow
+);
 
 const onLocationChange = debounce(e => {
 	const pathname = getPathName(e.destination.url);
@@ -84,7 +87,7 @@ import { diff, addedDiff, deletedDiff, updatedDiff, detailedDiff } from "deep-ob
 DEV: {
 	Store.subscribe(
 		state => state,
-		(a, b) => console.log(detailedDiff(b, a)),
+		(a, b) => console.log(diff(b, a)),
 		shallow
 	);
 

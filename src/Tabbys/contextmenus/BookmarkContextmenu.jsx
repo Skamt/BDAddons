@@ -6,7 +6,8 @@ import Store from "@/Store";
 import { nop } from "@Utils";
 import { wrapMenuItem } from "./helper";
 import { deleteBookmark, moveSubBookmarkToBookmarksAt, moveBookmarkToFolderAt, addFolder, getBookmark, openBookmarkAt, setBookmarkName, toggleBookmarkNameState, getBookmarkNameState } from "@/Store/methods";
-import { createFolder, MarkAsReadItem } from "./shared";
+
+import { createFolder, CopyUserIdItem, CopyGuildIdItem, CopyChannelIdItem, MarkAsReadItem } from "./shared";
 
 function renameBookmark(id, parentId) {
 	const bookmark = getBookmark(id, parentId);
@@ -20,7 +21,7 @@ function renameBookmark(id, parentId) {
 	});
 }
 
-export default function (id, { parentId, channelId, hasUnread }) {
+export default function (id, { channelId, userId, guildId, parentId, hasUnread }) {
 	const folders = Store.state.folders
 		.map(({ id: folderId, name }) => {
 			if (folderId === parentId) return;
@@ -41,6 +42,14 @@ export default function (id, { parentId, channelId, hasUnread }) {
 	}
 
 	const hasFolders = folders.length > 0;
+
+	const copies = [
+		channelId && CopyChannelIdItem(channelId), 
+		guildId && CopyGuildIdItem(guildId), 
+		userId && CopyUserIdItem(userId)
+	].filter(Boolean).map(wrapMenuItem);
+
+	const canCopy = copies.length > 0;
 
 	const Menu = ContextMenu.buildMenu(
 		[
@@ -73,6 +82,9 @@ export default function (id, { parentId, channelId, hasUnread }) {
 				label: "Create Folder",
 				icon: PlusIcon
 			},
+			
+			canCopy && { type: "separator" },
+			...copies,
 
 			{ type: "separator" },
 			{

@@ -1,11 +1,11 @@
 import { DNDTypes } from "@/consts";
 import Store from "@/Store";
-import { moveFolderToFolderAt, moveBookmarkToFolderAt,   addTabToFolderAt } from "@/Store/methods";
+import { moveFolderToFolderAt, moveBookmarkToFolderAt, addToFolderAt, addTabToFolderAt } from "@/Store/methods";
 import { makeDraggable, makeDroppable } from "../shared";
-
+import { getGuildChannelPath } from "@/utils";
 export default comp =>
 	makeDroppable(
-		[DNDTypes.BOOKMARK, DNDTypes.SUB_BOOKMARK, DNDTypes.TAB, DNDTypes.FOLDER, DNDTypes.SUB_FOLDER],
+		[DNDTypes.DRAGGABLE_GUILD_CHANNEL, DNDTypes.BOOKMARK, DNDTypes.SUB_BOOKMARK, DNDTypes.TAB, DNDTypes.FOLDER, DNDTypes.SUB_FOLDER],
 
 		(me, monitor) => {
 			if (!monitor.isOver({ shallow: true })) return;
@@ -18,13 +18,15 @@ export default comp =>
 				case DNDTypes.BOOKMARK:
 					return moveBookmarkToFolderAt(dropped.id, me.folderId);
 				case DNDTypes.TAB:
-					return addTabToFolderAt(dropped.id,me.folderId);
+					return addTabToFolderAt(dropped.id, me.folderId);
 				case DNDTypes.FOLDER:
 					return moveFolderToFolderAt(dropped.folderId, dropped.id, me.folderId);
 				case DNDTypes.SUB_BOOKMARK:
 					return moveBookmarkToFolderAt(dropped.id, me.folderId, dropped.parentId);
 				case DNDTypes.SUB_FOLDER:
 					return moveFolderToFolderAt(dropped.folderId, dropped.id, me.folderId, dropped.parentId);
+				case DNDTypes.DRAGGABLE_GUILD_CHANNEL:
+					return addToFolderAt(`/channels/${dropped.guildId}/${dropped.id}`, me.folderId);
 			}
 		}
 	)(comp);

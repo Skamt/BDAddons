@@ -1,6 +1,6 @@
 import Store from "@/store";
 import { slice, add } from "@Utils/Array";
-import { sort, createFrom, createFolder, createBookmarkFolder, createFromPath } from "./shared";
+import { sort, createFrom, createFolder, createSubBookmark, createBookmarkFolder, createFromPath } from "./shared";
 import { navigate } from "@/utils";
 
 export function isDescendent(parentId, childId) {
@@ -100,14 +100,22 @@ export function removeOtherTabs(id) {
 	if (tab) Store.setState({ tabs: [tab], selectedId: tab.id, lastSelectedIdAfterNewTab: null });
 }
 
+export function openTabAt(path, targetId, pos) {
+	Store.addTabBy(createFromPath(path), targetId, sort(pos));
+}
+
 export function openBookmarkAt(bookmarkId, targetId, pos, folderId) {
-	const bookmark = getBookmark(bookmarkId, folderId);
-	if (bookmark?.path) Store.addTabBy(createFromPath(bookmark.path), targetId, sort(pos));
+	const { path } = getBookmark(bookmarkId, folderId) || {};
+	if (path) openTabAt(path, targetId, pos);
+}
+
+export function addBookmarkAt(path, targetId, pos) {
+	Store.addBookmarkBy(createFromPath(path), targetId, sort(pos));
 }
 
 export function bookmarkTabAt(tabId, targetId, pos) {
-	const tab = Store.getTab(tabId);
-	if (tab?.path) Store.addBookmarkBy(createFromPath(tab.path), targetId, sort(pos));
+	const { path } = Store.getTab(tabId) || {};
+	if (path) addBookmarkAt(path, targetId, pos);
 }
 
 export function moveSubBookmarkToBookmarksAt(itemId, parentId, targetId, pos) {
@@ -124,9 +132,13 @@ export function moveSubFolderToBookmarksAt(subFolderId, itemId, parentId, target
 	Store.updateFolder(subFolderId, { parentId: null });
 }
 
+export function addToFolderAt(path, folderId, targetId, pos) {
+	return Store.addToFolderBy(folderId, createSubBookmark(folderId, path), targetId, sort(pos));
+}
+
 export function addTabToFolderAt(tabId, folderId, targetId, pos) {
-	const tab = Store.getTab(tabId);
-	Store.addToFolderBy(folderId, createFrom(tab, { parentId: folderId }), targetId, sort(pos));
+	const { path } = Store.getTab(tabId) || {};
+	if (path) addToFolderAt(path, folderId, targetId, pos);
 }
 
 export function moveBookmarkToFolderAt(itemId, targetFolderId, parentId, targetId, pos) {
