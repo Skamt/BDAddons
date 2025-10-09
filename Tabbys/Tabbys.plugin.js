@@ -31,12 +31,15 @@ var Config_default = {
 		"showTabUnreads": true,
 		"showTabPings": true,
 		"showTabTyping": true,
+		"highlightTabUnread": true,
 		"showBookmarkUnreads": true,
 		"showBookmarkPings": true,
 		"showBookmarkTyping": true,
+		"highlightBookmarkUnread": true,
 		"showFolderUnreads": true,
 		"showFolderPings": true,
-		"showFolderTyping": true
+		"showFolderTyping": true,
+		"highlightFolderUnread": true
 	}
 };
 
@@ -661,7 +664,7 @@ function mergeArrayItem(arr, targetId, payload) {
 	return set(arr, tabIndex, Object.assign({}, item, payload));
 }
 
-function createFolder2(name) {
+function createFolder(name) {
 	return { id: crypto.randomUUID(), name, items: [] };
 }
 
@@ -843,12 +846,19 @@ function setTabFromBookmark(tabId, bookmarkId, folderId) {
 
 function addFolder(name) {
 	if (!name) return;
-	const folder = createFolder2(name);
+	const folder = createFolder(name);
 	const bookmark = createBookmarkFolder(folder.id);
 	Store_default.setState({
 		folders: add(Store_default.state.folders, folder),
 		bookmarks: add(Store_default.state.bookmarks, bookmark)
 	});
+}
+
+function addSubFolder(name, parentId) {
+	if (!name) return;
+	const folder = createFolder(name);
+	Store_default.setState({ folders: add(Store_default.state.folders, folder) });
+	Store_default.addFolderToFolder(parentId, folder.id);
 }
 
 function removeTabsToRight(id) {
@@ -992,12 +1002,6 @@ var folders_default = {
 	actions: {
 		...getters2,
 		...setters2,
-		addFolder(name) {
-			const { folder, bookmark } = createFolder(name);
-			this.setState({
-				folders: add(this.state.folders, folder)
-			});
-		},
 		reOrderFolder(folderId, fromId, toId, pos) {
 			const items = this.getFolderItems(folderId);
 			this.setFolderItems(folderId, reOrder(items, fromId, toId, pos));
@@ -2316,12 +2320,17 @@ function MarkAsReadItem(channelId, hasUnread) {
 	};
 }
 
-function createFolder3() {
+function createFolder2(parentId) {
 	openPromptModal({
 		title: "Create Folder",
 		placeholder: "New Folder Name",
 		label: "New Folder Name",
-		onSubmit: (name) => name && addFolder(name)
+		required: true,
+		onSubmit: (name) => {
+			if (!name) return;
+			if (parentId) return addSubFolder(name, parentId);
+			addFolder(name);
+		}
 	});
 }
 
@@ -2443,8 +2452,8 @@ var c5 = classNameFactory("tab");
 
 function BaseTab({ id, icon, path: path2, title, guildId, userId, channelId, children, ...props }) {
 	const { isOver, canDrop, isDragging, dragRef, dropRef } = props;
-	const hasUnread = useStateFromStores_default([ReadStateStore_default], () => ReadStateStore_default.hasUnread(channelId), [channelId]);
-	const [tabMinWidth, tabWidth] = Settings_default((_) => [_.tabMinWidth, _.tabWidth], shallow);
+	const shouldHightLight = Settings_default(Settings_default.selectors.highlightTabUnread);
+	const hasUnread = useStateFromStores_default([ReadStateStore_default], () => shouldHightLight && ReadStateStore_default.hasUnread(channelId), [shouldHightLight, channelId]);
 	const isSelected = Store_default(Store_default.selectors.selectedId) === id;
 	const isSingle = Store_default(Store_default.selectors.isSingle);
 	const onClick = (e2) => {
@@ -2464,10 +2473,6 @@ function BaseTab({ id, icon, path: path2, title, guildId, userId, channelId, chi
 	return /* @__PURE__ */ React_default.createElement(
 		"div", {
 			onContextMenu: contextmenuHandler,
-			style: {
-				"--tab-width": `${tabWidth}px`,
-				"--tab-min-width": `${tabMinWidth}px`
-			},
 			ref: (e2) => dragRef(dropRef(e2)),
 			className: join2(c5("container", isOver && canDrop && "canDrop"), { isSelected, hasUnread, isDragging }, "card"),
 			onClick
@@ -2610,7 +2615,7 @@ function useChannelsState(channelIds = []) {
 				return acc;
 			}, [0, 0, false]);
 		},
-		[...channelIds]
+		[channelIds]
 	);
 	const typingUsersIds = useStateFromStores_default(
 		[TypingStore_default],
@@ -2860,6 +2865,7 @@ function DragHandle() {
 var c7 = clsx("tabbar");
 
 function TabBar() {
+	const [tabMinWidth, tabWidth] = Settings_default((_) => [_.tabMinWidth, _.tabWidth], shallow);
 	const tabs = Store_default(Store_default.selectors.tabs, (a, b) => a.length === b.length && !a.some((_, i) => a[i].id !== b[i].id));
 	const selectedId = Store_default(Store_default.selectors.selectedId);
 	const selectedIndex = Store_default.getSelectedTabIndex();
@@ -2868,28 +2874,42 @@ function TabBar() {
 		e2.stopPropagation();
 		Store_default.newTab();
 	};
-	return /* @__PURE__ */ React_default.createElement("div", { className: c7("container") }, /* @__PURE__ */ React_default.createElement(
-		TabsScroller, {
-			shouldScroll: selectedId,
-			scrollTo: selectedIndex,
-			containerClassName: c7("tabs-scroller-container"),
-			contentClassName: c7("tabs-scroller-content"),
-			items: tabs,
-			renderItem: ({ id }) => /* @__PURE__ */ React_default.createElement(
-				Tab_default3, {
-					key: id,
-					id
-				}
-			)
-		}
-	), /* @__PURE__ */ React_default.createElement(
+	return /* @__PURE__ */ React_default.createElement(
 		"div", {
-			className: join2(c7("new-tab"), "icon-wrapper"),
-			onClick: newTabHandler
+			style: {
+				"--tab-width": `${tabWidth}px`,
+				"--tab-min-width": `${tabMinWidth}px`
+			},
+			className: c7("container")
 		},
 		/* @__PURE__ */
-		React_default.createElement(PlusIcon, null)
-	), /* @__PURE__ */ React_default.createElement(DragHandle, null));
+		React_default.createElement(
+			TabsScroller, {
+				shouldScroll: selectedId,
+				scrollTo: selectedIndex,
+				containerClassName: c7("tabs-scroller-container"),
+				contentClassName: c7("tabs-scroller-content"),
+				items: tabs,
+				renderItem: ({ id }) => /* @__PURE__ */ React_default.createElement(
+					Tab_default3, {
+						key: id,
+						id
+					}
+				)
+			}
+		),
+		/* @__PURE__ */
+		React_default.createElement(
+			"div", {
+				className: join2(c7("new-tab"), "icon-wrapper"),
+				onClick: newTabHandler
+			},
+			/* @__PURE__ */
+			React_default.createElement(PlusIcon, null)
+		),
+		/* @__PURE__ */
+		React_default.createElement(DragHandle, null)
+	);
 }
 
 // src/Tabbys/components/BookmarkBar/styles.css
@@ -3011,7 +3031,7 @@ function BookmarkContextMenu_default(id, { path: path2, channelId, userId, guild
 				items: folders
 			},
 			{
-				action: createFolder3,
+				action: createFolder2,
 				label: "Create Folder",
 				icon: PlusIcon
 			},
@@ -3034,7 +3054,8 @@ var c8 = classNameFactory("bookmark");
 
 function BaseBookmark(props) {
 	const { id, icon, title, onClose, parentId, channelId, guildId, userId, path: path2, noName, className, children, ...rest } = props;
-	const hasUnread = useStateFromStores_default([ReadStateStore_default], () => ReadStateStore_default.hasUnread(channelId), [channelId]);
+	const shouldHightLight = Settings_default(Settings_default.selectors.highlightBookmarkUnread);
+	const hasUnread = useStateFromStores_default([ReadStateStore_default], () => shouldHightLight && ReadStateStore_default.hasUnread(channelId), [shouldHightLight, channelId]);
 	const onClick = (e2) => {
 		e2.stopPropagation();
 		onClose?.();
@@ -3279,8 +3300,8 @@ function FolderContextMenu_default(id, { folderId, parentId }) {
 	const hasFolders = folders.length > 0;
 	const Menu2 = ContextMenu.buildMenu(
 		[{
-				action: createFolder3,
-				label: "Create Folder",
+				action: () => createFolder2(folderId),
+				label: "Create Sub Folder",
 				icon: PlusIcon
 			},
 			{
@@ -3322,8 +3343,18 @@ function FolderContextMenu_default(id, { folderId, parentId }) {
 var c9 = classNameFactory("folder");
 
 function BaseFolder({ id, channelIds, folderId, parentId, name, className, children, canDrop, isOver, ...rest }) {
+	const shouldHightLight = Settings_default(Settings_default.selectors.highlightFolderUnread);
+	const hasUnread = useStateFromStores_default(
+		[ReadStateStore_default],
+		() => {
+			if (!shouldHightLight) return false;
+			for (let i = channelIds.length - 1; i >= 0; i--)
+				if (ReadStateStore_default.hasUnread(channelIds[i])) return true;
+		},
+		[shouldHightLight, channelIds]
+	);
 	const contextmenuHandler = (e2) => {
-		ContextMenu.open(e2, FolderContextMenu_default(id, { folderId, parentId }), {
+		ContextMenu.open(e2, FolderContextMenu_default(id, { hasUnread, folderId, parentId }), {
 			position: "bottom",
 			align: "left"
 		});
@@ -3332,7 +3363,7 @@ function BaseFolder({ id, channelIds, folderId, parentId, name, className, child
 		"div", {
 			...rest,
 			onContextMenu: contextmenuHandler,
-			className: join2(c9("container", isOver && canDrop && "canDrop"), "box-border", "no-drag", "card", className)
+			className: join2(c9("container", isOver && canDrop && "canDrop"), { hasUnread }, "card", className)
 		},
 		/* @__PURE__ */
 		React_default.createElement("div", { className: join2(c9("icon"), "icon-wrapper", "card-icon") }, /* @__PURE__ */ React_default.createElement(FolderIcon, null)),
@@ -3603,7 +3634,8 @@ function status() {
 		), [
 			{ key: `show${type}Pings`, label: "Pings" },
 			{ key: `show${type}Unreads`, label: "Unreads" },
-			{ key: `show${type}Typing`, label: "Typings" }
+			{ key: `show${type}Typing`, label: "Typings" },
+			{ key: `highlight${type}Unread`, label: "Highlight Unread" }
 		].map(buildToggle));
 	}
 	return /* @__PURE__ */ React_default.createElement(React_default.Fragment, null, d("Tab"), /* @__PURE__ */ React_default.createElement(Separator, null), d("Bookmark"), /* @__PURE__ */ React_default.createElement(Separator, null), d("Folder"));
@@ -4020,8 +4052,9 @@ function SettingComponent() {
 		return /* @__PURE__ */ React_default.createElement(Collapsible, { title: type }, [
 			{ description: "Unreads", settingKey: `show${type}Unreads` },
 			{ description: "Pings", settingKey: `show${type}Pings` },
-			{ description: "Typing", settingKey: `show${type}Typing` }
-		].map((props) => [SettingSwtich({ ...props, hideBorder: true, style: { marginBottom: 5 } }), /* @__PURE__ */ React_default.createElement(Gap, { gap: 5 })]));
+			{ description: "Typing", settingKey: `show${type}Typing` },
+			{ description: "Highlight Unread", settingKey: `highlight${type}Unread` }
+		].map((props) => [SettingSwtich(props), /* @__PURE__ */ React_default.createElement(Gap, { gap: 5 })]));
 	})));
 }
 
