@@ -64,12 +64,7 @@ export default {
 		...getters,
 		...setters,
 
-		addFolder(name) {
-			const { folder, bookmark } = createFolder(name);
-			this.setState({
-				folders: add(this.state.folders, folder)
-			});
-		},
+	
 		reOrderFolder(folderId, fromId, toId, pos) {
 			const items = this.getFolderItems(folderId);
 			this.setFolderItems(folderId, reOrder(items, fromId, toId, pos));

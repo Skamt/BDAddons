@@ -63,7 +63,8 @@ function status() {
 				{[
 					{ key: `show${type}Pings`, label: "Pings" },
 					{ key: `show${type}Unreads`, label: "Unreads" },
-					{ key: `show${type}Typing`, label: "Typings" }
+					{ key: `show${type}Typing`, label: "Typings" },
+					{ key: `highlight${type}Unread`, label: "Highlight Unread" }
 				].map(buildToggle)}
 			</>
 		);

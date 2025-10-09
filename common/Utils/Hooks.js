@@ -106,7 +106,7 @@ export function useChannelsState(channelIds = []) {
 				return acc;
 			}, [0,0,false]);
 		},
-		[...channelIds]
+		[channelIds]
 	);
 
 	const typingUsersIds = useStateFromStores(

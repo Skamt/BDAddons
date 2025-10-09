@@ -79,8 +79,9 @@ export default function SettingComponent() {
 							{[
 								{ description: "Unreads", settingKey: `show${type}Unreads` },
 								{ description: "Pings", settingKey: `show${type}Pings` },
-								{ description: "Typing", settingKey: `show${type}Typing` }
-							].map(props => [SettingSwtich({ ...props, hideBorder: true, style: { marginBottom: 5 } }), <Gap gap={5} />])}
+								{ description: "Typing", settingKey: `show${type}Typing` },
+								{ description: "Highlight Unread", settingKey: `highlight${type}Unread` }
+							].map(props => [SettingSwtich(props), <Gap gap={5} />])}
 						</Collapsible>
 					);
 				})}

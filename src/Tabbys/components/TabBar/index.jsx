@@ -7,10 +7,13 @@ import DragHandle from "@/components/DragHandle";
 import Store from "@/Store";
 import { clsx } from "@Utils";
 import { join } from "@Utils/css";
+import Settings from "@Utils/Settings";
+import { shallow } from "@Utils";
 
 const c = clsx("tabbar");
 
 export default function TabBar() {
+	const [tabMinWidth, tabWidth] = Settings(_ => [_.tabMinWidth, _.tabWidth], shallow);
 	const tabs = Store(Store.selectors.tabs, (a, b) => a.length === b.length && !a.some((_, i) => a[i].id !== b[i].id));
 	const selectedId = Store(Store.selectors.selectedId);
 	const selectedIndex = Store.getSelectedTabIndex();
@@ -22,7 +25,12 @@ export default function TabBar() {
 	};
 
 	return (
-		<div className={c("container")}>
+		<div
+			style={{
+				"--tab-width": `${tabWidth}px`,
+				"--tab-min-width": `${tabMinWidth}px`
+			}}
+			className={c("container")}>
 			<TabsScroller
 				shouldScroll={selectedId}
 				scrollTo={selectedIndex}
@@ -37,7 +45,7 @@ export default function TabBar() {
 				)}
 			/>
 			<div
-				className={join(c("new-tab"),"icon-wrapper")}
+				className={join(c("new-tab"), "icon-wrapper")}
 				onClick={newTabHandler}>
 				<PlusIcon />
 			</div>

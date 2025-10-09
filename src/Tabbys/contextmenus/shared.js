@@ -1,6 +1,6 @@
 import { Dispatcher } from "@Discord/Modules";
 import { openPromptModal } from "@/components/PromptModal";
-import { addFolder } from "@/Store/methods";
+import { addSubFolder, addFolder } from "@/Store/methods";
 import { copy } from "@Utils";
 import { IdIcon } from "@Components/Icon";
 
@@ -18,12 +18,17 @@ export function MarkAsReadItem(channelId, hasUnread) {
 	};
 }
 
-export function createFolder() {
+export function createFolder(parentId) {
 	openPromptModal({
 		title: "Create Folder",
 		placeholder: "New Folder Name",
 		label: "New Folder Name",
-		onSubmit: name => name && addFolder(name)
+		required: true,
+		onSubmit: name => {
+			if (!name) return;
+			if (parentId) return addSubFolder(name, parentId);
+			addFolder(name);
+		}
 	});
 }
 
@@ -54,6 +59,6 @@ export function CopyGuildIdItem(id) {
 export function CopyPathItem(path) {
 	return {
 		action: () => copy(path),
-		label: "Copy Path",
+		label: "Copy Path"
 	};
 }

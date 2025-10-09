@@ -3,20 +3,20 @@ import Store from "@/Store";
 import { TabDroppable, TabSortable } from "@/components/DND";
 import { CloseIcon } from "@Components/Icon";
 import React from "@React";
-import { shallow } from "@Utils";
-import Settings from "@Utils/Settings";
 import { classNameFactory, join } from "@Utils/css";
 import TabContextMenu from "@/contextmenus/TabContextMenu";
 import { ContextMenu } from "@Api";
 import useStateFromStores from "@Modules/useStateFromStores";
 import ReadStateStore from "@Stores/ReadStateStore";
+import Settings from "@Utils/Settings";
 
 const c = classNameFactory("tab");
 
-function BaseTab({ id, icon,  path, title, guildId, userId, channelId, children, ...props }) {
+function BaseTab({ id, icon, path, title, guildId, userId, channelId, children, ...props }) {
 	const { isOver, canDrop, isDragging, dragRef, dropRef } = props;
-	const hasUnread = useStateFromStores([ReadStateStore], () => ReadStateStore.hasUnread(channelId), [channelId]);
-	const [tabMinWidth, tabWidth] = Settings(_ => [_.tabMinWidth, _.tabWidth], shallow);
+	const shouldHightLight = Settings(Settings.selectors.highlightTabUnread);
+	const hasUnread = useStateFromStores([ReadStateStore], () => shouldHightLight && ReadStateStore.hasUnread(channelId), [shouldHightLight, channelId]);
+
 	const isSelected = Store(Store.selectors.selectedId) === id;
 	const isSingle = Store(Store.selectors.isSingle);
 
@@ -31,7 +31,7 @@ function BaseTab({ id, icon,  path, title, guildId, userId, channelId, children,
 	};
 
 	const contextmenuHandler = e => {
-		ContextMenu.open(e, TabContextMenu(id, { userId, path,guildId, channelId, hasUnread }), {
+		ContextMenu.open(e, TabContextMenu(id, { userId, path, guildId, channelId, hasUnread }), {
 			position: "bottom",
 			align: "left"
 		});
@@ -40,10 +40,6 @@ function BaseTab({ id, icon,  path, title, guildId, userId, channelId, children,
 	return (
 		<div
 			onContextMenu={contextmenuHandler}
-			style={{
-				"--tab-width": `${tabWidth}px`,
-				"--tab-min-width": `${tabMinWidth}px`
-			}}
 			ref={e => dragRef(dropRef(e))}
 			className={join(c("container", isOver && canDrop && "canDrop"), { isSelected, hasUnread, isDragging }, "card")}
 			onClick={onClick}>

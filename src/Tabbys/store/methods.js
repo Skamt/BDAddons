@@ -71,6 +71,15 @@ export function addFolder(name) {
 	});
 }
 
+export function addSubFolder(name, parentId) {
+	if (!name) return;
+	const folder = createFolder(name);
+	Store.setState({folders: add(Store.state.folders, folder)	});
+
+	Store.addFolderToFolder(parentId, folder.id)
+
+}
+
 export function removeTabsToRight(id) {
 	const { item, index, isLast, isSingle } = Store.getTabMeta(id);
 	if (!item || isLast || isSingle) return;

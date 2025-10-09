@@ -19,14 +19,16 @@
 		"showTabUnreads":true,
 		"showTabPings":true,
 		"showTabTyping":true,
+		"highlightTabUnread":true,
 
 		"showBookmarkUnreads":true,
 		"showBookmarkPings":true,
 		"showBookmarkTyping":true,
+		"highlightBookmarkUnread":true,
 
 		"showFolderUnreads":true,
 		"showFolderPings":true,
-		"showFolderTyping":true
-
+		"showFolderTyping":true,
+		"highlightFolderUnread":true
 	}
 }

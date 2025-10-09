@@ -34,8 +34,8 @@ export default function (id, { folderId, parentId }) {
 	const Menu = ContextMenu.buildMenu(
 		[
 			{
-				action: createFolder,
-				label: "Create Folder",
+				action: () => createFolder(folderId),
+				label: "Create Sub Folder",
 				icon: PlusIcon
 			},
 			{

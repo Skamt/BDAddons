@@ -8,11 +8,14 @@ import BookmarkContextMenu from "@/contextmenus/BookmarkContextMenu";
 import { ContextMenu } from "@Api";
 import useStateFromStores from "@Modules/useStateFromStores";
 import ReadStateStore from "@Stores/ReadStateStore";
+import Settings from "@Utils/Settings";
 
 const c = classNameFactory("bookmark");
+
 export default function BaseBookmark(props) {
 	const { id, icon, title, onClose, parentId, channelId, guildId, userId, path, noName, className, children, ...rest } = props;
-	const hasUnread = useStateFromStores([ReadStateStore], () => ReadStateStore.hasUnread(channelId), [channelId]);
+	const shouldHightLight = Settings(Settings.selectors.highlightBookmarkUnread);
+	const hasUnread = useStateFromStores([ReadStateStore], () =>  shouldHightLight && ReadStateStore.hasUnread(channelId), [shouldHightLight, channelId]);
 
 	const onClick = e => {
 		e.stopPropagation();
