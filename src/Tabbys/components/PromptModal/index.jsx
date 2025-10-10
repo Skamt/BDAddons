@@ -12,58 +12,70 @@ import { FieldWrapper } from "@Discord/Modules";
 
 const c = clsx("create-folder-modal");
 
-export default function PromptModal({ modalProps, required, title, placeholder, label, initialValue = "", onSubmit }) {
+export default function PromptModal({ modalProps, required,  title, placeholder, label, initialValue = "", onSubmit }) {
 	const [val, setVal] = useState(initialValue);
+	const [submitted, setSubmitted] = useState(false);
 
 	const saveHandler = e => {
-		onSubmit?.(val);
-		modalProps.onClose?.();
+		e.preventDefault();
+		setSubmitted(true);
+		try {
+			onSubmit?.(val);
+			modalProps.onClose?.();
+		} finally {
+			setSubmitted(false);
+		}
 	};
 
+	const saveOnReturn = e => {};
+
 	return (
-		<Modals.ModalRoot
-			{...modalProps}
-			fullscreenOnMobile={false}
-			className={c("root")}>
-			<Modals.ModalHeader separator={true}>
-				<Heading
-					variant="heading-lg/semibold"
-					style={{ flexGrow: 1 }}>
-					{title}
-				</Heading>
-				<Modals.ModalCloseButton onClick={modalProps.onClose} />
-			</Modals.ModalHeader>
-			<div className={c("content")}>
-				<FieldWrapper title={label}>
-					<TextInput
-						value={val}
-						onChange={setVal}
-						fullWidth={true}
-						required={required}
-						placeholder={initialValue || placeholder}
-						autoFocus={true}
+		<form onSubmit={saveHandler}>
+			<Modals.ModalRoot
+				{...modalProps}
+				fullscreenOnMobile={false}
+				className={c("root")}>
+				<Modals.ModalHeader separator={true}>
+					<Heading
+						variant="heading-lg/semibold"
+						style={{ flexGrow: 1 }}>
+						{title}
+					</Heading>
+					<Modals.ModalCloseButton onClick={modalProps.onClose} />
+				</Modals.ModalHeader>
+				<div className={c("content")}>
+					<FieldWrapper title={label}>
+						<TextInput
+							value={val}
+							onChange={setVal}
+							fullWidth={true}
+							required={required}
+							placeholder={initialValue || placeholder}
+							autoFocus={true}
+						/>
+					</FieldWrapper>
+					<ManaTextButton
+						text="reset"
+						textVariant="text-sm/medium"
+						type="button"
+						onClick={() => setVal(initialValue)}
 					/>
-				</FieldWrapper>
-				<ManaTextButton
-					text="reset"
-					textVariant="text-sm/medium"
-					type="button"
-					onClick={() => setVal(initialValue)}
-				/>
-			</div>
-			<Modals.ModalFooter
-				className={c("footer")}
-				separator={true}>
-				<ManaButton
-					text="Save"
-					onClick={saveHandler}
-				/>
-				<ManaTextButton
-					text="Cancel"
-					onClick={modalProps.onClose}
-				/>
-			</Modals.ModalFooter>
-		</Modals.ModalRoot>
+				</div>
+				<Modals.ModalFooter
+					className={c("footer")}
+					separator={true}>
+					<ManaButton
+						text="Save"
+						disable={submitted}
+						onClick={saveHandler}
+					/>
+					<ManaTextButton
+						text="Cancel"
+						onClick={modalProps.onClose}
+					/>
+				</Modals.ModalFooter>
+			</Modals.ModalRoot>
+		</form>
 	);
 }
 

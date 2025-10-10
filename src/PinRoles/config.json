@@ -1,9 +1,0 @@
-{
-	"info": {
-		"name": "PinRoles",
-		"version": "1.0.0",
-		"description": "Let's you pin roles next",
-		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/PinRoles/PinRoles.plugin.js",
-		"github": "https://github.com/Skamt/BDAddons/tree/main/PinRoles"
-	}
-}

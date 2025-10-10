@@ -54,7 +54,7 @@ export default class EmojiLetters extends Disposable {
 	keyDownHandler(e) {
 		if (e?.code?.includes?.("End")) {
 			this.active = !this.active;
-			document.querySelector("[class*=wordmarkWindows]").classList.toggle("active");
+			document.querySelector("[class^=title]").classList.toggle("active");
 		}
 	}
 
