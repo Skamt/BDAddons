@@ -2238,11 +2238,19 @@ var c4 = clsx("create-folder-modal");
 
 function PromptModal({ modalProps, required, title, placeholder, label, initialValue = "", onSubmit }) {
 	const [val, setVal] = useState(initialValue);
+	const [submitted, setSubmitted] = useState(false);
 	const saveHandler = (e2) => {
-		onSubmit?.(val);
-		modalProps.onClose?.();
+		e2.preventDefault();
+		setSubmitted(true);
+		try {
+			onSubmit?.(val);
+			modalProps.onClose?.();
+		} finally {
+			setSubmitted(false);
+		}
 	};
-	return /* @__PURE__ */ React_default.createElement(
+	const saveOnReturn = (e2) => {};
+	return /* @__PURE__ */ React_default.createElement("form", { onSubmit: saveHandler }, /* @__PURE__ */ React_default.createElement(
 		Modals.ModalRoot, {
 			...modalProps,
 			fullscreenOnMobile: false,
@@ -2284,6 +2292,7 @@ function PromptModal({ modalProps, required, title, placeholder, label, initialV
 			React_default.createElement(
 				ManaButton, {
 					text: "Save",
+					disable: submitted,
 					onClick: saveHandler
 				}
 			),
@@ -2295,7 +2304,7 @@ function PromptModal({ modalProps, required, title, placeholder, label, initialV
 				}
 			)
 		)
-	);
+	));
 }
 
 function openPromptModal(props) {
