@@ -3040,7 +3040,7 @@ function BookmarkContextMenu_default(id, { path: path2, channelId, userId, guild
 				items: folders
 			},
 			{
-				action: createFolder2,
+				action: () => createFolder2(),
 				label: "Create Folder",
 				icon: PlusIcon
 			},
