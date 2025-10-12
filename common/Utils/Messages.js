@@ -2,6 +2,7 @@ import { getModule } from "@Webpack";
 import MessageActions from "@Modules/MessageActions";
 import Dispatcher from "@Modules/Dispatcher";
 import PendingReplyStore from "@Stores/PendingReplyStore";
+import SelectedChannelStore from "@Stores/SelectedChannelStore";
 
 export function getReply(channelId) {
 	const reply = PendingReplyStore?.getPendingReply(channelId);
@@ -22,17 +23,18 @@ export function getReply(channelId) {
 	};
 }
 
-export function sendMessageDirectly(channel, content) {
-	if (!MessageActions || !MessageActions.sendMessage || typeof MessageActions.sendMessage !== "function") throw new Error("Can't send message directly.");
+export function sendMessageDirectly(content, channelId) {
+	if (!MessageActions?.sendMessage || typeof MessageActions.sendMessage !== "function") return;
+	if (!channelId) channelId = SelectedChannelStore.getChannelId();
 
 	return MessageActions.sendMessage(
-		channel.id,
+		channelId,
 		{
 			validNonShortcutEmojis: [],
 			content
 		},
 		undefined,
-		getReply(channel.id)
+		getReply(channelId)
 	);
 }
 

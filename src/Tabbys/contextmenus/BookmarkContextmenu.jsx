@@ -79,7 +79,7 @@ export default function (id, { path, channelId, userId, guildId, parentId, hasUn
 				items: folders
 			},
 			{
-				action: createFolder,
+				action: ()=>createFolder(),
 				label: "Create Folder",
 				icon: PlusIcon
 			},

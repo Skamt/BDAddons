@@ -71,7 +71,7 @@ export default class EmojiLetters extends Disposable {
 								.join("");
 						} catch {} finally {
 							this.active = false;
-							document.querySelector("[class*=wordmarkWindows]").classList.remove("active");
+							document.querySelector("[class^=title]").classList.toggle("active");
 						}
 				})
 			];
