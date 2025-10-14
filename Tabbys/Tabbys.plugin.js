@@ -147,79 +147,86 @@ Plugin_default.on(Events.STOP, () => {
 var StylesLoader_default = styleLoader;
 
 // src/Tabbys/styles.css
-StylesLoader_default.push(`
-
-
-
-.no-drag{
-	-webkit-app-region: no-drag;
-}
-
-.df{
-	display:flex;
-}
-
-.fcc{
-	display:flex;
-	align-items:center;
-	justify-content:center;
-}
-
-
-.rounded-full{
-	border-radius: var(--radius-round);
-}
-
-.box-border{
-	box-sizing:border-box;
-}
-
-.pointer-pointer{
-	cursor:pointer;
-}
-
-
-.ellipsis{
-	
-}
-
-:root{
+StylesLoader_default.push(`:root {
 	/* overrides */
-	
+
 	--tabbys-bookmarkbar-height: calc(var(--custom-app-top-bar-height) - 5px);
-	
+
 	/* Sizes */
-	--size:32px;
-	--tabbys-btn-size:calc(var(--size) * .8);
-	--tabbys-tab-btn-size:calc(var(--size) * .6);
+	--size: 32px;
+	--tabbys-btn-size: calc(var(--size) * 0.8);
+	--tabbys-tab-btn-size: calc(var(--size) * 0.6);
 	--radius-round: calc(infinity * 1px);
-	--tabs-gap:8px;
-	--bookmarks-gap:8px;
-	--folder-gap:8px;
-	
+	--tabs-gap: 8px;
+	--bookmarks-gap: 8px;
+	--folder-gap: 8px;
+
 	/* Cosmetiques */
 	--ping: rgb(218, 62, 68);
 	--unread: rgb(88, 101, 242);
-	--svg-color:#fff;
+	--svg-color: #fff;
 }
 
-:root{ 
+:root {
 	/* --tabbys-bg:var(--neutral-5); */
 	--tabbys-bg-hover: var(--background-mod-normal);
 	--tabbys-bg-selected: var(--background-mod-strong);
-	
-	--tabbys-text: var(--interactive-normal);
-	--tabbys-text-unread:var(--interactive-active);
-	
-	--tabbys-btn-color:var(--interactive-normal);
-	--tabbys-btn-color-hover:var(--interactive-hover);
-	--tabbys-btn-color-active:var(--interactive-active);
 
-	--tabbys-btn-bg:var(--background-accent);
-	--tabbys-btn-bg-hover:var(--interactive-muted);
-	--tabbys-btn-bg-active:var(--background-mod-strong);
-	
-	--tabbys-folder-menu-bg:var(--background-surface-highest);
+	--tabbys-text: var(--interactive-normal);
+	--tabbys-text-unread: var(--interactive-active);
+
+	--tabbys-btn-color: var(--interactive-normal);
+	--tabbys-btn-color-hover: var(--interactive-hover);
+	--tabbys-btn-color-active: var(--interactive-active);
+
+	--tabbys-btn-bg: var(--background-accent);
+	--tabbys-btn-bg-hover: var(--interactive-muted);
+	--tabbys-btn-bg-active: var(--background-mod-strong);
+
+	--tabbys-folder-menu-bg: var(--background-surface-highest);
+}
+
+.no-drag {
+	-webkit-app-region: no-drag;
+}
+
+.fcc {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.rounded-full {
+	border-radius: var(--radius-round);
+}
+
+.box-border {
+	box-sizing: border-box;
+}
+
+.pointer-pointer {
+	cursor: pointer;
+}
+
+
+.icon-wrapper {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-sizing: border-box;
+	overflow: hidden;
+}
+
+.icon-wrapper img,
+.icon-wrapper svg {
+	height: 100%;
+	width: 100%;
+}
+
+.discord-icon {
+	color: white;
+	background: #6361f8;
+	padding: 4px;
 }
 
 .Tabbys-menuitem-new-tab-to-left svg,
@@ -240,7 +247,7 @@ StylesLoader_default.push(`
 	border-radius: calc(var(--size) * 0.2);
 }
 
-.card-title{
+.card-title {
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -268,32 +275,8 @@ StylesLoader_default.push(`
 	border-radius: var(--radius-round);
 }
 
-.user-avatar {
-	/* flex:0 0 auto; */
-}
-
 .card img {
 	border-radius: inherit;
-}
-
-.icon-wrapper img,
-.icon-wrapper svg {
-	height: 100%;
-	width: 100%;
-}
-
-.icon-wrapper {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	box-sizing: border-box;
-	overflow: hidden;
-}
-
-.discord-icon {
-	color: white;
-	background: #6361f8;
-	padding: 4px;
 }
 
 .typing-dots {
@@ -397,8 +380,8 @@ function copy(data) {
 	DiscordNative.clipboard.copy(data);
 }
 
-function getNestedProp(obj, path2) {
-	return path2.split(".").reduce((ob, prop) => ob?.[prop], obj);
+function getNestedProp(obj, path3) {
+	return path3.split(".").reduce((ob, prop) => ob?.[prop], obj);
 }
 
 function reRender(selector) {
@@ -495,6 +478,8 @@ var DNDTypes = {
 var pathTypes = {
 	QUESTS: "QUESTS",
 	APPS: "APPS",
+	GROUP_DM: "GROUP_DM",
+	GUILD: "GUILD",
 	SERVERS: "SERVERS",
 	VERIFICATION: "VERIFICATION",
 	SHOP: "SHOP",
@@ -570,65 +555,107 @@ var types = {
 	"home": { title: "Home", type: pathTypes.HOME },
 	"unknown": { type: null, title: "Unknown" }
 };
-var channelRegex = /\/channels\/(@me|@favorites|\d+)\/(\d+)\/?(?:threads\/(\d+))?/;
+var parsers = [
+	{ regex: /^\/quest-home$/, handle: types.quests },
+	{ regex: /^\/channels\/@me$/, handle: types.home },
+	{ regex: /^\/shop$/, handle: types.shop },
+	{ regex: /^\/store$/, handle: types.store },
+	{ regex: /^\/discovery\/(applications|servers|quests)/, handle: (type) => types[type] },
+	{
+		regex: /^\/member-verification/,
+		handle() {
+			if (path.startsWith("/member-verification")) {
+				const id = path.split("/").pop();
+				const guild = UserGuildJoinRequestStore_default.getJoinRequestGuild(id);
+				if (!guild) return types.unknown;
+				return {
+					title: guild.name,
+					icon: guild.icon,
+					type: pathTypes.VERIFICATION
+				};
+			}
+		}
+	},
+	{
+		regex: /^\/channels\/(\d+)\/(.+)$/,
+		handle(guildId, type) {
+			return {
+				guildId,
+				name: type,
+				type: pathTypes.CHANNEL,
+				path: constructPath(guildId, type)
+			};
+		}
+	},
+	{
+		regex: /^\/channels\/(\d+|@favorites)\/(\d+)\/?(?:threads\/(\d+))?/,
+		handle(guildId, channelId, threadId) {
+			return {
+				guildId,
+				channelId: threadId || channelId,
+				type: pathTypes.CHANNEL,
+				path: constructPath(guildId, channelId, threadId)
+			};
+		}
+	},
+	{
+		regex: /^\/channels\/(@me)\/(\d+)/,
+		handle(me, channelId) {
+			const channel = ChannelStore_default.getChannel(channelId);
+			if (!channel) return types.unknown;
+			if (channel.isGroupDM())
+				return {
+					channelId,
+					type: pathTypes.GROUP_DM,
+					path: constructPath("@me", channelId)
+				};
+			const user = UserStore_default.getUser(channel.recipients[0]);
+			if (!user) return types.unknown;
+			return {
+				type: pathTypes.DM,
+				channelId: channel.id,
+				path: constructPath("@me", channelId),
+				username: user.username,
+				avatar: user.avatar,
+				userId: user.id
+			};
+		}
+	}
+];
 
-function parsePath(path2) {
-	if (path2.startsWith("/member-verification")) {
-		const id = path2.split("/").pop();
-		const guild = UserGuildJoinRequestStore_default.getJoinRequestGuild(id);
-		if (!guild) return types.unknown;
-		return {
-			title: guild.name,
-			type: null
-		};
-	}
-	if (path2 === "/shop") return types.shop;
-	if (path2 === "/store") return types.store;
-	if (path2 === "/channels/@me") return types.home;
-	if (path2 === "/quest-home") return types.quests;
-	if (path2.startsWith("/discovery/")) {
-		const category = path2.split("/")[2];
-		if (category === "servers" || category === "applications" || category === "quests") return types[category];
-		else types.unknown;
-	}
-	const channelMatch = path2.match(channelRegex);
-	if (!channelMatch) return types.unknown;
-	const [, guildId, channelId, threadId] = channelMatch;
-	const channel = ChannelStore_default.getChannel(threadId || channelId);
-	if (!channel) return types.unknown;
-	if (channel.isDM()) {
-		const user = UserStore_default.getUser(channel.recipients[0]);
-		if (!user) return types.unknown;
-		return {
-			type: pathTypes.DM,
-			channelId: channel.id,
-			path: constructPath("@me", channelId),
-			username: user.username,
-			avatar: user.avatar,
-			userId: user.id
-		};
-	}
-	return {
-		guildId,
-		channelId: threadId || channelId,
-		type: pathTypes.CHANNEL,
-		path: constructPath(guildId, channelId, threadId)
-	};
+function parsePath(path3) {
+	if (path3)
+		for (let i = parsers.length - 1; i >= 0; i--) {
+			const parser = parsers[i];
+			const match = path3.match(parser.regex);
+			if (!match) continue;
+			const [, ...captures] = match;
+			if (typeof parser.handle === "function") return parser.handle(...captures);
+			return parser.handle;
+		}
+	return types.unknown;
 }
 
 function constructPath(guildId, channelId, threadId) {
-	let path2 = `/channels/${guildId}/${channelId}/`;
-	if (threadId) path2 += `threads/${threadId}/`;
-	return path2;
+	let path3 = `/channels/${guildId}/${channelId}/`;
+	if (threadId) path3 += `threads/${threadId}/`;
+	return path3;
 }
 
-function navigate(tab) {
-	if (tab.type === pathTypes.DM) {
-		const channel = ChannelStore_default.getChannel(tab.channelId);
-		if (channel) return transitionTo(tab.path);
-		return ChannelUtils.openPrivateChannel({ recipientIds: [tab.userId] });
+function navigate({ type, channelId, path: path3, userId }) {
+	if (type === pathTypes.DM) {
+		const channel = ChannelStore_default.getChannel(channelId);
+		if (channel) return transitionTo(path3);
+		return ChannelUtils.openPrivateChannel({ recipientIds: [userId] });
 	}
-	return transitionTo(tab.path);
+	return transitionTo(path3);
+}
+
+function getSize(e2) {
+	if (e2 >= 32) return { size: 24, avatarSize: "SIZE_24" };
+	if (e2 >= 28 && e2 < 32) return { size: 20, avatarSize: "SIZE_20" };
+	if (e2 >= 24 && e2 < 28) return { size: 16, avatarSize: "SIZE_16" };
+	return { size: 20, avatarSize: "SIZE_20" };
 }
 
 // src/Tabbys/Store/shared.js
@@ -672,13 +699,13 @@ function createBookmarkFolder(folderId, parentId) {
 	return { id: crypto.randomUUID(), folderId, parentId };
 }
 
-function createSubBookmark(folderId, path2) {
-	const bookmark = createFromPath(path2);
+function createSubBookmark(folderId, path3) {
+	const bookmark = createFromPath(path3);
 	return Object.assign({ parentId: folderId }, bookmark);
 }
 
-function createFromPath(path2 = "/channels/@me") {
-	return Object.assign({ id: crypto.randomUUID(), path: path2 }, parsePath(path2));
+function createFromPath(path3 = "/channels/@me") {
+	return Object.assign({ id: crypto.randomUUID(), path: path3 }, parsePath(path3));
 }
 
 function createFrom(...objs) {
@@ -724,8 +751,8 @@ var setters = {
 	updateTab(tabId, payload) {
 		this.setState({ tabs: mergeArrayItem(this.state.tabs, tabId, payload) });
 	},
-	setTabPath(tabId, path2) {
-		if (path2) this.setTab(tabId, { id: tabId, path: path2, ...parsePath(path2) });
+	setTabPath(tabId, path3) {
+		if (path3) this.setTab(tabId, { id: tabId, path: path3, ...parsePath(path3) });
 	}
 };
 var tabs_default = {
@@ -743,9 +770,9 @@ var tabs_default = {
 	actions: {
 		...getters,
 		...setters,
-		newTab(path2) {
+		newTab(path3) {
 			const { selectedId, tabs } = this.state;
-			const tab = createFromPath(path2);
+			const tab = createFromPath(path3);
 			this.setState({
 				tabs: add(tabs, tab),
 				selectedId: tab.id,
@@ -758,8 +785,8 @@ var tabs_default = {
 		addTabBy(tab, targetId, fn) {
 			this.setState({ tabs: addBy(this.state.tabs, targetId, tab, fn) });
 		},
-		addTab(path2) {
-			this.addTabBy(createFromPath(path2));
+		addTab(path3) {
+			this.addTabBy(createFromPath(path3));
 		},
 		addTabToRight(tabId) {
 			this.addTabBy(createFromPath(), tabId, (a) => a + 1);
@@ -888,22 +915,22 @@ function removeOtherTabs(id) {
 	if (tab) Store_default.setState({ tabs: [tab], selectedId: tab.id, lastSelectedIdAfterNewTab: null });
 }
 
-function openTabAt(path2, targetId, pos) {
-	Store_default.addTabBy(createFromPath(path2), targetId, sort(pos));
+function openTabAt(path3, targetId, pos) {
+	Store_default.addTabBy(createFromPath(path3), targetId, sort(pos));
 }
 
 function openBookmarkAt(bookmarkId, targetId, pos, folderId) {
-	const { path: path2 } = getBookmark(bookmarkId, folderId) || {};
-	if (path2) openTabAt(path2, targetId, pos);
+	const { path: path3 } = getBookmark(bookmarkId, folderId) || {};
+	if (path3) openTabAt(path3, targetId, pos);
 }
 
-function addBookmarkAt(path2, targetId, pos) {
-	Store_default.addBookmarkBy(createFromPath(path2), targetId, sort(pos));
+function addBookmarkAt(path3, targetId, pos) {
+	Store_default.addBookmarkBy(createFromPath(path3), targetId, sort(pos));
 }
 
 function bookmarkTabAt(tabId, targetId, pos) {
-	const { path: path2 } = Store_default.getTab(tabId) || {};
-	if (path2) addBookmarkAt(path2, targetId, pos);
+	const { path: path3 } = Store_default.getTab(tabId) || {};
+	if (path3) addBookmarkAt(path3, targetId, pos);
 }
 
 function moveSubBookmarkToBookmarksAt(itemId, parentId, targetId, pos) {
@@ -920,13 +947,13 @@ function moveSubFolderToBookmarksAt(subFolderId, itemId, parentId, targetId, pos
 	Store_default.updateFolder(subFolderId, { parentId: null });
 }
 
-function addToFolderAt(path2, folderId, targetId, pos) {
-	return Store_default.addToFolderBy(folderId, createSubBookmark(folderId, path2), targetId, sort(pos));
+function addToFolderAt(path3, folderId, targetId, pos) {
+	return Store_default.addToFolderBy(folderId, createSubBookmark(folderId, path3), targetId, sort(pos));
 }
 
 function addTabToFolderAt(tabId, folderId, targetId, pos) {
-	const { path: path2 } = Store_default.getTab(tabId) || {};
-	if (path2) addToFolderAt(path2, folderId, targetId, pos);
+	const { path: path3 } = Store_default.getTab(tabId) || {};
+	if (path3) addToFolderAt(path3, folderId, targetId, pos);
 }
 
 function moveBookmarkToFolderAt(itemId, targetFolderId, parentId, targetId, pos) {
@@ -1010,8 +1037,8 @@ var folders_default = {
 			const items = this.getFolderItems(folderId);
 			if (items) this.updateFolder(folderId, { items: addBy(items, targetId, bookmark, fn) });
 		},
-		addToFolder(folderId, path2) {
-			this.addToFolderBy(folderId, createSubBookmark(folderId, path2));
+		addToFolder(folderId, path3) {
+			this.addToFolderBy(folderId, createSubBookmark(folderId, path3));
 		},
 		addFolderToFolder(parentId, folderId) {
 			this.addToFolderBy(parentId, createBookmarkFolder(folderId, parentId));
@@ -1090,8 +1117,8 @@ var bookmarks_default = {
 		addBookmarkBy(bookmark, targetId, fn = (a) => a) {
 			this.setState({ bookmarks: addBy(this.state.bookmarks, targetId, bookmark, fn) });
 		},
-		addBookmark(path2) {
-			this.addBookmarkBy(createFromPath(path2));
+		addBookmark(path3) {
+			this.addBookmarkBy(createFromPath(path3));
 		},
 		removeBookmark(id) {
 			const bookmarks = this.state.bookmarks;
@@ -1173,11 +1200,11 @@ Plugin_default.on(Events.START, () => {
 	if (!channelComponent) return Logger_default.patchError("channelComponent");
 	Patcher.after(channelComponent, "render", (_, [props], ret) => {
 		const origClick = getNestedProp(ret, "props.children.props.onClick");
-		const path2 = props.href;
-		if (!path2 || !origClick) return ret;
+		const path3 = props.href;
+		if (!path3 || !origClick) return ret;
 		ret.props.children.props.onClick = (e2) => {
 			e2.preventDefault();
-			if (e2.ctrlKey) Store_default.newTab(path2);
+			if (e2.ctrlKey) Store_default.newTab(path3);
 			else origClick?.(e2);
 		};
 	});
@@ -1238,12 +1265,12 @@ function svg(svgProps, ...paths) {
 				...svgProps,
 				...comProps
 			},
-			paths.map((p) => typeof p === "string" ? path(null, p) : p)
+			paths.map((p) => typeof p === "string" ? path2(null, p) : p)
 		)
 	);
 }
 
-function path(props, d) {
+function path2(props, d) {
 	return /* @__PURE__ */ React_default.createElement(
 		"path", {
 			...props,
@@ -1252,8 +1279,8 @@ function path(props, d) {
 	);
 }
 var BookmarkIconPath = "M17 4H7a1 1 0 0 0-1 1v13.74l3.99-3.61a3 3 0 0 1 4.02 0l3.99 3.6V5a1 1 0 0 0-1-1ZM7 2a3 3 0 0 0-3 3v16a1 1 0 0 0 1.67.74l5.66-5.13a1 1 0 0 1 1.34 0l5.66 5.13a1 1 0 0 0 1.67-.75V5a3 3 0 0 0-3-3H7Z";
-var BookmarkOutlinedIcon = svg(null, path({ fillRule: "evenodd" }, BookmarkIconPath));
-var BookmarkFilledIcon = svg(null, path({ fillRule: "" }, BookmarkIconPath));
+var BookmarkOutlinedIcon = svg(null, path2({ fillRule: "evenodd" }, BookmarkIconPath));
+var BookmarkFilledIcon = svg(null, path2({ fillRule: "" }, BookmarkIconPath));
 var AddToQueueIcon = svg({ viewBox: "-1 -1 18 18" }, "M16 15H2v-1.5h14V15zm0-4.5H2V9h14v1.5zm-8.034-6A5.484 5.484 0 0 1 7.187 6H13.5a2.5 2.5 0 0 0 0-5H7.966c.159.474.255.978.278 1.5H13.5a1 1 0 1 1 0 2H7.966zM2 2V0h1.5v2h2v1.5h-2v2H2v-2H0V2h2z");
 var ArrowIcon = svg(null, "M9.71069 18.2929C10.1012 18.6834 10.7344 18.6834 11.1249 18.2929L16.0123 13.4006C16.7927 12.6195 16.7924 11.3537 16.0117 10.5729L11.1213 5.68254C10.7308 5.29202 10.0976 5.29202 9.70708 5.68254C9.31655 6.07307 9.31655 6.70623 9.70708 7.09676L13.8927 11.2824C14.2833 11.6729 14.2833 12.3061 13.8927 12.6966L9.71069 16.8787C9.32016 17.2692 9.32016 17.9023 9.71069 18.2929Z");
 var CloseIcon = svg(null, "M17.3 18.7a1 1 0 0 0 1.4-1.4L13.42 12l5.3-5.3a1 1 0 0 0-1.42-1.4L12 10.58l-5.3-5.3a1 1 0 0 0-1.4 1.42L10.58 12l-5.3 5.3a1 1 0 1 0 1.42 1.4L12 13.42l5.3 5.3Z");
@@ -1287,20 +1314,20 @@ var SpotifyIcon = svg(
 var VectorIcon = svg(null, "M20.7 12.7a1 1 0 0 0 0-1.4l-5-5a1 1 0 1 0-1.4 1.4l3.29 3.3H4a1 1 0 1 0 0 2h13.59l-3.3 3.3a1 1 0 0 0 1.42 1.4l5-5Z");
 var VolumeIcon = svg({ viewBox: "0 0 16 16" }, "M9.741.85a.75.75 0 0 1 .375.65v13a.75.75 0 0 1-1.125.65l-6.925-4a3.642 3.642 0 0 1-1.33-4.967 3.639 3.639 0 0 1 1.33-1.332l6.925-4a.75.75 0 0 1 .75 0zm-6.924 5.3a2.139 2.139 0 0 0 0 3.7l5.8 3.35V2.8l-5.8 3.35zm8.683 4.29V5.56a2.75 2.75 0 0 1 0 4.88z", "M11.5 13.614a5.752 5.752 0 0 0 0-11.228v1.55a4.252 4.252 0 0 1 0 8.127v1.55z");
 var DiscordIcon = svg(null, "M19.73 4.87a18.2 18.2 0 0 0-4.6-1.44c-.21.4-.4.8-.58 1.21-1.69-.25-3.4-.25-5.1 0-.18-.41-.37-.82-.59-1.2-1.6.27-3.14.75-4.6 1.43A19.04 19.04 0 0 0 .96 17.7a18.43 18.43 0 0 0 5.63 2.87c.46-.62.86-1.28 1.2-1.98-.65-.25-1.29-.55-1.9-.92.17-.12.32-.24.47-.37 3.58 1.7 7.7 1.7 11.28 0l.46.37c-.6.36-1.25.67-1.9.92.35.7.75 1.35 1.2 1.98 2.03-.63 3.94-1.6 5.64-2.87.47-4.87-.78-9.09-3.3-12.83ZM8.3 15.12c-1.1 0-2-1.02-2-2.27 0-1.24.88-2.26 2-2.26s2.02 1.02 2 2.26c0 1.25-.89 2.27-2 2.27Zm7.4 0c-1.1 0-2-1.02-2-2.27 0-1.24.88-2.26 2-2.26s2.02 1.02 2 2.26c0 1.25-.88 2.27-2 2.27Z");
-var ErrorIcon = svg(null, path({ fill: "none" }, "M0 0h24v24H0z"), "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z");
+var ErrorIcon = svg(null, path2({ fill: "none" }, "M0 0h24v24H0z"), "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z");
 var ServersIcon = svg(null, "M10.55 4.4c.13-.24.1-.54-.12-.71L8.6 2.24a1 1 0 0 0-1.24 0l-4 3.15a1 1 0 0 0-.38.79v4.03c0 .43.5.66.82.39l2.28-1.9a3 3 0 0 1 3.84 0c.03.02.08 0 .08-.04V6.42a4 4 0 0 1 .55-2.02ZM7.36 10.23a1 1 0 0 1 1.28 0l1.18.99 2.98 2.48 1.84 1.53a1 1 0 0 1-.67 1.77.1.1 0 0 0-.1.09l-.23 3.06a2 2 0 0 1-2 1.85H4.36a2 2 0 0 1-2-1.85l-.24-3.16a1 1 0 0 1-.76-1.76l6-5Z", "M12 10.2c0 .14.07.28.18.38l3.74 3.12a3 3 0 0 1 .03 4.58.55.55 0 0 0-.2.37l-.12 1.65a4 4 0 0 1-.17.9c-.12.38.13.8.52.8H20a2 2 0 0 0 2-2V3.61a1.5 1.5 0 0 0-2-1.41l-6.66 2.33A2 2 0 0 0 12 6.42");
 var QuestsIcon = svg(null, "M7.5 21.7a8.95 8.95 0 0 1 9 0 1 1 0 0 0 1-1.73c-.6-.35-1.24-.64-1.9-.87.54-.3 1.05-.65 1.52-1.07a3.98 3.98 0 0 0 5.49-1.8.77.77 0 0 0-.24-.95 3.98 3.98 0 0 0-2.02-.76A4 4 0 0 0 23 10.47a.76.76 0 0 0-.71-.71 4.06 4.06 0 0 0-1.6.22 3.99 3.99 0 0 0 .54-5.35.77.77 0 0 0-.95-.24c-.75.36-1.37.95-1.77 1.67V6a4 4 0 0 0-4.9-3.9.77.77 0 0 0-.6.72 4 4 0 0 0 3.7 4.17c.89 1.3 1.3 2.95 1.3 4.51 0 3.66-2.75 6.5-6 6.5s-6-2.84-6-6.5c0-1.56.41-3.21 1.3-4.51A4 4 0 0 0 11 2.82a.77.77 0 0 0-.6-.72 4.01 4.01 0 0 0-4.9 3.96A4.02 4.02 0 0 0 3.73 4.4a.77.77 0 0 0-.95.24 3.98 3.98 0 0 0 .55 5.35 4 4 0 0 0-1.6-.22.76.76 0 0 0-.72.71l-.01.28a4 4 0 0 0 2.65 3.77c-.75.06-1.45.33-2.02.76-.3.22-.4.62-.24.95a4 4 0 0 0 5.49 1.8c.47.42.98.78 1.53 1.07-.67.23-1.3.52-1.91.87a1 1 0 1 0 1 1.73Z");
-var AppsIcon = svg(null, path({ "fill-rule": "evenodd", "clip-rule": "evenodd" }, "M20.97 4.06c0 .18.08.35.24.43.55.28.9.82 1.04 1.42.3 1.24.75 3.7.75 7.09v4.91a3.09 3.09 0 0 1-5.85 1.38l-1.76-3.51a1.09 1.09 0 0 0-1.23-.55c-.57.13-1.36.27-2.16.27s-1.6-.14-2.16-.27c-.49-.11-1 .1-1.23.55l-1.76 3.51A3.09 3.09 0 0 1 1 17.91V13c0-3.38.46-5.85.75-7.1.15-.6.49-1.13 1.04-1.4a.47.47 0 0 0 .24-.44c0-.7.48-1.32 1.2-1.47l2.93-.62c.5-.1 1 .06 1.36.4.35.34.78.71 1.28.68a42.4 42.4 0 0 1 4.4 0c.5.03.93-.34 1.28-.69.35-.33.86-.5 1.36-.39l2.94.62c.7.15 1.19.78 1.19 1.47ZM20 7.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0ZM15.5 12a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM5 7a1 1 0 0 1 2 0v1h1a1 1 0 0 1 0 2H7v1a1 1 0 1 1-2 0v-1H4a1 1 0 1 1 0-2h1V7Z"));
+var AppsIcon = svg(null, path2({ "fill-rule": "evenodd", "clip-rule": "evenodd" }, "M20.97 4.06c0 .18.08.35.24.43.55.28.9.82 1.04 1.42.3 1.24.75 3.7.75 7.09v4.91a3.09 3.09 0 0 1-5.85 1.38l-1.76-3.51a1.09 1.09 0 0 0-1.23-.55c-.57.13-1.36.27-2.16.27s-1.6-.14-2.16-.27c-.49-.11-1 .1-1.23.55l-1.76 3.51A3.09 3.09 0 0 1 1 17.91V13c0-3.38.46-5.85.75-7.1.15-.6.49-1.13 1.04-1.4a.47.47 0 0 0 .24-.44c0-.7.48-1.32 1.2-1.47l2.93-.62c.5-.1 1 .06 1.36.4.35.34.78.71 1.28.68a42.4 42.4 0 0 1 4.4 0c.5.03.93-.34 1.28-.69.35-.33.86-.5 1.36-.39l2.94.62c.7.15 1.19.78 1.19 1.47ZM20 7.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0ZM15.5 12a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM5 7a1 1 0 0 1 2 0v1h1a1 1 0 0 1 0 2H7v1a1 1 0 1 1-2 0v-1H4a1 1 0 1 1 0-2h1V7Z"));
 var SettingIcon = svg(
 	null,
 	"M10.56 1.1c-.46.05-.7.53-.64.98.18 1.16-.19 2.2-.98 2.53-.8.33-1.79-.15-2.49-1.1-.27-.36-.78-.52-1.14-.24-.77.59-1.45 1.27-2.04 2.04-.28.36-.12.87.24 1.14.96.7 1.43 1.7 1.1 2.49-.33.8-1.37 1.16-2.53.98-.45-.07-.93.18-.99.64a11.1 11.1 0 0 0 0 2.88c.06.46.54.7.99.64 1.16-.18 2.2.19 2.53.98.33.8-.14 1.79-1.1 2.49-.36.27-.52.78-.24 1.14.59.77 1.27 1.45 2.04 2.04.36.28.87.12 1.14-.24.7-.95 1.7-1.43 2.49-1.1.8.33 1.16 1.37.98 2.53-.07.45.18.93.64.99a11.1 11.1 0 0 0 2.88 0c.46-.06.7-.54.64-.99-.18-1.16.19-2.2.98-2.53.8-.33 1.79.14 2.49 1.1.27.36.78.52 1.14.24.77-.59 1.45-1.27 2.04-2.04.28-.36.12-.87-.24-1.14-.96-.7-1.43-1.7-1.1-2.49.33-.8 1.37-1.16 2.53-.98.45.07.93-.18.99-.64a11.1 11.1 0 0 0 0-2.88c-.06-.46-.54-.7-.99-.64-1.16.18-2.2-.19-2.53-.98-.33-.8.14-1.79 1.1-2.49.36-.27.52-.78.24-1.14a11.07 11.07 0 0 0-2.04-2.04c-.36-.28-.87-.12-1.14.24-.7.96-1.7 1.43-2.49 1.1-.8-.33-1.16-1.37-.98-2.53.07-.45-.18-.93-.64-.99a11.1 11.1 0 0 0-2.88 0ZM16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"
 );
 var PenIcon = svg(null, "m13.96 5.46 4.58 4.58a1 1 0 0 0 1.42 0l1.38-1.38a2 2 0 0 0 0-2.82l-3.18-3.18a2 2 0 0 0-2.82 0l-1.38 1.38a1 1 0 0 0 0 1.42ZM2.11 20.16l.73-4.22a3 3 0 0 1 .83-1.61l7.87-7.87a1 1 0 0 1 1.42 0l4.58 4.58a1 1 0 0 1 0 1.42l-7.87 7.87a3 3 0 0 1-1.6.83l-4.23.73a1.5 1.5 0 0 1-1.73-1.73Z");
 var UndoIcon = svg(null, "M4 12a8 8 0 0 1 14.93-4H15a1 1 0 1 0 0 2h6a1 1 0 0 0 1-1V3a1 1 0 1 0-2 0v3a9.98 9.98 0 0 0-18 6 10 10 0 0 0 16.29 7.78 1 1 0 0 0-1.26-1.56A8 8 0 0 1 4 12Z");
-var TrashBinIcon = svg(null, "M14.25 1c.41 0 .75.34.75.75V3h5.25c.41 0 .75.34.75.75v.5c0 .41-.34.75-.75.75H3.75A.75.75 0 0 1 3 4.25v-.5c0-.41.34-.75.75-.75H9V1.75c0-.41.34-.75.75-.75h4.5Z", path({ fillRule: "evenodd", "clip-rule": "evenodd" }, "M5.06 7a1 1 0 0 0-1 1.06l.76 12.13a3 3 0 0 0 3 2.81h8.36a3 3 0 0 0 3-2.81l.75-12.13a1 1 0 0 0-1-1.06H5.07ZM11 12a1 1 0 1 0-2 0v6a1 1 0 1 0 2 0v-6Zm3-1a1 1 0 0 1 1 1v6a1 1 0 1 1-2 0v-6a1 1 0 0 1 1-1Z"));
+var TrashBinIcon = svg(null, "M14.25 1c.41 0 .75.34.75.75V3h5.25c.41 0 .75.34.75.75v.5c0 .41-.34.75-.75.75H3.75A.75.75 0 0 1 3 4.25v-.5c0-.41.34-.75.75-.75H9V1.75c0-.41.34-.75.75-.75h4.5Z", path2({ fillRule: "evenodd", "clip-rule": "evenodd" }, "M5.06 7a1 1 0 0 0-1 1.06l.76 12.13a3 3 0 0 0 3 2.81h8.36a3 3 0 0 0 3-2.81l.75-12.13a1 1 0 0 0-1-1.06H5.07ZM11 12a1 1 0 1 0-2 0v6a1 1 0 1 0 2 0v-6Zm3-1a1 1 0 0 1 1 1v6a1 1 0 1 1-2 0v-6a1 1 0 0 1 1-1Z"));
 var StarIcon = svg(null, "M10.81 2.86c.38-1.15 2-1.15 2.38 0l1.89 5.83h6.12c1.2 0 1.71 1.54.73 2.25l-4.95 3.6 1.9 5.82a1.25 1.25 0 0 1-1.93 1.4L12 18.16l-4.95 3.6c-.98.7-2.3-.25-1.92-1.4l1.89-5.82-4.95-3.6a1.25 1.25 0 0 1 .73-2.25h6.12l1.9-5.83Z");
 var FolderIcon = svg({ fill: "none" },
-	path({
+	path2({
 			"stroke": "currentColor",
 			"stroke-width": "2"
 		},
@@ -1309,7 +1336,7 @@ var FolderIcon = svg({ fill: "none" },
 );
 var ShopIcon = svg(null, "M21 11.42V19a3 3 0 0 1-3 3h-2.75a.25.25 0 0 1-.25-.25V16a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v5.75c0 .14-.11.25-.25.25H6a3 3 0 0 1-3-3v-7.58c0-.18.2-.3.37-.24a4.46 4.46 0 0 0 4.94-1.1c.1-.12.3-.12.4 0a4.49 4.49 0 0 0 6.58 0c.1-.12.3-.12.4 0a4.45 4.45 0 0 0 4.94 1.1c.17-.07.37.06.37.24Z", "M2.63 4.19A3 3 0 0 1 5.53 2H7a1 1 0 0 1 1 1v3.98a3.07 3.07 0 0 1-.3 1.35A2.97 2.97 0 0 1 4.98 10c-2 0-3.44-1.9-2.9-3.83l.55-1.98ZM10 2a1 1 0 0 0-1 1v4a3 3 0 0 0 3 3 3 3 0 0 0 3-2.97V3a1 1 0 0 0-1-1h-4ZM17 2a1 1 0 0 0-1 1v3.98a2.43 2.43 0 0 0 0 .05A2.95 2.95 0 0 0 19.02 10c2 0 3.44-1.9 2.9-3.83l-.55-1.98A3 3 0 0 0 18.47 2H17Z");
 var NitroIcon = svg(null, "M16.23 12c0 1.29-.95 2.25-2.22 2.25A2.18 2.18 0 0 1 11.8 12c0-1.29.95-2.25 2.22-2.25 1.27 0 2.22.96 2.22 2.25ZM23 12c0 5.01-4 9-8.99 9a8.93 8.93 0 0 1-8.75-6.9H3.34l-.9-4.2H5.3c.26-.96.68-1.89 1.21-2.7H1.89L1 3h12.74C19.13 3 23 6.99 23 12Zm-4.26 0c0-2.67-2.1-4.8-4.73-4.8A4.74 4.74 0 0 0 9.28 12c0 2.67 2.1 4.8 4.73 4.8a4.74 4.74 0 0 0 4.73-4.8Z");
-var IdIcon = svg(null, "M15.3 14.48c-.46.45-1.08.67-1.86.67h-1.39V9.2h1.39c.78 0 1.4.22 1.86.67.46.45.68 1.22.68 2.31 0 1.1-.22 1.86-.68 2.31Z", path({ fillRule: "evenodd" }, "M5 2a3 3 0 0 0-3 3v14a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3V5a3 3 0 0 0-3-3H5Zm1 15h2.04V7.34H6V17Zm4-9.66V17h3.44c1.46 0 2.6-.42 3.38-1.25.8-.83 1.2-2.02 1.2-3.58s-.4-2.75-1.2-3.58c-.79-.83-1.92-1.25-3.38-1.25H10Z"));
+var IdIcon = svg(null, "M15.3 14.48c-.46.45-1.08.67-1.86.67h-1.39V9.2h1.39c.78 0 1.4.22 1.86.67.46.45.68 1.22.68 2.31 0 1.1-.22 1.86-.68 2.31Z", path2({ fillRule: "evenodd" }, "M5 2a3 3 0 0 0-3 3v14a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3V5a3 3 0 0 0-3-3H5Zm1 15h2.04V7.34H6V17Zm4-9.66V17h3.44c1.46 0 2.6-.42 3.38-1.25.8-.83 1.2-2.02 1.2-3.58s-.4-2.75-1.2-3.58c-.79-.83-1.92-1.25-3.38-1.25H10Z"));
 
 // src/Tabbys/patches/patchContextMenu.jsx
 function channelPath(...args) {
@@ -1333,17 +1360,17 @@ function getPath(channel) {
 	}
 }
 
-function menu(path2) {
+function menu(path3) {
 	const { showBookmarkbar, showTabbar } = Settings_default.state;
 	if (!showBookmarkbar && !showTabbar) return;
 	const menu2 = [ContextMenu.buildItem({ type: "separator" })];
 	const bookmark = {
-		action: () => Store_default.addBookmark(path2),
+		action: () => Store_default.addBookmark(path3),
 		icon: BookmarkOutlinedIcon,
 		label: "Bookmark channel"
 	};
 	const tab = {
-		action: () => Store_default.newTab(path2),
+		action: () => Store_default.newTab(path3),
 		icon: PlusIcon,
 		label: "Open in new Tab"
 	};
@@ -1366,23 +1393,23 @@ Plugin_default.on(Events.START, () => {
 		...["thread-context", "channel-context"].map(
 			(context) => ContextMenu.patch(context, (retVal, { channel, targetIsUser }) => {
 				if (!channel || targetIsUser) return;
-				const path2 = getPath(channel);
-				if (!path2) return;
-				retVal.props.children.push(...menu(path2));
+				const path3 = getPath(channel);
+				if (!path3) return;
+				retVal.props.children.push(...menu(path3));
 			})
 		),
 		ContextMenu.patch("channel-mention-context", (retVal, { originalLink }) => {
-			const path2 = getPathName(originalLink);
-			if (!path2) return;
-			retVal.props.children.push(...menu(path2));
+			const path3 = getPathName(originalLink);
+			if (!path3) return;
+			retVal.props.children.push(...menu(path3));
 		}),
 		ContextMenu.patch("user-context", (retVal, { user }) => {
 			if (user.email) return;
 			const channel = ChannelStore_default.getDMChannelFromUserId(user.id);
 			if (!channel) return;
-			const path2 = getPath(channel);
-			if (!path2) return;
-			retVal.props.children.push(...menu(path2));
+			const path3 = getPath(channel);
+			if (!path3) return;
+			retVal.props.children.push(...menu(path3));
 		})
 	];
 	Plugin_default.once(Events.STOP, () => {
@@ -1396,12 +1423,12 @@ var DMChannel = getModule((a) => a.render && DMChannelFilter(a.render), { search
 Plugin_default.on(Events.START, () => {
 	if (!DMChannel) return Logger_default.patchError("DMChannel");
 	Patcher.before(DMChannel, "render", (_, [props]) => {
-		const path2 = props.to;
-		if (!path2) return;
+		const path3 = props.to;
+		if (!path3) return;
 		props.onClick = (e2) => {
 			if (e2.ctrlKey) {
 				e2.preventDefault();
-				Store_default.newTab(path2);
+				Store_default.newTab(path3);
 			}
 		};
 	});
@@ -1415,10 +1442,10 @@ Plugin_default.on(Events.START, () => {
 		const targetProps = getNestedProp(ret, "props.children.1.props.children.props.children.props.children.props");
 		if (!targetProps) return ret;
 		const origClick = targetProps.onClick;
-		const path2 = getGuildChannelPath(guild.id);
+		const path3 = getGuildChannelPath(guild.id);
 		targetProps.onClick = (e2) => {
 			e2.preventDefault();
-			if (e2.ctrlKey) Store_default.newTab(path2);
+			if (e2.ctrlKey) Store_default.newTab(path3);
 			else origClick?.(e2);
 		};
 	});
@@ -2367,15 +2394,15 @@ function CopyGuildIdItem(id) {
 	};
 }
 
-function CopyPathItem(path2) {
+function CopyPathItem(path3) {
 	return {
-		action: () => copy(path2),
+		action: () => copy(path3),
 		label: "Copy Path"
 	};
 }
 
 // src/Tabbys/contextmenus/TabContextMenu.jsx
-function TabContextMenu_default(id, { path: path2, channelId, userId, guildId, hasUnread }) {
+function TabContextMenu_default(id, { path: path3, channelId, userId, guildId, hasUnread }) {
 	const canClose = Store_default.getTabsCount() > 1;
 	const folders = Store_default.state.folders.map(({ id: folderId, name }) => {
 		return {
@@ -2385,7 +2412,7 @@ function TabContextMenu_default(id, { path: path2, channelId, userId, guildId, h
 		};
 	}).map(wrapMenuItem);
 	const copies = [
-		CopyPathItem(path2),
+		CopyPathItem(path3),
 		channelId && CopyChannelIdItem(channelId),
 		guildId && CopyGuildIdItem(guildId),
 		userId && CopyUserIdItem(userId)
@@ -2456,55 +2483,6 @@ var useStateFromStores_default = getModule(Filters.byStrings("getStateFromStores
 // MODULES-AUTO-LOADER:@Stores/ReadStateStore
 var ReadStateStore_default = getStore("ReadStateStore");
 
-// src/Tabbys/components/Tab/BaseTab.jsx
-var c5 = classNameFactory("tab");
-
-function BaseTab({ id, icon, path: path2, title, guildId, userId, channelId, children, ...props }) {
-	const { isOver, canDrop, isDragging, dragRef, dropRef } = props;
-	const shouldHightLight = Settings_default(Settings_default.selectors.highlightTabUnread);
-	const hasUnread = useStateFromStores_default([ReadStateStore_default], () => shouldHightLight && ReadStateStore_default.hasUnread(channelId), [shouldHightLight, channelId]);
-	const isSelected = Store_default(Store_default.selectors.selectedId) === id;
-	const isSingle = Store_default(Store_default.selectors.isSingle);
-	const onClick = (e2) => {
-		e2.stopPropagation();
-		Store_default.setSelectedId(id);
-	};
-	const onCloseClick = (e2) => {
-		e2.stopPropagation();
-		Store_default.removeTab(id);
-	};
-	const contextmenuHandler = (e2) => {
-		ContextMenu.open(e2, TabContextMenu_default(id, { userId, path: path2, guildId, channelId, hasUnread }), {
-			position: "bottom",
-			align: "left"
-		});
-	};
-	return /* @__PURE__ */ React_default.createElement(
-		"div", {
-			onContextMenu: contextmenuHandler,
-			ref: (e2) => dragRef(dropRef(e2)),
-			className: join2(c5("container", isOver && canDrop && "canDrop"), { isSelected, hasUnread, isDragging }, "card"),
-			onClick
-		},
-		/* @__PURE__ */
-		React_default.createElement(Tab_default, { id }),
-		icon,
-		/* @__PURE__ */
-		React_default.createElement("div", { className: join2(c5("title"), "card-title") }, title),
-		children,
-		/* @__PURE__ */
-		React_default.createElement(
-			"div", {
-				className: join2(c5("close-button"), "icon-wrapper", "card-button"),
-				onClick: onCloseClick
-			},
-			/* @__PURE__ */
-			React_default.createElement(CloseIcon, null)
-		)
-	);
-}
-var BaseTab_default = Tab_default2(BaseTab);
-
 // src/Tabbys/components/NumberBadge/styles.css
 StylesLoader_default.push(`.badge-pill {
 	width: 16px;
@@ -2530,7 +2508,7 @@ StylesLoader_default.push(`.badge-pill {
 `);
 
 // src/Tabbys/components/NumberBadge/index.jsx
-var c6 = clsx("badge");
+var c5 = clsx("badge");
 
 function m(e2) {
 	return e2 < 10 ? 13 : e2 < 100 ? 19 : 27;
@@ -2543,7 +2521,7 @@ var NumberBadge_default = ({ count, type }) => {
 	return /* @__PURE__ */ React_default.createElement(
 		"div", {
 			style: { width: m(count) },
-			className: join(" ", c6("pill", type), "fcc", "rounded-full")
+			className: join(" ", c5("pill", type), "fcc", "rounded-full")
 		},
 		g(count)
 	);
@@ -2576,33 +2554,6 @@ function TypingDots_default({ users }) {
 
 // MODULES-AUTO-LOADER:@Stores/TypingStore
 var TypingStore_default = getStore("TypingStore");
-
-// MODULES-AUTO-LOADER:@Stores/GuildStore
-var GuildStore_default = getStore("GuildStore");
-
-// common/Utils/Channel.js
-function getChannelName(channel) {
-	if (!channel) return "";
-	if (channel.isGroupDM()) return channel.rawRecipients.map(getUserName).join(", ");
-	return channel.name;
-}
-
-function getChannelIconURL(channel, size) {
-	if (!channel) return "";
-	if (channel.isGroupDM())
-		return IconsUtils.getChannelIconURL({
-			id: channel.id,
-			icon: channel.icon,
-			applicationId: channel.getApplicationId(),
-			size
-		});
-	const guild = GuildStore_default.getGuild(channel.guild_id);
-	return IconsUtils.getGuildIconURL({
-		id: guild.id,
-		icon: guild.icon,
-		size
-	});
-}
 
 // common/Utils/Hooks.js
 function getChannelState(channelId) {
@@ -2665,8 +2616,76 @@ function ChannelStatus({ channelIds, type, isDM }) {
 	));
 }
 
-// src/Tabbys/components/Icons/Fallback.jsx
-var Fallback_default = () => /* @__PURE__ */ React_default.createElement("div", { className: join2("card-icon", "discord-icon", "icon-wrapper") }, /* @__PURE__ */ React_default.createElement(DiscordIcon, null));
+// src/Tabbys/components/Card/context.js
+var HideTitleContext = React_default.createContext(false);
+
+// MODULES-AUTO-LOADER:@Stores/GuildStore
+var GuildStore_default = getStore("GuildStore");
+
+// common/Utils/Channel.js
+function getGroupDmIcon(channelId, size) {
+	const channel = ChannelStore_default.getChannel(channelId) || {};
+	return IconsUtils.getChannelIconURL({
+		id: channel.id,
+		icon: channel.icon,
+		applicationId: channel.getApplicationId(),
+		size
+	});
+}
+
+function getGuildIcon(guildId, size) {
+	const guild = GuildStore_default.getGuild(guildId) || {};
+	return IconsUtils.getGuildIconURL({
+		id: guildId,
+		icon: guild.icon,
+		size
+	});
+}
+
+// src/Tabbys/components/Card/Markup.jsx
+function Markup({ icon, title }) {
+	const hideTitle = React_default.useContext(HideTitleContext);
+	return /* @__PURE__ */ React_default.createElement(React_default.Fragment, null, icon, !hideTitle && /* @__PURE__ */ React_default.createElement("div", { className: "card-title" }, title));
+}
+
+// src/Tabbys/components/Card/Icon.jsx
+function IconWrapper({ children, className }) {
+	return /* @__PURE__ */ React_default.createElement("div", { className: join2("card-icon", className) }, children);
+}
+
+function Icon({ size, src, alt, icon, className }) {
+	if (src)
+		return /* @__PURE__ */ React_default.createElement(IconWrapper, { className: join2("icon-wrapper", className) }, /* @__PURE__ */ React_default.createElement(
+			"img", {
+				width: size,
+				height: size,
+				src,
+				alt
+			}
+		));
+	if (icon) return /* @__PURE__ */ React_default.createElement(IconWrapper, { className }, icon);
+	return /* @__PURE__ */ React_default.createElement(IconWrapper, { className: join2("icon-wrapper", "discord-icon", className) }, /* @__PURE__ */ React_default.createElement(DiscordIcon, null));
+}
+
+// src/Tabbys/components/Card/Channel.jsx
+function Channel({ name, guildId, channelId }) {
+	const { size } = getSize(Settings_default((_) => _.size));
+	const channel = useStateFromStores_default([ChannelStore_default], () => ChannelStore_default.getChannel(channelId), [channelId]);
+	const title = name || channel?.name || channelId;
+	const src = getGuildIcon(channel?.guild_id, size);
+	return /* @__PURE__ */ React_default.createElement(
+		Markup, {
+			icon: /* @__PURE__ */ React_default.createElement(
+				Icon, {
+					size,
+					src,
+					alt: name
+				}
+			),
+			title
+		}
+	);
+}
 
 // MODULES-AUTO-LOADER:@Stores/PresenceStore
 var PresenceStore_default = getStore("PresenceStore");
@@ -2685,49 +2704,37 @@ var UserAvatar_default = ({ id, size, src }) => {
 	);
 };
 
-// src/Tabbys/components/Icons/shared.js
-function getSize(e2) {
-	if (e2 >= 32) return { size: 24, avatarSize: "SIZE_24" };
-	if (e2 >= 28 && e2 < 32) return { size: 20, avatarSize: "SIZE_20" };
-	if (e2 >= 24 && e2 < 28) return { size: 16, avatarSize: "SIZE_16" };
-	return { size: 20, avatarSize: "SIZE_20" };
-}
-
-// src/Tabbys/components/Icons/DMIcon.jsx
+// src/Tabbys/components/Card/DM.jsx
 function getUserAvatar2(id, avatar, size) {
 	return `https://cdn.discordapp.com/avatars/${id}/${avatar}.webp?size=${size}`;
 }
 
-function DMIcon({ user = {}, userId, fallbackAvatar }) {
+function DM({ userId, avatar, username }) {
 	const { size, avatarSize } = getSize(Settings_default((_) => _.size));
-	const src = getUserAvatar2(user.id || userId, user.avatar || fallbackAvatar, size);
-	if (!src) return /* @__PURE__ */ React_default.createElement(Fallback_default, null);
-	return /* @__PURE__ */ React_default.createElement("div", { className: join2("card-icon", "user-avatar", "fcc") }, /* @__PURE__ */ React_default.createElement(
-		UserAvatar_default, {
-			id: user.id,
-			src,
-			size: avatarSize
+	const user = useStateFromStores_default([UserStore_default], () => UserStore_default.getUser(userId), [userId]);
+	const title = getUserName(user) || username || userId;
+	const src = getUserAvatar2(user.id || userId, user.avatar || avatar, size);
+	return /* @__PURE__ */ React_default.createElement(
+		Markup, {
+			icon: /* @__PURE__ */ React_default.createElement(
+				Icon, {
+					className: join2("fcc"),
+					icon: /* @__PURE__ */ React_default.createElement(
+						UserAvatar_default, {
+							id: user.id,
+							src,
+							size: avatarSize
+						}
+					)
+				}
+			),
+			title
 		}
-	));
+	);
 }
 
-// src/Tabbys/components/Icons/ChannelIcon.jsx
-function ChannelIcon({ guildId, name, channel }) {
-	const { size } = getSize(Settings_default((_) => _.size));
-	const src = getChannelIconURL(channel, size);
-	if (!src) return /* @__PURE__ */ React_default.createElement(Fallback_default, null);
-	return /* @__PURE__ */ React_default.createElement("div", { className: join2("card-icon", "icon-wrapper") }, /* @__PURE__ */ React_default.createElement(
-		"img", {
-			width: size,
-			height: size,
-			src,
-			alt: name
-		}
-	));
-}
-
-// src/Tabbys/components/Icons/MiscIcon.jsx
-function MiscIcon({ type }) {
+// src/Tabbys/components/Card/Generic.jsx
+function Generic({ title, type }) {
 	let icon = null;
 	switch (type) {
 		case pathTypes.NITRO:
@@ -2745,88 +2752,114 @@ function MiscIcon({ type }) {
 		case pathTypes.APPS:
 			icon = /* @__PURE__ */ React_default.createElement(AppsIcon, null);
 			break;
-		default:
-			return /* @__PURE__ */ React_default.createElement(Fallback_default, null);
 	}
-	return /* @__PURE__ */ React_default.createElement("div", { className: join2("card-icon", "icon-wrapper") }, icon);
+	return /* @__PURE__ */ React_default.createElement(
+		Markup, {
+			icon: /* @__PURE__ */ React_default.createElement(Icon, { className: "icon-wrapper", icon }),
+			title
+		}
+	);
 }
 
-// src/Tabbys/components/Tab/ChannelTab.jsx
-function ChannelTab({ id, path: path2, guildId, channelId }) {
+// src/Tabbys/components/Card/GroupDM.jsx
+function GroupDM({ name, channelId }) {
+	const { size } = getSize(Settings_default((_) => _.size));
 	const channel = useStateFromStores_default([ChannelStore_default], () => ChannelStore_default.getChannel(channelId), [channelId]);
-	const name = getChannelName(channel);
+	const title = name || channel?.rawRecipients?.map(getUserName).join(", ") || channelId;
+	const src = getGroupDmIcon(channelId, size);
 	return /* @__PURE__ */ React_default.createElement(
-		BaseTab_default, {
-			id,
-			channelId,
-			guildId,
-			path: path2,
-			title: name || channelId,
+		Markup, {
 			icon: /* @__PURE__ */ React_default.createElement(
-				ChannelIcon, {
-					guildId,
-					name,
-					channel
+				Icon, {
+					size,
+					src,
+					alt: name
 				}
-			)
+			),
+			title
+		}
+	);
+}
+
+// src/Tabbys/components/Card/Content.jsx
+function Content({ type, ...props }) {
+	switch (type) {
+		case pathTypes.CHANNEL:
+			return /* @__PURE__ */ React_default.createElement(Channel, { ...props });
+		case pathTypes.DM:
+			return /* @__PURE__ */ React_default.createElement(DM, { ...props });
+		case pathTypes.GROUP_DM:
+			return /* @__PURE__ */ React_default.createElement(GroupDM, { ...props });
+		case pathTypes.NITRO:
+		case pathTypes.SHOP:
+		case pathTypes.SERVERS:
+		case pathTypes.QUESTS:
+		case pathTypes.APPS:
+		case pathTypes.HOME:
+			return /* @__PURE__ */ React_default.createElement(
+				Generic, {
+					type,
+					...props
+				}
+			);
+	}
+	return null;
+}
+
+// src/Tabbys/components/Tab/index.jsx
+var c6 = classNameFactory("tab");
+
+function Tab2({ id, isOver, canDrop, isDragging, dragRef, dropRef }) {
+	const tab = Store_default((state) => Store_default.getTab(id), shallow);
+	const { guildId, userId, path: path3, channelId } = tab;
+	const shouldHightLight = Settings_default(Settings_default.selectors.highlightTabUnread);
+	const hasUnread = useStateFromStores_default([ReadStateStore_default], () => shouldHightLight && ReadStateStore_default.hasUnread(channelId), [shouldHightLight, channelId]);
+	const isSelected = Store_default(Store_default.selectors.selectedId) === id;
+	const isSingle = Store_default(Store_default.selectors.isSingle);
+	const onClick = (e2) => {
+		e2.stopPropagation();
+		Store_default.setSelectedId(id);
+	};
+	const onCloseClick = (e2) => {
+		e2.stopPropagation();
+		Store_default.removeTab(id);
+	};
+	const contextmenuHandler = (e2) => {
+		ContextMenu.open(e2, TabContextMenu_default(id, { userId, path: path3, guildId, channelId, hasUnread }), {
+			position: "bottom",
+			align: "left"
+		});
+	};
+	return /* @__PURE__ */ React_default.createElement(
+		"div", {
+			onContextMenu: contextmenuHandler,
+			ref: (e2) => dragRef(dropRef(e2)),
+			className: join2(c6("container", isOver && canDrop && "canDrop"), { isSelected, hasUnread, isDragging }, "card"),
+			onClick
 		},
+		/* @__PURE__ */
+		React_default.createElement(Tab_default, { id }),
+		/* @__PURE__ */
+		React_default.createElement(Content, { ...tab }),
 		/* @__PURE__ */
 		React_default.createElement(
 			ChannelStatus, {
 				type: "Tab",
 				channelIds: [channelId]
 			}
-		)
-	);
-}
-
-// src/Tabbys/components/Tab/DMTab.jsx
-function DMTab({ id, userId, path: path2, avatar, username, channelId }) {
-	const user = useStateFromStores_default([UserStore_default], () => UserStore_default.getUser(userId), [userId]);
-	const name = getUserName(user) || username || userId;
-	return /* @__PURE__ */ React_default.createElement(
-		BaseTab_default, {
-			id,
-			channelId,
-			userId,
-			path: path2,
-			title: name,
-			icon: /* @__PURE__ */ React_default.createElement(
-				DMIcon, {
-					user,
-					userId,
-					fallbackAvatar: avatar
-				}
-			)
-		},
+		),
 		/* @__PURE__ */
 		React_default.createElement(
-			ChannelStatus, {
-				type: "Tab",
-				channelIds: [channelId],
-				isDM: true
-			}
+			"div", {
+				className: join2(c6("close-button"), "icon-wrapper", "card-button"),
+				onClick: onCloseClick
+			},
+			/* @__PURE__ */
+			React_default.createElement(CloseIcon, null)
 		)
 	);
 }
-
-// src/Tabbys/components/Tab/index.jsx
-var Tab_default3 = React_default.memo(function Tab2({ id }) {
-	const { type, ...tab } = Store_default((state) => Store_default.getTab(id), shallow);
-	switch (type) {
-		case pathTypes.CHANNEL:
-			return /* @__PURE__ */ React_default.createElement(ChannelTab, { ...tab });
-		case pathTypes.DM:
-			return /* @__PURE__ */ React_default.createElement(DMTab, { ...tab });
-		default:
-			return /* @__PURE__ */ React_default.createElement(
-				BaseTab_default, {
-					...tab,
-					icon: /* @__PURE__ */ React_default.createElement(MiscIcon, { type })
-				}
-			);
-	}
-});
+var Tab_default3 = React_default.memo(Tab_default2(Tab2));
 
 // MODULES-AUTO-LOADER:@Stores/ContextMenuStore
 var ContextMenuStore_default = getStore("ContextMenuStore");
@@ -2992,7 +3025,7 @@ function renameBookmark(id, parentId) {
 	});
 }
 
-function BookmarkContextMenu_default(id, { path: path2, channelId, userId, guildId, parentId, hasUnread }) {
+function BookmarkContextMenu_default(id, { path: path3, channelId, userId, guildId, parentId, hasUnread }) {
 	const folders = Store_default.state.folders.map(({ id: folderId, name }) => {
 		if (folderId === parentId) return;
 		return {
@@ -3009,7 +3042,7 @@ function BookmarkContextMenu_default(id, { path: path2, channelId, userId, guild
 	}
 	const hasFolders = folders.length > 0;
 	const copies = [
-		CopyPathItem(path2),
+		CopyPathItem(path3),
 		channelId && CopyChannelIdItem(channelId),
 		guildId && CopyGuildIdItem(guildId),
 		userId && CopyUserIdItem(userId)
@@ -3058,133 +3091,53 @@ function BookmarkContextMenu_default(id, { path: path2, channelId, userId, guild
 	return (props) => /* @__PURE__ */ React_default.createElement(Menu2, { ...props });
 }
 
-// src/Tabbys/components/Bookmark/BaseBookmark.jsx
-var c8 = classNameFactory("bookmark");
-
-function BaseBookmark(props) {
-	const { id, icon, title, onClose, parentId, channelId, guildId, userId, path: path2, noName, className, children, ...rest } = props;
+// src/Tabbys/components/Bookmark/index.jsx
+function BaseBookmark({ id, parentId, dragRef, onClose, className }) {
 	const shouldHightLight = Settings_default(Settings_default.selectors.highlightBookmarkUnread);
+	const bookmark = Store_default((state) => parentId ? Store_default.getFolderItem(parentId, id) : Store_default.getBookmark(id), shallow) || {};
+	const { noName, guildId, userId, path: path3, channelId } = bookmark;
 	const hasUnread = useStateFromStores_default([ReadStateStore_default], () => shouldHightLight && ReadStateStore_default.hasUnread(channelId), [shouldHightLight, channelId]);
+	const isSubBookmark = !!parentId;
+	const sortHandle = isSubBookmark ? /* @__PURE__ */ React_default.createElement(
+		SubBookmark_default, {
+			id,
+			parentId
+		}
+	) : /* @__PURE__ */ React_default.createElement(Bookmark_default, { id });
 	const onClick = (e2) => {
 		e2.stopPropagation();
 		onClose?.();
-		if (e2.ctrlKey) Store_default.newTab(path2);
+		if (e2.ctrlKey) Store_default.newTab(path3);
 		else openBookmark(id, parentId);
 	};
 	const contextmenuHandler = (e2) => {
-		ContextMenu.open(e2, BookmarkContextMenu_default(id, { path: path2, guildId, userId, parentId, channelId, hasUnread }), {
+		ContextMenu.open(e2, BookmarkContextMenu_default(id, { path: path3, guildId, userId, parentId, channelId, hasUnread }), {
 			position: "bottom",
 			align: "left"
 		});
 	};
 	return /* @__PURE__ */ React_default.createElement(
 		"div", {
-			...rest,
+			"data-id": isSubBookmark ? null : id,
+			ref: dragRef,
 			onContextMenu: contextmenuHandler,
-			className: join2(c8("container"), { hasUnread }, "card", className),
+			className: join2("bookmark-container", "card", isSubBookmark && "folder-item", { hasUnread }),
 			onClick
 		},
-		icon,
-		!noName && title && /* @__PURE__ */ React_default.createElement("div", { className: join2(c8("title"), "card-title") }, title),
-		children
-	);
-}
-
-// src/Tabbys/components/Bookmark/ChannelBookmark.jsx
-function ChannelBookmark({ name, guildId, channelId, children, ...rest }) {
-	const channel = useStateFromStores_default([ChannelStore_default], () => ChannelStore_default.getChannel(channelId), [channelId]);
-	const title = name || getChannelName(channel) || channelId;
-	return /* @__PURE__ */ React_default.createElement(
-		BaseBookmark, {
-			...rest,
-			channelId,
-			guildId,
-			title,
-			icon: /* @__PURE__ */ React_default.createElement(
-				ChannelIcon, {
-					guildId,
-					name: title,
-					channel
-				}
-			)
-		},
-		children,
+		/* @__PURE__ */
+		React_default.createElement(HideTitleContext.Provider, { value: noName }, /* @__PURE__ */ React_default.createElement(Content, { ...bookmark })),
 		/* @__PURE__ */
 		React_default.createElement(
 			ChannelStatus, {
 				type: "Bookmark",
 				channelIds: [channelId]
 			}
-		)
+		),
+		sortHandle
 	);
 }
-
-// src/Tabbys/components/Bookmark/DMBookmark.jsx
-function DMBookmark({ name, userId, avatar, username, channelId, children, ...rest }) {
-	const user = useStateFromStores_default([UserStore_default], () => UserStore_default.getUser(userId), [userId]);
-	const title = name || getUserName(user) || username || userId;
-	return /* @__PURE__ */ React_default.createElement(
-		BaseBookmark, {
-			...rest,
-			title,
-			channelId,
-			userId,
-			icon: /* @__PURE__ */ React_default.createElement(
-				DMIcon, {
-					userId,
-					user,
-					fallbackAvatar: avatar
-				}
-			)
-		},
-		children,
-		/* @__PURE__ */
-		React_default.createElement(
-			ChannelStatus, {
-				type: "Bookmark",
-				channelIds: [channelId]
-			}
-		)
-	);
-}
-
-// src/Tabbys/components/Bookmark/index.jsx
-function BookmarkSwitch({ id, parentId, dragRef, ...rest }) {
-	const { type, ...bookmark } = Store_default((state) => parentId ? Store_default.getFolderItem(parentId, id) : Store_default.getBookmark(id), shallow) || {};
-	let props = { ...bookmark, ...rest, id, ref: dragRef };
-	if (parentId)
-		props = Object.assign(props, {
-			parentId,
-			className: "folder-item",
-			children: /* @__PURE__ */ React_default.createElement(
-				SubBookmark_default, {
-					id,
-					parentId
-				}
-			)
-		});
-	else
-		props = Object.assign(props, {
-			"data-id": id,
-			children: /* @__PURE__ */ React_default.createElement(Bookmark_default, { id })
-		});
-	switch (type) {
-		case pathTypes.CHANNEL:
-			return /* @__PURE__ */ React_default.createElement(ChannelBookmark, { ...props });
-		case pathTypes.DM:
-			return /* @__PURE__ */ React_default.createElement(DMBookmark, { ...props });
-		default:
-			return /* @__PURE__ */ React_default.createElement(
-				BaseBookmark, {
-					...props,
-					title: props.name || props.title,
-					icon: /* @__PURE__ */ React_default.createElement(MiscIcon, { type })
-				}
-			);
-	}
-}
-var Bookmark2 = React_default.memo(makeDraggable(DNDTypes.BOOKMARK)((props) => /* @__PURE__ */ React_default.createElement(BookmarkSwitch, { ...props })));
-var SubBookmark2 = React_default.memo(makeDraggable(DNDTypes.SUB_BOOKMARK)((props) => /* @__PURE__ */ React_default.createElement(BookmarkSwitch, { ...props })));
+var Bookmark2 = React_default.memo(makeDraggable(DNDTypes.BOOKMARK)((props) => /* @__PURE__ */ React_default.createElement(BaseBookmark, { ...props })));
+var SubBookmark2 = React_default.memo(makeDraggable(DNDTypes.SUB_BOOKMARK)((props) => /* @__PURE__ */ React_default.createElement(BaseBookmark, { ...props })));
 
 // common/Components/Popout/index.jsx
 var Popout_default = ({ children, targetElementRef, ...props }) => {
@@ -3349,7 +3302,7 @@ function FolderContextMenu_default(id, { folderId, parentId }) {
 }
 
 // src/Tabbys/components/Folder/BaseFolder.jsx
-var c9 = classNameFactory("folder");
+var c8 = classNameFactory("folder");
 
 function BaseFolder({ id, channelIds, folderId, parentId, name, className, children, canDrop, isOver, ...rest }) {
 	const shouldHightLight = Settings_default(Settings_default.selectors.highlightFolderUnread);
@@ -3372,12 +3325,12 @@ function BaseFolder({ id, channelIds, folderId, parentId, name, className, child
 		"div", {
 			...rest,
 			onContextMenu: contextmenuHandler,
-			className: join2(c9("container", isOver && canDrop && "canDrop"), { hasUnread }, "card", className)
+			className: join2(c8("container", isOver && canDrop && "canDrop"), { hasUnread }, "card", className)
 		},
 		/* @__PURE__ */
-		React_default.createElement("div", { className: join2(c9("icon"), "icon-wrapper", "card-icon") }, /* @__PURE__ */ React_default.createElement(FolderIcon, null)),
+		React_default.createElement("div", { className: join2(c8("icon"), "icon-wrapper", "card-icon") }, /* @__PURE__ */ React_default.createElement(FolderIcon, null)),
 		/* @__PURE__ */
-		React_default.createElement("div", { className: join2(c9("title"), "card-title") }, name),
+		React_default.createElement("div", { className: join2(c8("title"), "card-title") }, name),
 		/* @__PURE__ */
 		React_default.createElement(
 			ChannelStatus, {
@@ -3390,7 +3343,7 @@ function BaseFolder({ id, channelIds, folderId, parentId, name, className, child
 }
 
 // src/Tabbys/components/Folder/SubFolder.jsx
-var c10 = classNameFactory("folder");
+var c9 = classNameFactory("folder");
 
 function SubFolder({ id, folderId, parentId, dragRef, dropRef, onClose, ...props }) {
 	const { name, items } = Store_default((state) => Store_default.getFolder(folderId), shallow) || {};
@@ -3415,7 +3368,7 @@ function SubFolder({ id, folderId, parentId, dragRef, dropRef, onClose, ...props
 				channelIds: items.map((a) => a.channelId).filter(Boolean),
 				folderId,
 				parentId,
-				className: c10("item"),
+				className: c9("item"),
 				onClick: e2.onClick,
 				name
 			},
@@ -3432,11 +3385,11 @@ function SubFolder({ id, folderId, parentId, dragRef, dropRef, onClose, ...props
 var SubFolder_default = makeDraggable(DNDTypes.SUB_FOLDER)(Folder_default(SubFolder));
 
 // src/Tabbys/components/Folder/FolderPopoutMenu.jsx
-var c11 = classNameFactory("folder");
+var c10 = classNameFactory("folder");
 
 function FolderPopoutMenu({ folderId, items, onClose }) {
 	const isEmpty2 = items.length === 0;
-	return /* @__PURE__ */ React_default.createElement("div", { className: "overflow-popout" }, isEmpty2 ? /* @__PURE__ */ React_default.createElement("div", { className: c11("empty") }, "(Empty)") : items.map((item) => {
+	return /* @__PURE__ */ React_default.createElement("div", { className: "overflow-popout" }, isEmpty2 ? /* @__PURE__ */ React_default.createElement("div", { className: c10("empty") }, "(Empty)") : items.map((item) => {
 		return item.folderId ? /* @__PURE__ */ React_default.createElement(
 			SubFolder_default, {
 				onClose: onClose || e.closePopout,
@@ -3491,7 +3444,7 @@ function Folder({ id, folderId, dropRef, dragRef, ...props }) {
 var Folder_default2 = React_default.memo(makeDraggable(DNDTypes.FOLDER)(Folder_default(Folder)));
 
 // src/Tabbys/components/BookmarkBar/index.jsx
-var c12 = classNameFactory("bookmarkbar");
+var c11 = classNameFactory("bookmarkbar");
 
 function getItem(props, id, folderId) {
 	return folderId ? /* @__PURE__ */ React_default.createElement(
@@ -3554,14 +3507,14 @@ function BookmarkBar() {
 	}, []);
 	const content = bookmarks.map(({ id, folderId }, index) => {
 		const hidden = overflowedItems.find((a) => a === id);
-		return getItem({ className: c12({ hidden }) }, id, folderId);
+		return getItem({ className: c11({ hidden }) }, id, folderId);
 	});
-	return /* @__PURE__ */ React_default.createElement("div", { className: c12("container") }, /* @__PURE__ */ React_default.createElement(
+	return /* @__PURE__ */ React_default.createElement("div", { className: c11("container") }, /* @__PURE__ */ React_default.createElement(
 		"div", {
 			ref: contentRef,
-			className: c12("content")
+			className: c11("content")
 		},
-		content.length > 0 ? content : /* @__PURE__ */ React_default.createElement("div", { className: c12("empty") }, "You have no bookmarks yet")
+		content.length > 0 ? content : /* @__PURE__ */ React_default.createElement("div", { className: c11("empty") }, "You have no bookmarks yet")
 	), !!overflowedItems.length && /* @__PURE__ */ React_default.createElement(OverflowMenu, { items: bookmarks.filter(({ id }) => overflowedItems.find((a) => a === id)) }), /* @__PURE__ */ React_default.createElement(DragHandle, null));
 }
 
@@ -3579,7 +3532,7 @@ function OverflowMenu({ items }) {
 		(e2) => {
 			return /* @__PURE__ */ React_default.createElement(
 				"div", {
-					className: join2(c12("overflow-button"), "icon-wrapper"),
+					className: join2(c11("overflow-button"), "icon-wrapper"),
 					onClick: e2.onClick
 				},
 				/* @__PURE__ */
@@ -3593,7 +3546,7 @@ function OverflowMenu({ items }) {
 var Slider_default = getModule(Filters.byPrototypeKeys("renderMark"), { searchExports: true });
 
 // src/Tabbys/contextmenus/SettingsContextMenu.jsx
-var c13 = classNameFactory(`${Config_default.info.name}-menuitem`);
+var c12 = classNameFactory(`${Config_default.info.name}-menuitem`);
 var { Separator, CheckboxItem, RadioItem, ControlItem, Group, Item, Menu } = ContextMenu;
 
 function buildToggle({ key, label, color }) {
@@ -3602,7 +3555,7 @@ function buildToggle({ key, label, color }) {
 		CheckboxItem, {
 			color,
 			label,
-			id: c13(label, key),
+			id: c12(label, key),
 			checked: state,
 			action: () => {
 				setState(!state);
@@ -3617,7 +3570,7 @@ function ContextMenuSlider({ key, label, ...rest }) {
 	const beautify = (e2) => `${Math.round(e2)}px`;
 	return /* @__PURE__ */ React_default.createElement(
 		ControlItem, {
-			id: c13(key),
+			id: c12(key),
 			label: `${label}: ${val}px`,
 			control: () => /* @__PURE__ */ React_default.createElement("div", { style: { padding: "0 8px" } }, /* @__PURE__ */ React_default.createElement(
 				Slider_default, {
@@ -3637,7 +3590,7 @@ function status() {
 		return /* @__PURE__ */ React_default.createElement(React_default.Fragment, null, /* @__PURE__ */ React_default.createElement(
 			Item, {
 				label: `${type}:`,
-				id: c13(type),
+				id: c12(type),
 				disabled: true
 			}
 		), [
@@ -3654,7 +3607,7 @@ function appearence() {
 	return /* @__PURE__ */ React_default.createElement(
 		Item, {
 			label: "Appearence",
-			id: c13("appearence")
+			id: c12("appearence")
 		},
 		[{
 				key: "size",
@@ -3691,7 +3644,7 @@ function SettingsContextMenu_default() {
 	return /* @__PURE__ */ React_default.createElement(Menu, null, appearence(), /* @__PURE__ */ React_default.createElement(
 		Item, {
 			label: "Status",
-			id: c13("status")
+			id: c12("status")
 		},
 		status()
 	));
@@ -3720,7 +3673,7 @@ function SettingsButton() {
 }
 
 // src/Tabbys/components/App/index.jsx
-var c14 = classNameFactory("tabbys-app");
+var c13 = classNameFactory("tabbys-app");
 
 function App({ leading, trailing }) {
 	const [size, privacyMode, keepTitle, showTabbar, showBookmarkbar, showSettingsButton] = Settings_default((_) => [_.size, _.privacyMode, _.keepTitle, _.showTabbar, _.showBookmarkbar, _.showSettingsButton], shallow);
@@ -3729,15 +3682,15 @@ function App({ leading, trailing }) {
 			style: {
 				"--size": `${size}px`
 			},
-			className: c14("container", { showTabbar, showBookmarkbar, keepTitle, privacyMode })
+			className: c13("container", { showTabbar, showBookmarkbar, keepTitle, privacyMode })
 		},
-		keepTitle && /* @__PURE__ */ React_default.createElement("div", { className: c14("leading") }, leading),
-		showTabbar && /* @__PURE__ */ React_default.createElement("div", { className: c14("tabbar") }, /* @__PURE__ */ React_default.createElement(TabBar, null)),
+		keepTitle && /* @__PURE__ */ React_default.createElement("div", { className: c13("leading") }, leading),
+		showTabbar && /* @__PURE__ */ React_default.createElement("div", { className: c13("tabbar") }, /* @__PURE__ */ React_default.createElement(TabBar, null)),
 		/* @__PURE__ */
-		React_default.createElement("div", { className: c14("trailing") }, React_default.cloneElement(trailing, {
+		React_default.createElement("div", { className: c13("trailing") }, React_default.cloneElement(trailing, {
 			children: [showSettingsButton && /* @__PURE__ */ React_default.createElement(SettingsButton, null), ...trailing.props.children]
 		})),
-		showBookmarkbar && /* @__PURE__ */ React_default.createElement("div", { className: join2(c14("bookmarkbar")) }, /* @__PURE__ */ React_default.createElement(BookmarkBar, null))
+		showBookmarkbar && /* @__PURE__ */ React_default.createElement("div", { className: join2(c13("bookmarkbar")) }, /* @__PURE__ */ React_default.createElement(BookmarkBar, null))
 	);
 }
 
@@ -3838,26 +3791,26 @@ StylesLoader_default.push(`.collapsible-container * {
 `);
 
 // common/Components/Collapsible/index.jsx
-var c15 = classNameFactory("collapsible");
+var c14 = classNameFactory("collapsible");
 
 function Collapsible({ title, children }) {
 	const [open, setOpen] = React_default.useState(false);
-	return /* @__PURE__ */ React_default.createElement("div", { className: c15("container", { open }) }, /* @__PURE__ */ React_default.createElement(
+	return /* @__PURE__ */ React_default.createElement("div", { className: c14("container", { open }) }, /* @__PURE__ */ React_default.createElement(
 		"div", {
-			className: c15("header"),
+			className: c14("header"),
 			onClick: () => setOpen(!open)
 		},
 		/* @__PURE__ */
 		React_default.createElement(
 			Heading_default, {
-				className: c15("title"),
+				className: c14("title"),
 				tag: "h5"
 			},
 			title
 		),
 		/* @__PURE__ */
-		React_default.createElement("div", { className: c15("icon") }, /* @__PURE__ */ React_default.createElement(ArrowIcon, null))
-	), /* @__PURE__ */ React_default.createElement("div", { className: c15("body") }, children));
+		React_default.createElement("div", { className: c14("icon") }, /* @__PURE__ */ React_default.createElement(ArrowIcon, null))
+	), /* @__PURE__ */ React_default.createElement("div", { className: c14("body") }, children));
 }
 
 // common/Components/Gap/styles.css
@@ -3875,13 +3828,13 @@ StylesLoader_default.push(`.gap-base {
 `);
 
 // common/Components/Gap/index.jsx
-var c16 = classNameFactory("gap");
+var c15 = classNameFactory("gap");
 
 function Gap({ direction = "horizontal", gap, className }) {
 	return /* @__PURE__ */ React_default.createElement(
 		"div", {
 			style: { marginTop: gap },
-			className: c16("base", { direction })
+			className: c15("base", { direction })
 		}
 	);
 }
@@ -3950,24 +3903,24 @@ StylesLoader_default.push(`.fieldset-container {
 `);
 
 // common/Components/FieldSet/index.jsx
-var c17 = classNameFactory("fieldset");
+var c16 = classNameFactory("fieldset");
 
 function FieldSet({ label, description, children, contentGap = 16 }) {
-	return /* @__PURE__ */ React_default.createElement("fieldset", { className: c17("container") }, label && /* @__PURE__ */ React_default.createElement(
+	return /* @__PURE__ */ React_default.createElement("fieldset", { className: c16("container") }, label && /* @__PURE__ */ React_default.createElement(
 		Heading_default, {
-			className: c17("label"),
+			className: c16("label"),
 			tag: "legend",
 			variant: "text-lg/medium"
 		},
 		label
 	), description && /* @__PURE__ */ React_default.createElement(
 		Heading_default, {
-			className: c17("description"),
+			className: c16("description"),
 			variant: "text-sm/normal",
 			color: "text-secondary"
 		},
 		description
-	), /* @__PURE__ */ React_default.createElement("div", { className: c17("content"), style: { gap: contentGap } }, children));
+	), /* @__PURE__ */ React_default.createElement("div", { className: c16("content"), style: { gap: contentGap } }, children));
 }
 
 // common/Components/Divider/styles.css
@@ -3988,7 +3941,7 @@ StylesLoader_default.push(`.divider-base {
 `);
 
 // common/Components/Divider/index.jsx
-var c18 = classNameFactory("divider");
+var c17 = classNameFactory("divider");
 
 function Divider({ direction = "horizontal", gap }) {
 	return /* @__PURE__ */ React_default.createElement(
@@ -3997,7 +3950,7 @@ function Divider({ direction = "horizontal", gap }) {
 				marginTop: gap,
 				marginBottom: gap
 			},
-			className: c18("base", { direction })
+			className: c17("base", { direction })
 		}
 	);
 }
