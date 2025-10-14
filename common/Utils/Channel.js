@@ -5,26 +5,30 @@ import ChannelStore from "@Stores/ChannelStore";
 import { IconsUtils } from "@Discord/Modules";
 
 export function getGroupDmName(channelId) {
-	const channel = ChannelStore.getChannel(channelId)|| {};
+	const channel = ChannelStore.getChannel(channelId) || {};
 	return !channel ? "" : channel.rawRecipients.map(getUserName).join(", ");
 }
 
 export function getGroupDmIcon(channelId, size) {
-	const channel = ChannelStore.getChannel(channelId) || {} ;
+	const channel = ChannelStore.getChannel(channelId);
 
-	return IconsUtils.getChannelIconURL({
-		id: channel.id,
-		icon: channel.icon,
-		applicationId: channel.getApplicationId(),
-		size
-	});
+	return !channel
+		? ""
+		: IconsUtils.getChannelIconURL({
+				id: channel.id,
+				icon: channel.icon,
+				applicationId: channel.getApplicationId(),
+				size
+			});
 }
 
 export function getGuildIcon(guildId, size) {
-	const guild = GuildStore.getGuild(guildId)|| {};
-	return IconsUtils.getGuildIconURL({
-		id: guildId,
-		icon: guild.icon,
-		size
-	});
+	const guild = GuildStore.getGuild(guildId);
+	return !guild
+		? ""
+		: IconsUtils.getGuildIconURL({
+				id: guildId,
+				icon: guild.icon,
+				size
+			});
 }
