@@ -1,52 +1,69 @@
+import "./styles";
 import Store from "@/Store";
+import { openBookmark } from "@/Store/methods";
 import React from "@React";
-import BaseBookmark from "./BaseBookmark";
-import ChannelBookmark from "./ChannelBookmark";
-import DMBookmark from "./DMBookmark";
-import { makeDraggable } from "@/components/DND/shared";
-import { DNDTypes } from "@/consts";
-import { MiscIcon } from "@/components/Icons";
+import { join } from "@Utils/css";
+import BookmarkContextMenu from "@/contextmenus/BookmarkContextMenu";
+import { ContextMenu } from "@Api";
+import useStateFromStores from "@Modules/useStateFromStores";
+import ReadStateStore from "@Stores/ReadStateStore";
+import Settings from "@Utils/Settings";
 import { SubBookmarkSortable, BookmarkSortable } from "@/components/DND";
+import { makeDraggable } from "@/components/DND/shared";
+import ChannelStatus from "@/components/ChannelStatus";
+import { DNDTypes } from "@/consts";
 import { shallow } from "@Utils";
-import { pathTypes } from "@/consts";
+import { Content, HideTitleContext } from "@/components/Card";
 
-function BookmarkSwitch({ id, parentId, dragRef, ...rest }) {
-	const { type, ...bookmark } = Store(state => (parentId ? Store.getFolderItem(parentId, id) : Store.getBookmark(id)), shallow) || {};
+function BaseBookmark({ id, parentId, dragRef, onClose, className }) {
+	const shouldHightLight = Settings(Settings.selectors.highlightBookmarkUnread);
+	const bookmark = Store(state => (parentId ? Store.getFolderItem(parentId, id) : Store.getBookmark(id)), shallow) || {};
+	const { noName, guildId, userId, path, channelId } = bookmark;
+	const hasUnread = useStateFromStores([ReadStateStore], () => shouldHightLight && ReadStateStore.hasUnread(channelId), [shouldHightLight, channelId]);
+	const isSubBookmark = !!parentId;
 
-	let props = { ...bookmark, ...rest, id, ref: dragRef };
+	const sortHandle = isSubBookmark ? (
+		<SubBookmarkSortable
+			id={id}
+			parentId={parentId}
+		/>
+	) : (
+		<BookmarkSortable id={id} />
+	);
 
-	if (parentId)
-		props = Object.assign(props, {
-			parentId,
-			className: "folder-item",
-			children: (
-				<SubBookmarkSortable
-					id={id}
-					parentId={parentId}
-				/>
-			)
+	const onClick = e => {
+		e.stopPropagation();
+		onClose?.();
+
+		if (e.ctrlKey) Store.newTab(path);
+		else openBookmark(id, parentId);
+	};
+
+	const contextmenuHandler = e => {
+		ContextMenu.open(e, BookmarkContextMenu(id, { path, guildId, userId, parentId, channelId, hasUnread }), {
+			position: "bottom",
+			align: "left"
 		});
-	else
-		props = Object.assign(props, {
-			"data-id": id,
-			children: <BookmarkSortable id={id} />
-		});
+	};
 
-	switch (type) {
-		case pathTypes.CHANNEL:
-			return <ChannelBookmark {...props} />;
-		case pathTypes.DM:
-			return <DMBookmark {...props} />;
-		default:
-			return (
-				<BaseBookmark
-					{...props}
-					title={props.name || props.title}
-					icon={<MiscIcon type={type} />}
-				/>
-			);
-	}
+	return (
+		<div
+			data-id={isSubBookmark ? null : id}
+			ref={dragRef}
+			onContextMenu={contextmenuHandler}
+			className={join("bookmark-container", "card", isSubBookmark && "folder-item", className, { hasUnread })}
+			onClick={onClick}>
+			<HideTitleContext.Provider value={noName}>
+				<Content {...bookmark} />
+			</HideTitleContext.Provider>
+			<ChannelStatus
+				type="Bookmark"
+				channelIds={[channelId]}
+			/>
+			{sortHandle}
+		</div>
+	);
 }
 
-export const Bookmark = React.memo(makeDraggable(DNDTypes.BOOKMARK)(props => <BookmarkSwitch {...props} />));
-export const SubBookmark = React.memo(makeDraggable(DNDTypes.SUB_BOOKMARK)(props => <BookmarkSwitch {...props} />));
+export const Bookmark = React.memo(makeDraggable(DNDTypes.BOOKMARK)(props => <BaseBookmark {...props} />));
+export const SubBookmark = React.memo(makeDraggable(DNDTypes.SUB_BOOKMARK)(props => <BaseBookmark {...props} />));

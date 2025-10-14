@@ -10,6 +10,8 @@ export const DNDTypes = {
 export const pathTypes = {
 	QUESTS: "QUESTS",
 	APPS: "APPS",
+	GROUP_DM: "GROUP_DM",
+	GUILD: "GUILD",
 	SERVERS: "SERVERS",
 	VERIFICATION: "VERIFICATION",
 	SHOP: "SHOP",

@@ -118,7 +118,7 @@ import React, { useEffect, useRef, useState } from "@React";
 // window.modalid = BdApi.UI.showConfirmationModal("", <App />);
 
 import { sendMessageDirectly, insertText } from "@Utils/Messages";
-import { copy } from "@Utils";
+import { copy, nop } from "@Utils";
 
 function GifMenu(url) {
 	const Menu = ContextMenu.buildMenu([
@@ -141,15 +141,42 @@ function GifMenu(url) {
 
 const B = s(215016).exports.iR;
 Plugin.on(Events.START, () => {
-	const unpatch = Patcher.after(B.prototype, "render", ({props}, args, ret) => {
+	Patcher.after(B.prototype, "render", ({ props }, args, ret) => {
 		// console.log(props)
-		if(!props.item?.url) return;
+		if (!props.item?.url) return;
 		ret.props.onContextMenu = e => {
 			ContextMenu.open(e, GifMenu(props.item.url), {
 				position: "bottom",
 				align: "left"
 			});
 		};
+	});
+});
+
+const D = s(593545).exports.Z;
+
+function removeRange() {
+	setTimeout(
+		Patcher.before(window, "fetch", (_, args) => {
+			delete args[1].headers.Range;
+		})
+	);
+}
+
+Plugin.on(Events.START, () => {
+	Patcher.before(D, "type", (_, [{ fileSize }]) => {
+		if (fileSize < 60e4) removeRange();
+	});
+	Patcher.after(D, "type", (_, args, ret) => {
+		if (ret.props.bytesLeft) return ret;
+		return [
+			ret,
+			<button
+				key="copybutton"
+				onClick={() => copy(ret.props.fileContents)}
+				children="Copy"
+			/>
+		];
 	});
 });
 

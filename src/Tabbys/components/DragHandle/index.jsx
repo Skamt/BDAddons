@@ -13,7 +13,7 @@ const { BasePopout } = getMangled(Filters.bySource("renderLayer", "POPOUT_PREVEN
 function usePopoutListener() {
 	const [hasPopout, setHasPopout] = useState(false);
 	const { windowDispatch } = useContext(BasePopout.contextType);
-
+	
 	useEffect(() => {
 		function show() {
 			setHasPopout(true);

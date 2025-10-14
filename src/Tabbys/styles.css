@@ -1,76 +1,74 @@
-
-
-
-
-.no-drag{
-	-webkit-app-region: no-drag;
-}
-
-.df{
-	display:flex;
-}
-
-.fcc{
-	display:flex;
-	align-items:center;
-	justify-content:center;
-}
-
-
-.rounded-full{
-	border-radius: var(--radius-round);
-}
-
-.box-border{
-	box-sizing:border-box;
-}
-
-.pointer-pointer{
-	cursor:pointer;
-}
-
-
-.ellipsis{
-	
-}
-
-:root{
+:root {
 	/* overrides */
-	
+
 	--tabbys-bookmarkbar-height: calc(var(--custom-app-top-bar-height) - 5px);
-	
+
 	/* Sizes */
-	--size:32px;
-	--tabbys-btn-size:calc(var(--size) * .8);
-	--tabbys-tab-btn-size:calc(var(--size) * .6);
+	--size: 32px;
+	--tabbys-btn-size: calc(var(--size) * 0.8);
+	--tabbys-tab-btn-size: calc(var(--size) * 0.6);
 	--radius-round: calc(infinity * 1px);
-	--tabs-gap:8px;
-	--bookmarks-gap:8px;
-	--folder-gap:8px;
-	
+	--tabs-gap: 8px;
+	--bookmarks-gap: 8px;
+	--folder-gap: 8px;
+
 	/* Cosmetiques */
 	--ping: rgb(218, 62, 68);
 	--unread: rgb(88, 101, 242);
-	--svg-color:#fff;
+	--svg-color: #fff;
 }
 
-:root{ 
+:root {
 	/* --tabbys-bg:var(--neutral-5); */
 	--tabbys-bg-hover: var(--background-mod-normal);
 	--tabbys-bg-selected: var(--background-mod-strong);
-	
-	--tabbys-text: var(--interactive-normal);
-	--tabbys-text-unread:var(--interactive-active);
-	
-	--tabbys-btn-color:var(--interactive-normal);
-	--tabbys-btn-color-hover:var(--interactive-hover);
-	--tabbys-btn-color-active:var(--interactive-active);
 
-	--tabbys-btn-bg:var(--background-accent);
-	--tabbys-btn-bg-hover:var(--interactive-muted);
-	--tabbys-btn-bg-active:var(--background-mod-strong);
-	
-	--tabbys-folder-menu-bg:var(--background-surface-highest);
+	--tabbys-text: var(--interactive-normal);
+	--tabbys-text-unread: var(--interactive-active);
+
+	--tabbys-btn-color: var(--interactive-normal);
+	--tabbys-btn-color-hover: var(--interactive-hover);
+	--tabbys-btn-color-active: var(--interactive-active);
+
+	--tabbys-btn-bg: var(--background-accent);
+	--tabbys-btn-bg-hover: var(--interactive-muted);
+	--tabbys-btn-bg-active: var(--background-mod-strong);
+
+	--tabbys-folder-menu-bg: var(--background-surface-highest);
+}
+
+.no-drag {
+	-webkit-app-region: no-drag;
+}
+
+.fcc {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.rounded-full {
+	border-radius: var(--radius-round);
+}
+
+.icon-wrapper {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-sizing: border-box;
+	overflow: hidden;
+}
+
+.icon-wrapper img,
+.icon-wrapper svg {
+	height: 100%;
+	width: 100%;
+}
+
+.discord-icon {
+	color: white;
+	background: #6361f8;
+	padding: 4px;
 }
 
 .Tabbys-menuitem-new-tab-to-left svg,
@@ -89,9 +87,10 @@
 	font-size: calc(var(--size) * 0.5);
 	color: var(--tabbys-text);
 	border-radius: calc(var(--size) * 0.2);
+	cursor: pointer;
 }
 
-.card-title{
+.card-title {
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -119,32 +118,8 @@
 	border-radius: var(--radius-round);
 }
 
-.user-avatar {
-	/* flex:0 0 auto; */
-}
-
 .card img {
 	border-radius: inherit;
-}
-
-.icon-wrapper img,
-.icon-wrapper svg {
-	height: 100%;
-	width: 100%;
-}
-
-.icon-wrapper {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	box-sizing: border-box;
-	overflow: hidden;
-}
-
-.discord-icon {
-	color: white;
-	background: #6361f8;
-	padding: 4px;
 }
 
 .typing-dots {

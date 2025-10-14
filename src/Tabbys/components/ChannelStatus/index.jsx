@@ -16,7 +16,7 @@ export default function ChannelStatus({ channelIds, type, isDM }) {
 	return (
 		<>
 			{showTyping && isTyping && <TypingDots users={typingUsers} />}
-			{showPings && !!mentionCount && (
+			{showPings && mentionCount > 1 && (
 				<Badge
 					count={mentionCount}
 					type="ping"

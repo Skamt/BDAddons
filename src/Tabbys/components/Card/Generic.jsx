@@ -1,11 +1,13 @@
-import React from "@React";
+// import { Fallback } from "@/components/Icons";
 import { join } from "@Utils/css";
+import React from "@React";
 import { AppsIcon, ShopIcon, QuestsIcon, NitroIcon, ServersIcon } from "@Components/Icon";
-import Fallback from "./Fallback";
 import { pathTypes } from "@/consts";
-
-export default function MiscIcon({ type }) {
+import Markup from "./Markup";
+import Icon from "./Icon";
+export default function Generic({ title, type }) {
 	let icon = null;
+
 	switch (type) {
 		case pathTypes.NITRO:
 			icon = <NitroIcon />;
@@ -22,9 +24,12 @@ export default function MiscIcon({ type }) {
 		case pathTypes.APPS:
 			icon = <AppsIcon />;
 			break;
-		default:
-			return <Fallback />;
 	}
 
-	return <div className={join("card-icon", "icon-wrapper")}>{icon}</div>;
+	return (
+		<Markup
+			icon={<Icon className="icon-wrapper" icon={icon} />}
+			title={title}
+		/>
+	);
 }

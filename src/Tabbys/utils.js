@@ -22,54 +22,86 @@ const types = {
 	"unknown": { type: null, title: "Unknown" }
 };
 
-const channelRegex = /\/channels\/(@me|@favorites|\d+)\/(\d+)\/?(?:threads\/(\d+))?/;
+const parsers = [
+	{ regex: /^\/quest-home$/, handle: types.quests },
+	{ regex: /^\/channels\/@me$/, handle: types.home },
+	{ regex: /^\/shop$/, handle: types.shop },
+	{ regex: /^\/store$/, handle: types.store },
+	{ regex: /^\/discovery\/(applications|servers|quests)/, handle: type => types[type] },
+	{
+		regex: /^\/member-verification/,
+		handle() {
+			if (path.startsWith("/member-verification")) {
+				const id = path.split("/").pop();
+				const guild = UserGuildJoinRequestStore.getJoinRequestGuild(id);
+				if (!guild) return types.unknown;
+				return {
+					title: guild.name,
+					icon: guild.icon,
+					type: pathTypes.VERIFICATION
+				};
+			}
+		}
+	},
+	{
+		regex: /^\/channels\/(\d+)\/(.+)$/,
+		handle(guildId, type) {
+			return {
+				guildId,
+				name: type,
+				type: pathTypes.CHANNEL,
+				path: constructPath(guildId, type)
+			};
+		}
+	},
+	{
+		regex: /^\/channels\/(\d+|@favorites)\/(\d+)\/?(?:threads\/(\d+))?/,
+		handle(guildId, channelId, threadId) {
+			return {
+				guildId,
+				channelId: threadId || channelId,
+				type: pathTypes.CHANNEL,
+				path: constructPath(guildId, channelId, threadId)
+			};
+		}
+	},
+	{
+		regex: /^\/channels\/(@me)\/(\d+)/,
+		handle(me, channelId) {
+			const channel = ChannelStore.getChannel(channelId);
+			if (!channel) return types.unknown;
+			if (channel.isGroupDM())
+				return {
+					channelId,
+					type: pathTypes.GROUP_DM,
+					path: constructPath("@me", channelId)
+				};
+
+			const user = UserStore.getUser(channel.recipients[0]);
+			if (!user) return types.unknown;
+			return {
+				type: pathTypes.DM,
+				channelId: channel.id,
+				path: constructPath("@me", channelId),
+				username: user.username,
+				avatar: user.avatar,
+				userId: user.id
+			};
+		}
+	}
+];
 
 export function parsePath(path) {
-	if (path.startsWith("/member-verification")) {
-		const id = path.split("/").pop();
-		const guild = UserGuildJoinRequestStore.getJoinRequestGuild(id);
-		if (!guild) return types.unknown;
-		return {
-			title: guild.name,
-			type: null
-		};
-	}
-	if (path === "/shop") return types.shop;
-	if (path === "/store") return types.store;
-	if (path === "/channels/@me") return types.home;
-	if (path === "/quest-home") return types.quests;
-	if (path.startsWith("/discovery/")) {
-		const category = path.split("/")[2];
-		if (category === "servers" || category === "applications" || category === "quests") return types[category];
-		else types.unknown;
-	}
-
-	const channelMatch = path.match(channelRegex);
-	if (!channelMatch) return types.unknown;
-	const [, guildId, channelId, threadId] = channelMatch;
-
-	const channel = ChannelStore.getChannel(threadId || channelId);
-	if (!channel) return types.unknown;
-
-	if (channel.isDM()) {
-		const user = UserStore.getUser(channel.recipients[0]);
-		if (!user) return types.unknown;
-		return {
-			type: pathTypes.DM,
-			channelId: channel.id,
-			path: constructPath("@me", channelId),
-			username: user.username,
-			avatar: user.avatar,
-			userId: user.id
-		};
-	}
-
-	return {
-		guildId,
-		channelId: threadId || channelId,
-		type: pathTypes.CHANNEL,
-		path: constructPath(guildId, channelId, threadId)
-	};
+	if (path)
+		for (let i = parsers.length - 1; i >= 0; i--) {
+			const parser = parsers[i];
+			const match = path.match(parser.regex);
+			if (!match) continue;
+			const [, ...captures] = match;
+			if (typeof parser.handle === "function") return parser.handle(...captures);
+			return parser.handle;
+		}
+	return types.unknown;
 }
 
 function constructPath(guildId, channelId, threadId) {
@@ -78,12 +110,28 @@ function constructPath(guildId, channelId, threadId) {
 	return path;
 }
 
-export function navigate(tab) {
-	if (tab.type === pathTypes.DM) {
-		const channel = ChannelStore.getChannel(tab.channelId);
-		if (channel) return transitionTo(tab.path);
-		return ChannelUtils.openPrivateChannel({ recipientIds: [tab.userId] });
+export function navigate({ type, channelId, path, userId }) {
+	if (type === pathTypes.DM) {
+		const channel = ChannelStore.getChannel(channelId);
+		if (channel) return transitionTo(path);
+		return ChannelUtils.openPrivateChannel({ recipientIds: [userId] });
 	}
 
-	return transitionTo(tab.path);
+	return transitionTo(path);
+}
+
+const avatarSizes = {
+	32: "SIZE_24",
+	30: "SIZE_20",
+	28: "SIZE_20",
+	26: "SIZE_16",
+	24: "SIZE_16"
+};
+
+export function getSize(e) {
+	if (e >= 32) return { size: 24, avatarSize: "SIZE_24" };
+	if (e >= 28 && e < 32) return { size: 20, avatarSize: "SIZE_20" };
+	if (e >= 24 && e < 28) return { size: 16, avatarSize: "SIZE_16" };
+
+	return { size: 20, avatarSize: "SIZE_20" };
 }

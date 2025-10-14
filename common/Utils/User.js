@@ -2,13 +2,16 @@ import UserStore from "@Stores/UserStore";
 import { isValidString } from "@Utils/String";
 import ChannelStore from "@Stores/ChannelStore";
 
-
 export function isSelf(user) {
 	const currentUser = UserStore.getCurrentUser();
 	return user?.id === currentUser?.id;
 }
 
-export function getUserAvatar({ id, guildId, size }) {
+export function getUserAvatar(id, size) {
+	UserStore.getUser(id)?.getAvatarURL(null, size);
+}
+
+export function getUserAvatarForGuild(id, guildId, size) {
 	UserStore.getUser(id).getAvatarURL(guildId, size);
 }
 

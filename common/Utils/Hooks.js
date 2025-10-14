@@ -4,8 +4,8 @@ import UserStore from "@Stores/UserStore";
 import ReadStateStore from "@Stores/ReadStateStore";
 import TypingStore from "@Stores/TypingStore";
 import ChannelStore from "@Stores/ChannelStore";
-import { getChannelName } from "@Utils/Channel";
-import { getUserName } from "@Utils/User";
+// import { getChannelName } from "@Utils/Channel";
+// import { getUserName } from "@Utils/User";
 
 export function usePropBasedState(prop) {
 	const [state, setState] = useState(prop);
