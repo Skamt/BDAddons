@@ -200,15 +200,6 @@ StylesLoader_default.push(`:root {
 	border-radius: var(--radius-round);
 }
 
-.box-border {
-	box-sizing: border-box;
-}
-
-.pointer-pointer {
-	cursor: pointer;
-}
-
-
 .icon-wrapper {
 	display: flex;
 	align-items: center;
@@ -245,6 +236,7 @@ StylesLoader_default.push(`:root {
 	font-size: calc(var(--size) * 0.5);
 	color: var(--tabbys-text);
 	border-radius: calc(var(--size) * 0.2);
+	cursor: pointer;
 }
 
 .card-title {
@@ -399,7 +391,15 @@ var { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector"
 	zustand: () => true
 });
 var subscribeWithSelector = getModule(Filters.byStrings("equalityFn", "fireImmediately"), { searchExports: true });
-var zustand_default = zustand;
+
+function create(initialState2) {
+	const Store2 = zustand(initialState2);
+	Object.defineProperty(Store2, "state", {
+		configurable: false,
+		get: () => Store2.getState()
+	});
+	return Store2;
+}
 
 // common/Utils/Array.js
 function set(array, index, item) {
@@ -1135,11 +1135,7 @@ var initialState = {
 	...folders_default.state,
 	...bookmarks_default.state
 };
-var Store = zustand_default(subscribeWithSelector(() => initialState));
-Object.defineProperty(Store, "state", {
-	configurable: false,
-	get: () => Store.getState()
-});
+var Store = create(subscribeWithSelector(() => initialState));
 Object.defineProperty(Store, "selectors", {
 	value: Object.assign({}, folders_default.selectors, tabs_default.selectors, bookmarks_default.selectors)
 });
@@ -1211,42 +1207,26 @@ Plugin_default.on(Events.START, () => {
 });
 
 // common/Utils/Settings.js
-var SettingsStoreSelectors = {};
-var persistMiddleware = (config) => (set2, get, api) => config((args) => (set2(args), Data.save("settings", get().getRawState())), get, api);
-var SettingsStore = Object.assign(
-	zustand_default(
-		persistMiddleware(
-			subscribeWithSelector((set2, get) => {
-				const settingsObj = /* @__PURE__ */ Object.create(null);
-				for (const [key, value] of Object.entries({
-						...Config_default.settings,
-						...Data.load("settings")
-					})) {
-					settingsObj[key] = value;
-					settingsObj[`set${key}`] = (newValue) => set2({
-						[key]: newValue });
-					SettingsStoreSelectors[key] = (state) => state[key];
-				}
-				settingsObj.getRawState = () => {
-					return Object.entries(get()).filter(([, val]) => typeof val !== "function").reduce((acc, [key, val]) => {
-						acc[key] = val;
-						return acc;
-					}, {});
-				};
-				return settingsObj;
-			})
-		)
-	), {
-		useSetting: function(key) {
-			return this((state) => [state[key], state[`set${key}`]]);
-		},
-		selectors: SettingsStoreSelectors
+var SettingsStore = create(subscribeWithSelector(() => Object.assign(Config_default.settings, Data.load("settings") || {})));
+((state) => {
+	const selectors = {};
+	const actions = {};
+	for (const [key, value] of Object.entries(state)) {
+		actions[`set${key}`] = (newValue) => SettingsStore.setState({
+			[key]: newValue });
+		selectors[key] = (state2) => state2[key];
 	}
+	Object.defineProperty(SettingsStore, "selectors", { value: Object.assign(selectors) });
+	Object.assign(SettingsStore, actions);
+})(SettingsStore.getInitialState());
+SettingsStore.subscribe(
+	(state) => state,
+	() => Data.save("settings", SettingsStore.state)
 );
-Object.defineProperty(SettingsStore, "state", {
-	configurable: false,
-	get() {
-		return this.getState();
+Object.assign(SettingsStore, {
+	useSetting: (key) => {
+		const val = SettingsStore((state) => state[key]);
+		return [val, SettingsStore[`set${key}`]];
 	}
 });
 var Settings_default = SettingsStore;
@@ -2624,8 +2604,8 @@ var GuildStore_default = getStore("GuildStore");
 
 // common/Utils/Channel.js
 function getGroupDmIcon(channelId, size) {
-	const channel = ChannelStore_default.getChannel(channelId) || {};
-	return IconsUtils.getChannelIconURL({
+	const channel = ChannelStore_default.getChannel(channelId);
+	return !channel ? "" : IconsUtils.getChannelIconURL({
 		id: channel.id,
 		icon: channel.icon,
 		applicationId: channel.getApplicationId(),
@@ -2634,8 +2614,8 @@ function getGroupDmIcon(channelId, size) {
 }
 
 function getGuildIcon(guildId, size) {
-	const guild = GuildStore_default.getGuild(guildId) || {};
-	return IconsUtils.getGuildIconURL({
+	const guild = GuildStore_default.getGuild(guildId);
+	return !guild ? "" : IconsUtils.getGuildIconURL({
 		id: guildId,
 		icon: guild.icon,
 		size
@@ -2672,7 +2652,7 @@ function Channel({ name, guildId, channelId }) {
 	const { size } = getSize(Settings_default((_) => _.size));
 	const channel = useStateFromStores_default([ChannelStore_default], () => ChannelStore_default.getChannel(channelId), [channelId]);
 	const title = name || channel?.name || channelId;
-	const src = getGuildIcon(channel?.guild_id, size);
+	const src = getGuildIcon(guildId || channel?.guild_id, size);
 	return /* @__PURE__ */ React_default.createElement(
 		Markup, {
 			icon: /* @__PURE__ */ React_default.createElement(
@@ -3051,7 +3031,7 @@ function BookmarkContextMenu_default(id, { path: path3, channelId, userId, guild
 		[
 			MarkAsReadItem(channelId, hasUnread),
 			{
-				action: () => openBookmarkAt(id),
+				action: () => openTabAt(path3),
 				label: "Open in new Tab",
 				icon: PlusIcon
 			},
@@ -3121,7 +3101,7 @@ function BaseBookmark({ id, parentId, dragRef, onClose, className }) {
 			"data-id": isSubBookmark ? null : id,
 			ref: dragRef,
 			onContextMenu: contextmenuHandler,
-			className: join2("bookmark-container", "card", isSubBookmark && "folder-item", { hasUnread }),
+			className: join2("bookmark-container", "card", isSubBookmark && "folder-item", className, { hasUnread }),
 			onClick
 		},
 		/* @__PURE__ */
@@ -3559,7 +3539,7 @@ function buildToggle({ key, label, color }) {
 			checked: state,
 			action: () => {
 				setState(!state);
-				Settings_default.state[`set${key}`](!Settings_default.state[key]);
+				Settings_default[`set${key}`](!Settings_default.state[key]);
 			}
 		}
 	);
