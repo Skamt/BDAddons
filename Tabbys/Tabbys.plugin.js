@@ -3053,8 +3053,8 @@ function BookmarkContextMenu_default(id, { path: path3, channelId, userId, guild
 				items: folders
 			},
 			{
-				action: () => createFolder2(),
-				label: "Create Folder",
+				action: () => createFolder2(parentId),
+				label: parentId ? "Create Sub Folder" : "Create Folder",
 				icon: PlusIcon
 			},
 			{ type: "separator" },
