@@ -5,7 +5,7 @@ import { openPromptModal } from "@/components/PromptModal";
 import Store from "@/Store";
 import { nop } from "@Utils";
 import { wrapMenuItem } from "./helper";
-import { deleteBookmark, moveSubBookmarkToBookmarksAt, moveBookmarkToFolderAt, addFolder, getBookmark, openBookmarkAt, setBookmarkName, toggleBookmarkNameState, getBookmarkNameState } from "@/Store/methods";
+import { deleteBookmark, moveSubBookmarkToBookmarksAt, moveBookmarkToFolderAt, addFolder, getBookmark, openTabAt, setBookmarkName, toggleBookmarkNameState, getBookmarkNameState } from "@/Store/methods";
 
 import { CopyPathItem, createFolder, CopyUserIdItem, CopyGuildIdItem, CopyChannelIdItem, MarkAsReadItem } from "./shared";
 
@@ -56,7 +56,7 @@ export default function (id, { path, channelId, userId, guildId, parentId, hasUn
 		[
 			MarkAsReadItem(channelId, hasUnread),
 			{
-				action: () => openBookmarkAt(id),
+				action: () => openTabAt(path),
 				label: "Open in new Tab",
 				icon: PlusIcon
 			},
@@ -79,8 +79,8 @@ export default function (id, { path, channelId, userId, guildId, parentId, hasUn
 				items: folders
 			},
 			{
-				action: ()=>createFolder(),
-				label: "Create Folder",
+				action: () => createFolder(parentId),
+				label: parentId ? "Create Sub Folder" : "Create Folder",
 				icon: PlusIcon
 			},
 

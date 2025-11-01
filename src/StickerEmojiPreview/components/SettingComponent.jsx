@@ -9,7 +9,7 @@ export default function SettingComponent() {
 			settingKey: "previewDefaultState",
 			description: "Preview open by default.",
 			onChange() {
-				Settings.state.setpreviewState(Settings.state.previewDefaultState);
+				Settings.setpreviewState(Settings.state.previewDefaultState);
 			}
 		}
 	].map(SettingSwtich);

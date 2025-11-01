@@ -54,11 +54,19 @@
 	margin: auto;
 }
 
-.VPP-carousel button {
+.VPP-carousel > div[role="button"] {
 	margin: 0 15px;
-	opacity: 0.8;
-	background: var(--background-base-low);
+	background: var(--background-surface-high);
+	color: var(--interactive-normal);
 	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.VPP-carousel > div[role="button"]:hover {
+	background: var(--background-surface-highest);
+	color: var(--interactive-hover);
 }
 
 /* Copy color button */

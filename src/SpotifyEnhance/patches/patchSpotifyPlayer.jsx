@@ -4,7 +4,7 @@ import SpotifyPlayer from "@/components/SpotifyPlayer";
 import Logger from "@Utils/Logger";
 import ErrorBoundary from "@Components/ErrorBoundary";
 import { PlayerPlaceEnum } from "@/consts.js";
-import Settings, { renderListener } from "@Utils/Settings";
+import Settings from "@Utils/Settings";
 import { shallow } from "@Utils";
 
 import Plugin, { Events } from "@Utils/Plugin";
@@ -23,17 +23,11 @@ Plugin.on(Events.START, async () => {
 			console.log(ret);
 		}
 		return [
-			// renderListener(
 			<ErrorBoundary
 				key="SpotifyPlayer"
 				id="SpotifyPlayer">
 				<SpotifyPlayer />
 			</ErrorBoundary>,
-			// 	[_ => [_.player, _.spotifyPlayerPlace], shallow],
-			// 	([player, place]) => place === PlayerPlaceEnum.USERAREA && player,
-			// 	true
-			// ),
-
 			ret
 		];
 	});

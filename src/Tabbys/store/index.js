@@ -1,4 +1,4 @@
-import zustand, { subscribeWithSelector } from "@Discord/zustand";
+import  { create, subscribeWithSelector } from "@Discord/zustand";
 import TabSlice from "./tabs";
 import { ensureTab } from "./methods";
 import FolderSlice from "./folders";
@@ -16,12 +16,7 @@ const initialState = {
 	...BookmarkSlice.state
 };
 
-const Store = zustand(subscribeWithSelector(() => initialState));
-
-Object.defineProperty(Store, "state", {
-	configurable: false,
-	get: () => Store.getState()
-});
+const Store = create(subscribeWithSelector(() => initialState));
 
 Object.defineProperty(Store, "selectors", {
 	value: Object.assign({}, FolderSlice.selectors, TabSlice.selectors, BookmarkSlice.selectors)

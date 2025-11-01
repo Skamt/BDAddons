@@ -2,13 +2,14 @@ import React from "@React";
 import { Patcher } from "@Api";
 import ErrorBoundary from "@Components/ErrorBoundary";
 import Logger from "@Utils/Logger";
-import { Filters, getModuleAndKey } from "@Webpack";
+import { Filters, getModule, getModuleAndKey } from "@Webpack";
 import App from "../components/App";
 import { reRender } from "@Utils";
 import Plugin, { Events } from "@Utils/Plugin";
-
 import { transitionTo } from "@Discord/Modules";
+
 const TitleBar = getModuleAndKey(Filters.byStrings("PlatformTypes", "windowKey", "title"), { searchExports: true });
+const BaseClasses = getModule(Filters.byKeys("base", "activityPanel"));
 
 Plugin.on(Events.START, () => {
 	const { module, key } = TitleBar;
@@ -26,6 +27,9 @@ Plugin.on(Events.START, () => {
 			</ErrorBoundary>
 		);
 	});
-	reRender('.base_c48ade');
+	reRender(`.${BaseClasses.base}`);
 });
 
+Plugin.on(Events.STOP, () => {
+	reRender(`.${BaseClasses.base}`);
+});

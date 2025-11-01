@@ -113,6 +113,44 @@ import React, { useEffect, useRef, useState } from "@React";
 // 	);
 // }
 
+// import { getBySource } from "@Webpack";
+// import { ReactDOM } from "@Api";
+// import ErrorBoundary from "@Components/ErrorBoundary";
+
+// const pipContainer = Object.assign(document.createElement("div"), { className: "pipContainer" });
+
+// const PIP = {
+// 	init() {
+// 		document.body.appendChild(pipContainer);
+// 		this.root = ReactDOM.createRoot(pipContainer);
+// 		this.root.render(
+// 			<ErrorBoundary>
+// 				<PipContainer />
+// 			</ErrorBoundary>
+// 		);
+// 	},
+// 	dispose() {
+// 		this.root.unmount();
+// 		pipContainer.remove();
+// 	}
+// };
+
+// const Draggable = getBySource("edgeOffsetBottom", "defaultPosition")?.Z;
+// const Draggable = s(689425).exports.Z;
+// const Draggable = s(241915).exports._;
+
+// function PipContainer() {
+// 	return (
+// 		// <Context>
+
+// 		<Draggable  maxX={window.innerWidth} maxY={window.innerHeight} dockedRect={true}>
+// 			<div className="el" />
+// 		</Draggable>
+
+// 		// </Context>
+// 	);
+// }
+
 // window.modalid && ModalActions.closeModal(window.modalid);
 
 // window.modalid = BdApi.UI.showConfirmationModal("", <App />);
@@ -164,6 +202,7 @@ function removeRange() {
 }
 
 Plugin.on(Events.START, () => {
+
 	Patcher.before(D, "type", (_, [{ fileSize }]) => {
 		if (fileSize < 60e4) removeRange();
 	});
@@ -181,6 +220,7 @@ Plugin.on(Events.START, () => {
 });
 
 Plugin.on(Events.STOP, () => {
+
 	Patcher.unpatchAll();
 });
 

@@ -1,5 +1,4 @@
 import { Patcher } from "@Api";
-// import Settings from "@Utils/Settings";
 import Logger from "@Utils/Logger";
 import { Filters, getModule } from "@Webpack";
 import { getNestedProp } from "@Utils";

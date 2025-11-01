@@ -32,10 +32,9 @@ Plugin.on(Events.START, async () => {
 	const socket = await getSocket();
 
 	const unpatch = Patcher.after(socket.prototype, "handleEvent", function onSocketEvent(socket, [socketEvent]) {
-		/*DEBUG*/
-		Logger.log("Spotify Socket", socketEvent, Date.now());
-		/*DEBUG*/
-
+		DEV: {
+			Logger.log("Spotify Socket", socketEvent, Date.now());
+		}
 		if (Store.state.account?.accountId && socket.accountId !== Store.state.account?.accountId) return;
 		const { type, event } = socketEvent;
 

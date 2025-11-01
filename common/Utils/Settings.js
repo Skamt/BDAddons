@@ -1,57 +1,36 @@
 import config from "@Config";
 import React from "@React";
-import zustand, { subscribeWithSelector } from "@Discord/zustand";
+import { create, subscribeWithSelector } from "@Discord/zustand";
 import { Data } from "@Api";
+import { shallow } from "@Utils";
 
-const SettingsStoreSelectors = {};
-const persistMiddleware = config => (set, get, api) => config(args => (set(args), Data.save("settings", get().getRawState())), get, api);
+const SettingsStore = create(subscribeWithSelector(() => Object.assign(config.settings, Data.load("settings") || {})));
 
-const SettingsStore = Object.assign(
-	zustand(
-		persistMiddleware(
-			subscribeWithSelector((set, get) => {
-				const settingsObj = Object.create(null);
+(state => {
+	const selectors = {};
+	const actions = {};
 
-				for (const [key, value] of Object.entries({
-					...config.settings,
-					...Data.load("settings")
-				})) {
-					settingsObj[key] = value;
-					settingsObj[`set${key}`] = newValue => set({ [key]: newValue });
-					SettingsStoreSelectors[key] = state => state[key];
-				}
-				settingsObj.getRawState = () => {
-					return Object.entries(get())
-						.filter(([, val]) => typeof val !== "function")
-						.reduce((acc, [key, val]) => {
-							acc[key] = val;
-							return acc;
-						}, {});
-				};
-				return settingsObj;
-			})
-		)
-	),
-	{
-		useSetting: function (key) {
-			return this(state => [state[key], state[`set${key}`]]);
-		},
-		selectors: SettingsStoreSelectors
+	for (const [key, value] of Object.entries(state)) {
+		actions[`set${key}`] = newValue => SettingsStore.setState({ [key]: newValue });
+		selectors[key] = state => state[key];
 	}
+
+	Object.defineProperty(SettingsStore, "selectors", { value: Object.assign(selectors) });
+	Object.assign(SettingsStore, actions);
+
+})(SettingsStore.getInitialState());
+
+SettingsStore.subscribe(
+	state => state,
+	() => Data.save("settings", SettingsStore.state)
 );
 
-Object.defineProperty(SettingsStore, "state", {
-	configurable: false,
-	get() {
-		return this.getState();
+Object.assign(SettingsStore, {
+	useSetting: key => {
+		const val = SettingsStore(state => state[key]);
+		return [val, SettingsStore[`set${key}`]];
 	}
 });
-
-export function renderListener(content, [selector, eqFn = Object.is], shouldShow, memo) {
-	const wrappedComp = () => (shouldShow(SettingsStore(selector, eqFn)) ? content : null);
-	return React.createElement(memo ? React.memo(wrappedComp) : wrappedComp);
-}
-
 
 DEV: {
 	window.BDPluginSettings = window.BDPluginSettings || {};

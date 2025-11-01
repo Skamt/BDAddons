@@ -22,7 +22,7 @@ function buildToggle({ key, label, color }) {
 			checked={state}
 			action={() => {
 				setState(!state);
-				Settings.state[`set${key}`](!Settings.state[key]);
+				Settings[`set${key}`](!Settings.state[key]);
 			}}
 		/>
 	);

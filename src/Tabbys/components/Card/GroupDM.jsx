@@ -1,7 +1,6 @@
 import React from "@React";
 import useStateFromStores from "@Modules/useStateFromStores";
 import ChannelStore from "@Stores/ChannelStore";
-// import { Fallback } from "@/components/Icons";
 import { getGroupDmIcon } from "@Utils/Channel";
 import { join } from "@Utils/css";
 import Settings from "@Utils/Settings";

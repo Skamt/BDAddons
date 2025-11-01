@@ -12,7 +12,7 @@ export function getUserAvatar(id, size) {
 }
 
 export function getUserAvatarForGuild(id, guildId, size) {
-	UserStore.getUser(id).getAvatarURL(guildId, size);
+	UserStore.getUser(id)?.getAvatarURL(guildId, size);
 }
 
 export function getUserName(userObject = {}) {
