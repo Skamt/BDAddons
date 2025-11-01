@@ -3680,7 +3680,7 @@ var BaseClasses = getModule(Filters.byKeys("base", "activityPanel"));
 Plugin_default.on(Events.START, () => {
 	const { module: module2, key } = TitleBar;
 	if (!module2 || !key) return Logger_default.patchError("patchTitleBar");
-	Patcher.after(module2, key, (_, [props], ret) => {
+	const unpatch = Patcher.after(module2, key, (_, [props], ret) => {
 		if (props.windowKey?.startsWith("DISCORD_")) return ret;
 		const [, leading, trailing] = ret?.props?.children || [];
 		return /* @__PURE__ */ React_default.createElement(ErrorBoundary, null, /* @__PURE__ */ React_default.createElement(
@@ -3691,9 +3691,10 @@ Plugin_default.on(Events.START, () => {
 		));
 	});
 	reRender(`.${BaseClasses.base}`);
-});
-Plugin_default.on(Events.STOP, () => {
-	reRender(`.${BaseClasses.base}`);
+	Plugin_default.once(Events.STOP, () => {
+		unpatch?.();
+		reRender(`.${BaseClasses.base}`);
+	});
 });
 
 // common/Components/Collapsible/styles.css
