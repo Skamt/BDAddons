@@ -3676,6 +3676,7 @@ function App({ leading, trailing }) {
 
 // src/Tabbys/patches/patchTitleBar.jsx
 var TitleBar = getModuleAndKey(Filters.byStrings("PlatformTypes", "windowKey", "title"), { searchExports: true });
+var BaseClasses = getModule(Filters.byKeys("base", "activityPanel"));
 Plugin_default.on(Events.START, () => {
 	const { module: module2, key } = TitleBar;
 	if (!module2 || !key) return Logger_default.patchError("patchTitleBar");
@@ -3689,7 +3690,10 @@ Plugin_default.on(Events.START, () => {
 			}
 		));
 	});
-	reRender(".base_c48ade");
+	reRender(`.${BaseClasses.base}`);
+});
+Plugin_default.on(Events.STOP, () => {
+	reRender(`.${BaseClasses.base}`);
 });
 
 // common/Components/Collapsible/styles.css
@@ -4002,9 +4006,7 @@ function SettingComponent() {
 
 // src/Tabbys/index.jsx
 Plugin_default.getSettingsPanel = () => /* @__PURE__ */ React_default.createElement(SettingComponent, null);
-Plugin_default.on(Events.START, () => {});
 Plugin_default.on(Events.STOP, () => {
 	Patcher.unpatchAll();
-	reRender(".base_c48ade");
 });
 module.exports = () => Plugin_default;
