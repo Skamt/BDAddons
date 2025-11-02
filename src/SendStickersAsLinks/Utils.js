@@ -1,13 +1,15 @@
-import { getModule, Filters } from "@Webpack";
+import { getMangled, Filters } from "@Webpack";
 import Settings from "@Utils/Settings";
 import UserStore from "@Stores/UserStore";
 import StickersStore from "@Stores/StickersStore";
 import ChannelStore from "@Stores/ChannelStore";
 import { sendMessageDirectly, insertText } from "@Utils/Messages";
 import Toast from "@Utils/Toast";
-import {StickerSendability} from "./Modules";
+import { StickerSendability } from "./Modules";
 
-const getStickerAssetUrl = getModule(Filters.byStrings("&passthrough=false"), { searchExports: true });
+const { getStickerAssetUrl } = getMangled(Filters.bySource("API_ENDPOINT", "ASSET_ENDPOINT"), {
+	getStickerAssetUrl: Filters.byStrings("STICKER_ASSET")
+});
 
 const { StickersSendabilityEnum, getStickerSendability } = StickerSendability;
 const StickerFormatEnum = {
@@ -27,7 +29,7 @@ export function sendStickerAsLink(sticker, channel) {
 	if (!Settings.state.sendDirectly) return insertText(content);
 
 	try {
-		sendMessageDirectly(channel, content);
+		sendMessageDirectly(content, channel.id);
 	} catch {
 		insertText(content);
 		Toast.error("Could not send directly.");
@@ -35,11 +37,13 @@ export function sendStickerAsLink(sticker, channel) {
 }
 
 export function getStickerUrl(sticker) {
-	return getStickerAssetUrl(sticker, { size: Settings.state.stickerSize || 160 });
+	const size = Settings.state.stickerSize || 160;
+	if (!getStickerAssetUrl) return `https://media.discordapp.net/stickers/${sticker.id}.webp?size=${size}&quality=lossless`;
+	return getStickerAssetUrl(sticker, { size });
 }
 
 export function isAnimatedSticker(sticker) {
-	return sticker["format_type"] !== StickerFormatEnum.PNG;
+	return sticker.format_type !== StickerFormatEnum.PNG;
 }
 
 export function isStickerSendable(sticker, channel, user) {

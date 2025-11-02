@@ -3,6 +3,7 @@
 	"version": "1.0.0",
 	"main": "index.js",
 	"scripts": {
+		"dist": "bun builder/index.js build && bun builder/index.js build -d",
 		"build": "bun builder/index.js build",
 		"build:w": "bun builder/index.js build -w",
 		"dev": "bun builder/index.js build -d",
