@@ -1,7 +1,7 @@
 /**
  * @name SendStickersAsLinks
  * @description Enables you to send custom Stickers as links
- * @version 2.3.2
+ * @version 2.3.3
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/SendStickersAsLinks
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/SendStickersAsLinks/SendStickersAsLinks.plugin.js
@@ -11,7 +11,7 @@
 var Config_default = {
 	"info": {
 		"name": "SendStickersAsLinks",
-		"version": "2.3.2",
+		"version": "2.3.3",
 		"description": "Enables you to send custom Stickers as links",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SendStickersAsLinks/SendStickersAsLinks.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SendStickersAsLinks",
@@ -177,45 +177,40 @@ var { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector"
 	zustand: () => true
 });
 var subscribeWithSelector = getModule(Filters.byStrings("equalityFn", "fireImmediately"), { searchExports: true });
-var zustand_default = zustand;
+
+function create(initialState) {
+	const Store = zustand(initialState);
+	Object.defineProperty(Store, "state", {
+		configurable: false,
+		get: () => Store.getState()
+	});
+	return Store;
+}
+
+// common/Utils/index.js
+var nop = () => {};
 
 // common/Utils/Settings.js
-var SettingsStoreSelectors = {};
-var persistMiddleware = (config) => (set, get, api) => config((args) => (set(args), Data.save("settings", get().getRawState())), get, api);
-var SettingsStore = Object.assign(
-	zustand_default(
-		persistMiddleware(
-			subscribeWithSelector((set, get) => {
-				const settingsObj = /* @__PURE__ */ Object.create(null);
-				for (const [key, value] of Object.entries({
-						...Config_default.settings,
-						...Data.load("settings")
-					})) {
-					settingsObj[key] = value;
-					settingsObj[`set${key}`] = (newValue) => set({
-						[key]: newValue });
-					SettingsStoreSelectors[key] = (state) => state[key];
-				}
-				settingsObj.getRawState = () => {
-					return Object.entries(get()).filter(([, val]) => typeof val !== "function").reduce((acc, [key, val]) => {
-						acc[key] = val;
-						return acc;
-					}, {});
-				};
-				return settingsObj;
-			})
-		)
-	), {
-		useSetting: function(key) {
-			return this((state) => [state[key], state[`set${key}`]]);
-		},
-		selectors: SettingsStoreSelectors
+var SettingsStore = create(subscribeWithSelector(() => Object.assign(Config_default.settings, Data.load("settings") || {})));
+((state) => {
+	const selectors = {};
+	const actions = {};
+	for (const [key, value] of Object.entries(state)) {
+		actions[`set${key}`] = (newValue) => SettingsStore.setState({
+			[key]: newValue });
+		selectors[key] = (state2) => state2[key];
 	}
+	Object.defineProperty(SettingsStore, "selectors", { value: Object.assign(selectors) });
+	Object.assign(SettingsStore, actions);
+})(SettingsStore.getInitialState());
+SettingsStore.subscribe(
+	(state) => state,
+	() => Data.save("settings", SettingsStore.state)
 );
-Object.defineProperty(SettingsStore, "state", {
-	configurable: false,
-	get() {
-		return this.getState();
+Object.assign(SettingsStore, {
+	useSetting: (key) => {
+		const val = SettingsStore((state) => state[key]);
+		return [val, SettingsStore[`set${key}`]];
 	}
 });
 var Settings_default = SettingsStore;
@@ -273,6 +268,9 @@ var Dispatcher_default = getModule(Filters.byKeys("dispatch", "_dispatch"), { se
 // MODULES-AUTO-LOADER:@Stores/PendingReplyStore
 var PendingReplyStore_default = getStore("PendingReplyStore");
 
+// MODULES-AUTO-LOADER:@Stores/SelectedChannelStore
+var SelectedChannelStore_default = getStore("SelectedChannelStore");
+
 // common/Utils/Messages.js
 function getReply(channelId) {
 	const reply = PendingReplyStore_default?.getPendingReply(channelId);
@@ -291,15 +289,16 @@ function getReply(channelId) {
 	};
 }
 
-function sendMessageDirectly(channel, content) {
-	if (!MessageActions_default || !MessageActions_default.sendMessage || typeof MessageActions_default.sendMessage !== "function") throw new Error("Can't send message directly.");
+function sendMessageDirectly(content, channelId) {
+	if (!MessageActions_default?.sendMessage || typeof MessageActions_default.sendMessage !== "function") return;
+	if (!channelId) channelId = SelectedChannelStore_default.getChannelId();
 	return MessageActions_default.sendMessage(
-		channel.id, {
+		channelId, {
 			validNonShortcutEmojis: [],
 			content
 		},
 		void 0,
-		getReply(channel.id)
+		getReply(channelId)
 	);
 }
 var insertText = /* @__PURE__ */ (() => {
@@ -325,7 +324,9 @@ var StickerSendability = getMangled(
 );
 
 // src/SendStickersAsLinks/Utils.js
-var getStickerAssetUrl = getModule(Filters.byStrings("&passthrough=false"), { searchExports: true });
+var { getStickerAssetUrl } = getMangled(Filters.bySource("API_ENDPOINT", "ASSET_ENDPOINT"), {
+	getStickerAssetUrl: Filters.byStrings("STICKER_ASSET")
+});
 var { StickersSendabilityEnum, getStickerSendability } = StickerSendability;
 var StickerFormatEnum = {
 	"1": "PNG",
@@ -342,7 +343,7 @@ function sendStickerAsLink(sticker, channel) {
 	const content = getStickerUrl(sticker);
 	if (!Settings_default.state.sendDirectly) return insertText(content);
 	try {
-		sendMessageDirectly(channel, content);
+		sendMessageDirectly(content, channel.id);
 	} catch {
 		insertText(content);
 		Toast_default.error("Could not send directly.");
@@ -350,11 +351,13 @@ function sendStickerAsLink(sticker, channel) {
 }
 
 function getStickerUrl(sticker) {
-	return getStickerAssetUrl(sticker, { size: Settings_default.state.stickerSize || 160 });
+	const size = Settings_default.state.stickerSize || 160;
+	if (!getStickerAssetUrl) return `https://media.discordapp.net/stickers/${sticker.id}.webp?size=${size}&quality=lossless`;
+	return getStickerAssetUrl(sticker, { size });
 }
 
 function isAnimatedSticker(sticker) {
-	return sticker["format_type"] !== StickerFormatEnum.PNG;
+	return sticker.format_type !== StickerFormatEnum.PNG;
 }
 
 function isStickerSendable(sticker, channel, user) {
@@ -459,9 +462,6 @@ var Heading_default = getModule((a) => a?.render?.toString().includes("data-exce
 
 // MODULES-AUTO-LOADER:@Modules/Slider
 var Slider_default = getModule(Filters.byPrototypeKeys("renderMark"), { searchExports: true });
-
-// common/Utils/index.js
-var nop = () => {};
 
 // MODULES-AUTO-LOADER:@Modules/FormSwitch
 var FormSwitch_default = getModule(Filters.byStrings("note", "tooltipNote"), { searchExports: true });
