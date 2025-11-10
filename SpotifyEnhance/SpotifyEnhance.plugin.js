@@ -1,7 +1,7 @@
 /**
  * @name SpotifyEnhance
  * @description All in one better spotify-discord experience.
- * @version 1.1.5
+ * @version 1.1.6
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js
@@ -11,7 +11,7 @@
 var Config_default = {
 	"info": {
 		"name": "SpotifyEnhance",
-		"version": "1.1.5",
+		"version": "1.1.6",
 		"description": "All in one better spotify-discord experience.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance",
@@ -222,6 +222,15 @@ var { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector"
 var subscribeWithSelector = getModule(Filters.byStrings("equalityFn", "fireImmediately"), { searchExports: true });
 var zustand_default = zustand;
 
+function create(initialState) {
+	const Store2 = zustand(initialState);
+	Object.defineProperty(Store2, "state", {
+		configurable: false,
+		get: () => Store2.getState()
+	});
+	return Store2;
+}
+
 // MODULES-AUTO-LOADER:@Stores/ConnectedAccountsStore
 var ConnectedAccountsStore_default = getStore("ConnectedAccountsStore");
 
@@ -308,15 +317,16 @@ function getReply(channelId) {
 	};
 }
 
-function sendMessageDirectly(channel, content) {
-	if (!MessageActions_default || !MessageActions_default.sendMessage || typeof MessageActions_default.sendMessage !== "function") throw new Error("Can't send message directly.");
+function sendMessageDirectly(content, channelId) {
+	if (!MessageActions_default?.sendMessage || typeof MessageActions_default.sendMessage !== "function") return;
+	if (!channelId) channelId = SelectedChannelStore_default.getChannelId();
 	return MessageActions_default.sendMessage(
-		channel.id, {
+		channelId, {
 			validNonShortcutEmojis: [],
 			content
 		},
 		void 0,
-		getReply(channel.id)
+		getReply(channelId)
 	);
 }
 var insertText = /* @__PURE__ */ (() => {
@@ -1141,42 +1151,26 @@ Plugin_default.on(Events.START, () => {
 });
 
 // common/Utils/Settings.js
-var SettingsStoreSelectors = {};
-var persistMiddleware = (config) => (set, get, api) => config((args) => (set(args), Data.save("settings", get().getRawState())), get, api);
-var SettingsStore = Object.assign(
-	zustand_default(
-		persistMiddleware(
-			subscribeWithSelector((set, get) => {
-				const settingsObj = /* @__PURE__ */ Object.create(null);
-				for (const [key, value] of Object.entries({
-						...Config_default.settings,
-						...Data.load("settings")
-					})) {
-					settingsObj[key] = value;
-					settingsObj[`set${key}`] = (newValue) => set({
-						[key]: newValue });
-					SettingsStoreSelectors[key] = (state) => state[key];
-				}
-				settingsObj.getRawState = () => {
-					return Object.entries(get()).filter(([, val]) => typeof val !== "function").reduce((acc, [key, val]) => {
-						acc[key] = val;
-						return acc;
-					}, {});
-				};
-				return settingsObj;
-			})
-		)
-	), {
-		useSetting: function(key) {
-			return this((state) => [state[key], state[`set${key}`]]);
-		},
-		selectors: SettingsStoreSelectors
+var SettingsStore = create(subscribeWithSelector(() => Object.assign(Config_default.settings, Data.load("settings") || {})));
+((state) => {
+	const selectors = {};
+	const actions = {};
+	for (const [key, value] of Object.entries(state)) {
+		actions[`set${key}`] = (newValue) => SettingsStore.setState({
+			[key]: newValue });
+		selectors[key] = (state2) => state2[key];
 	}
+	Object.defineProperty(SettingsStore, "selectors", { value: Object.assign(selectors) });
+	Object.assign(SettingsStore, actions);
+})(SettingsStore.getInitialState());
+SettingsStore.subscribe(
+	(state) => state,
+	() => Data.save("settings", SettingsStore.state)
 );
-Object.defineProperty(SettingsStore, "state", {
-	configurable: false,
-	get() {
-		return this.getState();
+Object.assign(SettingsStore, {
+	useSetting: (key) => {
+		const val = SettingsStore((state) => state[key]);
+		return [val, SettingsStore[`set${key}`]];
 	}
 });
 var Settings_default = SettingsStore;
@@ -1827,7 +1821,8 @@ StylesLoader_default.push(`.transparent-background.transparent-background{
 // common/Utils/Modals/index.jsx
 var ModalActions = /* @__PURE__ */ getMangled("onCloseRequest:null!=", {
 	openModal: /* @__PURE__ */ Filters.byStrings("onCloseRequest:null!="),
-	closeModal: /* @__PURE__ */ Filters.byStrings(".setState", ".getState()[")
+	closeModal: /* @__PURE__ */ Filters.byStrings(".setState", ".getState()["),
+	ModalStore: /* @__PURE__ */ Filters.byKeys("getState")
 });
 var Modals = /* @__PURE__ */ getMangled( /* @__PURE__ */ Filters.bySource("root", "headerIdIsManaged"), {
 	ModalRoot: /* @__PURE__ */ Filters.byStrings("rootWithShadow"),
@@ -2417,7 +2412,7 @@ StylesLoader_default.push(`.spotify-player-controls {
 
 // common/DiscordModules/Modules.js
 var DiscordPopout = /* @__PURE__ */ (() => getModule((a) => a?.prototype?.render && a.Animation, { searchExports: true }))();
-var RadioGroup = /* @__PURE__ */ (() => getMangled("radioIndicatorChecked", { radioGroup: Filters.byStrings("label", "required") }).radioGroup)();
+var RadioGroup = /* @__PURE__ */ (() => getMangled('data-toggleable-component":"radiogroup', { radioGroup: Filters.byStrings("label", "required") }).radioGroup)();
 
 // common/Components/Popout/index.jsx
 var Popout_default = ({ children, targetElementRef, ...props }) => {
@@ -2459,9 +2454,6 @@ var TypingStore_default = getStore("TypingStore");
 
 // MODULES-AUTO-LOADER:@Stores/ChannelStore
 var ChannelStore_default = getStore("ChannelStore");
-
-// MODULES-AUTO-LOADER:@Stores/GuildStore
-var GuildStore_default = getStore("GuildStore");
 
 // common/Utils/Hooks.js
 function useTimer(fn, delay) {
@@ -3074,7 +3066,6 @@ Plugin_default.on(Events.START, async () => {
 	if (!fluxContainer) return Logger_default.patchError("SpotifyPlayer");
 	const unpatch = Patcher.after(fluxContainer.type.prototype, "render", (_, __, ret) => {
 		return [
-			// renderListener(
 			/* @__PURE__ */
 			React.createElement(
 				ErrorBoundary, {
@@ -3084,10 +3075,6 @@ Plugin_default.on(Events.START, async () => {
 				/* @__PURE__ */
 				React.createElement(SpotifyPlayer_default, null)
 			),
-			// 	[_ => [_.player, _.spotifyPlayerPlace], shallow],
-			// 	([player, place]) => place === PlayerPlaceEnum.USERAREA && player,
-			// 	true
-			// ),
 			ret
 		];
 	});
@@ -3124,7 +3111,6 @@ function getSocket() {
 Plugin_default.on(Events.START, async () => {
 	const socket = await getSocket();
 	const unpatch = Patcher.after(socket.prototype, "handleEvent", function onSocketEvent(socket2, [socketEvent]) {
-		Logger_default.log("Spotify Socket", socketEvent, Date.now());
 		if (Store.state.account?.accountId && socket2.accountId !== Store.state.account?.accountId) return;
 		const { type, event } = socketEvent;
 		switch (type) {
@@ -3320,6 +3306,7 @@ var FolderIcon = svg({ fill: "none" },
 );
 var ShopIcon = svg(null, "M21 11.42V19a3 3 0 0 1-3 3h-2.75a.25.25 0 0 1-.25-.25V16a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v5.75c0 .14-.11.25-.25.25H6a3 3 0 0 1-3-3v-7.58c0-.18.2-.3.37-.24a4.46 4.46 0 0 0 4.94-1.1c.1-.12.3-.12.4 0a4.49 4.49 0 0 0 6.58 0c.1-.12.3-.12.4 0a4.45 4.45 0 0 0 4.94 1.1c.17-.07.37.06.37.24Z", "M2.63 4.19A3 3 0 0 1 5.53 2H7a1 1 0 0 1 1 1v3.98a3.07 3.07 0 0 1-.3 1.35A2.97 2.97 0 0 1 4.98 10c-2 0-3.44-1.9-2.9-3.83l.55-1.98ZM10 2a1 1 0 0 0-1 1v4a3 3 0 0 0 3 3 3 3 0 0 0 3-2.97V3a1 1 0 0 0-1-1h-4ZM17 2a1 1 0 0 0-1 1v3.98a2.43 2.43 0 0 0 0 .05A2.95 2.95 0 0 0 19.02 10c2 0 3.44-1.9 2.9-3.83l-.55-1.98A3 3 0 0 0 18.47 2H17Z");
 var NitroIcon = svg(null, "M16.23 12c0 1.29-.95 2.25-2.22 2.25A2.18 2.18 0 0 1 11.8 12c0-1.29.95-2.25 2.22-2.25 1.27 0 2.22.96 2.22 2.25ZM23 12c0 5.01-4 9-8.99 9a8.93 8.93 0 0 1-8.75-6.9H3.34l-.9-4.2H5.3c.26-.96.68-1.89 1.21-2.7H1.89L1 3h12.74C19.13 3 23 6.99 23 12Zm-4.26 0c0-2.67-2.1-4.8-4.73-4.8A4.74 4.74 0 0 0 9.28 12c0 2.67 2.1 4.8 4.73 4.8a4.74 4.74 0 0 0 4.73-4.8Z");
+var IdIcon = svg(null, "M15.3 14.48c-.46.45-1.08.67-1.86.67h-1.39V9.2h1.39c.78 0 1.4.22 1.86.67.46.45.68 1.22.68 2.31 0 1.1-.22 1.86-.68 2.31Z", path({ fillRule: "evenodd" }, "M5 2a3 3 0 0 0-3 3v14a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3V5a3 3 0 0 0-3-3H5Zm1 15h2.04V7.34H6V17Zm4-9.66V17h3.44c1.46 0 2.6-.42 3.38-1.25.8-.83 1.2-2.02 1.2-3.58s-.4-2.75-1.2-3.58c-.79-.83-1.92-1.25-3.38-1.25H10Z"));
 
 // common/Components/Collapsible/index.jsx
 var c = classNameFactory("collapsible");
