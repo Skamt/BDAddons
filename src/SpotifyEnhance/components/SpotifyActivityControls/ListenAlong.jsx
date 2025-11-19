@@ -1,8 +1,7 @@
 import React from "@React";
 import ActivityControlButton from "./ActivityControlButton";
-import ListenAlongIcon from "@Components/icons/ListenAlongIcon";
 import Tooltip from "@Components/Tooltip";
-
+import { ListenAlongIcon } from "@Components/Icon";
 
 export default function ListenAlong({ userSyncActivityState }) {
 	const { disabled, onClick, tooltip } = userSyncActivityState;

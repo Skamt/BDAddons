@@ -4,19 +4,8 @@ import Button from "@Components/Button";
 import Popout from "@Components/Popout";
 import HoverPopout from "@Components/HoverPopout";
 import Tooltip from "@Components/Tooltip";
-import MuteVolumeIcon from "@Components/icons/MuteVolumeIcon";
-import NextIcon from "@Components/icons/NextIcon";
-import PauseIcon from "@Components/icons/PauseIcon";
-import PlayIcon from "@Components/icons/PlayIcon";
-import PreviousIcon from "@Components/icons/PreviousIcon";
-import RepeatIcon from "@Components/icons/RepeatIcon";
-import RepeatOneIcon from "@Components/icons/RepeatOneIcon";
-import ShareIcon from "@Components/icons/ShareIcon";
-import ShuffleIcon from "@Components/icons/ShuffleIcon";
-import VolumeIcon from "@Components/icons/VolumeIcon";
-import ImageIcon from "@Components/icons/ImageIcon";
-import ListenIcon from "@Components/icons/ListenIcon";
-import AddToQueueIcon from "@Components/icons/AddToQueueIcon";
+import { MuteVolumeIcon, NextIcon, PauseIcon, PlayIcon, PreviousIcon, RepeatIcon, RepeatOneIcon, ShareIcon, ShuffleIcon, VolumeIcon, ImageIcon, ListenIcon, AddToQueueIcon } from "@Components/Icon";
+
 import { PlayerButtonsEnum } from "@/consts.js";
 
 import { ContextMenu } from "@Api";

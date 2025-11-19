@@ -1,8 +1,7 @@
 import React from "@React";
 import ActivityControlButton from "./ActivityControlButton";
-import ListenIcon from "@Components/icons/ListenIcon";
 import Tooltip from "@Components/Tooltip";
-
+import { ListenIcon } from "@Components/Icon";
 
 export default function Play({ userPlayActivityState }) {
 	const { label, disabled, onClick, tooltip } = userPlayActivityState;

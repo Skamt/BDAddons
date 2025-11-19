@@ -115,9 +115,9 @@ export default function SettingComponent() {
 				<SpotifyEmbedOptions />
 			</Collapsible>
 			<Gap gap={15} />
-			<Collapsible title="Spotify player placement">
+			{/*<Collapsible title="Spotify player placement">
 				<SpotifyPLayerOptions />
-			</Collapsible>
+			</Collapsible>*/}
 		</div>
 	);
 }

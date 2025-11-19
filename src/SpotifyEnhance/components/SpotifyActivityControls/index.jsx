@@ -3,12 +3,9 @@ import React from "@React";
 import ActivityControlButton from "./ActivityControlButton";
 import ListenAlong from "./ListenAlong";
 import Play from "./Play";
-
 import Tooltip from "@Components/Tooltip";
-import AddToQueueIcon from "@Components/icons/AddToQueueIcon";
-import ShareIcon from "@Components/icons/ShareIcon";
+import {  AddToQueueIcon, ShareIcon } from "@Components/Icon";
 import { Filters, getMangled } from "@Webpack";
-
 import { Store } from "@/Store";
 
 const { useSpotifyPlayAction, useSpotifySyncAction } = getMangled(

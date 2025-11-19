@@ -1,8 +1,7 @@
 import React from "@React";
-import PauseIcon from "@Components/icons/PauseIcon";
-import PlayIcon from "@Components/icons/PlayIcon";
 import Tooltip from "@Components/Tooltip";
 import Toast from "@Utils/Toast";
+import { PlayIcon, PauseIcon } from "@Components/Icon";
 
 class audioPlayer {
 	constructor(src) {

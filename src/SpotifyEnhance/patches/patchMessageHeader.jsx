@@ -5,7 +5,7 @@ import ErrorBoundary from "@Components/ErrorBoundary";
 import MessageHeader from "@Patch/MessageHeader";
 import useStateFromStores from "@Modules/useStateFromStores";
 import PresenceStore from "@Stores/PresenceStore";
-import SpotifyIcon from "@Components/icons/SpotifyIcon";
+import { SpotifyIcon } from "@Components/Icon";
 import Tooltip from "@Components/Tooltip";
 import Settings from "@Utils/Settings";
 import Plugin, { Events } from "@Utils/Plugin";

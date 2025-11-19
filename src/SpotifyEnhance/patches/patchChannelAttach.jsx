@@ -3,12 +3,10 @@ import Logger from "@Utils/Logger";
 import { Filters, getModule } from "@Webpack";
 import { Store } from "@/Store";
 import Flex from "@Components/Flex";
-import ImageIcon from "@Components/icons/ImageIcon";
-import ListenIcon from "@Components/icons/ListenIcon";
+import { ListenIcon, ImageIcon } from "@Components/Icon";
 import Plugin, { Events } from "@Utils/Plugin";
 
 const { Item: MenuItem } = ContextMenu;
-
 const ChannelAttachMenu = getModule(Filters.byStrings("Plus Button"), { defaultExport: false });
 
 function MenuLabel({ label, icon }) {

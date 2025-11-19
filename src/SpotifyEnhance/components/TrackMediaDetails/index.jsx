@@ -2,14 +2,12 @@ import "./styles";
 import React from "@React";
 import Tooltip from "@Components/Tooltip";
 import Anchor from "@Modules/Anchor";
-
 import { Store } from "@/Store";
 import Artist from "./Artist";
 import TrackBanner from "./TrackBanner";
 import { ContextMenu } from "@Api";
 import HoverPopout from "@Components/HoverPopout";
-import ListenIcon from "@Components/icons/ListenIcon";
-import ExternalLinkIcon from "@Components/icons/ExternalLinkIcon";
+import { ListenIcon, ExternalLinkIcon } from "@Components/Icon";
 
 export default ({ name, artists, mediaType }) => {
 	if (mediaType !== "track") {

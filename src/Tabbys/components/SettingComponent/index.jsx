@@ -3,7 +3,6 @@ import React from "@React";
 import Collapsible from "@Components/Collapsible";
 import Gap from "@Components/Gap";
 import SettingSwtich from "@Components/SettingSwtich";
-import { RadioGroup } from "@Discord/Modules";
 import Settings from "@Utils/Settings";
 import Plugin from "@Utils/Plugin";
 import Heading from "@Modules/Heading";

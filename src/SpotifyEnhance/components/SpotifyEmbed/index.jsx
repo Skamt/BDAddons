@@ -1,11 +1,7 @@
 import "./styles";
 import React from "@React";
 import Tooltip from "@Components/Tooltip";
-import AddToQueueIcon from "@Components/icons/AddToQueueIcon";
-import CopyIcon from "@Components/icons/CopyIcon";
-import ImageIcon from "@Components/icons/ImageIcon";
-import ListenIcon from "@Components/icons/ListenIcon";
-import SpotifyIcon from "@Components/icons/SpotifyIcon";
+import { AddToQueueIcon, CopyIcon, ImageIcon, ListenIcon, SpotifyIcon } from "@Components/Icon";
 import useStateFromStores from "@Modules/useStateFromStores";
 import AccessibilityStore from "@Stores/AccessibilityStore";
 import { fit, shallow } from "@Utils";
