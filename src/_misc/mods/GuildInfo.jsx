@@ -15,9 +15,9 @@ import GuildFeaturesEnum from "@Enums/GuildFeaturesEnum";
 
 const { getGuildIconURL } = getModule(a => a.getGuildIconURL) || {};
 
-const GuildTooltip = getMangled(Filters.bySource("includeActivity", "isHoveringOrFocusing"), {
-	default: Filters.byStrings("isHoveringOrFocusing"),
-	popout: Filters.byStrings("guildNameText")
+const GuildTooltip = getMangled(Filters.bySource("data-migration-pending", "includeActivity"), {
+	default: Filters.byStrings("data-migration-pending"),
+	popout: Filters.byStrings("guildJoinRequestStatus")
 });
 
 export default class GuildInfo extends Disposable {
@@ -37,7 +37,7 @@ export default class GuildInfo extends Disposable {
 				ret.props.children.push([el(`Owner: ${getUserName(owner)}`), el(`Created At: ${new Date(parseSnowflake(+guild.id)).toLocaleDateString()}`), el(`Joined At: ${guild.joinedAt.toLocaleDateString()}`), el("Clyde", { style: { color: guild.features.has(GuildFeaturesEnum.CLYDE_ENABLED) ? "lime" : "red" } }), el(`Roles: ${GuildRoleStore.getSortedRoles(guild.id).length}`), el(`Channels: ${GuildChannelStore.getChannels(guild.id).count}`), el(`Members: ${GuildMemberCountStore.getMemberCount(guild.id)}`)]);
 			}),
 			Patcher.after(GuildTooltip, "default", (_, [props], ret) => {
-				ret.props.renderPopout = () => <GuildTooltip.popout {...props} />;
+				ret.props.text = <GuildTooltip.popout {...props} />;
 			}),
 			ContextMenu.patch("guild-context", (retVal, { guild }) => {
 				if (!guild || !getGuildIconURL) return;
