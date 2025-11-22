@@ -9,15 +9,14 @@ import UserStore from "@Stores/UserStore";
 import GuildRoleStore from "@Stores/GuildRoleStore";
 import GuildChannelStore from "@Stores/GuildChannelStore";
 import GuildMemberCountStore from "@Stores/GuildMemberCountStore";
-import {getUserName} from "@Utils/User";
+import { getUserName } from "@Utils/User";
 
 import GuildFeaturesEnum from "@Enums/GuildFeaturesEnum";
 
 const { getGuildIconURL } = getModule(a => a.getGuildIconURL) || {};
 
-const GuildTooltip = getMangled(Filters.bySource("data-migration-pending", "includeActivity"), {
-	default: Filters.byStrings("data-migration-pending"),
-	popout: Filters.byStrings("guildJoinRequestStatus")
+const GuildTooltip = getMangled(Filters.bySource("data-migration-pending", "GuildTooltip"), {
+	default: Filters.byStrings("data-migration-pending")
 });
 
 export default class GuildInfo extends Disposable {
@@ -32,13 +31,20 @@ export default class GuildInfo extends Disposable {
 
 		if (!GuildTooltip) return Logger.patchError("GuildInfo");
 		this.patches = [
-			Patcher.after(GuildTooltip, "popout", (_, [{ guild }], ret) => {
+			Patcher.after(GuildTooltip, "default", (_, [{ guild }], ret) => {
 				const owner = UserStore.getUser(guild.ownerId);
-				ret.props.children.push([el(`Owner: ${getUserName(owner)}`), el(`Created At: ${new Date(parseSnowflake(+guild.id)).toLocaleDateString()}`), el(`Joined At: ${guild.joinedAt.toLocaleDateString()}`), el("Clyde", { style: { color: guild.features.has(GuildFeaturesEnum.CLYDE_ENABLED) ? "lime" : "red" } }), el(`Roles: ${GuildRoleStore.getSortedRoles(guild.id).length}`), el(`Channels: ${GuildChannelStore.getChannels(guild.id).count}`), el(`Members: ${GuildMemberCountStore.getMemberCount(guild.id)}`)]);
+				ret.props.text = [
+					ret.props.text,
+					el(`Owner: ${getUserName(owner)}`),
+					el(`Created At: ${new Date(parseSnowflake(+guild.id)).toLocaleDateString()}`),
+					el(`Joined At: ${guild.joinedAt.toLocaleDateString()}`),
+					el("Clyde", { style: { color: guild.features.has(GuildFeaturesEnum.CLYDE_ENABLED) ? "lime" : "red" } }),
+					el(`Roles: ${GuildRoleStore.getSortedRoles(guild.id).length}`),
+					el(`Channels: ${GuildChannelStore.getChannels(guild.id).count}`),
+					el(`Members: ${GuildMemberCountStore.getMemberCount(guild.id)}`)
+				];
 			}),
-			Patcher.after(GuildTooltip, "default", (_, [props], ret) => {
-				ret.props.text = <GuildTooltip.popout {...props} />;
-			}),
+
 			ContextMenu.patch("guild-context", (retVal, { guild }) => {
 				if (!guild || !getGuildIconURL) return;
 				const banner = getGuildIconURL(guild);
