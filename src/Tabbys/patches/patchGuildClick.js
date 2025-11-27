@@ -1,19 +1,16 @@
 import { Patcher } from "@Api";
 import Logger from "@Utils/Logger";
-import { Filters, getModule } from "@Webpack";
+import { reactRefMemoFilter, getModule } from "@Webpack";
 import Store from "@/Store";
 import { getNestedProp } from "@Utils";
 import SelectedChannelStore from "@Stores/SelectedChannelStore";
 import { getGuildChannelPath } from "@/utils";
-// const DMChannelFilter = Filters.byStrings("navigate", "location", "href", "createHref");
-// export const DMChannel = getModule(a => a.render && DMChannelFilter(a.render), { searchExports: true });
-
-const B = s(325257).exports.Z;
 import Plugin, { Events } from "@Utils/Plugin";
 
+const GuildComponent = getModule(reactRefMemoFilter("type","onDragStart", "guildNode"), { searchExports: true });
 Plugin.on(Events.START, () => {
-	if (!B) return Logger.patchError("GuildComponent");
-	Patcher.after(B, "type", (_, [{ guild }], ret) => {
+	if (!GuildComponent) return Logger.patchError("GuildComponent");
+	Patcher.after(GuildComponent, "type", (_, [{ guild }], ret) => {
 		const targetProps = getNestedProp(ret, "props.children.1.props.children.props.children.props.children.props");
 		if (!targetProps) return ret;
 		const origClick = targetProps.onClick;
