@@ -14,10 +14,10 @@ function getUserAvatar(id, avatar, size) {
 	return `https://cdn.discordapp.com/avatars/${id}/${avatar}.webp?size=${size}`;
 }
 
-export default function DM({ userId, avatar, username }) {
+export default function DM({ name, userId, avatar, username }) {
 	const { size, avatarSize } = getSize(Settings(_ => _.size));
 	const user = useStateFromStores([UserStore], () => UserStore.getUser(userId), [userId]);
-	const title = getUserName(user) || username || userId;
+	const title = name || getUserName(user) || username || userId;
 	const src = getUserAvatar(user.id || userId, user.avatar || avatar, size);
 
 	return (

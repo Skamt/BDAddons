@@ -12,9 +12,10 @@ import { FieldWrapper } from "@Discord/Modules";
 
 const c = clsx("create-folder-modal");
 
-export default function PromptModal({ modalProps, required,  title, placeholder, label, initialValue = "", onSubmit }) {
+export default function PromptModal({ modalProps, required, title, placeholder, label, initialValue = "", onSubmit }) {
 	const [val, setVal] = useState(initialValue);
 	const [submitted, setSubmitted] = useState(false);
+	const inputRef = useRef();
 
 	const saveHandler = e => {
 		e.preventDefault();
@@ -27,7 +28,10 @@ export default function PromptModal({ modalProps, required,  title, placeholder,
 		}
 	};
 
-	const saveOnReturn = e => {};
+	const resetHandler = () => {
+		setVal("");
+		inputRef.current.focus();
+	};
 
 	return (
 		<form onSubmit={saveHandler}>
@@ -46,19 +50,20 @@ export default function PromptModal({ modalProps, required,  title, placeholder,
 				<div className={c("content")}>
 					<FieldWrapper title={label}>
 						<TextInput
+							inputRef={inputRef}
 							value={val}
 							onChange={setVal}
 							fullWidth={true}
 							required={required}
-							placeholder={initialValue || placeholder}
+							placeholder={placeholder || initialValue}
 							autoFocus={true}
 						/>
 					</FieldWrapper>
 					<ManaTextButton
-						text="reset"
+						text="Reset Name"
 						textVariant="text-sm/medium"
 						type="button"
-						onClick={() => setVal(initialValue)}
+						onClick={resetHandler}
 					/>
 				</div>
 				<Modals.ModalFooter

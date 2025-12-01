@@ -1,4 +1,4 @@
-import { getUserFromDM } from "@Utils/User";
+import { getUserName } from "@Utils/User";
 import { pathTypes } from "@/consts";
 import ChannelStore from "@Stores/ChannelStore";
 import UserStore from "@Stores/UserStore";
@@ -83,7 +83,7 @@ const parsers = [
 				type: pathTypes.DM,
 				channelId: channel.id,
 				path: constructPath("@me", channelId),
-				username: user.username,
+				username: getUserName(user),
 				avatar: user.avatar,
 				userId: user.id
 			};

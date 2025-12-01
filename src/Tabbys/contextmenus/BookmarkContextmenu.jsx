@@ -15,7 +15,7 @@ function renameBookmark(id, parentId) {
 	openPromptModal({
 		title: "Bookmark Name",
 		label: "Bookmark Name",
-		placeholder: bookmark.name,
+		placeholder: bookmark.username || "",
 		initialValue: bookmark.name,
 		onSubmit: name => setBookmarkName(id, name, parentId)
 	});
