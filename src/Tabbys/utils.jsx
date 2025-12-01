@@ -1,4 +1,6 @@
+
 import { MenuLabel } from "@Components/ContextMenu";
+
 import useStateFromStores from "@Modules/useStateFromStores";
 import React from "@React";
 import UserStore from "@Stores/UserStore";
@@ -11,10 +13,16 @@ import { getUserAvatar } from "@Utils/User";
 import { getModule } from "@Webpack";
 
 const ChannelIconsUtils = getModule(a => a.getChannelIconURL);
+const { getGuildIconURL } = getModule(a => a.getGuildIconURL) || {};
 
 export function buildTab(tabObj) {
 	const id = crypto.randomUUID();
 	return { ...tabObj, id };
+}
+
+export function buildFolder(folderObj) {
+	const id = crypto.randomUUID();
+	return { ...folderObj, bookmarks: folderObj.bookmarks || [], id, isFolder: true };
 }
 
 export function getDmAvatar(channel, size) {
@@ -42,7 +50,7 @@ export function getChannelIcon(channel, size) {
 
 	const guild = GuildStore.getGuild(channel.guild_id);
 
-	if (guild) return guild.getIconURL(size);
+	if (guild) return getGuildIconURL(guild);
 }
 
 export function useChannel(channelId, size) {

@@ -13,8 +13,6 @@ import { Sources } from "./Sources";
 import { Stores } from "./Stores";
 import webpackRequire from "./webpackRequire";
 
-
-
 const d = (() => {
 	const cache = new WeakMap();
 	const emptyDoc = document.createDocumentFragment();
@@ -109,6 +107,10 @@ function init() {
 			Dispatcher,
 			TheBigBoyBundle,
 			DiscordPermissionsEnum
+		},
+		rdvGetType() {
+			if (!$r) return false;
+			return Sources.getSource(String($r.type));
 		}
 	});
 }
@@ -132,7 +134,7 @@ function updateStores() {
 }
 
 const enableExp = (() => {
-	let unpatch = ()=>{};
+	let unpatch = () => {};
 	return function enableExp(b) {
 		if (!b) {
 			unpatch?.();

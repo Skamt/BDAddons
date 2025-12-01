@@ -1,48 +1,34 @@
-import React, { useEffect } from "@React";
+import React, { useRef, useEffect } from "@React";
 import { useResizable, useDraggable } from "@/utils";
 import { CloseIcon } from "@Components/Icon";
 import { concateClassNames } from "@Utils";
+import Draggabilly from "draggabilly";
+
 
 export default function FloatingWindow({ focused, onMouseDown, title, content, onClose }) {
+	// const handle = useRef();
 	const [fw, handle] = useDraggable();
 	const { getRootProps, getHandleProps, rootRef } = useResizable({
-		initialWidth: window.innerWidth * 0.8,
-		initialHeight: window.innerHeight * 0.8
+		initialWidth: window.innerWidth * 0.5,
+		initialHeight: window.innerHeight * 0.5
 	});
 
-	useEffect(() => {
-		const targetEl = fw.current;
-		if (!targetEl) return;
-		const dx = (window.innerWidth - targetEl.clientWidth) / 2;
-		const dy = (window.innerHeight - targetEl.clientHeight) / 2;
-		targetEl.style.translate = `${dx}px ${dy}px`;
-	}, []);
+	// useEffect(() => {
+	// 	const draggie = new Draggabilly(rootRef.current, {
+	// 		containment: "html",
+	// 		handle: handle.current
+	// 	});
 
-	// Handle reverse handle change
-	const onReverseHandleChangeVertical = (parent, { heightDiff }) => {
-		if (!parent.current) return;
-		const [dx, dy] = getComputedStyle(parent.current)
-			.translate.split(" ")
-			.map(a => a.replace("px", ""));
-		parent.current.style.translate = `${dx}px ${Number.parseInt(dy || "0") - heightDiff}px`;
-	};
+	// 	() => draggie.destroy();
+	// }, []);
 
-	// Handle reverse handle change
-	const onReverseHandleChangeHorizontal = (parent, { widthDiff }) => {
-		if (!parent.current) return;
-		const [dx, dy] = getComputedStyle(parent.current)
-			.translate.split(" ")
-			.map(a => a.replace("px", ""));
-		parent.current.style.translate = `${Number.parseInt(dx || "0") - widthDiff}px ${dy}px `;
-	};
-
-	const { style, ref } = getRootProps();
+	const { style } = getRootProps();
 
 	return (
 		<div
 			style={style}
 			ref={e => {
-				ref.current = e;
+				rootRef.current = e;
 				fw.current = e;
 			}}
 			onMouseDown={onMouseDown}
@@ -59,13 +45,54 @@ export default function FloatingWindow({ focused, onMouseDown, title, content, o
 			</div>
 			<div className="floating-window-content">{content}</div>
 			<div
-				className="resize-handle resize-handle-up"
+				className="resize-handle resize-handle-top"
 				{...getHandleProps({
 					reverse: true,
 					lockHorizontal: true,
-					onResize: values => onReverseHandleChangeVertical(rootRef, values)
+					onResize: ({ heightDiff }) => {
+						if (!rootRef.current) return;
+						rootRef.current.style.top = `${Number.parseInt(rootRef.current.style.top || "0") - heightDiff}px`;
+					}
 				})}
 			/>
+			<div
+				className="resize-handle resize-handle-top-left"
+				{...getHandleProps({
+					reverse: true,
+					onResize: ({ widthDiff, heightDiff }) => {
+						if (!rootRef.current) return;
+						rootRef.current.style.left = `${Number.parseInt(rootRef.current.style.left || "0") - widthDiff}px`;
+						rootRef.current.style.top = `${Number.parseInt(rootRef.current.style.top || "0") - heightDiff}px`;
+					}
+				})}
+			/>
+			<div
+				className="resize-handle resize-handle-top-right"
+				{...getHandleProps({
+					reverseHeight: true,
+					onResize: ({ heightDiff }) => {
+						if (!rootRef.current) return;
+						rootRef.current.style.top = `${Number.parseInt(rootRef.current.style.top || "0") - heightDiff}px`;
+					}
+				})}
+			/>
+
+			<div
+				className="resize-handle resize-handle-bottom-right"
+				{...getHandleProps({})}
+			/>
+
+			<div
+				className="resize-handle resize-handle-bottom-left"
+				{...getHandleProps({
+					reverseWidth: true,
+					onResize: ({ widthDiff }) => {
+						if (!rootRef.current) return;
+						rootRef.current.style.left = `${Number.parseInt(rootRef.current.style.left || "0") - widthDiff}px`;
+					}
+				})}
+			/>
+
 			<div
 				className="resize-handle resize-handle-right"
 				{...getHandleProps({
@@ -73,7 +100,7 @@ export default function FloatingWindow({ focused, onMouseDown, title, content, o
 				})}
 			/>
 			<div
-				className="resize-handle resize-handle-down"
+				className="resize-handle resize-handle-bottom"
 				{...getHandleProps({
 					lockHorizontal: true
 				})}
@@ -83,7 +110,10 @@ export default function FloatingWindow({ focused, onMouseDown, title, content, o
 				{...getHandleProps({
 					reverse: true,
 					lockVertical: true,
-					onResize: values => onReverseHandleChangeHorizontal(rootRef, values)
+					onResize: ({ widthDiff }) => {
+						if (!rootRef.current) return;
+						rootRef.current.style.left = `${Number.parseInt(rootRef.current.style.left || "0") - widthDiff}px`;
+					}
 				})}
 			/>
 		</div>

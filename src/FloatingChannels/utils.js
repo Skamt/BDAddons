@@ -1,46 +1,6 @@
 import { useRef, useEffect } from "@React";
 import { getUserName } from "@Utils";
 
-import { findInTree, getInternalInstance } from "@Api";
-import { Filters, getModule } from "@Webpack";
-
-const activityPanelClasses = getModule(Filters.byKeys("activityPanel", "panels"), { searchExports: false });
-
-export const getFluxContainer = (() => {
-	let userAreaFluxContainer = undefined;
-
-	function tryGetFluxContainer() {
-		const el = document.querySelector(`.${activityPanelClasses.panels}`);
-		if (!el) return;
-		const instance = getInternalInstance(el);
-		if (!instance) return;
-		const res = findInTree(instance, a => a?.type?.prototype?.hasParty, { walkable: ["child", "sibling"] });
-		if (!res) return;
-		return res;
-	}
-
-	return () => {
-		if (userAreaFluxContainer) return Promise.resolve(userAreaFluxContainer);
-		userAreaFluxContainer = tryGetFluxContainer();
-		if (userAreaFluxContainer) Promise.resolve(userAreaFluxContainer);
-
-		return new Promise(resolve => {
-			const interval = setInterval(() => {
-				userAreaFluxContainer = tryGetFluxContainer();
-				if (!userAreaFluxContainer) return;
-				resolve(userAreaFluxContainer);
-				clearInterval(interval);
-			}, 500);
-
-			/* Fail safe */
-			setTimeout(() => {
-				resolve(null);
-				clearInterval(interval);
-			}, 60 * 1000);
-		});
-	};
-})();
-
 export function getChannelName(channel) {
 	if (!channel) return;
 	if (channel.isDM() || channel.isGroupDM()) return channel.rawRecipients.map(getUserName).join(", ");
@@ -80,7 +40,9 @@ export const useDraggable = () => {
 				const dx = Math.round(e.clientX - startPos.x);
 				const dy = Math.round(e.clientY - startPos.y);
 				position.current = { dx, dy };
-				targetEl.style.translate = `${dx}px ${dy}px`;
+				// targetEl.style.translate = `${dx}px ${dy}px`;
+				targetEl.style.top = `${dy}px`;
+				targetEl.style.left = `${dx}px `;
 			};
 
 			const handleMouseUp = () => {
@@ -97,7 +59,6 @@ export const useDraggable = () => {
 
 	return [targetRef, handleRef];
 };
-
 
 /* https://github.com/MikkelWestermann/react-use-resizable */
 const MoveEvent = {
@@ -135,7 +96,7 @@ export const useResizable = options => {
 		if (!handleProps) {
 			handleProps = {};
 		}
-		const { parent = parentRef, interval = 1, maxHeight = Number.MAX_SAFE_INTEGER, maxWidth = Number.MAX_SAFE_INTEGER, reverse, lockHorizontal, lockVertical, onResize, onDragEnd, onDragStart, minHeight = 0, minWidth = 0, disabled = false, maintainAspectRatio = false } = Object.assign(Object.assign({}, props), handleProps);
+		const { parent = parentRef, interval = 1, maxHeight = Number.MAX_SAFE_INTEGER, maxWidth = Number.MAX_SAFE_INTEGER, reverse, reverseWidth, reverseHeight, lockHorizontal, lockVertical, onResize, onDragEnd, onDragStart, minHeight = 0, minWidth = 0, disabled = false, maintainAspectRatio = false } = Object.assign(Object.assign({}, props), handleProps);
 		const handleMove = (clientY, startHeight, startY, clientX, startWidth, startX) => {
 			let _a;
 			let _b;
@@ -145,7 +106,7 @@ export const useResizable = options => {
 			let roundedHeight = currentHeight;
 			let roundedWidth = currentWidth;
 			if (!lockVertical) {
-				const newHeight = startHeight + (clientY - startY) * (reverse ? -1 : 1);
+				const newHeight = startHeight + (clientY - startY) * (reverse || reverseHeight ? -1 : 1);
 				// Round height to nearest interval
 				roundedHeight = Math.round(newHeight / interval) * interval;
 				if (roundedHeight <= 0) {
@@ -162,7 +123,7 @@ export const useResizable = options => {
 				}
 			}
 			if (!lockHorizontal) {
-				const newWidth = startWidth + (clientX - startX) * (reverse ? -1 : 1);
+				const newWidth = startWidth + (clientX - startX) * (reverse || reverseWidth ? -1 : 1);
 				// Round height to nearest interval
 				roundedWidth = Math.round(newWidth / interval) * interval;
 				if (roundedWidth <= 0) {
@@ -232,7 +193,7 @@ export const useResizable = options => {
 		};
 		const handleDown = e => {
 			let _a;
-				let _b;
+			let _b;
 			if (disabled) return;
 			const startHeight = ((_a = parent === null || parent === void 0 ? void 0 : parent.current) === null || _a === void 0 ? void 0 : _a.clientHeight) || 0;
 			const startWidth = ((_b = parent === null || parent === void 0 ? void 0 : parent.current) === null || _b === void 0 ? void 0 : _b.clientWidth) || 0;
@@ -266,10 +227,10 @@ export const useResizable = options => {
 			document.addEventListener(moveEvent, moveHandler, { passive: false });
 			document.addEventListener(endEvent, dragEndHandler);
 		};
-		
+
 		return {
 			onMouseDown: handleDown,
-			onTouchStart: handleDown,
+			onTouchStart: handleDown
 		};
 	};
 	return {

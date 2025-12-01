@@ -52,17 +52,17 @@ function updateCssVars() {
 }
 
 
-// import App from "./components/App";
-// import { closeModal } from "@Utils/Modals";
-// import ErrorBoundary from "@Components/ErrorBoundary";
+
+import App from "./components/App";
+import { openModal, closeModal } from "@Utils/Modals";
+import ErrorBoundary from "@Components/ErrorBoundary";
 // import { showConfirmationModal } from "@Api";
-// closeModal(window.id);
-// window.id = showConfirmationModal(
-// 	"",
-// 	<ErrorBoundary>
-// 		<App />
-// 	</ErrorBoundary>
-// );
+closeModal(window.id);
+window.id = BdApi.UI.showConfirmationModal("",
+	<ErrorBoundary>
+		<App />
+	</ErrorBoundary>
+);
 
 export default class Tabbys {
 	start() {
@@ -70,10 +70,10 @@ export default class Tabbys {
 			DOM.addStyle(css);
 			updateCssVars();
 			Store.init();
-			patchTitleBar();
-			patchDMClick();
-			patchChannelClick();
-			reRender('div[data-windows="true"] > *');
+			// patchTitleBar();
+			// patchDMClick();
+			// patchChannelClick();
+			// reRender('div[data-windows="true"] > *');
 			this.unCssVarsListener = cssVarsListener();
 			this.unpatchContextMenu = patchContextMenu();
 			this.removeDispatchInterceptor = disableGoHomeAfterSwitching();

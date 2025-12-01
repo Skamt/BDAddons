@@ -2,18 +2,17 @@ import "./styles";
 import { DOM, Patcher } from "@Api";
 import Logger from "@Utils/Logger";
 import { Store } from "./Store";
-
 import SettingComponent from "./components/SettingComponent";
 import patchListenAlong from "./patches/patchListenAlong";
 import patchSpotifyActivity from "./patches/patchSpotifyActivity";
 import patchSpotifyEmbed from "./patches/patchSpotifyEmbed";
 import patchSpotifyPlayer, { cleanFluxContainer } from "./patches/patchSpotifyPlayer";
 import patchSpotifySocket from "./patches/patchSpotifySocket";
+import patchLayer from "./patches/patchLayer";
 import patchMessageHeader from "./patches/patchMessageHeader";
 import patchMessageComponentAccessories from "./patches/patchMessageComponentAccessories";
 import patchChannelAttach from "./patches/patchChannelAttach";
 import DB from "./DB";
-import Pip from "./pip";
 
 import SpotifyAPI from "@Utils/SpotifyAPI";
 
@@ -30,7 +29,7 @@ export default class SpotifyEnhance {
 			DOM.addStyle(css);
 			await DB.init();
 			Store.init();
-			Pip.init();
+			patchLayer();
 			patchListenAlong();
 			patchSpotifyEmbed();
 			patchMessageComponentAccessories();
@@ -48,7 +47,6 @@ export default class SpotifyEnhance {
 		try {
 			DB.dispose();
 			Store.dispose();
-			Pip.dispose();
 			DOM.removeStyle();
 			Patcher.unpatchAll();
 

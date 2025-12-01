@@ -1,4 +1,4 @@
-// import zustand from "@Modules/zustand";
+import React from "@React";
 import zustand, { subscribeWithSelector } from "@Discord/zustand";
 import { Data } from "@Api";
 
@@ -7,27 +7,29 @@ const persistMiddleware = config => (set, get, api) => config(args => (set(args)
 
 const SettingsStore = Object.assign(
 	zustand(
-		persistMiddleware(subscribeWithSelector((set, get) => {
-					const settingsObj = Object.create(null);
-		
-					for (const [key, value] of Object.entries({
-						...config.settings,
-						...Data.load("settings")
-					})) {
-						settingsObj[key] = value;
-						settingsObj[`set${key}`] = newValue => set({ [key]: newValue });
-						SettingsStoreSelectors[key] = state => state[key];
-					}
-					settingsObj.getRawState = () => {
-						return Object.entries(get())
-							.filter(([, val]) => typeof val !== "function")
-							.reduce((acc, [key, val]) => {
-								acc[key] = val;
-								return acc;
-							}, {});
-					};
-					return settingsObj;
-				}))
+		persistMiddleware(
+			subscribeWithSelector((set, get) => {
+				const settingsObj = Object.create(null);
+
+				for (const [key, value] of Object.entries({
+					...config.settings,
+					...Data.load("settings")
+				})) {
+					settingsObj[key] = value;
+					settingsObj[`set${key}`] = newValue => set({ [key]: newValue });
+					SettingsStoreSelectors[key] = state => state[key];
+				}
+				settingsObj.getRawState = () => {
+					return Object.entries(get())
+						.filter(([, val]) => typeof val !== "function")
+						.reduce((acc, [key, val]) => {
+							acc[key] = val;
+							return acc;
+						}, {});
+				};
+				return settingsObj;
+			})
+		)
 	),
 	{
 		useSetting: function (key) {
@@ -38,12 +40,16 @@ const SettingsStore = Object.assign(
 );
 
 Object.defineProperty(SettingsStore, "state", {
-
 	configurable: false,
 	get() {
 		return this.getState();
 	}
 });
+
+export function renderListener(content, [selector, eqFn = Object.is], shouldShow, memo) {
+	const wrappedComp = () => (shouldShow(SettingsStore(selector, eqFn)) ? content : null);
+	return React.createElement(memo ? React.memo(wrappedComp) : wrappedComp);
+}
 
 /*DEBUG*/
 window.BDPluginSettings = window.BDPluginSettings || {};

@@ -7,7 +7,7 @@ import { ContextMenu, Patcher, React } from "@Api";
 import GuildTooltip from "@Patch/GuildTooltip";
 
 import UserStore from "@Stores/UserStore";
-import GuildStore from "@Stores/GuildStore";
+import GuildRoleStore from "@Stores/GuildRoleStore";
 import GuildChannelStore from "@Stores/GuildChannelStore";
 import GuildMemberCountStore from "@Stores/GuildMemberCountStore";
 
@@ -29,7 +29,7 @@ export default class GuildInfo extends Disposable {
 				Patcher.after(module, key, (_, [{ guild }], ret) => {
 					// console.log(guild);
 					const owner = UserStore.getUser(guild.ownerId);
-					ret.props.text = [ret.props.text, el(`Owner: ${owner?.globalName || owner?.username || guild.ownerId}`), el(`Created At: ${new Date(parseSnowflake(+guild.id)).toLocaleDateString()}`), el(`Joined At: ${guild.joinedAt.toLocaleDateString()}`), el("Clyde", { style: { color: guild.features.has(GuildFeaturesEnum.CLYDE_ENABLED) ? "lime" : "red" } }), el(`Roles: ${Object.keys(GuildStore.getRoles(guild.id)).length}`), el(`Channels: ${GuildChannelStore.getChannels(guild.id).count}`), el(`Members: ${GuildMemberCountStore.getMemberCount(guild.id)}`)];
+					ret.props.text = [ret.props.text, el(`Owner: ${owner?.globalName || owner?.username || guild.ownerId}`), el(`Created At: ${new Date(parseSnowflake(+guild.id)).toLocaleDateString()}`), el(`Joined At: ${guild.joinedAt.toLocaleDateString()}`), el("Clyde", { style: { color: guild.features.has(GuildFeaturesEnum.CLYDE_ENABLED) ? "lime" : "red" } }), el(`Roles: ${Object.keys(GuildRoleStore.getRoles(guild.id)).length}`), el(`Channels: ${GuildChannelStore.getChannels(guild.id).count}`), el(`Members: ${GuildMemberCountStore.getMemberCount(guild.id)}`)];
 				}),
 				ContextMenu.patch("guild-context", (retVal, { guild }) => {
 					if (!guild) return;

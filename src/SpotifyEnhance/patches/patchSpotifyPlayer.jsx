@@ -3,8 +3,9 @@ import { getFluxContainer } from "../Utils";
 import SpotifyPlayer from "../components/SpotifyPlayer";
 import Logger from "@Utils/Logger";
 import ErrorBoundary from "@Components/ErrorBoundary";
-import Setting from "@Utils/Settings";
 import { PlayerPlaceEnum } from "./../consts.js";
+import Settings, { renderListener } from "@Utils/Settings";
+import { shallow } from "@Utils";
 
 export default async () => {
 	const fluxContainer = await getFluxContainer();
@@ -14,13 +15,16 @@ export default async () => {
 		/*DEBUG*/
 		console.log(ret);
 		/*DEBUG*/
-		if (Setting.state.spotifyPlayerPlace !== PlayerPlaceEnum.USERAREA) return ret;
-		if (Array.isArray(ret)) return;
+
 		return [
-			// eslint-disable-next-line react/jsx-key
-			<ErrorBoundary id="SpotifyPlayer">
-				<SpotifyPlayer />
-			</ErrorBoundary>,
+			renderListener(
+				<ErrorBoundary id="SpotifyPlayer">
+					<SpotifyPlayer />
+				</ErrorBoundary>,
+				[_ => [_.player, _.spotifyPlayerPlace], shallow],
+				([player, place]) => place === PlayerPlaceEnum.USERAREA && player,
+				true
+			),
 			ret
 		];
 	});

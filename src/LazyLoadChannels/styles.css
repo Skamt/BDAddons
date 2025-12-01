@@ -107,6 +107,7 @@
 #lazyLoader > .controls > .buttons-container {
 	display: flex;
 	gap: 10px;
+	margin-bottom:15px;
 }
 
 #lazyLoader > .controls > .switch {

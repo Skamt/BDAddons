@@ -2,7 +2,7 @@ import List from "@Utils/List";
 
 const bookmarksList = new List();
 
-const store = (set) => ({
+const store = (set, get) => ({
 	bookmarks: [],
 
 	clearBookmarks() {
@@ -29,6 +29,13 @@ const store = (set) => ({
 	setBookmark(id, payload) {
 		bookmarksList.setItemById(id, payload);
 		set({ bookmarks: bookmarksList.list });
+	},
+	setFolder(id, payload){
+		const bookmark = get().getBookmark(id);
+		get().setBookmark(id, {
+			...payload,
+			bookmarks:[...bookmark.bookmarks, payload.bookmarks]
+		});
 	},
 	swapBookmark(fromId, toId) {
 		bookmarksList.swapItemById(fromId, toId);

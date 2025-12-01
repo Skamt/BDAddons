@@ -1,5 +1,17 @@
 import { Patcher, getOwnerInstance, ReactDOM, React } from "@Api";
 
+export function fit({width, height, gap=0.8}) {
+	const ratio = Math.min(innerWidth / width, innerHeight / height);
+	width = Math.round(width * ratio);
+	height = Math.round(height * ratio);
+	return {
+		width,
+		height,
+		maxHeight: height * gap,
+		maxWidth: width * gap
+	};
+}
+
 export function isValidString(string) {
 	return string && string.length > 0;
 }

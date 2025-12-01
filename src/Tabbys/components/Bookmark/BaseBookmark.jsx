@@ -30,8 +30,8 @@ function DragThis(comp) {
 		DragSource(
 			"BOOKMARK",
 			{
-				beginDrag(props) {
-					return { ...props };
+				beginDrag({id, path}) {
+					return { id, path };
 				}
 			},
 			(props, monitor) => {

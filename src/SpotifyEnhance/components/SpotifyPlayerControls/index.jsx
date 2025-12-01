@@ -159,10 +159,11 @@ export default () => {
 	);
 };
 
-function SpotifyPlayerButton({ className, active, name, value, ...rest }) {
+function SpotifyPlayerButton({ className, ref, active, name, value, ...rest }) {
 	return (
 		<Tooltip note={name}>
 			<Button
+				buttonRef={ref}
 				innerClassName="flexCenterCenter"
 				className={`spotify-player-controls-btn ${className} ${active ? "enabled" : ""}`}
 				size={Button.Sizes.NONE}

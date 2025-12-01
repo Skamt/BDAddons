@@ -6,13 +6,12 @@ export default ({ note, position, children }) => {
 		<Tooltip
 			text={note}
 			position={position || "top"}>
-			{props => {
-				children.props = {
+			{props =>
+				React.cloneElement(children, {
 					...props,
 					...children.props
-				};
-				return children;
-			}}
+				})
+			}
 		</Tooltip>
 	);
 };

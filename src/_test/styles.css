@@ -1,11 +1,5 @@
-.transparentBackground {
-	/*	background: red;*/
-}
 
-.test * {
-	box-sizing: border-box;
-}
 
-.b {
+div {
 	color: red;
 }
