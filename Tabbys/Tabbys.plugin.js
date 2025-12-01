@@ -2217,6 +2217,7 @@ var c4 = clsx("create-folder-modal");
 function PromptModal({ modalProps, required, title, placeholder, label, initialValue = "", onSubmit }) {
 	const [val, setVal] = useState(initialValue);
 	const [submitted, setSubmitted] = useState(false);
+	const inputRef = useRef(null);
 	const saveHandler = (e2) => {
 		e2.preventDefault();
 		setSubmitted(true);
@@ -2227,7 +2228,10 @@ function PromptModal({ modalProps, required, title, placeholder, label, initialV
 			setSubmitted(false);
 		}
 	};
-	const saveOnReturn = (e2) => {};
+	const resetHandler = () => {
+		setVal("");
+		inputRef.current.focus();
+	};
 	return /* @__PURE__ */ React_default.createElement("form", { onSubmit: saveHandler }, /* @__PURE__ */ React_default.createElement(
 		Modals.ModalRoot, {
 			...modalProps,
@@ -2245,6 +2249,7 @@ function PromptModal({ modalProps, required, title, placeholder, label, initialV
 		/* @__PURE__ */
 		React_default.createElement("div", { className: c4("content") }, /* @__PURE__ */ React_default.createElement(FieldWrapper, { title: label }, /* @__PURE__ */ React_default.createElement(
 			TextInput_default, {
+				ref: inputRef,
 				value: val,
 				onChange: setVal,
 				fullWidth: true,
@@ -2257,7 +2262,7 @@ function PromptModal({ modalProps, required, title, placeholder, label, initialV
 				text: "reset",
 				textVariant: "text-sm/medium",
 				type: "button",
-				onClick: () => setVal(initialValue)
+				onClick: resetHandler
 			}
 		)),
 		/* @__PURE__ */
@@ -2660,10 +2665,10 @@ function getUserAvatar2(id, avatar, size) {
 	return `https://cdn.discordapp.com/avatars/${id}/${avatar}.webp?size=${size}`;
 }
 
-function DM({ userId, avatar, username }) {
+function DM({ name, userId, avatar, username }) {
 	const { size, avatarSize } = getSize(Settings_default((_) => _.size));
 	const user = useStateFromStores_default([UserStore_default], () => UserStore_default.getUser(userId), [userId]);
-	const title = getUserName(user) || username || userId;
+	const title = name || getUserName(user) || username || userId;
 	const src = getUserAvatar2(user.id || userId, user.avatar || avatar, size);
 	return /* @__PURE__ */ React_default.createElement(
 		Markup, {
