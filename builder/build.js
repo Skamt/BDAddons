@@ -71,13 +71,14 @@ program
 	.option("-a, --all", "build all plugins")
 	.description("builds a given plugin")
 	.action((target, { watch, all, prod, dev }) => {
+		global.prod = prod;
+		global.dev = dev;
+		global.watch = watch;
+		
 		if (!target && all) return buildAll();
 
 		if (all) console.info("ignored 'all' option for invalid use");
 
-		global.prod = prod;
-		global.dev = dev;
-		global.watch = watch;
 
 		const pluginObject = getPluginObject(target || process.env.PWD || process.env.INIT_CWD);
 		if (!pluginObject) {
