@@ -8,4 +8,4 @@
 - [LazyLoadChannels](https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels) - Lets you choose whether to load a channel.
 - [SpotifyEnhance](https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance) - All in one better spotify-discord experience.
 - [Emojis](https://github.com/Skamt/BDAddons/tree/main/Emojis) - Send emoji as link if it can't be sent it normally. **(unpublished)**
-- [Tabbys](https://github.com/Skamt/BDAddons/tree/main/Tabbys) - Adds Browser like tabs/bookmarks for channels. **(unpublished)**
+- [Tabbys](https://github.com/Skamt/BDAddons/tree/main/Tabbys) - Adds Browser like tabs/bookmarks for channels. 
