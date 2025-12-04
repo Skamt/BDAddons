@@ -1,7 +1,7 @@
 /**
  * @name Tabbys
  * @description Adds Browser like tabs/bookmarks for channels
- * @version 1.0.2
+ * @version 1.0.3
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/Tabbys
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/Tabbys/Tabbys.plugin.js
@@ -11,7 +11,7 @@
 var Config_default = {
 	"info": {
 		"name": "Tabbys",
-		"version": "1.0.2",
+		"version": "1.0.3",
 		"description": "Adds Browser like tabs/bookmarks for channels",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/Tabbys/Tabbys.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/Tabbys",
@@ -28,6 +28,7 @@ var Config_default = {
 		"showBookmarkbar": false,
 		"keepTitle": false,
 		"privacyMode": false,
+		"bookmarkOverflowWrap": false,
 		"showTabUnreads": true,
 		"showTabPings": true,
 		"showTabTyping": true,
@@ -2927,6 +2928,10 @@ StylesLoader_default.push(`.bookmarkbar-container {
 	padding: 0 var(--bookmarks-gap);
 }
 
+.bookmarkbar-wrap {
+	flex-wrap: wrap;
+}
+
 .bookmarkbar-hidden {
 	opacity: 0;
 	pointer-events: none;
@@ -2953,8 +2958,6 @@ StylesLoader_default.push(`.bookmarkbar-container {
 	display: flex;
 	align-items: center;
 }
-
-
 `);
 
 // src/Tabbys/components/Bookmark/styles.css
@@ -3419,7 +3422,17 @@ function getItem(props, id, folderId) {
 	);
 }
 
-function BookmarkBar() {
+function NoBookmarks() {
+	return /* @__PURE__ */ React_default.createElement("div", { className: c11("empty") }, "You have no bookmarks yet");
+}
+
+function BookmarkBarWrapAround() {
+	const bookmarks = Store_default(Store_default.selectors.bookmarks, shallow);
+	const content = bookmarks.map(({ id, folderId }) => getItem({}, id, folderId));
+	return /* @__PURE__ */ React_default.createElement("div", { className: c11("container") }, /* @__PURE__ */ React_default.createElement("div", { className: c11("content", "wrap") }, content.length > 0 ? content : /* @__PURE__ */ React_default.createElement(NoBookmarks, null)), /* @__PURE__ */ React_default.createElement(DragHandle, null));
+}
+
+function BookmarkBarOverflowMenu() {
 	const bookmarks = Store_default(Store_default.selectors.bookmarks, shallow);
 	const contentRef = useRef();
 	const [overflowedItems, setOverflowedItems] = useState([]);
@@ -3470,7 +3483,7 @@ function BookmarkBar() {
 			ref: contentRef,
 			className: c11("content")
 		},
-		content.length > 0 ? content : /* @__PURE__ */ React_default.createElement("div", { className: c11("empty") }, "You have no bookmarks yet")
+		content.length > 0 ? content : /* @__PURE__ */ React_default.createElement(NoBookmarks, null)
 	), !!overflowedItems.length && /* @__PURE__ */ React_default.createElement(OverflowMenu, { items: bookmarks.filter(({ id }) => overflowedItems.find((a) => a === id)) }), /* @__PURE__ */ React_default.createElement(DragHandle, null));
 }
 
@@ -3496,6 +3509,11 @@ function OverflowMenu({ items }) {
 			);
 		}
 	);
+}
+
+function BookmarkBar() {
+	const bookmarkOverflowWrap = Settings_default(Settings_default.selectors.bookmarkOverflowWrap, shallow);
+	return bookmarkOverflowWrap ? /* @__PURE__ */ React_default.createElement(BookmarkBarWrapAround, null) : /* @__PURE__ */ React_default.createElement(BookmarkBarOverflowMenu, null);
 }
 
 // MODULES-AUTO-LOADER:@Modules/Slider
@@ -3584,6 +3602,9 @@ function appearence() {
 				maxValue: 250
 			}
 		].map(ContextMenuSlider),
+		/* @__PURE__ */
+		React_default.createElement(Separator, null),
+		[{ key: "bookmarkOverflowWrap", label: "Wrap Bookmarks" }].map(buildToggle),
 		/* @__PURE__ */
 		React_default.createElement(Separator, null),
 		[
@@ -3939,6 +3960,7 @@ function SettingSlider({ settingKey, label, description, ...props }) {
 
 function SettingComponent() {
 	return /* @__PURE__ */ React_default.createElement("div", { className: `${Config_default.info.name}-settings` }, /* @__PURE__ */ React_default.createElement(Collapsible, { title: "Appearence" }, /* @__PURE__ */ React_default.createElement(Collapsible, { title: "toggles" }, /* @__PURE__ */ React_default.createElement(FieldSet, { contentGap: 8 }, [
+		{ description: "Wrap Bookmarks", note: "Wrap overflowing bookmarks instead of clamping them into a overflow menu", settingKey: "bookmarkOverflowWrap" },
 		{ description: "Show/Hide Tabbar", settingKey: "showTabbar" },
 		{ description: "Show/Hide Bookmarkbar", settingKey: "showBookmarkbar" },
 		{ description: "Show/Hide Titlebar", settingKey: "keepTitle" },
