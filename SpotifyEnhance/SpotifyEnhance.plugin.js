@@ -1,7 +1,7 @@
 /**
  * @name SpotifyEnhance
  * @description All in one better spotify-discord experience.
- * @version 1.1.6
+ * @version 1.1.7
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js
@@ -11,7 +11,7 @@
 var Config_default = {
 	"info": {
 		"name": "SpotifyEnhance",
-		"version": "1.1.6",
+		"version": "1.1.7",
 		"description": "All in one better spotify-discord experience.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance",
@@ -219,7 +219,7 @@ var { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector"
 	_: Filters.byStrings("subscribe"),
 	zustand: () => true
 });
-var subscribeWithSelector = getModule(Filters.byStrings("equalityFn", "fireImmediately"), { searchExports: true });
+var subscribeWithSelector = getModule(Filters.byStrings("getState", "equalityFn", "fireImmediately"), { searchExports: true });
 var zustand_default = zustand;
 
 function create(initialState) {

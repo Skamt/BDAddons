@@ -1,7 +1,7 @@
 /**
  * @name Tabbys
  * @description Adds Browser like tabs/bookmarks for channels
- * @version 1.0.0
+ * @version 1.0.2
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/Tabbys
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/Tabbys/Tabbys.plugin.js
@@ -11,7 +11,7 @@
 var Config_default = {
 	"info": {
 		"name": "Tabbys",
-		"version": "1.0.0",
+		"version": "1.0.2",
 		"description": "Adds Browser like tabs/bookmarks for channels",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/Tabbys/Tabbys.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/Tabbys",
@@ -390,7 +390,7 @@ var { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector"
 	_: Filters.byStrings("subscribe"),
 	zustand: () => true
 });
-var subscribeWithSelector = getModule(Filters.byStrings("equalityFn", "fireImmediately"), { searchExports: true });
+var subscribeWithSelector = getModule(Filters.byStrings("getState", "equalityFn", "fireImmediately"), { searchExports: true });
 
 function create(initialState2) {
 	const Store2 = zustand(initialState2);
@@ -615,7 +615,7 @@ var parsers = [
 				type: pathTypes.DM,
 				channelId: channel.id,
 				path: constructPath("@me", channelId),
-				username: user.username,
+				username: getUserName(user),
 				avatar: user.avatar,
 				userId: user.id
 			};
@@ -2217,7 +2217,7 @@ var c4 = clsx("create-folder-modal");
 function PromptModal({ modalProps, required, title, placeholder, label, initialValue = "", onSubmit }) {
 	const [val, setVal] = useState(initialValue);
 	const [submitted, setSubmitted] = useState(false);
-	const inputRef = useRef(null);
+	const inputRef = useRef();
 	const saveHandler = (e2) => {
 		e2.preventDefault();
 		setSubmitted(true);
@@ -2249,17 +2249,17 @@ function PromptModal({ modalProps, required, title, placeholder, label, initialV
 		/* @__PURE__ */
 		React_default.createElement("div", { className: c4("content") }, /* @__PURE__ */ React_default.createElement(FieldWrapper, { title: label }, /* @__PURE__ */ React_default.createElement(
 			TextInput_default, {
-				ref: inputRef,
+				inputRef,
 				value: val,
 				onChange: setVal,
 				fullWidth: true,
 				required,
-				placeholder: initialValue || placeholder,
+				placeholder: placeholder || initialValue,
 				autoFocus: true
 			}
 		)), /* @__PURE__ */ React_default.createElement(
 			ManaTextButton, {
-				text: "reset",
+				text: "Reset Name",
 				textVariant: "text-sm/medium",
 				type: "button",
 				onClick: resetHandler
@@ -2975,7 +2975,7 @@ function renameBookmark(id, parentId) {
 	openPromptModal({
 		title: "Bookmark Name",
 		label: "Bookmark Name",
-		placeholder: bookmark.name,
+		placeholder: bookmark.username || "",
 		initialValue: bookmark.name,
 		onSubmit: (name) => setBookmarkName(id, name, parentId)
 	});

@@ -48,7 +48,7 @@ const { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelecto
 	_: Filters.byStrings("subscribe"),
 	zustand: () => true
 });
-const subscribeWithSelector = getModule(Filters.byStrings("equalityFn", "fireImmediately"), { searchExports: true });
+const subscribeWithSelector = getModule(Filters.byStrings("getState", "equalityFn", "fireImmediately"), { searchExports: true });
 const zustand$1 = zustand;
 
 // common\Utils\Settings.js

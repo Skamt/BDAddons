@@ -1,7 +1,7 @@
 /**
  * @name SendStickersAsLinks
  * @description Enables you to send custom Stickers as links
- * @version 2.3.3
+ * @version 2.3.4
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/SendStickersAsLinks
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/SendStickersAsLinks/SendStickersAsLinks.plugin.js
@@ -11,7 +11,7 @@
 var Config_default = {
 	"info": {
 		"name": "SendStickersAsLinks",
-		"version": "2.3.3",
+		"version": "2.3.4",
 		"description": "Enables you to send custom Stickers as links",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SendStickersAsLinks/SendStickersAsLinks.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SendStickersAsLinks",
@@ -176,7 +176,7 @@ var { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector"
 	_: Filters.byStrings("subscribe"),
 	zustand: () => true
 });
-var subscribeWithSelector = getModule(Filters.byStrings("equalityFn", "fireImmediately"), { searchExports: true });
+var subscribeWithSelector = getModule(Filters.byStrings("getState", "equalityFn", "fireImmediately"), { searchExports: true });
 
 function create(initialState) {
 	const Store = zustand(initialState);
