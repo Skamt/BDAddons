@@ -1,7 +1,7 @@
 /**
  * @name Tabbys
  * @description Adds Browser like tabs/bookmarks for channels
- * @version 1.0.4
+ * @version 1.0.5
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/Tabbys
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/Tabbys/Tabbys.plugin.js
@@ -11,7 +11,7 @@
 var Config_default = {
 	"info": {
 		"name": "Tabbys",
-		"version": "1.0.4",
+		"version": "1.0.5",
 		"description": "Adds Browser like tabs/bookmarks for channels",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/Tabbys/Tabbys.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/Tabbys",
@@ -173,18 +173,19 @@ StylesLoader_default.push(`:root {
 	--tabbys-bg-hover: var(--background-mod-normal);
 	--tabbys-bg-selected: var(--background-mod-strong);
 
-	--tabbys-text: var(--interactive-normal);
-	--tabbys-text-unread: var(--interactive-active);
+	--tabbys-text: var(--interactive-text-default);
+	--tabbys-text-unread: var(--interactive-text-active);
 
-	--tabbys-btn-color: var(--interactive-normal);
-	--tabbys-btn-color-hover: var(--interactive-hover);
-	--tabbys-btn-color-active: var(--interactive-active);
+	--tabbys-btn-color: var(--interactive-text-default);
+	--tabbys-btn-color-hover: var(--interactive-text-hover);
+	--tabbys-btn-color-active: var(--interactive-text-active);
 
 	--tabbys-btn-bg: var(--background-accent);
 	--tabbys-btn-bg-hover: var(--interactive-muted);
 	--tabbys-btn-bg-active: var(--background-mod-strong);
 
 	--tabbys-folder-menu-bg: var(--background-surface-highest);
+
 }
 
 .no-drag {
@@ -1349,13 +1350,13 @@ function menu(path2) {
 	const { showBookmarkbar, showTabbar } = Settings_default.state;
 	if (!showBookmarkbar && !showTabbar) return;
 	const menu2 = [ContextMenu.buildItem({ type: "separator" })];
-	const folders = Store_default.state.folders.map(({ id: id2, name }) => {
-		return {
+	const folders = Store_default.state.folders.map(
+		({ id: id2, name }) => wrapMenuItem({
 			action: () => addToFolderAt(path2, id2),
 			label: name,
 			icon: BookmarkOutlinedIcon
-		};
-	}).map(wrapMenuItem);
+		})
+	);
 	const bookmark = {
 		action: () => addBookmarkAt(path2),
 		label: "Bookmark channel",
@@ -2370,13 +2371,13 @@ function CopyPathItem(path2) {
 // src/Tabbys/contextmenus/TabContextMenu.jsx
 function TabContextMenu_default(id, { path: path2, channelId, userId, guildId, hasUnread }) {
 	const canClose = Store_default.getTabsCount() > 1;
-	const folders = Store_default.state.folders.map(({ id: folderId, name }) => {
-		return {
+	const folders = Store_default.state.folders.map(
+		({ id: folderId, name }) => wrapMenuItem({
 			action: () => addTabToFolderAt(id, folderId),
 			label: name,
 			icon: BookmarkOutlinedIcon
-		};
-	}).map(wrapMenuItem);
+		})
+	);
 	const copies = [
 		CopyPathItem(path2),
 		channelId && CopyChannelIdItem(channelId),
@@ -3860,10 +3861,46 @@ var Switch_default = getModule(Filters.byStrings('"data-toggleable-component":"s
 	));
 };
 
+// common/Components/Divider/styles.css
+StylesLoader_default.push(`.divider-base {
+	border-top: thin solid var(--border-subtle);
+	flex:1 0 0;
+}
+
+.divider-horizontal {
+	width: 100%;
+	height: 1px;
+}
+
+.divider-vertical {
+	width: 1px;
+	height: 100%;
+}
+`);
+
+// common/Components/Divider/index.jsx
+var c16 = classNameFactory("divider");
+
+function Divider({ direction = "horizontal", gap }) {
+	return /* @__PURE__ */ React_default.createElement(
+		"div", {
+			style: {
+				marginTop: gap,
+				marginBottom: gap
+			},
+			className: c16("base", { direction })
+		}
+	);
+}
+Divider.direction = {
+	HORIZONTAL: "horizontal",
+	VERTICAL: "vertical"
+};
+
 // common/Components/SettingSwtich/index.jsx
-function SettingSwtich({ settingKey, note, onChange = nop, description, ...rest }) {
+function SettingSwtich({ settingKey, note, border = false, onChange = nop, description, ...rest }) {
 	const [val, set2] = Settings_default.useSetting(settingKey);
-	return /* @__PURE__ */ React.createElement(
+	return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(
 		Switch_default, {
 			...rest,
 			checked: val,
@@ -3874,7 +3911,7 @@ function SettingSwtich({ settingKey, note, onChange = nop, description, ...rest 
 				onChange(e2);
 			}
 		}
-	);
+	), border && /* @__PURE__ */ React.createElement(Divider, { gap: 15 }));
 }
 
 // common/Components/FieldSet/styles.css
@@ -3906,61 +3943,25 @@ StylesLoader_default.push(`.fieldset-container {
 `);
 
 // common/Components/FieldSet/index.jsx
-var c16 = classNameFactory("fieldset");
+var c17 = classNameFactory("fieldset");
 
 function FieldSet({ label, description, children, contentGap = 16 }) {
-	return /* @__PURE__ */ React_default.createElement("fieldset", { className: c16("container") }, label && /* @__PURE__ */ React_default.createElement(
+	return /* @__PURE__ */ React_default.createElement("fieldset", { className: c17("container") }, label && /* @__PURE__ */ React_default.createElement(
 		Heading_default, {
-			className: c16("label"),
+			className: c17("label"),
 			tag: "legend",
 			variant: "text-lg/medium"
 		},
 		label
 	), description && /* @__PURE__ */ React_default.createElement(
 		Heading_default, {
-			className: c16("description"),
+			className: c17("description"),
 			variant: "text-sm/normal",
 			color: "text-secondary"
 		},
 		description
-	), /* @__PURE__ */ React_default.createElement("div", { className: c16("content"), style: { gap: contentGap } }, children));
+	), /* @__PURE__ */ React_default.createElement("div", { className: c17("content"), style: { gap: contentGap } }, children));
 }
-
-// common/Components/Divider/styles.css
-StylesLoader_default.push(`.divider-base {
-	border-top: thin solid var(--border-subtle);
-	flex:1 0 0;
-}
-
-.divider-horizontal {
-	width: 100%;
-	height: 1px;
-}
-
-.divider-vertical {
-	width: 1px;
-	height: 100%;
-}
-`);
-
-// common/Components/Divider/index.jsx
-var c17 = classNameFactory("divider");
-
-function Divider({ direction = "horizontal", gap }) {
-	return /* @__PURE__ */ React_default.createElement(
-		"div", {
-			style: {
-				marginTop: gap,
-				marginBottom: gap
-			},
-			className: c17("base", { direction })
-		}
-	);
-}
-Divider.direction = {
-	HORIZONTAL: "horizontal",
-	VERTICAL: "vertical"
-};
 
 // src/Tabbys/components/SettingComponent/index.jsx
 function SettingSlider({ settingKey, label, description, ...props }) {
@@ -3981,7 +3982,7 @@ function SettingSlider({ settingKey, label, description, ...props }) {
 
 function SettingComponent() {
 	return /* @__PURE__ */ React_default.createElement("div", { className: `${Config_default.info.name}-settings` }, /* @__PURE__ */ React_default.createElement(Collapsible, { title: "Appearence" }, /* @__PURE__ */ React_default.createElement(Collapsible, { title: "toggles" }, /* @__PURE__ */ React_default.createElement(FieldSet, { contentGap: 8 }, [
-		{ description: "Wrap Bookmarks", note: "Wrap overflowing bookmarks instead of clamping them into a overflow menu", settingKey: "bookmarkOverflowWrap" },
+		{ border: true, description: "Wrap Bookmarks", note: "Wrap overflowing bookmarks instead of clamping them into a overflow menu", settingKey: "bookmarkOverflowWrap" },
 		{ description: "Show/Hide Tabbar", settingKey: "showTabbar" },
 		{ description: "Show/Hide Bookmarkbar", settingKey: "showBookmarkbar" },
 		{ description: "Show/Hide Titlebar", settingKey: "keepTitle" },

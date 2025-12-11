@@ -547,7 +547,7 @@ function sendEmojiAsLink(content, channel) {
 	if (draft) return insertText(`[\u{E01EB}](${content})`);
 	if (Settings_default.state.sendDirectly) {
 		try {
-			return sendMessageDirectly(channel, content);
+			return sendMessageDirectly(content, channel.id);
 		} catch {
 			Toast_default.error("Could not send directly.");
 		}
@@ -973,10 +973,57 @@ var Switch_default = getModule(Filters.byStrings('"data-toggleable-component":"s
 	));
 };
 
+// common/Components/Divider/styles.css
+StylesLoader_default.push(`.divider-base {
+	border-top: thin solid var(--border-subtle);
+	flex:1 0 0;
+}
+
+.divider-horizontal {
+	width: 100%;
+	height: 1px;
+}
+
+.divider-vertical {
+	width: 1px;
+	height: 100%;
+}
+`);
+
+// common/Utils/css.js
+var classNameFactory = (prefix = "", connector = "-") => (...args) => {
+	const classNames = /* @__PURE__ */ new Set();
+	for (const arg of args) {
+		if (arg && typeof arg === "string") classNames.add(arg);
+		else if (Array.isArray(arg)) arg.forEach((name) => classNames.add(name));
+		else if (arg && typeof arg === "object") Object.entries(arg).forEach(([name, value]) => value && classNames.add(name));
+	}
+	return Array.from(classNames, (name) => `${prefix}${connector}${name}`).join(" ");
+};
+
+// common/Components/Divider/index.jsx
+var c2 = classNameFactory("divider");
+
+function Divider({ direction = "horizontal", gap: gap2 }) {
+	return /* @__PURE__ */ React_default.createElement(
+		"div", {
+			style: {
+				marginTop: gap2,
+				marginBottom: gap2
+			},
+			className: c2("base", { direction })
+		}
+	);
+}
+Divider.direction = {
+	HORIZONTAL: "horizontal",
+	VERTICAL: "vertical"
+};
+
 // common/Components/SettingSwtich/index.jsx
-function SettingSwtich({ settingKey, note, onChange = nop, description, ...rest }) {
+function SettingSwtich({ settingKey, note, border = false, onChange = nop, description, ...rest }) {
 	const [val, set] = Settings_default.useSetting(settingKey);
-	return /* @__PURE__ */ React.createElement(
+	return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(
 		Switch_default, {
 			...rest,
 			checked: val,
@@ -987,7 +1034,7 @@ function SettingSwtich({ settingKey, note, onChange = nop, description, ...rest 
 				onChange(e);
 			}
 		}
-	);
+	), border && /* @__PURE__ */ React.createElement(Divider, { gap: 15 }));
 }
 
 // MODULES-AUTO-LOADER:@Modules/Slider
