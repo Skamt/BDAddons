@@ -29,6 +29,7 @@ var Config_default = {
 		"keepTitle": false,
 		"privacyMode": false,
 		"bookmarkOverflowWrap": false,
+		"ctrlClickChannel": true,
 		"showTabUnreads": true,
 		"showTabPings": true,
 		"showTabTyping": true,
@@ -320,7 +321,7 @@ var FieldWrapper = /* @__PURE__ */ (() => getModule(reactRefMemoFilter("render",
 var IconsUtils = /* @__PURE__ */ (() => getModule((a) => a.getChannelIconURL))();
 var ChannelUtils = /* @__PURE__ */ (() => getModule((m2) => m2.openPrivateChannel))();
 
-// src/Tabbys/patches/lotgoutInterceptor.js
+// src/Tabbys/patches/logoutInterceptor.js
 Plugin_default.on(Events.START, () => {
 	function interceptor(e2) {
 		if (e2.type !== "LOGOUT") return;
@@ -544,6 +545,8 @@ var ChannelTypeEnum = getModule(Filters.byKeys("GUILD_TEXT", "DM"), { searchExpo
 var SelectedChannelStore_default = getStore("SelectedChannelStore");
 
 // src/Tabbys/utils.js
+var valueToPx = (e2) => `${Math.round(e2)}px`;
+
 function getGuildChannelPath(guildId) {
 	const selectedChannelId = SelectedChannelStore_default.getChannelId(guildId);
 	return `/channels/${guildId}/${selectedChannelId}`;
@@ -1191,23 +1194,6 @@ Plugin_default.on(Events.STOP, () => {
 });
 var Store_default = Store;
 
-// src/Tabbys/patches/patchChannelClick.js
-var channelFilter = Filters.byStrings("href", "children", "onClick", "onKeyPress", "focusProps");
-var channelComponent = getModule((a) => a.render && channelFilter(a.render), { searchExports: true });
-Plugin_default.on(Events.START, () => {
-	if (!channelComponent) return Logger_default.patchError("channelComponent");
-	Patcher.after(channelComponent, "render", (_, [props], ret) => {
-		const origClick = getNestedProp(ret, "props.children.props.onClick");
-		const path2 = props.href;
-		if (!path2 || !origClick) return ret;
-		ret.props.children.props.onClick = (e2) => {
-			e2.preventDefault();
-			if (e2.ctrlKey) Store_default.newTab(path2);
-			else origClick?.(e2);
-		};
-	});
-});
-
 // common/Utils/Settings.js
 var SettingsStore = create(subscribeWithSelector(() => Object.assign(Config_default.settings, Data.load("settings") || {})));
 ((state) => {
@@ -1232,6 +1218,23 @@ Object.assign(SettingsStore, {
 	}
 });
 var Settings_default = SettingsStore;
+
+// src/Tabbys/patches/patchChannelClick.js
+var channelFilter = Filters.byStrings("href", "children", "onClick", "onKeyPress", "focusProps");
+var channelComponent = getModule((a) => a.render && channelFilter(a.render), { searchExports: true });
+Plugin_default.on(Events.START, () => {
+	if (!channelComponent) return Logger_default.patchError("channelComponent");
+	Patcher.after(channelComponent, "render", (_, [props], ret) => {
+		const origClick = getNestedProp(ret, "props.children.props.onClick");
+		const path2 = props.href;
+		if (!path2 || !origClick) return ret;
+		ret.props.children.props.onClick = (e2) => {
+			e2.preventDefault();
+			if (e2.ctrlKey && Settings_default.state.ctrlClickChannel) Store_default.newTab(path2);
+			else origClick?.(e2);
+		};
+	});
+});
 
 // common/Utils/css.js
 function join2(...args) {
@@ -1421,7 +1424,7 @@ Plugin_default.on(Events.START, () => {
 		const path2 = props.to;
 		if (!path2) return;
 		props.onClick = (e2) => {
-			if (e2.ctrlKey) {
+			if (e2.ctrlKey && Settings_default.state.ctrlClickChannel) {
 				e2.preventDefault();
 				Store_default.newTab(path2);
 			}
@@ -1440,7 +1443,7 @@ Plugin_default.on(Events.START, () => {
 		const path2 = getGuildChannelPath(guild.id);
 		targetProps.onClick = (e2) => {
 			e2.preventDefault();
-			if (e2.ctrlKey) Store_default.newTab(path2);
+			if (e2.ctrlKey && Settings_default.state.ctrlClickChannel) Store_default.newTab(path2);
 			else origClick?.(e2);
 		};
 	});
@@ -1564,12 +1567,12 @@ StylesLoader_default.push(`div:has(> .tabbys-app-container):not(#a) {
 }
 
 .tabbys-app-settings-button {
-	color: var(--icon-tertiary);
+	color: var(--tabbys-btn-color);
 	cursor: pointer;
 }
 
 .tabbys-app-settings-button:hover {
-	color: var(--icon-secondary);
+	color: var(--tabbys-btn-color-hover);
 }
 
 .tabbys-app-privacyMode .card-icon,
@@ -3541,40 +3544,52 @@ function BookmarkBar() {
 // MODULES-AUTO-LOADER:@Modules/Slider
 var Slider_default = getModule(Filters.byPrototypeKeys("renderMark"), { searchExports: true });
 
+// common/Components/SettingSlider/index.jsx
+function SettingSlider({ settingKey, label, description, ...props }) {
+	const [val, set2] = Settings_default.useSetting(settingKey);
+	return /* @__PURE__ */ React_default.createElement(
+		Slider_default, {
+			...props,
+			mini: true,
+			label,
+			description,
+			initialValue: val,
+			onValueChange: (e2) => set2(Math.round(e2))
+		}
+	);
+}
+
 // src/Tabbys/contextmenus/SettingsContextMenu.jsx
 var c12 = classNameFactory(`${Config_default.info.name}-menuitem`);
 var { Separator, CheckboxItem, RadioItem, ControlItem, Group, Item, Menu } = ContextMenu;
 
-function buildToggle({ key, label, color }) {
-	const [state, setState] = useState(Settings_default.state[key]);
+function ContextMenuToggle({ settingKey, label, color }) {
+	const [state, setState] = useState(Settings_default.state[settingKey]);
 	return /* @__PURE__ */ React_default.createElement(
 		CheckboxItem, {
 			color,
 			label,
-			id: c12(label, key),
+			id: c12(label, settingKey),
 			checked: state,
 			action: () => {
 				setState(!state);
-				Settings_default[`set${key}`](!Settings_default.state[key]);
+				Settings_default[`set${settingKey}`](!Settings_default.state[settingKey]);
 			}
 		}
 	);
 }
 
-function ContextMenuSlider({ key, label, ...rest }) {
-	const [val, set2] = Settings_default.useSetting(key);
-	const beautify = (e2) => `${Math.round(e2)}px`;
+function ContextMenuSlider({ settingKey, label, ...rest }) {
+	const [val] = Settings_default.useSetting(settingKey);
 	return /* @__PURE__ */ React_default.createElement(
 		ControlItem, {
-			id: c12(key),
+			id: c12(settingKey),
 			label: `${label}: ${val}px`,
 			control: () => /* @__PURE__ */ React_default.createElement("div", { style: { padding: "0 8px" } }, /* @__PURE__ */ React_default.createElement(
-				Slider_default, {
+				SettingSlider, {
 					...rest,
-					mini: true,
-					initialValue: val,
-					onValueChange: (e2) => set2(Math.round(e2)),
-					onValueRender: beautify
+					settingKey,
+					onValueRender: valueToPx
 				}
 			))
 		}
@@ -3582,7 +3597,7 @@ function ContextMenuSlider({ key, label, ...rest }) {
 }
 
 function status() {
-	function d(type) {
+	function genStatusToggles(type) {
 		return /* @__PURE__ */ React_default.createElement(React_default.Fragment, null, /* @__PURE__ */ React_default.createElement(
 			Item, {
 				label: `${type}:`,
@@ -3590,13 +3605,25 @@ function status() {
 				disabled: true
 			}
 		), [
-			{ key: `show${type}Pings`, label: "Pings" },
-			{ key: `show${type}Unreads`, label: "Unreads" },
-			{ key: `show${type}Typing`, label: "Typings" },
-			{ key: `highlight${type}Unread`, label: "Highlight Unread" }
-		].map(buildToggle));
+			{ settingKey: `show${type}Pings`, label: "Pings" },
+			{ settingKey: `show${type}Unreads`, label: "Unreads" },
+			{ settingKey: `show${type}Typing`, label: "Typings" },
+			{ settingKey: `highlight${type}Unread`, label: "Highlight Unread" }
+		].map(ContextMenuToggle));
 	}
-	return /* @__PURE__ */ React_default.createElement(React_default.Fragment, null, d("Tab"), /* @__PURE__ */ React_default.createElement(Separator, null), d("Bookmark"), /* @__PURE__ */ React_default.createElement(Separator, null), d("Folder"));
+	return /* @__PURE__ */ React_default.createElement(
+		Item, {
+			label: "Status",
+			id: c12("status")
+		},
+		genStatusToggles("Tab"),
+		/* @__PURE__ */
+		React_default.createElement(Separator, null),
+		genStatusToggles("Bookmark"),
+		/* @__PURE__ */
+		React_default.createElement(Separator, null),
+		genStatusToggles("Folder")
+	);
 }
 
 function appearence() {
@@ -3606,46 +3633,46 @@ function appearence() {
 			id: c12("appearence")
 		},
 		[{
-				key: "size",
+				settingKey: "size",
 				label: "UI Size",
 				minValue: 24,
 				maxValue: 32
 			},
 			{
 				label: "Tab width",
-				key: "tabWidth",
+				settingKey: "tabWidth",
 				minValue: 50,
 				maxValue: 250
 			},
 			{
 				label: "Tab min width",
-				key: "tabMinWidth",
+				settingKey: "tabMinWidth",
 				minValue: 50,
 				maxValue: 250
 			}
 		].map(ContextMenuSlider),
 		/* @__PURE__ */
 		React_default.createElement(Separator, null),
-		[{ key: "bookmarkOverflowWrap", label: "Wrap Bookmarks" }].map(buildToggle),
-		/* @__PURE__ */
-		React_default.createElement(Separator, null),
 		[
-			{ key: "showTabbar", label: "Show Tabbar" },
-			{ key: "showBookmarkbar", label: "Show Bookmarks" },
-			{ key: "keepTitle", label: "Keep TitleBar" },
-			{ key: "privacyMode", label: "Privacy Mode" },
-			{ key: "showSettingsButton", label: "Show Settings button", color: "danger" }
-		].map(buildToggle)
+			{ settingKey: "showTabbar", label: "Show Tabbar" },
+			{ settingKey: "showBookmarkbar", label: "Show Bookmarks" },
+			{ settingKey: "keepTitle", label: "Keep TitleBar" },
+			{ settingKey: "privacyMode", label: "Privacy Mode" },
+			{ settingKey: "showSettingsButton", label: "Show Settings button", color: "danger" }
+		].map(ContextMenuToggle)
 	);
 }
 
 function SettingsContextMenu_default() {
-	return /* @__PURE__ */ React_default.createElement(Menu, null, appearence(), /* @__PURE__ */ React_default.createElement(
+	return /* @__PURE__ */ React_default.createElement(Menu, null, appearence(), status(), /* @__PURE__ */ React_default.createElement(
 		Item, {
-			label: "Status",
-			id: c12("status")
+			label: "Functionality",
+			id: c12("functionality")
 		},
-		status()
+		[
+			{ settingKey: "bookmarkOverflowWrap", label: "Wrap Bookmarks" },
+			{ settingKey: "ctrlClickChannel", label: "Ctrl+Click channel" }
+		].map(ContextMenuToggle)
 	));
 }
 
@@ -3881,7 +3908,7 @@ StylesLoader_default.push(`.divider-base {
 // common/Components/Divider/index.jsx
 var c16 = classNameFactory("divider");
 
-function Divider({ direction = "horizontal", gap }) {
+function Divider({ direction = Divider.HORIZONTAL, gap }) {
 	return /* @__PURE__ */ React_default.createElement(
 		"div", {
 			style: {
@@ -3964,24 +3991,8 @@ function FieldSet({ label, description, children, contentGap = 16 }) {
 }
 
 // src/Tabbys/components/SettingComponent/index.jsx
-function SettingSlider({ settingKey, label, description, ...props }) {
-	const [val, set2] = Settings_default.useSetting(settingKey);
-	const beautify = (e2) => `${Math.round(e2)}px`;
-	return /* @__PURE__ */ React_default.createElement(
-		Slider_default, {
-			...props,
-			mini: true,
-			label,
-			description,
-			initialValue: val,
-			onValueChange: (e2) => set2(Math.round(e2)),
-			onValueRender: beautify
-		}
-	);
-}
-
 function SettingComponent() {
-	return /* @__PURE__ */ React_default.createElement("div", { className: `${Config_default.info.name}-settings` }, /* @__PURE__ */ React_default.createElement(Collapsible, { title: "Appearence" }, /* @__PURE__ */ React_default.createElement(Collapsible, { title: "toggles" }, /* @__PURE__ */ React_default.createElement(FieldSet, { contentGap: 8 }, [
+	return /* @__PURE__ */ React_default.createElement("div", { className: `${Config_default.info.name}-settings` }, /* @__PURE__ */ React_default.createElement(FieldSet, { contentGap: 10 }, /* @__PURE__ */ React_default.createElement(Collapsible, { title: "Appearence" }, /* @__PURE__ */ React_default.createElement(Collapsible, { title: "toggles" }, /* @__PURE__ */ React_default.createElement(FieldSet, { contentGap: 8 }, [
 		{ border: true, description: "Wrap Bookmarks", note: "Wrap overflowing bookmarks instead of clamping them into a overflow menu", settingKey: "bookmarkOverflowWrap" },
 		{ description: "Show/Hide Tabbar", settingKey: "showTabbar" },
 		{ description: "Show/Hide Bookmarkbar", settingKey: "showBookmarkbar" },
@@ -3995,7 +4006,8 @@ function SettingComponent() {
 			description: "overall scale for the entire UI",
 			minValue: 24,
 			maxValue: 32,
-			markers: [24, 28, 32]
+			markers: [24, 28, 32],
+			onValueRender: valueToPx
 		}
 	), /* @__PURE__ */ React_default.createElement(Divider, { gap: 25 }), /* @__PURE__ */ React_default.createElement(
 		SettingSlider, {
@@ -4004,7 +4016,8 @@ function SettingComponent() {
 			description: "width a tab will take when there is enough space",
 			minValue: 50,
 			maxValue: 250,
-			markers: [50, 100, 150, 200, 250]
+			markers: [50, 100, 150, 200, 250],
+			onValueRender: valueToPx
 		}
 	), /* @__PURE__ */ React_default.createElement(Divider, { gap: 25 }), /* @__PURE__ */ React_default.createElement(
 		SettingSlider, {
@@ -4013,16 +4026,27 @@ function SettingComponent() {
 			description: "width at which a tab will stop shrinking when there is too many tabs",
 			minValue: 50,
 			maxValue: 250,
-			markers: [50, 100, 150, 200, 250]
+			markers: [50, 100, 150, 200, 250],
+			onValueRender: valueToPx
 		}
-	)), /* @__PURE__ */ React_default.createElement(Gap, { gap: 15 }), /* @__PURE__ */ React_default.createElement(Collapsible, { title: "Status" }, ["Tab", "Bookmark", "Folder"].map((type) => {
-		return /* @__PURE__ */ React_default.createElement(Collapsible, { title: type }, [
-			{ description: "Unreads", settingKey: `show${type}Unreads` },
-			{ description: "Pings", settingKey: `show${type}Pings` },
-			{ description: "Typing", settingKey: `show${type}Typing` },
-			{ description: "Highlight Unread", settingKey: `highlight${type}Unread` }
-		].map((props) => [SettingSwtich(props), /* @__PURE__ */ React_default.createElement(Gap, { gap: 5 })]));
-	})));
+	)), /* @__PURE__ */ React_default.createElement(Collapsible, { title: "Status" }, ["Tab", "Bookmark", "Folder"].map((type) => {
+		return /* @__PURE__ */ React_default.createElement(
+			Collapsible, {
+				key: type,
+				title: type
+			},
+			/* @__PURE__ */
+			React_default.createElement(FieldSet, { contentGap: 5 }, [
+				{ description: "Unreads", settingKey: `show${type}Unreads` },
+				{ description: "Pings", settingKey: `show${type}Pings` },
+				{ description: "Typing", settingKey: `show${type}Typing` },
+				{ description: "Highlight Unread", settingKey: `highlight${type}Unread` }
+			].map(SettingSwtich))
+		);
+	})), /* @__PURE__ */ React_default.createElement(Collapsible, { title: "Functionality" }, /* @__PURE__ */ React_default.createElement(FieldSet, { contentGap: 8 }, [
+		{ settingKey: "ctrlClickChannel", description: "Ctrl+Click Channel to open in new tab" },
+		{ settingKey: "bookmarkOverflowWrap", description: "Wrap Bookmarks", note: "Wrap overflowing bookmarks instead of clamping them into a overflow menu" }
+	].map(SettingSwtich)))));
 }
 
 // src/Tabbys/index.jsx
