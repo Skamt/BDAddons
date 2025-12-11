@@ -4,6 +4,7 @@ import { Filters, getModule } from "@Webpack";
 import { getNestedProp } from "@Utils";
 import Store from "@/Store";
 import Plugin, { Events } from "@Utils/Plugin";
+import Settings from "@Utils/Settings";
 
 const channelFilter = Filters.byStrings("href", "children", "onClick", "onKeyPress", "focusProps");
 const channelComponent = getModule(a => a.render && channelFilter(a.render), { searchExports: true });
@@ -16,7 +17,7 @@ Plugin.on(Events.START, () => {
 		if (!path || !origClick) return ret;
 		ret.props.children.props.onClick = e => {
 			e.preventDefault();
-			if (e.ctrlKey) Store.newTab(path);
+			if (e.ctrlKey && Settings.state.ctrlClickChannel) Store.newTab(path);
 			else origClick?.(e);
 		};
 	});

@@ -71,7 +71,7 @@
 	cursor: pointer;
 	position: relative;
 	margin-left: 2px;
-	color: var(--interactive-normal);
+	color: var(--interactive-text-default);
 }
 
 ul[aria-label="Channels"] > li[class*="selected"] .channelMuteButton, 

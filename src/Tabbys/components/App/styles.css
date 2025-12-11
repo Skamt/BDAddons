@@ -79,12 +79,12 @@ div:has(> .tabbys-app-container):not(#a) {
 }
 
 .tabbys-app-settings-button {
-	color: var(--icon-tertiary);
+	color: var(--tabbys-btn-color);
 	cursor: pointer;
 }
 
 .tabbys-app-settings-button:hover {
-	color: var(--icon-secondary);
+	color: var(--tabbys-btn-color-hover);
 }
 
 .tabbys-app-privacyMode .card-icon,

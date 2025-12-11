@@ -4,7 +4,7 @@ import { classNameFactory } from "@Utils/css";
 
 const c = classNameFactory("divider");
 
-export default function Divider({ direction = "horizontal", gap }) {
+export default function Divider({ direction = Divider.HORIZONTAL, gap }) {
 	return (
 		<div
 			style={{
@@ -20,4 +20,3 @@ Divider.direction = {
 	HORIZONTAL: "horizontal",
 	VERTICAL: "vertical"
 };
-

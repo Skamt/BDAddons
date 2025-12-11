@@ -17,6 +17,7 @@
 		"privacyMode":false,
 
 		"bookmarkOverflowWrap":false,
+		"ctrlClickChannel":true,
 
 		"showTabUnreads":true,
 		"showTabPings":true,

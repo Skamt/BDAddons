@@ -6,6 +6,7 @@ import { getNestedProp } from "@Utils";
 import SelectedChannelStore from "@Stores/SelectedChannelStore";
 import { getGuildChannelPath } from "@/utils";
 import Plugin, { Events } from "@Utils/Plugin";
+import Settings from "@Utils/Settings";
 
 const GuildComponent = getModule(reactRefMemoFilter("type","onDragStart", "guildNode"), { searchExports: true });
 Plugin.on(Events.START, () => {
@@ -17,7 +18,7 @@ Plugin.on(Events.START, () => {
 		const path = getGuildChannelPath(guild.id);
 		targetProps.onClick = e => {
 			e.preventDefault();
-			if (e.ctrlKey) Store.newTab(path);
+			if (e.ctrlKey&& Settings.state.ctrlClickChannel) Store.newTab(path);
 			else origClick?.(e);
 		};
 	});

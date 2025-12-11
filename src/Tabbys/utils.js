@@ -7,6 +7,8 @@ import { ChannelTypeEnum } from "@Discord/Enums";
 import { transitionTo, ChannelUtils } from "@Discord/Modules";
 import SelectedChannelStore from "@Stores/SelectedChannelStore";
 
+export const valueToPx = e => `${Math.round(e)}px`;
+
 export function getGuildChannelPath(guildId) {
 	const selectedChannelId = SelectedChannelStore.getChannelId(guildId);
 	return `/channels/${guildId}/${selectedChannelId}`;
