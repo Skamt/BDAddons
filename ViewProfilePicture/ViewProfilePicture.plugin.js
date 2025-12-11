@@ -1,7 +1,7 @@
 /**
  * @name ViewProfilePicture
  * @description Adds a button to the user popout and profile that allows you to view the Avatar and banner.
- * @version 1.3.3
+ * @version 1.3.4
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js
@@ -11,7 +11,7 @@
 var Config_default = {
 	"info": {
 		"name": "ViewProfilePicture",
-		"version": "1.3.3",
+		"version": "1.3.4",
 		"description": "Adds a button to the user popout and profile that allows you to view the Avatar and banner.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture",
@@ -173,7 +173,7 @@ StylesLoader_default.push(`/* View Profile Button */
 .VPP-carousel > div[role="button"] {
 	margin: 0 15px;
 	background: var(--background-surface-high);
-	color: var(--interactive-normal);
+	color: var(--interactive-text-default);
 	border-radius: 50%;
 	display: flex;
 	align-items: center;
@@ -182,7 +182,7 @@ StylesLoader_default.push(`/* View Profile Button */
 
 .VPP-carousel > div[role="button"]:hover {
 	background: var(--background-surface-highest);
-	color: var(--interactive-hover);
+	color: var(--interactive-text-default);
 }
 
 /* Copy color button */
@@ -596,22 +596,22 @@ function resolveColor() {
 }
 
 function copyColor(type, color) {
-	let c2 = color;
+	let c3 = color;
 	try {
 		switch (type) {
 			case "hex":
-				c2 = Color_default(color).hex();
+				c3 = Color_default(color).hex();
 				break;
 			case "rgba":
-				c2 = Color_default(color).css("rgba");
+				c3 = Color_default(color).css("rgba");
 				break;
 			case "hsla":
-				c2 = Color_default(color).css("hsla");
+				c3 = Color_default(color).css("hsla");
 				break;
 		}
 	} finally {
-		copy(c2);
-		Toast_default.success(`${c2} Copied!`);
+		copy(c3);
+		Toast_default.success(`${c3} Copied!`);
 	}
 }
 
@@ -774,10 +774,57 @@ var Switch_default = getModule(Filters.byStrings('"data-toggleable-component":"s
 	));
 };
 
+// common/Components/Divider/styles.css
+StylesLoader_default.push(`.divider-base {
+	border-top: thin solid var(--border-subtle);
+	flex:1 0 0;
+}
+
+.divider-horizontal {
+	width: 100%;
+	height: 1px;
+}
+
+.divider-vertical {
+	width: 1px;
+	height: 100%;
+}
+`);
+
+// common/Utils/css.js
+var classNameFactory = (prefix = "", connector = "-") => (...args) => {
+	const classNames = /* @__PURE__ */ new Set();
+	for (const arg of args) {
+		if (arg && typeof arg === "string") classNames.add(arg);
+		else if (Array.isArray(arg)) arg.forEach((name) => classNames.add(name));
+		else if (arg && typeof arg === "object") Object.entries(arg).forEach(([name, value]) => value && classNames.add(name));
+	}
+	return Array.from(classNames, (name) => `${prefix}${connector}${name}`).join(" ");
+};
+
+// common/Components/Divider/index.jsx
+var c = classNameFactory("divider");
+
+function Divider({ direction = Divider.HORIZONTAL, gap }) {
+	return /* @__PURE__ */ React_default.createElement(
+		"div", {
+			style: {
+				marginTop: gap,
+				marginBottom: gap
+			},
+			className: c("base", { direction })
+		}
+	);
+}
+Divider.direction = {
+	HORIZONTAL: "horizontal",
+	VERTICAL: "vertical"
+};
+
 // common/Components/SettingSwtich/index.jsx
-function SettingSwtich({ settingKey, note, onChange = nop, description, ...rest }) {
+function SettingSwtich({ settingKey, note, border = false, onChange = nop, description, ...rest }) {
 	const [val, set] = Settings_default.useSetting(settingKey);
-	return /* @__PURE__ */ React.createElement(
+	return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(
 		Switch_default, {
 			...rest,
 			checked: val,
@@ -788,7 +835,7 @@ function SettingSwtich({ settingKey, note, onChange = nop, description, ...rest 
 				onChange(e);
 			}
 		}
-	);
+	), border && /* @__PURE__ */ React.createElement(Divider, { gap: 15 }));
 }
 
 // common/Components/FieldSet/styles.css
@@ -822,36 +869,25 @@ StylesLoader_default.push(`.fieldset-container {
 // MODULES-AUTO-LOADER:@Modules/Heading
 var Heading_default = getModule((a) => a?.render?.toString().includes("data-excessive-heading-level"), { searchExports: true });
 
-// common/Utils/css.js
-var classNameFactory = (prefix = "", connector = "-") => (...args) => {
-	const classNames = /* @__PURE__ */ new Set();
-	for (const arg of args) {
-		if (arg && typeof arg === "string") classNames.add(arg);
-		else if (Array.isArray(arg)) arg.forEach((name) => classNames.add(name));
-		else if (arg && typeof arg === "object") Object.entries(arg).forEach(([name, value]) => value && classNames.add(name));
-	}
-	return Array.from(classNames, (name) => `${prefix}${connector}${name}`).join(" ");
-};
-
 // common/Components/FieldSet/index.jsx
-var c = classNameFactory("fieldset");
+var c2 = classNameFactory("fieldset");
 
 function FieldSet({ label, description, children, contentGap = 16 }) {
-	return /* @__PURE__ */ React_default.createElement("fieldset", { className: c("container") }, label && /* @__PURE__ */ React_default.createElement(
+	return /* @__PURE__ */ React_default.createElement("fieldset", { className: c2("container") }, label && /* @__PURE__ */ React_default.createElement(
 		Heading_default, {
-			className: c("label"),
+			className: c2("label"),
 			tag: "legend",
 			variant: "text-lg/medium"
 		},
 		label
 	), description && /* @__PURE__ */ React_default.createElement(
 		Heading_default, {
-			className: c("description"),
+			className: c2("description"),
 			variant: "text-sm/normal",
 			color: "text-secondary"
 		},
 		description
-	), /* @__PURE__ */ React_default.createElement("div", { className: c("content"), style: { gap: contentGap } }, children));
+	), /* @__PURE__ */ React_default.createElement("div", { className: c2("content"), style: { gap: contentGap } }, children));
 }
 
 // src/ViewProfilePicture/components/SettingComponent.jsx
