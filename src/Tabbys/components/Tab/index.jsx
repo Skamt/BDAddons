@@ -41,8 +41,15 @@ function Tab({ id, isOver, canDrop, isDragging, dragRef, dropRef }) {
 		});
 	};
 
+	const onMiddleClick = e => {
+		if (e.button !== 1) return;
+		e.preventDefault();
+		Store.removeTab(id);
+	};
+
 	return (
 		<div
+			onAuxClick={onMiddleClick}
 			onContextMenu={contextmenuHandler}
 			ref={e => dragRef(dropRef(e))}
 			className={join(c("container", isOver && canDrop && "canDrop"), { isSelected, hasUnread, isDragging }, "card")}

@@ -1,7 +1,7 @@
 {
 	"info": {
 		"name": "Tabbys",
-		"version": "1.0.2",
+		"version": "1.0.5",
 		"description": "Adds Browser like tabs/bookmarks for channels",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/Tabbys/Tabbys.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/Tabbys"
@@ -15,6 +15,8 @@
 		"showBookmarkbar":false,
 		"keepTitle":false,
 		"privacyMode":false,
+
+		"bookmarkOverflowWrap":false,
 
 		"showTabUnreads":true,
 		"showTabPings":true,

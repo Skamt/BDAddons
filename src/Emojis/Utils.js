@@ -19,6 +19,7 @@ export function handleUnsendableEmoji(emoji, channel) {
 
 	sendEmojiAsLink(emoji, channel);
 }
+
 function getCustomEmojiById(id) {
 	const emoji = EmojiStore.getCustomEmojiById(id);
 	if (emoji) return emoji;
@@ -47,7 +48,7 @@ function sendEmojiAsLink(content, channel) {
 
 	if (Settings.state.sendDirectly) {
 		try {
-			return sendMessageDirectly(channel, content);
+			return sendMessageDirectly(content, channel.id);
 		} catch {
 			Toast.error("Could not send directly.");
 		}

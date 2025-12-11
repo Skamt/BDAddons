@@ -1,7 +1,7 @@
 import { ContextMenu } from "@Api";
 import Store from "@/Store";
 import { Dispatcher } from "@Discord/Modules";
-import { BookmarkOutlinedIcon, DuplicateIcon, LightiningIcon,  VectorIcon } from "@Components/Icon";
+import { BookmarkOutlinedIcon, DuplicateIcon, LightiningIcon, VectorIcon } from "@Components/Icon";
 import React from "@React";
 import { wrapMenuItem } from "./helper";
 import { nop } from "@Utils";
@@ -11,23 +11,22 @@ import { CopyPathItem, CopyUserIdItem, CopyGuildIdItem, CopyChannelIdItem, MarkA
 export default function (id, { path, channelId, userId, guildId, hasUnread }) {
 	const canClose = Store.getTabsCount() > 1;
 
-	const folders = Store.state.folders
-		.map(({ id: folderId, name }) => {
-			return {
-				action: () => addTabToFolderAt(id, folderId),
-				label: name,
-				icon: BookmarkOutlinedIcon
-			};
+	const folders = Store.state.folders.map(({ id: folderId, name }) =>
+		wrapMenuItem({
+			action: () => addTabToFolderAt(id, folderId),
+			label: name,
+			icon: BookmarkOutlinedIcon
 		})
-		.map(wrapMenuItem);
+	);
 
 	const copies = [
-		CopyPathItem(path),
+		CopyPathItem(path), 
 		channelId && CopyChannelIdItem(channelId), 
 		guildId && CopyGuildIdItem(guildId), 
 		userId && CopyUserIdItem(userId)
-	].filter(Boolean).map(wrapMenuItem);
-
+	]
+	.filter(Boolean)
+	.map(wrapMenuItem);
 
 	const Menu = ContextMenu.buildMenu(
 		[

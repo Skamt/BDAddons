@@ -33,6 +33,7 @@ export default function SettingComponent() {
 				<Collapsible title="toggles">
 					<FieldSet contentGap={8}>
 						{[
+							{ border: true, description: "Wrap Bookmarks", note: "Wrap overflowing bookmarks instead of clamping them into a overflow menu", settingKey: "bookmarkOverflowWrap" },
 							{ description: "Show/Hide Tabbar", settingKey: "showTabbar" },
 							{ description: "Show/Hide Bookmarkbar", settingKey: "showBookmarkbar" },
 							{ description: "Show/Hide Titlebar", settingKey: "keepTitle" },

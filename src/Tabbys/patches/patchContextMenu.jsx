@@ -1,16 +1,15 @@
 import config from "@Config";
 import { ContextMenu } from "@Api";
 import Settings from "@Utils/Settings";
-// import { MenuLabel } from "@Components/ContextMenu";
+import { wrapMenuItem } from "@/contextmenus/helper";
 import Store from "@/Store";
 import React from "@React";
 import { ChannelTypeEnum } from "@Discord/Enums";
-import { getPathName } from "@Utils";
+import { getPathName, nop } from "@Utils";
 import { BookmarkOutlinedIcon, PlusIcon } from "@Components/Icon";
 import ChannelStore from "@Stores/ChannelStore";
-
+import { addBookmarkAt, addToFolderAt } from "@/Store/methods";
 import Plugin, { Events } from "@Utils/Plugin";
-// import { getModule } from "@Webpack";
 
 export function channelPath(...args) {
 	return `/channels/${args.filter(Boolean).join("/")}`;
@@ -39,10 +38,20 @@ function menu(path) {
 
 	const menu = [ContextMenu.buildItem({ type: "separator" })];
 
+	const folders = Store.state.folders.map(({ id, name }) =>
+		wrapMenuItem({
+			action: () => addToFolderAt(path, id),
+			label: name,
+			icon: BookmarkOutlinedIcon
+		})
+	);
+
 	const bookmark = {
-		action: () => Store.addBookmark(path),
-		icon: BookmarkOutlinedIcon,
-		label: "Bookmark channel"
+		action: () => addBookmarkAt(path),
+		label: "Bookmark channel",
+		type: folders.length > 0 ? "submenu" : null,
+		icon: folders.length > 0 ? nop : BookmarkOutlinedIcon,
+		items: folders
 	};
 
 	const tab = {

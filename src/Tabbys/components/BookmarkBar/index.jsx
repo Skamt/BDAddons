@@ -1,5 +1,6 @@
 import "./styles";
 import Store from "@/Store";
+import Settings from "@Utils/Settings";
 import { Bookmark } from "@/components/Bookmark";
 import { Folder } from "@/components/Folder";
 import { ArrowIcon } from "@Components/Icon";
@@ -27,7 +28,25 @@ function getItem(props, id, folderId) {
 	);
 }
 
-export default function BookmarkBar() {
+function NoBookmarks() {
+	return <div className={c("empty")}>You have no bookmarks yet</div>;
+}
+
+export function BookmarkBarWrapAround() {
+	const bookmarks = Store(Store.selectors.bookmarks, shallow);
+
+	const content = bookmarks.map(({ id, folderId }) => getItem({}, id, folderId));
+
+	return (
+		<div className={c("container")}>
+			<div className={c("content", "wrap")}>{content.length > 0 ? content : <NoBookmarks />}
+			<DragHandle />
+			</div>
+		</div>
+	);
+}
+
+export function BookmarkBarOverflowMenu() {
 	const bookmarks = Store(Store.selectors.bookmarks, shallow);
 	const contentRef = useRef();
 	const [overflowedItems, setOverflowedItems] = useState([]);
@@ -86,7 +105,7 @@ export default function BookmarkBar() {
 			<div
 				ref={contentRef}
 				className={c("content")}>
-				{content.length > 0 ? content : <div className={c("empty")}>You have no bookmarks yet</div>}
+				{content.length > 0 ? content : <NoBookmarks />}
 			</div>
 			{!!overflowedItems.length && <OverflowMenu items={bookmarks.filter(({ id }) => overflowedItems.find(a => a === id))} />}
 			<DragHandle />
@@ -115,4 +134,9 @@ function OverflowMenu({ items }) {
 			}}
 		</Popout>
 	);
+}
+
+export default function BookmarkBar() {
+	const bookmarkOverflowWrap = Settings(Settings.selectors.bookmarkOverflowWrap, shallow);
+	return bookmarkOverflowWrap ? <BookmarkBarWrapAround /> : <BookmarkBarOverflowMenu />;
 }

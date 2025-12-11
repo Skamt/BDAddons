@@ -2,10 +2,11 @@ import { React } from "@Api";
 import { nop } from "@Utils";
 import Settings from "@Utils/Settings";
 import Switch from "@Components/Switch";
-
-export default function SettingSwtich({ settingKey, note, onChange = nop, description, ...rest }) {
+import Divider from "@Components/Divider";
+export default function SettingSwtich({ settingKey, note, border=false,onChange = nop, description, ...rest }) {
 	const [val, set] = Settings.useSetting(settingKey);
 	return (
+		<>	
 		<Switch
 			{...rest}
 			checked={val}
@@ -15,6 +16,8 @@ export default function SettingSwtich({ settingKey, note, onChange = nop, descri
 				set(e);
 				onChange(e);
 			}}/>
+		{border && <Divider gap={15} />}</>
+
 			
 	);
 }

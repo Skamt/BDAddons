@@ -30,7 +30,7 @@ const parsers = [
 	{ regex: /^\/discovery\/(applications|servers|quests)/, handle: type => types[type] },
 	{
 		regex: /^\/member-verification/,
-		handle() {
+		handle(path) {
 			if (path.startsWith("/member-verification")) {
 				const id = path.split("/").pop();
 				const guild = UserGuildJoinRequestStore.getJoinRequestGuild(id);

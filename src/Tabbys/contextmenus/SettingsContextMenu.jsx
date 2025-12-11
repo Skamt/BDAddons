@@ -108,6 +108,8 @@ function appearence() {
 			].map(ContextMenuSlider)}
 
 			<Separator />
+			{[{ key: "bookmarkOverflowWrap", label: "Wrap Bookmarks" }].map(buildToggle)}
+			<Separator />
 			{[
 				{ key: "showTabbar", label: "Show Tabbar" },
 				{ key: "showBookmarkbar", label: "Show Bookmarks" },

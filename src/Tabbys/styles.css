@@ -23,18 +23,19 @@
 	--tabbys-bg-hover: var(--background-mod-normal);
 	--tabbys-bg-selected: var(--background-mod-strong);
 
-	--tabbys-text: var(--interactive-normal);
-	--tabbys-text-unread: var(--interactive-active);
+	--tabbys-text: var(--interactive-text-default);
+	--tabbys-text-unread: var(--interactive-text-active);
 
-	--tabbys-btn-color: var(--interactive-normal);
-	--tabbys-btn-color-hover: var(--interactive-hover);
-	--tabbys-btn-color-active: var(--interactive-active);
+	--tabbys-btn-color: var(--interactive-text-default);
+	--tabbys-btn-color-hover: var(--interactive-text-hover);
+	--tabbys-btn-color-active: var(--interactive-text-active);
 
 	--tabbys-btn-bg: var(--background-accent);
 	--tabbys-btn-bg-hover: var(--interactive-muted);
 	--tabbys-btn-bg-active: var(--background-mod-strong);
 
 	--tabbys-folder-menu-bg: var(--background-surface-highest);
+
 }
 
 .no-drag {

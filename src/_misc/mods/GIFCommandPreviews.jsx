@@ -11,10 +11,9 @@ import { sendMessageDirectly, insertText } from "@Utils/Messages";
 const GIFIntegration = getModule(a => a.GIFIntegration).GIFIntegration;
 
 const GifsModule = getMangled(Filters.bySource("renderGIF()", "renderEmptyFavorites"), {
-	Gif:BdApi.Webpack.Filters.byStrings("t=B();return(0,r.jsx)(G"),
-	GifsList: BdApi.Webpack.Filters.byPrototypeKeys("renderGIF"),
+	Gif: Filters.byStrings("return(0,r.jsx)(G"),
+	GifsList: Filters.byPrototypeKeys("renderGIF")
 });
-
 
 function GifMenu(url) {
 	const Menu = ContextMenu.buildMenu([

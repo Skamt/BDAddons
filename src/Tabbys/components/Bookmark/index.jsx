@@ -39,6 +39,12 @@ function BaseBookmark({ id, parentId, dragRef, onClose, className }) {
 		else openBookmark(id, parentId);
 	};
 
+	const onMiddleClick = e => {
+		if (e.button !== 1) return;
+		e.preventDefault();
+		Store.newTab(path);
+	};
+
 	const contextmenuHandler = e => {
 		ContextMenu.open(e, BookmarkContextMenu(id, { path, guildId, userId, parentId, channelId, hasUnread }), {
 			position: "bottom",
@@ -48,6 +54,7 @@ function BaseBookmark({ id, parentId, dragRef, onClose, className }) {
 
 	return (
 		<div
+			onAuxClick={onMiddleClick}
 			data-id={isSubBookmark ? null : id}
 			ref={dragRef}
 			onContextMenu={contextmenuHandler}
