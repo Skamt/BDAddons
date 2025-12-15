@@ -1,7 +1,7 @@
 /**
  * @name SpotifyEnhance
  * @description All in one better spotify-discord experience.
- * @version 1.1.7
+ * @version 1.1.8
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js
@@ -11,7 +11,7 @@
 var Config_default = {
 	"info": {
 		"name": "SpotifyEnhance",
-		"version": "1.1.7",
+		"version": "1.1.8",
 		"description": "All in one better spotify-discord experience.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance",
@@ -869,7 +869,7 @@ var Utils = {
 		const id = SelectedChannelStore_default.getCurrentlySelectedChannelId();
 		if (!id) return Toast_default.info("There is no Selected Channel");
 		link = sanitizeSpotifyLink(link);
-		sendMessageDirectly({ id }, link).catch((a) => {
+		sendMessageDirectly(link, id).catch((a) => {
 			Toast_default.error(a.message);
 			insertText(link);
 		});
@@ -2163,6 +2163,8 @@ StylesLoader_default.push(`.spotify-player-container {
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;
+	border-top-left-radius: inherit;
+	border-top-right-radius: inherit;
 }
 
 .spotify-player-container.bannerBackground {
@@ -2213,7 +2215,6 @@ StylesLoader_default.push(`.spotify-player-container {
 		"banner artist";
 	justify-content: center;
 	gap: 5px 10px;
-
 }
 
 .spotify-player-container.compact .spotify-player-banner {
@@ -2228,38 +2229,39 @@ StylesLoader_default.push(`.spotify-player-container {
 	justify-content: unset;
 	align-items: center;
 	margin-right: 5px;
-	flex:0 0 auto;
+	flex: 0 0 auto;
 }
 
-.spotify-player-minmax{
-	position:absolute;
-	top:10px;
-	left:10px;
-	z-index:10;
-	rotate:90deg;
-	box-sizing:bordr-box;
-	width:15px;
-	height:15px;
-	cursor:pointer;
-	display:none;
-	background:#000a;
-	border-radius:50%;
+.spotify-player-minmax {
+	position: absolute;
+	top: 10px;
+	left: 10px;
+	z-index: 10;
+	rotate: 90deg;
+	box-sizing: bordr-box;
+	width: 15px;
+	height: 15px;
+	cursor: pointer;
+	display: none;
+	background: #000a;
+	border-radius: 50%;
 }
 
-.spotify-player-container:hover .spotify-player-minmax{
-	display:flex;
+.spotify-player-container:hover .spotify-player-minmax {
+	display: flex;
 }
 
-.spotify-player-minmax svg{
-	width:100%;
-	height:100%;
+.spotify-player-minmax svg {
+	width: 100%;
+	height: 100%;
 }
 
-.spotify-player-container.compact .spotify-player-minmax{
-	top:0px;
-	left:0px;
-	rotate:-90deg;
-}`);
+.spotify-player-container.compact .spotify-player-minmax {
+	top: 0px;
+	left: 0px;
+	rotate: -90deg;
+}
+`);
 
 // src/SpotifyEnhance/components/SpotifyPlayerControls/styles.css
 StylesLoader_default.push(`.spotify-player-controls {
@@ -3131,7 +3133,7 @@ StylesLoader_default.push(`.divider-base {
 // common/Components/Divider/index.jsx
 var c4 = classNameFactory("divider");
 
-function Divider({ direction = "horizontal", gap }) {
+function Divider({ direction = Divider.HORIZONTAL, gap }) {
 	return /* @__PURE__ */ React_default.createElement(
 		"div", {
 			style: {
@@ -3162,9 +3164,9 @@ var Switch_default = getModule(Filters.byStrings('"data-toggleable-component":"s
 };
 
 // common/Components/SettingSwtich/index.jsx
-function SettingSwtich({ settingKey, note, onChange = nop, description, ...rest }) {
+function SettingSwtich({ settingKey, note, border = false, onChange = nop, description, ...rest }) {
 	const [val, set] = Settings_default.useSetting(settingKey);
-	return /* @__PURE__ */ React.createElement(
+	return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(
 		Switch_default, {
 			...rest,
 			checked: val,
@@ -3175,7 +3177,7 @@ function SettingSwtich({ settingKey, note, onChange = nop, description, ...rest 
 				onChange(e);
 			}
 		}
-	);
+	), border && /* @__PURE__ */ React.createElement(Divider, { gap: 15 }));
 }
 
 // src/SpotifyEnhance/components/SettingComponent/index.jsx
