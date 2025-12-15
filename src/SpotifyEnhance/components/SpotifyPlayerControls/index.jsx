@@ -6,6 +6,7 @@ import HoverPopout from "@Components/HoverPopout";
 import Tooltip from "@Components/Tooltip";
 import { MuteVolumeIcon, NextIcon, PauseIcon, PlayIcon, PreviousIcon, RepeatIcon, RepeatOneIcon, ShareIcon, ShuffleIcon, VolumeIcon, ImageIcon, ListenIcon, AddToQueueIcon } from "@Components/Icon";
 
+import { preventDefault } from "@Utils";
 import { PlayerButtonsEnum } from "@/consts.js";
 
 import { ContextMenu } from "@Api";
@@ -154,11 +155,12 @@ export default () => {
 	);
 };
 
-function SpotifyPlayerButton({ className, ref, active, name, value, ...rest }) {
+function SpotifyPlayerButton({ className, ref, active, onClick, name, value, ...rest }) {
 	return (
 		<Tooltip note={name}>
 			<Button
 				{...rest}
+				onClick={preventDefault(onClick)}
 				buttonRef={ref}
 				innerClassName="flexCenterCenter"
 				className={`spotify-player-controls-btn ${className} ${active ? "enabled" : ""}`}

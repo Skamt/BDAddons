@@ -11,6 +11,7 @@ import NoTrack from "./mods/NoTrack";
 import ShowUserInfo from "./mods/ShowUserInfo";
 // import SpotifyListenAlong from "./mods/SpotifyListenAlong";
 import EnableModView from "./mods/EnableModView";
+import WelcomeMessage from "./mods/WelcomeMessage";
 import PinRoles from "./mods/PinRoles";
 
 import ShowChannelPerms from "./mods/ShowChannelPerms";
@@ -24,6 +25,7 @@ const mods = [
 	new ConsoleToggleButton(),
 	new EmojiLetters(),
 	new GuildInfo(),
+	new WelcomeMessage(),
 	new NoLinkPreview(),
 	// new NoReplyPing(),
 	new PinRoles(),

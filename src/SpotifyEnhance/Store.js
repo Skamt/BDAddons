@@ -31,7 +31,7 @@ const Utils = {
 		const id = SelectedChannelStore.getCurrentlySelectedChannelId();
 		if (!id) return Toast.info("There is no Selected Channel");
 		link = sanitizeSpotifyLink(link);
-		sendMessageDirectly({ id }, link).catch(a => {
+		sendMessageDirectly(link, id).catch(a => {
 			Toast.error(a.message);
 			insertText(link);
 		});

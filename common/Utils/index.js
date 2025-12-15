@@ -13,14 +13,14 @@ export function fit({ width, height, gap = 0.8 }) {
 	};
 }
 
-
 export function concateClassNames(...args) {
 	return args.filter(Boolean).join(" ");
 }
 
 export function clsx(prefix) {
 	return (...args) =>
-		args.filter(Boolean)
+		args
+			.filter(Boolean)
 			.map(a => `${prefix}-${a}`)
 			.join(" ");
 }
@@ -232,5 +232,18 @@ export function exceptionWrapper(fn, exp, fin) {
 		} finally {
 			fin?.();
 		}
+	};
+}
+
+export function random(min, max) {
+	return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+export function preventDefault(handler) {
+	if (!handler) return nop;
+	return e => {
+		e.preventDefault();
+		e.stopPropagation();
+		handler.apply(null, [e]);
 	};
 }

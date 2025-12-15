@@ -1,8 +1,6 @@
 import { Patcher } from "@Api";
 import Logger from "@Utils/Logger";
-
 import MessageActions from "@Modules/MessageActions";
-import { sendMessageDirectly } from "@Utils/Messages";
 import { getStickerUrl, sendStickerAsLink, handleSticker } from "../Utils";
 
 import Plugin, { Events } from "@Utils/Plugin";

@@ -160,13 +160,13 @@ function EmojiCard({ animated, name, id, style, onChange }) {
 					src={getEmojiUrl(id, hover && animated, 80)}
 				/>
 			</div>
-			<TextInput
+			{/*<TextInput
 				maxLength={32}
 				size="sm"
 				disabled={deleteEmoji}
 				onChange={changeHandler}
 				value={val}
-			/>
+			/>*/}
 			<div className={c("btn-delete")}>
 				<ManaButton
 					onClick={deleteHandler}
