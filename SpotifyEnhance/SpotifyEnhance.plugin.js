@@ -290,6 +290,15 @@ function buildUrl(endpoint, path2, params) {
 	return uri;
 }
 
+function preventDefault(handler) {
+	if (!handler) return nop;
+	return (e) => {
+		e.preventDefault();
+		e.stopPropagation();
+		handler.apply(null, [e]);
+	};
+}
+
 // MODULES-AUTO-LOADER:@Modules/MessageActions
 var MessageActions_default = getModule(Filters.byKeys("jumpToMessage", "_sendMessage"), { searchExports: false });
 
@@ -1367,7 +1376,7 @@ function ActivityControlButton({ value, onClick, className, ...rest }) {
 			size: Button_default2.Sizes.NONE,
 			color: Button_default2.Colors.PRIMARY,
 			look: Button_default2.Colors.OUTLINED,
-			onClick,
+			onClick: preventDefault(onClick),
 			...rest
 		},
 		value
@@ -1483,7 +1492,7 @@ function ControlBtn({ value, onClick, ...rest }) {
 		Button_default2, {
 			size: Button_default2.Sizes.TINY,
 			color: Button_default2.Colors.GREEN,
-			onClick,
+			onClick: preventDefault(onClick),
 			...rest
 		},
 		value
@@ -2558,10 +2567,11 @@ var SpotifyPlayerControls_default = () => {
 	)), [playerButtons[PlayerButtonsEnum.SHUFFLE] && { name: "Shuffle", value: /* @__PURE__ */ React_default.createElement(ShuffleIcon, null), className: "spotify-player-controls-shuffle", disabled: toggling_shuffle, active: shuffle, onClick: shuffleHandler }, playerButtons[PlayerButtonsEnum.PREVIOUS] && { name: "Previous", value: /* @__PURE__ */ React_default.createElement(PreviousIcon, null), className: "spotify-player-controls-previous", disabled: skipping_prev, onClick: previousHandler }, { name: playPauseTooltip, value: playPauseIcon, className: playPauseClassName, disabled: false, onClick: playPauseHandler }, playerButtons[PlayerButtonsEnum.NEXT] && { name: "Next", value: /* @__PURE__ */ React_default.createElement(NextIcon, null), className: "spotify-player-controls-next", disabled: skipping_next, onClick: nextHandler }, playerButtons[PlayerButtonsEnum.REPEAT] && { name: repeatTooltip, value: repeatIcon, className: "spotify-player-controls-repeat", disabled: toggling_repeat_track, active: repeatActive, onClick: repeatHandler }].filter(Boolean).map(SpotifyPlayerButton), playerButtons[PlayerButtonsEnum.VOLUME] && /* @__PURE__ */ React_default.createElement(Volume, { volume }));
 };
 
-function SpotifyPlayerButton({ className, ref, active, name, value, ...rest }) {
+function SpotifyPlayerButton({ className, ref, active, onClick, name, value, ...rest }) {
 	return /* @__PURE__ */ React_default.createElement(Tooltip_default2, { note: name }, /* @__PURE__ */ React_default.createElement(
 		Button_default2, {
 			...rest,
+			onClick: preventDefault(onClick),
 			buttonRef: ref,
 			innerClassName: "flexCenterCenter",
 			className: `spotify-player-controls-btn ${className} ${active ? "enabled" : ""}`,
