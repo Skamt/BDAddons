@@ -9,7 +9,7 @@ Plugin.on(Events.START, () => {
 	try {
 		if (!RenderLinkComponent) return Logger.patchError("RenderLinkComponent");
 		Patcher.after(RenderLinkComponent, "type", (_, [{ className, href }], returnValue) => {
-			if (!returnValue || !className?.startsWith("downloadLink") || !href) return;
+			if (!returnValue || !className?.includes("downloadLink") || !href) return;
 			// biome-ignore lint/correctness/useJsxKeyInIterable: <explanation>
 			return [returnValue, <CopyButtonComponent href={href} />];
 		});

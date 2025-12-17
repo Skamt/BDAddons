@@ -18,7 +18,7 @@ import Plugin, { Events } from "@Utils/Plugin";
 Plugin.on(Events.START, () => {
 	if (!UserProfileModalforwardRef) return Logger.patchError("patchVPPButton");
 	const unpatch = Patcher.after(UserProfileModalforwardRef, "render", (_, [props], ret) => {
-		const target = findInTree(ret, a => typeFilter(a?.type), { walkable: ["props", "children"] }) || findInTree(ret, a => a?.type === "header" || a?.props?.className?.startsWith("profileHeader"), { walkable: ["props", "children"] });
+		const target = findInTree(ret, a => typeFilter(a?.type), { walkable: ["props", "children"] }) || findInTree(ret, a => a?.type === "header" || a?.props?.className?.includes("profileHeader"), { walkable: ["props", "children"] });
 		if (!target) return;
 
 		ret.props.className = `${ret.props.className} VPP-container`;

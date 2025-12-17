@@ -8,6 +8,8 @@ import GIFCommandPreviews from "./mods/GIFCommandPreviews";
 import GuildInfo from "./mods/GuildInfo";
 import NoLinkPreview from "./mods/NoLinkPreview";
 import NoTrack from "./mods/NoTrack";
+import MarkdownActionButtons from "./mods/MarkdownActionButtons";
+import OwnerCrown from "./mods/OwnerCrown";
 import ShowUserInfo from "./mods/ShowUserInfo";
 // import SpotifyListenAlong from "./mods/SpotifyListenAlong";
 import EnableModView from "./mods/EnableModView";
@@ -26,6 +28,7 @@ const mods = [
 	new EmojiLetters(),
 	new GuildInfo(),
 	new WelcomeMessage(),
+	new OwnerCrown(),
 	new NoLinkPreview(),
 	// new NoReplyPing(),
 	new PinRoles(),
@@ -34,6 +37,7 @@ const mods = [
 	new NoTrack(),
 	// new FriendsSince(),
 	new ShowUserInfo(),
+	new MarkdownActionButtons(),
 	// new SpotifyListenAlong(),
 	new GIFCommandPreviews()
 	// new MemUsage(),
