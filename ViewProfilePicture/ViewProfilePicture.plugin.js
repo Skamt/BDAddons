@@ -1,7 +1,7 @@
 /**
  * @name ViewProfilePicture
  * @description Adds a button to the user popout and profile that allows you to view the Avatar and banner.
- * @version 1.3.4
+ * @version 1.3.5
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js
@@ -11,7 +11,7 @@
 var Config_default = {
 	"info": {
 		"name": "ViewProfilePicture",
-		"version": "1.3.4",
+		"version": "1.3.5",
 		"description": "Adds a button to the user popout and profile that allows you to view the Avatar and banner.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture",
@@ -735,7 +735,7 @@ var typeFilter = Filters.byStrings("div", "wrapper", "children");
 Plugin_default.on(Events.START, () => {
 	if (!UserProfileModalforwardRef) return Logger_default.patchError("patchVPPButton");
 	const unpatch = Patcher.after(UserProfileModalforwardRef, "render", (_, [props], ret) => {
-		const target = findInTree(ret, (a) => typeFilter(a?.type), { walkable: ["props", "children"] }) || findInTree(ret, (a) => a?.type === "header" || a?.props?.className?.startsWith("profileHeader"), { walkable: ["props", "children"] });
+		const target = findInTree(ret, (a) => typeFilter(a?.type), { walkable: ["props", "children"] }) || findInTree(ret, (a) => a?.type === "header" || a?.props?.className?.includes("profileHeader"), { walkable: ["props", "children"] });
 		if (!target) return;
 		ret.props.className = `${ret.props.className} VPP-container`;
 		target.props.children.unshift(
