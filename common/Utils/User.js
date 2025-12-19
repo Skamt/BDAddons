@@ -1,6 +1,7 @@
 import UserStore from "@Stores/UserStore";
 import { isValidString } from "@Utils/String";
 import ChannelStore from "@Stores/ChannelStore";
+import GuildMemberStore from "@Stores/GuildMemberStore";
 
 export function isSelf(user) {
 	const currentUser = UserStore.getCurrentUser();
@@ -20,6 +21,16 @@ export function getUserName(userObject = {}) {
 	if (isValidString(global_name)) return global_name;
 	if (isValidString(globalName)) return globalName;
 	if (isValidString(username)) return username;
+}
+
+export function getGuildMemberName(guildId, userId) {
+	const memeber = GuildMemberStore.getMember(guildId, userId);
+	if (memeber.nick) return memeber.nick;
+
+	const user = UserStore.getUser(userId);
+	if (user) return getUserName(user);
+
+	return "???";
 }
 
 export function getUserFromDM(channelId) {

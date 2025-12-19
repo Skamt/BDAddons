@@ -31,18 +31,17 @@ const parsers = [
 	{ regex: /^\/store$/, handle: types.store },
 	{ regex: /^\/discovery\/(applications|servers|quests)/, handle: type => types[type] },
 	{
-		regex: /^\/member-verification/,
-		handle(path) {
-			if (path.startsWith("/member-verification")) {
-				const id = path.split("/").pop();
-				const guild = UserGuildJoinRequestStore.getJoinRequestGuild(id);
-				if (!guild) return types.unknown;
-				return {
-					title: guild.name,
-					icon: guild.icon,
-					type: pathTypes.VERIFICATION
-				};
-			}
+		regex: /^\/member-verification\/(\d+)/,
+		handle(guildId) {
+			if (!guildId) return;
+
+			const guild = UserGuildJoinRequestStore.getJoinRequestGuild(guildId);
+			if (!guild) return types.unknown;
+			return {
+				title: guild.name,
+				icon: guild.icon,
+				type: pathTypes.VERIFICATION
+			};
 		}
 	},
 	{
@@ -100,7 +99,7 @@ export function parsePath(path) {
 			const match = path.match(parser.regex);
 			if (!match) continue;
 			const [, ...captures] = match;
-			if (typeof parser.handle === "function") return parser.handle(...captures);
+			if (typeof parser.handle === "function") return parser.handle(...captures, path);
 			return parser.handle;
 		}
 	return types.unknown;

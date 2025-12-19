@@ -11,6 +11,7 @@ import NoTrack from "./mods/NoTrack";
 import MarkdownActionButtons from "./mods/MarkdownActionButtons";
 import OwnerCrown from "./mods/OwnerCrown";
 import ShowUserInfo from "./mods/ShowUserInfo";
+import Commands from "./mods/Commands";
 // import SpotifyListenAlong from "./mods/SpotifyListenAlong";
 import EnableModView from "./mods/EnableModView";
 import WelcomeMessage from "./mods/WelcomeMessage";
@@ -25,6 +26,7 @@ import ShowChannelPerms from "./mods/ShowChannelPerms";
 const mods = [
 	new ChannelMuteButton(),
 	new ConsoleToggleButton(),
+	new Commands(),
 	new EmojiLetters(),
 	new GuildInfo(),
 	new WelcomeMessage(),

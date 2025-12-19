@@ -7,16 +7,18 @@ import { ContextMenu, Patcher, React } from "@Api";
 
 import UserStore from "@Stores/UserStore";
 import GuildRoleStore from "@Stores/GuildRoleStore";
+import GuildMemberStore from "@Stores/GuildMemberStore";
 import GuildChannelStore from "@Stores/GuildChannelStore";
 import GuildMemberCountStore from "@Stores/GuildMemberCountStore";
-import { getUserName } from "@Utils/User";
+import { getGuildMemberName } from "@Utils/User";
 
 import GuildFeaturesEnum from "@Enums/GuildFeaturesEnum";
 
 const { getGuildIconURL } = getModule(a => a.getGuildIconURL) || {};
 
-const GuildTooltip = getMangled(Filters.bySource("data-migration-pending", "GuildTooltip"), {
-	default: Filters.byStrings("data-migration-pending")
+
+const GuildTooltip = getMangled(Filters.bySource("GuildTooltip"), {
+	default: a => true
 });
 
 export default class GuildInfo extends Disposable {
@@ -32,17 +34,19 @@ export default class GuildInfo extends Disposable {
 		if (!GuildTooltip) return Logger.patchError("GuildInfo");
 		this.patches = [
 			Patcher.after(GuildTooltip, "default", (_, [{ guild }], ret) => {
-				const owner = UserStore.getUser(guild.ownerId);
-				ret.props.text = [
-					ret.props.text,
-					el(`Owner: ${getUserName(owner)}`),
-					el(`Created At: ${new Date(parseSnowflake(+guild.id)).toLocaleDateString()}`),
-					el(`Joined At: ${guild.joinedAt.toLocaleDateString()}`),
-					el("Clyde", { style: { color: guild.features.has(GuildFeaturesEnum.CLYDE_ENABLED) ? "lime" : "red" } }),
-					el(`Roles: ${GuildRoleStore.getSortedRoles(guild.id).length}`),
-					el(`Channels: ${GuildChannelStore.getChannels(guild.id).count}`),
-					el(`Members: ${GuildMemberCountStore.getMemberCount(guild.id)}`)
-				];
+				Patcher.after(ret.props.__unsupportedReactNodeAsText.props.children, "type", (__, ___, r) => {
+					if (r.props.children.length > 3) return r;
+					r.props.children.push(...[
+						el(`Owner: ${getGuildMemberName(guild.id, guild.ownerId)}`), 
+						el(`OwnerId: ${guild.ownerId}`), 
+						el(`Created At: ${new Date(parseSnowflake(+guild.id)).toLocaleDateString()}`), 
+						el(`Joined At: ${guild.joinedAt.toLocaleDateString()}`), 
+						el("Clyde", { style: { color: guild.features.has(GuildFeaturesEnum.CLYDE_ENABLED) ? "lime" : "red" } }), 
+						el(`Roles: ${GuildRoleStore.getSortedRoles(guild.id).length}`), 
+						el(`Channels: ${GuildChannelStore.getChannels(guild.id).count}`),
+						el(`Members: ${GuildMemberCountStore.getMemberCount(guild.id)}`)
+					]);
+				});
 			}),
 
 			ContextMenu.patch("guild-context", (retVal, { guild }) => {

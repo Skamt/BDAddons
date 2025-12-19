@@ -7,6 +7,7 @@ export const Data = /*@__PURE__*/ (() => Api.Data)();
 export const React = /*@__PURE__*/ (() => Api.React)();
 export const ReactDOM = /*@__PURE__*/ (() => Api.ReactDOM)();
 export const Patcher = /*@__PURE__*/ (() => Api.Patcher)();
+export const Commands = /*@__PURE__*/ (() => Api.Commands)();
 export const ContextMenu = /*@__PURE__*/ (() => Api.ContextMenu)();
 export const Logger = /*@__PURE__*/ (() => Api.Logger)();
 

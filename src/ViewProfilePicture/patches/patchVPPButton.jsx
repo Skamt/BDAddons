@@ -22,7 +22,11 @@ Plugin.on(Events.START, () => {
 		if (!target) return;
 
 		ret.props.className = `${ret.props.className} VPP-container`;
-		target.props.children.unshift(
+
+		const children = Array.isArray(target.props.children) ? target.props.children : [target.props.children];
+				
+
+		children.unshift(
 			<ErrorBoundary
 				id="ViewProfilePictureButtonComponent"
 				plugin={config.info.name}
@@ -34,6 +38,7 @@ Plugin.on(Events.START, () => {
 				/>
 			</ErrorBoundary>
 		);
+		target.props.children = children;
 	});
 
 	Plugin.once(Events.STOP, unpatch);

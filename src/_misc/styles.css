@@ -27,7 +27,7 @@
 	background: red;
 }
 
-[class^="repliedMessage"] .messageHeaderItem {
+[class*="repliedMessage"] .messageHeaderItem {
 	display: none;
 }
 
@@ -38,7 +38,7 @@
 }
 
 .shareButton:hover,
-[class^="imageWrapper"]:hover ~ .shareButton {
+[class*="imageWrapper"]:hover ~ .shareButton {
 	opacity: 1;
 }
 
@@ -118,6 +118,6 @@ ul[aria-label="Channels"] > li:hover .channelMuteButton {
 	margin: 0 0rem 0 0.25rem;
 }
 
-[class^="repliedMessage"] .messageRoleHeader {
+[class*="repliedMessage"] .messageRoleHeader {
 	display: none;
 }

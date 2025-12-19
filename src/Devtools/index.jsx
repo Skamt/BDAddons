@@ -13,6 +13,8 @@ import { Sources } from "./Sources";
 import { Stores } from "./Stores";
 import webpackRequire from "./webpackRequire";
 
+import { transitionTo, ChannelUtils } from "@Discord/Modules";
+
 const d = (() => {
 	const cache = new WeakMap();
 	const emptyDoc = document.createDocumentFragment();
@@ -108,6 +110,8 @@ function init() {
 			getModuleAndKey
 		},
 		Utils: {
+			ChannelUtils,
+			transitionTo,
 			ErrorBoundary,
 			...Utils,
 			...d,
