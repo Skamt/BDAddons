@@ -5,6 +5,7 @@
 	"scripts": {
 		"dist": "bun builder/index.js build && bun builder/index.js build -d",
 		"build": "bun builder/index.js build",
+		"new": "bun builder/index.js new",
 		"build:w": "bun builder/index.js build -w",
 		"dev": "bun builder/index.js build -d",
 		"dev:w": "bun builder/index.js build -dw",

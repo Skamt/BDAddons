@@ -4,6 +4,7 @@ const { program } = require("commander");
 require("./global");
 require("./build");
 require("./list");
+require("./new");
 
 program.version(`v${pkg.version}`).description("BD Plugin builder");
 

@@ -1,29 +1,26 @@
 import "./styles.css";
+import Logger from "@Utils/Logger";
 import { DOM } from "@Api";
 import ChannelMuteButton from "./mods/ChannelMuteButton";
 import ConsoleToggleButton from "./mods/ConsoleToggleButton";
 import EmojiLetters from "./mods/EmojiLetters";
-// import FriendsSince from "./mods/FriendsSince";
 import GIFCommandPreviews from "./mods/GIFCommandPreviews";
 import GuildInfo from "./mods/GuildInfo";
 import NoLinkPreview from "./mods/NoLinkPreview";
 import NoTrack from "./mods/NoTrack";
 import MarkdownActionButtons from "./mods/MarkdownActionButtons";
+import MoreQuickReacts from "./mods/MoreQuickReacts";
 import OwnerCrown from "./mods/OwnerCrown";
 import ShowUserInfo from "./mods/ShowUserInfo";
 import Commands from "./mods/Commands";
-// import SpotifyListenAlong from "./mods/SpotifyListenAlong";
 import EnableModView from "./mods/EnableModView";
 import WelcomeMessage from "./mods/WelcomeMessage";
 import PinRoles from "./mods/PinRoles";
-
 import ShowChannelPerms from "./mods/ShowChannelPerms";
-// import NoReplyPing from "./mods/NoReplyPing";
-// import MemUsage from "./mods/MemUsage";
-// import RefreshChannel from "./mods/RefreshChannel";
-// import Whois from "./mods/Whois";
+
 
 const mods = [
+	new MoreQuickReacts(),
 	new ChannelMuteButton(),
 	new ConsoleToggleButton(),
 	new Commands(),
@@ -52,16 +49,12 @@ if (console.context) console = console.context();
 import Plugin, { Events } from "@Utils/Plugin";
 
 Plugin.on(Events.START, () => {
-	try {
-		for (const mod of mods) {
-			try {
-				mod.Init?.();
-			} catch (e) {
-				console.log(mod, "\nInit failed\n", e);
-			}
+	for (const mod of mods) {
+		try {
+			mod.Init?.();
+		} catch (e) {
+			Logger.error(mod, "\nInit failed\n", e);
 		}
-	} catch (e) {
-		Logger.error(e);
 	}
 });
 
@@ -70,18 +63,19 @@ Plugin.on(Events.STOP, () => {
 		try {
 			mod.Dispose?.();
 		} catch (e) {
-			console.log(mod, "\nDispose failed\n", e);
+			Logger.error(mod, "\nDispose failed\n", e);
 		}
 	}
 });
 
-module.exports = () => Plugin;
+Plugin.getSettingsPanel = () => {
+	return mod.map(mod => {
+		try {
+			return content.push(mod.getSettingsPanel?.());
+		} catch (e) {
+			Logger.error(mod, "\nError loading settings\n", e);
+		}
+	});
+};
 
-// export default () => ({
-// 	start() {
-// 		DOM.addStyle(css);
-// 	},
-// 	stop() {
-// 		DOM.removeStyle();
-// 	}
-// });
+module.exports = () => Plugin;

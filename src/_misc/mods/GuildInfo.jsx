@@ -16,7 +16,6 @@ import GuildFeaturesEnum from "@Enums/GuildFeaturesEnum";
 
 const { getGuildIconURL } = getModule(a => a.getGuildIconURL) || {};
 
-
 const GuildTooltip = getMangled(Filters.bySource("GuildTooltip"), {
 	default: a => true
 });
@@ -26,7 +25,8 @@ export default class GuildInfo extends Disposable {
 		const el = (children, props) => (
 			<div
 				className="small"
-				{...props}>
+				{...props}
+			>
 				{children}
 			</div>
 		);
@@ -40,12 +40,11 @@ export default class GuildInfo extends Disposable {
 						el(`Owner: ${getGuildMemberName(guild.id, guild.ownerId)}`), 
 						el(`OwnerId: ${guild.ownerId}`), 
 						el(`Created At: ${new Date(parseSnowflake(+guild.id)).toLocaleDateString()}`), 
-						el(`Joined At: ${guild.joinedAt.toLocaleDateString()}`), 
+						el(`Joined At: ${guild.joinedAt?.toLocaleDateString()}`), 
 						el("Clyde", { style: { color: guild.features.has(GuildFeaturesEnum.CLYDE_ENABLED) ? "lime" : "red" } }), 
 						el(`Roles: ${GuildRoleStore.getSortedRoles(guild.id).length}`), 
-						el(`Channels: ${GuildChannelStore.getChannels(guild.id).count}`),
-						el(`Members: ${GuildMemberCountStore.getMemberCount(guild.id)}`)
-					]);
+						el(`Channels: ${GuildChannelStore.getChannels(guild.id).count}`), 
+						el(`Members: ${GuildMemberCountStore.getMemberCount(guild.id)}`)]);
 				});
 			}),
 

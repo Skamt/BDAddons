@@ -1,19 +1,22 @@
 import React from "@React";
 import useStateFromStores from "@Modules/useStateFromStores";
 import ChannelStore from "@Stores/ChannelStore";
-import { getGroupDmIcon } from "@Utils/Channel";
+import { getGuildIcon } from "@Utils/Channel";
 import { join } from "@Utils/css";
 import Settings from "@Utils/Settings";
 import { getSize } from "@/utils";
-import { getUserName } from "@Utils/User";
 import Markup from "./Markup";
 import Icon from "./Icon";
+import { IconsUtils } from "@Discord/Modules";
 
-export default function GroupDM({ name, channelId }) {
+export default function MemberVerification({ icon, guildName, name, guildId }) {
 	const { size } = getSize(Settings(_ => _.size));
-	const channel = useStateFromStores([ChannelStore], () => ChannelStore.getChannel(channelId), [channelId]);
-	const title = name || channel?.rawRecipients?.map(getUserName).join(", ") || channelId;
-	const src = getGroupDmIcon(channelId, size);
+	const title = name || guildName || guildId;
+	const src = IconsUtils.getGuildIconURL({
+		id: guildId,
+		icon: icon,
+		size
+	});
 
 	return (
 		<Markup

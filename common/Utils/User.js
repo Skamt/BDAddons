@@ -25,7 +25,7 @@ export function getUserName(userObject = {}) {
 
 export function getGuildMemberName(guildId, userId) {
 	const memeber = GuildMemberStore.getMember(guildId, userId);
-	if (memeber.nick) return memeber.nick;
+	if (memeber?.nick) return memeber.nick;
 
 	const user = UserStore.getUser(userId);
 	if (user) return getUserName(user);

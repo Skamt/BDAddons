@@ -54,7 +54,7 @@ export default class EmojiLetters extends Disposable {
 	keyDownHandler(e) {
 		if (e?.code?.includes?.("End")) {
 			this.active = !this.active;
-			document.querySelector("[class^=title]").classList.toggle("active");
+			document.querySelector("[class*=title]").classList.toggle("active");
 		}
 	}
 
@@ -71,7 +71,7 @@ export default class EmojiLetters extends Disposable {
 								.join("");
 						} catch {} finally {
 							this.active = false;
-							document.querySelector("[class^=title]").classList.toggle("active");
+							document.querySelector("[class*=title]").classList.toggle("active");
 						}
 				})
 			];

@@ -20,7 +20,7 @@ export default function Channel({ name, guildId, channelId }) {
 				<Icon
 					size={size}
 					src={src}
-					alt={name}
+					alt={title}
 				/>
 			}
 			title={title}

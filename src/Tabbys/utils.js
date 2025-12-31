@@ -38,20 +38,10 @@ const parsers = [
 			const guild = UserGuildJoinRequestStore.getJoinRequestGuild(guildId);
 			if (!guild) return types.unknown;
 			return {
-				title: guild.name,
+				guildId,
+				guildName: guild.name,
 				icon: guild.icon,
 				type: pathTypes.VERIFICATION
-			};
-		}
-	},
-	{
-		regex: /^\/channels\/(\d+)\/(.+)$/,
-		handle(guildId, type) {
-			return {
-				guildId,
-				name: type,
-				type: pathTypes.CHANNEL,
-				path: constructPath(guildId, type)
 			};
 		}
 	},
@@ -67,8 +57,8 @@ const parsers = [
 		}
 	},
 	{
-		regex: /^\/channels\/(@me)\/(\d+)/,
-		handle(me, channelId) {
+		regex: /^\/channels\/@me\/(\d+)/,
+		handle(channelId) {
 			const channel = ChannelStore.getChannel(channelId);
 			if (!channel) return types.unknown;
 			if (channel.isGroupDM())
