@@ -5,6 +5,9 @@ import GroupDM from "./GroupDM";
 import MemberVerification from "./MemberVerification";
 import React from "@React";
 import { pathTypes } from "@/consts";
+import Markup from "./Markup";
+import Icon from "./Icon";
+import { getNameFromPath } from "@/utils";
 
 export default function Content({ type, ...props }) {
 	switch (type) {
@@ -30,5 +33,10 @@ export default function Content({ type, ...props }) {
 			);
 	}
 
-	return null;
+	return (
+		<Markup
+			icon={<Icon />}
+			title={getNameFromPath(props.path)}
+		/>
+	);
 }

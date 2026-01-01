@@ -74,10 +74,9 @@ export function addFolder(name) {
 export function addSubFolder(name, parentId) {
 	if (!name) return;
 	const folder = createFolder(name);
-	Store.setState({folders: add(Store.state.folders, folder)	});
+	Store.setState({ folders: add(Store.state.folders, folder) });
 
-	Store.addFolderToFolder(parentId, folder.id)
-
+	Store.addFolderToFolder(parentId, folder.id);
 }
 
 export function removeTabsToRight(id) {

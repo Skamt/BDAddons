@@ -8,10 +8,10 @@ import { getSize } from "@/utils";
 import Markup from "./Markup";
 import Icon from "./Icon";
 
-export default function Channel({ name, guildId, channelId }) {
+export default function Channel({ name, channelName, guildId, channelId }) {
 	const { size } = getSize(Settings(_ => _.size));
 	const channel = useStateFromStores([ChannelStore], () => ChannelStore.getChannel(channelId), [channelId]);
-	const title = name || channel?.name || channelId;
+	const title = name || channelName || channel?.name || channelId;
 	const src = getGuildIcon(guildId || channel?.guild_id, size);
 
 	return (

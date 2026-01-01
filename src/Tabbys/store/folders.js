@@ -1,5 +1,4 @@
-import zustand, { subscribeWithSelector } from "@Discord/zustand";
-import { remove, removeMany, set, arrayMove, add } from "@Utils/Array";
+import { remove, removeMany } from "@Utils/Array";
 import { addBy, mergeArrayItem, setArrayItem, createSubBookmark, createBookmarkFolder, reOrder } from "./shared";
 
 const getters = {

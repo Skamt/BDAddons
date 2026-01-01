@@ -20,8 +20,7 @@ const types = {
 	"servers": { title: "Servers", type: pathTypes.SERVERS },
 	"applications": { title: "Applications", type: pathTypes.APPS },
 	"quests": { title: "Quests", type: pathTypes.QUESTS },
-	"home": { title: "Home", type: pathTypes.HOME },
-	"unknown": { type: null, title: "Unknown" }
+	"home": { title: "Home", type: pathTypes.HOME }
 };
 
 const parsers = [
@@ -31,12 +30,23 @@ const parsers = [
 	{ regex: /^\/store$/, handle: types.store },
 	{ regex: /^\/discovery\/(applications|servers|quests)/, handle: type => types[type] },
 	{
+		regex: /^\/channels\/(\d+)\/(.+)$/,
+		handle(guildId, type) {
+			return {
+				guildId,
+				channelName: type,
+				type: pathTypes.CHANNEL,
+				path: constructPath(guildId, type)
+			};
+		}
+	},
+	{
 		regex: /^\/member-verification\/(\d+)/,
 		handle(guildId) {
 			if (!guildId) return;
 
 			const guild = UserGuildJoinRequestStore.getJoinRequestGuild(guildId);
-			if (!guild) return types.unknown;
+			if (!guild) return;
 			return {
 				guildId,
 				guildName: guild.name,
@@ -60,7 +70,7 @@ const parsers = [
 		regex: /^\/channels\/@me\/(\d+)/,
 		handle(channelId) {
 			const channel = ChannelStore.getChannel(channelId);
-			if (!channel) return types.unknown;
+			if (!channel) return;
 			if (channel.isGroupDM())
 				return {
 					channelId,
@@ -69,7 +79,7 @@ const parsers = [
 				};
 
 			const user = UserStore.getUser(channel.recipients[0]);
-			if (!user) return types.unknown;
+			if (!user) return;
 			return {
 				type: pathTypes.DM,
 				channelId: channel.id,
@@ -83,16 +93,19 @@ const parsers = [
 ];
 
 export function parsePath(path) {
-	if (path)
-		for (let i = parsers.length - 1; i >= 0; i--) {
-			const parser = parsers[i];
-			const match = path.match(parser.regex);
-			if (!match) continue;
-			const [, ...captures] = match;
-			if (typeof parser.handle === "function") return parser.handle(...captures, path);
-			return parser.handle;
-		}
-	return types.unknown;
+	if (!path) return;
+	for (let i = parsers.length - 1; i >= 0; i--) {
+		const parser = parsers[i];
+		const match = path.match(parser.regex);
+		if (!match) continue;
+		const [, ...captures] = match;
+		if (typeof parser.handle === "function") return parser.handle(...captures, path);
+		return parser.handle;
+	}
+}
+
+export function getNameFromPath(path) {
+	return path?.split("/").pop() || "???";
 }
 
 function constructPath(guildId, channelId, threadId) {

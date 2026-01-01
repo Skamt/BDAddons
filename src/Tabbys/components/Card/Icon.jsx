@@ -1,6 +1,5 @@
 import React from "@React";
 import { join } from "@Utils/css";
-// import Fallback from "./Fallback";
 import { DiscordIcon } from "@Components/Icon";
 
 function IconWrapper({ children, className }) {

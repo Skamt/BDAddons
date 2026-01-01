@@ -4,7 +4,7 @@ import { Disposable, fit, parseSnowflake } from "@Utils";
 import { ImageComponent } from "@Utils/ImageModal";
 import { openModal } from "@Utils/Modals";
 import { ContextMenu, Patcher, React } from "@Api";
-
+import { getGuildIcon } from "@Utils/Channel";
 import UserStore from "@Stores/UserStore";
 import GuildRoleStore from "@Stores/GuildRoleStore";
 import GuildMemberStore from "@Stores/GuildMemberStore";
@@ -13,8 +13,6 @@ import GuildMemberCountStore from "@Stores/GuildMemberCountStore";
 import { getGuildMemberName } from "@Utils/User";
 
 import GuildFeaturesEnum from "@Enums/GuildFeaturesEnum";
-
-const { getGuildIconURL } = getModule(a => a.getGuildIconURL) || {};
 
 const GuildTooltip = getMangled(Filters.bySource("GuildTooltip"), {
 	default: a => true
@@ -49,8 +47,8 @@ export default class GuildInfo extends Disposable {
 			}),
 
 			ContextMenu.patch("guild-context", (retVal, { guild }) => {
-				if (!guild || !getGuildIconURL) return;
-				const banner = getGuildIconURL(guild);
+				if (!guild) return;
+				const banner = getGuildIcon(guild.id, 4096);
 				if (!banner) return;
 				retVal.props.children.splice(
 					1,

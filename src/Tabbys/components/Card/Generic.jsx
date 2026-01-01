@@ -1,10 +1,10 @@
-// import { Fallback } from "@/components/Icons";
 import { join } from "@Utils/css";
 import React from "@React";
-import { AppsIcon, ShopIcon, QuestsIcon, NitroIcon, ServersIcon } from "@Components/Icon";
+import { ChannelsIcon, AppsIcon, ShopIcon, QuestsIcon, NitroIcon, ServersIcon } from "@Components/Icon";
 import { pathTypes } from "@/consts";
 import Markup from "./Markup";
 import Icon from "./Icon";
+
 export default function Generic({ title, type }) {
 	let icon = null;
 
@@ -28,7 +28,12 @@ export default function Generic({ title, type }) {
 
 	return (
 		<Markup
-			icon={<Icon className="icon-wrapper" icon={icon} />}
+			icon={
+				<Icon
+					className="icon-wrapper"
+					icon={icon}
+				/>
+			}
 			title={title}
 		/>
 	);
