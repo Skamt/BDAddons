@@ -5,5 +5,8 @@
 		"description": "Let's you pick who not to ping",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/NoPing/NoPing.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/NoPing"
+	},
+	"settings":{
+		"silent":false
 	}
 }

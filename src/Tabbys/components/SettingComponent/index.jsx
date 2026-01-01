@@ -1,18 +1,11 @@
 import config from "@Config";
 import React from "@React";
 import Collapsible from "@Components/Collapsible";
-import Gap from "@Components/Gap";
 import SettingSwtich from "@Components/SettingSwtich";
 import SettingSlider from "@Components/SettingSlider";
-import Settings from "@Utils/Settings";
-import Plugin from "@Utils/Plugin";
-import Heading from "@Modules/Heading";
-import Slider from "@Modules/Slider";
 import FieldSet from "@Components/FieldSet";
 import Divider from "@Components/Divider";
-import {valueToPx} from "@/utils";
-
-
+import { valueToPx } from "@/utils";
 
 export default function SettingComponent() {
 	return (

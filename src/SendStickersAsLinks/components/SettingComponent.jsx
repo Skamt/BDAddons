@@ -4,7 +4,8 @@ import Heading from "@Modules/Heading";
 import Slider from "@Modules/Slider";
 import SettingSwtich from "@Components/SettingSwtich";
 import FieldSet from "@Components/FieldSet";
-import Divider from "@Components/Divider";
+
+const sizes = [80, 100, 128, 160];
 
 function StickerSize() {
 	const [val, set] = Settings.useSetting("stickerSize");
@@ -16,11 +17,11 @@ function StickerSize() {
 			stickToMarkers={true}
 			sortedMarkers={true}
 			equidistant={true}
-			markers={[80, 100, 128, 160]}
-			minValue={80}
-			maxValue={160}
+			markers={sizes}
+			minValue={sizes[0]}
+			maxValue={sizes[sizes.length - 1]}
 			initialValue={val}
-			onValueChange={set}
+			onValueChange={e => set(sizes.find(s => e <= s) ?? sizes[sizes.length - 1])}
 		/>
 	);
 }
@@ -30,26 +31,29 @@ export default () => {
 		<FieldSet contentGap={8}>
 			{[
 				{
+					border: true,
 					settingKey: "sendDirectly",
 					description: "Send Directly",
 					note: "Send the sticker link in a message directly instead of putting it in the chat box."
 				},
 				{
+					border: true,
 					settingKey: "ignoreEmbedPermissions",
 					description: "Ignore Embed Permissions",
 					note: "Send sticker links regardless of embed permissions, meaning links will not turn into images."
 				},
 				{
+					border: true,
 					settingKey: "shouldSendAnimatedStickers",
 					description: "Send animated stickers",
 					note: "Animated stickers do not animate, sending them will only send the first picture of the animation. (still useful)"
 				},
 				{
+					border: true,
 					settingKey: "shouldHighlightAnimated",
 					description: "Highlight animated stickers"
 				}
 			].map(SettingSwtich)}
-			<Divider gap={15} />
 			<StickerSize />
 		</FieldSet>
 	);

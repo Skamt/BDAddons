@@ -1,14 +1,18 @@
+import React from "@React";
 import { Patcher, findInTree } from "@Api";
-import Logger from "@Utils/Logger";
+import { getMangled } from "@Webpack";
 import Plugin, { Events } from "@Utils/Plugin";
+import PingToggle from "@/components/PingToggle";
 
-const DD = s(407661).exports;
+const Module = getMangled("showMentionToggle", {
+	replayComponent: a => true
+});
 
 Plugin.on(Events.START, () => {
-	Patcher.after(DD, "Z", (_, args, ret) => {
+	Patcher.after(Module, "replayComponent", (_, [{ reply }], ret) => {
 		const target = findInTree(ret, a => a?.className?.includes("actions"), { walkable: ["children", "props"] });
-		if(!target) return ret;
-		console.log(ret,target);
-		target.children.splice(0,0, "POOP")
+
+		if (!target || !reply?.message?.author?.id) return ret;
+		target.children.splice(0, 0, <PingToggle userId={reply.message.author.id} />);
 	});
 });

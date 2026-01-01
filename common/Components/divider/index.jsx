@@ -4,14 +4,11 @@ import { classNameFactory } from "@Utils/css";
 
 const c = classNameFactory("divider");
 
-export default function Divider({ direction = Divider.HORIZONTAL, gap }) {
+export default function Divider({ gap = 15, gutter=0, direction = Divider.direction.HORIZONTAL }) {
 	return (
 		<div
-			style={{
-				marginTop: gap,
-				marginBottom: gap
-			}}
-			className={c("base", { direction })}
+			style={{ "--divider-gap": `${gap}px`, "--divider-gutter":`${gutter}%` }}
+			className={c("base", direction)}
 		/>
 	);
 }

@@ -2,9 +2,7 @@ import config from "@Config";
 import React from "@React";
 import Collapsible from "@Components/Collapsible";
 import Gap from "@Components/Gap";
-
 import FieldSet from "@Components/FieldSet";
-import Divider from "@Components/Divider";
 import SettingSwtich from "@Components/SettingSwtich";
 import { RadioGroup } from "@Discord/Modules";
 import Settings from "@Utils/Settings";

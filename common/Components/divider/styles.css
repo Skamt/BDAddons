@@ -1,14 +1,11 @@
-.divider-base {
-	border-top: thin solid var(--border-subtle);
-	flex:1 0 0;
-}
-
 .divider-horizontal {
-	width: 100%;
-	height: 1px;
+	border-top: thin solid var(--border-subtle);
+	align-self: stretch;
+	margin:var(--divider-gap) var(--divider-gutter) var(--divider-gap) var(--divider-gutter) ;
 }
 
 .divider-vertical {
-	width: 1px;
-	height: 100%;
+	border-left: thin solid var(--border-subtle);
+	align-self: stretch;
+	margin:var(--divider-gutter) var(--divider-gap) var(--divider-gutter) var(--divider-gap);
 }
