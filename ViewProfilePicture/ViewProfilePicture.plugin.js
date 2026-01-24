@@ -1,7 +1,7 @@
 /**
  * @name ViewProfilePicture
  * @description Adds a button to the user popout and profile that allows you to view the Avatar and banner.
- * @version 1.3.5
+ * @version 1.3.6
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js
@@ -11,7 +11,7 @@
 var Config_default = {
 	"info": {
 		"name": "ViewProfilePicture",
-		"version": "1.3.5",
+		"version": "1.3.6",
 		"description": "Adds a button to the user popout and profile that allows you to view the Avatar and banner.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture",
@@ -258,6 +258,10 @@ var promiseHandler = (promise) => promise.then((data) => [void 0, data]).catch((
 function copy(data) {
 	DiscordNative.clipboard.copy(data);
 }
+
+function getNestedProp(obj, path) {
+	return path.split(".").reduce((ob, prop) => ob?.[prop], obj);
+}
 var nop = () => {};
 
 function getImageDimensions(url) {
@@ -344,16 +348,6 @@ function reactRefMemoFilter(type, ...args) {
 	return (target) => target[type] && filter(target[type]);
 }
 
-function getModuleAndKey(filter, options) {
-	let module2;
-	const target = getModule((entry, m) => filter(entry) ? module2 = m : false, options);
-	module2 = module2?.exports;
-	if (!module2) return;
-	const key = Object.keys(module2).find((k) => module2[k] === target);
-	if (!key) return;
-	return { module: module2, key };
-}
-
 // common/DiscordModules/zustand.js
 var { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
 	_: Filters.byStrings("subscribe"),
@@ -407,14 +401,14 @@ var ModalActions = /* @__PURE__ */ getMangled("onCloseRequest:null!=", {
 	closeModal: /* @__PURE__ */ Filters.byStrings(".setState", ".getState()["),
 	ModalStore: /* @__PURE__ */ Filters.byKeys("getState")
 });
-var Modals = /* @__PURE__ */ getMangled( /* @__PURE__ */ Filters.bySource("root", "headerIdIsManaged"), {
-	ModalRoot: /* @__PURE__ */ Filters.byStrings("rootWithShadow"),
+var Modals = /* @__PURE__ */ getMangled( /* @__PURE__ */ Filters.bySource("MODAL_ROOT", "transitionState"), {
+	ModalRoot: /* @__PURE__ */ Filters.byStrings("transitionState"),
 	ModalFooter: /* @__PURE__ */ Filters.byStrings(".footer"),
 	ModalContent: /* @__PURE__ */ Filters.byStrings(".content"),
-	ModalHeader: /* @__PURE__ */ Filters.byStrings(".header", "separator"),
+	ModalHeader: /* @__PURE__ */ Filters.byStrings("headerIdIsManaged", "headerId"),
 	Animations: (a) => a.SUBTLE,
 	Sizes: (a) => a.DYNAMIC,
-	ModalCloseButton: Filters.byStrings(".close]:")
+	ModalCloseButton: Filters.byStrings("withCircleBackground")
 });
 var openModal = (children, tag, { className, ...modalRootProps } = {}) => {
 	const id = `${tag ? `${tag}-` : ""}modal`;
@@ -637,9 +631,7 @@ function SimpleColorModal({ color }) {
 		))
 	);
 }
-var {
-	module: { ZP: palletHook }
-} = getModuleAndKey(Filters.byStrings("toHexString", "toHsl", "palette"), { searchExports: true }) || {};
+var palletHook = getModule(Filters.byStrings("toHexString", "toHsl", "palette"), { searchExports: true }) || {};
 
 function ColorModal({ displayProfile, user }) {
 	const color = palletHook(user.getAvatarURL(displayProfile.guildId, 80));
@@ -731,14 +723,16 @@ var ViewProfilePictureButtonComponent_default = ({ className, user, displayProfi
 
 // src/ViewProfilePicture/patches/patchVPPButton.jsx
 var UserProfileModalforwardRef = getModule(Filters.byKeys("Overlay", "render"));
-var typeFilter = Filters.byStrings("div", "wrapper", "children");
+var typeFilter = Filters.byStrings("div", "children:");
 Plugin_default.on(Events.START, () => {
 	if (!UserProfileModalforwardRef) return Logger_default.patchError("patchVPPButton");
 	const unpatch = Patcher.after(UserProfileModalforwardRef, "render", (_, [props], ret) => {
-		const target = findInTree(ret, (a) => typeFilter(a?.type), { walkable: ["props", "children"] }) || findInTree(ret, (a) => a?.type === "header" || a?.props?.className?.includes("profileHeader"), { walkable: ["props", "children"] });
+		const t = getNestedProp(ret, "props.children.props.children.props.children.props.children.1");
+		const target = typeFilter(t?.type) && t || findInTree(ret, (a) => a?.type === "header" || a?.props?.className?.includes("profileHeader"), { walkable: ["props", "children"] });
 		if (!target) return;
 		ret.props.className = `${ret.props.className} VPP-container`;
-		target.props.children.unshift(
+		const children = Array.isArray(target.props.children) ? target.props.children : [target.props.children];
+		children.unshift(
 			/* @__PURE__ */
 			React.createElement(
 				ErrorBoundary, {
@@ -756,6 +750,7 @@ Plugin_default.on(Events.START, () => {
 				)
 			)
 		);
+		target.props.children = children;
 	});
 	Plugin_default.once(Events.STOP, unpatch);
 });
@@ -775,19 +770,16 @@ var Switch_default = getModule(Filters.byStrings('"data-toggleable-component":"s
 };
 
 // common/Components/Divider/styles.css
-StylesLoader_default.push(`.divider-base {
+StylesLoader_default.push(`.divider-horizontal {
 	border-top: thin solid var(--border-subtle);
-	flex:1 0 0;
-}
-
-.divider-horizontal {
-	width: 100%;
-	height: 1px;
+	align-self: stretch;
+	margin:var(--divider-gap) var(--divider-gutter) var(--divider-gap) var(--divider-gutter) ;
 }
 
 .divider-vertical {
-	width: 1px;
-	height: 100%;
+	border-left: thin solid var(--border-subtle);
+	align-self: stretch;
+	margin:var(--divider-gutter) var(--divider-gap) var(--divider-gutter) var(--divider-gap);
 }
 `);
 
@@ -805,14 +797,11 @@ var classNameFactory = (prefix = "", connector = "-") => (...args) => {
 // common/Components/Divider/index.jsx
 var c = classNameFactory("divider");
 
-function Divider({ direction = Divider.HORIZONTAL, gap }) {
+function Divider({ gap = 15, gutter = 0, direction = Divider.direction.HORIZONTAL }) {
 	return /* @__PURE__ */ React_default.createElement(
 		"div", {
-			style: {
-				marginTop: gap,
-				marginBottom: gap
-			},
-			className: c("base", { direction })
+			style: { "--divider-gap": `${gap}px`, "--divider-gutter": `${gutter}%` },
+			className: c("base", direction)
 		}
 	);
 }
