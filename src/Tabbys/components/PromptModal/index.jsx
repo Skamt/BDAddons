@@ -7,8 +7,8 @@ import { ManaTextButton, ManaButton } from "@Components/Button";
 import TextInput from "@Components/TextInput";
 import { clsx } from "@Utils";
 import ErrorBoundary from "@Components/ErrorBoundary";
+import FieldSet from "@Components/FieldSet";
 import { ModalActions, Modals } from "@Utils/Modals";
-import { FieldWrapper } from "@Discord/Modules";
 
 const c = clsx("create-folder-modal");
 
@@ -48,7 +48,7 @@ export default function PromptModal({ modalProps, required, title, placeholder, 
 					<Modals.ModalCloseButton onClick={modalProps.onClose} />
 				</Modals.ModalHeader>
 				<div className={c("content")}>
-					<FieldWrapper title={label}>
+					<FieldSet label={label}>
 						<TextInput
 							inputRef={inputRef}
 							value={val}
@@ -58,7 +58,7 @@ export default function PromptModal({ modalProps, required, title, placeholder, 
 							placeholder={placeholder || initialValue}
 							autoFocus={true}
 						/>
-					</FieldWrapper>
+					</FieldSet>
 					<ManaTextButton
 						text="Reset Name"
 						textVariant="text-sm/medium"

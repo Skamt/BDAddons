@@ -11,7 +11,7 @@ import Plugin, { Events } from "@Utils/Plugin";
 
 async function cleanFluxContainer() {
 	const fluxContainer = await getFluxContainer();
-	if (fluxContainer) fluxContainer.stateNode.forceUpdate();
+	if (fluxContainer) fluxContainer?.stateNode?.forceUpdate();
 }
 
 Plugin.on(Events.START, async () => {
@@ -32,7 +32,8 @@ Plugin.on(Events.START, async () => {
 		];
 	});
 
-	fluxContainer.stateNode.forceUpdate();
+	fluxContainer?.stateNode?.forceUpdate();
+
 	Plugin.once(Events.STOP, () => {
 		unpatch();
 		cleanFluxContainer();

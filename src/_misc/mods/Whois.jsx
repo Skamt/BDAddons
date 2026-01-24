@@ -1,41 +1,31 @@
 import Logger from "@Utils/Logger";
 import { Disposable } from "@Utils";
-import { Patcher, React } from "@Api";
-
+import { ContextMenu } from "@Api";
+import Toast from "@Utils/Toast";
 import FetchUser from "@Modules/FetchUser";
-import MentionComponent from "@Patch/MentionComponent";
 
 export default class Whois extends Disposable {
 	Init() {
-		const { module, key } = MentionComponent;
-		if (module && key)
-			this.patches = [
-				Patcher.after(module, key, (context, args, ret) => {
-					const { children, role } = ret.props;
-					if (role === "link") return;
-					let userId = undefined;
-
-					try {userId = children[1][0].match(/\d+/)[0];} 
-					catch {return;}
-
-					if (!userId) return;
-
-					ret.props.children = (
-						<span style={{zIndex:"999999"}} className="mention wrapper-1ZcZW- interactive loadUnknownUser"
-							onClick={() => {
-								FetchUser(userId)
-									.then(a => {
-										console.log(`${userId}-${a.username} loaded`);
-									})
-									.catch(e => {
-										Logger.error(e);
-									});
-							}}>
-							{children[1]}
-						</span>
-					);
-				})
-			];
-		else Logger.patchError("ChannelMuteButton");
+		this.patches.push(
+			ContextMenu.patch("unknown-user-context", (retVal, { userId }) => {
+				if (!userId) return;
+				retVal.props.children.unshift(
+					BdApi.ContextMenu.buildItem({
+						label: "Load User",
+						action() {
+							FetchUser(userId)
+								.then(a => {
+									Logger.log(`user loaded: ${userId} ${a.username}`);
+									Toast.success("User Loaded!");
+								})
+								.catch(e => {
+									Logger.error(e);
+									Toast.error(`Could not load user: ${userId}`);
+								});
+						}
+					})
+				);
+			})
+		);
 	}
 }

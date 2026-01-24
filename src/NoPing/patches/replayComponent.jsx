@@ -11,7 +11,7 @@ const Module = getMangled("showMentionToggle", {
 Plugin.on(Events.START, () => {
 	Patcher.after(Module, "replayComponent", (_, [{ reply }], ret) => {
 		const target = findInTree(ret, a => a?.className?.includes("actions"), { walkable: ["children", "props"] });
-
+		console.log(reply)
 		if (!target || !reply?.message?.author?.id) return ret;
 		target.children.splice(0, 0, <PingToggle userId={reply.message.author.id} />);
 	});

@@ -4,7 +4,7 @@ import Logger from "@Utils/Logger";
 
 import DiscordUtils from "@Modules/DiscordUtils";
 import Analytics from "@Modules/Analytics";
-import Anchor from "@Modules/Anchor";
+import { Anchor } from "@Discord/Modules";
 import MessageActions from "@Modules/MessageActions";
 import Dispatcher from "@Modules/Dispatcher";
 

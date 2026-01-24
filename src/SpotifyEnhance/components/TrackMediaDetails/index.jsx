@@ -1,7 +1,7 @@
 import "./styles";
 import React from "@React";
 import Tooltip from "@Components/Tooltip";
-import Anchor from "@Modules/Anchor";
+import { Anchor } from "@Discord/Modules";
 import { Store } from "@/Store";
 import Artist from "./Artist";
 import TrackBanner from "./TrackBanner";

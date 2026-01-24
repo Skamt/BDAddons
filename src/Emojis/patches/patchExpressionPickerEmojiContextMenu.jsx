@@ -1,34 +1,34 @@
-import Plugin, { Events } from "@Utils/Plugin";
-import { React, ContextMenu, Patcher } from "@Api";
-import { getModule, Filters } from "@Webpack";
-import Logger from "@Utils/Logger";
-import { sendEmojiDirectly, insertEmoji } from "../Utils";
+// import Plugin, { Events } from "@Utils/Plugin";
+// import { React, ContextMenu, Patcher } from "@Api";
+// import { getModule, Filters } from "@Webpack";
+// import Logger from "@Utils/Logger";
+// import { sendEmojiDirectly, insertEmoji } from "../Utils";
 
-const bbb = getModule(Filters.byStrings("unfavorite"), { defaultExport: false });
+// const bbb = getModule(Filters.byStrings("unfavorite"), { defaultExport: false });
 
-Plugin.on(Events.START, () => {
-	if (!bbb?.Z) return Logger.patchError("patchUnfavoriteEmoji");
-	Patcher.after(bbb, "Z", (_, args, ret) => {
+// Plugin.on(Events.START, () => {
+// 	if (!bbb?.Z) return Logger.patchError("patchUnfavoriteEmoji");
+// 	Patcher.after(bbb, "Z", (_, args, ret) => {
 		// console.log(...args);
 		// return ret;
-		const [{ type, isInExpressionPicker, id }] = args;
-		if (type !== "emoji" || !isInExpressionPicker || !id) return;
+		// const [{ type, isInExpressionPicker, id }] = args;
+		// if (type !== "emoji" || !isInExpressionPicker || !id) return;
 		// console.log(_, args, ret);
-		return [
+		// return [
 			// biome-ignore lint/correctness/useJsxKeyInIterable: <explanation>
-			<ContextMenu.Item
-				action={() => sendEmojiDirectly(id)}
-				id="send-directly"
-				label="send directly"
-			/>,
+			// <ContextMenu.Item
+			// 	action={() => sendEmojiDirectly(id)}
+			// 	id="send-directly"
+			// 	label="send directly"
+			// />,
 			// biome-ignore lint/correctness/useJsxKeyInIterable: <explanation>
-			<ContextMenu.Item
-				action={() => insertEmoji(id)}
-				id="insert-url"
-				label="insert url"
-			/>,
-			ret
-		];
+		// 	<ContextMenu.Item
+		// 		action={() => insertEmoji(id)}
+		// 		id="insert-url"
+		// 		label="insert url"
+		// 	/>,
+		// 	ret
+		// ];
 		// if (has(id))
 		// 	return (
 		// 		<MenuItem
@@ -47,8 +47,8 @@ Plugin.on(Events.START, () => {
 		// 		/>
 		// 	);
 		// }
-	});
-});
+// 	});
+// });
 
 // function unfavHandler(id) {
 // 	const emojis = Data.load("emojis");

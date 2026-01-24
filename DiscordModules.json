@@ -1,7 +1,7 @@
 {
 	"Modules": {
 		"Anchor": {
-			"filter": "Filters.byStrings(\"anchor\",\"noreferrer noopener\")",
+			"filter": "Filters.byKeys(\"Anchor\")",
 			"options": "{ searchExports: true }"
 		},
 		"RadioGroup": {
@@ -150,7 +150,7 @@
 		},
 		"Dispatcher": {
 			"filter": "Filters.byKeys(\"dispatch\", \"_dispatch\")",
-			"options": "{ searchExports: false }"
+			"options": "{ searchExports: true }"
 		},
 		"ImageModal": {
 			"filter": "Filters.byStrings(\"renderLinkComponent\", \"zoomThumbnailPlaceholder\")",

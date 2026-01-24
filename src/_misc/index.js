@@ -10,6 +10,7 @@ import NoLinkPreview from "./mods/NoLinkPreview";
 import NoTrack from "./mods/NoTrack";
 import MarkdownActionButtons from "./mods/MarkdownActionButtons";
 import MoreQuickReacts from "./mods/MoreQuickReacts";
+import Whois from "./mods/Whois";
 import OwnerCrown from "./mods/OwnerCrown";
 import ShowUserInfo from "./mods/ShowUserInfo";
 import Commands from "./mods/Commands";
@@ -38,9 +39,9 @@ const mods = [
 	new ShowUserInfo(),
 	new MarkdownActionButtons(),
 	// new SpotifyListenAlong(),
-	new GIFCommandPreviews()
+	new GIFCommandPreviews(),
 	// new MemUsage(),
-	// new Whois(),
+	new Whois(),
 	// new RefreshChannel(),
 ];
 

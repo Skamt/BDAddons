@@ -7,6 +7,7 @@
 		"github": "https://github.com/Skamt/BDAddons/tree/main/NoPing"
 	},
 	"settings":{
-		"silent":false
+		"silent":false,
+		"mentionToggle":false
 	}
 }

@@ -2,7 +2,7 @@ import "./styles";
 // import "./patches/*";
 import "./patches/patchIsEmojiDisabled";
 import "./patches/patchFavoriteEmojis";
-import "./patches/patchExpressionPickerEmojiContextMenu";
+import "./patches/EmojiContextmenu";
 import "./patches/patchUseEmojiGrid";
 import "./patches/patchEmojiPickerHeader";
 
