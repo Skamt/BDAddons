@@ -1,7 +1,7 @@
 /**
  * @name Emojis
  * @description Send emoji as link if it can't be sent it normally.
- * @version 1.0.4
+ * @version 1.0.0
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/Emojis
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/Emojis/Emojis.plugin.js
@@ -11,7 +11,7 @@
 var Config_default = {
 	"info": {
 		"name": "Emojis",
-		"version": "1.0.4",
+		"version": "1.0.0",
 		"description": "Send emoji as link if it can't be sent it normally.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/Emojis/Emojis.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/Emojis",
@@ -39,6 +39,7 @@ var Patcher = /* @__PURE__ */ (() => Api.Patcher)();
 var ContextMenu = /* @__PURE__ */ (() => Api.ContextMenu)();
 var Logger = /* @__PURE__ */ (() => Api.Logger)();
 var Webpack = /* @__PURE__ */ (() => Api.Webpack)();
+var getInternalInstance = /* @__PURE__ */ (() => Api.ReactUtils.getInternalInstance.bind(Api.ReactUtils))();
 
 // common/Utils/Logger.js
 Logger.patchError = (patchId) => {
@@ -443,7 +444,7 @@ var ChannelStore_default = getStore("ChannelStore");
 var MessageActions_default = getModule(Filters.byKeys("jumpToMessage", "_sendMessage"), { searchExports: false });
 
 // MODULES-AUTO-LOADER:@Modules/Dispatcher
-var Dispatcher_default = getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: false });
+var Dispatcher_default = getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: true });
 
 // MODULES-AUTO-LOADER:@Stores/PendingReplyStore
 var PendingReplyStore_default = getStore("PendingReplyStore");
@@ -565,34 +566,27 @@ function insertEmoji(id) {
 	insertText(content);
 }
 
-// src/Emojis/patches/patchExpressionPickerEmojiContextMenu.jsx
-var bbb = getModule(Filters.byStrings("unfavorite"), { defaultExport: false });
+// src/Emojis/patches/EmojiContextmenu.js
 Plugin_default.on(Events.START, () => {
-	if (!bbb?.Z) return Logger_default.patchError("patchUnfavoriteEmoji");
-	Patcher.after(bbb, "Z", (_, args, ret) => {
-		const [{ type, isInExpressionPicker, id }] = args;
-		if (type !== "emoji" || !isInExpressionPicker || !id) return;
-		return [
-			// biome-ignore lint/correctness/useJsxKeyInIterable: <explanation>
-			/* @__PURE__ */
-			React.createElement(
-				ContextMenu.Item, {
-					action: () => sendEmojiDirectly(id),
-					id: "send-directly",
-					label: "send directly"
-				}
-			),
-			// biome-ignore lint/correctness/useJsxKeyInIterable: <explanation>
-			/* @__PURE__ */
-			React.createElement(
-				ContextMenu.Item, {
-					action: () => insertEmoji(id),
-					id: "insert-url",
-					label: "insert url"
-				}
-			),
-			ret
-		];
+	const unpatch = [
+		ContextMenu.patch("expression-picker", (retVal, props) => {
+			const id = getInternalInstance(props.target)?.pendingProps?.["data-id"];
+			if (!id) return;
+			console.log(id);
+			retVal.props.children.splice(1, 0, [
+				ContextMenu.buildItem({
+					label: "Send directly",
+					action: () => sendEmojiDirectly(id)
+				}),
+				ContextMenu.buildItem({
+					label: "Insert url",
+					action: () => insertEmoji(id)
+				})
+			]);
+		})
+	];
+	Plugin_default.once(Events.STOP, () => {
+		unpatch.forEach((a) => a && typeof a === "function" && a());
 	});
 });
 
@@ -661,15 +655,6 @@ var Heading_default = getModule((a) => a?.render?.toString().includes("data-exce
 
 // common/Components/TextInput/index.jsx
 var TextInput = getModule(Filters.byStrings("showCharacterCount", "clearable"), { searchExports: true });
-var TextInput_default = TextInput || function TextInputFallback(props) {
-	return /* @__PURE__ */ React_default.createElement("div", { style: { color: "#fff" } }, /* @__PURE__ */ React_default.createElement(
-		"input", {
-			...props,
-			type: "text",
-			onChange: (e) => props.onChange?.(e.target.value)
-		}
-	));
-};
 
 // common/Components/ErrorBoundary/index.jsx
 var ErrorBoundary = class extends React_default.Component {
@@ -725,14 +710,14 @@ var ModalActions = /* @__PURE__ */ getMangled("onCloseRequest:null!=", {
 	closeModal: /* @__PURE__ */ Filters.byStrings(".setState", ".getState()["),
 	ModalStore: /* @__PURE__ */ Filters.byKeys("getState")
 });
-var Modals = /* @__PURE__ */ getMangled( /* @__PURE__ */ Filters.bySource("root", "headerIdIsManaged"), {
-	ModalRoot: /* @__PURE__ */ Filters.byStrings("rootWithShadow"),
+var Modals = /* @__PURE__ */ getMangled( /* @__PURE__ */ Filters.bySource("MODAL_ROOT", "transitionState"), {
+	ModalRoot: /* @__PURE__ */ Filters.byStrings("transitionState"),
 	ModalFooter: /* @__PURE__ */ Filters.byStrings(".footer"),
 	ModalContent: /* @__PURE__ */ Filters.byStrings(".content"),
-	ModalHeader: /* @__PURE__ */ Filters.byStrings(".header", "separator"),
+	ModalHeader: /* @__PURE__ */ Filters.byStrings("headerIdIsManaged", "headerId"),
 	Animations: (a) => a.SUBTLE,
 	Sizes: (a) => a.DYNAMIC,
-	ModalCloseButton: Filters.byStrings(".close]:")
+	ModalCloseButton: Filters.byStrings("withCircleBackground")
 });
 
 // src/Emojis/components/EmojiManager.jsx
@@ -874,16 +859,6 @@ function EmojiCard({ animated, name, id, style, onChange }) {
 			}
 		)),
 		/* @__PURE__ */
-		React_default.createElement(
-			TextInput_default, {
-				maxLength: 32,
-				size: "sm",
-				disabled: deleteEmoji,
-				onChange: changeHandler,
-				value: val
-			}
-		),
-		/* @__PURE__ */
 		React_default.createElement("div", { className: c("btn-delete") }, /* @__PURE__ */ React_default.createElement(
 			ManaButton, {
 				onClick: deleteHandler,
@@ -974,19 +949,16 @@ var Switch_default = getModule(Filters.byStrings('"data-toggleable-component":"s
 };
 
 // common/Components/Divider/styles.css
-StylesLoader_default.push(`.divider-base {
+StylesLoader_default.push(`.divider-horizontal {
 	border-top: thin solid var(--border-subtle);
-	flex:1 0 0;
-}
-
-.divider-horizontal {
-	width: 100%;
-	height: 1px;
+	align-self: stretch;
+	margin:var(--divider-gap) var(--divider-gutter) var(--divider-gap) var(--divider-gutter) ;
 }
 
 .divider-vertical {
-	width: 1px;
-	height: 100%;
+	border-left: thin solid var(--border-subtle);
+	align-self: stretch;
+	margin:var(--divider-gutter) var(--divider-gap) var(--divider-gutter) var(--divider-gap);
 }
 `);
 
@@ -1004,14 +976,11 @@ var classNameFactory = (prefix = "", connector = "-") => (...args) => {
 // common/Components/Divider/index.jsx
 var c2 = classNameFactory("divider");
 
-function Divider({ direction = "horizontal", gap: gap2 }) {
+function Divider({ gap: gap2 = 15, gutter = 0, direction = Divider.direction.HORIZONTAL }) {
 	return /* @__PURE__ */ React_default.createElement(
 		"div", {
-			style: {
-				marginTop: gap2,
-				marginBottom: gap2
-			},
-			className: c2("base", { direction })
+			style: { "--divider-gap": `${gap2}px`, "--divider-gutter": `${gutter}%` },
+			className: c2("base", direction)
 		}
 	);
 }
@@ -1040,58 +1009,108 @@ function SettingSwtich({ settingKey, note, border = false, onChange = nop, descr
 // MODULES-AUTO-LOADER:@Modules/Slider
 var Slider_default = getModule(Filters.byPrototypeKeys("renderMark"), { searchExports: true });
 
+// common/Components/FieldSet/styles.css
+StylesLoader_default.push(`.fieldset-container {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.fieldset-label {
+	margin-bottom: 12px;
+}
+
+.fieldset-description {
+	margin-bottom: 12px;
+}
+
+.fieldset-label + .fieldset-description{
+	margin-top:-8px;
+	margin-bottom: 0;
+}
+
+.fieldset-content {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	justify-content: flex-start;
+}
+`);
+
+// common/Components/FieldSet/index.jsx
+var c3 = classNameFactory("fieldset");
+
+function FieldSet({ label, description, children, contentGap = 16 }) {
+	return /* @__PURE__ */ React_default.createElement("fieldset", { className: c3("container") }, label && /* @__PURE__ */ React_default.createElement(
+		Heading_default, {
+			className: c3("label"),
+			tag: "legend",
+			variant: "text-lg/medium"
+		},
+		label
+	), description && /* @__PURE__ */ React_default.createElement(
+		Heading_default, {
+			className: c3("description"),
+			variant: "text-sm/normal",
+			color: "text-secondary"
+		},
+		description
+	), /* @__PURE__ */ React_default.createElement("div", { className: c3("content"), style: { gap: contentGap } }, children));
+}
+
 // src/Emojis/components/SettingComponent.jsx
+var sizes = [48, 56, 60, 64, 80, 96, 100, 128, 160, 240, 256, 300];
+
+function StickerSize() {
+	const [val, set] = Settings_default.useSetting("emojiSize");
+	return /* @__PURE__ */ React_default.createElement(
+		Slider_default, {
+			className: "emojiSizeSlider",
+			label: "Emoji Size",
+			description: "The size of the Emoji in pixels",
+			stickToMarkers: true,
+			sortedMarkers: true,
+			equidistant: true,
+			markers: sizes,
+			minValue: sizes[0],
+			maxValue: sizes[sizes.length - 1],
+			initialValue: val,
+			onValueChange: (e) => set(sizes.find((s) => e <= s) ?? sizes[sizes.length - 1])
+		}
+	);
+}
 var SettingComponent_default = () => {
-	return /* @__PURE__ */ React_default.createElement(React_default.Fragment, null, [{
+	return /* @__PURE__ */ React_default.createElement(FieldSet, { contentGap: 8 }, [{
+			border: true,
 			description: "Send Directly",
 			note: "Send the emoji link in a message directly instead of putting it in the chat box.",
 			settingKey: "sendDirectly"
 		},
 		{
+			border: true,
 			description: "Ignore Embed Permissions",
 			note: "Send emoji links regardless of embed permissions, meaning links will not turn into images.",
 			settingKey: "ignoreEmbedPermissions"
 		},
 		{
+			border: true,
 			description: "Send animated emojis",
 			note: "Animated emojis are sent as GIFs.",
 			settingKey: "shouldSendAnimatedEmojis"
 		},
 		{
+			border: true,
 			description: "Send animated as png",
 			note: "Meaning the emoji will show only the first frame, making them act as normal emoji, unless the first frame is empty.",
 			settingKey: "sendEmojiAsPng"
 		},
 		{
+			border: true,
 			description: "Highlight animated emoji",
 			settingKey: "shouldHihglightAnimatedEmojis"
 		}
 	].map(SettingSwtich), /* @__PURE__ */ React_default.createElement(StickerSize, null));
 };
-var emojiSizes = [48, 56, 60, 64, 80, 96, 100, 128, 160, 240, 256, 300];
-
-function StickerSize() {
-	const [val, set] = Settings_default.useSetting("emojiSize");
-	return /* @__PURE__ */ React_default.createElement(React_default.Fragment, null, /* @__PURE__ */ React_default.createElement(
-		Heading_default, {
-			style: { marginBottom: 20 },
-			tag: "h5"
-		},
-		"Emoji Size"
-	), /* @__PURE__ */ React_default.createElement(
-		Slider_default, {
-			className: "emojiSizeSlider",
-			stickToMarkers: true,
-			sortedMarkers: true,
-			equidistant: true,
-			markers: emojiSizes,
-			minValue: emojiSizes[0],
-			maxValue: emojiSizes[emojiSizes.length - 1],
-			initialValue: val,
-			onValueChange: (e) => set(emojiSizes.find((s) => e <= s) ?? emojiSizes[emojiSizes.length - 1])
-		}
-	), /* @__PURE__ */ React_default.createElement(Heading_default, { variant: "text-sm/normal" }, "The size of the Emoji in pixels"));
-}
 
 // src/Emojis/index.jsx
 Plugin_default.getSettingsPanel = () => /* @__PURE__ */ React_default.createElement(SettingComponent_default, null);
