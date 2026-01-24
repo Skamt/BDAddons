@@ -1,7 +1,7 @@
 /**
  * @name Tabbys
  * @description Adds Browser like tabs/bookmarks for channels
- * @version 1.0.5
+ * @version 1.0.7
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/Tabbys
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/Tabbys/Tabbys.plugin.js
@@ -11,7 +11,7 @@
 var Config_default = {
 	"info": {
 		"name": "Tabbys",
-		"version": "1.0.5",
+		"version": "1.0.7",
 		"description": "Adds Browser like tabs/bookmarks for channels",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/Tabbys/Tabbys.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/Tabbys",
@@ -313,11 +313,11 @@ function getModuleAndKey(filter, options) {
 
 // common/DiscordModules/Modules.js
 var DiscordPopout = /* @__PURE__ */ (() => getModule((a) => a?.prototype?.render && a.Animation, { searchExports: true }))();
-var Dispatcher = /* @__PURE__ */ (() => getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: false }))();
+var ChannelComponent = getModule(Filters.byComponentType(Filters.byStrings("hasActiveThreads")), { searchExports: true });
+var Dispatcher = /* @__PURE__ */ (() => getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: true }))();
 var transitionTo = /* @__PURE__ */ (() => getModule(Filters.byStrings(`"transitionTo - Transitioning to "`), { searchExports: true }))();
 var DragSource = /* @__PURE__ */ (() => getModule(Filters.byStrings("drag-source", "collect"), { searchExports: true }))();
 var DropTarget = /* @__PURE__ */ (() => getModule(Filters.byStrings("drop-target", "collect"), { searchExports: true }))();
-var FieldWrapper = /* @__PURE__ */ (() => getModule(reactRefMemoFilter("render", "fieldWrapper", "title", "titleId"), { searchExports: true }))();
 var IconsUtils = /* @__PURE__ */ (() => getModule((a) => a.getChannelIconURL))();
 var ChannelUtils = /* @__PURE__ */ (() => getModule((m2) => m2.openPrivateChannel))();
 
@@ -461,6 +461,9 @@ function join(char = "", ...strs) {
 // MODULES-AUTO-LOADER:@Stores/ChannelStore
 var ChannelStore_default = getStore("ChannelStore");
 
+// MODULES-AUTO-LOADER:@Stores/GuildMemberStore
+var GuildMemberStore_default = getStore("GuildMemberStore");
+
 // common/Utils/User.js
 function getUserName(userObject = {}) {
 	const { global_name, globalName, username } = userObject;
@@ -557,8 +560,7 @@ var types = {
 	"servers": { title: "Servers", type: pathTypes.SERVERS },
 	"applications": { title: "Applications", type: pathTypes.APPS },
 	"quests": { title: "Quests", type: pathTypes.QUESTS },
-	"home": { title: "Home", type: pathTypes.HOME },
-	"unknown": { type: null, title: "Unknown" }
+	"home": { title: "Home", type: pathTypes.HOME }
 };
 var parsers = [
 	{ regex: /^\/quest-home$/, handle: types.quests },
@@ -567,28 +569,27 @@ var parsers = [
 	{ regex: /^\/store$/, handle: types.store },
 	{ regex: /^\/discovery\/(applications|servers|quests)/, handle: (type) => types[type] },
 	{
-		regex: /^\/member-verification/,
-		handle(path2) {
-			if (path2.startsWith("/member-verification")) {
-				const id = path2.split("/").pop();
-				const guild = UserGuildJoinRequestStore_default.getJoinRequestGuild(id);
-				if (!guild) return types.unknown;
-				return {
-					title: guild.name,
-					icon: guild.icon,
-					type: pathTypes.VERIFICATION
-				};
-			}
-		}
-	},
-	{
 		regex: /^\/channels\/(\d+)\/(.+)$/,
 		handle(guildId, type) {
 			return {
 				guildId,
-				name: type,
+				channelName: type,
 				type: pathTypes.CHANNEL,
 				path: constructPath(guildId, type)
+			};
+		}
+	},
+	{
+		regex: /^\/member-verification\/(\d+)/,
+		handle(guildId) {
+			if (!guildId) return;
+			const guild = UserGuildJoinRequestStore_default.getJoinRequestGuild(guildId);
+			if (!guild) return;
+			return {
+				guildId,
+				guildName: guild.name,
+				icon: guild.icon,
+				type: pathTypes.VERIFICATION
 			};
 		}
 	},
@@ -604,10 +605,10 @@ var parsers = [
 		}
 	},
 	{
-		regex: /^\/channels\/(@me)\/(\d+)/,
-		handle(me, channelId) {
+		regex: /^\/channels\/@me\/(\d+)/,
+		handle(channelId) {
 			const channel = ChannelStore_default.getChannel(channelId);
-			if (!channel) return types.unknown;
+			if (!channel) return;
 			if (channel.isGroupDM())
 				return {
 					channelId,
@@ -615,7 +616,7 @@ var parsers = [
 					path: constructPath("@me", channelId)
 				};
 			const user = UserStore_default.getUser(channel.recipients[0]);
-			if (!user) return types.unknown;
+			if (!user) return;
 			return {
 				type: pathTypes.DM,
 				channelId: channel.id,
@@ -629,16 +630,19 @@ var parsers = [
 ];
 
 function parsePath(path2) {
-	if (path2)
-		for (let i = parsers.length - 1; i >= 0; i--) {
-			const parser = parsers[i];
-			const match = path2.match(parser.regex);
-			if (!match) continue;
-			const [, ...captures] = match;
-			if (typeof parser.handle === "function") return parser.handle(...captures);
-			return parser.handle;
-		}
-	return types.unknown;
+	if (!path2) return;
+	for (let i = parsers.length - 1; i >= 0; i--) {
+		const parser = parsers[i];
+		const match = path2.match(parser.regex);
+		if (!match) continue;
+		const [, ...captures] = match;
+		if (typeof parser.handle === "function") return parser.handle(...captures, path2);
+		return parser.handle;
+	}
+}
+
+function getNameFromPath(path2) {
+	return path2?.split("/").pop() || "???";
 }
 
 function constructPath(guildId, channelId, threadId) {
@@ -2203,6 +2207,55 @@ var TextInput_default = TextInput || function TextInputFallback(props) {
 	));
 };
 
+// common/Components/FieldSet/styles.css
+StylesLoader_default.push(`.fieldset-container {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.fieldset-label {
+	margin-bottom: 12px;
+}
+
+.fieldset-description {
+	margin-bottom: 12px;
+}
+
+.fieldset-label + .fieldset-description{
+	margin-top:-8px;
+	margin-bottom: 0;
+}
+
+.fieldset-content {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	justify-content: flex-start;
+}
+`);
+
+// common/Components/FieldSet/index.jsx
+var c4 = classNameFactory("fieldset");
+
+function FieldSet({ label, description, children, contentGap = 16 }) {
+	return /* @__PURE__ */ React_default.createElement("fieldset", { className: c4("container") }, label && /* @__PURE__ */ React_default.createElement(
+		Heading_default, {
+			className: c4("label"),
+			tag: "legend",
+			variant: "text-lg/medium"
+		},
+		label
+	), description && /* @__PURE__ */ React_default.createElement(
+		Heading_default, {
+			className: c4("description"),
+			variant: "text-sm/normal",
+			color: "text-secondary"
+		},
+		description
+	), /* @__PURE__ */ React_default.createElement("div", { className: c4("content"), style: { gap: contentGap } }, children));
+}
+
 // common/Utils/Modals/styles.css
 StylesLoader_default.push(`.transparent-background.transparent-background{
 	background: transparent;
@@ -2215,18 +2268,18 @@ var ModalActions = /* @__PURE__ */ getMangled("onCloseRequest:null!=", {
 	closeModal: /* @__PURE__ */ Filters.byStrings(".setState", ".getState()["),
 	ModalStore: /* @__PURE__ */ Filters.byKeys("getState")
 });
-var Modals = /* @__PURE__ */ getMangled( /* @__PURE__ */ Filters.bySource("root", "headerIdIsManaged"), {
-	ModalRoot: /* @__PURE__ */ Filters.byStrings("rootWithShadow"),
-	ModalFooter: /* @__PURE__ */ Filters.byStrings(".footer"),
-	ModalContent: /* @__PURE__ */ Filters.byStrings(".content"),
-	ModalHeader: /* @__PURE__ */ Filters.byStrings(".header", "separator"),
+var Modals = /* @__PURE__ */ getMangled( /* @__PURE__ */ Filters.bySource("MODAL_ROOT", "transitionState"), {
+	ModalRoot: /* @__PURE__ */ Filters.byStrings("transitionState"),
+	ModalFooter: /* @__PURE__ */ Filters.byStrings(".HORIZONTAL_REVERSE"),
+	ModalContent: /* @__PURE__ */ Filters.byStrings("scrollbarType", "scrollerRef"),
+	ModalHeader: /* @__PURE__ */ Filters.byStrings("headerIdIsManaged", "headerId", ".HORIZONTAL"),
 	Animations: (a) => a.SUBTLE,
 	Sizes: (a) => a.DYNAMIC,
-	ModalCloseButton: Filters.byStrings(".close]:")
+	ModalCloseButton: Filters.byStrings("withCircleBackground")
 });
 
 // src/Tabbys/components/PromptModal/index.jsx
-var c4 = clsx("create-folder-modal");
+var c5 = clsx("create-folder-modal");
 
 function PromptModal({ modalProps, required, title, placeholder, label, initialValue = "", onSubmit }) {
 	const [val, setVal] = useState(initialValue);
@@ -2250,7 +2303,7 @@ function PromptModal({ modalProps, required, title, placeholder, label, initialV
 		Modals.ModalRoot, {
 			...modalProps,
 			fullscreenOnMobile: false,
-			className: c4("root")
+			className: c5("root")
 		},
 		/* @__PURE__ */
 		React_default.createElement(Modals.ModalHeader, { separator: true }, /* @__PURE__ */ React_default.createElement(
@@ -2261,7 +2314,7 @@ function PromptModal({ modalProps, required, title, placeholder, label, initialV
 			title
 		), /* @__PURE__ */ React_default.createElement(Modals.ModalCloseButton, { onClick: modalProps.onClose })),
 		/* @__PURE__ */
-		React_default.createElement("div", { className: c4("content") }, /* @__PURE__ */ React_default.createElement(FieldWrapper, { title: label }, /* @__PURE__ */ React_default.createElement(
+		React_default.createElement("div", { className: c5("content") }, /* @__PURE__ */ React_default.createElement(FieldSet, { label }, /* @__PURE__ */ React_default.createElement(
 			TextInput_default, {
 				inputRef,
 				value: val,
@@ -2282,7 +2335,7 @@ function PromptModal({ modalProps, required, title, placeholder, label, initialV
 		/* @__PURE__ */
 		React_default.createElement(
 			Modals.ModalFooter, {
-				className: c4("footer"),
+				className: c5("footer"),
 				separator: true
 			},
 			/* @__PURE__ */
@@ -2478,7 +2531,7 @@ StylesLoader_default.push(`.badge-pill {
 `);
 
 // src/Tabbys/components/NumberBadge/index.jsx
-var c5 = clsx("badge");
+var c6 = clsx("badge");
 
 function m(e2) {
 	return e2 < 10 ? 13 : e2 < 100 ? 19 : 27;
@@ -2491,7 +2544,7 @@ var NumberBadge_default = ({ count, type }) => {
 	return /* @__PURE__ */ React_default.createElement(
 		"div", {
 			style: { width: m(count) },
-			className: join(" ", c5("pill", type), "fcc", "rounded-full")
+			className: join(" ", c6("pill", type), "fcc", "rounded-full")
 		},
 		g(count)
 	);
@@ -2638,10 +2691,10 @@ function Icon({ size, src, alt, icon, className }) {
 }
 
 // src/Tabbys/components/Card/Channel.jsx
-function Channel({ name, guildId, channelId }) {
+function Channel({ name, channelName, guildId, channelId }) {
 	const { size } = getSize(Settings_default((_) => _.size));
 	const channel = useStateFromStores_default([ChannelStore_default], () => ChannelStore_default.getChannel(channelId), [channelId]);
-	const title = name || channel?.name || channelId;
+	const title = name || channelName || channel?.name || channelId;
 	const src = getGuildIcon(guildId || channel?.guild_id, size);
 	return /* @__PURE__ */ React_default.createElement(
 		Markup, {
@@ -2649,7 +2702,7 @@ function Channel({ name, guildId, channelId }) {
 				Icon, {
 					size,
 					src,
-					alt: name
+					alt: title
 				}
 			),
 			title
@@ -2725,7 +2778,12 @@ function Generic({ title, type }) {
 	}
 	return /* @__PURE__ */ React_default.createElement(
 		Markup, {
-			icon: /* @__PURE__ */ React_default.createElement(Icon, { className: "icon-wrapper", icon }),
+			icon: /* @__PURE__ */ React_default.createElement(
+				Icon, {
+					className: "icon-wrapper",
+					icon
+				}
+			),
 			title
 		}
 	);
@@ -2743,7 +2801,30 @@ function GroupDM({ name, channelId }) {
 				Icon, {
 					size,
 					src,
-					alt: name
+					alt: title
+				}
+			),
+			title
+		}
+	);
+}
+
+// src/Tabbys/components/Card/MemberVerification.jsx
+function MemberVerification({ icon, guildName, name, guildId }) {
+	const { size } = getSize(Settings_default((_) => _.size));
+	const title = name || guildName || guildId;
+	const src = IconsUtils.getGuildIconURL({
+		id: guildId,
+		icon,
+		size
+	});
+	return /* @__PURE__ */ React_default.createElement(
+		Markup, {
+			icon: /* @__PURE__ */ React_default.createElement(
+				Icon, {
+					size,
+					src,
+					alt: title
 				}
 			),
 			title
@@ -2760,6 +2841,8 @@ function Content({ type, ...props }) {
 			return /* @__PURE__ */ React_default.createElement(DM, { ...props });
 		case pathTypes.GROUP_DM:
 			return /* @__PURE__ */ React_default.createElement(GroupDM, { ...props });
+		case pathTypes.VERIFICATION:
+			return /* @__PURE__ */ React_default.createElement(MemberVerification, { ...props });
 		case pathTypes.NITRO:
 		case pathTypes.SHOP:
 		case pathTypes.SERVERS:
@@ -2773,11 +2856,16 @@ function Content({ type, ...props }) {
 				}
 			);
 	}
-	return null;
+	return /* @__PURE__ */ React_default.createElement(
+		Markup, {
+			icon: /* @__PURE__ */ React_default.createElement(Icon, null),
+			title: getNameFromPath(props.path)
+		}
+	);
 }
 
 // src/Tabbys/components/Tab/index.jsx
-var c6 = classNameFactory("tab");
+var c7 = classNameFactory("tab");
 
 function Tab2({ id, isOver, canDrop, isDragging, dragRef, dropRef }) {
 	const tab = Store_default((state) => Store_default.getTab(id), shallow);
@@ -2810,7 +2898,7 @@ function Tab2({ id, isOver, canDrop, isDragging, dragRef, dropRef }) {
 			onAuxClick: onMiddleClick,
 			onContextMenu: contextmenuHandler,
 			ref: (e2) => dragRef(dropRef(e2)),
-			className: join2(c6("container", isOver && canDrop && "canDrop"), { isSelected, hasUnread, isDragging }, "card"),
+			className: join2(c7("container", isOver && canDrop && "canDrop"), { isSelected, hasUnread, isDragging }, "card"),
 			onClick
 		},
 		/* @__PURE__ */
@@ -2827,7 +2915,7 @@ function Tab2({ id, isOver, canDrop, isDragging, dragRef, dropRef }) {
 		/* @__PURE__ */
 		React_default.createElement(
 			"div", {
-				className: join2(c6("close-button"), "icon-wrapper", "card-button"),
+				className: join2(c7("close-button"), "icon-wrapper", "card-button"),
 				onClick: onCloseClick
 			},
 			/* @__PURE__ */
@@ -2880,7 +2968,7 @@ function DragHandle() {
 }
 
 // src/Tabbys/components/TabBar/index.jsx
-var c7 = clsx("tabbar");
+var c8 = clsx("tabbar");
 
 function TabBar() {
 	const [tabMinWidth, tabWidth] = Settings_default((_) => [_.tabMinWidth, _.tabWidth], shallow);
@@ -2898,15 +2986,15 @@ function TabBar() {
 				"--tab-width": `${tabWidth}px`,
 				"--tab-min-width": `${tabMinWidth}px`
 			},
-			className: c7("container")
+			className: c8("container")
 		},
 		/* @__PURE__ */
 		React_default.createElement(
 			TabsScroller, {
 				shouldScroll: selectedId,
 				scrollTo: selectedIndex,
-				containerClassName: c7("tabs-scroller-container"),
-				contentClassName: c7("tabs-scroller-content"),
+				containerClassName: c8("tabs-scroller-container"),
+				contentClassName: c8("tabs-scroller-content"),
 				items: tabs,
 				renderItem: ({ id }) => /* @__PURE__ */ React_default.createElement(
 					Tab_default3, {
@@ -2919,7 +3007,7 @@ function TabBar() {
 		/* @__PURE__ */
 		React_default.createElement(
 			"div", {
-				className: join2(c7("new-tab"), "icon-wrapper"),
+				className: join2(c8("new-tab"), "icon-wrapper"),
 				onClick: newTabHandler
 			},
 			/* @__PURE__ */
@@ -3286,7 +3374,7 @@ function FolderContextMenu_default(id, { folderId, parentId }) {
 }
 
 // src/Tabbys/components/Folder/BaseFolder.jsx
-var c8 = classNameFactory("folder");
+var c9 = classNameFactory("folder");
 
 function BaseFolder({ id, channelIds, folderId, parentId, name, className, children, canDrop, isOver, ...rest }) {
 	const shouldHightLight = Settings_default(Settings_default.selectors.highlightFolderUnread);
@@ -3309,12 +3397,12 @@ function BaseFolder({ id, channelIds, folderId, parentId, name, className, child
 		"div", {
 			...rest,
 			onContextMenu: contextmenuHandler,
-			className: join2(c8("container", isOver && canDrop && "canDrop"), { hasUnread }, "card", className)
+			className: join2(c9("container", isOver && canDrop && "canDrop"), { hasUnread }, "card", className)
 		},
 		/* @__PURE__ */
-		React_default.createElement("div", { className: join2(c8("icon"), "icon-wrapper", "card-icon") }, /* @__PURE__ */ React_default.createElement(FolderIcon, null)),
+		React_default.createElement("div", { className: join2(c9("icon"), "icon-wrapper", "card-icon") }, /* @__PURE__ */ React_default.createElement(FolderIcon, null)),
 		/* @__PURE__ */
-		React_default.createElement("div", { className: join2(c8("title"), "card-title") }, name),
+		React_default.createElement("div", { className: join2(c9("title"), "card-title") }, name),
 		/* @__PURE__ */
 		React_default.createElement(
 			ChannelStatus, {
@@ -3327,7 +3415,7 @@ function BaseFolder({ id, channelIds, folderId, parentId, name, className, child
 }
 
 // src/Tabbys/components/Folder/SubFolder.jsx
-var c9 = classNameFactory("folder");
+var c10 = classNameFactory("folder");
 
 function SubFolder({ id, folderId, parentId, dragRef, dropRef, onClose, ...props }) {
 	const { name, items } = Store_default((state) => Store_default.getFolder(folderId), shallow) || {};
@@ -3352,7 +3440,7 @@ function SubFolder({ id, folderId, parentId, dragRef, dropRef, onClose, ...props
 				channelIds: items.map((a) => a.channelId).filter(Boolean),
 				folderId,
 				parentId,
-				className: c9("item"),
+				className: c10("item"),
 				onClick: e2.onClick,
 				name
 			},
@@ -3369,11 +3457,11 @@ function SubFolder({ id, folderId, parentId, dragRef, dropRef, onClose, ...props
 var SubFolder_default = makeDraggable(DNDTypes.SUB_FOLDER)(Folder_default(SubFolder));
 
 // src/Tabbys/components/Folder/FolderPopoutMenu.jsx
-var c10 = classNameFactory("folder");
+var c11 = classNameFactory("folder");
 
 function FolderPopoutMenu({ folderId, items, onClose }) {
 	const isEmpty2 = items.length === 0;
-	return /* @__PURE__ */ React_default.createElement("div", { className: "overflow-popout" }, isEmpty2 ? /* @__PURE__ */ React_default.createElement("div", { className: c10("empty") }, "(Empty)") : items.map((item) => {
+	return /* @__PURE__ */ React_default.createElement("div", { className: "overflow-popout" }, isEmpty2 ? /* @__PURE__ */ React_default.createElement("div", { className: c11("empty") }, "(Empty)") : items.map((item) => {
 		return item.folderId ? /* @__PURE__ */ React_default.createElement(
 			SubFolder_default, {
 				onClose: onClose || e.closePopout,
@@ -3428,7 +3516,7 @@ function Folder({ id, folderId, dropRef, dragRef, ...props }) {
 var Folder_default2 = React_default.memo(makeDraggable(DNDTypes.FOLDER)(Folder_default(Folder)));
 
 // src/Tabbys/components/BookmarkBar/index.jsx
-var c11 = classNameFactory("bookmarkbar");
+var c12 = classNameFactory("bookmarkbar");
 
 function getItem(props, id, folderId) {
 	return folderId ? /* @__PURE__ */ React_default.createElement(
@@ -3448,13 +3536,13 @@ function getItem(props, id, folderId) {
 }
 
 function NoBookmarks() {
-	return /* @__PURE__ */ React_default.createElement("div", { className: c11("empty") }, "You have no bookmarks yet");
+	return /* @__PURE__ */ React_default.createElement("div", { className: c12("empty") }, "You have no bookmarks yet");
 }
 
 function BookmarkBarWrapAround() {
 	const bookmarks = Store_default(Store_default.selectors.bookmarks, shallow);
 	const content = bookmarks.map(({ id, folderId }) => getItem({}, id, folderId));
-	return /* @__PURE__ */ React_default.createElement("div", { className: c11("container") }, /* @__PURE__ */ React_default.createElement("div", { className: c11("content", "wrap") }, content.length > 0 ? content : /* @__PURE__ */ React_default.createElement(NoBookmarks, null), /* @__PURE__ */ React_default.createElement(DragHandle, null)));
+	return /* @__PURE__ */ React_default.createElement("div", { className: c12("container") }, /* @__PURE__ */ React_default.createElement("div", { className: c12("content", "wrap") }, content.length > 0 ? content : /* @__PURE__ */ React_default.createElement(NoBookmarks, null), /* @__PURE__ */ React_default.createElement(DragHandle, null)));
 }
 
 function BookmarkBarOverflowMenu() {
@@ -3501,12 +3589,12 @@ function BookmarkBarOverflowMenu() {
 	}, []);
 	const content = bookmarks.map(({ id, folderId }, index) => {
 		const hidden = overflowedItems.find((a) => a === id);
-		return getItem({ className: c11({ hidden }) }, id, folderId);
+		return getItem({ className: c12({ hidden }) }, id, folderId);
 	});
-	return /* @__PURE__ */ React_default.createElement("div", { className: c11("container") }, /* @__PURE__ */ React_default.createElement(
+	return /* @__PURE__ */ React_default.createElement("div", { className: c12("container") }, /* @__PURE__ */ React_default.createElement(
 		"div", {
 			ref: contentRef,
-			className: c11("content")
+			className: c12("content")
 		},
 		content.length > 0 ? content : /* @__PURE__ */ React_default.createElement(NoBookmarks, null)
 	), !!overflowedItems.length && /* @__PURE__ */ React_default.createElement(OverflowMenu, { items: bookmarks.filter(({ id }) => overflowedItems.find((a) => a === id)) }), /* @__PURE__ */ React_default.createElement(DragHandle, null));
@@ -3526,7 +3614,7 @@ function OverflowMenu({ items }) {
 		(e2) => {
 			return /* @__PURE__ */ React_default.createElement(
 				"div", {
-					className: join2(c11("overflow-button"), "icon-wrapper"),
+					className: join2(c12("overflow-button"), "icon-wrapper"),
 					onClick: e2.onClick
 				},
 				/* @__PURE__ */
@@ -3560,7 +3648,7 @@ function SettingSlider({ settingKey, label, description, ...props }) {
 }
 
 // src/Tabbys/contextmenus/SettingsContextMenu.jsx
-var c12 = classNameFactory(`${Config_default.info.name}-menuitem`);
+var c13 = classNameFactory(`${Config_default.info.name}-menuitem`);
 var { Separator, CheckboxItem, RadioItem, ControlItem, Group, Item, Menu } = ContextMenu;
 
 function ContextMenuToggle({ settingKey, label, color }) {
@@ -3569,7 +3657,7 @@ function ContextMenuToggle({ settingKey, label, color }) {
 		CheckboxItem, {
 			color,
 			label,
-			id: c12(label, settingKey),
+			id: c13(label, settingKey),
 			checked: state,
 			action: () => {
 				setState(!state);
@@ -3583,7 +3671,7 @@ function ContextMenuSlider({ settingKey, label, ...rest }) {
 	const [val] = Settings_default.useSetting(settingKey);
 	return /* @__PURE__ */ React_default.createElement(
 		ControlItem, {
-			id: c12(settingKey),
+			id: c13(settingKey),
 			label: `${label}: ${val}px`,
 			control: () => /* @__PURE__ */ React_default.createElement("div", { style: { padding: "0 8px" } }, /* @__PURE__ */ React_default.createElement(
 				SettingSlider, {
@@ -3601,7 +3689,7 @@ function status() {
 		return /* @__PURE__ */ React_default.createElement(React_default.Fragment, null, /* @__PURE__ */ React_default.createElement(
 			Item, {
 				label: `${type}:`,
-				id: c12(type),
+				id: c13(type),
 				disabled: true
 			}
 		), [
@@ -3614,7 +3702,7 @@ function status() {
 	return /* @__PURE__ */ React_default.createElement(
 		Item, {
 			label: "Status",
-			id: c12("status")
+			id: c13("status")
 		},
 		genStatusToggles("Tab"),
 		/* @__PURE__ */
@@ -3630,7 +3718,7 @@ function appearence() {
 	return /* @__PURE__ */ React_default.createElement(
 		Item, {
 			label: "Appearence",
-			id: c12("appearence")
+			id: c13("appearence")
 		},
 		[{
 				settingKey: "size",
@@ -3667,7 +3755,7 @@ function SettingsContextMenu_default() {
 	return /* @__PURE__ */ React_default.createElement(Menu, null, appearence(), status(), /* @__PURE__ */ React_default.createElement(
 		Item, {
 			label: "Functionality",
-			id: c12("functionality")
+			id: c13("functionality")
 		},
 		[
 			{ settingKey: "bookmarkOverflowWrap", label: "Wrap Bookmarks" },
@@ -3699,7 +3787,7 @@ function SettingsButton() {
 }
 
 // src/Tabbys/components/App/index.jsx
-var c13 = classNameFactory("tabbys-app");
+var c14 = classNameFactory("tabbys-app");
 
 function App({ leading, trailing }) {
 	const [size, privacyMode, keepTitle, showTabbar, showBookmarkbar, showSettingsButton] = Settings_default((_) => [_.size, _.privacyMode, _.keepTitle, _.showTabbar, _.showBookmarkbar, _.showSettingsButton], shallow);
@@ -3708,15 +3796,15 @@ function App({ leading, trailing }) {
 			style: {
 				"--size": `${size}px`
 			},
-			className: c13("container", { showTabbar, showBookmarkbar, keepTitle, privacyMode })
+			className: c14("container", { showTabbar, showBookmarkbar, keepTitle, privacyMode })
 		},
-		keepTitle && /* @__PURE__ */ React_default.createElement("div", { className: c13("leading") }, leading),
-		showTabbar && /* @__PURE__ */ React_default.createElement("div", { className: c13("tabbar") }, /* @__PURE__ */ React_default.createElement(TabBar, null)),
+		keepTitle && /* @__PURE__ */ React_default.createElement("div", { className: c14("leading") }, leading),
+		showTabbar && /* @__PURE__ */ React_default.createElement("div", { className: c14("tabbar") }, /* @__PURE__ */ React_default.createElement(TabBar, null)),
 		/* @__PURE__ */
-		React_default.createElement("div", { className: c13("trailing") }, React_default.cloneElement(trailing, {
+		React_default.createElement("div", { className: c14("trailing") }, React_default.cloneElement(trailing, {
 			children: [showSettingsButton && /* @__PURE__ */ React_default.createElement(SettingsButton, null), ...trailing.props.children]
 		})),
-		showBookmarkbar && /* @__PURE__ */ React_default.createElement("div", { className: join2(c13("bookmarkbar")) }, /* @__PURE__ */ React_default.createElement(BookmarkBar, null))
+		showBookmarkbar && /* @__PURE__ */ React_default.createElement("div", { className: join2(c14("bookmarkbar")) }, /* @__PURE__ */ React_default.createElement(BookmarkBar, null))
 	);
 }
 
@@ -3822,57 +3910,27 @@ StylesLoader_default.push(`.collapsible-container * {
 `);
 
 // common/Components/Collapsible/index.jsx
-var c14 = classNameFactory("collapsible");
+var c15 = classNameFactory("collapsible");
 
 function Collapsible({ title, children }) {
 	const [open, setOpen] = React_default.useState(false);
-	return /* @__PURE__ */ React_default.createElement("div", { className: c14("container", { open }) }, /* @__PURE__ */ React_default.createElement(
+	return /* @__PURE__ */ React_default.createElement("div", { className: c15("container", { open }) }, /* @__PURE__ */ React_default.createElement(
 		"div", {
-			className: c14("header"),
+			className: c15("header"),
 			onClick: () => setOpen(!open)
 		},
 		/* @__PURE__ */
 		React_default.createElement(
 			Heading_default, {
-				className: c14("title"),
+				className: c15("title"),
 				tag: "h5"
 			},
 			title
 		),
 		/* @__PURE__ */
-		React_default.createElement("div", { className: c14("icon") }, /* @__PURE__ */ React_default.createElement(ArrowIcon, null))
-	), /* @__PURE__ */ React_default.createElement("div", { className: c14("body") }, children));
+		React_default.createElement("div", { className: c15("icon") }, /* @__PURE__ */ React_default.createElement(ArrowIcon, null))
+	), /* @__PURE__ */ React_default.createElement("div", { className: c15("body") }, children));
 }
-
-// common/Components/Gap/styles.css
-StylesLoader_default.push(`.gap-base {
-	flex:1 0 0;
-}
-
-.gap-horizontal {
-	width: 100%;
-}
-
-.gap-vertical {
-	height: 100%;
-}
-`);
-
-// common/Components/Gap/index.jsx
-var c15 = classNameFactory("gap");
-
-function Gap({ direction = "horizontal", gap, className }) {
-	return /* @__PURE__ */ React_default.createElement(
-		"div", {
-			style: { marginTop: gap },
-			className: c15("base", { direction })
-		}
-	);
-}
-Gap.direction = {
-	HORIZONTAL: "horizontal",
-	VERTICAL: "vertical"
-};
 
 // MODULES-AUTO-LOADER:@Modules/FormSwitch
 var FormSwitch_default = getModule(Filters.byStrings("note", "tooltipNote"), { searchExports: true });
@@ -3889,33 +3947,27 @@ var Switch_default = getModule(Filters.byStrings('"data-toggleable-component":"s
 };
 
 // common/Components/Divider/styles.css
-StylesLoader_default.push(`.divider-base {
+StylesLoader_default.push(`.divider-horizontal {
 	border-top: thin solid var(--border-subtle);
-	flex:1 0 0;
-}
-
-.divider-horizontal {
-	width: 100%;
-	height: 1px;
+	align-self: stretch;
+	margin:var(--divider-gap) var(--divider-gutter) var(--divider-gap) var(--divider-gutter) ;
 }
 
 .divider-vertical {
-	width: 1px;
-	height: 100%;
+	border-left: thin solid var(--border-subtle);
+	align-self: stretch;
+	margin:var(--divider-gutter) var(--divider-gap) var(--divider-gutter) var(--divider-gap);
 }
 `);
 
 // common/Components/Divider/index.jsx
 var c16 = classNameFactory("divider");
 
-function Divider({ direction = Divider.HORIZONTAL, gap }) {
+function Divider({ gap = 15, gutter = 0, direction = Divider.direction.HORIZONTAL }) {
 	return /* @__PURE__ */ React_default.createElement(
 		"div", {
-			style: {
-				marginTop: gap,
-				marginBottom: gap
-			},
-			className: c16("base", { direction })
+			style: { "--divider-gap": `${gap}px`, "--divider-gutter": `${gutter}%` },
+			className: c16("base", direction)
 		}
 	);
 }
@@ -3939,55 +3991,6 @@ function SettingSwtich({ settingKey, note, border = false, onChange = nop, descr
 			}
 		}
 	), border && /* @__PURE__ */ React.createElement(Divider, { gap: 15 }));
-}
-
-// common/Components/FieldSet/styles.css
-StylesLoader_default.push(`.fieldset-container {
-	display: flex;
-	flex-direction: column;
-	gap: 16px;
-}
-
-.fieldset-label {
-	margin-bottom: 12px;
-}
-
-.fieldset-description {
-	margin-bottom: 12px;
-}
-
-.fieldset-label + .fieldset-description{
-	margin-top:-8px;
-	margin-bottom: 0;
-}
-
-.fieldset-content {
-	display: flex;
-	flex-direction: column;
-	width: 100%;
-	justify-content: flex-start;
-}
-`);
-
-// common/Components/FieldSet/index.jsx
-var c17 = classNameFactory("fieldset");
-
-function FieldSet({ label, description, children, contentGap = 16 }) {
-	return /* @__PURE__ */ React_default.createElement("fieldset", { className: c17("container") }, label && /* @__PURE__ */ React_default.createElement(
-		Heading_default, {
-			className: c17("label"),
-			tag: "legend",
-			variant: "text-lg/medium"
-		},
-		label
-	), description && /* @__PURE__ */ React_default.createElement(
-		Heading_default, {
-			className: c17("description"),
-			variant: "text-sm/normal",
-			color: "text-secondary"
-		},
-		description
-	), /* @__PURE__ */ React_default.createElement("div", { className: c17("content"), style: { gap: contentGap } }, children));
 }
 
 // src/Tabbys/components/SettingComponent/index.jsx
