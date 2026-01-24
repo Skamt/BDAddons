@@ -1,7 +1,7 @@
 /**
  * @name SpotifyEnhance
  * @description All in one better spotify-discord experience.
- * @version 1.1.9
+ * @version 1.1.10
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js
@@ -11,7 +11,7 @@
 var Config_default = {
 	"info": {
 		"name": "SpotifyEnhance",
-		"version": "1.1.9",
+		"version": "1.1.10",
 		"description": "All in one better spotify-discord experience.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance",
@@ -1775,9 +1775,9 @@ var ModalActions = /* @__PURE__ */ getMangled("onCloseRequest:null!=", {
 });
 var Modals = /* @__PURE__ */ getMangled( /* @__PURE__ */ Filters.bySource("MODAL_ROOT", "transitionState"), {
 	ModalRoot: /* @__PURE__ */ Filters.byStrings("transitionState"),
-	ModalFooter: /* @__PURE__ */ Filters.byStrings(".footer"),
-	ModalContent: /* @__PURE__ */ Filters.byStrings(".content"),
-	ModalHeader: /* @__PURE__ */ Filters.byStrings("headerIdIsManaged", "headerId"),
+	ModalFooter: /* @__PURE__ */ Filters.byStrings(".HORIZONTAL_REVERSE"),
+	ModalContent: /* @__PURE__ */ Filters.byStrings("scrollbarType", "scrollerRef"),
+	ModalHeader: /* @__PURE__ */ Filters.byStrings("headerIdIsManaged", "headerId", ".HORIZONTAL"),
 	Animations: (a) => a.SUBTLE,
 	Sizes: (a) => a.DYNAMIC,
 	ModalCloseButton: Filters.byStrings("withCircleBackground")
@@ -2136,10 +2136,11 @@ function SpotifyEmbedWrapper({ id, type, embedObject, embedComponent }) {
 }
 
 // src/SpotifyEnhance/patches/patchSpotifyEmbed.jsx
-var SpotifyEmbed = getModule(Filters.byStrings("iframe", "playlist", "track"), { defaultExport: false });
+var SpotifyEmbed = getModuleAndKey(Filters.byStrings("iframe", "playlist", "track"));
 Plugin_default.on(Events.START, () => {
-	if (!SpotifyEmbed) return Logger_default.patchError("SpotifyEmbed");
-	const unpatch = Patcher.after(SpotifyEmbed, "Z", (_, [{ embed }], ret) => {
+	const { module: module2, key } = SpotifyEmbed;
+	if (!module2 || !key) return Logger_default.patchError("SpotifyEmbed");
+	const unpatch = Patcher.after(module2, key, (_, [{ embed }], ret) => {
 		const messageState = React.useContext(MessageStateContext);
 		if (messageState !== "SENT") return null;
 		const [id, type] = parseSpotifyUrl(embed.url) || [];
