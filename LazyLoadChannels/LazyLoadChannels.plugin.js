@@ -1,7 +1,7 @@
 /**
  * @name LazyLoadChannels
  * @description Lets you choose whether to load a channel
- * @version 1.2.15
+ * @version 1.2.16
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js
@@ -10,7 +10,7 @@
 const config = {
 	"info": {
 		"name": "LazyLoadChannels",
-		"version": "1.2.15",
+		"version": "1.2.16",
 		"description": "Lets you choose whether to load a channel",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels",
@@ -160,7 +160,7 @@ const ChannelsStateManager = {
 };
 
 // @Modules\Dispatcher
-const Dispatcher = getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: false });
+const Dispatcher = getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: true });
 
 // @Modules\ChannelActions
 const ChannelActions = getModule(Filters.byKeys("actions", "fetchMessages"), { searchExports: true });
@@ -220,8 +220,7 @@ const SettingComponent = () => {
 };
 
 // common\DiscordModules\Modules.js
-const ChannelComponentFilter = Filters.byStrings("hasActiveThreads", "favoritesSuggestion");
-const ChannelComponent = getModule(a => a.render && ChannelComponentFilter(a.render), { searchExports: true });
+const ChannelComponent = getModule(Filters.byComponentType(Filters.byStrings("hasActiveThreads")), { searchExports: true });
 
 // src\LazyLoadChannels\patches\patchChannel.js
 const patchChannel = () => {

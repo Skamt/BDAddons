@@ -1,7 +1,7 @@
 /**
  * @name SpotifyEnhance
  * @description All in one better spotify-discord experience.
- * @version 1.1.8
+ * @version 1.1.9
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js
@@ -11,7 +11,7 @@
 var Config_default = {
 	"info": {
 		"name": "SpotifyEnhance",
-		"version": "1.1.8",
+		"version": "1.1.9",
 		"description": "All in one better spotify-discord experience.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance",
@@ -303,7 +303,7 @@ function preventDefault(handler) {
 var MessageActions_default = getModule(Filters.byKeys("jumpToMessage", "_sendMessage"), { searchExports: false });
 
 // MODULES-AUTO-LOADER:@Modules/Dispatcher
-var Dispatcher_default = getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: false });
+var Dispatcher_default = getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: true });
 
 // MODULES-AUTO-LOADER:@Stores/PendingReplyStore
 var PendingReplyStore_default = getStore("PendingReplyStore");
@@ -1773,14 +1773,14 @@ var ModalActions = /* @__PURE__ */ getMangled("onCloseRequest:null!=", {
 	closeModal: /* @__PURE__ */ Filters.byStrings(".setState", ".getState()["),
 	ModalStore: /* @__PURE__ */ Filters.byKeys("getState")
 });
-var Modals = /* @__PURE__ */ getMangled( /* @__PURE__ */ Filters.bySource("root", "headerIdIsManaged"), {
-	ModalRoot: /* @__PURE__ */ Filters.byStrings("rootWithShadow"),
+var Modals = /* @__PURE__ */ getMangled( /* @__PURE__ */ Filters.bySource("MODAL_ROOT", "transitionState"), {
+	ModalRoot: /* @__PURE__ */ Filters.byStrings("transitionState"),
 	ModalFooter: /* @__PURE__ */ Filters.byStrings(".footer"),
 	ModalContent: /* @__PURE__ */ Filters.byStrings(".content"),
-	ModalHeader: /* @__PURE__ */ Filters.byStrings(".header", "separator"),
+	ModalHeader: /* @__PURE__ */ Filters.byStrings("headerIdIsManaged", "headerId"),
 	Animations: (a) => a.SUBTLE,
 	Sizes: (a) => a.DYNAMIC,
-	ModalCloseButton: Filters.byStrings(".close]:")
+	ModalCloseButton: Filters.byStrings("withCircleBackground")
 });
 var openModal = (children, tag, { className, ...modalRootProps } = {}) => {
 	const id = `${tag ? `${tag}-` : ""}modal`;
@@ -2334,6 +2334,8 @@ StylesLoader_default.push(`.spotify-player-controls {
 
 // common/DiscordModules/Modules.js
 var DiscordPopout = /* @__PURE__ */ (() => getModule((a) => a?.prototype?.render && a.Animation, { searchExports: true }))();
+var ChannelComponent = getModule(Filters.byComponentType(Filters.byStrings("hasActiveThreads")), { searchExports: true });
+var Anchor = /* @__PURE__ */ (() => getModule(Filters.byKeys("Anchor")).Anchor)();
 var RadioGroup = /* @__PURE__ */ (() => getMangled('data-toggleable-component":"radiogroup', { radioGroup: Filters.byStrings("label", "required") }).radioGroup)();
 
 // common/Components/Popout/index.jsx
@@ -2701,9 +2703,6 @@ StylesLoader_default.push(`.spotify-player-media {
 }
 `);
 
-// MODULES-AUTO-LOADER:@Modules/Anchor
-var Anchor_default = getModule(Filters.byStrings("anchor", "noreferrer noopener"), { searchExports: true });
-
 // src/SpotifyEnhance/components/TrackMediaDetails/Artist.jsx
 function Artist({ artists }) {
 	const menu = artists.length === 1 ? getArtistContextMenu(artists[0]) : artists.map((artist) => ({
@@ -2765,7 +2764,7 @@ var TrackMediaDetails_default = ({ name, artists, mediaType }) => {
 	const songUrl = Store.state.getSongUrl();
 	const { name: albumName, url: albumUrl, id: albumeId } = Store.state.getAlbum();
 	return /* @__PURE__ */ React_default.createElement("div", { className: "spotify-player-media" }, /* @__PURE__ */ React_default.createElement(TrackBanner, null), /* @__PURE__ */ React_default.createElement(Tooltip_default2, { note: name }, /* @__PURE__ */ React_default.createElement(
-		Anchor_default, {
+		Anchor, {
 			href: songUrl,
 			className: "spotify-player-title ellipsis"
 		},
@@ -2859,7 +2858,7 @@ var SpotifyPlayer_default = React_default.memo(function SpotifyPlayer() {
 // src/SpotifyEnhance/patches/patchSpotifyPlayer.jsx
 async function cleanFluxContainer() {
 	const fluxContainer = await getFluxContainer();
-	if (fluxContainer) fluxContainer.stateNode.forceUpdate();
+	if (fluxContainer) fluxContainer?.stateNode?.forceUpdate();
 }
 Plugin_default.on(Events.START, async () => {
 	const fluxContainer = await getFluxContainer();
@@ -2878,7 +2877,7 @@ Plugin_default.on(Events.START, async () => {
 			ret
 		];
 	});
-	fluxContainer.stateNode.forceUpdate();
+	fluxContainer?.stateNode?.forceUpdate();
 	Plugin_default.once(Events.STOP, () => {
 		unpatch();
 		cleanFluxContainer();
@@ -3123,42 +3122,6 @@ function FieldSet({ label, description, children, contentGap = 16 }) {
 	), /* @__PURE__ */ React_default.createElement("div", { className: c3("content"), style: { gap: contentGap } }, children));
 }
 
-// common/Components/Divider/styles.css
-StylesLoader_default.push(`.divider-base {
-	border-top: thin solid var(--border-subtle);
-	flex:1 0 0;
-}
-
-.divider-horizontal {
-	width: 100%;
-	height: 1px;
-}
-
-.divider-vertical {
-	width: 1px;
-	height: 100%;
-}
-`);
-
-// common/Components/Divider/index.jsx
-var c4 = classNameFactory("divider");
-
-function Divider({ direction = Divider.HORIZONTAL, gap }) {
-	return /* @__PURE__ */ React_default.createElement(
-		"div", {
-			style: {
-				marginTop: gap,
-				marginBottom: gap
-			},
-			className: c4("base", { direction })
-		}
-	);
-}
-Divider.direction = {
-	HORIZONTAL: "horizontal",
-	VERTICAL: "vertical"
-};
-
 // MODULES-AUTO-LOADER:@Modules/FormSwitch
 var FormSwitch_default = getModule(Filters.byStrings("note", "tooltipNote"), { searchExports: true });
 
@@ -3171,6 +3134,36 @@ var Switch_default = getModule(Filters.byStrings('"data-toggleable-component":"s
 			onChange: (e) => props.onChange(e.target.checked)
 		}
 	));
+};
+
+// common/Components/Divider/styles.css
+StylesLoader_default.push(`.divider-horizontal {
+	border-top: thin solid var(--border-subtle);
+	align-self: stretch;
+	margin:var(--divider-gap) var(--divider-gutter) var(--divider-gap) var(--divider-gutter) ;
+}
+
+.divider-vertical {
+	border-left: thin solid var(--border-subtle);
+	align-self: stretch;
+	margin:var(--divider-gutter) var(--divider-gap) var(--divider-gutter) var(--divider-gap);
+}
+`);
+
+// common/Components/Divider/index.jsx
+var c4 = classNameFactory("divider");
+
+function Divider({ gap = 15, gutter = 0, direction = Divider.direction.HORIZONTAL }) {
+	return /* @__PURE__ */ React_default.createElement(
+		"div", {
+			style: { "--divider-gap": `${gap}px`, "--divider-gutter": `${gutter}%` },
+			className: c4("base", direction)
+		}
+	);
+}
+Divider.direction = {
+	HORIZONTAL: "horizontal",
+	VERTICAL: "vertical"
 };
 
 // common/Components/SettingSwtich/index.jsx
