@@ -1,7 +1,7 @@
 /**
  * @name SpotifyEnhance
  * @description All in one better spotify-discord experience.
- * @version 1.1.10
+ * @version 1.1.11
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js
@@ -11,7 +11,7 @@
 var Config_default = {
 	"info": {
 		"name": "SpotifyEnhance",
-		"version": "1.1.10",
+		"version": "1.1.11",
 		"description": "All in one better spotify-discord experience.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance",
@@ -1120,7 +1120,7 @@ var VolumeIcon = /* @__PURE__ */ svg({ viewBox: "0 0 16 16" }, "M9.741.85a.75.75
 
 // src/SpotifyEnhance/patches/patchChannelAttach.jsx
 var { Item: MenuItem } = ContextMenu;
-var ChannelAttachMenu = getModule(Filters.byStrings("Plus Button"), { defaultExport: false });
+var ChannelAttachMenu = getModuleAndKey(Filters.byStrings("Plus Button"));
 
 function MenuLabel({ label, icon }) {
 	return /* @__PURE__ */ React.createElement(
@@ -1135,8 +1135,9 @@ function MenuLabel({ label, icon }) {
 	);
 }
 Plugin_default.on(Events.START, () => {
-	if (!ChannelAttachMenu) return Logger_default.patchError("patchChannelAttach");
-	const unpatch = Patcher.after(ChannelAttachMenu, "Z", (_, args, ret) => {
+	const { module: module2, key } = ChannelAttachMenu;
+	if (!module2 || !key) return Logger_default.patchError("patchChannelAttach");
+	const unpatch = Patcher.after(module2, key, (_, args, ret) => {
 		if (!Store.state.isActive) return;
 		if (!Store.state.mediaId) return;
 		if (!Array.isArray(ret?.props?.children)) return;
