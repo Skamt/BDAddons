@@ -1,7 +1,7 @@
 /**
  * @name Tabbys
  * @description Adds Browser like tabs/bookmarks for channels
- * @version 1.0.7
+ * @version 1.0.8
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/Tabbys
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/Tabbys/Tabbys.plugin.js
@@ -11,7 +11,7 @@
 var Config_default = {
 	"info": {
 		"name": "Tabbys",
-		"version": "1.0.7",
+		"version": "1.0.8",
 		"description": "Adds Browser like tabs/bookmarks for channels",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/Tabbys/Tabbys.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/Tabbys",
@@ -315,7 +315,7 @@ function getModuleAndKey(filter, options) {
 var DiscordPopout = /* @__PURE__ */ (() => getModule((a) => a?.prototype?.render && a.Animation, { searchExports: true }))();
 var ChannelComponent = getModule(Filters.byComponentType(Filters.byStrings("hasActiveThreads")), { searchExports: true });
 var Dispatcher = /* @__PURE__ */ (() => getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: true }))();
-var transitionTo = /* @__PURE__ */ (() => getModule(Filters.byStrings(`"transitionTo - Transitioning to "`), { searchExports: true }))();
+var transitionTo = /* @__PURE__ */ (() => getModule(Filters.byStrings(`transitionTo - Transitioning to`), { searchExports: true }))();
 var DragSource = /* @__PURE__ */ (() => getModule(Filters.byStrings("drag-source", "collect"), { searchExports: true }))();
 var DropTarget = /* @__PURE__ */ (() => getModule(Filters.byStrings("drop-target", "collect"), { searchExports: true }))();
 var IconsUtils = /* @__PURE__ */ (() => getModule((a) => a.getChannelIconURL))();
@@ -2263,11 +2263,7 @@ StylesLoader_default.push(`.transparent-background.transparent-background{
 }`);
 
 // common/Utils/Modals/index.jsx
-var ModalActions = /* @__PURE__ */ getMangled("onCloseRequest:null!=", {
-	openModal: /* @__PURE__ */ Filters.byStrings("onCloseRequest:null!="),
-	closeModal: /* @__PURE__ */ Filters.byStrings(".setState", ".getState()["),
-	ModalStore: /* @__PURE__ */ Filters.byKeys("getState")
-});
+var ModalActions = getModule((a) => a.useModalsStore);
 var Modals = /* @__PURE__ */ getMangled( /* @__PURE__ */ Filters.bySource("MODAL_ROOT", "transitionState"), {
 	ModalRoot: /* @__PURE__ */ Filters.byStrings("transitionState"),
 	ModalFooter: /* @__PURE__ */ Filters.byStrings(".HORIZONTAL_REVERSE"),
@@ -2959,7 +2955,7 @@ function usePopoutListener() {
 
 function DragHandle() {
 	const hasPopout = usePopoutListener();
-	const hasAny = ModalActions.ModalStore((a) => a.default?.length > 0 || a.popout?.length > 0);
+	const hasAny = ModalActions.useModalsStore((a) => a.default?.length > 0 || a.popout?.length > 0);
 	const hasLayers = useStateFromStores_default([LayerStore_default], () => LayerStore_default.hasLayers());
 	const isOpen = useStateFromStores_default([ContextMenuStore_default], () => ContextMenuStore_default.isOpen());
 	const style = { "width": "100%", "flex": "1 0 0" };
