@@ -1,7 +1,7 @@
 /**
  * @name SpotifyEnhance
  * @description All in one better spotify-discord experience.
- * @version 1.1.11
+ * @version 1.1.12
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js
@@ -11,7 +11,7 @@
 var Config_default = {
 	"info": {
 		"name": "SpotifyEnhance",
-		"version": "1.1.11",
+		"version": "1.1.12",
 		"description": "All in one better spotify-discord experience.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance",
@@ -1769,11 +1769,7 @@ StylesLoader_default.push(`.transparent-background.transparent-background{
 }`);
 
 // common/Utils/Modals/index.jsx
-var ModalActions = /* @__PURE__ */ getMangled("onCloseRequest:null!=", {
-	openModal: /* @__PURE__ */ Filters.byStrings("onCloseRequest:null!="),
-	closeModal: /* @__PURE__ */ Filters.byStrings(".setState", ".getState()["),
-	ModalStore: /* @__PURE__ */ Filters.byKeys("getState")
-});
+var ModalActions = getModule((a) => a.useModalsStore);
 var Modals = /* @__PURE__ */ getMangled( /* @__PURE__ */ Filters.bySource("MODAL_ROOT", "transitionState"), {
 	ModalRoot: /* @__PURE__ */ Filters.byStrings("transitionState"),
 	ModalFooter: /* @__PURE__ */ Filters.byStrings(".HORIZONTAL_REVERSE"),
