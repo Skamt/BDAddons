@@ -1,4 +1,5 @@
 import "./styles.css";
+import React from "@React";
 import Logger from "@Utils/Logger";
 import { DOM } from "@Api";
 import ChannelMuteButton from "./mods/ChannelMuteButton";
@@ -8,6 +9,7 @@ import GIFCommandPreviews from "./mods/GIFCommandPreviews";
 import GuildInfo from "./mods/GuildInfo";
 import NoLinkPreview from "./mods/NoLinkPreview";
 import NoTrack from "./mods/NoTrack";
+import Contextmenus from "./mods/Contextmenus";
 import MarkdownActionButtons from "./mods/MarkdownActionButtons";
 import MoreQuickReacts from "./mods/MoreQuickReacts";
 import Whois from "./mods/Whois";
@@ -19,6 +21,7 @@ import WelcomeMessage from "./mods/WelcomeMessage";
 import PinRoles from "./mods/PinRoles";
 import ShowChannelPerms from "./mods/ShowChannelPerms";
 
+import FieldSet from "@Components/FieldSet";
 
 const mods = [
 	new MoreQuickReacts(),
@@ -37,11 +40,12 @@ const mods = [
 	new NoTrack(),
 	// new FriendsSince(),
 	new ShowUserInfo(),
+	new Contextmenus(),
 	new MarkdownActionButtons(),
 	// new SpotifyListenAlong(),
 	new GIFCommandPreviews(),
 	// new MemUsage(),
-	new Whois(),
+	new Whois()
 	// new RefreshChannel(),
 ];
 
@@ -70,9 +74,10 @@ Plugin.on(Events.STOP, () => {
 });
 
 Plugin.getSettingsPanel = () => {
-	return mod.map(mod => {
+	return mods.map(mod => {
 		try {
-			return content.push(mod.getSettingsPanel?.());
+			const settings = mod.getSettingsPanel?.();
+			if (settings) return React.createElement(FieldSet, {}, settings);
 		} catch (e) {
 			Logger.error(mod, "\nError loading settings\n", e);
 		}

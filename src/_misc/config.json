@@ -7,6 +7,7 @@
 		"github": "https://github.com/Skamt/BDAddons/tree/main/misc"
 	},
 	"settings":{
-		"quickReactsAmount":5
+		"quickReactsAmount":5,
+		"showContextmenuNavId":true
 	}
 }

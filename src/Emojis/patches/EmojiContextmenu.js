@@ -7,9 +7,8 @@ Plugin.on(Events.START, () => {
 		ContextMenu.patch("expression-picker", (retVal, props) => {
 			const id = getInternalInstance(props.target)?.pendingProps?.["data-id"];
 			if(!id) return;
-			console.log(id);
-			
-			retVal.props.children.splice(1, 0, [
+		
+			const MenuItems = [
 				ContextMenu.buildItem({
 					label: "Send directly",
 					action: () => sendEmojiDirectly(id)
@@ -18,7 +17,10 @@ Plugin.on(Events.START, () => {
 					label: "Insert url",
 					action: () => insertEmoji(id)
 				})
-			]);
+			];
+
+			if (Array.isArray(retVal.props.children)) retVal.props.children.unshift(MenuItems);
+				else retVal.props.children = [MenuItems, retVal.props.children];
 		})
 	];
 

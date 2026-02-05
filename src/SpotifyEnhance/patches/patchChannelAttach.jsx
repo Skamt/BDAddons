@@ -1,13 +1,13 @@
 import { React, Patcher, ContextMenu } from "@Api";
 import Logger from "@Utils/Logger";
-import { Filters, getModule } from "@Webpack";
+import { Filters, getModuleAndKey } from "@Webpack";
 import { Store } from "@/Store";
 import Flex from "@Components/Flex";
 import { ListenIcon, ImageIcon } from "@Components/Icon";
 import Plugin, { Events } from "@Utils/Plugin";
 
 const { Item: MenuItem } = ContextMenu;
-const ChannelAttachMenu = getModule(Filters.byStrings("Plus Button"), { defaultExport: false });
+const ChannelAttachMenu = getModuleAndKey(Filters.byStrings("Plus Button"));
 
 function MenuLabel({ label, icon }) {
 	return (
@@ -22,8 +22,9 @@ function MenuLabel({ label, icon }) {
 }
 
 Plugin.on(Events.START, () => {
-	if (!ChannelAttachMenu) return Logger.patchError("patchChannelAttach");
-	const unpatch = Patcher.after(ChannelAttachMenu, "Z", (_, args, ret) => {
+	const {module, key} = ChannelAttachMenu;
+	if (!module || !key) return Logger.patchError("patchChannelAttach");
+	const unpatch = Patcher.after(module, key, (_, args, ret) => {
 		if (!Store.state.isActive) return;
 		if (!Store.state.mediaId) return;
 		if (!Array.isArray(ret?.props?.children)) return;

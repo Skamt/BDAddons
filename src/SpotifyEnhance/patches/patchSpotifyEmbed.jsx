@@ -1,6 +1,6 @@
 import Logger from "@Utils/Logger";
 import { React, Patcher } from "@Api";
-import { getModule, Filters } from "@Webpack";
+import { getModuleAndKey, Filters } from "@Webpack";
 import ErrorBoundary from "@Components/ErrorBoundary";
 import SpotifyEmbedWrapper from "@/components/SpotifyEmbedWrapper";
 import { parseSpotifyUrl } from "@/Utils";
@@ -8,11 +8,13 @@ import { ALLOWD_TYPES } from "@/consts";
 import { MessageStateContext } from "./patchMessageComponentAccessories";
 import Plugin, { Events } from "@Utils/Plugin";
 
-const SpotifyEmbed = getModule(Filters.byStrings("iframe", "playlist", "track"), { defaultExport: false });
+const SpotifyEmbed = getModuleAndKey(Filters.byStrings("iframe", "playlist", "track"));
 
 Plugin.on(Events.START, () => {
-	if (!SpotifyEmbed) return Logger.patchError("SpotifyEmbed");
-	const unpatch = Patcher.after(SpotifyEmbed, "Z", (_, [{ embed }], ret) => {
+	const { module, key } = SpotifyEmbed;
+	if (!module || !key) return Logger.patchError("SpotifyEmbed");
+	
+	const unpatch = Patcher.after(module, key, (_, [{ embed }], ret) => {
 		const messageState = React.useContext(MessageStateContext);
 		if (messageState !== "SENT") return null;
 		const [id, type] = parseSpotifyUrl(embed.url) || [];

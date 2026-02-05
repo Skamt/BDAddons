@@ -9,22 +9,22 @@ export default class Whois extends Disposable {
 		this.patches.push(
 			ContextMenu.patch("unknown-user-context", (retVal, { userId }) => {
 				if (!userId) return;
-				retVal.props.children.unshift(
-					BdApi.ContextMenu.buildItem({
-						label: "Load User",
-						action() {
-							FetchUser(userId)
-								.then(a => {
-									Logger.log(`user loaded: ${userId} ${a.username}`);
-									Toast.success("User Loaded!");
-								})
-								.catch(e => {
-									Logger.error(e);
-									Toast.error(`Could not load user: ${userId}`);
-								});
-						}
-					})
-				);
+				const MenuItem = BdApi.ContextMenu.buildItem({
+					label: "Load User",
+					action() {
+						FetchUser(userId)
+							.then(a => {
+								Logger.log(`user loaded: ${userId} ${a.username}`);
+								Toast.success("User Loaded!");
+							})
+							.catch(e => {
+								Logger.error(e);
+								Toast.error(`Could not load user: ${userId}`);
+							});
+					}
+				});
+				if (Array.isArray(retVal.props.children)) retVal.props.children.unshift(MenuItem);
+				else retVal.props.children = [MenuItem, retVal.props.children];
 			})
 		);
 	}

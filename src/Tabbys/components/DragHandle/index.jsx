@@ -35,7 +35,7 @@ function usePopoutListener() {
 
 export default function DragHandle() {
 	const hasPopout = usePopoutListener();
-	const hasAny = ModalActions.ModalStore(a => a.default?.length > 0 || a.popout?.length > 0);
+	const hasAny = ModalActions.useModalsStore(a => a.default?.length > 0 || a.popout?.length > 0);
 	const hasLayers = useStateFromStores([LayerStore], () => LayerStore.hasLayers());
 	const isOpen = useStateFromStores([ContextMenuStore], () => ContextMenuStore.isOpen());
 	const style = { "width": "100%", "flex": "1 0 0" };

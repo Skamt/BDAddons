@@ -5,11 +5,13 @@ import { concateClassNames } from "@Utils";
 import { getModule, getMangled, Filters } from "@Webpack";
 import ErrorBoundary from "@Components/ErrorBoundary";
 
-export const ModalActions = /*@__PURE__*/ getMangled("onCloseRequest:null!=", {
-	openModal: /*@__PURE__*/ Filters.byStrings("onCloseRequest:null!="),
-	closeModal: /*@__PURE__*/ Filters.byStrings(".setState", ".getState()["),
-	ModalStore: /*@__PURE__*/ Filters.byKeys("getState")
-});
+export const ModalActions = getModule(a => a.useModalsStore);
+
+//  /*@__PURE__*/ getMangled("onCloseRequest:null!=", {
+// 	openModal: /*@__PURE__*/ Filters.byStrings("onCloseRequest:null!="),
+// 	closeModal: /*@__PURE__*/ Filters.byStrings(".setState", ".getState()["),
+// 	ModalStore: /*@__PURE__*/ Filters.byKeys("getState")
+// });
 
 export const Modals = /*@__PURE__*/ getMangled(/*@__PURE__*/ Filters.bySource("MODAL_ROOT", "transitionState"), {
 	ModalRoot: /*@__PURE__*/ Filters.byStrings("transitionState"),
