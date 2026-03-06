@@ -1,7 +1,7 @@
 /**
  * @name Tabbys
  * @description Adds Browser like tabs/bookmarks for channels
- * @version 1.0.8
+ * @version 1.0.9
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/Tabbys
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/Tabbys/Tabbys.plugin.js
@@ -11,7 +11,7 @@
 var Config_default = {
 	"info": {
 		"name": "Tabbys",
-		"version": "1.0.8",
+		"version": "1.0.9",
 		"description": "Adds Browser like tabs/bookmarks for channels",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/Tabbys/Tabbys.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/Tabbys",
@@ -1493,6 +1493,11 @@ var ErrorBoundary = class extends React_default.Component {
 StylesLoader_default.push(`div:has(> .tabbys-app-container):not(#a) {
 	grid-template-rows: [top] auto [titleBarEnd] min-content [noticeEnd] 1fr [end];
 	padding-top: 0;
+}
+
+.tabbys-app-settings-button ~ :not([class^=winButtons]) svg{
+	height: 100% !important;
+	width: 100% !important;
 }
 
 .tabbys-app-container {
@@ -3785,7 +3790,7 @@ function SettingsButton() {
 // src/Tabbys/components/App/index.jsx
 var c14 = classNameFactory("tabbys-app");
 
-function App({ leading, trailing }) {
+function App({ leading, title, trailing }) {
 	const [size, privacyMode, keepTitle, showTabbar, showBookmarkbar, showSettingsButton] = Settings_default((_) => [_.size, _.privacyMode, _.keepTitle, _.showTabbar, _.showBookmarkbar, _.showSettingsButton], shallow);
 	return /* @__PURE__ */ React_default.createElement(
 		"div", {
@@ -3794,7 +3799,7 @@ function App({ leading, trailing }) {
 			},
 			className: c14("container", { showTabbar, showBookmarkbar, keepTitle, privacyMode })
 		},
-		keepTitle && /* @__PURE__ */ React_default.createElement("div", { className: c14("leading") }, leading),
+		keepTitle && /* @__PURE__ */ React_default.createElement("div", { className: c14("leading") }, [leading, title]),
 		showTabbar && /* @__PURE__ */ React_default.createElement("div", { className: c14("tabbar") }, /* @__PURE__ */ React_default.createElement(TabBar, null)),
 		/* @__PURE__ */
 		React_default.createElement("div", { className: c14("trailing") }, React_default.cloneElement(trailing, {
@@ -3812,10 +3817,11 @@ Plugin_default.on(Events.START, () => {
 	if (!module2 || !key) return Logger_default.patchError("patchTitleBar");
 	const unpatch = Patcher.after(module2, key, (_, [props], ret) => {
 		if (props.windowKey?.startsWith("DISCORD_")) return ret;
-		const [, leading, trailing] = ret?.props?.children || [];
+		const [leading, title, trailing] = ret?.props?.children || [];
 		return /* @__PURE__ */ React_default.createElement(ErrorBoundary, null, /* @__PURE__ */ React_default.createElement(
 			App, {
 				leading,
+				title,
 				trailing
 			}
 		));
