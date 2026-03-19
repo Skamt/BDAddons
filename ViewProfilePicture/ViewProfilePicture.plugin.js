@@ -1,7 +1,7 @@
 /**
  * @name ViewProfilePicture
  * @description Adds a button to the user popout and profile that allows you to view the Avatar and banner.
- * @version 1.3.9
+ * @version 1.3.10
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js
@@ -11,7 +11,7 @@
 var Config_default = {
 	"info": {
 		"name": "ViewProfilePicture",
-		"version": "1.3.9",
+		"version": "1.3.10",
 		"description": "Adds a button to the user popout and profile that allows you to view the Avatar and banner.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture",
@@ -27,7 +27,6 @@ var Config_default = {
 
 // common/Api.js
 var Api = new BdApi(Config_default.info.name);
-var UI = /* @__PURE__ */ (() => Api.UI)();
 var DOM = /* @__PURE__ */ (() => Api.DOM)();
 var Data = /* @__PURE__ */ (() => Api.Data)();
 var React = /* @__PURE__ */ (() => Api.React)();
@@ -150,90 +149,12 @@ StylesLoader_default.push(`/* View Profile Button */
 	background: rgb(1 0 1 / 64%);
 }
 
-/* div replacement if No banner */
-.VPP-NoBanner {
-	width: 70vw;
-	height: 50vh;
-	position: relative;
-}
-
-/* Carousel Modal */
-.VPP-carousel-modal {
-	background: #0000;
-	width: 100vw;
-	height: 100vh;
-	box-shadow: none !important;
-}
-
-.VPP-carousel {
-	position: static;
-	margin: auto;
-}
-
-.VPP-carousel > div[role="button"] {
-	margin: 0 15px;
-	background: var(--background-surface-high);
-	color: var(--interactive-text-default);
-	border-radius: 50%;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-}
-
-.VPP-carousel > div[role="button"]:hover {
-	background: var(--background-surface-highest);
-	color: var(--interactive-text-default);
-}
-
-/* Copy color button */
-.VPP-copy-color-container {
-	position: absolute;
-	top: 100%;
-	display: flex;
-	cursor: pointer;
-	gap: 5px;
-}
-
-.VPP-copy-color-label,
-.VPP-copy-color {
-	font-size: 14px;
-	font-weight: 500;
-	color: #fff;
-	line-height: 30px;
-	transition: opacity 0.15s ease;
-	opacity: 0.5;
-	text-transform: uppercase;
-}
-
-.VPP-copy-color:hover {
-	opacity: 1;
-	text-decoration: underline;
-}
-
-.VPP-separator {
-	line-height: 30px;
-	opacity: 0.5;
-	color: #fff;
-}
-
-.VPP-copy-color-label {
-	text-transform: capitalize;
-}
-
 .VPP-hover {
 	opacity: 0;
 }
 
 .VPP-container:hover .VPP-hover {
 	opacity: 1;
-}
-
-.VPP-colorFormat-options {
-	display: flex;
-}
-
-.VPP-colorFormat-options > div {
-	flex: 1;
 }
 `);
 
@@ -249,15 +170,7 @@ function fit({ width, height, gap = 0.8 }) {
 		maxWidth: width * gap
 	};
 }
-
-function concateClassNames(...args) {
-	return args.filter(Boolean).join(" ");
-}
 var promiseHandler = (promise) => promise.then((data) => [void 0, data]).catch((err) => [err]);
-
-function copy(data) {
-	DiscordNative.clipboard.copy(data);
-}
 
 function getNestedProp(obj, path) {
 	return path.split(".").reduce((ob, prop) => ob?.[prop], obj);
@@ -276,9 +189,27 @@ function getImageDimensions(url) {
 	});
 }
 
+// common/Utils/css.js
+function join(...args) {
+	const classNames = /* @__PURE__ */ new Set();
+	for (const arg of args) {
+		if (arg && typeof arg === "string") classNames.add(arg);
+		else if (Array.isArray(arg)) arg.forEach((name) => classNames.add(name));
+		else if (arg && typeof arg === "object") Object.entries(arg).forEach(([name, value]) => value && classNames.add(name));
+	}
+	return Array.from(classNames).join(" ");
+}
+var classNameFactory = (prefix = "", connector = "-") => (...args) => {
+	const classNames = /* @__PURE__ */ new Set();
+	for (const arg of args) {
+		if (arg && typeof arg === "string") classNames.add(arg);
+		else if (Array.isArray(arg)) arg.forEach((name) => classNames.add(name));
+		else if (arg && typeof arg === "object") Object.entries(arg).forEach(([name, value]) => value && classNames.add(name));
+	}
+	return Array.from(classNames, (name) => `${prefix}${connector}${name}`).join(" ");
+};
+
 // common/React.jsx
-var useState = /* @__PURE__ */ (() => React.useState)();
-var useMemo = /* @__PURE__ */ (() => React.useMemo)();
 var React_default = /* @__PURE__ */ (() => React)();
 
 // common/Components/ErrorBoundary/index.jsx
@@ -341,12 +272,6 @@ var ErrorIcon_default = (props) => /* @__PURE__ */ React.createElement("div", { 
 var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
 var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
 var getMangled = /* @__PURE__ */ (() => Webpack.getMangled)();
-var getStore = /* @__PURE__ */ (() => Webpack.getStore)();
-
-function reactRefMemoFilter(type, ...args) {
-	const filter = Filters.byStrings(...args);
-	return (target) => target[type] && filter(target[type]);
-}
 
 // common/DiscordModules/zustand.js
 var { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
@@ -389,46 +314,6 @@ Object.assign(SettingsStore, {
 });
 var Settings_default = SettingsStore;
 
-// common/Utils/Modals/styles.css
-StylesLoader_default.push(`.transparent-background.transparent-background{
-	background: transparent;
-	border:unset;
-}`);
-
-// common/Utils/Modals/index.jsx
-var ModalActions = getModule((a) => a.useModalsStore);
-var Modals = /* @__PURE__ */ getMangled( /* @__PURE__ */ Filters.bySource("MODAL_ROOT", "transitionState"), {
-	ModalRoot: /* @__PURE__ */ Filters.byStrings("transitionState"),
-	ModalFooter: /* @__PURE__ */ Filters.byStrings(".HORIZONTAL_REVERSE"),
-	ModalContent: /* @__PURE__ */ Filters.byStrings("scrollbarType", "scrollerRef"),
-	ModalHeader: /* @__PURE__ */ Filters.byStrings("headerIdIsManaged", "headerId", ".HORIZONTAL"),
-	Animations: (a) => a.SUBTLE,
-	Sizes: (a) => a.DYNAMIC,
-	ModalCloseButton: Filters.byStrings("withCircleBackground")
-});
-var openModal = (children, tag, { className, ...modalRootProps } = {}) => {
-	const id = `${tag ? `${tag}-` : ""}modal`;
-	return ModalActions.openModal((props) => {
-		return /* @__PURE__ */ React.createElement(
-			ErrorBoundary, {
-				id,
-				plugin: Config_default.info.name
-			},
-			/* @__PURE__ */
-			React.createElement(
-				Modals.ModalRoot, {
-					onClick: props.onClose,
-					transitionState: props.transitionState,
-					className: concateClassNames("transparent-background", className),
-					size: Modals.Sizes.DYNAMIC,
-					...modalRootProps
-				},
-				React.cloneElement(children, { ...props })
-			)
-		);
-	});
-};
-
 // MODULES-AUTO-LOADER:@Modules/Tooltip
 var Tooltip_default = getModule(Filters.byPrototypeKeys("renderTooltip"), { searchExports: true });
 
@@ -461,256 +346,56 @@ function ImageIcon(props) {
 	);
 }
 
-// common/Utils/ImageModal/styles.css
-StylesLoader_default.push(`.downloadLink {
-	color: white !important;
-	font-size: 14px;
-	font-weight: 500;
-	/*	line-height: 18px;*/
-	text-decoration: none;
-	transition: opacity.15s ease;
-	opacity: 0.5;
-}
-
-.imageModalwrapper {
-	display: flex;
-	flex-direction: column;
-}
-
-.imageModalOptions {
-	display: flex;
-	flex-direction: row;
-	align-items: center;
-	justify-content: space-between;
-	flex-wrap: wrap;
-	gap: 4px;
-}
-`);
-
-// MODULES-AUTO-LOADER:@Stores/AccessibilityStore
-var AccessibilityStore_default = getStore("AccessibilityStore");
-
-// common/Utils/ImageModal/index.jsx
-var RenderLinkComponent = getModule((m) => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false });
-var ImageModal = getModule(reactRefMemoFilter("type", "renderLinkComponent"), { searchExports: true });
-
-function h(e, t) {
-	let n = arguments.length > 2 && void 0 !== arguments[2] && arguments[2];
-	true === n || AccessibilityStore_default.useReducedMotion ? e.set(t) : e.start(t);
-}
-var useSomeScalingHook = getModule(Filters.byStrings("reducedMotion.enabled", "useSpring", "respect-motion-settings"), { searchExports: true });
-var context = getModule((a) => a?._currentValue?.scale, { searchExports: true });
-var ImageComponent = ({ url, ...rest }) => {
-	const [x, P] = useState(false);
-	const [M, w] = useSomeScalingHook(() => ({
-		scale: AccessibilityStore_default.useReducedMotion ? 1 : 0.9,
-		x: 0,
-		y: 0,
-		config: {
-			friction: 30,
-			tension: 300
-		}
-	}));
-	const contextVal = useMemo(
-		() => ({
-			scale: M.scale,
-			x: M.x,
-			y: M.y,
-			setScale(e, t) {
-				h(M.scale, e, null == t ? void 0 : t.immediate);
-			},
-			setOffset(e, t, n) {
-				h(M.x, e, null == n ? void 0 : n.immediate), h(M.y, t, null == n ? void 0 : n.immediate);
-			},
-			zoomed: x,
-			setZoomed(e) {
-				P(e), h(M.scale, e ? 2.5 : 1), e || (h(M.x, 0), h(M.y, 0));
-			}
-		}),
-		[x, M]
-	);
-	return /* @__PURE__ */ React_default.createElement(context.Provider, { value: contextVal }, /* @__PURE__ */ React_default.createElement("div", { className: "imageModalwrapper" }, /* @__PURE__ */ React_default.createElement(
-		ImageModal, {
-			maxWidth: rest.maxWidth,
-			maxHeight: rest.maxHeight,
-			media: {
-				...rest,
-				type: "IMAGE",
-				url,
-				proxyUrl: url
-			}
-		}
-	), !x && /* @__PURE__ */ React_default.createElement("div", { className: "imageModalOptions" }, /* @__PURE__ */ React_default.createElement(
-		RenderLinkComponent, {
-			className: "downloadLink",
-			href: url
-		},
-		"Open in Browser"
-	))));
-};
+// common/DiscordModules/Modules.js
+var ChannelComponent = getModule(Filters.byComponentType(Filters.byStrings("hasActiveThreads")), { searchExports: true });
+var MediaViewerModal = /* @__PURE__ */ (() => getMangled("Media Viewer Modal", { MediaViewerModal: (a) => typeof a !== "string" }).MediaViewerModal)();
 
 // MODULES-AUTO-LOADER:@Modules/Color
 var Color_default = getModule(Filters.byKeys("Color", "hex", "hsl"), { searchExports: false });
 
-// MODULES-AUTO-LOADER:@Stores/ThemeStore
-var ThemeStore_default = getStore("ThemeStore");
-
-// common/Utils/Toast.js
-function showToast(content, type) {
-	UI.showToast(`[${Config_default.info.name}] ${content}`, { timeout: 5e3, type });
+// src/ViewProfilePicture/components/VPPButton.jsx
+function getColorImg(color) {
+	const canvas = document.createElement("canvas");
+	const width = window.innerWidth * 0.7;
+	const height = window.innerHeight * 0.5;
+	canvas.setAttribute("width", width);
+	canvas.setAttribute("height", height);
+	const ctx = canvas.getContext("2d");
+	ctx.fillStyle = Color_default(color || "#555").hex();
+	ctx.fillRect(0, 0, canvas.width, canvas.height);
+	return {
+		url: canvas.toDataURL(),
+		...fit({ width, height })
+	};
 }
-var Toast_default = {
-	success(content) {
-		showToast(content, "success");
-	},
-	info(content) {
-		showToast(content, "info");
-	},
-	warning(content) {
-		showToast(content, "warning");
-	},
-	error(content) {
-		showToast(content, "error");
-	}
-};
-
-// src/ViewProfilePicture/components/ColorModalComponent.jsx
-var DesignSystem = getModule((a) => a?.unsafe_rawColors?.PRIMARY_800?.resolve);
-
-function resolveColor() {
-	if (!DesignSystem?.unsafe_rawColors?.PRIMARY_800) return "#111214";
-	return DesignSystem.unsafe_rawColors?.PRIMARY_800.resolve({
-		theme: ThemeStore_default.theme,
-		saturation: AccessibilityStore_default.saturation
-	}).hex();
-}
-
-function copyColor(type, color) {
-	let c3 = color;
-	try {
-		switch (type) {
-			case "hex":
-				c3 = Color_default(color).hex();
-				break;
-			case "rgba":
-				c3 = Color_default(color).css("rgba");
-				break;
-			case "hsla":
-				c3 = Color_default(color).css("hsla");
-				break;
-		}
-	} finally {
-		copy(c3);
-		Toast_default.success(`${c3} Copied!`);
-	}
-}
-
-function SimpleColorModal({ color }) {
-	return /* @__PURE__ */ React_default.createElement(
-		"div", {
-			onClick: (e) => e.stopPropagation(),
-			className: "VPP-NoBanner",
-			style: { backgroundColor: Color_default(color).css() }
-		},
-		/* @__PURE__ */
-		React_default.createElement("div", { className: "VPP-copy-color-container" }, /* @__PURE__ */ React_default.createElement("span", { className: "VPP-copy-color-label" }, "Copy Color:"), ["hex", false, "rgba", false, "hsla"].map(
-			(name) => name ? /* @__PURE__ */ React_default.createElement(
-				"a", {
-					className: "VPP-copy-color",
-					onClick: (e) => {
-						e.stopPropagation();
-						copyColor(name, color);
-					}
-				},
-				name
-			) : /* @__PURE__ */ React_default.createElement("span", { className: "VPP-separator" }, "|")
-		))
-	);
+async function getFittedDims(url) {
+	const [err, dims] = await promiseHandler(getImageDimensions(url));
+	return err ? {} : fit(dims);
 }
 var palletHook = getModule(Filters.byStrings("toHexString", "toHsl", "palette"), { searchExports: true }) || {};
-
-function ColorModal({ displayProfile, user }) {
-	const color = palletHook(user.getAvatarURL(displayProfile.guildId, 80))[0];
-	return /* @__PURE__ */ React_default.createElement(SimpleColorModal, { color: color || resolveColor() });
-}
-var ColorModalComponent_default = {
-	SimpleColorModal,
-	ColorModal
-};
-
-// MODULES-AUTO-LOADER:@Modules/ModalCarousel
-var ModalCarousel_default = getModule(Filters.byPrototypeKeys("navigateTo", "preloadImage"), { searchExports: false });
-
-// src/ViewProfilePicture/components/ModalCarousel.jsx
-var ModalCarousel_default2 = class extends ModalCarousel_default {
-	preloadNextImages() {}
-};
-
-// MODULES-AUTO-LOADER:@Modules/Spinner
-var Spinner_default = getModule((a) => a?.Type?.CHASING_DOTS, { searchExports: true });
-
-// src/ViewProfilePicture/components/ViewProfilePictureButtonComponent.jsx
-function Banner({ url, src }) {
-	const [loaded, setLoaded] = React_default.useState(false);
-	const dimsRef = React_default.useRef();
-	React_default.useEffect(() => {
-		(async () => {
-			const [err, dims] = await promiseHandler(getImageDimensions(src));
-			dimsRef.current = fit(err ? {} : dims);
-			setLoaded(true);
-		})();
-	}, []);
-	if (!loaded) return /* @__PURE__ */ React_default.createElement(Spinner_default, { type: Spinner_default.Type.SPINNING_CIRCLE });
-	return /* @__PURE__ */ React_default.createElement(
-		ImageComponent, {
-			url,
-			...dimsRef.current
-		}
-	);
-}
-var ViewProfilePictureButtonComponent_default = ({ className, user, displayProfile }) => {
+var VPPButton_default = ({ className, user, displayProfile }) => {
 	const showOnHover = Settings_default(Settings_default.selectors.showOnHover);
-	const handler = () => {
+	const colorFromPfp = palletHook(user.getAvatarURL(displayProfile?.guildId, 80))[0];
+	const handler = async () => {
 		const avatarURL = user.getAvatarURL(displayProfile.guildId, 4096, true);
 		const bannerURL = displayProfile.getBannerURL({ canAnimate: true, size: 4096 });
-		const color = displayProfile.accentColor || displayProfile.primaryColor;
-		const items = [
-			/* @__PURE__ */
-			React_default.createElement(
-				ImageComponent, {
-					url: avatarURL,
-					...fit({ width: 4096, height: 4096 })
-				}
-			),
-			bannerURL && /* @__PURE__ */ React_default.createElement(
-				Banner, {
-					url: bannerURL,
-					src: displayProfile.getBannerURL({ canAnimate: true, size: 20 })
-				}
-			),
-			(!bannerURL || Settings_default.getState().bannerColor) && (color ? /* @__PURE__ */ React_default.createElement(ColorModalComponent_default.SimpleColorModal, { color }) : /* @__PURE__ */ React_default.createElement(
-				ColorModalComponent_default.ColorModal, {
-					user,
-					displayProfile
-				}
-			))
-		].filter(Boolean).map((item) => ({ component: item }));
-		openModal(
-			/* @__PURE__ */
-			React_default.createElement(
-				ModalCarousel_default2, {
-					startWith: 0,
-					className: "VPP-carousel",
-					items
-				}
-			),
-			"VPP-carousel", { className: "VPP-carousel-modal" }
-		);
+		const color = displayProfile.accentColor || displayProfile.primaryColor || colorFromPfp;
+		const items = [{
+				url: avatarURL,
+				...fit({ width: 4096, height: 4096 })
+			},
+			bannerURL && {
+				url: bannerURL,
+				...await getFittedDims(displayProfile.getBannerURL({ canAnimate: true, size: 20 }))
+			},
+			(!bannerURL || Settings_default.getState().bannerColor) && getColorImg(color)
+		].filter(Boolean).map((a) => ({ "type": "IMAGE", ...a }));
+		MediaViewerModal({ items });
 	};
 	return /* @__PURE__ */ React_default.createElement(Tooltip_default2, { note: "View profile picture" }, /* @__PURE__ */ React_default.createElement(
 		"div", {
 			onClick: handler,
-			className: concateClassNames(className, showOnHover && "VPP-hover")
+			className: join(className, showOnHover && "VPP-hover")
 		},
 		/* @__PURE__ */
 		React_default.createElement(ImageIcon, null)
@@ -732,14 +417,14 @@ Plugin_default.on(Events.START, () => {
 			/* @__PURE__ */
 			React.createElement(
 				ErrorBoundary, {
-					id: "ViewProfilePictureButtonComponent",
+					id: "VPPButton",
 					plugin: Config_default.info.name,
 					fallback: /* @__PURE__ */ React.createElement(ErrorIcon_default, { className: "VPP-Button" })
 				},
 				/* @__PURE__ */
 				React.createElement(
-					ViewProfilePictureButtonComponent_default, {
-						className: concateClassNames("VPP-Button", !typeFilter(target?.type) && "VPP-float"),
+					VPPButton_default, {
+						className: join("VPP-Button", !typeFilter(target?.type) && "VPP-float"),
 						user: props.user,
 						displayProfile: props.displayProfile
 					}
@@ -778,17 +463,6 @@ StylesLoader_default.push(`.divider-horizontal {
 	margin:var(--divider-gutter) var(--divider-gap) var(--divider-gutter) var(--divider-gap);
 }
 `);
-
-// common/Utils/css.js
-var classNameFactory = (prefix = "", connector = "-") => (...args) => {
-	const classNames = /* @__PURE__ */ new Set();
-	for (const arg of args) {
-		if (arg && typeof arg === "string") classNames.add(arg);
-		else if (Array.isArray(arg)) arg.forEach((name) => classNames.add(name));
-		else if (arg && typeof arg === "object") Object.entries(arg).forEach(([name, value]) => value && classNames.add(name));
-	}
-	return Array.from(classNames, (name) => `${prefix}${connector}${name}`).join(" ");
-};
 
 // common/Components/Divider/index.jsx
 var c = classNameFactory("divider");
