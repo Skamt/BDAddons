@@ -4,7 +4,6 @@ import AccessibilityStore from "@Stores/AccessibilityStore";
 import ThemeStore from "@Stores/ThemeStore";
 import { copy } from "@Utils";
 import Toast from "@Utils/Toast";
-import { Filters, getModule } from "@Webpack";
 
 const DesignSystem = getModule(a => a?.unsafe_rawColors?.PRIMARY_800?.resolve);
 
@@ -66,7 +65,7 @@ function SimpleColorModal({ color }) {
 const palletHook  = getModule(Filters.byStrings("toHexString", "toHsl", "palette"), { searchExports: true }) || {};
 
 function ColorModal({ displayProfile, user }) {
-	const color = palletHook(user.getAvatarURL(displayProfile.guildId, 80));
+	
 
 	return <SimpleColorModal color={color || resolveColor()} />;
 }

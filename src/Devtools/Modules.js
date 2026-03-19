@@ -39,7 +39,7 @@ class Module {
 	}
 
 	get code() {
-		return this.loader.toString();
+		return this.loader.toString().replace(/^\d+/,"function");
 	}
 
 	get imports() {

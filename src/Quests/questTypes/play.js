@@ -23,7 +23,7 @@ export default function (quest) {
 
 	if (!game) reject(`can't find ${applicationName} in [GameStore]`);
 
-	const exeName = game.executables.find(x => x.os === "win32").name.replace(">", "");
+	const exeName = game?.executables?.find(x => x.os === "win32")?.name?.replace(">", "") || "";
 
 	const fakeGame = {
 		cmdLine: `C:\\Program Files\\${game.name}\\${exeName}`,

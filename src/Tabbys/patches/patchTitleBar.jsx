@@ -16,12 +16,13 @@ Plugin.on(Events.START, () => {
 	if (!module || !key) return Logger.patchError("patchTitleBar");
 	const unpatch = Patcher.after(module, key, (_, [props], ret) => {
 		if (props.windowKey?.startsWith("DISCORD_")) return ret;
-		const [, leading, trailing] = ret?.props?.children || [];
+		const [leading,title , trailing] = ret?.props?.children || [];
 
 		return (
 			<ErrorBoundary>
 				<App
 					leading={leading}
+					title={title}
 					trailing={trailing}
 				/>
 			</ErrorBoundary>

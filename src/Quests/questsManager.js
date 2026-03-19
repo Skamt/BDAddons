@@ -1,16 +1,11 @@
 import QuestStore from "@Stores/QuestStore";
 import Plugin, { Events } from "@Utils/Plugin";
-import { isQuestExpired, isQuestClaimed, isOrbsQuest, isQuestCompleted, isQuestAccepted } from "@/utils";
+import { isQuestExpired, isQuestClaimed, isOrbsQuest, solve, isQuestCompleted, isQuestAccepted } from "@/utils";
 import { transitionTo } from "@Discord/Modules";
 
 function patch() {
 	QuestStore.quests.forEach((quest, id) => {
-
-		if(
-			isQuestExpired(quest) ||
-			(isQuestCompleted(quest) && isQuestClaimed(quest))
-		)
-		QuestStore.quests.delete(id);
+		if (isQuestExpired(quest) || (isQuestCompleted(quest) && isQuestClaimed(quest))) QuestStore.quests.delete(id);
 	});
 	QuestStore.emitChange();
 }
@@ -29,20 +24,25 @@ function notifyOfNewQuests() {
 		title: "Available Quests",
 		content: `${orbsQuests.length} Orb quests available`,
 		type: "info",
-		duration: location.pathname === "/quest-home" ? 8e3 : Number.POSITIVE_INFINITY,
+		duration: Number.POSITIVE_INFINITY,
 		actions: [
 			{
-				label: "Go to quests",
+				label: "Quests",
 				dontClose: false,
 				onClick() {
 					transitionTo("/quest-home");
 				}
 			},
 			{
+				label: "Solve",
+				onClick() {
+					solve();
+				}
+			},
+			{
 				label: "Close",
-				color:"red",
-				dontClose: false,
-				
+				color: "red",
+				dontClose: false
 			}
 		]
 	});

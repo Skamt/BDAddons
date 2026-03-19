@@ -37,6 +37,7 @@ export const getFluxContainer = (() => {
 	let userAreaFluxContainer = undefined;
 
 	function tryGetFluxContainer() {
+		if(userAreaFluxContainer) return userAreaFluxContainer;
 		const el = document.querySelector(`.${activityPanelClasses.panels}`);
 		if (!el) return;
 		const instance = getInternalInstance(el);
@@ -47,9 +48,8 @@ export const getFluxContainer = (() => {
 	}
 
 	return () => {
-		if (userAreaFluxContainer) return Promise.resolve(userAreaFluxContainer);
 		userAreaFluxContainer = tryGetFluxContainer();
-		if (userAreaFluxContainer) Promise.resolve(userAreaFluxContainer);
+		if (userAreaFluxContainer) return Promise.resolve(userAreaFluxContainer);
 
 		return new Promise(resolve => {
 			const interval = setInterval(() => {

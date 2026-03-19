@@ -18,7 +18,7 @@ export default async function (quest) {
 	Toast.info(`Completing quest ${questName}.`);
 
 	while (true) {
-		const maxAllowed = Math.floor((Date.now() - enrolledAt) / 1000) + maxFuture;
+		const maxAllowed = Math.abs(Math.floor((enrolledAt - Date.now()) / 1000) + maxFuture);
 		const diff = maxAllowed - secondsDone;
 		const timestamp = secondsDone + speed;
 		if (diff >= speed) {

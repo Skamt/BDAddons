@@ -1,4 +1,4 @@
-import { getMangled } from "@Webpack";
+import { getMangled, Filters } from "@Webpack";
 import { Patcher } from "@Api";
 import Logger from "@Utils/Logger";
 import Plugin, { Events } from "@Utils/Plugin";
@@ -9,7 +9,7 @@ import Toast from "@Utils/Toast";
 import completeQuest from "@/questTypes";
 import { isQuestExpired, isOrbsQuest, isQuestClaimed, isQuestCompleted, isQuestAccepted } from "@/utils";
 
-const QuestCard = getMangled("openQuestMinorEnrollmentBlockModal", { default: a => true });
+const QuestCard = getMangled(Filters.bySource("isClaimingReward","sourceQuestContent"), { default: a => true });
 
 function CompleteQuest({ quest }) {
 	const [completing, setCompleting] = React.useState(false);

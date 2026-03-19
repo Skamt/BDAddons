@@ -37,7 +37,7 @@ function* sourceLookup(...args) {
 	const invert = typeof args[args.length - 1] === "boolean" ? args.pop() : false;
 
 	for (const [id, source] of Object.entries(webpackRequire.m)) {
-		const sourceCode = source.toString();
+		const sourceCode = source.toString().replace(/^\d+/,"function");
 		const result = strArr.every(str => sourceCode.includes(str));
 		if (invert ^ result) yield new Source(id, source);
 	}

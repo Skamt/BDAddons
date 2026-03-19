@@ -34,88 +34,10 @@
 	background: rgb(1 0 1 / 64%);
 }
 
-/* div replacement if No banner */
-.VPP-NoBanner {
-	width: 70vw;
-	height: 50vh;
-	position: relative;
-}
-
-/* Carousel Modal */
-.VPP-carousel-modal {
-	background: #0000;
-	width: 100vw;
-	height: 100vh;
-	box-shadow: none !important;
-}
-
-.VPP-carousel {
-	position: static;
-	margin: auto;
-}
-
-.VPP-carousel > div[role="button"] {
-	margin: 0 15px;
-	background: var(--background-surface-high);
-	color: var(--interactive-text-default);
-	border-radius: 50%;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-}
-
-.VPP-carousel > div[role="button"]:hover {
-	background: var(--background-surface-highest);
-	color: var(--interactive-text-default);
-}
-
-/* Copy color button */
-.VPP-copy-color-container {
-	position: absolute;
-	top: 100%;
-	display: flex;
-	cursor: pointer;
-	gap: 5px;
-}
-
-.VPP-copy-color-label,
-.VPP-copy-color {
-	font-size: 14px;
-	font-weight: 500;
-	color: #fff;
-	line-height: 30px;
-	transition: opacity 0.15s ease;
-	opacity: 0.5;
-	text-transform: uppercase;
-}
-
-.VPP-copy-color:hover {
-	opacity: 1;
-	text-decoration: underline;
-}
-
-.VPP-separator {
-	line-height: 30px;
-	opacity: 0.5;
-	color: #fff;
-}
-
-.VPP-copy-color-label {
-	text-transform: capitalize;
-}
-
 .VPP-hover {
 	opacity: 0;
 }
 
 .VPP-container:hover .VPP-hover {
 	opacity: 1;
-}
-
-.VPP-colorFormat-options {
-	display: flex;
-}
-
-.VPP-colorFormat-options > div {
-	flex: 1;
 }

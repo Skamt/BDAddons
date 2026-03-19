@@ -3,6 +3,11 @@ div:has(> .tabbys-app-container):not(#a) {
 	padding-top: 0;
 }
 
+.tabbys-app-settings-button ~ :not([class^=winButtons]) svg{
+	height: 100% !important;
+	width: 100% !important;
+}
+
 .tabbys-app-container {
 	--custom-app-top-bar-height: calc(var(--size));
 	--space-32: calc(var(--size));
