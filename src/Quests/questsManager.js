@@ -1,7 +1,8 @@
 import QuestStore from "@Stores/QuestStore";
 import Plugin, { Events } from "@Utils/Plugin";
-import { isQuestExpired, isQuestClaimed, isOrbsQuest, solve, isQuestCompleted, isQuestAccepted } from "@/utils";
+import { isQuestExpired, isQuestClaimed, isOrbsQuest, isQuestCompleted, isQuestAccepted } from "@/utils";
 import { transitionTo } from "@Discord/Modules";
+import solveAll from "@/questTypes/all";
 
 function patch() {
 	QuestStore.quests.forEach((quest, id) => {
@@ -19,7 +20,7 @@ function notifyOfNewQuests() {
 
 	if (!orbsQuests.length || !hasNew) return;
 
-	const { close } = BdApi.UI.showNotification({
+	BdApi.UI.showNotification({
 		id: `quests-${Math.random().toString(36).slice(2)}`,
 		title: "Available Quests",
 		content: `${orbsQuests.length} Orb quests available`,
@@ -28,21 +29,20 @@ function notifyOfNewQuests() {
 		actions: [
 			{
 				label: "Quests",
-				dontClose: false,
 				onClick() {
 					transitionTo("/quest-home");
 				}
 			},
 			{
 				label: "Solve",
+				dontClose: true,
 				onClick() {
-					solve();
+					solveAll();
 				}
 			},
 			{
 				label: "Close",
-				color: "red",
-				dontClose: false
+				color: "red"
 			}
 		]
 	});

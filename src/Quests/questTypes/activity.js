@@ -3,7 +3,7 @@ import GuildChannelStore from "@Stores/GuildChannelStore";
 import { DiscordApi } from "@Discord/Modules";
 import Toast from "@Utils/Toast";
 import { supportedTasks } from "@/consts";
-
+import { sleep } from "@Utils";
 export default async function (quest) {
 	const taskConfig = quest.config.taskConfig ?? quest.config.taskConfigV2;
 	const taskName = supportedTasks.find(x => taskConfig.tasks[x] != null);
@@ -20,7 +20,7 @@ export default async function (quest) {
 		const progress = res.body.progress.PLAY_ACTIVITY.value;
 		Toast.info(`Quest progress: ${progress}/${secondsNeeded}`);
 
-		await new Promise(resolve => setTimeout(resolve, 20 * 1000));
+		await sleep(20);
 
 		if (progress >= secondsNeeded) {
 			await DiscordApi.api.post({ url: `/quests/${quest.id}/heartbeat`, body: { stream_key: streamKey, terminal: true } });

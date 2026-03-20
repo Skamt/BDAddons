@@ -7,7 +7,7 @@ import Button from "@Components/Button";
 import React from "@React";
 import Toast from "@Utils/Toast";
 import completeQuest from "@/questTypes";
-import { isQuestExpired, isOrbsQuest, isQuestClaimed, isQuestCompleted, isQuestAccepted } from "@/utils";
+import { isQuestCompleted, isQuestAccepted } from "@/utils";
 
 const QuestCard = getMangled(Filters.bySource("isClaimingReward","sourceQuestContent"), { default: a => true });
 

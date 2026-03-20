@@ -1,6 +1,7 @@
 import { DiscordApi } from "@Discord/Modules";
 import Toast from "@Utils/Toast";
 import { supportedTasks } from "@/consts";
+import { sleep } from "@Utils";
 
 export default async function (quest) {
 	const taskConfig = quest.config.taskConfig ?? quest.config.taskConfigV2;
@@ -27,14 +28,13 @@ export default async function (quest) {
 			secondsDone = Math.min(secondsNeeded, timestamp);
 		}
 
-		if (timestamp >= secondsNeeded) {
-			break;
-		}
-		await new Promise(resolve => setTimeout(resolve, interval * 1000));
+		if (timestamp >= secondsNeeded) break;
+
+		await sleep(1);
 	}
 	if (!completed) {
 		await DiscordApi.api.post({ url: `/quests/${quest.id}/video-progress`, body: { timestamp: secondsNeeded } });
 	}
-	
+
 	Toast.success(`Quest ${questName} completed!`);
 }
