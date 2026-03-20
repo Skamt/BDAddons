@@ -103,6 +103,10 @@ var Plugin_default = new class extends EventEmitter_default {
 // common/Utils/index.js
 var nop = () => {};
 
+function sleep(delay) {
+	return new Promise((done) => setTimeout(() => done(), delay * 1e3));
+}
+
 function preventDefault(handler) {
 	if (!handler) return nop;
 	return (e) => {
@@ -150,7 +154,8 @@ var GuildChannelStore_default = getStore("GuildChannelStore");
 
 // common/DiscordModules/Modules.js
 var DiscordApi = /* @__PURE__ */ (() => getMangled("HTTPUtils", { api: Filters.byKeys("get", "del", "patch", "put") }))();
-var transitionTo = /* @__PURE__ */ (() => getModule(Filters.byStrings(`"transitionTo - Transitioning to "`), { searchExports: true }))();
+var ChannelComponent = (() => getModule(Filters.byComponentType(Filters.byStrings("hasActiveThreads")), { searchExports: true }))();
+var transitionTo = /* @__PURE__ */ (() => getModule(Filters.byStrings("transitionTo - Transitioning to"), { searchExports: true }))();
 
 // src/Quests/consts.js
 var supportedTasks = ["WATCH_VIDEO", "PLAY_ON_DESKTOP", "STREAM_ON_DESKTOP", "PLAY_ACTIVITY", "WATCH_VIDEO_ON_MOBILE"];
@@ -158,9 +163,9 @@ var supportedTasks = ["WATCH_VIDEO", "PLAY_ON_DESKTOP", "STREAM_ON_DESKTOP", "PL
 // src/Quests/questTypes/activity.js
 async function activity_default(quest) {
 	const taskConfig = quest.config.taskConfig ?? quest.config.taskConfigV2;
-	const taskName = supportedTasks.find((x) => taskConfig.tasks[x] != null);
+	const taskName2 = supportedTasks.find((x) => taskConfig.tasks[x] != null);
 	const questName = quest.config.messages.questName;
-	const secondsNeeded = taskConfig.tasks[taskName].target;
+	const secondsNeeded = taskConfig.tasks[taskName2].target;
 	const channelId = ChannelStore_default.getSortedPrivateChannels()[0]?.id ?? Object.values(GuildChannelStore_default.getAllGuilds()).find((x) => x != null && x.VOCAL.length > 0).VOCAL[0].channel.id;
 	const streamKey = `call:${channelId}:1`;
 	Toast_default.info(`Completing quest ${questName}-${quest.config.messages.questName}`);
@@ -168,7 +173,7 @@ async function activity_default(quest) {
 		const res = await DiscordApi.api.post({ url: `/quests/${quest.id}/heartbeat`, body: { stream_key: streamKey, terminal: false } });
 		const progress = res.body.progress.PLAY_ACTIVITY.value;
 		Toast_default.info(`Quest progress: ${progress}/${secondsNeeded}`);
-		await new Promise((resolve) => setTimeout(resolve, 20 * 1e3));
+		await sleep(20);
 		if (progress >= secondsNeeded) {
 			await DiscordApi.api.post({ url: `/quests/${quest.id}/heartbeat`, body: { stream_key: streamKey, terminal: true } });
 			break;
@@ -191,15 +196,15 @@ function play_default(quest) {
 	const { promise, reject, resolve } = Promise.withResolvers();
 	const pid = Math.floor(Math.random() * 3e4) + 1e3;
 	const taskConfig = quest.config.taskConfig ?? quest.config.taskConfigV2;
-	const taskName = supportedTasks.find((x) => taskConfig.tasks[x] != null);
+	const taskName2 = supportedTasks.find((x) => taskConfig.tasks[x] != null);
 	const applicationId = quest.config.application.id;
 	const applicationName = quest.config.application.name;
 	const questName = quest.config.messages.questName;
-	const secondsNeeded = taskConfig.tasks[taskName].target;
-	const secondsDone = quest.userStatus?.progress?.[taskName]?.value ?? 0;
+	const secondsNeeded = taskConfig.tasks[taskName2].target;
+	const secondsDone = quest.userStatus?.progress?.[taskName2]?.value ?? 0;
 	const game = GameStore_default.games.find((a) => a.id === applicationId);
 	if (!game) reject(`can't find ${applicationName} in [GameStore]`);
-	const exeName = game.executables.find((x) => x.os === "win32").name.replace(">", "");
+	const exeName = game?.executables?.find((x) => x.os === "win32")?.name?.replace(">", "") || "";
 	const fakeGame = {
 		cmdLine: `C:\\Program Files\\${game.name}\\${exeName}`,
 		exeName,
@@ -243,10 +248,10 @@ function stream_default(quest) {}
 // src/Quests/questTypes/video.js
 async function video_default(quest) {
 	const taskConfig = quest.config.taskConfig ?? quest.config.taskConfigV2;
-	const taskName = supportedTasks.find((x) => taskConfig.tasks[x] != null);
+	const taskName2 = supportedTasks.find((x) => taskConfig.tasks[x] != null);
 	const questName = quest.config.messages.questName;
-	const secondsNeeded = taskConfig.tasks[taskName].target;
-	let secondsDone = quest.userStatus?.progress?.[taskName]?.value ?? 0;
+	const secondsNeeded = taskConfig.tasks[taskName2].target;
+	let secondsDone = quest.userStatus?.progress?.[taskName2]?.value ?? 0;
 	const maxFuture = 10;
 	const speed = 7;
 	const interval = 1;
@@ -254,7 +259,7 @@ async function video_default(quest) {
 	let completed = false;
 	Toast_default.info(`Completing quest ${questName}.`);
 	while (true) {
-		const maxAllowed = Math.floor((Date.now() - enrolledAt) / 1e3) + maxFuture;
+		const maxAllowed = Math.abs(Math.floor((enrolledAt - Date.now()) / 1e3) + maxFuture);
 		const diff = maxAllowed - secondsDone;
 		const timestamp = secondsDone + speed;
 		if (diff >= speed) {
@@ -262,10 +267,8 @@ async function video_default(quest) {
 			completed = res.body.completed_at != null;
 			secondsDone = Math.min(secondsNeeded, timestamp);
 		}
-		if (timestamp >= secondsNeeded) {
-			break;
-		}
-		await new Promise((resolve) => setTimeout(resolve, interval * 1e3));
+		if (timestamp >= secondsNeeded) break;
+		await sleep(1);
 	}
 	if (!completed) {
 		await DiscordApi.api.post({ url: `/quests/${quest.id}/video-progress`, body: { timestamp: secondsNeeded } });
@@ -274,32 +277,28 @@ async function video_default(quest) {
 }
 
 // src/Quests/questTypes/index.js
-function questTypes_default(quest) {
-	const pid = Math.floor(Math.random() * 3e4) + 1e3;
-	const taskConfig = quest.config.taskConfig ?? quest.config.taskConfigV2;
-	const taskName = supportedTasks.find((x) => taskConfig.tasks[x] != null);
-	const applicationId = quest.config.application.id;
-	const applicationName = quest.config.application.name;
-	const questName = quest.config.messages.questName;
-	const secondsNeeded = taskConfig.tasks[taskName].target;
-	let secondsDone = quest.userStatus?.progress?.[taskName]?.value ?? 0;
-	console.log(quest);
+async function questTypes_default(quest) {
 	switch (taskName) {
 		case "WATCH_VIDEO":
 		case "WATCH_VIDEO_ON_MOBILE":
-			return video_default(quest);
+			return await video_default(quest);
 		case "PLAY_ON_DESKTOP":
-			return play_default(quest);
+			return await play_default(quest);
 		case "STREAM_ON_DESKTOP":
-			return stream_default(quest);
+			return await stream_default(quest);
 		case "PLAY_ACTIVITY":
-			return activity_default(quest);
+			return await activity_default(quest);
 		default: {
-			console.log(`Unsupported quest type ${taskName}`);
-			return Promise.resolve();
+			throw `Unsupported quest type ${taskName}`;
 		}
 	}
 }
+
+// MODULES-AUTO-LOADER:@Stores/ApplicationStreamingStore
+var ApplicationStreamingStore_default = getStore("ApplicationStreamingStore");
+
+// MODULES-AUTO-LOADER:@Stores/QuestStore
+var QuestStore_default = getStore("QuestStore");
 
 // src/Quests/utils.js
 function isQuestExpired(quest) {
@@ -322,8 +321,13 @@ function isOrbsQuest(quest) {
 	return quest.config.rewardsConfig.rewards.some((a) => a.type === 4);
 }
 
+function isQuestSupported(quest) {
+	const config = quest.config.taskConfig ?? quest.config.taskConfigV2;
+	return supportedTasks.find((task) => Object.keys(config.tasks).includes(task));
+}
+
 // src/Quests/patches/patchQuestCard.jsx
-var QuestCard = getMangled("openQuestMinorEnrollmentBlockModal", { default: (a) => true });
+var QuestCard = getMangled(Filters.bySource("isClaimingReward", "sourceQuestContent"), { default: (a) => true });
 
 function CompleteQuest({ quest }) {
 	const [completing, setCompleting] = React_default.useState(false);
@@ -354,14 +358,30 @@ Plugin_default.on(Events.START, () => {
 	});
 });
 
-// MODULES-AUTO-LOADER:@Stores/QuestStore
-var QuestStore_default = getStore("QuestStore");
+// src/Quests/questTypes/all.js
+async function all_default() {
+	const quests = [...QuestStore_default.quests.values()].filter((q) => isQuestAccepted(q) && !isQuestExpired(q) && !isQuestCompleted(q) && isQuestSupported(q));
+	const qcount = quests.length;
+	if (quests.length === 0)
+		console.log("You don't have any uncompleted quests!");
+	Toast_default.info(`Completing ${qcount} quests.`);
+	while (quests.length) {
+		const quest = quests.pop();
+		Toast_default.info(`quest ${qcount - quests.length}/${qcount}`);
+		try {
+			await questTypes_default(quest);
+		} catch (e) {
+			Logger_default.error(e);
+		} finally {
+			await sleep(5);
+		}
+	}
+}
 
 // src/Quests/questsManager.js
 function patch() {
 	QuestStore_default.quests.forEach((quest, id) => {
-		if (isQuestExpired(quest) || isQuestCompleted(quest) && isQuestClaimed(quest))
-			QuestStore_default.quests.delete(id);
+		if (isQuestExpired(quest) || isQuestCompleted(quest) && isQuestClaimed(quest)) QuestStore_default.quests.delete(id);
 	});
 	QuestStore_default.emitChange();
 }
@@ -372,23 +392,28 @@ function notifyOfNewQuests() {
 	const hasNew = orbsQuests.some((a) => !seenQuests.has(a.id));
 	orbsQuests.forEach((a) => seenQuests.add(a.id));
 	if (!orbsQuests.length || !hasNew) return;
-	const { close } = BdApi.UI.showNotification({
+	BdApi.UI.showNotification({
 		id: `quests-${Math.random().toString(36).slice(2)}`,
 		title: "Available Quests",
 		content: `${orbsQuests.length} Orb quests available`,
 		type: "info",
-		duration: location.pathname === "/quest-home" ? 8e3 : Number.POSITIVE_INFINITY,
+		duration: Number.POSITIVE_INFINITY,
 		actions: [{
-				label: "Go to quests",
-				dontClose: false,
+				label: "Quests",
 				onClick() {
 					transitionTo("/quest-home");
 				}
 			},
 			{
+				label: "Solve",
+				dontClose: true,
+				onClick() {
+					all_default();
+				}
+			},
+			{
 				label: "Close",
-				color: "red",
-				dontClose: false
+				color: "red"
 			}
 		]
 	});
