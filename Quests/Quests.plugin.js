@@ -437,3 +437,7 @@ Plugin_default.on(Events.STOP, () => {
 	Patcher.unpatchAll();
 });
 module.exports = () => Plugin_default;
+/*!
+ * original script
+ * https://gist.github.com/aamiaa/204cd9d42013ded9faf646fae7f89fbb
+ * */
