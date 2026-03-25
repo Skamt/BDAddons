@@ -1,7 +1,7 @@
 /**
  * @name SendStickersAsLinks
  * @description Enables you to send custom Stickers as links
- * @version 2.3.4
+ * @version 2.3.5
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/SendStickersAsLinks
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/SendStickersAsLinks/SendStickersAsLinks.plugin.js
@@ -11,7 +11,7 @@
 var Config_default = {
 	"info": {
 		"name": "SendStickersAsLinks",
-		"version": "2.3.4",
+		"version": "2.3.5",
 		"description": "Enables you to send custom Stickers as links",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SendStickersAsLinks/SendStickersAsLinks.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SendStickersAsLinks",
@@ -263,7 +263,7 @@ var StickersStore_default = getStore("StickersStore");
 var ChannelStore_default = getStore("ChannelStore");
 
 // MODULES-AUTO-LOADER:@Modules/Dispatcher
-var Dispatcher_default = getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: false });
+var Dispatcher_default = getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: true });
 
 // MODULES-AUTO-LOADER:@Stores/PendingReplyStore
 var PendingReplyStore_default = getStore("PendingReplyStore");
@@ -398,16 +398,32 @@ Plugin_default.on(Events.START, () => {
 });
 
 // src/SendStickersAsLinks/patches/patchStickerAttachement.js
+var replyInterceptor = {
+	handler(a) {
+		if (a.type !== "DELETE_PENDING_REPLY") return;
+		delete a.channelId;
+	},
+	on() {
+		Dispatcher_default.addInterceptor(this.handler);
+	},
+	off() {
+		Dispatcher_default._interceptors.splice(Dispatcher_default._interceptors.indexOf(this.handler), 1);
+	}
+};
 Plugin_default.on(Events.START, () => {
-	if (!MessageActions_default) return Logger_default.patchError("StickerAttachement");
+	if (!MessageActions_default) return Logger_default.patchError("sendMessage");
 	const unpatch = Patcher.before(MessageActions_default, "sendMessage", (_, args) => {
 		const [channelId, , , attachments] = args;
 		if (attachments?.stickerIds?.filter) {
 			const [stickerId] = attachments.stickerIds;
 			const { isSendable, sticker, channel } = handleSticker(channelId, stickerId);
 			if (!isSendable) {
+				replyInterceptor.on();
 				args[3].stickerIds = void 0;
-				setTimeout(() => sendStickerAsLink(sticker, channel));
+				setTimeout(() => {
+					replyInterceptor.off();
+					sendStickerAsLink(sticker, channel);
+				});
 			}
 		}
 	});
@@ -477,10 +493,51 @@ var Switch_default = getModule(Filters.byStrings('"data-toggleable-component":"s
 	));
 };
 
+// common/Components/Divider/styles.css
+StylesLoader_default.push(`.divider-horizontal {
+	border-top: thin solid var(--border-subtle);
+	align-self: stretch;
+	margin:var(--divider-gap) var(--divider-gutter) var(--divider-gap) var(--divider-gutter) ;
+}
+
+.divider-vertical {
+	border-left: thin solid var(--border-subtle);
+	align-self: stretch;
+	margin:var(--divider-gutter) var(--divider-gap) var(--divider-gutter) var(--divider-gap);
+}
+`);
+
+// common/Utils/css.js
+var classNameFactory = (prefix = "", connector = "-") => (...args) => {
+	const classNames = /* @__PURE__ */ new Set();
+	for (const arg of args) {
+		if (arg && typeof arg === "string") classNames.add(arg);
+		else if (Array.isArray(arg)) arg.forEach((name) => classNames.add(name));
+		else if (arg && typeof arg === "object") Object.entries(arg).forEach(([name, value]) => value && classNames.add(name));
+	}
+	return Array.from(classNames, (name) => `${prefix}${connector}${name}`).join(" ");
+};
+
+// common/Components/Divider/index.jsx
+var c = classNameFactory("divider");
+
+function Divider({ gap = 15, gutter = 0, direction = Divider.direction.HORIZONTAL }) {
+	return /* @__PURE__ */ React_default.createElement(
+		"div", {
+			style: { "--divider-gap": `${gap}px`, "--divider-gutter": `${gutter}%` },
+			className: c("base", direction)
+		}
+	);
+}
+Divider.direction = {
+	HORIZONTAL: "horizontal",
+	VERTICAL: "vertical"
+};
+
 // common/Components/SettingSwtich/index.jsx
-function SettingSwtich({ settingKey, note, onChange = nop, description, ...rest }) {
+function SettingSwtich({ settingKey, note, border = false, onChange = nop, description, ...rest }) {
 	const [val, set] = Settings_default.useSetting(settingKey);
-	return /* @__PURE__ */ React.createElement(
+	return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(
 		Switch_default, {
 			...rest,
 			checked: val,
@@ -491,7 +548,7 @@ function SettingSwtich({ settingKey, note, onChange = nop, description, ...rest 
 				onChange(e);
 			}
 		}
-	);
+	), border && /* @__PURE__ */ React.createElement(Divider, { gap: 15 }));
 }
 
 // common/Components/FieldSet/styles.css
@@ -522,75 +579,30 @@ StylesLoader_default.push(`.fieldset-container {
 }
 `);
 
-// common/Utils/css.js
-var classNameFactory = (prefix = "", connector = "-") => (...args) => {
-	const classNames = /* @__PURE__ */ new Set();
-	for (const arg of args) {
-		if (arg && typeof arg === "string") classNames.add(arg);
-		else if (Array.isArray(arg)) arg.forEach((name) => classNames.add(name));
-		else if (arg && typeof arg === "object") Object.entries(arg).forEach(([name, value]) => value && classNames.add(name));
-	}
-	return Array.from(classNames, (name) => `${prefix}${connector}${name}`).join(" ");
-};
-
 // common/Components/FieldSet/index.jsx
-var c = classNameFactory("fieldset");
+var c2 = classNameFactory("fieldset");
 
 function FieldSet({ label, description, children, contentGap = 16 }) {
-	return /* @__PURE__ */ React_default.createElement("fieldset", { className: c("container") }, label && /* @__PURE__ */ React_default.createElement(
+	return /* @__PURE__ */ React_default.createElement("fieldset", { className: c2("container") }, label && /* @__PURE__ */ React_default.createElement(
 		Heading_default, {
-			className: c("label"),
+			className: c2("label"),
 			tag: "legend",
 			variant: "text-lg/medium"
 		},
 		label
 	), description && /* @__PURE__ */ React_default.createElement(
 		Heading_default, {
-			className: c("description"),
+			className: c2("description"),
 			variant: "text-sm/normal",
 			color: "text-secondary"
 		},
 		description
-	), /* @__PURE__ */ React_default.createElement("div", { className: c("content"), style: { gap: contentGap } }, children));
+	), /* @__PURE__ */ React_default.createElement("div", { className: c2("content"), style: { gap: contentGap } }, children));
 }
-
-// common/Components/Divider/styles.css
-StylesLoader_default.push(`.divider-base {
-	border-top: thin solid var(--border-subtle);
-	flex:1 0 0;
-}
-
-.divider-horizontal {
-	width: 100%;
-	height: 1px;
-}
-
-.divider-vertical {
-	width: 1px;
-	height: 100%;
-}
-`);
-
-// common/Components/Divider/index.jsx
-var c2 = classNameFactory("divider");
-
-function Divider({ direction = "horizontal", gap }) {
-	return /* @__PURE__ */ React_default.createElement(
-		"div", {
-			style: {
-				marginTop: gap,
-				marginBottom: gap
-			},
-			className: c2("base", { direction })
-		}
-	);
-}
-Divider.direction = {
-	HORIZONTAL: "horizontal",
-	VERTICAL: "vertical"
-};
 
 // src/SendStickersAsLinks/components/SettingComponent.jsx
+var sizes = [80, 100, 128, 160];
+
 function StickerSize() {
 	const [val, set] = Settings_default.useSetting("stickerSize");
 	return /* @__PURE__ */ React_default.createElement(
@@ -601,35 +613,39 @@ function StickerSize() {
 			stickToMarkers: true,
 			sortedMarkers: true,
 			equidistant: true,
-			markers: [80, 100, 128, 160],
-			minValue: 80,
-			maxValue: 160,
+			markers: sizes,
+			minValue: sizes[0],
+			maxValue: sizes[sizes.length - 1],
 			initialValue: val,
-			onValueChange: set
+			onValueChange: (e) => set(sizes.find((s) => e <= s) ?? sizes[sizes.length - 1])
 		}
 	);
 }
 var SettingComponent_default = () => {
 	return /* @__PURE__ */ React_default.createElement(FieldSet, { contentGap: 8 }, [{
+			border: true,
 			settingKey: "sendDirectly",
 			description: "Send Directly",
 			note: "Send the sticker link in a message directly instead of putting it in the chat box."
 		},
 		{
+			border: true,
 			settingKey: "ignoreEmbedPermissions",
 			description: "Ignore Embed Permissions",
 			note: "Send sticker links regardless of embed permissions, meaning links will not turn into images."
 		},
 		{
+			border: true,
 			settingKey: "shouldSendAnimatedStickers",
 			description: "Send animated stickers",
 			note: "Animated stickers do not animate, sending them will only send the first picture of the animation. (still useful)"
 		},
 		{
+			border: true,
 			settingKey: "shouldHighlightAnimated",
 			description: "Highlight animated stickers"
 		}
-	].map(SettingSwtich), /* @__PURE__ */ React_default.createElement(Divider, { gap: 15 }), /* @__PURE__ */ React_default.createElement(StickerSize, null));
+	].map(SettingSwtich), /* @__PURE__ */ React_default.createElement(StickerSize, null));
 };
 
 // src/SendStickersAsLinks/index.jsx
