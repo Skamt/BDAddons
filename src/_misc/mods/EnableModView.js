@@ -7,6 +7,7 @@ import { Filters,  getModule } from "@Webpack";
 
 // const a = getModule(a => a.useCanAccessGuildMemberModView);
 const d = getModule(Filters.byStrings("openGuildSidebar"), { searchExports: true });
+const a = getModule(Filters.bySource("checkElevated","user:","context:","getGuild","getCurrentUser","ated:!1}),l.M)};function c(e){r"));
 
 // eslint-disable-next-line no-undef
 
@@ -17,7 +18,6 @@ export default class EnableModView extends Disposable {
 			Patcher.after(PermissionStore, "can", (_, args, ret) => (args[0] === 268435456n ? true : ret))
 		);
 
-		const a = s.getSource("checkElevated","user:","context:","getGuild","getCurrentUser","default")?.module?.exports;
 		if (!a) return Logger.patchError("EnableModView");
 
 		for (const key in a) {

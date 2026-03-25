@@ -29,6 +29,7 @@ function notifyOfNewQuests() {
 		actions: [
 			{
 				label: "Quests",
+				dontClose: true,
 				onClick() {
 					transitionTo("/quest-home");
 				}

@@ -11,10 +11,10 @@ Plugin.on(Events.START, () => {
 	let unpatch = [
 		...["thread-context", "user-context", "channel-context"].map(context =>
 			ContextMenu.patch(context, (retVal, ag) => {
-				console.log(ag);
+				console.log(retVal,ag);
 				
 				const channel = ag.channel;
-				if (!channel) return;
+				if (ag.guildId || !channel) return;
 				retVal.props.children.splice(0, 0, [
 					ContextMenu.buildItem({
 						id: `${config.info.name}-open-window`,

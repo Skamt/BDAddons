@@ -8,8 +8,10 @@ import { Filters, getModule } from "@Webpack";
 import FloatingWindow from "./FloatingWindow";
 
 // const ChannelComp = getModule(a => a.type && String(a.type).includes("providedChannel"));
-const ChannelComp = getModule(m => m?.type?.toString().indexOf("communicationDisabledUntil") > -1);
+// const ChannelComp = getModule(m => m?.type?.toString().indexOf("communicationDisabledUntil") > -1);
 const chatInputTypes = getModule(Filters.byKeys("OVERLAY", "NORMAL"), { searchExports: true });
+
+const ChannelComp = s(415586).exports.A;
 
 export default React.memo(function FloatingChannel({ id }) {
 	console.log("FloatingChannel")
@@ -35,12 +37,12 @@ export default React.memo(function FloatingChannel({ id }) {
 			title={getChannelName(channel)}
 			content={
 				<ChannelComp
-					channel={channel}
-					guild={guild}
-					chatInputType={{
-						...chatInputTypes.NORMAL,
-						analyticsName: crypto.randomUUID()
-					}}
+					channelId={channel.id}
+					// guild={guild}
+					// chatInputType={{
+					// 	...chatInputTypes.NORMAL,
+					// 	analyticsName: crypto.randomUUID()
+					// }}
 				/>
 			}
 		/>

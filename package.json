@@ -27,5 +27,8 @@
 		"esbuild": "^0.25.5",
 		"esbuild-plugin-import-glob": "^0.1.1",
 		"js-beautify": "^1.15.4"
+	},
+	"optionalDependencies": {
+		"draggabilly": "^3.0.0"
 	}
 }

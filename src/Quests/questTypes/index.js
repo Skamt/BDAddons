@@ -7,8 +7,8 @@ import { supportedTasks } from "@/consts";
 export default async function (quest) {
 	// const pid = Math.floor(Math.random() * 30000) + 1000;
 
-	// const taskConfig = quest.config.taskConfig ?? quest.config.taskConfigV2;
-	// const taskName = supportedTasks.find(x => taskConfig.tasks[x] != null);
+	const taskConfig = quest.config.taskConfig ?? quest.config.taskConfigV2;
+	const taskName = supportedTasks.find(x => taskConfig.tasks[x] != null);
 
 	// const applicationId = quest.config.application.id;
 	// const applicationName = quest.config.application.name;

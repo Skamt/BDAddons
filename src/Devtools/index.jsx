@@ -12,6 +12,7 @@ import SettingComponent from "./SettingComponent";
 import { Sources } from "./Sources";
 import { Stores } from "./Stores";
 import webpackRequire from "./webpackRequire";
+import MessageActions from "@Modules/MessageActions";
 
 import { transitionTo, ChannelUtils } from "@Discord/Modules";
 
@@ -123,8 +124,9 @@ function init() {
 		...Sources,
 		...Modules,
 		DiscordModules: {
+			MessageActions,
 			Dispatcher,
-			TheBigBoyBundle,
+			
 			DiscordPermissionsEnum
 		}
 	});

@@ -11,7 +11,7 @@ import { sendMessageDirectly, insertText } from "@Utils/Messages";
 const GIFIntegration = getModule(a => a.GIFIntegration).GIFIntegration;
 
 const GifsModule = getMangled(Filters.bySource("renderGIF()", "renderEmptyFavorites"), {
-	Gif: Filters.byStrings("return(0,r.jsx)(G"),
+	Gif: Filters.byStrings("return(0,r.jsx)("),
 	GifsList: Filters.byPrototypeKeys("renderGIF")
 });
 
@@ -40,7 +40,6 @@ export default class GIFCommandPreviews extends Disposable {
 
 		this.patches = [
 			Patcher.after(GifsModule.GifsList.prototype, "render", ({ props }, args, ret) => {
-				// console.log(props)
 				if (!props.item?.url) return;
 				ret.props.onContextMenu = e => {
 					ContextMenu.open(e, GifMenu(props.item.url), {
@@ -52,20 +51,22 @@ export default class GIFCommandPreviews extends Disposable {
 			Patcher.after(GIFIntegration.prototype, "renderContent", (_, args, ret) => {
 				return (
 					<ErrorBoundary id="GIF-Stuff">
-						<HoverPopout
-							popout={() => (
-								<img
-									src={_.props.src}
-									alt={_.props.url}
-									width={_.props.width * 5}
-									height={_.props.height * 5}
-								/>
-							)}
-							align="center"
-							position="top"
-							delay={100}>
-							{ret}
-						</HoverPopout>
+						<div ref={ref}>
+							<HoverPopout
+								popout={() => (
+									<img
+										src={_.props.src}
+										alt={_.props.url}
+										width={_.props.width * 5}
+										height={_.props.height * 5}
+									/>
+								)}
+								align="center"
+								position="top"
+								delay={100}>
+								{ret}
+							</HoverPopout>
+						</div>
 					</ErrorBoundary>
 				);
 			}),

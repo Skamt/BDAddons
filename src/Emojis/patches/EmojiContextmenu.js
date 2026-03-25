@@ -5,9 +5,10 @@ import { sendEmojiDirectly, insertEmoji } from "../Utils";
 Plugin.on(Events.START, () => {
 	const unpatch = [
 		ContextMenu.patch("expression-picker", (retVal, props) => {
-			const id = getInternalInstance(props.target)?.pendingProps?.["data-id"];
+			const iProps = getInternalInstance(props.target)?.pendingProps;
+			const id = iProps?.["data-type"] === "emoji" && iProps["data-id"];
 			if(!id) return;
-		
+			
 			const MenuItems = [
 				ContextMenu.buildItem({
 					label: "Send directly",
