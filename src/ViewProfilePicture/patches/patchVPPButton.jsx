@@ -4,36 +4,55 @@ import { getNestedProp } from "@Utils";
 import { join } from "@Utils/css";
 import ErrorBoundary from "@Components/ErrorBoundary";
 import ErrorIcon from "@Components/icons/ErrorIcon";
-// import ProfileTypeEnum from "@Enums/ProfileTypeEnum";
 import Logger from "@Utils/Logger";
-
-import { Filters, getModule } from "@Webpack";
+import Plugin, { Events } from "@Utils/Plugin";
+import { Filters, getById, getMangled, getModule } from "@Webpack";
 import VPPButton from "../components/VPPButton";
 
-// const UserBannerMask = getModuleAndKey(Filters.byStrings("bannerSrc", "showPremiumBadgeUpsell"), { searchExports: true });
 const UserProfileModalforwardRef = getModule(Filters.byKeys("Overlay", "render"));
-const typeFilter = Filters.byStrings("div", "children:");
 
-import Plugin, { Events } from "@Utils/Plugin";
+const wrapper = getById(587168).A;
+
+const UserProfileBanner = getMangled(Filters.bySource("avatarOffsetX","foreignObject"), {
+	Banner: Filters.byStrings("canUsePremiumProfileCustomization")
+})
 
 Plugin.on(Events.START, () => {
-	if (!UserProfileModalforwardRef) return Logger.patchError("patchVPPButton");
-	const unpatch = Patcher.after(UserProfileModalforwardRef, "render", (_, [props], ret) => {
-		const t = getNestedProp(ret, "props.children.props.children.props.children.props.children.1.1");
-		const target = (typeFilter(t?.type) && t) || findInTree(ret, a => a?.type === "header" || a?.props?.className?.includes("profileHeader"), { walkable: ["props", "children"] });
-		if (!target) return;
+	
+	// User Profile Modal_V2
+	Patcher.after(UserProfileBanner, "Banner", (_, [props], ret) => {
+		if (props.themeType !== "MODAL_V2") return ret;
+		return [
+			ret,
+			<ErrorBoundary
+				id="VPPButton"
+				plugin={config.info.name}
+				fallback={<ErrorIcon className="VPP-Button" />}>
+				<VPPButton
+					className={join("VPP-Button", "VPP-float")}
+					user={props.user}
+					displayProfile={props.displayProfile}
+				/>
+			</ErrorBoundary>
+		];
+	});
 
+	// Popout, Sidebar, Bot Profile
+	Patcher.after(UserProfileModalforwardRef, "render", (_, [props], ret) => {
+		// adds VPP-container anyway to help the previous patch
 		ret.props.className = `${ret.props.className} VPP-container`;
 
-		const children = Array.isArray(target.props.children) ? target.props.children : [target.props.children];
+		const target = findInTree(ret, a => a?.type === wrapper, { walkable: ["props", "children"] });
+		if (!target) return;
 
+		const children = Array.isArray(target.props.children) ? target.props.children : [target.props.children];
 		children.unshift(
 			<ErrorBoundary
 				id="VPPButton"
 				plugin={config.info.name}
 				fallback={<ErrorIcon className="VPP-Button" />}>
 				<VPPButton
-					className={join("VPP-Button", !typeFilter(target?.type) && "VPP-float")}
+					className={join("VPP-Button")}
 					user={props.user}
 					displayProfile={props.displayProfile}
 				/>
@@ -41,6 +60,4 @@ Plugin.on(Events.START, () => {
 		);
 		target.props.children = children;
 	});
-
-	Plugin.once(Events.STOP, unpatch);
 });

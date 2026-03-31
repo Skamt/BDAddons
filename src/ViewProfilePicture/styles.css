@@ -11,23 +11,17 @@
 	align-items: center;
 }
 
-.VPP-float {
-	position: absolute;
-	top: 12px;
-	right: 12px;
-	z-index: 987;
-}
-
 .VPP-Button svg {
 	height: 18px;
 	width: 18px;
 }
 
-/* Bigger icon on profile */
-.VPP-settings svg,
-.VPP-profile svg {
-	height: 24px;
-	width: 24px;
+/* Profile Modal_V2 */
+.VPP-float {
+	position: absolute;
+	top: 12px;
+	right: 12px;
+	z-index: 3;
 }
 
 .VPP-Button:hover {
