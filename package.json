@@ -49,7 +49,7 @@
 	"homepage": "https://github.com/Skamt/BetterDiscordPlugins#readme",
 	"buildConfig": {
 		"pluginsFolder": "./src",
-		"releaseFolder": "./release",
+		"releaseFolder": "../BDAddonsV2/release",
 		"baseConfig": {
 			"info": {
 				"authors": [
