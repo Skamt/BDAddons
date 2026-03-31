@@ -570,10 +570,10 @@ function insertEmoji(id) {
 Plugin_default.on(Events.START, () => {
 	const unpatch = [
 		ContextMenu.patch("expression-picker", (retVal, props) => {
-			const id = getInternalInstance(props.target)?.pendingProps?.["data-id"];
+			const iProps = getInternalInstance(props.target)?.pendingProps;
+			const id = iProps?.["data-type"] === "emoji" && iProps["data-id"];
 			if (!id) return;
-			console.log(id);
-			retVal.props.children.splice(1, 0, [
+			const MenuItems = [
 				ContextMenu.buildItem({
 					label: "Send directly",
 					action: () => sendEmojiDirectly(id)
@@ -582,7 +582,9 @@ Plugin_default.on(Events.START, () => {
 					label: "Insert url",
 					action: () => insertEmoji(id)
 				})
-			]);
+			];
+			if (Array.isArray(retVal.props.children)) retVal.props.children.unshift(MenuItems);
+			else retVal.props.children = [MenuItems, retVal.props.children];
 		})
 	];
 	Plugin_default.once(Events.STOP, () => {
@@ -705,16 +707,12 @@ StylesLoader_default.push(`.transparent-background.transparent-background{
 }`);
 
 // common/Utils/Modals/index.jsx
-var ModalActions = /* @__PURE__ */ getMangled("onCloseRequest:null!=", {
-	openModal: /* @__PURE__ */ Filters.byStrings("onCloseRequest:null!="),
-	closeModal: /* @__PURE__ */ Filters.byStrings(".setState", ".getState()["),
-	ModalStore: /* @__PURE__ */ Filters.byKeys("getState")
-});
+var ModalActions = getModule((a) => a.useModalsStore);
 var Modals = /* @__PURE__ */ getMangled( /* @__PURE__ */ Filters.bySource("MODAL_ROOT", "transitionState"), {
 	ModalRoot: /* @__PURE__ */ Filters.byStrings("transitionState"),
-	ModalFooter: /* @__PURE__ */ Filters.byStrings(".footer"),
-	ModalContent: /* @__PURE__ */ Filters.byStrings(".content"),
-	ModalHeader: /* @__PURE__ */ Filters.byStrings("headerIdIsManaged", "headerId"),
+	ModalFooter: /* @__PURE__ */ Filters.byStrings(".HORIZONTAL_REVERSE"),
+	ModalContent: /* @__PURE__ */ Filters.byStrings("scrollbarType", "scrollerRef"),
+	ModalHeader: /* @__PURE__ */ Filters.byStrings("headerIdIsManaged", "headerId", ".HORIZONTAL"),
 	Animations: (a) => a.SUBTLE,
 	Sizes: (a) => a.DYNAMIC,
 	ModalCloseButton: Filters.byStrings("withCircleBackground")

@@ -1,7 +1,7 @@
 /**
  * @name ViewProfilePicture
  * @description Adds a button to the user popout and profile that allows you to view the Avatar and banner.
- * @version 1.3.10
+ * @version 1.3.11
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js
@@ -11,7 +11,7 @@
 var Config_default = {
 	"info": {
 		"name": "ViewProfilePicture",
-		"version": "1.3.10",
+		"version": "1.3.11",
 		"description": "Adds a button to the user popout and profile that allows you to view the Avatar and banner.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture",
@@ -52,11 +52,11 @@ var EventEmitter_default = class {
 	once(event, handler) {
 		if (this.isInValid(event, handler)) return;
 		if (!this.listeners[event]) this.listeners[event] = /* @__PURE__ */ new Set();
-		const wrapper = () => {
+		const wrapper2 = () => {
 			handler();
-			this.off(event, wrapper);
+			this.off(event, wrapper2);
 		};
-		this.listeners[event].add(wrapper);
+		this.listeners[event].add(wrapper2);
 	}
 	on(event, handler) {
 		if (this.isInValid(event, handler)) return;
@@ -126,23 +126,17 @@ StylesLoader_default.push(`/* View Profile Button */
 	align-items: center;
 }
 
-.VPP-float {
-	position: absolute;
-	top: 12px;
-	right: 12px;
-	z-index: 987;
-}
-
 .VPP-Button svg {
 	height: 18px;
 	width: 18px;
 }
 
-/* Bigger icon on profile */
-.VPP-settings svg,
-.VPP-profile svg {
-	height: 24px;
-	width: 24px;
+/* Profile Modal_V2 */
+.VPP-float {
+	position: absolute;
+	top: 12px;
+	right: 12px;
+	z-index: 3;
 }
 
 .VPP-Button:hover {
@@ -171,10 +165,6 @@ function fit({ width, height, gap = 0.8 }) {
 	};
 }
 var promiseHandler = (promise) => promise.then((data) => [void 0, data]).catch((err) => [err]);
-
-function getNestedProp(obj, path) {
-	return path.split(".").reduce((ob, prop) => ob?.[prop], obj);
-}
 var nop = () => {};
 
 function getImageDimensions(url) {
@@ -272,6 +262,7 @@ var ErrorIcon_default = (props) => /* @__PURE__ */ React.createElement("div", { 
 var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
 var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
 var getMangled = /* @__PURE__ */ (() => Webpack.getMangled)();
+var getById = /* @__PURE__ */ (() => Webpack.getById)();
 
 // common/DiscordModules/zustand.js
 var { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
@@ -347,7 +338,7 @@ function ImageIcon(props) {
 }
 
 // common/DiscordModules/Modules.js
-var ChannelComponent = getModule(Filters.byComponentType(Filters.byStrings("hasActiveThreads")), { searchExports: true });
+var ChannelComponent = (() => getModule(Filters.byComponentType(Filters.byStrings("hasActiveThreads")), { searchExports: true }))();
 var MediaViewerModal = /* @__PURE__ */ (() => getMangled("Media Viewer Modal", { MediaViewerModal: (a) => typeof a !== "string" }).MediaViewerModal)();
 
 // MODULES-AUTO-LOADER:@Modules/Color
@@ -404,14 +395,37 @@ var VPPButton_default = ({ className, user, displayProfile }) => {
 
 // src/ViewProfilePicture/patches/patchVPPButton.jsx
 var UserProfileModalforwardRef = getModule(Filters.byKeys("Overlay", "render"));
-var typeFilter = Filters.byStrings("div", "children:");
+var wrapper = getById(587168).A;
+var UserProfileBanner = getMangled(Filters.bySource("avatarOffsetX", "foreignObject"), {
+	Banner: Filters.byStrings("canUsePremiumProfileCustomization")
+});
 Plugin_default.on(Events.START, () => {
-	if (!UserProfileModalforwardRef) return Logger_default.patchError("patchVPPButton");
-	const unpatch = Patcher.after(UserProfileModalforwardRef, "render", (_, [props], ret) => {
-		const t = getNestedProp(ret, "props.children.props.children.props.children.props.children.1.1");
-		const target = typeFilter(t?.type) && t || findInTree(ret, (a) => a?.type === "header" || a?.props?.className?.includes("profileHeader"), { walkable: ["props", "children"] });
-		if (!target) return;
+	Patcher.after(UserProfileBanner, "Banner", (_, [props], ret) => {
+		if (props.themeType !== "MODAL_V2") return ret;
+		return [
+			ret,
+			/* @__PURE__ */
+			React.createElement(
+				ErrorBoundary, {
+					id: "VPPButton",
+					plugin: Config_default.info.name,
+					fallback: /* @__PURE__ */ React.createElement(ErrorIcon_default, { className: "VPP-Button" })
+				},
+				/* @__PURE__ */
+				React.createElement(
+					VPPButton_default, {
+						className: join("VPP-Button", "VPP-float"),
+						user: props.user,
+						displayProfile: props.displayProfile
+					}
+				)
+			)
+		];
+	});
+	Patcher.after(UserProfileModalforwardRef, "render", (_, [props], ret) => {
 		ret.props.className = `${ret.props.className} VPP-container`;
+		const target = findInTree(ret, (a) => a?.type === wrapper, { walkable: ["props", "children"] });
+		if (!target) return;
 		const children = Array.isArray(target.props.children) ? target.props.children : [target.props.children];
 		children.unshift(
 			/* @__PURE__ */
@@ -424,7 +438,7 @@ Plugin_default.on(Events.START, () => {
 				/* @__PURE__ */
 				React.createElement(
 					VPPButton_default, {
-						className: join("VPP-Button", !typeFilter(target?.type) && "VPP-float"),
+						className: join("VPP-Button"),
 						user: props.user,
 						displayProfile: props.displayProfile
 					}
@@ -433,7 +447,6 @@ Plugin_default.on(Events.START, () => {
 		);
 		target.props.children = children;
 	});
-	Plugin_default.once(Events.STOP, unpatch);
 });
 
 // MODULES-AUTO-LOADER:@Modules/FormSwitch
@@ -566,4 +579,7 @@ function SettingComponent() {
 
 // src/ViewProfilePicture/index.jsx
 Plugin_default.getSettingsPanel = () => /* @__PURE__ */ React_default.createElement(SettingComponent, null);
+Plugin_default.on(Events.STOP, () => {
+	Patcher.unpatchAll();
+});
 module.exports = () => Plugin_default;
