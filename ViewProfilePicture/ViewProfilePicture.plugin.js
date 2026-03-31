@@ -338,7 +338,6 @@ function ImageIcon(props) {
 }
 
 // common/DiscordModules/Modules.js
-var ChannelComponent = (() => getModule(Filters.byComponentType(Filters.byStrings("hasActiveThreads")), { searchExports: true }))();
 var MediaViewerModal = /* @__PURE__ */ (() => getMangled("Media Viewer Modal", { MediaViewerModal: (a) => typeof a !== "string" }).MediaViewerModal)();
 
 // MODULES-AUTO-LOADER:@Modules/Color
