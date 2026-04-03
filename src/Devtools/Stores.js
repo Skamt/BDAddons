@@ -3,8 +3,9 @@ import { Sources } from "./Sources";
 import Dispatcher from "@Modules/Dispatcher";
 
 class Store {
-	constructor(module) {
-		this.module = module;
+	constructor(store) {
+		this.store = store;
+		this.module = Sources.getSourceByFunc(store.constructor)?.[0].module;
 		this.name = this.store.getName();
 
 		this.methods = {};
@@ -25,10 +26,11 @@ class Store {
 	}
 
 
-	get store() {
+	// get store() {
 		
-		for (const key of ["Z", "ZP", "default"]) if (key in this.module.exports) return this.module.exports[key];
-	}
+	// 	for (const key of ["Z", "ZP", "default"]) if (key in this.module.exports) 
+	// 		return this.module.exports[key];
+	// }
 
 	// get localVars() {
 	// 	return this.store.__getLocalVars();
@@ -39,25 +41,29 @@ class Store {
 	}
 }
 
-const Zustand = Sources.getSource("/ServerSideRendering|^Deno\\//");
+// const Zustand = Sources.getSource("/ServerSideRendering|^Deno\\//");
+
+
+const FluxStore = Modules.getModule(a => a.Store, {searchExports:true})?.target.Store;
+const stores = FluxStore.getAll();
+
 
 export const Stores = {
 	getStore(storeName) {
-		// const storeFilter = exp => exp?.default?._dispatchToken && exp?.default?.getName() === storeName;
-		const storeFilter = exp => exp && ["Z", "ZP", "default"].some(k => exp[k]?._dispatchToken && exp[k]?._changeCallbacks && exp[k]?.getName() ===  storeName);
-		const module = Modules.getModule(storeFilter);
+		const module = stores.find(a => a.getName() === storeName);
 		if (!module) return undefined;
 		return new Store(module);
 	},
 	getStoreFuzzy(str = "") {
-		// const storeFilter = exp => exp?.default?._dispatchToken && exp?.default?.getName().toLowerCase().includes(str.toLowerCase());
-		const storeFilter = exp => exp && ["Z", "ZP", "default"].some(k => exp[k]?._dispatchToken && exp[k]?._changeCallbacks && exp[k]?.getName()?.toLowerCase?.().includes(str));
-		return Modules.getModules(storeFilter).map(module => new Store(module));
+		return stores.filter(a => a.getName().toLowerCase().includes(str)).map(store => new Store(store));
 	},
 	getStoreListeners(storeName) {
 		const nodes = Dispatcher._actionHandlers._dependencyGraph.nodes;
 		const storeHandlers = Object.values(nodes).filter(({ name }) => name === storeName);
-		return storeHandlers[0];
+		return {
+			events:storeHandlers[0],
+			store:Stores.getStore(storeName)
+		};
 	},
 	getSortedStores: (() => {
 		let stores = null;
@@ -71,7 +77,7 @@ export const Stores = {
 			return stores;
 		};
 	})(),
-	getZustanStores(){
-		return Zustand.module.modulesUsingThisModule;
-	}
+	// getZustanStores(){
+	// 	return Zustand.module.modulesUsingThisModule;
+	// }
 };

@@ -11,6 +11,7 @@ import { Misc } from "./Misc";
 import SettingComponent from "./SettingComponent";
 import { Sources } from "./Sources";
 import { Stores } from "./Stores";
+import * as utils from "./utils";
 import webpackRequire from "./webpackRequire";
 import MessageActions from "@Modules/MessageActions";
 
@@ -115,6 +116,7 @@ function init() {
 			transitionTo,
 			ErrorBoundary,
 			...Utils,
+			...utils,
 			...d,
 			dispatcherEventInterceptor
 		},

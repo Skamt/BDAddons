@@ -28,6 +28,8 @@ class Source {
 	}
 }
 
+
+
 function sourceById(id) {
 	return new Source(id, webpackRequire.m[id]);
 }
@@ -56,11 +58,16 @@ function getSource(...args) {
 }
 
 
+function getSourceByFunc(func) {
+	return getSources(String(func));
+}
+
 export const Sources = {
 	getWebpackSources() {
 		return webpackRequire.m;
 	},
 	sourceById,
 	getSource,
-	getSources
+	getSources,
+	getSourceByFunc
 };

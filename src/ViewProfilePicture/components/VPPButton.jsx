@@ -38,7 +38,7 @@ export default ({ className, user, displayProfile }) => {
 	const handler = async () => {
 		const avatarURL = user.getAvatarURL(displayProfile.guildId, 4096, true);
 		const bannerURL = displayProfile.getBannerURL({ canAnimate: true, size: 4096 });
-		const color = displayProfile.accentColor || displayProfile.primaryColor || colorFromPfp;
+		const color = displayProfile.accentColor ?? displayProfile.primaryColor || colorFromPfp;
 
 		const items = [
 			{
