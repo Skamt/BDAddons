@@ -54,6 +54,7 @@ var Patcher = /* @__PURE__ */ (() => Api.Patcher)();
 var Logger = /* @__PURE__ */ (() => Api.Logger)();
 var Webpack = /* @__PURE__ */ (() => Api.Webpack)();
 var getOwnerInstance = /* @__PURE__ */ (() => Api.ReactUtils.getOwnerInstance.bind(Api.ReactUtils))();
+var getInternalInstance = /* @__PURE__ */ (() => Api.ReactUtils.getInternalInstance.bind(Api.ReactUtils))();
 
 // common/React.jsx
 var React_default = /* @__PURE__ */ (() => React)();
@@ -115,7 +116,7 @@ function getModuleAndKey(filter, options) {
 }
 
 // MODULES-AUTO-LOADER:@Modules/Dispatcher
-var Dispatcher_default = getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: false });
+var Dispatcher_default = getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: true });
 
 // MODULES-AUTO-LOADER:@Modules/TheBigBoyBundle
 var TheBigBoyBundle_default = getModule(Filters.byKeys("openModal", "FormSwitch", "Anchor"), { searchExports: false });
@@ -142,7 +143,9 @@ __export(Utils_exports, {
 	nop: () => nop,
 	parseSnowflake: () => parseSnowflake,
 	prettyfiyBytes: () => prettyfiyBytes,
+	preventDefault: () => preventDefault,
 	promiseHandler: () => promiseHandler,
+	random: () => random,
 	reRender: () => reRender,
 	shallow: () => shallow,
 	sleep: () => sleep
@@ -356,6 +359,19 @@ function exceptionWrapper(fn, exp, fin) {
 	};
 }
 
+function random(min, max) {
+	return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function preventDefault(handler) {
+	if (!handler) return nop;
+	return (e) => {
+		e.preventDefault();
+		e.stopPropagation();
+		handler.apply(null, [e]);
+	};
+}
+
 // MODULES-AUTO-LOADER:@Enums/DiscordPermissionsEnum
 var DiscordPermissionsEnum_default = getModule(Filters.byKeys("ADD_REACTIONS"), { searchExports: true }) || {
 	"EMBED_LINKS": "16384n",
@@ -404,7 +420,7 @@ function* sourceLookup(...args) {
 	const strArr = args;
 	const invert = typeof args[args.length - 1] === "boolean" ? args.pop() : false;
 	for (const [id, source] of Object.entries(webpackRequire_default.m)) {
-		const sourceCode = source.toString();
+		const sourceCode = source.toString().replace(/^\d+/, "function");
 		const result = strArr.every((str) => sourceCode.includes(str));
 		if (invert ^ result) yield new Source(id, source);
 	}
@@ -420,13 +436,18 @@ function getSource(...args) {
 	b.return();
 	return res;
 }
+
+function getSourceByFunc(func) {
+	return getSources(String(func));
+}
 var Sources = {
 	getWebpackSources() {
 		return webpackRequire_default.m;
 	},
 	sourceById,
 	getSource,
-	getSources
+	getSources,
+	getSourceByFunc
 };
 
 // src/Devtools/Modules.js
@@ -463,7 +484,7 @@ var Module = class {
 		return ret;
 	}
 	get code() {
-		return this.loader.toString();
+		return this.loader.toString().replace(/^\d+/, "function");
 	}
 	get imports() {
 		return Modules.modulesImportedInModuleById(this.id).reduce((acc, id) => defineModuleGetter(acc, id), {});
@@ -673,8 +694,9 @@ function SettingComponent_default({ settings: settings2, enableExp: enableExp2 }
 
 // src/Devtools/Stores.js
 var Store = class {
-	constructor(module2) {
-		this.module = module2;
+	constructor(store) {
+		this.store = store;
+		this.module = Sources.getSourceByFunc(store.constructor)?.[0].module;
 		this.name = this.store.getName();
 		this.methods = {};
 		const _this = this;
@@ -691,10 +713,10 @@ var Store = class {
 			this.methods[key] = func;
 		});
 	}
-	get store() {
-		for (const key of ["Z", "ZP", "default"])
-			if (key in this.module.exports) return this.module.exports[key];
-	}
+	// get store() {
+	// 	for (const key of ["Z", "ZP", "default"]) if (key in this.module.exports) 
+	// 		return this.module.exports[key];
+	// }
 	// get localVars() {
 	// 	return this.store.__getLocalVars();
 	// }
@@ -702,37 +724,78 @@ var Store = class {
 		return Stores.getStoreListeners(this.name);
 	}
 };
-var Zustand = Sources.getSource("/ServerSideRendering|^Deno\\//");
+var FluxStore = Modules.getModule((a) => a.Store, { searchExports: true })?.target.Store;
+var stores = FluxStore.getAll();
 var Stores = {
 	getStore(storeName) {
-		const storeFilter = (exp) => exp && ["Z", "ZP", "default"].some((k) => exp[k]?._dispatchToken && exp[k]?._changeCallbacks && exp[k]?.getName() === storeName);
-		const module2 = Modules.getModule(storeFilter);
+		const module2 = stores.find((a) => a.getName() === storeName);
 		if (!module2) return void 0;
 		return new Store(module2);
 	},
 	getStoreFuzzy(str = "") {
-		const storeFilter = (exp) => exp && ["Z", "ZP", "default"].some((k) => exp[k]?._dispatchToken && exp[k]?._changeCallbacks && exp[k]?.getName()?.toLowerCase?.().includes(str));
-		return Modules.getModules(storeFilter).map((module2) => new Store(module2));
+		return stores.filter((a) => a.getName().toLowerCase().includes(str)).map((store) => new Store(store));
 	},
 	getStoreListeners(storeName) {
 		const nodes = Dispatcher_default._actionHandlers._dependencyGraph.nodes;
 		const storeHandlers = Object.values(nodes).filter(({ name }) => name === storeName);
-		return storeHandlers[0];
+		return {
+			events: storeHandlers[0],
+			store: Stores.getStore(storeName)
+		};
 	},
 	getSortedStores: /* @__PURE__ */ (() => {
-		let stores = null;
+		let stores2 = null;
 		return function getSortedStores(force) {
-			if (!stores || force) {
-				stores = Modules.getModule((a) => a?.Store, { searchExports: true }).target.Store.getAll().map((store) => [store.getName(), store]).sort((a, b) => a[0].localeCompare(b[0])).map(([a, b]) => ({
+			if (!stores2 || force) {
+				stores2 = Modules.getModule((a) => a?.Store, { searchExports: true }).target.Store.getAll().map((store) => [store.getName(), store]).sort((a, b) => a[0].localeCompare(b[0])).map(([a, b]) => ({
 					[a]: b }));
 			}
-			return stores;
+			return stores2;
 		};
-	})(),
-	getZustanStores() {
-		return Zustand.module.modulesUsingThisModule;
-	}
+	})()
+	// getZustanStores(){
+	// 	return Zustand.module.modulesUsingThisModule;
+	// }
 };
+
+// src/Devtools/utils.js
+var utils_exports = {};
+__export(utils_exports, {
+	getFiber: () => getFiber,
+	walkFiber: () => walkFiber
+});
+
+function walkFiber(filter = (a) => a, depth, el) {
+	el ??= $0;
+	depth = depth < 1 || !depth ? 1 : depth;
+	let fiber = getInternalInstance(el);
+	if (!fiber) return console.error("Can't find fiber");
+	let res = [];
+	while (fiber) {
+		let match;
+		try {
+			if (filter(fiber)) match = fiber;
+		} catch {}
+		if (match) {
+			if (depth === 1) return match;
+			res.push(match);
+			if (res.length === depth) return res;
+		}
+		fiber = fiber.return;
+	}
+	return res;
+}
+
+function getFiber() {
+	return getInternalInstance($0);
+}
+
+// MODULES-AUTO-LOADER:@Modules/MessageActions
+var MessageActions_default = getModule(Filters.byKeys("jumpToMessage", "_sendMessage"), { searchExports: false });
+
+// common/DiscordModules/Modules.js
+var transitionTo = /* @__PURE__ */ (() => getModule(Filters.byStrings("transitionTo - Transitioning to"), { searchExports: true }))();
+var ChannelUtils = /* @__PURE__ */ (() => getModule((m) => m.openPrivateChannel))();
 
 // src/Devtools/index.jsx
 var d = (() => {
@@ -820,8 +883,11 @@ function init() {
 			getModuleAndKey
 		},
 		Utils: {
+			ChannelUtils,
+			transitionTo,
 			ErrorBoundary,
 			...Utils_exports,
+			...utils_exports,
 			...d,
 			dispatcherEventInterceptor
 		},
@@ -831,8 +897,8 @@ function init() {
 		...Sources,
 		...Modules,
 		DiscordModules: {
+			MessageActions: MessageActions_default,
 			Dispatcher: Dispatcher_default,
-			TheBigBoyBundle: TheBigBoyBundle_default,
 			DiscordPermissionsEnum: DiscordPermissionsEnum_default
 		}
 	});
