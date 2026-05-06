@@ -1,6 +1,6 @@
 import Logger from "@Utils/Logger";
 import { React, Patcher } from "@Api";
-import { getModuleAndKey, Filters } from "@Webpack";
+import { getDeclarationAndKey, Filters } from "@Webpack";
 import ErrorBoundary from "@Components/ErrorBoundary";
 import SpotifyEmbedWrapper from "@/components/SpotifyEmbedWrapper";
 import { parseSpotifyUrl } from "@/Utils";
@@ -8,7 +8,7 @@ import { ALLOWD_TYPES } from "@/consts";
 import { MessageStateContext } from "./patchMessageComponentAccessories";
 import Plugin, { Events } from "@Utils/Plugin";
 
-const SpotifyEmbed = getModuleAndKey(Filters.byStrings("iframe", "playlist", "track"));
+const SpotifyEmbed = getDeclarationAndKey(Filters.bySource("iframe", "playlist", "track"), Filters.byStrings("iframe", "playlist", "track"));
 
 Plugin.on(Events.START, () => {
 	const { module, key } = SpotifyEmbed;

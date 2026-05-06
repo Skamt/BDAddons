@@ -11,7 +11,7 @@ import VPPButton from "../components/VPPButton";
 
 const UserProfileModalforwardRef = getModule(Filters.byKeys("Overlay", "render"));
 
-const wrapper = getById(587168).A;
+const wrapper = getById(587168)?.A;
 
 const UserProfileBanner = getMangled(Filters.bySource("avatarOffsetX","foreignObject"), {
 	Banner: Filters.byStrings("canUsePremiumProfileCustomization")

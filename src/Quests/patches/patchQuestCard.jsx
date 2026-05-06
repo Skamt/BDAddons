@@ -1,4 +1,4 @@
-import { getMangled, Filters } from "@Webpack";
+import { getDeclarationAndKey, Filters } from "@Webpack";
 import { Patcher } from "@Api";
 import Logger from "@Utils/Logger";
 import Plugin, { Events } from "@Utils/Plugin";
@@ -9,7 +9,9 @@ import Toast from "@Utils/Toast";
 import completeQuest from "@/questTypes";
 import { isQuestCompleted, isQuestAccepted } from "@/utils";
 
-const QuestCard = getMangled(Filters.bySource("isClaimingReward","sourceQuestContent"), { default: a => true });
+// const QuestCard = s(291922).rawModule.declarations;
+// getMangled(Filters.bySource("isClaimingReward","sourceQuestContent"), { default: a => true });
+const QuestCard = getDeclarationAndKey(Filters.bySource("isClaimingReward","sourceQuestContent","questEnrollmentBlockedUntil","enabledQuestStates"), Filters.byStrings("isClaimingReward","sourceQuestContent","questEnrollmentBlockedUntil","enabledQuestStates"));
 
 function CompleteQuest({ quest }) {
 	const [completing, setCompleting] = React.useState(false);
@@ -36,7 +38,9 @@ function CompleteQuest({ quest }) {
 }
 
 Plugin.on(Events.START, () => {
-	Patcher.after(QuestCard, "default", (_, [props], ret) => {
+	Patcher.after(QuestCard, "ek", (_, [props], ret) => {
+		// console.log(ret);
+		// return ret;
 		if (!isQuestAccepted(props.quest) || isQuestCompleted(props.quest)) return;
 		ret.props.children.push(<CompleteQuest quest={props.quest} />);
 	});

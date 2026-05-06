@@ -12,7 +12,7 @@ export const MessageStateContext = React.createContext(null);
 
 
 Plugin.on(Events.START, () => {
-	if (!MessageComponentAccessories) return Logger.patchError("patchMessageComponentAccessories");
+	if (!MessageComponentAccessories) return Logger.patchError("MessageComponentAccessories");
 	const unpatches = [
 		Patcher.before(MessageComponentAccessories.prototype, "renderEmbeds", (_, args) => {
 			const message = args[0];

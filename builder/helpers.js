@@ -57,6 +57,7 @@ function parseJSON(str) {
 function buildMeta(config) {
 	const metaString = ["/**"];
 	const line = (label, val) => val && metaString.push(` * @${label} ${val}`);
+	line("runAt", "idle");
 	line("name", config.info.name);
 	line("description", config.info.description);
 	line("version", config.info.version);

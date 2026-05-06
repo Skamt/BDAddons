@@ -1,13 +1,13 @@
 import { React, Patcher, ContextMenu } from "@Api";
 import Logger from "@Utils/Logger";
-import { Filters, getModuleAndKey } from "@Webpack";
+import { Filters, getDeclarationAndKey } from "@Webpack";
 import { Store } from "@/Store";
 import Flex from "@Components/Flex";
 import { ListenIcon, ImageIcon } from "@Components/Icon";
 import Plugin, { Events } from "@Utils/Plugin";
 
 const { Item: MenuItem } = ContextMenu;
-const ChannelAttachMenu = getModuleAndKey(Filters.byStrings("Plus Button"));
+const ChannelAttachMenu = getDeclarationAndKey(Filters.bySource("Plus Button"), Filters.byStrings("Plus Button"));
 
 function MenuLabel({ label, icon }) {
 	return (
