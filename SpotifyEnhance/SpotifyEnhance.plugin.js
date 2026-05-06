@@ -1,7 +1,8 @@
 /**
+ * @runAt idle
  * @name SpotifyEnhance
  * @description All in one better spotify-discord experience.
- * @version 1.1.12
+ * @version 1.1.13
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js
@@ -11,7 +12,7 @@
 var Config_default = {
 	"info": {
 		"name": "SpotifyEnhance",
-		"version": "1.1.12",
+		"version": "1.1.13",
 		"description": "All in one better spotify-discord experience.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance",
@@ -212,6 +213,14 @@ function getModuleAndKey(filter, options) {
 	const key = Object.keys(module2).find((k) => module2[k] === target);
 	if (!key) return;
 	return { module: module2, key };
+}
+
+function getDeclarationAndKey(moduleFilter, declarationFilter, options = {}) {
+	const module2 = getModule(moduleFilter, { options, raw: true });
+	for (const name in module2.declarations) {
+		if (!declarationFilter(module2.declarations[name])) continue;
+		return { module: module2.declarations, key: name };
+	}
 }
 
 // common/DiscordModules/zustand.js
@@ -646,6 +655,7 @@ var getFluxContainer = /* @__PURE__ */ (() => {
 	let userAreaFluxContainer = void 0;
 
 	function tryGetFluxContainer() {
+		if (userAreaFluxContainer) return userAreaFluxContainer;
 		const el = document.querySelector(`.${activityPanelClasses.panels}`);
 		if (!el) return;
 		const instance = getInternalInstance(el);
@@ -655,9 +665,8 @@ var getFluxContainer = /* @__PURE__ */ (() => {
 		return res;
 	}
 	return () => {
-		if (userAreaFluxContainer) return Promise.resolve(userAreaFluxContainer);
 		userAreaFluxContainer = tryGetFluxContainer();
-		if (userAreaFluxContainer) Promise.resolve(userAreaFluxContainer);
+		if (userAreaFluxContainer) return Promise.resolve(userAreaFluxContainer);
 		return new Promise((resolve) => {
 			const interval = setInterval(() => {
 				userAreaFluxContainer = tryGetFluxContainer();
@@ -1120,7 +1129,7 @@ var VolumeIcon = /* @__PURE__ */ svg({ viewBox: "0 0 16 16" }, "M9.741.85a.75.75
 
 // src/SpotifyEnhance/patches/patchChannelAttach.jsx
 var { Item: MenuItem } = ContextMenu;
-var ChannelAttachMenu = getModuleAndKey(Filters.byStrings("Plus Button"));
+var ChannelAttachMenu = getDeclarationAndKey(Filters.bySource("Plus Button"), Filters.byStrings("Plus Button"));
 
 function MenuLabel({ label, icon }) {
 	return /* @__PURE__ */ React.createElement(
@@ -1222,7 +1231,7 @@ var MessageComponentAccessories = getModule(Filters.byPrototypeKeys("renderPoll"
 var urlRegex = /((?:https?|steam):\/\/[^\s<]+[^<.,:;"'\]\s])/g;
 var MessageStateContext = React.createContext(null);
 Plugin_default.on(Events.START, () => {
-	if (!MessageComponentAccessories) return Logger_default.patchError("patchMessageComponentAccessories");
+	if (!MessageComponentAccessories) return Logger_default.patchError("MessageComponentAccessories");
 	const unpatches = [
 		Patcher.before(MessageComponentAccessories.prototype, "renderEmbeds", (_, args) => {
 			const message = args[0];
@@ -1439,7 +1448,7 @@ var SpotifyActivityControls_default = ({ activity, user }) => {
 };
 
 // src/SpotifyEnhance/patches/patchSpotifyActivity.jsx
-var ActivityComponent = getModuleAndKey(Filters.byStrings("PRESS_LISTEN_ALONG_ON_SPOTIFY_BUTTON", "PRESS_PLAY_ON_SPOTIFY_BUTTON"));
+var ActivityComponent = getDeclarationAndKey(Filters.bySource("PRESS_LISTEN_ALONG_ON_SPOTIFY_BUTTON", "PRESS_PLAY_ON_SPOTIFY_BUTTON"), Filters.byStrings("PRESS_LISTEN_ALONG_ON_SPOTIFY_BUTTON", "PRESS_PLAY_ON_SPOTIFY_BUTTON"));
 Plugin_default.on(Events.START, () => {
 	const { module: module2, key } = ActivityComponent;
 	if (!module2 || !key) return Logger_default.patchError("SpotifyActivityComponent");
@@ -2133,7 +2142,7 @@ function SpotifyEmbedWrapper({ id, type, embedObject, embedComponent }) {
 }
 
 // src/SpotifyEnhance/patches/patchSpotifyEmbed.jsx
-var SpotifyEmbed = getModuleAndKey(Filters.byStrings("iframe", "playlist", "track"));
+var SpotifyEmbed = getDeclarationAndKey(Filters.bySource("iframe", "playlist", "track"), Filters.byStrings("iframe", "playlist", "track"));
 Plugin_default.on(Events.START, () => {
 	const { module: module2, key } = SpotifyEmbed;
 	if (!module2 || !key) return Logger_default.patchError("SpotifyEmbed");
@@ -2332,7 +2341,6 @@ StylesLoader_default.push(`.spotify-player-controls {
 
 // common/DiscordModules/Modules.js
 var DiscordPopout = /* @__PURE__ */ (() => getModule((a) => a?.prototype?.render && a.Animation, { searchExports: true }))();
-var ChannelComponent = getModule(Filters.byComponentType(Filters.byStrings("hasActiveThreads")), { searchExports: true });
 var Anchor = /* @__PURE__ */ (() => getModule(Filters.byKeys("Anchor")).Anchor)();
 var RadioGroup = /* @__PURE__ */ (() => getMangled('data-toggleable-component":"radiogroup', { radioGroup: Filters.byStrings("label", "required") }).radioGroup)();
 

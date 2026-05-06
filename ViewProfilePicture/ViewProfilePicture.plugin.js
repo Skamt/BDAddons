@@ -1,7 +1,8 @@
 /**
+ * @runAt idle
  * @name ViewProfilePicture
  * @description Adds a button to the user popout and profile that allows you to view the Avatar and banner.
- * @version 1.3.11
+ * @version 1.3.12
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js
@@ -11,7 +12,7 @@
 var Config_default = {
 	"info": {
 		"name": "ViewProfilePicture",
-		"version": "1.3.11",
+		"version": "1.3.12",
 		"description": "Adds a button to the user popout and profile that allows you to view the Avatar and banner.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture",
@@ -369,7 +370,7 @@ var VPPButton_default = ({ className, user, displayProfile }) => {
 	const handler = async () => {
 		const avatarURL = user.getAvatarURL(displayProfile.guildId, 4096, true);
 		const bannerURL = displayProfile.getBannerURL({ canAnimate: true, size: 4096 });
-		const color = displayProfile.accentColor || displayProfile.primaryColor || colorFromPfp;
+		const color = displayProfile.accentColor ?? (displayProfile.primaryColor || colorFromPfp);
 		const items = [{
 				url: avatarURL,
 				...fit({ width: 4096, height: 4096 })
@@ -394,7 +395,7 @@ var VPPButton_default = ({ className, user, displayProfile }) => {
 
 // src/ViewProfilePicture/patches/patchVPPButton.jsx
 var UserProfileModalforwardRef = getModule(Filters.byKeys("Overlay", "render"));
-var wrapper = getById(587168).A;
+var wrapper = getById(587168)?.A;
 var UserProfileBanner = getMangled(Filters.bySource("avatarOffsetX", "foreignObject"), {
 	Banner: Filters.byStrings("canUsePremiumProfileCustomization")
 });
