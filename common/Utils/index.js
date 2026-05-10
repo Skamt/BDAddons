@@ -1,6 +1,13 @@
 import config from "@Config";
 import { Patcher, getOwnerInstance, ReactDOM, React } from "@Api";
 
+export function getObjectKey(object, filter) {
+	for (const key in object) {
+		if (!filter(object[key])) continue;
+		return key;
+	}
+}
+
 export function fit({ width, height, gap = 0.8 }) {
 	const ratio = Math.min(innerWidth / width, innerHeight / height);
 	width = Math.round(width * ratio);
