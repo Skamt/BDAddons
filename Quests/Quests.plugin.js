@@ -1,4 +1,5 @@
 /**
+ * @runAt idle
  * @name Quests
  * @description Empty description
  * @version 1.0.0
@@ -35,6 +36,7 @@ var React_default = /* @__PURE__ */ (() => React)();
 // common/Webpack.js
 var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
 var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
+var waitForModule = /* @__PURE__ */ (() => Webpack.waitForModule)();
 var getMangled = /* @__PURE__ */ (() => Webpack.getMangled)();
 var getStore = /* @__PURE__ */ (() => Webpack.getStore)();
 
@@ -101,6 +103,12 @@ var Plugin_default = new class extends EventEmitter_default {
 }();
 
 // common/Utils/index.js
+function getObjectKey(object, filter) {
+	for (const key in object) {
+		if (!filter(object[key])) continue;
+		return key;
+	}
+}
 var nop = () => {};
 
 function sleep(delay) {
@@ -154,7 +162,6 @@ var GuildChannelStore_default = getStore("GuildChannelStore");
 
 // common/DiscordModules/Modules.js
 var DiscordApi = /* @__PURE__ */ (() => getMangled("HTTPUtils", { api: Filters.byKeys("get", "del", "patch", "put") }))();
-var ChannelComponent = (() => getModule(Filters.byComponentType(Filters.byStrings("hasActiveThreads")), { searchExports: true }))();
 var transitionTo = /* @__PURE__ */ (() => getModule(Filters.byStrings("transitionTo - Transitioning to"), { searchExports: true }))();
 
 // src/Quests/consts.js
@@ -163,9 +170,9 @@ var supportedTasks = ["WATCH_VIDEO", "PLAY_ON_DESKTOP", "STREAM_ON_DESKTOP", "PL
 // src/Quests/questTypes/activity.js
 async function activity_default(quest) {
 	const taskConfig = quest.config.taskConfig ?? quest.config.taskConfigV2;
-	const taskName2 = supportedTasks.find((x) => taskConfig.tasks[x] != null);
+	const taskName = supportedTasks.find((x) => taskConfig.tasks[x] != null);
 	const questName = quest.config.messages.questName;
-	const secondsNeeded = taskConfig.tasks[taskName2].target;
+	const secondsNeeded = taskConfig.tasks[taskName].target;
 	const channelId = ChannelStore_default.getSortedPrivateChannels()[0]?.id ?? Object.values(GuildChannelStore_default.getAllGuilds()).find((x) => x != null && x.VOCAL.length > 0).VOCAL[0].channel.id;
 	const streamKey = `call:${channelId}:1`;
 	Toast_default.info(`Completing quest ${questName}-${quest.config.messages.questName}`);
@@ -196,12 +203,12 @@ function play_default(quest) {
 	const { promise, reject, resolve } = Promise.withResolvers();
 	const pid = Math.floor(Math.random() * 3e4) + 1e3;
 	const taskConfig = quest.config.taskConfig ?? quest.config.taskConfigV2;
-	const taskName2 = supportedTasks.find((x) => taskConfig.tasks[x] != null);
+	const taskName = supportedTasks.find((x) => taskConfig.tasks[x] != null);
 	const applicationId = quest.config.application.id;
 	const applicationName = quest.config.application.name;
 	const questName = quest.config.messages.questName;
-	const secondsNeeded = taskConfig.tasks[taskName2].target;
-	const secondsDone = quest.userStatus?.progress?.[taskName2]?.value ?? 0;
+	const secondsNeeded = taskConfig.tasks[taskName].target;
+	const secondsDone = quest.userStatus?.progress?.[taskName]?.value ?? 0;
 	const game = GameStore_default.games.find((a) => a.id === applicationId);
 	if (!game) reject(`can't find ${applicationName} in [GameStore]`);
 	const exeName = game?.executables?.find((x) => x.os === "win32")?.name?.replace(">", "") || "";
@@ -248,10 +255,10 @@ function stream_default(quest) {}
 // src/Quests/questTypes/video.js
 async function video_default(quest) {
 	const taskConfig = quest.config.taskConfig ?? quest.config.taskConfigV2;
-	const taskName2 = supportedTasks.find((x) => taskConfig.tasks[x] != null);
+	const taskName = supportedTasks.find((x) => taskConfig.tasks[x] != null);
 	const questName = quest.config.messages.questName;
-	const secondsNeeded = taskConfig.tasks[taskName2].target;
-	let secondsDone = quest.userStatus?.progress?.[taskName2]?.value ?? 0;
+	const secondsNeeded = taskConfig.tasks[taskName].target;
+	let secondsDone = quest.userStatus?.progress?.[taskName]?.value ?? 0;
 	const maxFuture = 10;
 	const speed = 7;
 	const interval = 1;
@@ -278,6 +285,8 @@ async function video_default(quest) {
 
 // src/Quests/questTypes/index.js
 async function questTypes_default(quest) {
+	const taskConfig = quest.config.taskConfig ?? quest.config.taskConfigV2;
+	const taskName = supportedTasks.find((x) => taskConfig.tasks[x] != null);
 	switch (taskName) {
 		case "WATCH_VIDEO":
 		case "WATCH_VIDEO_ON_MOBILE":
@@ -327,8 +336,6 @@ function isQuestSupported(quest) {
 }
 
 // src/Quests/patches/patchQuestCard.jsx
-var QuestCard = getMangled(Filters.bySource("isClaimingReward", "sourceQuestContent"), { default: (a) => true });
-
 function CompleteQuest({ quest }) {
 	const [completing, setCompleting] = React_default.useState(false);
 	const questHandler = async () => {
@@ -351,8 +358,13 @@ function CompleteQuest({ quest }) {
 		"Complete Quest"
 	);
 }
-Plugin_default.on(Events.START, () => {
-	Patcher.after(QuestCard, "default", (_, [props], ret) => {
+Plugin_default.on(Events.START, async () => {
+	const QuestCard = await waitForModule(Filters.bySource("isClaimingReward", "sourceQuestContent", "questEnrollmentBlockedUntil", "enabledQuestStates"), { raw: true });
+	if (!QuestCard) return Logger_default.patchError("QuestCard");
+	const declarationFilter = Filters.byStrings("isClaimingReward", "sourceQuestContent", "questEnrollmentBlockedUntil", "enabledQuestStates");
+	const key = getObjectKey(QuestCard.declarations, declarationFilter);
+	if (!key) return Logger_default.patchError("QuestCard");
+	Patcher.after(QuestCard.declarations, key, (_, [props], ret) => {
 		if (!isQuestAccepted(props.quest) || isQuestCompleted(props.quest)) return;
 		ret.props.children.push( /* @__PURE__ */ React_default.createElement(CompleteQuest, { quest: props.quest }));
 	});
@@ -400,6 +412,7 @@ function notifyOfNewQuests() {
 		duration: Number.POSITIVE_INFINITY,
 		actions: [{
 				label: "Quests",
+				dontClose: true,
 				onClick() {
 					transitionTo("/quest-home");
 				}

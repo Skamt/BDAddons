@@ -1,7 +1,8 @@
 /**
+ * @runAt idle
  * @name Tabbys
  * @description Adds Browser like tabs/bookmarks for channels
- * @version 1.0.9
+ * @version 1.0.10
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/Tabbys
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/Tabbys/Tabbys.plugin.js
@@ -11,7 +12,7 @@
 var Config_default = {
 	"info": {
 		"name": "Tabbys",
-		"version": "1.0.9",
+		"version": "1.0.10",
 		"description": "Adds Browser like tabs/bookmarks for channels",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/Tabbys/Tabbys.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/Tabbys",
@@ -283,6 +284,7 @@ StylesLoader_default.push(`:root {
 var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
 var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
 var waitForModule = /* @__PURE__ */ (() => Webpack.waitForModule)();
+var getBySource = /* @__PURE__ */ (() => Webpack.getBySource)();
 var getMangled = /* @__PURE__ */ (() => Webpack.getMangled)();
 var getStore = /* @__PURE__ */ (() => Webpack.getStore)();
 
@@ -313,9 +315,8 @@ function getModuleAndKey(filter, options) {
 
 // common/DiscordModules/Modules.js
 var DiscordPopout = /* @__PURE__ */ (() => getModule((a) => a?.prototype?.render && a.Animation, { searchExports: true }))();
-var ChannelComponent = getModule(Filters.byComponentType(Filters.byStrings("hasActiveThreads")), { searchExports: true });
 var Dispatcher = /* @__PURE__ */ (() => getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: true }))();
-var transitionTo = /* @__PURE__ */ (() => getModule(Filters.byStrings(`transitionTo - Transitioning to`), { searchExports: true }))();
+var transitionTo = /* @__PURE__ */ (() => getModule(Filters.byStrings("transitionTo - Transitioning to"), { searchExports: true }))();
 var DragSource = /* @__PURE__ */ (() => getModule(Filters.byStrings("drag-source", "collect"), { searchExports: true }))();
 var DropTarget = /* @__PURE__ */ (() => getModule(Filters.byStrings("drop-target", "collect"), { searchExports: true }))();
 var IconsUtils = /* @__PURE__ */ (() => getModule((a) => a.getChannelIconURL))();
@@ -1273,7 +1274,7 @@ function wrapMenuItem(item) {
 	};
 }
 
-// common/Components/Icon/index.jsx
+// common/Components/icon/index.jsx
 function svg(svgProps, ...paths) {
 	return (comProps) => (
 		// biome-ignore lint/a11y/noSvgWithoutTitle: <explanation>
@@ -1437,11 +1438,13 @@ Plugin_default.on(Events.START, () => {
 });
 
 // src/Tabbys/patches/patchGuildClick.js
-var GuildComponent = getModule(reactRefMemoFilter("type", "onDragStart", "guildNode"), { searchExports: true });
+var GuildComponent = getBySource("guildsnav", {
+	declarationFilter: Filters.byComponentType(Filters.byStrings("aria-owns=folder-items-", "onDragOverChanged"))
+});
 Plugin_default.on(Events.START, () => {
 	if (!GuildComponent) return Logger_default.patchError("GuildComponent");
 	Patcher.after(GuildComponent, "type", (_, [{ guild }], ret) => {
-		const targetProps = getNestedProp(ret, "props.children.1.props.children.props.children.props.children.props");
+		const targetProps = getNestedProp(ret, "props.children.1.props.children.props.children.props.children.props.children.props.children.props");
 		if (!targetProps) return ret;
 		const origClick = targetProps.onClick;
 		const path2 = getGuildChannelPath(guild.id);
