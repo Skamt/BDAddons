@@ -2,7 +2,7 @@
  * @runAt idle
  * @name LazyLoadChannels
  * @description Lets you choose whether to load a channel
- * @version 1.2.16
+ * @version 1.3.0
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js
@@ -12,7 +12,7 @@
 var Config_default = {
 	"info": {
 		"name": "LazyLoadChannels",
-		"version": "1.2.16",
+		"version": "1.3.0",
 		"description": "Lets you choose whether to load a channel",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels",
