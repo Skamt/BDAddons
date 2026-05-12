@@ -1,7 +1,8 @@
 import { ContextMenu } from "@Api";
 import Settings from "@Utils/Settings";
-import ChannelsStateManager from "../ChannelsStateManager";
+import ChannelsStateManager from "@/ChannelsStateManager";
 import ChannelTypeEnum from "@Enums/ChannelTypeEnum";
+import Plugin, { Events } from "@Utils/Plugin";
 
 Plugin.on(Events.START, () => {
 	const unpatch = [

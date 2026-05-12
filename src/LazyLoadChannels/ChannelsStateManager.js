@@ -1,6 +1,5 @@
 import { Data } from "@Api";
 
-import Plugin, { Events } from "@Utils/Plugin";
 const ChannelsStateManager = {
 	init() {
 		this.channels = new Set(Data.load("channels") || []);
@@ -37,8 +36,6 @@ const ChannelsStateManager = {
 	}
 };
 
-Plugin.once(Events.START, () => {
-	ChannelsStateManager.init();
-});
+ChannelsStateManager.init();
 
 export default ChannelsStateManager;

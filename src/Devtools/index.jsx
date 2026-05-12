@@ -3,6 +3,7 @@ import ErrorBoundary from "@Components/ErrorBoundary";
 import Dispatcher from "@Modules/Dispatcher";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 import * as Utils from "@Utils";
+import * as Webpack from "@Webpack";
 import Logger from "@Utils/Logger";
 import DiscordPermissionsEnum from "@Enums/DiscordPermissionsEnum";
 import { getModuleAndKey } from "@Webpack";
@@ -120,6 +121,7 @@ function init() {
 			...d,
 			dispatcherEventInterceptor
 		},
+		Webpack,
 		r: webpackRequire,
 		...Misc,
 		...Stores,

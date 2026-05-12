@@ -5,8 +5,6 @@ import ChannelsStateManager from "../ChannelsStateManager";
 import { ChannelComponent } from "@Discord/Modules";
 import Plugin, { Events } from "@Utils/Plugin";
 
-
-
 Plugin.on(Events.START, () => {
 	if (!ChannelComponent) return Logger.patchError("Channel");
 	Patcher.after(ChannelComponent, "render", (_, [{ channel }], returnValue) => {

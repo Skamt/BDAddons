@@ -4,7 +4,7 @@ import Tooltip from "@Components/Tooltip";
 import { AddToQueueIcon, CopyIcon, ImageIcon, ListenIcon, SpotifyIcon } from "@Components/Icon";
 import useStateFromStores from "@Modules/useStateFromStores";
 import AccessibilityStore from "@Stores/AccessibilityStore";
-import { fit, shallow } from "@Utils";
+import { fit, preventDefault, shallow } from "@Utils";
 import { ImageComponent } from "@Utils/ImageModal";
 import { openModal } from "@Utils/Modals";
 import Settings from "@Utils/Settings";
@@ -38,7 +38,7 @@ export default ({ id, type }) => {
 		<Tooltip note={`Play ${type}`}>
 			{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 			<div
-				onClick={() => Store.Api.listen(type, id, rawTitle)}
+				onClick={preventDefault(() => Store.Api.listen(type, id, rawTitle))}
 				className="spotify-embed-btn spotify-embed-btn-listen">
 				<ListenIcon />
 			</div>
@@ -49,7 +49,7 @@ export default ({ id, type }) => {
 		<Tooltip note={`Add ${type} to queue`}>
 			{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 			<div
-				onClick={() => Store.Api.queue(type, id, rawTitle)}
+				onClick={preventDefault(() => Store.Api.queue(type, id, rawTitle))}
 				className="spotify-embed-btn spotify-embed-btn-addToQueue">
 				<AddToQueueIcon />
 			</div>
@@ -78,7 +78,7 @@ export default ({ id, type }) => {
 			<Tooltip note="View">
 				{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 				<div
-					onClick={() => {
+					onClick={preventDefault(() => {
 						const { url, ...rest } = banner.bannerLg;
 						openModal(
 							<div className="spotify-banner-modal">
@@ -88,7 +88,7 @@ export default ({ id, type }) => {
 								/>
 							</div>
 						);
-					}}
+					})}
 					className="spotify-embed-thumbnail"
 				/>
 			</Tooltip>
@@ -104,17 +104,15 @@ export default ({ id, type }) => {
 					{((isThis && isActive && !isPlaying) || (!isThis && isActive)) && [listenBtn, queueBtn]}
 					{isThis && isActive && isPlaying && <TrackTimeLine />}
 					<Tooltip note="Copy link">
-						{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 						<div
-							onClick={() => Store.Utils.copySpotifyLink(url)}
+							onClick={preventDefault(() => Store.Utils.copySpotifyLink(url))}
 							className="spotify-embed-btn spotify-embed-btn-copy">
 							<CopyIcon />
 						</div>
 					</Tooltip>
 					<Tooltip note="Copy banner">
-						{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 						<div
-							onClick={() => Store.Utils.copySpotifyLink(banner.bannerLg?.url)}
+							onClick={preventDefault(() => Store.Utils.copySpotifyLink(banner.bannerLg?.url))}
 							className="spotify-embed-btn spotify-embed-btn-copy">
 							<ImageIcon />
 						</div>
@@ -123,9 +121,8 @@ export default ({ id, type }) => {
 				</div>
 			)}
 			<Tooltip note="Play on Spotify">
-				{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 				<div
-					onClick={() => Store.Utils.openSpotifyLink(url)}
+					onClick={preventDefault(() => Store.Utils.openSpotifyLink(url))}
 					className="spotify-embed-spotifyIcon">
 					<SpotifyIcon />
 				</div>
