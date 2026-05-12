@@ -49,7 +49,7 @@
 			"options": "{ searchExports: false }"
 		},
 		"TreadComponent": {
-			"filter": "a => a?.type?.toString().includes(\"GUILD_CHANNEL_LIST\")",
+			"filter": "a => a?.type?.toString().includes(\"__invalid_threadMainContent\")",
 			"options": "{ searchExports: false }"
 		},
 		"useStateFromStores": {
