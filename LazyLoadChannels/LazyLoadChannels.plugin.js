@@ -467,10 +467,40 @@ function loadChannel(channel, messageId) {
 	});
 }
 
+// common/Utils/ControlKeys.js
+var ControlKeys = {
+	init() {
+		this.subs = ["keydown", "keyup"].map((event) => {
+			const handler = (e) => this.e = e;
+			document.addEventListener(event, handler);
+			return () => document.removeEventListener(event, handler);
+		});
+	},
+	clean() {
+		this.subs?.forEach((unsub) => unsub && typeof unsub === "function" && unsub());
+	},
+	get ctrlKey() {
+		return this.e?.ctrlKey;
+	},
+	get shiftKey() {
+		return this.e?.shiftKey;
+	},
+	get metaKey() {
+		return this.e?.metaKey;
+	}
+};
+Plugin_default.on(Events.START, () => {
+	ControlKeys.init();
+});
+Plugin_default.on(Events.STOP, () => {
+	ControlKeys.clean();
+});
+var ControlKeys_default = ControlKeys;
+
 // src/LazyLoadChannels/components/LazyLoaderComponent.jsx
 var LazyLoaderComponent_default = ({ channel, ret }) => {
 	const [checked, setChecked] = React_default.useState(false);
-	const [load, setLoad] = React_default.useState(false);
+	const [load, setLoad] = React_default.useState(ControlKeys_default.ctrlKey || !channel.guild_id && !Settings_default.state.lazyLoadDMs || ChannelsStateManager_default.getChannelstate(channel.guild_id, channel.id));
 	const isDm = channel.guild_id === null;
 	const loadChannelHandler = () => {
 		if (checked) ChannelsStateManager_default.add("channels", channel.id);
@@ -525,36 +555,6 @@ var LazyLoaderComponent_default = ({ channel, ret }) => {
 	);
 };
 
-// common/Utils/ControlKeys.js
-var ControlKeys = {
-	init() {
-		this.subs = ["keydown", "keyup"].map((event) => {
-			const handler = (e) => this.e = e;
-			document.addEventListener(event, handler);
-			return () => document.removeEventListener(event, handler);
-		});
-	},
-	clean() {
-		this.subs?.forEach((unsub) => unsub && typeof unsub === "function" && unsub());
-	},
-	get ctrlKey() {
-		return this.e?.ctrlKey;
-	},
-	get shiftKey() {
-		return this.e?.shiftKey;
-	},
-	get metaKey() {
-		return this.e?.metaKey;
-	}
-};
-Plugin_default.on(Events.START, () => {
-	ControlKeys.init();
-});
-Plugin_default.on(Events.STOP, () => {
-	ControlKeys.clean();
-});
-var ControlKeys_default = ControlKeys;
-
 // MODULES-AUTO-LOADER:@Stores/ChannelStore
 var ChannelStore_default = getStore("ChannelStore");
 
@@ -571,7 +571,6 @@ Plugin_default.on(Events.START, () => {
 				params: { channelId, guildId }
 			}
 		}], ret) => {
-			if (ControlKeys_default.ctrlKey || !guildId && !Settings_default.state.lazyLoadDMs || ChannelsStateManager_default.getChannelstate(guildId, channelId)) return ret;
 			const channel = ChannelStore_default.getChannel(channelId);
 			if (!channel) return ret;
 			return /* @__PURE__ */ React_default.createElement(
