@@ -6,8 +6,7 @@ import Logger from "@Utils/Logger";
 import ErrorBoundary from "@Components/ErrorBoundary";
 import ErrorFallbackComponent from "@/components/ErrorFallbackComponent";
 import LazyLoaderComponent from "@/components/LazyLoaderComponent";
-import ControlKeys from "@Utils/ControlKeys";
-import Settings from "@Utils/Settings";
+
 import Plugin, { Events } from "@Utils/Plugin";
 import ChannelStore from "@Stores/ChannelStore";
 import ChannelsStateManager from "@/ChannelsStateManager";
@@ -31,8 +30,7 @@ Plugin.on(Events.START, () => {
 			],
 			ret
 		) => {
-			if (ControlKeys.ctrlKey || (!guildId && !Settings.state.lazyLoadDMs) || ChannelsStateManager.getChannelstate(guildId, channelId)) return ret;
-
+			
 			const channel = ChannelStore.getChannel(channelId);
 			if (!channel) return ret;
 

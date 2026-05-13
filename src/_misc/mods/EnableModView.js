@@ -3,11 +3,11 @@ import PermissionStore from "@Stores/PermissionStore";
 import { Disposable } from "@Utils";
 import { isSelf } from "@Utils/User";
 import { Patcher } from "@Api";
-import { Filters,  getModule } from "@Webpack";
+import { Filters,  getById, getModule } from "@Webpack";
 
 // const a = getModule(a => a.useCanAccessGuildMemberModView);
 const d = getModule(Filters.byStrings("openGuildSidebar"), { searchExports: true });
-const a = getModule(Filters.bySource("checkElevated","user:","context:","getGuild","getCurrentUser","ated:!1}),l.M)};function c(e){r"));
+const a = getById(985925) ?? getModule(Filters.bySource("user:I,context:a,checkElevated:"));
 
 // eslint-disable-next-line no-undef
 

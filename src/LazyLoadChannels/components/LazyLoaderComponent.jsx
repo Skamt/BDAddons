@@ -6,10 +6,12 @@ import Button from "@Components/Button";
 import { COMPONENT_ID } from "../Constants";
 import FieldSet from "@Components/FieldSet";
 import { loadChannel } from "@/utils";
+import ControlKeys from "@Utils/ControlKeys";
+import Settings from "@Utils/Settings";
 
 export default ({ channel, ret }) => {
 	const [checked, setChecked] = React.useState(false);
-	const [load, setLoad] = React.useState(false);
+	const [load, setLoad] = React.useState(ControlKeys.ctrlKey || (!channel.guild_id && !Settings.state.lazyLoadDMs) || ChannelsStateManager.getChannelstate(channel.guild_id, channel.id));
 	const isDm = channel.guild_id === null;
 
 	const loadChannelHandler = () => {

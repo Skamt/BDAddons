@@ -11,7 +11,7 @@ import { sendMessageDirectly, insertText } from "@Utils/Messages";
 const GIFIntegration = getModule(a => a.GIFIntegration).GIFIntegration;
 
 const GifsModule = getMangled(Filters.bySource("renderGIF()", "renderEmptyFavorites"), {
-	Gif: Filters.byStrings("return(0,r.jsx)("),
+	Gif: a => typeof a === "function" && a.length,
 	GifsList: Filters.byPrototypeKeys("renderGIF")
 });
 
@@ -48,10 +48,12 @@ export default class GIFCommandPreviews extends Disposable {
 					});
 				};
 			}),
+			
 			Patcher.after(GIFIntegration.prototype, "renderContent", (_, args, ret) => {
+				// const ref = React.useRef();
 				return (
 					<ErrorBoundary id="GIF-Stuff">
-						<div ref={ref}>
+						{/*<div ref={ref}>*/}
 							<HoverPopout
 								popout={() => (
 									<img
@@ -66,7 +68,7 @@ export default class GIFCommandPreviews extends Disposable {
 								delay={100}>
 								{ret}
 							</HoverPopout>
-						</div>
+						{/*</div>*/}
 					</ErrorBoundary>
 				);
 			}),
