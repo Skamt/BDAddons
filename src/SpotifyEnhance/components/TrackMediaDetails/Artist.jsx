@@ -18,7 +18,7 @@ export default function Artist({ artists }) {
 
 	return (
 		<HoverPopout popout={e => <ContextMenu.Menu onClose={e.closePopout}>{ContextMenu.buildMenuChildren(menu)}</ContextMenu.Menu>}>
-			<div className="spotify-player-artist ellipsis">{`on ${artists[0].name}`}</div>
+			<div className="spotify-player-artist ellipsis">{`by ${artists[0].name}`}</div>
 		</HoverPopout>
 	);
 }

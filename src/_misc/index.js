@@ -53,10 +53,12 @@ if (console.context) console = console.context();
 
 import Plugin, { Events } from "@Utils/Plugin";
 
+let controller;
 Plugin.on(Events.START, () => {
+	controller =  new AbortController();
 	for (const mod of mods) {
 		try {
-			mod.Init?.();
+			mod.Init?.(controller.signal);
 		} catch (e) {
 			Logger.error(mod, "\nInit failed\n", e);
 		}
@@ -64,6 +66,7 @@ Plugin.on(Events.START, () => {
 });
 
 Plugin.on(Events.STOP, () => {
+	signal.abort();
 	for (const mod of mods) {
 		try {
 			mod.Dispose?.();

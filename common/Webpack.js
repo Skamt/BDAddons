@@ -1,5 +1,7 @@
 import { Webpack } from "@Api";
 import { LazyComponent } from "@React";
+import { getObjectKey } from "@Utils";
+
 export const getModule = /*@__PURE__*/ (() => Webpack.getModule)();
 export const Filters = /*@__PURE__*/ (() => Webpack.Filters)();
 export const waitForModule = /*@__PURE__*/ (() => Webpack.waitForModule)();
@@ -36,14 +38,14 @@ export function getModuleAndKey(filter, options) {
 	return { module, key };
 }
 
+
 export function getDeclarationAndKey(moduleFilter, declarationFilter, options = {}) {
 	const module = getModule(moduleFilter, { options, raw: true });
-	if (!module || !module.declarations) return;
-	for (const name in module.declarations) {
-		if (!declarationFilter(module.declarations[name])) continue;
-		return { module: module.declarations, key: name };
-	}
+	if ( !module?.declarations) return;
+	const key = getObjectKey(module.declarations, declarationFilter);
+	return key ? {key, module:module.declarations}: undefined;
 }
+
 
 export function filterModuleAndExport(moduleFilter, exportFilter, options) {
 	const module = getModule(moduleFilter, { ...options, raw: true });

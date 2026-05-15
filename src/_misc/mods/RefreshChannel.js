@@ -28,8 +28,8 @@ function repositionChannel(guildId, channelId, position) {
 }
 
 export default class RefreshChannel extends Disposable {
-	async Init() {
-		const Settings = await waitForModule(Filters.byPrototypeKeys(["getPredicateSections"]));
+	async Init(signal) {
+		const Settings = await waitForModule(Filters.byPrototypeKeys(["getPredicateSections"]), {signal});
 		if (Settings)
 			this.patches = [
 				Patcher.after(Settings.prototype, "getPredicateSections", (_, __, ret) => {

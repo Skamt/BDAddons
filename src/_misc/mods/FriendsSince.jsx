@@ -7,7 +7,7 @@ import RelationshipStore from "@Stores/RelationshipStore";
 import useStateFromStores from "@Modules/useStateFromStores";
 import ErrorBoundary from "@Components/ErrorBoundary";
 
-const UserPopout = waitForModule(Filters.byStrings(",showCopiableUsername:", ",showBorder:"), { defaultExport: false });
+
 const getCreatedAtDate = getModule(Filters.byStrings("getTime", "short"), { searchExports: true });
 
 function D({ userId }) {
@@ -40,8 +40,8 @@ async function patchUserPopout(m) {
 }
 
 export default class FriendsSince extends Disposable {
-	async Init() {
-		const m = await UserPopout;
+	async Init(signal) {
+		const m = await waitForModule(Filters.byStrings(",showCopiableUsername:", ",showBorder:"), { signal, defaultExport: false });;
 		if (!m) return Logger.patchError("FriendsSince");
 		this.patches = [await patchUserPopout(m)];
 	}
