@@ -315,12 +315,14 @@ var ChannelsStateManager_default = ChannelsStateManager;
 
 // src/LazyLoadChannels/patches/patchChannel.js
 Plugin_default.on(Events.START, () => {
-	waitForModule(reactRefMemoFilter("render", "hasActiveThreads"), { searchExports: true }).then((ChannelComponent) => {
+	const controller = new AbortController();
+	waitForModule(reactRefMemoFilter("render", "hasActiveThreads"), { signal: controller.signal, searchExports: true }).then((ChannelComponent) => {
 		Patcher.after(ChannelComponent, "render", (_, [{ channel }], returnValue) => {
 			if (!Settings_default.state.autoloadedChannelIndicator) return;
 			if (ChannelsStateManager_default.getChannelstate(channel.guild_id, channel.id)) returnValue.props.children.props.children[1].props.className += " autoload";
 		});
 	});
+	Plugin_default.once(Events.STOP, () => controller.abort());
 });
 
 // common/Components/ErrorBoundary/index.jsx

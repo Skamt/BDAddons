@@ -1150,7 +1150,8 @@ function MenuLabel({ label, icon }) {
 	);
 }
 Plugin_default.on(Events.START, () => {
-	waitForModule(Filters.bySource("Plus Button"), { raw: true }).then(({ declarations: ChannelAttachMenu }) => {
+	const controller = new AbortController();
+	waitForModule(Filters.bySource("Plus Button"), { signal: controller.signal, raw: true }).then(({ declarations: ChannelAttachMenu }) => {
 		const key = getObjectKey(ChannelAttachMenu, Filters.byStrings("Plus Button"));
 		if (!key) return Logger_default.patchError("patchChannelAttach");
 		const unpatch = Patcher.after(ChannelAttachMenu, key, (_, args, ret) => {
@@ -1196,6 +1197,7 @@ Plugin_default.on(Events.START, () => {
 		});
 		Plugin_default.once(Events.STOP, unpatch);
 	});
+	Plugin_default.once(Events.STOP, () => controller.abort());
 });
 
 // common/Utils/Settings.js
@@ -1238,32 +1240,31 @@ Plugin_default.on(Events.START, () => {
 var urlRegex = /((?:https?|steam):\/\/[^\s<]+[^<.,:;"'\]\s])/g;
 var MessageStateContext = React.createContext(null);
 Plugin_default.on(Events.START, () => {
-	waitForModule(Filters.byPrototypeKeys("renderPoll"), { searchExports: true }).then((MessageComponentAccessories) => {
-		const unpatches = [
-			Patcher.before(MessageComponentAccessories.prototype, "renderEmbeds", (_, args) => {
-				const message = args[0];
-				const urlMatches = message.content.match(urlRegex) || [];
-				if (!urlMatches.length) return;
-				const embeds = urlMatches.filter(isSpotifyUrl).map((url) => ({
-					url,
-					"type": "link",
-					"provider": {
-						"name": "Spotify",
-						"url": "https://spotify.com/"
-					}
-				}));
-				if (!embeds.length) return;
-				args[0] = Object.assign(args[0], {
-					embeds: [...message.embeds.filter((a) => a.provider.name !== "Spotify"), ...embeds]
-				});
-			}),
-			Patcher.after(MessageComponentAccessories.prototype, "renderEmbeds", (_, [message], ret) => {
-				if (!ret || !message?.state) return;
-				return /* @__PURE__ */ React.createElement(MessageStateContext.Provider, { value: message.state }, ret);
-			})
-		];
-		Plugin_default.once(Events.STOP, () => unpatches.forEach((a) => a?.()));
+	const controller = new AbortController();
+	waitForModule(Filters.byPrototypeKeys("renderPoll"), { signal: controller.signal, searchExports: true }).then((MessageComponentAccessories) => {
+		Patcher.before(MessageComponentAccessories.prototype, "renderEmbeds", (_, args) => {
+			const message = args[0];
+			const urlMatches = message.content.match(urlRegex) || [];
+			if (!urlMatches.length) return;
+			const embeds = urlMatches.filter(isSpotifyUrl).map((url) => ({
+				url,
+				"type": "link",
+				"provider": {
+					"name": "Spotify",
+					"url": "https://spotify.com/"
+				}
+			}));
+			if (!embeds.length) return;
+			args[0] = Object.assign(args[0], {
+				embeds: [...message.embeds.filter((a) => a.provider.name !== "Spotify"), ...embeds]
+			});
+		});
+		Patcher.after(MessageComponentAccessories.prototype, "renderEmbeds", (_, [message], ret) => {
+			if (!ret || !message?.state) return;
+			return /* @__PURE__ */ React.createElement(MessageStateContext.Provider, { value: message.state }, ret);
+		});
 	});
+	Plugin_default.once(Events.STOP, () => controller.abort());
 });
 
 // common/Components/ErrorBoundary/index.jsx
@@ -1343,7 +1344,8 @@ function SpotifyActivityIndicator({ userId }) {
 }
 var MessageHeaderFilter = Filters.byStrings("userOverride", "withMentionPrefix");
 Plugin_default.on(Events.START, () => {
-	waitForModule(MessageHeaderFilter, { raw: true, searchExports: false }).then(({ exports: MessageHeader }) => {
+	const controller = new AbortController();
+	waitForModule(MessageHeaderFilter, { signal: controller.signal, raw: true, searchExports: false }).then(({ exports: MessageHeader }) => {
 		const key = getObjectKey(MessageHeader, MessageHeaderFilter);
 		if (!key) return Logger_default.patchError("MessageHeader");
 		const unpatch = Patcher.after(MessageHeader, key, (_, [{ message }], ret) => {
@@ -1353,8 +1355,8 @@ Plugin_default.on(Events.START, () => {
 				React.createElement(ErrorBoundary, { id: "SpotifyActivityIndicator" }, /* @__PURE__ */ React.createElement(SpotifyActivityIndicator, { userId }))
 			);
 		});
-		Plugin_default.once(Events.STOP, unpatch);
 	});
+	Plugin_default.once(Events.STOP, () => controller.abort());
 });
 
 // src/SpotifyEnhance/components/SpotifyActivityControls/styles.css
