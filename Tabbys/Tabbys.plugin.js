@@ -2,7 +2,7 @@
  * @runAt idle
  * @name Tabbys
  * @description Adds Browser like tabs/bookmarks for channels
- * @version 1.0.10
+ * @version 1.0.11
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/Tabbys
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/Tabbys/Tabbys.plugin.js
@@ -12,7 +12,7 @@
 var Config_default = {
 	"info": {
 		"name": "Tabbys",
-		"version": "1.0.10",
+		"version": "1.0.11",
 		"description": "Adds Browser like tabs/bookmarks for channels",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/Tabbys/Tabbys.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/Tabbys",
@@ -280,61 +280,6 @@ StylesLoader_default.push(`:root {
 }
 `);
 
-// common/Webpack.js
-var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
-var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
-var waitForModule = /* @__PURE__ */ (() => Webpack.waitForModule)();
-var getBySource = /* @__PURE__ */ (() => Webpack.getBySource)();
-var getMangled = /* @__PURE__ */ (() => Webpack.getMangled)();
-var getStore = /* @__PURE__ */ (() => Webpack.getStore)();
-
-function waitForComponent(filter, options) {
-	let myValue = () => {};
-	const lazyComponent = LazyComponent(() => myValue);
-	waitForModule(filter, options).then((v) => {
-		myValue = v;
-		Object.assign(lazyComponent, v);
-	});
-	return lazyComponent;
-}
-
-function reactRefMemoFilter(type, ...args) {
-	const filter = Filters.byStrings(...args);
-	return (target) => target[type] && filter(target[type]);
-}
-
-function getModuleAndKey(filter, options) {
-	let module2;
-	const target = getModule((entry, m2) => filter(entry) ? module2 = m2 : false, options);
-	module2 = module2?.exports;
-	if (!module2) return;
-	const key = Object.keys(module2).find((k) => module2[k] === target);
-	if (!key) return;
-	return { module: module2, key };
-}
-
-// common/DiscordModules/Modules.js
-var DiscordPopout = /* @__PURE__ */ (() => getModule((a) => a?.prototype?.render && a.Animation, { searchExports: true }))();
-var Dispatcher = /* @__PURE__ */ (() => getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: true }))();
-var transitionTo = /* @__PURE__ */ (() => getModule(Filters.byStrings("transitionTo - Transitioning to"), { searchExports: true }))();
-var DragSource = /* @__PURE__ */ (() => getModule(Filters.byStrings("drag-source", "collect"), { searchExports: true }))();
-var DropTarget = /* @__PURE__ */ (() => getModule(Filters.byStrings("drop-target", "collect"), { searchExports: true }))();
-var IconsUtils = /* @__PURE__ */ (() => getModule((a) => a.getChannelIconURL))();
-var ChannelUtils = /* @__PURE__ */ (() => getModule((m2) => m2.openPrivateChannel))();
-
-// src/Tabbys/patches/logoutInterceptor.js
-Plugin_default.on(Events.START, () => {
-	function interceptor(e2) {
-		if (e2.type !== "LOGOUT") return;
-		e2.goHomeAfterSwitching = false;
-	}
-	Dispatcher.addInterceptor(interceptor);
-	Plugin_default.once(Events.STOP, () => {
-		const index = Dispatcher._interceptors.indexOf(interceptor);
-		Dispatcher._interceptors.splice(index, 1);
-	});
-});
-
 // common/Utils/index.js
 function clsx(prefix) {
 	return (...args) => args.filter(Boolean).map((a) => `${prefix}-${a}`).join(" ");
@@ -388,6 +333,59 @@ function reRender(selector) {
 	instance.forceUpdate(() => instance.forceUpdate());
 }
 var nop = () => {};
+
+// common/Webpack.js
+var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
+var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
+var waitForModule = /* @__PURE__ */ (() => Webpack.waitForModule)();
+var getBySource = /* @__PURE__ */ (() => Webpack.getBySource)();
+var getMangled = /* @__PURE__ */ (() => Webpack.getMangled)();
+var getStore = /* @__PURE__ */ (() => Webpack.getStore)();
+
+function waitForComponent(filter, options) {
+	let myValue = () => {};
+	const lazyComponent = LazyComponent(() => myValue);
+	waitForModule(filter, options).then((v) => {
+		myValue = v;
+		Object.assign(lazyComponent, v);
+	});
+	return lazyComponent;
+}
+
+function reactRefMemoFilter(type, ...args) {
+	const filter = Filters.byStrings(...args);
+	return (target) => target[type] && filter(target[type]);
+}
+
+function getModuleAndKey(filter, options) {
+	let module2;
+	const target = getModule((entry, m2) => filter(entry) ? module2 = m2 : false, options);
+	module2 = module2?.exports;
+	if (!module2) return;
+	const key = Object.keys(module2).find((k) => module2[k] === target);
+	if (!key) return;
+	return { module: module2, key };
+}
+
+// common/DiscordModules/Modules.js
+var DiscordPopout = /* @__PURE__ */ (() => getModule((a) => a?.prototype?.render && a.Animation, { searchExports: true }))();
+var Dispatcher = /* @__PURE__ */ (() => getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: true }))();
+var transitionTo = /* @__PURE__ */ (() => getModule(Filters.byStrings("transitionTo - Transitioning to"), { searchExports: true }))();
+var IconsUtils = /* @__PURE__ */ (() => getModule((a) => a.getChannelIconURL))();
+var ChannelUtils = /* @__PURE__ */ (() => getModule((m2) => m2.openPrivateChannel))();
+
+// src/Tabbys/patches/logoutInterceptor.js
+Plugin_default.on(Events.START, () => {
+	function interceptor(e2) {
+		if (e2.type !== "LOGOUT") return;
+		e2.goHomeAfterSwitching = false;
+	}
+	Dispatcher.addInterceptor(interceptor);
+	Plugin_default.once(Events.STOP, () => {
+		const index = Dispatcher._interceptors.indexOf(interceptor);
+		Dispatcher._interceptors.splice(index, 1);
+	});
+});
 
 // common/DiscordModules/zustand.js
 var { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
@@ -1274,7 +1272,7 @@ function wrapMenuItem(item) {
 	};
 }
 
-// common/Components/icon/index.jsx
+// common/Components/Icon/index.jsx
 function svg(svgProps, ...paths) {
 	return (comProps) => (
 		// biome-ignore lint/a11y/noSvgWithoutTitle: <explanation>
@@ -1987,6 +1985,11 @@ function DroppableMarkup({ isOver, canDrop, dropRef, draggedIsMe, dragInProgress
 }
 
 // src/Tabbys/components/DND/shared.js
+var DragSource;
+var DropTarget;
+waitForModule(Filters.byStrings("drag-source", "collect"), { searchExports: true }).then((a) => DragSource = a);
+waitForModule(Filters.byStrings("drop-target", "collect"), { searchExports: true }).then((a) => DropTarget = a);
+
 function collect(connect, monitor, props) {
 	const item = monitor.getItem();
 	return {
@@ -1998,15 +2001,45 @@ function collect(connect, monitor, props) {
 	};
 }
 
-function makeDraggable(type) {
-	return DragSource(type, { beginDrag: (a) => a }, (connect, monitor) => ({
-		isDragging: !!monitor.isDragging(),
-		dragRef: connect.dragSource()
-	}));
+function makeDroppable(types2, drop) {
+	let Result = null;
+	return (Comp) => {
+		return (props) => {
+			if (Result) return /* @__PURE__ */ React_default.createElement(Result, { ...props });
+			if (DropTarget) {
+				Result = DropTarget(types2, { drop }, collect)(Comp);
+				return /* @__PURE__ */ React_default.createElement(Result, { ...props });
+			}
+			return /* @__PURE__ */ React_default.createElement(
+				Comp, {
+					...props,
+					dropRef: (a) => {}
+				}
+			);
+		};
+	};
 }
 
-function makeDroppable(types2, drop) {
-	return DropTarget(types2, { drop }, collect);
+function makeDraggable(type) {
+	let Result = null;
+	return (Comp) => {
+		return (props) => {
+			if (Result) return /* @__PURE__ */ React_default.createElement(Result, { ...props });
+			if (DropTarget) {
+				Result = DragSource(type, { beginDrag: (a) => a }, (connect, monitor) => ({
+					isDragging: !!monitor.isDragging(),
+					dragRef: connect.dragSource()
+				}))(Comp);
+				return /* @__PURE__ */ React_default.createElement(Result, { ...props });
+			}
+			return /* @__PURE__ */ React_default.createElement(
+				Comp, {
+					...props,
+					dragRef: (a) => {}
+				}
+			);
+		};
+	};
 }
 
 // src/Tabbys/components/DND/Sortables/Tab.jsx

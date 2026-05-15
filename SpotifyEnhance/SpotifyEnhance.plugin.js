@@ -2,7 +2,7 @@
  * @runAt idle
  * @name SpotifyEnhance
  * @description All in one better spotify-discord experience.
- * @version 1.1.13
+ * @version 1.1.14
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js
@@ -12,7 +12,7 @@
 var Config_default = {
 	"info": {
 		"name": "SpotifyEnhance",
-		"version": "1.1.13",
+		"version": "1.1.14",
 		"description": "All in one better spotify-discord experience.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance",
@@ -185,71 +185,14 @@ StylesLoader_default.push(`:root {
 	box-sizing: border-box;
 }`);
 
-// common/React.jsx
-var useState = /* @__PURE__ */ (() => React.useState)();
-var useEffect = /* @__PURE__ */ (() => React.useEffect)();
-var useRef = /* @__PURE__ */ (() => React.useRef)();
-var useCallback = /* @__PURE__ */ (() => React.useCallback)();
-var useMemo = /* @__PURE__ */ (() => React.useMemo)();
-var Children = /* @__PURE__ */ (() => React.Children)();
-var React_default = /* @__PURE__ */ (() => React)();
-
-// common/Webpack.js
-var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
-var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
-var getMangled = /* @__PURE__ */ (() => Webpack.getMangled)();
-var getStore = /* @__PURE__ */ (() => Webpack.getStore)();
-
-function reactRefMemoFilter(type, ...args) {
-	const filter = Filters.byStrings(...args);
-	return (target) => target[type] && filter(target[type]);
-}
-
-function getModuleAndKey(filter, options) {
-	let module2;
-	const target = getModule((entry, m) => filter(entry) ? module2 = m : false, options);
-	module2 = module2?.exports;
-	if (!module2) return;
-	const key = Object.keys(module2).find((k) => module2[k] === target);
-	if (!key) return;
-	return { module: module2, key };
-}
-
-function getDeclarationAndKey(moduleFilter, declarationFilter, options = {}) {
-	const module2 = getModule(moduleFilter, { options, raw: true });
-	for (const name in module2.declarations) {
-		if (!declarationFilter(module2.declarations[name])) continue;
-		return { module: module2.declarations, key: name };
+// common/Utils/index.js
+function getObjectKey(object, filter) {
+	for (const key in object) {
+		if (!filter(object[key])) continue;
+		return key;
 	}
 }
 
-// common/DiscordModules/zustand.js
-var { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
-	_: Filters.byStrings("subscribe"),
-	zustand: () => true
-});
-var subscribeWithSelector = getModule(Filters.byStrings("getState", "equalityFn", "fireImmediately"), { searchExports: true });
-var zustand_default = zustand;
-
-function create(initialState) {
-	const Store2 = zustand(initialState);
-	Object.defineProperty(Store2, "state", {
-		configurable: false,
-		get: () => Store2.getState()
-	});
-	return Store2;
-}
-
-// MODULES-AUTO-LOADER:@Stores/ConnectedAccountsStore
-var ConnectedAccountsStore_default = getStore("ConnectedAccountsStore");
-
-// MODULES-AUTO-LOADER:@Stores/SelectedChannelStore
-var SelectedChannelStore_default = getStore("SelectedChannelStore");
-
-// MODULES-AUTO-LOADER:@Stores/SpotifyStore
-var SpotifyStore_default = getStore("SpotifyStore");
-
-// common/Utils/index.js
 function fit({ width, height, gap = 0.8 }) {
 	const ratio = Math.min(innerWidth / width, innerHeight / height);
 	width = Math.round(width * ratio);
@@ -307,6 +250,70 @@ function preventDefault(handler) {
 		handler.apply(null, [e]);
 	};
 }
+
+// common/React.jsx
+var useState = /* @__PURE__ */ (() => React.useState)();
+var useEffect = /* @__PURE__ */ (() => React.useEffect)();
+var useRef = /* @__PURE__ */ (() => React.useRef)();
+var useCallback = /* @__PURE__ */ (() => React.useCallback)();
+var useMemo = /* @__PURE__ */ (() => React.useMemo)();
+var Children = /* @__PURE__ */ (() => React.Children)();
+var React_default = /* @__PURE__ */ (() => React)();
+
+// common/Webpack.js
+var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
+var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
+var waitForModule = /* @__PURE__ */ (() => Webpack.waitForModule)();
+var getMangled = /* @__PURE__ */ (() => Webpack.getMangled)();
+var getStore = /* @__PURE__ */ (() => Webpack.getStore)();
+
+function reactRefMemoFilter(type, ...args) {
+	const filter = Filters.byStrings(...args);
+	return (target) => target[type] && filter(target[type]);
+}
+
+function getModuleAndKey(filter, options) {
+	let module2;
+	const target = getModule((entry, m) => filter(entry) ? module2 = m : false, options);
+	module2 = module2?.exports;
+	if (!module2) return;
+	const key = Object.keys(module2).find((k) => module2[k] === target);
+	if (!key) return;
+	return { module: module2, key };
+}
+
+function getDeclarationAndKey(moduleFilter, declarationFilter, options = {}) {
+	const module2 = getModule(moduleFilter, { options, raw: true });
+	if (!module2?.declarations) return;
+	const key = getObjectKey(module2.declarations, declarationFilter);
+	return key ? { key, module: module2.declarations } : void 0;
+}
+
+// common/DiscordModules/zustand.js
+var { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
+	_: Filters.byStrings("subscribe"),
+	zustand: () => true
+});
+var subscribeWithSelector = getModule(Filters.byStrings("getState", "equalityFn", "fireImmediately"), { searchExports: true });
+var zustand_default = zustand;
+
+function create(initialState) {
+	const Store2 = zustand(initialState);
+	Object.defineProperty(Store2, "state", {
+		configurable: false,
+		get: () => Store2.getState()
+	});
+	return Store2;
+}
+
+// MODULES-AUTO-LOADER:@Stores/ConnectedAccountsStore
+var ConnectedAccountsStore_default = getStore("ConnectedAccountsStore");
+
+// MODULES-AUTO-LOADER:@Stores/SelectedChannelStore
+var SelectedChannelStore_default = getStore("SelectedChannelStore");
+
+// MODULES-AUTO-LOADER:@Stores/SpotifyStore
+var SpotifyStore_default = getStore("SpotifyStore");
 
 // MODULES-AUTO-LOADER:@Modules/MessageActions
 var MessageActions_default = getModule(Filters.byKeys("jumpToMessage", "_sendMessage"), { searchExports: false });
@@ -1129,7 +1136,6 @@ var VolumeIcon = /* @__PURE__ */ svg({ viewBox: "0 0 16 16" }, "M9.741.85a.75.75
 
 // src/SpotifyEnhance/patches/patchChannelAttach.jsx
 var { Item: MenuItem } = ContextMenu;
-var ChannelAttachMenu = getDeclarationAndKey(Filters.bySource("Plus Button"), Filters.byStrings("Plus Button"));
 
 function MenuLabel({ label, icon }) {
 	return /* @__PURE__ */ React.createElement(
@@ -1144,50 +1150,52 @@ function MenuLabel({ label, icon }) {
 	);
 }
 Plugin_default.on(Events.START, () => {
-	const { module: module2, key } = ChannelAttachMenu;
-	if (!module2 || !key) return Logger_default.patchError("patchChannelAttach");
-	const unpatch = Patcher.after(module2, key, (_, args, ret) => {
-		if (!Store.state.isActive) return;
-		if (!Store.state.mediaId) return;
-		if (!Array.isArray(ret?.props?.children)) return;
-		ret.props.children.push(
-			/* @__PURE__ */
-			React.createElement(
-				MenuItem, {
-					id: "spotify-share-song-menuitem",
-					label: /* @__PURE__ */ React.createElement(
-						MenuLabel, {
-							icon: /* @__PURE__ */ React.createElement(ListenIcon, null),
-							label: "Share spotify song"
+	waitForModule(Filters.bySource("Plus Button"), { raw: true }).then(({ declarations: ChannelAttachMenu }) => {
+		const key = getObjectKey(ChannelAttachMenu, Filters.byStrings("Plus Button"));
+		if (!key) return Logger_default.patchError("patchChannelAttach");
+		const unpatch = Patcher.after(ChannelAttachMenu, key, (_, args, ret) => {
+			if (!Store.state.isActive) return;
+			if (!Store.state.mediaId) return;
+			if (!Array.isArray(ret?.props?.children)) return;
+			ret.props.children.push(
+				/* @__PURE__ */
+				React.createElement(
+					MenuItem, {
+						id: "spotify-share-song-menuitem",
+						label: /* @__PURE__ */ React.createElement(
+							MenuLabel, {
+								icon: /* @__PURE__ */ React.createElement(ListenIcon, null),
+								label: "Share spotify song"
+							}
+						),
+						action: () => {
+							const songUrl = Store.state.getSongUrl();
+							Store.Utils.share(songUrl);
 						}
-					),
-					action: () => {
-						const songUrl = Store.state.getSongUrl();
-						Store.Utils.share(songUrl);
 					}
-				}
-			),
-			/* @__PURE__ */
-			React.createElement(
-				MenuItem, {
-					id: "spotify-share-banner-menuitem",
-					label: /* @__PURE__ */ React.createElement(
-						MenuLabel, {
-							icon: /* @__PURE__ */ React.createElement(ImageIcon, null),
-							label: "Share spotify song banner"
+				),
+				/* @__PURE__ */
+				React.createElement(
+					MenuItem, {
+						id: "spotify-share-banner-menuitem",
+						label: /* @__PURE__ */ React.createElement(
+							MenuLabel, {
+								icon: /* @__PURE__ */ React.createElement(ImageIcon, null),
+								label: "Share spotify song banner"
+							}
+						),
+						action: () => {
+							const {
+								bannerLg: { url }
+							} = Store.state.getSongBanners();
+							Store.Utils.share(url);
 						}
-					),
-					action: () => {
-						const {
-							bannerLg: { url }
-						} = Store.state.getSongBanners();
-						Store.Utils.share(url);
 					}
-				}
-			)
-		);
+				)
+			);
+		});
+		Plugin_default.once(Events.STOP, unpatch);
 	});
-	Plugin_default.once(Events.STOP, unpatch);
 });
 
 // common/Utils/Settings.js
@@ -1227,35 +1235,35 @@ Plugin_default.on(Events.START, () => {
 });
 
 // src/SpotifyEnhance/patches/patchMessageComponentAccessories.jsx
-var MessageComponentAccessories = getModule(Filters.byPrototypeKeys("renderPoll"), { searchExports: true });
 var urlRegex = /((?:https?|steam):\/\/[^\s<]+[^<.,:;"'\]\s])/g;
 var MessageStateContext = React.createContext(null);
 Plugin_default.on(Events.START, () => {
-	if (!MessageComponentAccessories) return Logger_default.patchError("MessageComponentAccessories");
-	const unpatches = [
-		Patcher.before(MessageComponentAccessories.prototype, "renderEmbeds", (_, args) => {
-			const message = args[0];
-			const urlMatches = message.content.match(urlRegex) || [];
-			if (!urlMatches.length) return;
-			const embeds = urlMatches.filter(isSpotifyUrl).map((url) => ({
-				url,
-				"type": "link",
-				"provider": {
-					"name": "Spotify",
-					"url": "https://spotify.com/"
-				}
-			}));
-			if (!embeds.length) return;
-			args[0] = Object.assign(args[0], {
-				embeds: [...message.embeds.filter((a) => a.provider.name !== "Spotify"), ...embeds]
-			});
-		}),
-		Patcher.after(MessageComponentAccessories.prototype, "renderEmbeds", (_, [message], ret) => {
-			if (!ret || !message?.state) return;
-			return /* @__PURE__ */ React.createElement(MessageStateContext.Provider, { value: message.state }, ret);
-		})
-	];
-	Plugin_default.once(Events.STOP, () => unpatches.forEach((a) => a?.()));
+	waitForModule(Filters.byPrototypeKeys("renderPoll"), { searchExports: true }).then((MessageComponentAccessories) => {
+		const unpatches = [
+			Patcher.before(MessageComponentAccessories.prototype, "renderEmbeds", (_, args) => {
+				const message = args[0];
+				const urlMatches = message.content.match(urlRegex) || [];
+				if (!urlMatches.length) return;
+				const embeds = urlMatches.filter(isSpotifyUrl).map((url) => ({
+					url,
+					"type": "link",
+					"provider": {
+						"name": "Spotify",
+						"url": "https://spotify.com/"
+					}
+				}));
+				if (!embeds.length) return;
+				args[0] = Object.assign(args[0], {
+					embeds: [...message.embeds.filter((a) => a.provider.name !== "Spotify"), ...embeds]
+				});
+			}),
+			Patcher.after(MessageComponentAccessories.prototype, "renderEmbeds", (_, [message], ret) => {
+				if (!ret || !message?.state) return;
+				return /* @__PURE__ */ React.createElement(MessageStateContext.Provider, { value: message.state }, ret);
+			})
+		];
+		Plugin_default.once(Events.STOP, () => unpatches.forEach((a) => a?.()));
+	});
 });
 
 // common/Components/ErrorBoundary/index.jsx
@@ -1333,17 +1341,20 @@ function SpotifyActivityIndicator({ userId }) {
 		}
 	));
 }
+var MessageHeaderFilter = Filters.byStrings("userOverride", "withMentionPrefix");
 Plugin_default.on(Events.START, () => {
-	const { module: module2, key } = MessageHeader_default;
-	if (!module2 || !key) return Logger_default.patchError("MessageHeader");
-	const unpatch = Patcher.after(module2, key, (_, [{ message }], ret) => {
-		const userId = message.author.id;
-		ret.props.children.push(
-			/* @__PURE__ */
-			React.createElement(ErrorBoundary, { id: "SpotifyActivityIndicator" }, /* @__PURE__ */ React.createElement(SpotifyActivityIndicator, { userId }))
-		);
+	waitForModule(MessageHeaderFilter, { raw: true, searchExports: false }).then(({ exports: MessageHeader }) => {
+		const key = getObjectKey(MessageHeader, MessageHeaderFilter);
+		if (!key) return Logger_default.patchError("MessageHeader");
+		const unpatch = Patcher.after(MessageHeader, key, (_, [{ message }], ret) => {
+			const userId = message.author.id;
+			ret.props.children.push(
+				/* @__PURE__ */
+				React.createElement(ErrorBoundary, { id: "SpotifyActivityIndicator" }, /* @__PURE__ */ React.createElement(SpotifyActivityIndicator, { userId }))
+			);
+		});
+		Plugin_default.once(Events.STOP, unpatch);
 	});
-	Plugin_default.once(Events.STOP, unpatch);
 });
 
 // src/SpotifyEnhance/components/SpotifyActivityControls/styles.css
@@ -2025,7 +2036,7 @@ var SpotifyEmbed_default = ({ id, type }) => {
 	const isThis = mediaId === id;
 	const listenBtn = type !== "show" && /* @__PURE__ */ React_default.createElement(Tooltip_default2, { note: `Play ${type}` }, /* @__PURE__ */ React_default.createElement(
 		"div", {
-			onClick: () => Store.Api.listen(type, id, rawTitle),
+			onClick: preventDefault(() => Store.Api.listen(type, id, rawTitle)),
 			className: "spotify-embed-btn spotify-embed-btn-listen"
 		},
 		/* @__PURE__ */
@@ -2033,7 +2044,7 @@ var SpotifyEmbed_default = ({ id, type }) => {
 	));
 	const queueBtn = (type === "track" || type === "episode") && /* @__PURE__ */ React_default.createElement(Tooltip_default2, { note: `Add ${type} to queue` }, /* @__PURE__ */ React_default.createElement(
 		"div", {
-			onClick: () => Store.Api.queue(type, id, rawTitle),
+			onClick: preventDefault(() => Store.Api.queue(type, id, rawTitle)),
 			className: "spotify-embed-btn spotify-embed-btn-addToQueue"
 		},
 		/* @__PURE__ */
@@ -2059,7 +2070,7 @@ var SpotifyEmbed_default = ({ id, type }) => {
 		/* @__PURE__ */
 		React_default.createElement(Tooltip_default2, { note: "View" }, /* @__PURE__ */ React_default.createElement(
 			"div", {
-				onClick: () => {
+				onClick: preventDefault(() => {
 					const { url: url2, ...rest } = banner.bannerLg;
 					openModal(
 						/* @__PURE__ */
@@ -2070,7 +2081,7 @@ var SpotifyEmbed_default = ({ id, type }) => {
 							}
 						))
 					);
-				},
+				}),
 				className: "spotify-embed-thumbnail"
 			}
 		)),
@@ -2080,14 +2091,14 @@ var SpotifyEmbed_default = ({ id, type }) => {
 		React_default.createElement(Tooltip_default2, { note: rawDescription }, /* @__PURE__ */ React_default.createElement("p", { className: "spotify-embed-description" }, rawDescription)),
 		type && id && /* @__PURE__ */ React_default.createElement("div", { className: "spotify-embed-controls" }, (isThis && isActive && !isPlaying || !isThis && isActive) && [listenBtn, queueBtn], isThis && isActive && isPlaying && /* @__PURE__ */ React_default.createElement(TrackTimeLine_default, null), /* @__PURE__ */ React_default.createElement(Tooltip_default2, { note: "Copy link" }, /* @__PURE__ */ React_default.createElement(
 			"div", {
-				onClick: () => Store.Utils.copySpotifyLink(url),
+				onClick: preventDefault(() => Store.Utils.copySpotifyLink(url)),
 				className: "spotify-embed-btn spotify-embed-btn-copy"
 			},
 			/* @__PURE__ */
 			React_default.createElement(CopyIcon, null)
 		)), /* @__PURE__ */ React_default.createElement(Tooltip_default2, { note: "Copy banner" }, /* @__PURE__ */ React_default.createElement(
 			"div", {
-				onClick: () => Store.Utils.copySpotifyLink(banner.bannerLg?.url),
+				onClick: preventDefault(() => Store.Utils.copySpotifyLink(banner.bannerLg?.url)),
 				className: "spotify-embed-btn spotify-embed-btn-copy"
 			},
 			/* @__PURE__ */
@@ -2096,7 +2107,7 @@ var SpotifyEmbed_default = ({ id, type }) => {
 		/* @__PURE__ */
 		React_default.createElement(Tooltip_default2, { note: "Play on Spotify" }, /* @__PURE__ */ React_default.createElement(
 			"div", {
-				onClick: () => Store.Utils.openSpotifyLink(url),
+				onClick: preventDefault(() => Store.Utils.openSpotifyLink(url)),
 				className: "spotify-embed-spotifyIcon"
 			},
 			/* @__PURE__ */
@@ -2717,7 +2728,7 @@ function Artist({ artists }) {
 		label: artist.name,
 		items: getArtistContextMenu(artist)
 	}));
-	return /* @__PURE__ */ React_default.createElement(HoverPopout, { popout: (e) => /* @__PURE__ */ React_default.createElement(ContextMenu.Menu, { onClose: e.closePopout }, ContextMenu.buildMenuChildren(menu)) }, /* @__PURE__ */ React_default.createElement("div", { className: "spotify-player-artist ellipsis" }, `on ${artists[0].name}`));
+	return /* @__PURE__ */ React_default.createElement(HoverPopout, { popout: (e) => /* @__PURE__ */ React_default.createElement(ContextMenu.Menu, { onClose: e.closePopout }, ContextMenu.buildMenuChildren(menu)) }, /* @__PURE__ */ React_default.createElement("div", { className: "spotify-player-artist ellipsis" }, `by ${artists[0].name}`));
 }
 
 function getArtistContextMenu(artist) {

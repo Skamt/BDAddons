@@ -2,7 +2,7 @@
  * @runAt idle
  * @name LazyLoadChannels
  * @description Lets you choose whether to load a channel
- * @version 1.3.0
+ * @version 1.3.1
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js
@@ -12,7 +12,7 @@
 var Config_default = {
 	"info": {
 		"name": "LazyLoadChannels",
-		"version": "1.3.0",
+		"version": "1.3.1",
 		"description": "Lets you choose whether to load a channel",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels",
@@ -205,19 +205,32 @@ StylesLoader_default.push(`#lazyLoader {
 // common/React.jsx
 var React_default = /* @__PURE__ */ (() => React)();
 
+// common/Utils/index.js
+function getObjectKey(object, filter) {
+	for (const key in object) {
+		if (!filter(object[key])) continue;
+		return key;
+	}
+}
+var nop = () => {};
+
 // common/Webpack.js
 var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
 var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
+var waitForModule = /* @__PURE__ */ (() => Webpack.waitForModule)();
 var getMangled = /* @__PURE__ */ (() => Webpack.getMangled)();
 var getStore = /* @__PURE__ */ (() => Webpack.getStore)();
 
+function reactRefMemoFilter(type, ...args) {
+	const filter = Filters.byStrings(...args);
+	return (target) => target[type] && filter(target[type]);
+}
+
 function getDeclarationAndKey(moduleFilter, declarationFilter, options = {}) {
 	const module2 = getModule(moduleFilter, { options, raw: true });
-	if (!module2 || !module2.declarations) return;
-	for (const name in module2.declarations) {
-		if (!declarationFilter(module2.declarations[name])) continue;
-		return { module: module2.declarations, key: name };
-	}
+	if (!module2?.declarations) return;
+	const key = getObjectKey(module2.declarations, declarationFilter);
+	return key ? { key, module: module2.declarations } : void 0;
 }
 
 // common/DiscordModules/zustand.js
@@ -235,9 +248,6 @@ function create(initialState) {
 	});
 	return Store;
 }
-
-// common/Utils/index.js
-var nop = () => {};
 
 // common/Utils/Settings.js
 var SettingsStore = create(subscribeWithSelector(() => Object.assign(Config_default.settings, Data.load("settings") || {})));
@@ -303,15 +313,13 @@ var ChannelsStateManager = {
 ChannelsStateManager.init();
 var ChannelsStateManager_default = ChannelsStateManager;
 
-// common/DiscordModules/Modules.js
-var ChannelComponent = /* @__PURE__ */ (() => getModule(Filters.byComponentType(Filters.byStrings("hasActiveThreads")), { searchExports: true }))();
-
 // src/LazyLoadChannels/patches/patchChannel.js
 Plugin_default.on(Events.START, () => {
-	if (!ChannelComponent) return Logger_default.patchError("Channel");
-	Patcher.after(ChannelComponent, "render", (_, [{ channel }], returnValue) => {
-		if (!Settings_default.state.autoloadedChannelIndicator) return;
-		if (ChannelsStateManager_default.getChannelstate(channel.guild_id, channel.id)) returnValue.props.children.props.children[1].props.className += " autoload";
+	waitForModule(reactRefMemoFilter("render", "hasActiveThreads"), { searchExports: true }).then((ChannelComponent) => {
+		Patcher.after(ChannelComponent, "render", (_, [{ channel }], returnValue) => {
+			if (!Settings_default.state.autoloadedChannelIndicator) return;
+			if (ChannelsStateManager_default.getChannelstate(channel.guild_id, channel.id)) returnValue.props.children.props.children[1].props.className += " autoload";
+		});
 	});
 });
 
