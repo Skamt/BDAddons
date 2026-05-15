@@ -282,11 +282,21 @@ function getModuleAndKey(filter, options) {
 	return { module: module2, key };
 }
 
+// FIX: getDeclarationAndKey — safely handle missing .declarations
 function getDeclarationAndKey(moduleFilter, declarationFilter, options = {}) {
-	const module2 = getModule(moduleFilter, { options, raw: true });
-	if (!module2?.declarations) return;
-	const key = getObjectKey(module2.declarations, declarationFilter);
-	return key ? { key, module: module2.declarations } : void 0;
+	try {
+		const module2 = getModule(moduleFilter, { ...options, raw: true });
+		// Guard: module or declarations may be undefined after Discord updates
+		if (!module2) return undefined;
+		// Support both old format (.declarations) and new format (.exports)
+		const declarations = module2.declarations || module2.exports;
+		if (!declarations) return undefined;
+		const key = getObjectKey(declarations, declarationFilter);
+		return key ? { key, module: declarations } : undefined;
+	} catch (e) {
+		Logger_default.error("getDeclarationAndKey failed", e);
+		return undefined;
+	}
 }
 
 // common/DiscordModules/zustand.js
@@ -815,13 +825,11 @@ function ressourceActions(prop) {
 	const { success, error } = {
 		queue: {
 			success: (type, name) => `Queued ${name}`,
-			error: (type, name, reason) => `Could not queue ${name}
-${reason}`
+			error: (type, name, reason) => `Could not queue ${name}\n${reason}`
 		},
 		listen: {
 			success: (type, name) => `Playing ${name}`,
-			error: (type, name, reason) => `Could not play ${name}
-${reason}`
+			error: (type, name, reason) => `Could not play ${name}\n${reason}`
 		}
 	} [prop];
 	return (type, id, description) => requestHandler(() => SpotifyAPI_default[prop](type, id)).then(() => {
@@ -860,8 +868,7 @@ var SpotifyAPIWrapper_default = new Proxy({}, {
 			case "previous":
 			case "volume":
 				return (...args) => requestHandler(() => SpotifyAPI_default[prop].apply(SpotifyAPI_default, args)).catch((reason) => {
-					Toast_default.error(`Could not execute ${prop} command
-${reason}`);
+					Toast_default.error(`Could not execute ${prop} command\n${reason}`);
 				});
 			case "getPlayerState":
 			case "getDevices":
@@ -965,9 +972,7 @@ var Store = Object.assign(
 					const state = get();
 					if (!state.media) return "";
 					const { artists, album } = state.media;
-					return `Name: ${state.media.name}
-Artist${artists.length > 1 ? "s" : ""}: ${artists.map((a) => a.name).join(" ,")}
-Album: ${album.name}`;
+					return `Name: ${state.media.name}\nArtist${artists.length > 1 ? "s" : ""}: ${artists.map((a) => a.name).join(" ,")}\nAlbum: ${album.name}`;
 				},
 				getSongUrl() {
 					return get().media?.external_urls?.spotify;
@@ -1087,7 +1092,6 @@ var Flex_default = getModule(Filters.byKeys("Child", "Align", "Justify"));
 // common/Components/Icon/index.jsx
 function svg(svgProps, ...paths) {
 	return (comProps) => (
-		// biome-ignore lint/a11y/noSvgWithoutTitle: <explanation>
 		/* @__PURE__ */
 		React_default.createElement(
 			"svg", {
@@ -1151,7 +1155,10 @@ function MenuLabel({ label, icon }) {
 }
 Plugin_default.on(Events.START, () => {
 	const controller = new AbortController();
-	waitForModule(Filters.bySource("Plus Button"), { signal: controller.signal, raw: true }).then(({ declarations: ChannelAttachMenu }) => {
+	waitForModule(Filters.bySource("Plus Button"), { signal: controller.signal, raw: true }).then((rawModule) => {
+		// FIX: safely access declarations OR exports
+		const ChannelAttachMenu = rawModule?.declarations || rawModule?.exports;
+		if (!ChannelAttachMenu) return Logger_default.patchError("patchChannelAttach");
 		const key = getObjectKey(ChannelAttachMenu, Filters.byStrings("Plus Button"));
 		if (!key) return Logger_default.patchError("patchChannelAttach");
 		const unpatch = Patcher.after(ChannelAttachMenu, key, (_, args, ret) => {
@@ -1272,10 +1279,8 @@ var ErrorBoundary = class extends React_default.Component {
 	state = { hasError: false, error: null, info: null };
 	componentDidCatch(error, info) {
 		this.setState({ error, info, hasError: true });
-		const errorMessage = `
-	${error?.message || ""}${(info?.componentStack || "").split("\n").slice(0, 20).join("\n")}`;
-		console.error(`%c[${Config_default?.info?.name || "Unknown Plugin"}] %cthrew an exception at %c[${this.props.id}]
-`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
+		const errorMessage = `\n\t${error?.message || ""}${(info?.componentStack || "").split("\n").slice(0, 20).join("\n")}`;
+		console.error(`%c[${Config_default?.info?.name || "Unknown Plugin"}] %cthrew an exception at %c[${this.props.id}]\n`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
 	}
 	renderErrorBoundary() {
 		return /* @__PURE__ */ React_default.createElement("div", { style: { background: "#292c2c", padding: "20px", borderRadius: "10px" } }, /* @__PURE__ */ React_default.createElement("b", { style: { color: "#e0e1e5" } }, "An error has occured while rendering ", /* @__PURE__ */ React_default.createElement("span", { style: { color: "orange" } }, this.props.id)));
@@ -1345,7 +1350,10 @@ function SpotifyActivityIndicator({ userId }) {
 var MessageHeaderFilter = Filters.byStrings("userOverride", "withMentionPrefix");
 Plugin_default.on(Events.START, () => {
 	const controller = new AbortController();
-	waitForModule(MessageHeaderFilter, { signal: controller.signal, raw: true, searchExports: false }).then(({ exports: MessageHeader }) => {
+	waitForModule(MessageHeaderFilter, { signal: controller.signal, raw: true, searchExports: false }).then((rawModule) => {
+		// FIX: safely access exports
+		const MessageHeader = rawModule?.exports || rawModule?.declarations;
+		if (!MessageHeader) return Logger_default.patchError("MessageHeader");
 		const key = getObjectKey(MessageHeader, MessageHeaderFilter);
 		if (!key) return Logger_default.patchError("MessageHeader");
 		const unpatch = Patcher.after(MessageHeader, key, (_, [{ message }], ret) => {
@@ -1355,6 +1363,7 @@ Plugin_default.on(Events.START, () => {
 				React.createElement(ErrorBoundary, { id: "SpotifyActivityIndicator" }, /* @__PURE__ */ React.createElement(SpotifyActivityIndicator, { userId }))
 			);
 		});
+		Plugin_default.once(Events.STOP, unpatch);
 	});
 	Plugin_default.once(Events.STOP, () => controller.abort());
 });
@@ -1461,7 +1470,12 @@ var SpotifyActivityControls_default = ({ activity, user }) => {
 };
 
 // src/SpotifyEnhance/patches/patchSpotifyActivity.jsx
-var ActivityComponent = getDeclarationAndKey(Filters.bySource("PRESS_LISTEN_ALONG_ON_SPOTIFY_BUTTON", "PRESS_PLAY_ON_SPOTIFY_BUTTON"), Filters.byStrings("PRESS_LISTEN_ALONG_ON_SPOTIFY_BUTTON", "PRESS_PLAY_ON_SPOTIFY_BUTTON"));
+// FIX: guard against undefined result from getDeclarationAndKey
+var ActivityComponent = getDeclarationAndKey(
+	Filters.bySource("PRESS_LISTEN_ALONG_ON_SPOTIFY_BUTTON", "PRESS_PLAY_ON_SPOTIFY_BUTTON"),
+	Filters.byStrings("PRESS_LISTEN_ALONG_ON_SPOTIFY_BUTTON", "PRESS_PLAY_ON_SPOTIFY_BUTTON")
+) || {};
+
 Plugin_default.on(Events.START, () => {
 	const { module: module2, key } = ActivityComponent;
 	if (!module2 || !key) return Logger_default.patchError("SpotifyActivityComponent");
@@ -1704,7 +1718,6 @@ StylesLoader_default.push(`.downloadLink {
 	color: white !important;
 	font-size: 14px;
 	font-weight: 500;
-	/*	line-height: 18px;*/
 	text-decoration: none;
 	transition: opacity.15s ease;
 	opacity: 0.5;
@@ -2125,7 +2138,6 @@ function SpotifyEmbedWrapper({ id, type, embedObject, embedComponent }) {
 		case EmbedStyleEnum.KEEP:
 			return [
 				embedComponent,
-				// eslint-disable-next-line react/jsx-key
 				/* @__PURE__ */
 				React_default.createElement(
 					SpotifyControls_default, {
@@ -2155,7 +2167,12 @@ function SpotifyEmbedWrapper({ id, type, embedObject, embedComponent }) {
 }
 
 // src/SpotifyEnhance/patches/patchSpotifyEmbed.jsx
-var SpotifyEmbed = getDeclarationAndKey(Filters.bySource("iframe", "playlist", "track"), Filters.byStrings("iframe", "playlist", "track"));
+// FIX: guard against undefined result from getDeclarationAndKey
+var SpotifyEmbed = getDeclarationAndKey(
+	Filters.bySource("iframe", "playlist", "track"),
+	Filters.byStrings("iframe", "playlist", "track")
+) || {};
+
 Plugin_default.on(Events.START, () => {
 	const { module: module2, key } = SpotifyEmbed;
 	if (!module2 || !key) return Logger_default.patchError("SpotifyEmbed");
@@ -2546,7 +2563,6 @@ var SpotifyPlayerControls_default = () => {
 					className: "spotify-menuitem",
 					id: "copy-song-name",
 					action: copyNameHandler,
-					// icon: ImageIcon,
 					label: "Copy name"
 				}
 			]
@@ -2982,7 +2998,6 @@ StylesLoader_default.push(`.collapsible-container * {
 .collapsible-header:hover {
 	background: var(--background-mod-normal);
 }
-
 .collapsible-header:active {
 	background: var(--background-mod-faint);
 }
