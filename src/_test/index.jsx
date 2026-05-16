@@ -1,13 +1,28 @@
 import { Filters, getDeclarationAndKey } from "@Webpack";
 
-const d =  getDeclarationAndKey(Filters.bySource("isClaimingReward","sourceQuestContent","questEnrollmentBlockedUntil","enabledQuestStates"), Filters.byStrings("isClaimingReward","sourceQuestContent","questEnrollmentBlockedUntil","enabledQuestStates"));
-;
-console.log(d);
+function onKeyDown(e) {
+	const CtrlTab = e.key === "Tab" && e.ctrlKey;
+	const CtrlShiftTab = CtrlTab && e.shiftKey;
+
+	if(CtrlShiftTab || CtrlTab) e.stopPropagation();
+
+	if(CtrlShiftTab) {
+
+	}
+
+	else if (CtrlTab) {
+
+	};
+	
+}
+
 module.exports = () => ({
 	start() {
-		Patcher;
+		// document.addEventListener("keydown", onKeyDown);
+		// document.addEventListener("keyup",onKeyDown);
 	},
 	stop() {
-		Patcher.unpatchAll();
+		// document.removeEventListener("keydown", onKeyDown);
+		// document.removeEventListener("keyup",onKeyDown);
 	}
 });

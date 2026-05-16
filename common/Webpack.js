@@ -40,10 +40,10 @@ export function getModuleAndKey(filter, options) {
 
 
 export function getDeclarationAndKey(moduleFilter, declarationFilter, options = {}) {
-	const module = getModule(moduleFilter, { options, raw: true });
+	const module = getModule(moduleFilter, { ...options, raw: true });
 	if ( !module?.declarations) return;
 	const key = getObjectKey(module.declarations, declarationFilter);
-	return key ? {key, module:module.declarations}: undefined;
+	return key ? {key, module:module.declarations} : undefined;
 }
 
 

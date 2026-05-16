@@ -11,7 +11,7 @@ const ActivityComponent = getDeclarationAndKey(Filters.bySource("PRESS_LISTEN_AL
 Plugin.on(Events.START, () => {
 	const { module, key } = ActivityComponent;
 	if (!module || !key) return Logger.patchError("SpotifyActivityComponent");
-	const unpatch = Patcher.after(module, key, (_, [{ user, activity }]) => {
+	Patcher.after(module, key, (_, [{ user, activity }]) => {
 		if (!Settings.getState().activity) return;
 		if (activity?.name.toLowerCase() !== "spotify") return;
 
@@ -24,6 +24,4 @@ Plugin.on(Events.START, () => {
 			</ErrorBoundary>
 		);
 	});
-
-	Plugin.once(Events.STOP, unpatch);
 });

@@ -130,7 +130,8 @@ export default function () {
 				id={c("functionality")}>
 				{[
 					{ settingKey: "bookmarkOverflowWrap", label: "Wrap Bookmarks" },
-					{ settingKey: "ctrlClickChannel", label: "Ctrl+Click channel" }
+					{ settingKey: "ctrlClickChannel", label: "Ctrl+Click channel" },
+					{ settingKey: "tabSwitch", label: "Tab switch keybinds" }
 				].map(ContextMenuToggle)}
 			</Item>
 		</Menu>

@@ -80,6 +80,7 @@ export default function SettingComponent() {
 						{[
 							{ settingKey: "ctrlClickChannel", description: "Ctrl+Click Channel to open in new tab" },
 							{ settingKey: "bookmarkOverflowWrap", description: "Wrap Bookmarks", note: "Wrap overflowing bookmarks instead of clamping them into a overflow menu" }
+							,{ settingKey: "tabSwitch", description: "Enable switch keybinds", note: "Switch between channels using keybinds --  switch right [Ctrl+Tab] / switch left [Ctrl+Shift+Tab]" }
 						].map(SettingSwtich)}
 					</FieldSet>
 				</Collapsible>

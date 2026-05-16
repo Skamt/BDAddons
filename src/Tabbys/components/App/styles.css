@@ -64,6 +64,7 @@ div:has(> .tabbys-app-container):not(#a) {
 }
 
 .tabbys-app-leading {
+	display: flex;
 	grid-area: leading;
 	position: relative;
 	-webkit-app-region: drag;

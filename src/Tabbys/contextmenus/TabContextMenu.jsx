@@ -19,14 +19,7 @@ export default function (id, { path, channelId, userId, guildId, hasUnread }) {
 		})
 	);
 
-	const copies = [
-		CopyPathItem(path), 
-		channelId && CopyChannelIdItem(channelId), 
-		guildId && CopyGuildIdItem(guildId), 
-		userId && CopyUserIdItem(userId)
-	]
-	.filter(Boolean)
-	.map(wrapMenuItem);
+	const copies = [CopyPathItem(path), channelId && CopyChannelIdItem(channelId), guildId && CopyGuildIdItem(guildId), userId && CopyUserIdItem(userId)].filter(Boolean).map(wrapMenuItem);
 
 	const Menu = ContextMenu.buildMenu(
 		[
@@ -41,6 +34,24 @@ export default function (id, { path, channelId, userId, guildId, hasUnread }) {
 				action: () => Store.addTabToLeft(id),
 				label: "New tab to left",
 				icon: VectorIcon
+			},
+			{
+				type: "submenu",
+				label: "Move",
+				items: [
+					{
+						action: () => Store.moveRight(id),
+						label: "Move right",
+						icon: VectorIcon
+					},
+					{
+						action: () => Store.moveLeft(id),
+						label: "Move Left",
+						icon: VectorIcon
+					}
+				]
+					.filter(Boolean)
+					.map(wrapMenuItem)
 			},
 			{ type: "separator" },
 			{

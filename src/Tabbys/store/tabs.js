@@ -1,8 +1,14 @@
-import { remove, meta, add } from "@Utils/Array";
+import { remove, arrayMove, meta, add } from "@Utils/Array";
 import { createFrom, createFromPath, addBy, mergeArrayItem, setArrayItem, reOrder } from "./shared";
 import { parsePath } from "@/utils";
 
 const getters = {
+	getFirstTab() {
+		return this.state.tabs[0];
+	},
+	getLastTab() {
+		return this.state.tabs[this.state.tabs.length - 1];
+	},
 	getTabIndex(id) {
 		return this.state.tabs.findIndex(tab => tab.id === id);
 	},
@@ -66,6 +72,16 @@ export default {
 				selectedId: tab.id,
 				lastSelectedIdAfterNewTab: selectedId
 			});
+		},
+		moveRight(tabId) {
+			const tabMeta = this.getTabMeta(tabId);
+			const toIndex = tabMeta.nextItem ? tabMeta.index + 1 : 0;
+			this.setState({ tabs: arrayMove(this.state.tabs, tabMeta.index, toIndex) });
+		},
+		moveLeft(tabId) {
+			const tabMeta = this.getTabMeta(tabId);
+			const toIndex = tabMeta.previousItem ? tabMeta.index - 1 : this.state.tabs.length - 1;
+			this.setState({ tabs: arrayMove(this.state.tabs, tabMeta.index, toIndex) });
 		},
 		reOrderTabs(fromId, toId, pos) {
 			this.setTabs(reOrder(this.state.tabs, fromId, toId, pos));

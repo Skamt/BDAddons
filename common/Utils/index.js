@@ -1,7 +1,7 @@
 import config from "@Config";
 import { Patcher, getOwnerInstance, ReactDOM, React } from "@Api";
 
-export function getObjectKey(object, filter) {
+export function getObjectKey(object = {}, filter) {
 	for (const key in object) {
 		if (!filter(object[key])) continue;
 		return key;

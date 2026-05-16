@@ -13,8 +13,8 @@ const SpotifyEmbed = getDeclarationAndKey(Filters.bySource("iframe", "playlist",
 Plugin.on(Events.START, () => {
 	const { module, key } = SpotifyEmbed;
 	if (!module || !key) return Logger.patchError("SpotifyEmbed");
-	
-	const unpatch = Patcher.after(module, key, (_, [{ embed }], ret) => {
+
+	Patcher.after(module, key, (_, [{ embed }], ret) => {
 		const messageState = React.useContext(MessageStateContext);
 		if (messageState !== "SENT") return null;
 		const [id, type] = parseSpotifyUrl(embed.url) || [];
@@ -33,6 +33,4 @@ Plugin.on(Events.START, () => {
 			</ErrorBoundary>
 		);
 	});
-
-	Plugin.once(Events.STOP, unpatch);
 });

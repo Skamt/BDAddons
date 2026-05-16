@@ -3,6 +3,22 @@ import { slice, add } from "@Utils/Array";
 import { sort, createFrom, createFolder, createSubBookmark, createBookmarkFolder, createFromPath } from "./shared";
 import { navigate } from "@/utils";
 
+export function switchLeft(){
+	const selectedMeta = Store.getTabMeta(Store.state.selectedId);
+	const target = selectedMeta.previousItem ?? Store.getLastTab();
+	if(!target) return;
+	Store.setSelectedId(target.id);
+}
+
+export function switchRight(){
+	const selectedMeta = Store.getTabMeta(Store.state.selectedId);
+	const target = selectedMeta.nextItem ?? Store.getFirstTab();
+	if(!target) return;
+	Store.setSelectedId(target.id);
+}
+
+
+
 export function isDescendent(parentId, childId) {
 	const child = Store.getFolder(childId);
 	if (!child.parentId) return false;

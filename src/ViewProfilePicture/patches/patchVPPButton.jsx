@@ -6,19 +6,21 @@ import ErrorBoundary from "@Components/ErrorBoundary";
 import ErrorIcon from "@Components/icons/ErrorIcon";
 import Logger from "@Utils/Logger";
 import Plugin, { Events } from "@Utils/Plugin";
-import { Filters, getById, getMangled, getModule } from "@Webpack";
+import { Filters, waitForModule, getMangled, getModule } from "@Webpack";
 import VPPButton from "../components/VPPButton";
 
 const UserProfileModalforwardRef = getModule(Filters.byKeys("Overlay", "render"));
 
-const wrapper = getById(587168)?.A;
+let wrapper;
+waitForModule((a, _, id) => id === 587168).then(match => {
+	wrapper = match.A;
+});
 
-const UserProfileBanner = getMangled(Filters.bySource("avatarOffsetX","foreignObject"), {
+const UserProfileBanner = getMangled(Filters.bySource("avatarOffsetX", "foreignObject"), {
 	Banner: Filters.byStrings("canUsePremiumProfileCustomization")
-})
+});
 
 Plugin.on(Events.START, () => {
-	
 	// User Profile Modal_V2
 	Patcher.after(UserProfileBanner, "Banner", (_, [props], ret) => {
 		if (props.themeType !== "MODAL_V2") return ret;
@@ -42,7 +44,7 @@ Plugin.on(Events.START, () => {
 		// adds VPP-container anyway to help the previous patch
 		ret.props.className = `${ret.props.className} VPP-container`;
 
-		const target = findInTree(ret, a => a?.type === wrapper, { walkable: ["props", "children"] });
+		const target = findInTree(ret, a => wrapper && wrapper === a?.type, { walkable: ["props", "children"] });
 		if (!target) return;
 
 		const children = Array.isArray(target.props.children) ? target.props.children : [target.props.children];

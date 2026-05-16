@@ -72,6 +72,7 @@
 	padding: 4px;
 }
 
+.Tabbys-menuitem-move-left svg,
 .Tabbys-menuitem-new-tab-to-left svg,
 .Tabbys-menuitem-close-tabs-to-left svg {
 	rotate: 180deg;

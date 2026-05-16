@@ -35,7 +35,7 @@ Plugin.on(Events.START, () => {
 		const key = getObjectKey(MessageHeader, MessageHeaderFilter);
 
 		if (!key) return Logger.patchError("MessageHeader");
-		const unpatch = Patcher.after(MessageHeader, key, (_, [{ message }], ret) => {
+		Patcher.after(MessageHeader, key, (_, [{ message }], ret) => {
 			const userId = message.author.id;
 			ret.props.children.push(
 				<ErrorBoundary id="SpotifyActivityIndicator">
