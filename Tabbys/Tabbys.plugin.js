@@ -2,7 +2,7 @@
  * @runAt idle
  * @name Tabbys
  * @description Adds Browser like tabs/bookmarks for channels
- * @version 1.0.11
+ * @version 1.0.12
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/Tabbys
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/Tabbys/Tabbys.plugin.js
@@ -12,7 +12,7 @@
 var Config_default = {
 	"info": {
 		"name": "Tabbys",
-		"version": "1.0.11",
+		"version": "1.0.12",
 		"description": "Adds Browser like tabs/bookmarks for channels",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/Tabbys/Tabbys.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/Tabbys",
@@ -42,7 +42,8 @@ var Config_default = {
 		"showFolderUnreads": true,
 		"showFolderPings": true,
 		"showFolderTyping": true,
-		"highlightFolderUnread": true
+		"highlightFolderUnread": true,
+		"tabSwitch": false
 	}
 };
 
@@ -224,6 +225,7 @@ StylesLoader_default.push(`:root {
 	padding: 4px;
 }
 
+.Tabbys-menuitem-move-left svg,
 .Tabbys-menuitem-new-tab-to-left svg,
 .Tabbys-menuitem-close-tabs-to-left svg {
 	rotate: 180deg;
@@ -374,19 +376,6 @@ var transitionTo = /* @__PURE__ */ (() => getModule(Filters.byStrings("transitio
 var IconsUtils = /* @__PURE__ */ (() => getModule((a) => a.getChannelIconURL))();
 var ChannelUtils = /* @__PURE__ */ (() => getModule((m2) => m2.openPrivateChannel))();
 
-// src/Tabbys/patches/logoutInterceptor.js
-Plugin_default.on(Events.START, () => {
-	function interceptor(e2) {
-		if (e2.type !== "LOGOUT") return;
-		e2.goHomeAfterSwitching = false;
-	}
-	Dispatcher.addInterceptor(interceptor);
-	Plugin_default.once(Events.STOP, () => {
-		const index = Dispatcher._interceptors.indexOf(interceptor);
-		Dispatcher._interceptors.splice(index, 1);
-	});
-});
-
 // common/DiscordModules/zustand.js
 var { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
 	_: Filters.byStrings("subscribe"),
@@ -402,6 +391,31 @@ function create(initialState2) {
 	});
 	return Store2;
 }
+
+// common/Utils/Settings.js
+var SettingsStore = create(subscribeWithSelector(() => Object.assign(Config_default.settings, Data.load("settings") || {})));
+((state) => {
+	const selectors = {};
+	const actions = {};
+	for (const [key, value] of Object.entries(state)) {
+		actions[`set${key}`] = (newValue) => SettingsStore.setState({
+			[key]: newValue });
+		selectors[key] = (state2) => state2[key];
+	}
+	Object.defineProperty(SettingsStore, "selectors", { value: Object.assign(selectors) });
+	Object.assign(SettingsStore, actions);
+})(SettingsStore.getInitialState());
+SettingsStore.subscribe(
+	(state) => state,
+	() => Data.save("settings", SettingsStore.state)
+);
+Object.assign(SettingsStore, {
+	useSetting: (key) => {
+		const val = SettingsStore((state) => state[key]);
+		return [val, SettingsStore[`set${key}`]];
+	}
+});
+var Settings_default = SettingsStore;
 
 // common/Utils/Array.js
 function set(array, index, item) {
@@ -726,6 +740,12 @@ function sort(pos) {
 
 // src/Tabbys/Store/tabs.js
 var getters = {
+	getFirstTab() {
+		return this.state.tabs[0];
+	},
+	getLastTab() {
+		return this.state.tabs[this.state.tabs.length - 1];
+	},
 	getTabIndex(id) {
 		return this.state.tabs.findIndex((tab) => tab.id === id);
 	},
@@ -787,6 +807,16 @@ var tabs_default = {
 				lastSelectedIdAfterNewTab: selectedId
 			});
 		},
+		moveRight(tabId) {
+			const tabMeta = this.getTabMeta(tabId);
+			const toIndex = tabMeta.nextItem ? tabMeta.index + 1 : 0;
+			this.setState({ tabs: arrayMove(this.state.tabs, tabMeta.index, toIndex) });
+		},
+		moveLeft(tabId) {
+			const tabMeta = this.getTabMeta(tabId);
+			const toIndex = tabMeta.previousItem ? tabMeta.index - 1 : this.state.tabs.length - 1;
+			this.setState({ tabs: arrayMove(this.state.tabs, tabMeta.index, toIndex) });
+		},
 		reOrderTabs(fromId, toId, pos) {
 			this.setTabs(reOrder(this.state.tabs, fromId, toId, pos));
 		},
@@ -820,162 +850,6 @@ var tabs_default = {
 		}
 	}
 };
-
-// src/Tabbys/Store/methods.js
-function isDescendent(parentId, childId) {
-	const child = Store_default.getFolder(childId);
-	if (!child.parentId) return false;
-	if (child.parentId === parentId) return true;
-	return isDescendent(parentId, child.parentId);
-}
-
-function deleteBookmark(itemId, parentId) {
-	if (parentId) Store_default.removeItemFromFolder(parentId, itemId);
-	else Store_default.removeBookmark(itemId);
-}
-
-function deleteFolder(folderId, itemId, parentId) {
-	Store_default.deleteFolder(folderId);
-	deleteBookmark(itemId, parentId);
-}
-
-function getBookmark(bookmarkId, folderId) {
-	return folderId ? Store_default.getFolderItem(folderId, bookmarkId) : Store_default.getBookmark(bookmarkId);
-}
-
-function setBookmarkName(bookmarkId, name, parentId) {
-	const bookmark = getBookmark(bookmarkId, parentId);
-	if (!bookmark) return;
-	if (parentId) Store_default.updateFolderItem(parentId, bookmarkId, { name });
-	else Store_default.updateBookmark(bookmarkId, { name });
-}
-
-function getBookmarkNameState(bookmarkId, parentId) {
-	const bookmark = getBookmark(bookmarkId, parentId);
-	return bookmark?.noName;
-}
-
-function toggleBookmarkNameState(bookmarkId, parentId) {
-	const bookmark = getBookmark(bookmarkId, parentId);
-	if (!bookmark) return;
-	if (parentId) Store_default.updateFolderItem(parentId, bookmarkId, { noName: !bookmark.noName });
-	else Store_default.updateBookmark(bookmarkId, { noName: !bookmark.noName });
-}
-
-function ensureTab() {
-	if (Store_default.getTabsCount() > 0) return;
-	const tab = createFromPath(location.pathname);
-	Store_default.setState({ tabs: [tab], selectedId: tab.id });
-}
-
-function openBookmark(bookmarkId, folderId) {
-	const bookmark = getBookmark(bookmarkId, folderId);
-	if (bookmark) navigate(bookmark);
-}
-
-function setTabFromBookmark(tabId, bookmarkId, folderId) {
-	const { noName, id, ...bookmark } = getBookmark(bookmarkId, folderId) || {};
-	if (bookmark) Store_default.updateTab(tabId, bookmark);
-	Store_default.setSelectedId(tabId);
-}
-
-function addFolder(name) {
-	if (!name) return;
-	const folder = createFolder(name);
-	const bookmark = createBookmarkFolder(folder.id);
-	Store_default.setState({
-		folders: add(Store_default.state.folders, folder),
-		bookmarks: add(Store_default.state.bookmarks, bookmark)
-	});
-}
-
-function addSubFolder(name, parentId) {
-	if (!name) return;
-	const folder = createFolder(name);
-	Store_default.setState({ folders: add(Store_default.state.folders, folder) });
-	Store_default.addFolderToFolder(parentId, folder.id);
-}
-
-function removeTabsToRight(id) {
-	const { item, index, isLast, isSingle } = Store_default.getTabMeta(id);
-	if (!item || isLast || isSingle) return;
-	const newSelected = Store_default.getSelectedTabIndex() < index + 1 ? Store_default.state.selectedId : id;
-	Store_default.setState({
-		tabs: slice(Store_default.state.tabs, 0, index + 1),
-		selectedId: newSelected,
-		lastSelectedIdAfterNewTab: null
-	});
-}
-
-function removeTabsToLeft(id) {
-	const { item, index, isFirst, isSingle, length } = Store_default.getTabMeta(id);
-	if (!item || isFirst || isSingle) return;
-	const newSelected = Store_default.getSelectedTabIndex() > index ? Store_default.state.selectedId : id;
-	Store_default.setState({
-		tabs: slice(Store_default.state.tabs, index, length),
-		selectedId: newSelected,
-		lastSelectedIdAfterNewTab: null
-	});
-}
-
-function removeOtherTabs(id) {
-	const tab = Store_default.getTab(id);
-	if (tab) Store_default.setState({ tabs: [tab], selectedId: tab.id, lastSelectedIdAfterNewTab: null });
-}
-
-function openTabAt(path2, targetId, pos) {
-	Store_default.addTabBy(createFromPath(path2), targetId, sort(pos));
-}
-
-function openBookmarkAt(bookmarkId, targetId, pos, folderId) {
-	const { path: path2 } = getBookmark(bookmarkId, folderId) || {};
-	if (path2) openTabAt(path2, targetId, pos);
-}
-
-function addBookmarkAt(path2, targetId, pos) {
-	Store_default.addBookmarkBy(createFromPath(path2), targetId, sort(pos));
-}
-
-function bookmarkTabAt(tabId, targetId, pos) {
-	const { path: path2 } = Store_default.getTab(tabId) || {};
-	if (path2) addBookmarkAt(path2, targetId, pos);
-}
-
-function moveSubBookmarkToBookmarksAt(itemId, parentId, targetId, pos) {
-	const subBookmark = Store_default.getFolderItem(parentId, itemId);
-	if (!subBookmark) return;
-	Store_default.addBookmarkBy(createFrom(subBookmark, { parentId: null }), targetId, sort(pos));
-	Store_default.removeItemFromFolder(parentId, itemId);
-}
-
-function moveSubFolderToBookmarksAt(subFolderId, itemId, parentId, targetId, pos) {
-	const folder = createBookmarkFolder(subFolderId);
-	Store_default.addBookmarkBy(folder, targetId, sort(pos));
-	Store_default.removeItemFromFolder(parentId, itemId);
-	Store_default.updateFolder(subFolderId, { parentId: null });
-}
-
-function addToFolderAt(path2, folderId, targetId, pos) {
-	return Store_default.addToFolderBy(folderId, createSubBookmark(folderId, path2), targetId, sort(pos));
-}
-
-function addTabToFolderAt(tabId, folderId, targetId, pos) {
-	const { path: path2 } = Store_default.getTab(tabId) || {};
-	if (path2) addToFolderAt(path2, folderId, targetId, pos);
-}
-
-function moveBookmarkToFolderAt(itemId, targetFolderId, parentId, targetId, pos) {
-	const bookmark = getBookmark(itemId, parentId);
-	deleteBookmark(itemId, parentId);
-	Store_default.addToFolderBy(targetFolderId, createFrom(bookmark, { parentId: targetFolderId }), targetId, sort(pos));
-}
-
-function moveFolderToFolderAt(folderId, itemId, targetFolderId, parentId, targetId, pos) {
-	if (isDescendent(folderId, targetFolderId)) return;
-	deleteBookmark(itemId, parentId);
-	Store_default.addToFolderBy(targetFolderId, createBookmarkFolder(folderId, targetFolderId), targetId, sort(pos));
-	Store_default.updateFolder(folderId, { parentId: targetFolderId });
-}
 
 // src/Tabbys/Store/folders.js
 var getters2 = {
@@ -1197,30 +1071,204 @@ Plugin_default.on(Events.STOP, () => {
 });
 var Store_default = Store;
 
-// common/Utils/Settings.js
-var SettingsStore = create(subscribeWithSelector(() => Object.assign(Config_default.settings, Data.load("settings") || {})));
-((state) => {
-	const selectors = {};
-	const actions = {};
-	for (const [key, value] of Object.entries(state)) {
-		actions[`set${key}`] = (newValue) => SettingsStore.setState({
-			[key]: newValue });
-		selectors[key] = (state2) => state2[key];
-	}
-	Object.defineProperty(SettingsStore, "selectors", { value: Object.assign(selectors) });
-	Object.assign(SettingsStore, actions);
-})(SettingsStore.getInitialState());
-SettingsStore.subscribe(
-	(state) => state,
-	() => Data.save("settings", SettingsStore.state)
-);
-Object.assign(SettingsStore, {
-	useSetting: (key) => {
-		const val = SettingsStore((state) => state[key]);
-		return [val, SettingsStore[`set${key}`]];
-	}
+// src/Tabbys/Store/methods.js
+function switchLeft() {
+	const selectedMeta = Store_default.getTabMeta(Store_default.state.selectedId);
+	const target = selectedMeta.previousItem ?? Store_default.getLastTab();
+	if (!target) return;
+	Store_default.setSelectedId(target.id);
+}
+
+function switchRight() {
+	const selectedMeta = Store_default.getTabMeta(Store_default.state.selectedId);
+	const target = selectedMeta.nextItem ?? Store_default.getFirstTab();
+	if (!target) return;
+	Store_default.setSelectedId(target.id);
+}
+
+function isDescendent(parentId, childId) {
+	const child = Store_default.getFolder(childId);
+	if (!child.parentId) return false;
+	if (child.parentId === parentId) return true;
+	return isDescendent(parentId, child.parentId);
+}
+
+function deleteBookmark(itemId, parentId) {
+	if (parentId) Store_default.removeItemFromFolder(parentId, itemId);
+	else Store_default.removeBookmark(itemId);
+}
+
+function deleteFolder(folderId, itemId, parentId) {
+	Store_default.deleteFolder(folderId);
+	deleteBookmark(itemId, parentId);
+}
+
+function getBookmark(bookmarkId, folderId) {
+	return folderId ? Store_default.getFolderItem(folderId, bookmarkId) : Store_default.getBookmark(bookmarkId);
+}
+
+function setBookmarkName(bookmarkId, name, parentId) {
+	const bookmark = getBookmark(bookmarkId, parentId);
+	if (!bookmark) return;
+	if (parentId) Store_default.updateFolderItem(parentId, bookmarkId, { name });
+	else Store_default.updateBookmark(bookmarkId, { name });
+}
+
+function getBookmarkNameState(bookmarkId, parentId) {
+	const bookmark = getBookmark(bookmarkId, parentId);
+	return bookmark?.noName;
+}
+
+function toggleBookmarkNameState(bookmarkId, parentId) {
+	const bookmark = getBookmark(bookmarkId, parentId);
+	if (!bookmark) return;
+	if (parentId) Store_default.updateFolderItem(parentId, bookmarkId, { noName: !bookmark.noName });
+	else Store_default.updateBookmark(bookmarkId, { noName: !bookmark.noName });
+}
+
+function ensureTab() {
+	if (Store_default.getTabsCount() > 0) return;
+	const tab = createFromPath(location.pathname);
+	Store_default.setState({ tabs: [tab], selectedId: tab.id });
+}
+
+function openBookmark(bookmarkId, folderId) {
+	const bookmark = getBookmark(bookmarkId, folderId);
+	if (bookmark) navigate(bookmark);
+}
+
+function setTabFromBookmark(tabId, bookmarkId, folderId) {
+	const { noName, id, ...bookmark } = getBookmark(bookmarkId, folderId) || {};
+	if (bookmark) Store_default.updateTab(tabId, bookmark);
+	Store_default.setSelectedId(tabId);
+}
+
+function addFolder(name) {
+	if (!name) return;
+	const folder = createFolder(name);
+	const bookmark = createBookmarkFolder(folder.id);
+	Store_default.setState({
+		folders: add(Store_default.state.folders, folder),
+		bookmarks: add(Store_default.state.bookmarks, bookmark)
+	});
+}
+
+function addSubFolder(name, parentId) {
+	if (!name) return;
+	const folder = createFolder(name);
+	Store_default.setState({ folders: add(Store_default.state.folders, folder) });
+	Store_default.addFolderToFolder(parentId, folder.id);
+}
+
+function removeTabsToRight(id) {
+	const { item, index, isLast, isSingle } = Store_default.getTabMeta(id);
+	if (!item || isLast || isSingle) return;
+	const newSelected = Store_default.getSelectedTabIndex() < index + 1 ? Store_default.state.selectedId : id;
+	Store_default.setState({
+		tabs: slice(Store_default.state.tabs, 0, index + 1),
+		selectedId: newSelected,
+		lastSelectedIdAfterNewTab: null
+	});
+}
+
+function removeTabsToLeft(id) {
+	const { item, index, isFirst, isSingle, length } = Store_default.getTabMeta(id);
+	if (!item || isFirst || isSingle) return;
+	const newSelected = Store_default.getSelectedTabIndex() > index ? Store_default.state.selectedId : id;
+	Store_default.setState({
+		tabs: slice(Store_default.state.tabs, index, length),
+		selectedId: newSelected,
+		lastSelectedIdAfterNewTab: null
+	});
+}
+
+function removeOtherTabs(id) {
+	const tab = Store_default.getTab(id);
+	if (tab) Store_default.setState({ tabs: [tab], selectedId: tab.id, lastSelectedIdAfterNewTab: null });
+}
+
+function openTabAt(path2, targetId, pos) {
+	Store_default.addTabBy(createFromPath(path2), targetId, sort(pos));
+}
+
+function openBookmarkAt(bookmarkId, targetId, pos, folderId) {
+	const { path: path2 } = getBookmark(bookmarkId, folderId) || {};
+	if (path2) openTabAt(path2, targetId, pos);
+}
+
+function addBookmarkAt(path2, targetId, pos) {
+	Store_default.addBookmarkBy(createFromPath(path2), targetId, sort(pos));
+}
+
+function bookmarkTabAt(tabId, targetId, pos) {
+	const { path: path2 } = Store_default.getTab(tabId) || {};
+	if (path2) addBookmarkAt(path2, targetId, pos);
+}
+
+function moveSubBookmarkToBookmarksAt(itemId, parentId, targetId, pos) {
+	const subBookmark = Store_default.getFolderItem(parentId, itemId);
+	if (!subBookmark) return;
+	Store_default.addBookmarkBy(createFrom(subBookmark, { parentId: null }), targetId, sort(pos));
+	Store_default.removeItemFromFolder(parentId, itemId);
+}
+
+function moveSubFolderToBookmarksAt(subFolderId, itemId, parentId, targetId, pos) {
+	const folder = createBookmarkFolder(subFolderId);
+	Store_default.addBookmarkBy(folder, targetId, sort(pos));
+	Store_default.removeItemFromFolder(parentId, itemId);
+	Store_default.updateFolder(subFolderId, { parentId: null });
+}
+
+function addToFolderAt(path2, folderId, targetId, pos) {
+	return Store_default.addToFolderBy(folderId, createSubBookmark(folderId, path2), targetId, sort(pos));
+}
+
+function addTabToFolderAt(tabId, folderId, targetId, pos) {
+	const { path: path2 } = Store_default.getTab(tabId) || {};
+	if (path2) addToFolderAt(path2, folderId, targetId, pos);
+}
+
+function moveBookmarkToFolderAt(itemId, targetFolderId, parentId, targetId, pos) {
+	const bookmark = getBookmark(itemId, parentId);
+	deleteBookmark(itemId, parentId);
+	Store_default.addToFolderBy(targetFolderId, createFrom(bookmark, { parentId: targetFolderId }), targetId, sort(pos));
+}
+
+function moveFolderToFolderAt(folderId, itemId, targetFolderId, parentId, targetId, pos) {
+	if (isDescendent(folderId, targetFolderId)) return;
+	deleteBookmark(itemId, parentId);
+	Store_default.addToFolderBy(targetFolderId, createBookmarkFolder(folderId, targetFolderId), targetId, sort(pos));
+	Store_default.updateFolder(folderId, { parentId: targetFolderId });
+}
+
+// src/Tabbys/patches/keybinds.js
+Plugin_default.on(Events.START, () => {
+	document.addEventListener("keydown", onKeyDown);
 });
-var Settings_default = SettingsStore;
+Plugin_default.on(Events.STOP, () => {
+	document.removeEventListener("keydown", onKeyDown);
+});
+
+function onKeyDown(e2) {
+	if (!Settings_default.state.tabSwitch) return;
+	if (e2.key !== "Tab" || !e2.ctrlKey) return;
+	e2.stopPropagation();
+	if (e2.shiftKey) switchLeft();
+	else switchRight();
+}
+
+// src/Tabbys/patches/logoutInterceptor.js
+Plugin_default.on(Events.START, () => {
+	function interceptor(e2) {
+		if (e2.type !== "LOGOUT") return;
+		e2.goHomeAfterSwitching = false;
+	}
+	Dispatcher.addInterceptor(interceptor);
+	Plugin_default.once(Events.STOP, () => {
+		const index = Dispatcher._interceptors.indexOf(interceptor);
+		Dispatcher._interceptors.splice(index, 1);
+	});
+});
 
 // src/Tabbys/patches/patchChannelClick.js
 var channelFilter = Filters.byStrings("href", "children", "onClick", "onKeyPress", "focusProps");
@@ -1557,6 +1605,7 @@ StylesLoader_default.push(`div:has(> .tabbys-app-container):not(#a) {
 }
 
 .tabbys-app-leading {
+	display: flex;
 	grid-area: leading;
 	position: relative;
 	-webkit-app-region: drag;
@@ -2471,12 +2520,7 @@ function TabContextMenu_default(id, { path: path2, channelId, userId, guildId, h
 			icon: BookmarkOutlinedIcon
 		})
 	);
-	const copies = [
-		CopyPathItem(path2),
-		channelId && CopyChannelIdItem(channelId),
-		guildId && CopyGuildIdItem(guildId),
-		userId && CopyUserIdItem(userId)
-	].filter(Boolean).map(wrapMenuItem);
+	const copies = [CopyPathItem(path2), channelId && CopyChannelIdItem(channelId), guildId && CopyGuildIdItem(guildId), userId && CopyUserIdItem(userId)].filter(Boolean).map(wrapMenuItem);
 	const Menu2 = ContextMenu.buildMenu(
 		[
 			MarkAsReadItem(channelId, hasUnread),
@@ -2490,6 +2534,21 @@ function TabContextMenu_default(id, { path: path2, channelId, userId, guildId, h
 				action: () => Store_default.addTabToLeft(id),
 				label: "New tab to left",
 				icon: VectorIcon
+			},
+			{
+				type: "submenu",
+				label: "Move",
+				items: [{
+						action: () => Store_default.moveRight(id),
+						label: "Move right",
+						icon: VectorIcon
+					},
+					{
+						action: () => Store_default.moveLeft(id),
+						label: "Move Left",
+						icon: VectorIcon
+					}
+				].filter(Boolean).map(wrapMenuItem)
 			},
 			{ type: "separator" },
 			{
@@ -3796,7 +3855,8 @@ function SettingsContextMenu_default() {
 		},
 		[
 			{ settingKey: "bookmarkOverflowWrap", label: "Wrap Bookmarks" },
-			{ settingKey: "ctrlClickChannel", label: "Ctrl+Click channel" }
+			{ settingKey: "ctrlClickChannel", label: "Ctrl+Click channel" },
+			{ settingKey: "tabSwitch", label: "Tab switch keybinds" }
 		].map(ContextMenuToggle)
 	));
 }
@@ -4086,7 +4146,8 @@ function SettingComponent() {
 		);
 	})), /* @__PURE__ */ React_default.createElement(Collapsible, { title: "Functionality" }, /* @__PURE__ */ React_default.createElement(FieldSet, { contentGap: 8 }, [
 		{ settingKey: "ctrlClickChannel", description: "Ctrl+Click Channel to open in new tab" },
-		{ settingKey: "bookmarkOverflowWrap", description: "Wrap Bookmarks", note: "Wrap overflowing bookmarks instead of clamping them into a overflow menu" }
+		{ settingKey: "bookmarkOverflowWrap", description: "Wrap Bookmarks", note: "Wrap overflowing bookmarks instead of clamping them into a overflow menu" },
+		{ settingKey: "tabSwitch", description: "Enable switch keybinds", note: "Switch between channels using keybinds --  switch right [Ctrl+Tab] / switch left [Ctrl+Shift+Tab]" }
 	].map(SettingSwtich)))));
 }
 
