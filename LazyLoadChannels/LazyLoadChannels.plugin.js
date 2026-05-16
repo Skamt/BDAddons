@@ -2,7 +2,7 @@
  * @runAt idle
  * @name LazyLoadChannels
  * @description Lets you choose whether to load a channel
- * @version 1.3.1
+ * @version 1.3.2
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js
@@ -12,7 +12,7 @@
 var Config_default = {
 	"info": {
 		"name": "LazyLoadChannels",
-		"version": "1.3.1",
+		"version": "1.3.2",
 		"description": "Lets you choose whether to load a channel",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels",
@@ -206,7 +206,7 @@ StylesLoader_default.push(`#lazyLoader {
 var React_default = /* @__PURE__ */ (() => React)();
 
 // common/Utils/index.js
-function getObjectKey(object, filter) {
+function getObjectKey(object = {}, filter) {
 	for (const key in object) {
 		if (!filter(object[key])) continue;
 		return key;
@@ -224,13 +224,6 @@ var getStore = /* @__PURE__ */ (() => Webpack.getStore)();
 function reactRefMemoFilter(type, ...args) {
 	const filter = Filters.byStrings(...args);
 	return (target) => target[type] && filter(target[type]);
-}
-
-function getDeclarationAndKey(moduleFilter, declarationFilter, options = {}) {
-	const module2 = getModule(moduleFilter, { options, raw: true });
-	if (!module2?.declarations) return;
-	const key = getObjectKey(module2.declarations, declarationFilter);
-	return key ? { key, module: module2.declarations } : void 0;
 }
 
 // common/DiscordModules/zustand.js
@@ -569,18 +562,12 @@ var LazyLoaderComponent_default = ({ channel, ret }) => {
 var ChannelStore_default = getStore("ChannelStore");
 
 // src/LazyLoadChannels/patches/patchChannelContent.jsx
-var ChannelRenderer = getDeclarationAndKey(Filters.bySource(`name:"Channel",renderLoader`), Filters.byStrings("ChannelRenderer"));
 Plugin_default.on(Events.START, () => {
-	const { module: module2, key } = ChannelRenderer;
-	if (!module2 || !key) return Logger_default.patchError("SpotifyChannelRenderer");
-	Patcher.after(
-		module2,
-		key,
-		(_, [{
-			match: {
-				params: { channelId, guildId }
-			}
-		}], ret) => {
+	const controller = new AbortController();
+	waitForModule(Filters.bySource(`name:"Channel",renderLoader`), { signal: controller.signal, raw: true }).then(({ declarations: ChannelRenderer }) => {
+		const key = getObjectKey(ChannelRenderer, Filters.byStrings("ChannelRenderer"));
+		if (!key) return Logger_default.patchError("ChannelRenderer");
+		Patcher.after(ChannelRenderer, key, (_, [{ match: { params: { channelId, guildId } } }], ret) => {
 			const channel = ChannelStore_default.getChannel(channelId);
 			if (!channel) return ret;
 			return /* @__PURE__ */ React_default.createElement(
@@ -599,8 +586,9 @@ Plugin_default.on(Events.START, () => {
 					}
 				)
 			);
-		}
-	);
+		});
+	});
+	Plugin_default.once(Events.STOP, () => controller.abort());
 });
 
 // MODULES-AUTO-LOADER:@Enums/ChannelTypeEnum
@@ -675,15 +663,19 @@ Plugin_default.on(Events.START, () => {
 });
 
 // src/LazyLoadChannels/patches/patchThread.js
-var TreadComponent = getModule(Filters.bySource("withGuildIcon", "thread", "collapsed"), {
-	declarationFilter: Filters.byComponentType(Filters.byStrings("0nZpiF", "isThread", "collapsed"))
-});
 Plugin_default.on(Events.START, () => {
-	if (!TreadComponent) return Logger_default.patchError("Tread");
-	Patcher.after(TreadComponent, "type", (_, [{ thread }], ret) => {
-		if (!Settings_default.state.autoloadedChannelIndicator) return;
-		if (ChannelsStateManager_default.getChannelstate(thread.guild_id, thread.id)) ret.props.className += " autoload";
+	const controller = new AbortController();
+	waitForModule(
+		Filters.bySource("withGuildIcon", "thread", "collapsed"), { signal: controller.signal, raw: true }
+	).then(({ declarations: TreadComponent }) => {
+		const key = getObjectKey(TreadComponent, Filters.byComponentType(Filters.byStrings("0nZpiF", "isThread", "collapsed")));
+		if (!key) return Logger_default.patchError("TreadComponent");
+		Patcher.after(TreadComponent[key], "type", (_, [{ thread }], ret) => {
+			if (!Settings_default.state.autoloadedChannelIndicator) return;
+			if (ChannelsStateManager_default.getChannelstate(thread.guild_id, thread.id)) ret.props.className += " autoload";
+		});
 	});
+	Plugin_default.once(Events.STOP, () => controller.abort());
 });
 
 // MODULES-AUTO-LOADER:@Modules/Dispatcher

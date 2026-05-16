@@ -2,7 +2,7 @@
  * @runAt idle
  * @name ViewProfilePicture
  * @description Adds a button to the user popout and profile that allows you to view the Avatar and banner.
- * @version 1.3.12
+ * @version 1.3.13
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js
@@ -12,7 +12,7 @@
 var Config_default = {
 	"info": {
 		"name": "ViewProfilePicture",
-		"version": "1.3.12",
+		"version": "1.3.13",
 		"description": "Adds a button to the user popout and profile that allows you to view the Avatar and banner.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture",
@@ -262,8 +262,8 @@ var ErrorIcon_default = (props) => /* @__PURE__ */ React.createElement("div", { 
 // common/Webpack.js
 var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
 var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
+var waitForModule = /* @__PURE__ */ (() => Webpack.waitForModule)();
 var getMangled = /* @__PURE__ */ (() => Webpack.getMangled)();
-var getById = /* @__PURE__ */ (() => Webpack.getById)();
 
 // common/DiscordModules/zustand.js
 var { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
@@ -395,7 +395,10 @@ var VPPButton_default = ({ className, user, displayProfile }) => {
 
 // src/ViewProfilePicture/patches/patchVPPButton.jsx
 var UserProfileModalforwardRef = getModule(Filters.byKeys("Overlay", "render"));
-var wrapper = getById(587168)?.A;
+var wrapper;
+waitForModule((a, _, id) => id === 587168).then((match) => {
+	wrapper = match.A;
+});
 var UserProfileBanner = getMangled(Filters.bySource("avatarOffsetX", "foreignObject"), {
 	Banner: Filters.byStrings("canUsePremiumProfileCustomization")
 });
@@ -424,7 +427,7 @@ Plugin_default.on(Events.START, () => {
 	});
 	Patcher.after(UserProfileModalforwardRef, "render", (_, [props], ret) => {
 		ret.props.className = `${ret.props.className} VPP-container`;
-		const target = findInTree(ret, (a) => a?.type === wrapper, { walkable: ["props", "children"] });
+		const target = findInTree(ret, (a) => wrapper && wrapper === a?.type, { walkable: ["props", "children"] });
 		if (!target) return;
 		const children = Array.isArray(target.props.children) ? target.props.children : [target.props.children];
 		children.unshift(

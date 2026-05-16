@@ -2,7 +2,7 @@
  * @runAt idle
  * @name SpotifyEnhance
  * @description All in one better spotify-discord experience.
- * @version 1.1.14
+ * @version 1.1.15
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js
@@ -12,7 +12,7 @@
 var Config_default = {
 	"info": {
 		"name": "SpotifyEnhance",
-		"version": "1.1.14",
+		"version": "1.1.15",
 		"description": "All in one better spotify-discord experience.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance",
@@ -50,8 +50,6 @@ var Patcher = /* @__PURE__ */ (() => Api.Patcher)();
 var ContextMenu = /* @__PURE__ */ (() => Api.ContextMenu)();
 var Logger = /* @__PURE__ */ (() => Api.Logger)();
 var Webpack = /* @__PURE__ */ (() => Api.Webpack)();
-var findInTree = /* @__PURE__ */ (() => Api.Utils.findInTree)();
-var getInternalInstance = /* @__PURE__ */ (() => Api.ReactUtils.getInternalInstance.bind(Api.ReactUtils))();
 
 // common/Utils/Logger.js
 Logger.patchError = (patchId) => {
@@ -186,7 +184,7 @@ StylesLoader_default.push(`:root {
 }`);
 
 // common/Utils/index.js
-function getObjectKey(object, filter) {
+function getObjectKey(object = {}, filter) {
 	for (const key in object) {
 		if (!filter(object[key])) continue;
 		return key;
@@ -283,7 +281,7 @@ function getModuleAndKey(filter, options) {
 }
 
 function getDeclarationAndKey(moduleFilter, declarationFilter, options = {}) {
-	const module2 = getModule(moduleFilter, { options, raw: true });
+	const module2 = getModule(moduleFilter, { ...options, raw: true });
 	if (!module2?.declarations) return;
 	const key = getObjectKey(module2.declarations, declarationFilter);
 	return key ? { key, module: module2.declarations } : void 0;
@@ -658,36 +656,6 @@ function isSpotifyUrl(url) {
 	}
 }
 var activityPanelClasses = getModule(Filters.byKeys("activityPanel", "panels"), { searchExports: false });
-var getFluxContainer = /* @__PURE__ */ (() => {
-	let userAreaFluxContainer = void 0;
-
-	function tryGetFluxContainer() {
-		if (userAreaFluxContainer) return userAreaFluxContainer;
-		const el = document.querySelector(`.${activityPanelClasses.panels}`);
-		if (!el) return;
-		const instance = getInternalInstance(el);
-		if (!instance) return;
-		const res = findInTree(instance, (a) => a?.type?.prototype?.hasParty, { walkable: ["child", "sibling"] });
-		if (!res) return;
-		return res;
-	}
-	return () => {
-		userAreaFluxContainer = tryGetFluxContainer();
-		if (userAreaFluxContainer) return Promise.resolve(userAreaFluxContainer);
-		return new Promise((resolve) => {
-			const interval = setInterval(() => {
-				userAreaFluxContainer = tryGetFluxContainer();
-				if (!userAreaFluxContainer) return;
-				resolve(userAreaFluxContainer);
-				clearInterval(interval);
-			}, 500);
-			setTimeout(() => {
-				resolve(null);
-				clearInterval(interval);
-			}, 60 * 1e3);
-		});
-	};
-})();
 var parsers = {
 	track(obj) {
 		return {
@@ -1154,7 +1122,7 @@ Plugin_default.on(Events.START, () => {
 	waitForModule(Filters.bySource("Plus Button"), { signal: controller.signal, raw: true }).then(({ declarations: ChannelAttachMenu }) => {
 		const key = getObjectKey(ChannelAttachMenu, Filters.byStrings("Plus Button"));
 		if (!key) return Logger_default.patchError("patchChannelAttach");
-		const unpatch = Patcher.after(ChannelAttachMenu, key, (_, args, ret) => {
+		Patcher.after(ChannelAttachMenu, key, (_, args, ret) => {
 			if (!Store.state.isActive) return;
 			if (!Store.state.mediaId) return;
 			if (!Array.isArray(ret?.props?.children)) return;
@@ -1195,7 +1163,6 @@ Plugin_default.on(Events.START, () => {
 				)
 			);
 		});
-		Plugin_default.once(Events.STOP, unpatch);
 	});
 	Plugin_default.once(Events.STOP, () => controller.abort());
 });
@@ -1228,12 +1195,11 @@ var Settings_default = SettingsStore;
 // src/SpotifyEnhance/patches/patchListenAlong.js
 Plugin_default.on(Events.START, () => {
 	if (!SpotifyStore_default) return Logger_default.patchError("ListenAlong");
-	const unpatch = Patcher.after(SpotifyStore_default, "getActiveSocketAndDevice", (_, __, ret) => {
+	Patcher.after(SpotifyStore_default, "getActiveSocketAndDevice", (_, __, ret) => {
 		if (!Settings_default.getState().enableListenAlong) return;
 		if (ret?.socket) ret.socket.isPremium = true;
 		return ret;
 	});
-	Plugin_default.once(Events.STOP, unpatch);
 });
 
 // src/SpotifyEnhance/patches/patchMessageComponentAccessories.jsx
@@ -1348,7 +1314,7 @@ Plugin_default.on(Events.START, () => {
 	waitForModule(MessageHeaderFilter, { signal: controller.signal, raw: true, searchExports: false }).then(({ exports: MessageHeader }) => {
 		const key = getObjectKey(MessageHeader, MessageHeaderFilter);
 		if (!key) return Logger_default.patchError("MessageHeader");
-		const unpatch = Patcher.after(MessageHeader, key, (_, [{ message }], ret) => {
+		Patcher.after(MessageHeader, key, (_, [{ message }], ret) => {
 			const userId = message.author.id;
 			ret.props.children.push(
 				/* @__PURE__ */
@@ -1465,7 +1431,7 @@ var ActivityComponent = getDeclarationAndKey(Filters.bySource("PRESS_LISTEN_ALON
 Plugin_default.on(Events.START, () => {
 	const { module: module2, key } = ActivityComponent;
 	if (!module2 || !key) return Logger_default.patchError("SpotifyActivityComponent");
-	const unpatch = Patcher.after(module2, key, (_, [{ user, activity }]) => {
+	Patcher.after(module2, key, (_, [{ user, activity }]) => {
 		if (!Settings_default.getState().activity) return;
 		if (activity?.name.toLowerCase() !== "spotify") return;
 		return /* @__PURE__ */ React.createElement(ErrorBoundary, { id: "SpotifyEmbed" }, /* @__PURE__ */ React.createElement(
@@ -1475,7 +1441,6 @@ Plugin_default.on(Events.START, () => {
 			}
 		));
 	});
-	Plugin_default.once(Events.STOP, unpatch);
 });
 
 // src/SpotifyEnhance/consts.js
@@ -2159,7 +2124,7 @@ var SpotifyEmbed = getDeclarationAndKey(Filters.bySource("iframe", "playlist", "
 Plugin_default.on(Events.START, () => {
 	const { module: module2, key } = SpotifyEmbed;
 	if (!module2 || !key) return Logger_default.patchError("SpotifyEmbed");
-	const unpatch = Patcher.after(module2, key, (_, [{ embed }], ret) => {
+	Patcher.after(module2, key, (_, [{ embed }], ret) => {
 		const messageState = React.useContext(MessageStateContext);
 		if (messageState !== "SENT") return null;
 		const [id, type] = parseSpotifyUrl(embed.url) || [];
@@ -2180,7 +2145,6 @@ Plugin_default.on(Events.START, () => {
 			)
 		);
 	});
-	Plugin_default.once(Events.STOP, unpatch);
 });
 
 // src/SpotifyEnhance/components/SpotifyPlayer/styles.css
@@ -2875,31 +2839,25 @@ var SpotifyPlayer_default = React_default.memo(function SpotifyPlayer() {
 });
 
 // src/SpotifyEnhance/patches/patchSpotifyPlayer.jsx
-async function cleanFluxContainer() {
-	const fluxContainer = await getFluxContainer();
-	if (fluxContainer) fluxContainer?.stateNode?.forceUpdate();
-}
-Plugin_default.on(Events.START, async () => {
-	const fluxContainer = await getFluxContainer();
-	if (!fluxContainer) return Logger_default.patchError("SpotifyPlayer");
-	const unpatch = Patcher.after(fluxContainer.type.prototype, "render", (_, __, ret) => {
-		return [
-			/* @__PURE__ */
-			React.createElement(
-				ErrorBoundary, {
-					key: "SpotifyPlayer",
-					id: "SpotifyPlayer"
-				},
+Plugin_default.on(Events.START, () => {
+	waitForModule(Filters.bySource("hasParty"), { raw: true }).then(({ declarations: UserPanelFluxContainer }) => {
+		const key = getObjectKey(UserPanelFluxContainer, (a) => a?.prototype?.hasParty);
+		if (!key) return Logger_default.patchError("SpotifyPlayer");
+		Patcher.after(UserPanelFluxContainer[key].prototype, "render", (_, __, ret) => {
+			return [
 				/* @__PURE__ */
-				React.createElement(SpotifyPlayer_default, null)
-			),
-			ret
-		];
-	});
-	fluxContainer?.stateNode?.forceUpdate();
-	Plugin_default.once(Events.STOP, () => {
-		unpatch();
-		cleanFluxContainer();
+				React.createElement(
+					ErrorBoundary, {
+						key: "SpotifyPlayer",
+						id: "SpotifyPlayer"
+					},
+					/* @__PURE__ */
+					React.createElement(SpotifyPlayer_default, null)
+				),
+				ret
+			];
+		});
+		UserStore_default.emitChange();
 	});
 });
 
@@ -3269,4 +3227,7 @@ function SettingComponent() {
 
 // src/SpotifyEnhance/index.jsx
 Plugin_default.getSettingsPanel = () => /* @__PURE__ */ React_default.createElement(SettingComponent, null);
+Plugin_default.on(Events.STOP, () => {
+	Patcher.unpatchAll();
+});
 module.exports = () => Plugin_default;
