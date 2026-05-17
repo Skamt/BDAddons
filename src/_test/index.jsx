@@ -1,28 +1,13 @@
 import { Filters, getDeclarationAndKey } from "@Webpack";
+import { MessageHeader as MessageHeaderPromise } from "@Discord/Modules";
 
-function onKeyDown(e) {
-	const CtrlTab = e.key === "Tab" && e.ctrlKey;
-	const CtrlShiftTab = CtrlTab && e.shiftKey;
+import Plugin, { Events } from "@Utils/Plugin";
 
-	if(CtrlShiftTab || CtrlTab) e.stopPropagation();
-
-	if(CtrlShiftTab) {
-
-	}
-
-	else if (CtrlTab) {
-
-	};
-	
-}
-
-module.exports = () => ({
-	start() {
-		// document.addEventListener("keydown", onKeyDown);
-		// document.addEventListener("keyup",onKeyDown);
-	},
-	stop() {
-		// document.removeEventListener("keydown", onKeyDown);
-		// document.removeEventListener("keyup",onKeyDown);
-	}
+Plugin.on(Events.START, async () => {
+	const MessageHeader = await MessageHeaderPromise;
+	console.log(MessageHeader);
 });
+
+Plugin.on(Events.STOP, () => {});
+
+module.exports = () => Plugin;

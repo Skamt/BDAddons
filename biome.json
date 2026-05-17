@@ -27,11 +27,12 @@
 	},
 	"formatter": {
 		"ignore": [],
-		"indentStyle": "space"
+		"indentStyle": "tab",
+		"lineWidth": 250
 	},
 	"javascript": {
 		"formatter": {
-			"indentStyle": "space"
+			"indentStyle": "tab"
 		}
 	},
 	"json": {

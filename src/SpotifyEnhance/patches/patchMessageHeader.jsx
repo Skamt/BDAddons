@@ -1,7 +1,7 @@
-import { React, Patcher } from "@Api";
+import { Patcher } from "@Api";
 import { getObjectKey } from "@Utils";
 import { Filters, waitForModule } from "@Webpack";
-
+import React from "@React";
 import Logger from "@Utils/Logger";
 import ErrorBoundary from "@Components/ErrorBoundary";
 import MessageHeader from "@Patch/MessageHeader";
@@ -14,7 +14,11 @@ import Plugin, { Events } from "@Utils/Plugin";
 
 function SpotifyActivityIndicator({ userId }) {
 	const activityIndicator = Settings(Settings.selectors.activityIndicator);
-	const spotifyActivity = useStateFromStores([PresenceStore], () => PresenceStore.getActivities(userId).find(activity => activity?.name?.toLowerCase() === "spotify"));
+	const spotifyActivity = useStateFromStores([PresenceStore], () =>
+		PresenceStore.getActivities(userId).find(
+			(activity) => activity?.name?.toLowerCase() === "spotify",
+		),
+	);
 	if (!activityIndicator || !spotifyActivity) return null;
 
 	return (
@@ -28,10 +32,17 @@ function SpotifyActivityIndicator({ userId }) {
 	);
 }
 
-const MessageHeaderFilter = Filters.byStrings("userOverride", "withMentionPrefix");
+const MessageHeaderFilter = Filters.byStrings(
+	"userOverride",
+	"withMentionPrefix",
+);
 Plugin.on(Events.START, () => {
 	const controller = new AbortController();
-	waitForModule(MessageHeaderFilter, { signal: controller.signal, raw: true, searchExports: false }).then(({ exports: MessageHeader }) => {
+	waitForModule(MessageHeaderFilter, {
+		signal: controller.signal,
+		raw: true,
+		searchExports: false,
+	}).then(({ exports: MessageHeader }) => {
 		const key = getObjectKey(MessageHeader, MessageHeaderFilter);
 
 		if (!key) return Logger.patchError("MessageHeader");
@@ -40,7 +51,7 @@ Plugin.on(Events.START, () => {
 			ret.props.children.push(
 				<ErrorBoundary id="SpotifyActivityIndicator">
 					<SpotifyActivityIndicator userId={userId} />
-				</ErrorBoundary>
+				</ErrorBoundary>,
 			);
 		});
 	});

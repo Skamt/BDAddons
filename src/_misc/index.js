@@ -1,4 +1,5 @@
 import "./styles.css";
+import { Patcher } from "@Api";
 import React from "@React";
 import Logger from "@Utils/Logger";
 import { DOM } from "@Api";
@@ -36,7 +37,7 @@ const mods = [
 	// new NoReplyPing(),
 	new PinRoles(),
 	new EnableModView(),
-	new ShowChannelPerms(),
+	// new ShowChannelPerms(),
 	new NoTrack(),
 	// new FriendsSince(),
 	new ShowUserInfo(),
@@ -66,7 +67,8 @@ Plugin.on(Events.START, () => {
 });
 
 Plugin.on(Events.STOP, () => {
-	signal.abort();
+	Patcher.unpatchAll();
+	controller.abort();
 	for (const mod of mods) {
 		try {
 			mod.Dispose?.();
