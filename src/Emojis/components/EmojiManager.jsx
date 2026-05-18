@@ -10,6 +10,7 @@ import EmojisManager from "@/EmojisManager";
 import ErrorBoundary from "@Components/ErrorBoundary";
 import GridScroller from "@Components/GridScroller";
 import { ModalActions, Modals } from "@Utils/Modals";
+// import EmojiStore from "@Stores/EmojiStore";
 
 const c = clsx("emoji-manager");
 
@@ -31,54 +32,37 @@ function getEmojiUrl(id, animated = false, size = 48) {
 export default function EmojiManagerComponent({ emojis, modalProps }) {
 	const state = useRef({});
 
-	const changeHandler = emoji => {
+	const changeHandler = (emoji) => {
 		state.current[emoji.id] = emoji;
 	};
 
 	const saveHandler = () => {
-		Object.keys(state.current).forEach(id => {
+		
+		Object.keys(state.current).forEach((id) => {
 			const { name, deleted } = state.current[id];
 			if (deleted) return EmojisManager.remove(id);
 			if (name) return EmojisManager.update(id, { name });
 		});
+
 		EmojisManager.commit();
 		modalProps.onClose();
 	};
 
 	return (
-		<Modals.ModalRoot
-			{...modalProps}
-			size="dynamic"
-			fullscreenOnMobile={false}
-			className={c("modal-root")}>
+		<Modals.ModalRoot {...modalProps} size="dynamic" fullscreenOnMobile={false} className={c("modal-root")}>
 			<Modals.ModalHeader separator={true}>
-				<Heading
-					variant="heading-lg/semibold"
-					style={{ flexGrow: 1 }}>
+				<Heading variant="heading-lg/semibold" style={{ flexGrow: 1 }}>
 					EmojiManager
 				</Heading>
 				<Modals.ModalCloseButton onClick={modalProps.onClose} />
 			</Modals.ModalHeader>
 			<div className={c("modal-content")}>
-				<EmojisList
-					emojis={emojis}
-					onChange={changeHandler}
-				/>
+				<EmojisList emojis={emojis} onChange={changeHandler} />
 			</div>
 			<Modals.ModalFooter separator={true}>
-				<Flex
-					style={{ gap: 8 }}
-					align={Flex.Align.CENTER}
-					justify={Flex.Justify.END}>
-					<ManaTextButton
-						text="Cancel"
-						onClick={modalProps.onClose}
-					/>
-					<ManaButton
-						size="sm"
-						text="Save"
-						onClick={saveHandler}
-					/>
+				<Flex style={{ gap: 8 }} align={Flex.Align.CENTER} justify={Flex.Justify.END}>
+					<ManaTextButton text="Cancel" onClick={modalProps.onClose} />
+					<ManaButton size="sm" text="Save" onClick={saveHandler} />
 				</Flex>
 			</Modals.ModalFooter>
 		</Modals.ModalRoot>
@@ -120,14 +104,7 @@ function EmojisList({ emojis, onChange }) {
 			getItemHeight={() => 150}
 			renderItem={(_, index, style) => {
 				const emoji = emojis[index];
-				return (
-					<EmojiCard
-						onChange={onChange}
-						style={style}
-						key={emoji.id}
-						{...emoji}
-					/>
-				);
+				return <EmojiCard onChange={onChange} style={style} key={emoji.id} {...emoji} />;
 			}}
 		/>
 	);
@@ -138,7 +115,7 @@ function EmojiCard({ animated, name, id, style, onChange }) {
 	const [hover, setHover] = useState(false);
 	const [deleteEmoji, setDeleteEmoji] = useState(false);
 
-	const changeHandler = name => {
+	const changeHandler = (name) => {
 		setValue(name);
 		if (name.length < 3) return;
 		onChange({ id, name });
@@ -151,14 +128,13 @@ function EmojiCard({ animated, name, id, style, onChange }) {
 	};
 
 	return (
-		<div
-			style={style}
-			className={c("emoji-card", deleteEmoji && "emoji-card-deleted", animated && "emoji-card-animated")}>
-			<div className={c("emoji-img")} onMouseEnter={()=> setHover(true)} onMouseLeave={()=> setHover(false)}>
-				<img
-					alt={name}
-					src={getEmojiUrl(id, hover && animated, 80)}
-				/>
+		<div style={style} onClick={deleteHandler} className={c("emoji-card", deleteEmoji && "emoji-card-deleted", animated && "emoji-card-animated")}>
+			<div
+				className={c("emoji-img")}
+				// onMouseEnter={() => setHover(true)}
+				// onMouseLeave={() => setHover(false)}
+			>
+				<img alt={name} src={getEmojiUrl(id, hover && animated, 80)} />
 			</div>
 			{/*<TextInput
 				maxLength={32}
@@ -167,7 +143,7 @@ function EmojiCard({ animated, name, id, style, onChange }) {
 				onChange={changeHandler}
 				value={val}
 			/>*/}
-			<div className={c("btn-delete")}>
+			{/*<div className={c("btn-delete")}>
 				<ManaButton
 					onClick={deleteHandler}
 					fullWidth={true}
@@ -187,7 +163,7 @@ function EmojiCard({ animated, name, id, style, onChange }) {
 						)
 					}
 				/>
-			</div>
+			</div>*/}
 		</div>
 	);
 }
@@ -198,12 +174,7 @@ function EmojiPreview({ id, animated, name = "" }) {
 		setValue(name);
 	}, [name]);
 	return (
-		<Flex
-			grow={0}
-			style={{ gap: 20 }}
-			direction={Flex.Direction.VERTICAL}
-			align={Flex.Align.STRETCH}
-			className="emoji-info">
+		<Flex grow={0} style={{ gap: 20 }} direction={Flex.Direction.VERTICAL} align={Flex.Align.STRETCH} className="emoji-info">
 			{/* biome-ignore lint/a11y/useAltText: <explanation> */}
 			<div className="emoji-preview">{id && <img src={getEmojiUrl(id, animated, 4096)} />}</div>
 
@@ -219,12 +190,9 @@ function EmojiPreview({ id, animated, name = "" }) {
 }
 
 export function openEmojiManager() {
-	ModalActions.openModal(e => (
+	ModalActions.openModal((e) => (
 		<ErrorBoundary>
-			<EmojiManagerComponent
-				modalProps={e}
-				emojis={EmojisManager.emojis}
-			/>
+			<EmojiManagerComponent modalProps={e} emojis={EmojisManager.emojis} />
 		</ErrorBoundary>
 	));
 }

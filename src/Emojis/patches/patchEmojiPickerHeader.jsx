@@ -1,6 +1,6 @@
 import { Patcher } from "@Api";
 import { getNestedProp, promiseHandler, concateClassNames } from "@Utils";
-import { Filters, lazy } from "@Webpack";
+import { Filters, getMangled, lazy } from "@Webpack";
 import React from "@React";
 import Logger from "@Utils/Logger";
 import Plugin, { Events } from "@Utils/Plugin";
@@ -11,7 +11,21 @@ import { ManaButton } from "@Components/Button";
 import { ModalActions } from "@Utils/Modals";
 
 // const EmojiPickerHeader = getModuleAndKey(Filters.byStrings("selectedSurrogate"));
-const EmojiPickerHeader = lazy(Filters.bySource("selectedSurrogate"),{declarationsFilter:Filters.byStrings("ion:f,onBurstRea")})
+const EmojiPickerHeader = lazy(Filters.bySource("selectedSurrogate"), { declarationsFilter: Filters.byStrings("ion:f,onBurstRea") });
+
+// const { ExpressionPickerStore } = getMangled("expression-picker-last-active-view", {
+// 	ExpressionPickerStore: (a) => a.getState,
+// });
+
+// function closeExpressionPicker() {
+// 	const state = ExpressionPickerStore.getState();
+// 	ExpressionPickerStore.setState({
+// 		activeView: null,
+// 		activeViewType: null,
+// 		activeChannelId: null,
+// 		lastActiveView: state.activeView,
+// 	});
+// }
 
 Plugin.on(Events.START, async () => {
 	const [err, { module, key }] = await promiseHandler(EmojiPickerHeader);
@@ -25,7 +39,15 @@ Plugin.on(Events.START, async () => {
 
 		children.push(
 			<Tooltip note="Emoji settings">
-				<ManaButton onClick={openEmojiManager} variant="icon-only" size="sm" icon={() => <SettingIcon width="20" height="20" />} />
+				<ManaButton
+					onClick={() => {
+						// closeExpressionPicker();
+						openEmojiManager();
+					}}
+					variant="icon-only"
+					size="sm"
+					icon={() => <SettingIcon width="20" height="20" />}
+				/>
 			</Tooltip>,
 		);
 	});

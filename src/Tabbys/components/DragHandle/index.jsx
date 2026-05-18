@@ -7,13 +7,17 @@ import { ModalActions } from "@Utils/Modals";
 import { getMangled, Filters } from "@Webpack";
 
 const { BasePopout } = getMangled(Filters.bySource("renderLayer", "POPOUT_PREVENT_CLOSE"), {
-	BasePopout: a => a.contextType
+	BasePopout: (a) => a.contextType,
+});
+
+const { ExpressionPickerStore } = getMangled("expression-picker-last-active-view", {
+	ExpressionPickerStore: (a) => a.getState,
 });
 
 function usePopoutListener() {
 	const [hasPopout, setHasPopout] = useState(false);
 	const { windowDispatch } = useContext(BasePopout.contextType);
-	
+
 	useEffect(() => {
 		function show() {
 			setHasPopout(true);
@@ -34,12 +38,13 @@ function usePopoutListener() {
 }
 
 export default function DragHandle() {
+	const isExpressionPickerOpen = ExpressionPickerStore(a => a.activeView);
 	const hasPopout = usePopoutListener();
-	const hasAny = ModalActions.useModalsStore(a => a.default?.length > 0 || a.popout?.length > 0);
+	const hasAny = ModalActions.useModalsStore((a) => a.default?.length > 0 || a.popout?.length > 0);
 	const hasLayers = useStateFromStores([LayerStore], () => LayerStore.hasLayers());
 	const isOpen = useStateFromStores([ContextMenuStore], () => ContextMenuStore.isOpen());
-	const style = { "width": "100%", "flex": "1 0 0" };
+	const style = { width: "100%", flex: "1 0 0" };
 
-	if (!hasAny && !isOpen && !hasLayers && !hasPopout) style["-webkit-app-region"] = "drag";
+	if (!isExpressionPickerOpen && !hasAny && !isOpen && !hasLayers && !hasPopout) style["-webkit-app-region"] = "drag";
 	return <div style={style} />;
 }

@@ -55,8 +55,8 @@ function add({ animated, name, id }) {
 function remove(id) {
 	if (!has(id)) return;
 	const index = emojisMap.indexMap[id];
-	emojisMap.parsedEmojis.splice(index, 1, false);
-	emojisMap.rawEmojis.splice(index, 1, false);
+	emojisMap.parsedEmojis.splice(index, 1);
+	emojisMap.rawEmojis.splice(index, 1);
 	delete emojisMap.indexMap[id];
 }
 
@@ -80,7 +80,7 @@ function commit() {
 		emojisMap.parsedEmojis.push(parsedEmoji);
 		emojisMap.indexMap[id] = index;
 	}
-
+	EmojisManager.emojis = emojisMap.parsedEmojis;
 	// console.log(emojisMap);
 	Data.save("emojis", cleaned);
 }
