@@ -33,6 +33,28 @@ var Webpack = /* @__PURE__ */ (() => Api.Webpack)();
 // common/React.jsx
 var React_default = /* @__PURE__ */ (() => React)();
 
+// common/Utils/index.js
+function getObjectKey(object = {}, filter) {
+	for (const key in object) {
+		if (!filter(object[key])) continue;
+		return key;
+	}
+}
+var nop = () => {};
+
+function sleep(delay) {
+	return new Promise((done) => setTimeout(() => done(), delay * 1e3));
+}
+
+function preventDefault(handler) {
+	if (!handler) return nop;
+	return (e) => {
+		e.preventDefault();
+		e.stopPropagation();
+		handler.apply(null, [e]);
+	};
+}
+
 // common/Webpack.js
 var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
 var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
@@ -94,35 +116,16 @@ var Events = {
 	STOP: "STOP"
 };
 var Plugin_default = new class extends EventEmitter_default {
+	stopped = true;
 	start() {
 		this.emit(Events.START);
+		this.stopped = false;
 	}
 	stop() {
 		this.emit(Events.STOP);
+		this.stopped = true;
 	}
 }();
-
-// common/Utils/index.js
-function getObjectKey(object, filter) {
-	for (const key in object) {
-		if (!filter(object[key])) continue;
-		return key;
-	}
-}
-var nop = () => {};
-
-function sleep(delay) {
-	return new Promise((done) => setTimeout(() => done(), delay * 1e3));
-}
-
-function preventDefault(handler) {
-	if (!handler) return nop;
-	return (e) => {
-		e.preventDefault();
-		e.stopPropagation();
-		handler.apply(null, [e]);
-	};
-}
 
 // MODULES-AUTO-LOADER:@Modules/Button
 var Button_default = getModule((a) => a && a.Link && a.Colors, { searchExports: true });

@@ -1,4 +1,5 @@
 /**
+ * @runAt idle
  * @name Devtools
  * @description Helpful devtools for discord modules
  * @version 1.0.0
@@ -58,6 +59,14 @@ var getInternalInstance = /* @__PURE__ */ (() => Api.ReactUtils.getInternalInsta
 
 // common/React.jsx
 var React_default = /* @__PURE__ */ (() => React)();
+var NoopComponent = () => null;
+var LazyComponent = (get) => {
+	const Comp = (props) => {
+		const Component = get() ?? NoopComponent;
+		return /* @__PURE__ */ React.createElement(Component, { ...props });
+	};
+	return Comp;
+};
 
 // common/Utils/Logger.js
 Logger.patchError = (patchId) => {
@@ -102,24 +111,25 @@ var ErrorBoundary = class extends React_default.Component {
 };
 
 // common/Webpack.js
-var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
-var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
-
-function getModuleAndKey(filter, options) {
-	let module2;
-	const target = getModule((entry, m) => filter(entry) ? module2 = m : false, options);
-	module2 = module2?.exports;
-	if (!module2) return;
-	const key = Object.keys(module2).find((k) => module2[k] === target);
-	if (!key) return;
-	return { module: module2, key };
-}
-
-// MODULES-AUTO-LOADER:@Modules/Dispatcher
-var Dispatcher_default = getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: true });
-
-// MODULES-AUTO-LOADER:@Modules/TheBigBoyBundle
-var TheBigBoyBundle_default = getModule(Filters.byKeys("openModal", "FormSwitch", "Anchor"), { searchExports: false });
+var Webpack_exports = {};
+__export(Webpack_exports, {
+	Filters: () => Filters,
+	_getBySource: () => _getBySource,
+	filterModuleAndExport: () => filterModuleAndExport,
+	getById: () => getById,
+	getBySource: () => getBySource,
+	getDeclarationAndKey: () => getDeclarationAndKey,
+	getMangled: () => getMangled,
+	getModule: () => getModule,
+	getModuleAndKey: () => getModuleAndKey,
+	getStore: () => getStore,
+	lazy: () => lazy,
+	mapExports: () => mapExports,
+	modules: () => modules,
+	reactRefMemoFilter: () => reactRefMemoFilter,
+	waitForComponent: () => waitForComponent,
+	waitForModule: () => waitForModule
+});
 
 // common/Utils/index.js
 var Utils_exports = {};
@@ -137,6 +147,7 @@ __export(Utils_exports, {
 	genUrlParamsFromArray: () => genUrlParamsFromArray,
 	getImageDimensions: () => getImageDimensions,
 	getNestedProp: () => getNestedProp,
+	getObjectKey: () => getObjectKey,
 	getPathName: () => getPathName,
 	hook: () => hook,
 	isSnowflake: () => isSnowflake,
@@ -150,6 +161,13 @@ __export(Utils_exports, {
 	shallow: () => shallow,
 	sleep: () => sleep
 });
+
+function getObjectKey(object = {}, filter) {
+	for (const key in object) {
+		if (!filter(object[key])) continue;
+		return key;
+	}
+}
 
 function fit({ width, height, gap = 0.8 }) {
 	const ratio = Math.min(innerWidth / width, innerHeight / height);
@@ -372,6 +390,98 @@ function preventDefault(handler) {
 	};
 }
 
+// common/Webpack.js
+var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
+var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
+var waitForModule = /* @__PURE__ */ (() => Webpack.waitForModule)();
+var modules = /* @__PURE__ */ (() => Webpack.modules)();
+var getBySource = /* @__PURE__ */ (() => Webpack.getBySource)();
+var getMangled = /* @__PURE__ */ (() => Webpack.getMangled)();
+var getById = /* @__PURE__ */ (() => Webpack.getById)();
+var getStore = /* @__PURE__ */ (() => Webpack.getStore)();
+async function lazy(filter, options) {
+	const { exportsFilter, declarationsFilter, ...rest } = options;
+	const [err, res] = await promiseHandler(waitForModule(filter, { ...rest, raw: true }));
+	if (err) return;
+	const module2 = exportsFilter ? res.exports : res.declarations;
+	const key = getObjectKey(module2, exportsFilter || declarationsFilter);
+	if (key) return { module: module2, key, target: module2[key] };
+}
+
+function waitForComponent(filter, options) {
+	let myValue = () => {};
+	const lazyComponent = LazyComponent(() => myValue);
+	waitForModule(filter, options).then((v) => {
+		myValue = v;
+		Object.assign(lazyComponent, v);
+	});
+	return lazyComponent;
+}
+
+function reactRefMemoFilter(type, ...args) {
+	const filter = Filters.byStrings(...args);
+	return (target) => target[type] && filter(target[type]);
+}
+
+function getModuleAndKey(filter, options) {
+	let module2;
+	const target = getModule((entry, m) => filter(entry) ? module2 = m : false, options);
+	module2 = module2?.exports;
+	if (!module2) return;
+	const key = Object.keys(module2).find((k) => module2[k] === target);
+	if (!key) return;
+	return { module: module2, key };
+}
+
+function getDeclarationAndKey(moduleFilter, declarationFilter, options = {}) {
+	const module2 = getModule(moduleFilter, { ...options, raw: true });
+	if (!module2?.declarations) return;
+	const key = getObjectKey(module2.declarations, declarationFilter);
+	return key ? { key, module: module2.declarations } : void 0;
+}
+
+function filterModuleAndExport(moduleFilter, exportFilter, options) {
+	const module2 = getModule(moduleFilter, { ...options, raw: true });
+	if (!module2) return;
+	const { exports } = module2;
+	const key = Object.keys(exports).find((k) => exportFilter(exports[k]));
+	if (!key) return {};
+	return { module: exports, key, target: exports[key] };
+}
+
+function mapExports(moduleFilter, exportsMap, options) {
+	const module2 = getModule(moduleFilter, { ...options, raw: true });
+	if (!module2) return {};
+	const { exports } = module2;
+	const res = { module: exports, mangledKeys: {} };
+	for (const [mapKey, filter] of Object.entries(exportsMap)) {
+		for (const [exportKey, val] of Object.entries(exports)) {
+			if (!filter(val)) continue;
+			res[mapKey] = val;
+			res.mangledKeys[mapKey] = exportKey;
+			break;
+		}
+	}
+	return res;
+}
+
+function _getBySource(filter) {
+	let moduleId = null;
+	for (const [id, loader] of Object.entries(modules)) {
+		if (filter(loader.toString())) {
+			moduleId = id;
+			break;
+		}
+	}
+	return getModule((_, __, id) => id === moduleId);
+}
+
+// MODULES-AUTO-LOADER:@Modules/Dispatcher
+var Dispatcher_default = getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: true });
+
+// MODULES-AUTO-LOADER:@Modules/TheBigBoyBundle
+var TheBigBoyBundle_default = getModule(Filters.byKeys("openModal", "FormSwitch", "Anchor"), { searchExports: false });
+
 // MODULES-AUTO-LOADER:@Enums/DiscordPermissionsEnum
 var DiscordPermissionsEnum_default = getModule(Filters.byKeys("ADD_REACTIONS"), { searchExports: true }) || {
 	"EMBED_LINKS": "16384n",
@@ -511,16 +621,16 @@ var Module = class {
 			fs.mkdirSync(`${path}\\modulesUsingThisModule`);
 			fs.mkdirSync(`${path}\\imports`);
 			{
-				const modules = Object.entries(this.modulesUsingThisModule);
-				for (let i = modules.length - 1; i >= 0; i--) {
-					const [id, module2] = modules[i];
+				const modules2 = Object.entries(this.modulesUsingThisModule);
+				for (let i = modules2.length - 1; i >= 0; i--) {
+					const [id, module2] = modules2[i];
 					const code = module2.code;
 					fs.writeFileSync(`${path}\\modulesUsingThisModule\\${id}.js`, code, "utf8");
 				}
 			} {
-				const modules = Object.entries(this.imports);
-				for (let i = modules.length - 1; i >= 0; i--) {
-					const [id, module2] = modules[i];
+				const modules2 = Object.entries(this.imports);
+				for (let i = modules2.length - 1; i >= 0; i--) {
+					const [id, module2] = modules2[i];
 					const code = module2.code;
 					fs.writeFileSync(`${path}\\imports\\${id}.js`, code, "utf8");
 				}
@@ -891,6 +1001,7 @@ function init() {
 			...d,
 			dispatcherEventInterceptor
 		},
+		Webpack: Webpack_exports,
 		r: webpackRequire_default,
 		...Misc,
 		...Stores,

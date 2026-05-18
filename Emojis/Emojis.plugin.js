@@ -1,4 +1,5 @@
 /**
+ * @runAt idle
  * @name Emojis
  * @description Send emoji as link if it can't be sent it normally.
  * @version 1.0.0
@@ -95,11 +96,14 @@ var Events = {
 	STOP: "STOP"
 };
 var Plugin_default = new class extends EventEmitter_default {
+	stopped = true;
 	start() {
 		this.emit(Events.START);
+		this.stopped = false;
 	}
 	stop() {
 		this.emit(Events.STOP);
+		this.stopped = true;
 	}
 }();
 
@@ -237,11 +241,38 @@ var useEffect = /* @__PURE__ */ (() => React.useEffect)();
 var useRef = /* @__PURE__ */ (() => React.useRef)();
 var React_default = /* @__PURE__ */ (() => React)();
 
+// common/Utils/index.js
+function getObjectKey(object = {}, filter) {
+	for (const key in object) {
+		if (!filter(object[key])) continue;
+		return key;
+	}
+}
+
+function clsx(prefix) {
+	return (...args) => args.filter(Boolean).map((a) => `${prefix}-${a}`).join(" ");
+}
+var promiseHandler = (promise) => promise.then((data) => [void 0, data]).catch((err) => [err]);
+
+function getNestedProp(obj, path2) {
+	return path2.split(".").reduce((ob, prop) => ob?.[prop], obj);
+}
+var nop = () => {};
+
 // common/Webpack.js
 var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
 var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
+var waitForModule = /* @__PURE__ */ (() => Webpack.waitForModule)();
 var getMangled = /* @__PURE__ */ (() => Webpack.getMangled)();
 var getStore = /* @__PURE__ */ (() => Webpack.getStore)();
+async function lazy(filter, options) {
+	const { exportsFilter, declarationsFilter, ...rest } = options;
+	const [err, res] = await promiseHandler(waitForModule(filter, { ...rest, raw: true }));
+	if (err) return;
+	const module2 = exportsFilter ? res.exports : res.declarations;
+	const key = getObjectKey(module2, exportsFilter || declarationsFilter);
+	if (key) return { module: module2, key, target: module2[key] };
+}
 
 function reactRefMemoFilter(type, ...args) {
 	const filter = Filters.byStrings(...args);
@@ -330,8 +361,8 @@ function add({ animated, name, id }) {
 function remove(id) {
 	if (!has(id)) return;
 	const index = emojisMap.indexMap[id];
-	emojisMap.parsedEmojis.splice(index, 1, false);
-	emojisMap.rawEmojis.splice(index, 1, false);
+	emojisMap.parsedEmojis.splice(index, 1);
+	emojisMap.rawEmojis.splice(index, 1);
 	delete emojisMap.indexMap[id];
 }
 
@@ -355,6 +386,7 @@ function commit() {
 		emojisMap.parsedEmojis.push(parsedEmoji);
 		emojisMap.indexMap[id] = index;
 	}
+	EmojisManager.emojis = emojisMap.parsedEmojis;
 	Data.save("emojis", cleaned);
 }
 var EmojisManager = {
@@ -398,16 +430,6 @@ function create(initialState) {
 	});
 	return Store;
 }
-
-// common/Utils/index.js
-function clsx(prefix) {
-	return (...args) => args.filter(Boolean).map((a) => `${prefix}-${a}`).join(" ");
-}
-
-function getNestedProp(obj, path2) {
-	return path2.split(".").reduce((ob, prop) => ob?.[prop], obj);
-}
-var nop = () => {};
 
 // common/Utils/Settings.js
 var SettingsStore = create(subscribeWithSelector(() => Object.assign(Config_default.settings, Data.load("settings") || {})));
@@ -649,8 +671,6 @@ var SettingIcon = /* @__PURE__ */ svg(
 	null,
 	"M10.56 1.1c-.46.05-.7.53-.64.98.18 1.16-.19 2.2-.98 2.53-.8.33-1.79-.15-2.49-1.1-.27-.36-.78-.52-1.14-.24-.77.59-1.45 1.27-2.04 2.04-.28.36-.12.87.24 1.14.96.7 1.43 1.7 1.1 2.49-.33.8-1.37 1.16-2.53.98-.45-.07-.93.18-.99.64a11.1 11.1 0 0 0 0 2.88c.06.46.54.7.99.64 1.16-.18 2.2.19 2.53.98.33.8-.14 1.79-1.1 2.49-.36.27-.52.78-.24 1.14.59.77 1.27 1.45 2.04 2.04.36.28.87.12 1.14-.24.7-.95 1.7-1.43 2.49-1.1.8.33 1.16 1.37.98 2.53-.07.45.18.93.64.99a11.1 11.1 0 0 0 2.88 0c.46-.06.7-.54.64-.99-.18-1.16.19-2.2.98-2.53.8-.33 1.79.14 2.49 1.1.27.36.78.52 1.14.24.77-.59 1.45-1.27 2.04-2.04.28-.36.12-.87-.24-1.14-.96-.7-1.43-1.7-1.1-2.49.33-.8 1.37-1.16 2.53-.98.45.07.93-.18.99-.64a11.1 11.1 0 0 0 0-2.88c-.06-.46-.54-.7-.99-.64-1.16.18-2.2-.19-2.53-.98-.33-.8.14-1.79 1.1-2.49.36-.27.52-.78.24-1.14a11.07 11.07 0 0 0-2.04-2.04c-.36-.28-.87-.12-1.14.24-.7.96-1.7 1.43-2.49 1.1-.8-.33-1.16-1.37-.98-2.53.07-.45-.18-.93-.64-.99a11.1 11.1 0 0 0-2.88 0ZM16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"
 );
-var UndoIcon = /* @__PURE__ */ svg(null, "M4 12a8 8 0 0 1 14.93-4H15a1 1 0 1 0 0 2h6a1 1 0 0 0 1-1V3a1 1 0 1 0-2 0v3a9.98 9.98 0 0 0-18 6 10 10 0 0 0 16.29 7.78 1 1 0 0 0-1.26-1.56A8 8 0 0 1 4 12Z");
-var TrashBinIcon = /* @__PURE__ */ svg(null, "M14.25 1c.41 0 .75.34.75.75V3h5.25c.41 0 .75.34.75.75v.5c0 .41-.34.75-.75.75H3.75A.75.75 0 0 1 3 4.25v-.5c0-.41.34-.75.75-.75H9V1.75c0-.41.34-.75.75-.75h4.5Z", /* @__PURE__ */ path({ fillRule: "evenodd", "clip-rule": "evenodd" }, "M5.06 7a1 1 0 0 0-1 1.06l.76 12.13a3 3 0 0 0 3 2.81h8.36a3 3 0 0 0 3-2.81l.75-12.13a1 1 0 0 0-1-1.06H5.07ZM11 12a1 1 0 1 0-2 0v6a1 1 0 1 0 2 0v-6Zm3-1a1 1 0 0 1 1 1v6a1 1 0 1 1-2 0v-6a1 1 0 0 1 1-1Z"));
 
 // MODULES-AUTO-LOADER:@Modules/Heading
 var Heading_default = getModule((a) => a?.render?.toString().includes("data-excessive-heading-level"), { searchExports: true });
@@ -740,52 +760,7 @@ function EmojiManagerComponent({ emojis, modalProps }) {
 		EmojisManager_default.commit();
 		modalProps.onClose();
 	};
-	return /* @__PURE__ */ React_default.createElement(
-		Modals.ModalRoot, {
-			...modalProps,
-			size: "dynamic",
-			fullscreenOnMobile: false,
-			className: c("modal-root")
-		},
-		/* @__PURE__ */
-		React_default.createElement(Modals.ModalHeader, { separator: true }, /* @__PURE__ */ React_default.createElement(
-			Heading_default, {
-				variant: "heading-lg/semibold",
-				style: { flexGrow: 1 }
-			},
-			"EmojiManager"
-		), /* @__PURE__ */ React_default.createElement(Modals.ModalCloseButton, { onClick: modalProps.onClose })),
-		/* @__PURE__ */
-		React_default.createElement("div", { className: c("modal-content") }, /* @__PURE__ */ React_default.createElement(
-			EmojisList, {
-				emojis,
-				onChange: changeHandler
-			}
-		)),
-		/* @__PURE__ */
-		React_default.createElement(Modals.ModalFooter, { separator: true }, /* @__PURE__ */ React_default.createElement(
-			Flex_default, {
-				style: { gap: 8 },
-				align: Flex_default.Align.CENTER,
-				justify: Flex_default.Justify.END
-			},
-			/* @__PURE__ */
-			React_default.createElement(
-				ManaTextButton, {
-					text: "Cancel",
-					onClick: modalProps.onClose
-				}
-			),
-			/* @__PURE__ */
-			React_default.createElement(
-				ManaButton, {
-					size: "sm",
-					text: "Save",
-					onClick: saveHandler
-				}
-			)
-		))
-	);
+	return /* @__PURE__ */ React_default.createElement(Modals.ModalRoot, { ...modalProps, size: "dynamic", fullscreenOnMobile: false, className: c("modal-root") }, /* @__PURE__ */ React_default.createElement(Modals.ModalHeader, { separator: true }, /* @__PURE__ */ React_default.createElement(Heading_default, { variant: "heading-lg/semibold", style: { flexGrow: 1 } }, "EmojiManager"), /* @__PURE__ */ React_default.createElement(Modals.ModalCloseButton, { onClick: modalProps.onClose })), /* @__PURE__ */ React_default.createElement("div", { className: c("modal-content") }, /* @__PURE__ */ React_default.createElement(EmojisList, { emojis, onChange: changeHandler })), /* @__PURE__ */ React_default.createElement(Modals.ModalFooter, { separator: true }, /* @__PURE__ */ React_default.createElement(Flex_default, { style: { gap: 8 }, align: Flex_default.Align.CENTER, justify: Flex_default.Justify.END }, /* @__PURE__ */ React_default.createElement(ManaTextButton, { text: "Cancel", onClick: modalProps.onClose }), /* @__PURE__ */ React_default.createElement(ManaButton, { size: "sm", text: "Save", onClick: saveHandler }))));
 }
 var desiredColumns = 6;
 var desiredItemWidth = 130;
@@ -817,14 +792,7 @@ function EmojisList({ emojis, onChange }) {
 			getItemHeight: () => 150,
 			renderItem: (_, index, style) => {
 				const emoji = emojis[index];
-				return /* @__PURE__ */ React_default.createElement(
-					EmojiCard, {
-						onChange,
-						style,
-						key: emoji.id,
-						...emoji
-					}
-				);
+				return /* @__PURE__ */ React_default.createElement(EmojiCard, { onChange, style, key: emoji.id, ...emoji });
 			}
 		}
 	);
@@ -844,48 +812,17 @@ function EmojiCard({ animated, name, id, style, onChange }) {
 		setDeleteEmoji(del);
 		onChange({ id, deleted: del });
 	};
-	return /* @__PURE__ */ React_default.createElement(
+	return /* @__PURE__ */ React_default.createElement("div", { style, onClick: deleteHandler, className: c("emoji-card", deleteEmoji && "emoji-card-deleted", animated && "emoji-card-animated") }, /* @__PURE__ */ React_default.createElement(
 		"div", {
-			style,
-			className: c("emoji-card", deleteEmoji && "emoji-card-deleted", animated && "emoji-card-animated")
+			className: c("emoji-img")
 		},
 		/* @__PURE__ */
-		React_default.createElement("div", { className: c("emoji-img"), onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false) }, /* @__PURE__ */ React_default.createElement(
-			"img", {
-				alt: name,
-				src: getEmojiUrl2(id, hover && animated, 80)
-			}
-		)),
-		/* @__PURE__ */
-		React_default.createElement("div", { className: c("btn-delete") }, /* @__PURE__ */ React_default.createElement(
-			ManaButton, {
-				onClick: deleteHandler,
-				fullWidth: true,
-				size: "sm",
-				variant: "",
-				icon: () => deleteEmoji ? /* @__PURE__ */ React_default.createElement(
-					UndoIcon, {
-						width: "18",
-						height: "18"
-					}
-				) : /* @__PURE__ */ React_default.createElement(
-					TrashBinIcon, {
-						width: "18",
-						height: "18"
-					}
-				)
-			}
-		))
-	);
+		React_default.createElement("img", { alt: name, src: getEmojiUrl2(id, hover && animated, 80) })
+	));
 }
 
 function openEmojiManager() {
-	ModalActions.openModal((e) => /* @__PURE__ */ React_default.createElement(ErrorBoundary, null, /* @__PURE__ */ React_default.createElement(
-		EmojiManagerComponent, {
-			modalProps: e,
-			emojis: EmojisManager_default.emojis
-		}
-	)));
+	ModalActions.openModal((e) => /* @__PURE__ */ React_default.createElement(ErrorBoundary, null, /* @__PURE__ */ React_default.createElement(EmojiManagerComponent, { modalProps: e, emojis: EmojisManager_default.emojis })));
 }
 
 // MODULES-AUTO-LOADER:@Modules/Tooltip
@@ -906,10 +843,11 @@ var Tooltip_default2 = ({ note, position, children }) => {
 };
 
 // src/Emojis/patches/patchEmojiPickerHeader.jsx
-var EmojiPickerHeader = getModuleAndKey(Filters.byStrings("selectedSurrogate"));
-Plugin_default.on(Events.START, () => {
-	const { module: module2, key } = EmojiPickerHeader;
-	if (!module2 || !key) return Logger_default.patchError("patchEmojiPickerHeader");
+var EmojiPickerHeader = lazy(Filters.bySource("selectedSurrogate"), { declarationsFilter: Filters.byStrings("ion:f,onBurstRea") });
+Plugin_default.on(Events.START, async () => {
+	const [err, { module: module2, key }] = await promiseHandler(EmojiPickerHeader);
+	if (err || !module2 || !key) return Logger_default.patchError("patchEmojiPickerHeader");
+	if (Plugin_default.stopped) return;
 	Patcher.after(module2, key, (_, args, ret) => {
 		const children = getNestedProp(ret, "props.children.props.children");
 		if (!children || !Array.isArray(children)) return;
@@ -917,15 +855,12 @@ Plugin_default.on(Events.START, () => {
 			/* @__PURE__ */
 			React_default.createElement(Tooltip_default2, { note: "Emoji settings" }, /* @__PURE__ */ React_default.createElement(
 				ManaButton, {
-					onClick: openEmojiManager,
+					onClick: () => {
+						openEmojiManager();
+					},
 					variant: "icon-only",
 					size: "sm",
-					icon: () => /* @__PURE__ */ React_default.createElement(
-						SettingIcon, {
-							width: "20",
-							height: "20"
-						}
-					)
+					icon: () => /* @__PURE__ */ React_default.createElement(SettingIcon, { width: "20", height: "20" })
 				}
 			))
 		);
