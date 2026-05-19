@@ -1,38 +1,52 @@
-import { Patcher } from "@Api";
-import { Filters, getModule } from "@Webpack";
-
+import { Patcher, findInTree } from "@Api";
+import { Filters, getMangled, getModule } from "@Webpack";
 import Logger from "@Utils/Logger";
+import React from "@React";
+import ErrorBoundary from "@Components/ErrorBoundary";
+import EmojisComponent from "@/components/EmojisComponent";
+import Plugin, { Events } from "@Utils/Plugin";
 
-import EmojiIntentionEnum from "@Enums/EmojiIntentionEnum";
-import { handleUnsendableEmoji, isEmojiSendable } from "../Utils";
+const ExpressionPicker = getModule((a) => a?.type?.toString().includes("handleDrawerResizeHandleMouseDown"), { searchExports: false });
 
-const ExpressionPicker = getModule(a => a?.type?.toString().includes("handleDrawerResizeHandleMouseDown"), { searchExports: false });
-const d = getModule(Filters.byPrototypeKeys("onResultClick", "onHideAutocomplete"));
+const { ExpressionPickerStore } = getMangled("expression-picker-last-active-view", {
+	ExpressionPickerStore: (a) => a.getState,
+});
+const VIEW_TYPE = "SAVED_EMOJIS";
 
-export default () => {
-	if (ExpressionPicker && ExpressionPicker.type)
-		Patcher.before(ExpressionPicker, "type", (_, [props]) => {
-			const orig = props.onSelectEmoji;
-			props.onSelectEmoji = (...args) => {
-				const [emoji] = args;
-				const channel = props.channel;
-				if (!isEmojiSendable({ emoji, channel, intention: EmojiIntentionEnum.CHAT }))
-					handleUnsendableEmoji(emoji, channel);
-				else orig.apply(null, args);
-			};
+Plugin.on(Events.START, () => {
+	if (!ExpressionPicker) return Logger.patchError("ExpressionPicker");
+	Patcher.after(ExpressionPicker, "type", (_, args, ret) => {
+		const thing = findInTree(ret, Filters.byKeys("align", "autoInvert"), { walkable: ["props", "children"] });
+		if (!thing?.children) return ret;
+
+		const unpatch = Patcher.after(thing, "children", (_, args, ret) => {
+			unpatch();
+
+			const body = findInTree(ret, (el) => el?.[0]?.type === "nav", { walkable: ["props", "children"] });
+			const head = findInTree(body, (el) => el?.[0]?.props?.["aria-selected"] !== void 0, { walkable: ["props", "children"] });
+
+			const TabButtonComponent = head?.[0]?.type?.type;
+			if (!TabButtonComponent) return;
+
+			const activeView = ExpressionPickerStore.getState().activeView;
+			const selected = VIEW_TYPE === activeView;
+
+			head.push(
+				<ErrorBoundary id="EmojisComponent-TabButtonComponent">
+					<TabButtonComponent id={VIEW_TYPE} aria-controls={VIEW_TYPE} aria-selected={selected} viewType={VIEW_TYPE} isActive={selected}>
+						My Tab
+					</TabButtonComponent>
+				</ErrorBoundary>,
+			);
+
+			if (selected) {
+				body.push(
+					<ErrorBoundary id="EmojisComponent">
+						<EmojisComponent />
+					</ErrorBoundary>,
+				);
+			}
 		});
-	else Logger.patchError("ExpressionPicker");
+	});
+});
 
-	// if (!d) return Logger.patchError("dddd-ExpressionPicker");
-
-	// Patcher.instead(d.prototype, "selectResult", (_this, args, orig) => {
-	// 	if (_this.state.query.type !== "EMOJIS_AND_STICKERS") return orig.apply(null, args);
-	// 	const emoji = _this.state.query.results.emojis[args[0]];
-	// 	if (!isEmojiSendable({ emoji, channel: _this.props.channel, intention: EmojiIntentionEnum.CHAT })) {
-	// 		_this.state.query.options.insertText("");
-	// 		const content = getEmojiUrl(emoji);
-	// 		insertText(`[󠇫](${content})`);
-	// 		_this.clearQuery();
-	// 	} else orig.apply(null, args);
-	// });
-};

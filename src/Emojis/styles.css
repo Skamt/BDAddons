@@ -1,3 +1,7 @@
+.emoji-manager-ref{
+	display: contents;
+}
+
 .emoji-manager-modal-root {
 	max-height: 75vh;
 	max-width: 80vw;
@@ -87,24 +91,5 @@
 
 
 
-
-
-/* ============== */
-/*.CHAT .premiumPromo-1eKAIB {
-	display: none;
-}
-.emojiItemDisabled-3VVnwp {
-	filter: unset;
-}
-
-.emojiControls {
-	display: flex;
-	justify-content: flex-end;
-	gap: 4px;
-	margin-top: 5px;
-}
-.emojiSizeSlider {
-	line-height: 1;
-}*/
 
 
