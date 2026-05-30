@@ -46,9 +46,9 @@ function getByIndex(index){
 function add({ animated, name, id }) {
 	if (has(id)) return;
 	const parsedEmoji = buildEmojiObj({ animated, name, id });
-	emojisMap.rawEmojis.push(serializeEmoji({ animated, name, id }));
-	emojisMap.parsedEmojis.push(parsedEmoji);
-	emojisMap.indexMap[id] = emojisMap.parsedEmojis.length - 1;
+	emojisMap.rawEmojis.unshift(serializeEmoji({ animated, name, id }));
+	emojisMap.parsedEmojis.unshift(parsedEmoji);
+	// emojisMap.indexMap[id] = 0;
 }
 
 
@@ -57,7 +57,7 @@ function remove(id) {
 	const index = emojisMap.indexMap[id];
 	emojisMap.parsedEmojis.splice(index, 1);
 	emojisMap.rawEmojis.splice(index, 1);
-	delete emojisMap.indexMap[id];
+	// delete emojisMap.indexMap[id];
 }
 
 function update(id, payload) {

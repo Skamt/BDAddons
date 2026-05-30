@@ -9,6 +9,7 @@ export default function SettingSwtich({ settingKey, note, border = false, onChan
 		<>
 			<Switch
 				{...rest}
+				hasIcon={true}
 				checked={val}
 				label={description || settingKey}
 				description={note}

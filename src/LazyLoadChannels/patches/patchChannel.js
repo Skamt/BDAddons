@@ -10,10 +10,14 @@ Plugin.on(Events.START, () => {
 	// if (!ChannelComponent) return Logger.patchError("Channel");
 	const controller = new AbortController();
 
-	waitForModule(reactRefMemoFilter("render", "hasActiveThreads"), { signal: controller.signal, searchExports: true }).then(ChannelComponent => {
+	waitForModule(reactRefMemoFilter("render", "hasActiveThreads"), {
+		signal: controller.signal,
+		searchExports: true,
+	}).then((ChannelComponent) => {
 		Patcher.after(ChannelComponent, "render", (_, [{ channel }], returnValue) => {
 			if (!Settings.state.autoloadedChannelIndicator) return;
-			if (ChannelsStateManager.getChannelstate(channel.guild_id, channel.id)) returnValue.props.children.props.children[1].props.className += " autoload";
+			if (ChannelsStateManager.getChannelstate(channel.guild_id, channel.id))
+				returnValue.props.children.props.children[1].props.className += " autoload";
 		});
 	});
 

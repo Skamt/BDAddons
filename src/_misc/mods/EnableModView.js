@@ -16,12 +16,12 @@ waitForModule(Filters.byStrings("openGuildSidebar"), { searchExports: true }).th
 });
 
 const filter = Filters.bySource("user:I,context:a,checkElevated:");
-const modViewModule = waitForModule((a, _, id) => id === 985925 || filter(a));
+const modViewModulePromise = waitForModule((a, _, id) => id === 985925 || filter(a));
 async function enableModView() {
-	await modViewModule;
+	const modViewModule = await modViewModulePromise;
 	if (Plugin.stopped) return;
 	for (const key in modViewModule) {
-		this.patches.push(Patcher.after(a, key, () => true));
+		Patcher.after(modViewModule, key, () => true);
 	}
 }
 

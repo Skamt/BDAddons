@@ -4,8 +4,8 @@ import "./patches/patchExpressionPicker";
 import "./patches/patchIsEmojiDisabled";
 // import "./patches/patchFavoriteEmojis";
 import "./patches/EmojiContextmenu";
-// import "./patches/patchUseEmojiGrid";
-// import "./patches/patchEmojiPickerHeader";
+import "./patches/patchEmojiInChat";
+import "./patches/patchEmojiPickerHeader";
 
 import { Patcher } from "@Api";
 import React from "@React";

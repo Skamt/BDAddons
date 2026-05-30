@@ -28,7 +28,7 @@
 	"formatter": {
 		"ignore": [],
 		"indentStyle": "tab",
-		"lineWidth": 250
+		"lineWidth": 100
 	},
 	"javascript": {
 		"formatter": {
