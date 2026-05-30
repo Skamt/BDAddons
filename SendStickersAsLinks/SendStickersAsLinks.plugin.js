@@ -1,7 +1,8 @@
 /**
+ * @runAt idle
  * @name SendStickersAsLinks
  * @description Enables you to send custom Stickers as links
- * @version 2.3.5
+ * @version 2.3.6
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/SendStickersAsLinks
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/SendStickersAsLinks/SendStickersAsLinks.plugin.js
@@ -11,7 +12,7 @@
 var Config_default = {
 	"info": {
 		"name": "SendStickersAsLinks",
-		"version": "2.3.5",
+		"version": "2.3.6",
 		"description": "Enables you to send custom Stickers as links",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SendStickersAsLinks/SendStickersAsLinks.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SendStickersAsLinks",
@@ -92,11 +93,14 @@ var Events = {
 	STOP: "STOP"
 };
 var Plugin_default = new class extends EventEmitter_default {
+	stopped = true;
 	start() {
 		this.emit(Events.START);
+		this.stopped = false;
 	}
 	stop() {
 		this.emit(Events.STOP);
+		this.stopped = true;
 	}
 }();
 
@@ -138,6 +142,9 @@ StylesLoader_default.push(`.animatedSticker{
 
 // common/React.jsx
 var React_default = /* @__PURE__ */ (() => React)();
+
+// common/Utils/index.js
+var nop = () => {};
 
 // common/Webpack.js
 var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
@@ -186,9 +193,6 @@ function create(initialState) {
 	});
 	return Store;
 }
-
-// common/Utils/index.js
-var nop = () => {};
 
 // common/Utils/Settings.js
 var SettingsStore = create(subscribeWithSelector(() => Object.assign(Config_default.settings, Data.load("settings") || {})));
@@ -483,11 +487,13 @@ var Slider_default = getModule(Filters.byPrototypeKeys("renderMark"), { searchEx
 var FormSwitch_default = getModule(Filters.byStrings("note", "tooltipNote"), { searchExports: true });
 
 // common/Components/Switch/index.jsx
-var Switch_default = getModule(Filters.byStrings('"data-toggleable-component":"switch"', 'layout:"horizontal"'), { searchExports: true }) || function SwitchComponentFallback(props) {
-	return /* @__PURE__ */ React.createElement("div", { style: { color: "#fff" } }, props.children, /* @__PURE__ */ React.createElement(
+var Switch_default = getMangled(Filters.bySource("auxiliaryContentPosition", "hasIcon"), {
+	Switch: () => true
+})?.Switch || function SwitchComponentFallback(props) {
+	return /* @__PURE__ */ React.createElement("div", { style: { color: "#fff" } }, props.label, /* @__PURE__ */ React.createElement(
 		"input", {
 			type: "checkbox",
-			checked: props.value,
+			checked: props.checked,
 			onChange: (e) => props.onChange(e.target.checked)
 		}
 	));
@@ -540,6 +546,7 @@ function SettingSwtich({ settingKey, note, border = false, onChange = nop, descr
 	return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(
 		Switch_default, {
 			...rest,
+			hasIcon: true,
 			checked: val,
 			label: description || settingKey,
 			description: note,

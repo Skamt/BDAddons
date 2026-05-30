@@ -2,7 +2,7 @@
  * @runAt idle
  * @name SpotifyEnhance
  * @description All in one better spotify-discord experience.
- * @version 1.1.15
+ * @version 1.1.16
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js
@@ -12,7 +12,7 @@
 var Config_default = {
 	"info": {
 		"name": "SpotifyEnhance",
-		"version": "1.1.15",
+		"version": "1.1.16",
 		"description": "All in one better spotify-discord experience.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance",
@@ -105,11 +105,14 @@ var Events = {
 	STOP: "STOP"
 };
 var Plugin_default = new class extends EventEmitter_default {
+	stopped = true;
 	start() {
 		this.emit(Events.START);
+		this.stopped = false;
 	}
 	stop() {
 		this.emit(Events.STOP);
+		this.stopped = true;
 	}
 }();
 
@@ -1298,9 +1301,14 @@ var Tooltip_default2 = ({ note, position, children }) => {
 // src/SpotifyEnhance/patches/patchMessageHeader.jsx
 function SpotifyActivityIndicator({ userId }) {
 	const activityIndicator = Settings_default(Settings_default.selectors.activityIndicator);
-	const spotifyActivity = useStateFromStores_default([PresenceStore_default], () => PresenceStore_default.getActivities(userId).find((activity) => activity?.name?.toLowerCase() === "spotify"));
+	const spotifyActivity = useStateFromStores_default(
+		[PresenceStore_default],
+		() => PresenceStore_default.getActivities(userId).find(
+			(activity) => activity?.name?.toLowerCase() === "spotify"
+		)
+	);
 	if (!activityIndicator || !spotifyActivity) return null;
-	return /* @__PURE__ */ React.createElement(Tooltip_default2, { note: `${spotifyActivity.details} - ${spotifyActivity.state}` }, /* @__PURE__ */ React.createElement(
+	return /* @__PURE__ */ React_default.createElement(Tooltip_default2, { note: `${spotifyActivity.details} - ${spotifyActivity.state}` }, /* @__PURE__ */ React_default.createElement(
 		SpotifyIcon, {
 			width: "20",
 			height: "20",
@@ -1308,17 +1316,24 @@ function SpotifyActivityIndicator({ userId }) {
 		}
 	));
 }
-var MessageHeaderFilter = Filters.byStrings("userOverride", "withMentionPrefix");
+var MessageHeaderFilter = Filters.byStrings(
+	"userOverride",
+	"withMentionPrefix"
+);
 Plugin_default.on(Events.START, () => {
 	const controller = new AbortController();
-	waitForModule(MessageHeaderFilter, { signal: controller.signal, raw: true, searchExports: false }).then(({ exports: MessageHeader }) => {
+	waitForModule(MessageHeaderFilter, {
+		signal: controller.signal,
+		raw: true,
+		searchExports: false
+	}).then(({ exports: MessageHeader }) => {
 		const key = getObjectKey(MessageHeader, MessageHeaderFilter);
 		if (!key) return Logger_default.patchError("MessageHeader");
 		Patcher.after(MessageHeader, key, (_, [{ message }], ret) => {
 			const userId = message.author.id;
 			ret.props.children.push(
 				/* @__PURE__ */
-				React.createElement(ErrorBoundary, { id: "SpotifyActivityIndicator" }, /* @__PURE__ */ React.createElement(SpotifyActivityIndicator, { userId }))
+				React_default.createElement(ErrorBoundary, { id: "SpotifyActivityIndicator" }, /* @__PURE__ */ React_default.createElement(SpotifyActivityIndicator, { userId }))
 			);
 		});
 	});
@@ -3103,11 +3118,13 @@ function FieldSet({ label, description, children, contentGap = 16 }) {
 var FormSwitch_default = getModule(Filters.byStrings("note", "tooltipNote"), { searchExports: true });
 
 // common/Components/Switch/index.jsx
-var Switch_default = getModule(Filters.byStrings('"data-toggleable-component":"switch"', 'layout:"horizontal"'), { searchExports: true }) || function SwitchComponentFallback(props) {
-	return /* @__PURE__ */ React.createElement("div", { style: { color: "#fff" } }, props.children, /* @__PURE__ */ React.createElement(
+var Switch_default = getMangled(Filters.bySource("auxiliaryContentPosition", "hasIcon"), {
+	Switch: () => true
+})?.Switch || function SwitchComponentFallback(props) {
+	return /* @__PURE__ */ React.createElement("div", { style: { color: "#fff" } }, props.label, /* @__PURE__ */ React.createElement(
 		"input", {
 			type: "checkbox",
-			checked: props.value,
+			checked: props.checked,
 			onChange: (e) => props.onChange(e.target.checked)
 		}
 	));
@@ -3149,6 +3166,7 @@ function SettingSwtich({ settingKey, note, border = false, onChange = nop, descr
 	return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(
 		Switch_default, {
 			...rest,
+			hasIcon: true,
 			checked: val,
 			label: description || settingKey,
 			description: note,

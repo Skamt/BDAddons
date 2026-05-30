@@ -1,7 +1,8 @@
 /**
+ * @runAt idle
  * @name StickerEmojiPreview
  * @description Adds a zoomed preview to those tiny Stickers and Emojis
- * @version 1.3.3
+ * @version 1.3.4
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/StickerEmojiPreview
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/StickerEmojiPreview/StickerEmojiPreview.plugin.js
@@ -11,7 +12,7 @@
 var Config_default = {
 	"info": {
 		"name": "StickerEmojiPreview",
-		"version": "1.3.3",
+		"version": "1.3.4",
 		"description": "Adds a zoomed preview to those tiny Stickers and Emojis",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/StickerEmojiPreview/StickerEmojiPreview.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/StickerEmojiPreview",
@@ -88,11 +89,14 @@ var Events = {
 	STOP: "STOP"
 };
 var Plugin_default = new class extends EventEmitter_default {
+	stopped = true;
 	start() {
 		this.emit(Events.START);
+		this.stopped = false;
 	}
 	stop() {
 		this.emit(Events.STOP);
+		this.stopped = true;
 	}
 }();
 
@@ -137,6 +141,9 @@ StylesLoader_default.push(`.stickersPreview {
 var useRef = /* @__PURE__ */ (() => React.useRef)();
 var React_default = /* @__PURE__ */ (() => React)();
 
+// common/Utils/index.js
+var nop = () => {};
+
 // common/Webpack.js
 var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
 var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
@@ -170,9 +177,6 @@ function create(initialState) {
 	});
 	return Store;
 }
-
-// common/Utils/index.js
-var nop = () => {};
 
 // common/Utils/Settings.js
 var SettingsStore = create(subscribeWithSelector(() => Object.assign(Config_default.settings, Data.load("settings") || {})));
@@ -332,22 +336,66 @@ Plugin_default.on(Events.START, () => {
 var FormSwitch_default = getModule(Filters.byStrings("note", "tooltipNote"), { searchExports: true });
 
 // common/Components/Switch/index.jsx
-var Switch_default = getModule(Filters.byStrings('"data-toggleable-component":"switch"', 'layout:"horizontal"'), { searchExports: true }) || function SwitchComponentFallback(props) {
-	return /* @__PURE__ */ React.createElement("div", { style: { color: "#fff" } }, props.children, /* @__PURE__ */ React.createElement(
+var Switch_default = getMangled(Filters.bySource("auxiliaryContentPosition", "hasIcon"), {
+	Switch: () => true
+})?.Switch || function SwitchComponentFallback(props) {
+	return /* @__PURE__ */ React.createElement("div", { style: { color: "#fff" } }, props.label, /* @__PURE__ */ React.createElement(
 		"input", {
 			type: "checkbox",
-			checked: props.value,
+			checked: props.checked,
 			onChange: (e) => props.onChange(e.target.checked)
 		}
 	));
 };
 
+// common/Components/Divider/styles.css
+StylesLoader_default.push(`.divider-horizontal {
+	border-top: thin solid var(--border-subtle);
+	align-self: stretch;
+	margin:var(--divider-gap) var(--divider-gutter) var(--divider-gap) var(--divider-gutter) ;
+}
+
+.divider-vertical {
+	border-left: thin solid var(--border-subtle);
+	align-self: stretch;
+	margin:var(--divider-gutter) var(--divider-gap) var(--divider-gutter) var(--divider-gap);
+}
+`);
+
+// common/Utils/css.js
+var classNameFactory = (prefix = "", connector = "-") => (...args) => {
+	const classNames = /* @__PURE__ */ new Set();
+	for (const arg of args) {
+		if (arg && typeof arg === "string") classNames.add(arg);
+		else if (Array.isArray(arg)) arg.forEach((name) => classNames.add(name));
+		else if (arg && typeof arg === "object") Object.entries(arg).forEach(([name, value]) => value && classNames.add(name));
+	}
+	return Array.from(classNames, (name) => `${prefix}${connector}${name}`).join(" ");
+};
+
+// common/Components/Divider/index.jsx
+var c = classNameFactory("divider");
+
+function Divider({ gap = 15, gutter = 0, direction = Divider.direction.HORIZONTAL }) {
+	return /* @__PURE__ */ React_default.createElement(
+		"div", {
+			style: { "--divider-gap": `${gap}px`, "--divider-gutter": `${gutter}%` },
+			className: c("base", direction)
+		}
+	);
+}
+Divider.direction = {
+	HORIZONTAL: "horizontal",
+	VERTICAL: "vertical"
+};
+
 // common/Components/SettingSwtich/index.jsx
-function SettingSwtich({ settingKey, note, onChange = nop, description, ...rest }) {
+function SettingSwtich({ settingKey, note, border = false, onChange = nop, description, ...rest }) {
 	const [val, set] = Settings_default.useSetting(settingKey);
-	return /* @__PURE__ */ React.createElement(
+	return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(
 		Switch_default, {
 			...rest,
+			hasIcon: true,
 			checked: val,
 			label: description || settingKey,
 			description: note,
@@ -356,7 +404,7 @@ function SettingSwtich({ settingKey, note, onChange = nop, description, ...rest 
 				onChange(e);
 			}
 		}
-	);
+	), border && /* @__PURE__ */ React.createElement(Divider, { gap: 15 }));
 }
 
 // src/StickerEmojiPreview/components/SettingComponent.jsx

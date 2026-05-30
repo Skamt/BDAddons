@@ -2,7 +2,7 @@
  * @runAt idle
  * @name LazyLoadChannels
  * @description Lets you choose whether to load a channel
- * @version 1.3.2
+ * @version 1.3.3
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js
@@ -12,7 +12,7 @@
 var Config_default = {
 	"info": {
 		"name": "LazyLoadChannels",
-		"version": "1.3.2",
+		"version": "1.3.3",
 		"description": "Lets you choose whether to load a channel",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels",
@@ -90,11 +90,14 @@ var Events = {
 	STOP: "STOP"
 };
 var Plugin_default = new class extends EventEmitter_default {
+	stopped = true;
 	start() {
 		this.emit(Events.START);
+		this.stopped = false;
 	}
 	stop() {
 		this.emit(Events.STOP);
+		this.stopped = true;
 	}
 }();
 
@@ -309,10 +312,14 @@ var ChannelsStateManager_default = ChannelsStateManager;
 // src/LazyLoadChannels/patches/patchChannel.js
 Plugin_default.on(Events.START, () => {
 	const controller = new AbortController();
-	waitForModule(reactRefMemoFilter("render", "hasActiveThreads"), { signal: controller.signal, searchExports: true }).then((ChannelComponent) => {
+	waitForModule(reactRefMemoFilter("render", "hasActiveThreads"), {
+		signal: controller.signal,
+		searchExports: true
+	}).then((ChannelComponent) => {
 		Patcher.after(ChannelComponent, "render", (_, [{ channel }], returnValue) => {
 			if (!Settings_default.state.autoloadedChannelIndicator) return;
-			if (ChannelsStateManager_default.getChannelstate(channel.guild_id, channel.id)) returnValue.props.children.props.children[1].props.className += " autoload";
+			if (ChannelsStateManager_default.getChannelstate(channel.guild_id, channel.id))
+				returnValue.props.children.props.children[1].props.className += " autoload";
 		});
 	});
 	Plugin_default.once(Events.STOP, () => controller.abort());
@@ -374,11 +381,13 @@ var ErrorFallbackComponent_default = (props) => {
 var FormSwitch_default = getModule(Filters.byStrings("note", "tooltipNote"), { searchExports: true });
 
 // common/Components/Switch/index.jsx
-var Switch_default = getModule(Filters.byStrings('"data-toggleable-component":"switch"', 'layout:"horizontal"'), { searchExports: true }) || function SwitchComponentFallback(props) {
-	return /* @__PURE__ */ React.createElement("div", { style: { color: "#fff" } }, props.children, /* @__PURE__ */ React.createElement(
+var Switch_default = getMangled(Filters.bySource("auxiliaryContentPosition", "hasIcon"), {
+	Switch: () => true
+})?.Switch || function SwitchComponentFallback(props) {
+	return /* @__PURE__ */ React.createElement("div", { style: { color: "#fff" } }, props.label, /* @__PURE__ */ React.createElement(
 		"input", {
 			type: "checkbox",
-			checked: props.value,
+			checked: props.checked,
 			onChange: (e) => props.onChange(e.target.checked)
 		}
 	));
@@ -755,6 +764,7 @@ function SettingSwtich({ settingKey, note, border = false, onChange = nop, descr
 	return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(
 		Switch_default, {
 			...rest,
+			hasIcon: true,
 			checked: val,
 			label: description || settingKey,
 			description: note,

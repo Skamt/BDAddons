@@ -2,7 +2,7 @@
  * @runAt idle
  * @name Tabbys
  * @description Adds Browser like tabs/bookmarks for channels
- * @version 1.0.12
+ * @version 1.0.13
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/Tabbys
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/Tabbys/Tabbys.plugin.js
@@ -12,7 +12,7 @@
 var Config_default = {
 	"info": {
 		"name": "Tabbys",
-		"version": "1.0.12",
+		"version": "1.0.13",
 		"description": "Adds Browser like tabs/bookmarks for channels",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/Tabbys/Tabbys.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/Tabbys",
@@ -127,11 +127,14 @@ var Events = {
 	STOP: "STOP"
 };
 var Plugin_default = new class extends EventEmitter_default {
+	stopped = true;
 	start() {
 		this.emit(Events.START);
+		this.stopped = false;
 	}
 	stop() {
 		this.emit(Events.STOP);
+		this.stopped = true;
 	}
 }();
 
@@ -3031,6 +3034,9 @@ var LayerStore_default = getStore("LayerStore");
 var { BasePopout } = getMangled(Filters.bySource("renderLayer", "POPOUT_PREVENT_CLOSE"), {
 	BasePopout: (a) => a.contextType
 });
+var { ExpressionPickerStore } = getMangled("expression-picker-last-active-view", {
+	ExpressionPickerStore: (a) => a.getState
+});
 
 function usePopoutListener() {
 	const [hasPopout, setHasPopout] = useState(false);
@@ -3054,12 +3060,13 @@ function usePopoutListener() {
 }
 
 function DragHandle() {
+	const isExpressionPickerOpen = ExpressionPickerStore((a) => a.activeView);
 	const hasPopout = usePopoutListener();
 	const hasAny = ModalActions.useModalsStore((a) => a.default?.length > 0 || a.popout?.length > 0);
 	const hasLayers = useStateFromStores_default([LayerStore_default], () => LayerStore_default.hasLayers());
 	const isOpen = useStateFromStores_default([ContextMenuStore_default], () => ContextMenuStore_default.isOpen());
-	const style = { "width": "100%", "flex": "1 0 0" };
-	if (!hasAny && !isOpen && !hasLayers && !hasPopout) style["-webkit-app-region"] = "drag";
+	const style = { width: "100%", flex: "1 0 0" };
+	if (!isExpressionPickerOpen && !hasAny && !isOpen && !hasLayers && !hasPopout) style["-webkit-app-region"] = "drag";
 	return /* @__PURE__ */ React_default.createElement("div", { style });
 }
 
@@ -4034,11 +4041,13 @@ function Collapsible({ title, children }) {
 var FormSwitch_default = getModule(Filters.byStrings("note", "tooltipNote"), { searchExports: true });
 
 // common/Components/Switch/index.jsx
-var Switch_default = getModule(Filters.byStrings('"data-toggleable-component":"switch"', 'layout:"horizontal"'), { searchExports: true }) || function SwitchComponentFallback(props) {
-	return /* @__PURE__ */ React.createElement("div", { style: { color: "#fff" } }, props.children, /* @__PURE__ */ React.createElement(
+var Switch_default = getMangled(Filters.bySource("auxiliaryContentPosition", "hasIcon"), {
+	Switch: () => true
+})?.Switch || function SwitchComponentFallback(props) {
+	return /* @__PURE__ */ React.createElement("div", { style: { color: "#fff" } }, props.label, /* @__PURE__ */ React.createElement(
 		"input", {
 			type: "checkbox",
-			checked: props.value,
+			checked: props.checked,
 			onChange: (e2) => props.onChange(e2.target.checked)
 		}
 	));
@@ -4080,6 +4089,7 @@ function SettingSwtich({ settingKey, note, border = false, onChange = nop, descr
 	return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(
 		Switch_default, {
 			...rest,
+			hasIcon: true,
 			checked: val,
 			label: description || settingKey,
 			description: note,
