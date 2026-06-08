@@ -22,7 +22,7 @@ Plugin.on(Events.START, () => {
 		Patcher.after(ChannelRenderer, key, (_, [{ match: { params: { channelId, guildId } } }],ret) => {
 			const channel = ChannelStore.getChannel(channelId);
 			if (!channel) return ret;
-
+						
 			return (
 				<ErrorBoundary
 					id="LazyLoaderComponent"

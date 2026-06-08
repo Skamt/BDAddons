@@ -230,8 +230,11 @@
 			"filter": "Filters.byKeys(\"GUILD_TEXT\", \"DM\")",
 			"options": "{ searchExports: true }",
 			"fallback": {
+				"GUILD_TEXT": 0,
+				"GUILD_VOICE": 2,
 				"GUILD_CATEGORY": 4
 			}
 		}
 	}
 }
+

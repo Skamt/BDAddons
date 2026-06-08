@@ -1,4 +1,8 @@
 import ChannelActions from "@Modules/ChannelActions";
+import Settings from "@Utils/Settings";
+import ControlKeys from "@Utils/ControlKeys";
+import ChannelsStateManager from "@/ChannelsStateManager";
+import ChannelTypeEnum from "@Enums/ChannelTypeEnum";
 
 export function loadChannel(channel, messageId) {
 	ChannelActions.fetchMessages({
@@ -6,4 +10,9 @@ export function loadChannel(channel, messageId) {
 		guildId: channel.guild_id,
 		messageId
 	});
+}
+
+
+export function shouldLoad({guild_id, id, type}){
+	return ControlKeys.ctrlKey || (type === ChannelTypeEnum.GUILD_VOICE && !Settings.state.lazyLoadVoice) || (!guild_id && !Settings.state.lazyLoadDMs) || ChannelsStateManager.getChannelstate(guild_id, id)	
 }

@@ -15,6 +15,11 @@ export default () => {
 					settingKey: "lazyLoadDMs",
 					description: "Lazy load DMs.",
 					note: "Whether or not to consider DMs for lazy loading"
+				},
+				{
+					settingKey: "lazyLoadVoice",
+					description: "Lazy load Voice channels.",
+					note: "Whether or not to consider voice channels for lazy loading"
 				}
 			].map(SettingSwtich)}
 		</FieldSet>

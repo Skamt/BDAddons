@@ -1,8 +1,9 @@
 import ControlKeys from "@Utils/ControlKeys";
 import ChannelsStateManager from "@/ChannelsStateManager";
-import { loadChannel } from "@/utils";
+import { shouldLoad, loadChannel } from "@/utils";
 import Dispatcher from "@Modules/Dispatcher";
 import Settings from "@Utils/Settings";
+import ChannelStore from "@Stores/ChannelStore";
 
 export default new (class {
 	init() {
@@ -10,7 +11,7 @@ export default new (class {
 	}
 
 	dispose() {
-		this.handlers?.forEach?.(h => h());
+		this.handlers?.forEach?.((h) => h());
 		this.handlers = null;
 	}
 
@@ -44,7 +45,9 @@ export default new (class {
 		 * !guildId means it's DM
 		 * OR channel is autoloaded
 		 **/
-		if (ControlKeys.ctrlKey || messageId || (!guildId && !Settings.state.lazyLoadDMs) || ChannelsStateManager.getChannelstate(guildId, channelId)) loadChannel({ id: channelId, guild_id: guildId }, messageId);
+		const channel = ChannelStore.getChannel(channelId);
+	
+		if (shouldLoad(channel)) loadChannel({ id: channelId, guild_id: guildId }, messageId);
 	}
 
 	guildDeleteHandler({ guild }) {
@@ -56,7 +59,7 @@ export default new (class {
 			["THREAD_CREATE_LOCAL", this.threadCreateHandler],
 			["GUILD_CREATE", this.guildCreateHandler],
 			["CHANNEL_SELECT", this.channelSelectHandler],
-			["GUILD_DELETE", this.guildDeleteHandler]
+			["GUILD_DELETE", this.guildDeleteHandler],
 		].map(([event, handler]) => {
 			const boundHandler = handler.bind(this);
 			Dispatcher.subscribe(event, boundHandler);
