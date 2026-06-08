@@ -2,7 +2,7 @@
  * @runAt idle
  * @name LazyLoadChannels
  * @description Lets you choose whether to load a channel
- * @version 1.3.3
+ * @version 1.3.4
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js
@@ -12,7 +12,7 @@
 var Config_default = {
 	"info": {
 		"name": "LazyLoadChannels",
-		"version": "1.3.3",
+		"version": "1.3.4",
 		"description": "Lets you choose whether to load a channel",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/LazyLoadChannels/LazyLoadChannels.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/LazyLoadChannels",
@@ -22,6 +22,7 @@ var Config_default = {
 	},
 	"settings": {
 		"autoloadedChannelIndicator": false,
+		"lazyLoadVoice": false,
 		"lazyLoadDMs": false
 	}
 };
@@ -470,15 +471,6 @@ function FieldSet({ label, description, children, contentGap = 16 }) {
 // MODULES-AUTO-LOADER:@Modules/ChannelActions
 var ChannelActions_default = getModule(Filters.byKeys("actions", "fetchMessages"), { searchExports: true });
 
-// src/LazyLoadChannels/utils.js
-function loadChannel(channel, messageId) {
-	ChannelActions_default.fetchMessages({
-		channelId: channel.id,
-		guildId: channel.guild_id,
-		messageId
-	});
-}
-
 // common/Utils/ControlKeys.js
 var ControlKeys = {
 	init() {
@@ -509,10 +501,30 @@ Plugin_default.on(Events.STOP, () => {
 });
 var ControlKeys_default = ControlKeys;
 
+// MODULES-AUTO-LOADER:@Enums/ChannelTypeEnum
+var ChannelTypeEnum_default = getModule(Filters.byKeys("GUILD_TEXT", "DM"), { searchExports: true }) || {
+	"GUILD_TEXT": 0,
+	"GUILD_VOICE": 2,
+	"GUILD_CATEGORY": 4
+};
+
+// src/LazyLoadChannels/utils.js
+function loadChannel(channel, messageId) {
+	ChannelActions_default.fetchMessages({
+		channelId: channel.id,
+		guildId: channel.guild_id,
+		messageId
+	});
+}
+
+function shouldLoad({ guild_id, id, type }) {
+	return ControlKeys_default.ctrlKey || type === ChannelTypeEnum_default.GUILD_VOICE && !Settings_default.state.lazyLoadVoice || !guild_id && !Settings_default.state.lazyLoadDMs || ChannelsStateManager_default.getChannelstate(guild_id, id);
+}
+
 // src/LazyLoadChannels/components/LazyLoaderComponent.jsx
 var LazyLoaderComponent_default = ({ channel, ret }) => {
 	const [checked, setChecked] = React_default.useState(false);
-	const [load, setLoad] = React_default.useState(ControlKeys_default.ctrlKey || !channel.guild_id && !Settings_default.state.lazyLoadDMs || ChannelsStateManager_default.getChannelstate(channel.guild_id, channel.id));
+	const [load, setLoad] = React_default.useState(shouldLoad(channel));
 	const isDm = channel.guild_id === null;
 	const loadChannelHandler = () => {
 		if (checked) ChannelsStateManager_default.add("channels", channel.id);
@@ -599,11 +611,6 @@ Plugin_default.on(Events.START, () => {
 	});
 	Plugin_default.once(Events.STOP, () => controller.abort());
 });
-
-// MODULES-AUTO-LOADER:@Enums/ChannelTypeEnum
-var ChannelTypeEnum_default = getModule(Filters.byKeys("GUILD_TEXT", "DM"), { searchExports: true }) || {
-	"GUILD_CATEGORY": 4
-};
 
 // src/LazyLoadChannels/patches/patchContextMenu.js
 Plugin_default.on(Events.START, () => {
@@ -709,7 +716,8 @@ var ChannelHandlers_default = new class {
 		if (guildCreateDate === nowDate) ChannelsStateManager_default.add("guilds", guild.id);
 	}
 	channelSelectHandler({ channelId, guildId, messageId }) {
-		if (ControlKeys_default.ctrlKey || messageId || !guildId && !Settings_default.state.lazyLoadDMs || ChannelsStateManager_default.getChannelstate(guildId, channelId)) loadChannel({ id: channelId, guild_id: guildId }, messageId);
+		const channel = ChannelStore_default.getChannel(channelId);
+		if (shouldLoad(channel)) loadChannel({ id: channelId, guild_id: guildId }, messageId);
 	}
 	guildDeleteHandler({ guild }) {
 		ChannelsStateManager_default.remove("guilds", guild.id);
@@ -787,6 +795,11 @@ var SettingComponent_default = () => {
 			settingKey: "lazyLoadDMs",
 			description: "Lazy load DMs.",
 			note: "Whether or not to consider DMs for lazy loading"
+		},
+		{
+			settingKey: "lazyLoadVoice",
+			description: "Lazy load Voice channels.",
+			note: "Whether or not to consider voice channels for lazy loading"
 		}
 	].map(SettingSwtich));
 };
