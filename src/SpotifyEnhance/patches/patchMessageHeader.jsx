@@ -4,7 +4,7 @@ import { Filters, waitForModule } from "@Webpack";
 import React from "@React";
 import Logger from "@Utils/Logger";
 import ErrorBoundary from "@Components/ErrorBoundary";
-import MessageHeader from "@Patch/MessageHeader";
+// import MessageHeader from "@Patch/MessageHeader";
 import useStateFromStores from "@Modules/useStateFromStores";
 import PresenceStore from "@Stores/PresenceStore";
 import { SpotifyIcon } from "@Components/Icon";

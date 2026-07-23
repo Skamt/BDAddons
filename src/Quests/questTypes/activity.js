@@ -4,6 +4,7 @@ import { DiscordApi } from "@Discord/Modules";
 import Toast from "@Utils/Toast";
 import { supportedTasks } from "@/consts";
 import { sleep } from "@Utils";
+
 export default async function (quest) {
 	const taskConfig = quest.config.taskConfig ?? quest.config.taskConfigV2;
 	const taskName = supportedTasks.find(x => taskConfig.tasks[x] != null);

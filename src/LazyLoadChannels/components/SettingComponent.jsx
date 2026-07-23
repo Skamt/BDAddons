@@ -9,18 +9,11 @@ export default () => {
 				{
 					settingKey: "autoloadedChannelIndicator",
 					description: "Auto load indicator.",
-					note: "Whether or not to show an indicator for channels set to auto load"
+					note: "Whether or not to show an indicator for channels set to auto load",
 				},
-				{
-					settingKey: "lazyLoadDMs",
-					description: "Lazy load DMs.",
-					note: "Whether or not to consider DMs for lazy loading"
-				},
-				{
-					settingKey: "lazyLoadVoice",
-					description: "Lazy load Voice channels.",
-					note: "Whether or not to consider voice channels for lazy loading"
-				}
+				{ settingKey: "lazyLoadDMs", description: "Lazy load DMs." },
+				{ settingKey: "lazyLoadForum", description: "Lazy load Forums." },
+				{ settingKey: "lazyLoadVoice", description: "Lazy load Voice channels." },
 			].map(SettingSwtich)}
 		</FieldSet>
 	);

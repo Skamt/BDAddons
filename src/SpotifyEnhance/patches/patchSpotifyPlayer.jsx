@@ -10,10 +10,6 @@ import { getObjectKey } from "@Utils";
 import { Filters, waitForModule } from "@Webpack";
 import Plugin, { Events } from "@Utils/Plugin";
 
-async function cleanFluxContainer() {
-	const fluxContainer = await getFluxContainer();
-	if (fluxContainer) fluxContainer?.stateNode?.forceUpdate();
-}
 
 Plugin.on(Events.START, () => {
 	waitForModule(Filters.bySource("hasParty"), { raw: true }).then(({ declarations: UserPanelFluxContainer }) => {

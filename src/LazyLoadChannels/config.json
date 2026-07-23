@@ -8,6 +8,7 @@
 	},
 	"settings": {
 		"autoloadedChannelIndicator": false,
+		"lazyLoadForum": false,
 		"lazyLoadVoice": false,
 		"lazyLoadDMs": false
 	}

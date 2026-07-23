@@ -16,22 +16,11 @@ export default new (class {
 	}
 
 	threadCreateHandler({ channelId }) {
-		/**
-		 * Listening for threads created by current user
-		 **/
 		ChannelsStateManager.add("channels", channelId);
 	}
 
 	guildCreateHandler({ guild }) {
-		/**
-		 * No need to lazy load channels of newly created guild
-		 *
-		 * Snowflake conversion:
-		 *	+guild.id: convert guildid to Number
-		 *	4194304: the equivalent of right shifting by 22
-		 *	1420070400000: DISCORD_EPOCH
-		 * https://discord.com/developers/docs/reference#convert-snowflake-to-datetime
-		 */
+
 		if (!guild || !guild.id || !guild.channels || !Array.isArray(guild.channels)) return;
 		const guildCreateDate = new Date(+guild.id / 4194304 + 1420070400000).toLocaleDateString();
 		const nowDate = new Date(Date.now()).toLocaleDateString();
@@ -40,13 +29,7 @@ export default new (class {
 	}
 
 	channelSelectHandler({ channelId, guildId, messageId }) {
-		/** Ignore if
-		 * messageId !== undefined means it's a jump
-		 * !guildId means it's DM
-		 * OR channel is autoloaded
-		 **/
 		const channel = ChannelStore.getChannel(channelId);
-	
 		if (shouldLoad(channel)) loadChannel({ id: channelId, guild_id: guildId }, messageId);
 	}
 

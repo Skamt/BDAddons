@@ -27,18 +27,19 @@ function CompleteQuest({ quest }) {
 		<Button
 			disabled={completing}
 			onClick={preventDefault(questHandler)}
-			color={Button.Colors.GREEN}>
+			color={Button.Colors.GREEN}
+		>
 			Complete Quest
 		</Button>
 	);
 }
 
 Plugin.on(Events.START, async () => {
-	const QuestCard = await waitForModule(Filters.bySource("isClaimingReward", "sourceQuestContent", "questEnrollmentBlockedUntil", "enabledQuestStates"), { raw: true });
+	const QuestCard = await waitForModule(Filters.bySource("isQuestEnrollmentBlocked", "questNameHeadingId", "questOrQuests"),{ raw: true },);
 
 	if (!QuestCard) return Logger.patchError("QuestCard");
 
-	const declarationFilter = Filters.byStrings("isClaimingReward", "sourceQuestContent", "questEnrollmentBlockedUntil", "enabledQuestStates");
+	const declarationFilter = Filters.byStrings("sourceQuestContent", "questEnrollmentBlockedUntil");
 
 	const key = getObjectKey(QuestCard.declarations, declarationFilter);
 
@@ -46,6 +47,12 @@ Plugin.on(Events.START, async () => {
 
 	Patcher.after(QuestCard.declarations, key, (_, [props], ret) => {
 		if (!isQuestAccepted(props.quest) || isQuestCompleted(props.quest)) return;
-		ret.props.children.push(<CompleteQuest quest={props.quest} />);
+		pushChild(ret, <CompleteQuest quest={props.quest} />);
 	});
 });
+
+function pushChild(target, child) {
+	const children = Array.isArray(target.props.children) ? target.props.children : [target.props.children];
+	children.push(child);
+	target.props.children = children;
+}

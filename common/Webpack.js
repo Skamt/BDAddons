@@ -14,10 +14,12 @@ export const getStore = /*@__PURE__*/ (() => Webpack.getStore)();
 export async function lazy(filter, options) {
 	const { exportsFilter, declarationsFilter, ...rest } = options;
 	const [err, res] = await promiseHandler(waitForModule(filter, { ...rest, raw: true }));
-	if(err) return;
+	if(err) throw err;
 	const module = exportsFilter ? res.exports : res.declarations;
+	if(!module) throw "Can't find module";
 	const key = getObjectKey(module, exportsFilter || declarationsFilter);
-	if (key) return { module, key, target: module[key] };
+	if(!key) throw "Can't find key";
+	return { module, key, target: module[key] };
 }
 
 export function waitForComponent(filter, options) {
