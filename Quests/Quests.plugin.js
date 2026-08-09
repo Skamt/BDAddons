@@ -362,7 +362,7 @@ function CompleteQuest({ quest }) {
 	);
 }
 Plugin_default.on(Events.START, async () => {
-	const QuestCard = await waitForModule(Filters.bySource("isClaimingReward", "sourceQuestContent", "questEnrollmentBlockedUntil", "enabledQuestStates"), { raw: true });
+	const QuestCard = await waitForModule(Filters.bySource("isInFeaturedSection", "sourceQuestContent", "questEnrollmentBlockedUntil", "enabledQuestStates"), { raw: true });
 	if (!QuestCard) return Logger_default.patchError("QuestCard");
 	const declarationFilter = Filters.byStrings("isClaimingReward", "sourceQuestContent", "questEnrollmentBlockedUntil", "enabledQuestStates");
 	const key = getObjectKey(QuestCard.declarations, declarationFilter);

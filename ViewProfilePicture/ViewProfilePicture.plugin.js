@@ -2,7 +2,7 @@
  * @runAt idle
  * @name ViewProfilePicture
  * @description Adds a button to the user popout and profile that allows you to view the Avatar and banner.
- * @version 1.3.14
+ * @version 1.3.15
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js
@@ -12,7 +12,7 @@
 var Config_default = {
 	"info": {
 		"name": "ViewProfilePicture",
-		"version": "1.3.14",
+		"version": "1.3.15",
 		"description": "Adds a button to the user popout and profile that allows you to view the Avatar and banner.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture",
@@ -267,6 +267,22 @@ var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
 var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
 var waitForModule = /* @__PURE__ */ (() => Webpack.waitForModule)();
 var getMangled = /* @__PURE__ */ (() => Webpack.getMangled)();
+var getStore = /* @__PURE__ */ (() => Webpack.getStore)();
+
+// MODULES-AUTO-LOADER:@Stores/UserStore
+var UserStore_default = getStore("UserStore");
+
+// MODULES-AUTO-LOADER:@Stores/ChannelStore
+var ChannelStore_default = getStore("ChannelStore");
+
+// MODULES-AUTO-LOADER:@Stores/GuildMemberStore
+var GuildMemberStore_default = getStore("GuildMemberStore");
+
+// common/Utils/User.js
+function isSelf(user2) {
+	const currentUser = UserStore_default.getCurrentUser();
+	return user2?.id === currentUser?.id;
+}
 
 // common/DiscordModules/zustand.js
 var { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
@@ -367,11 +383,11 @@ async function getFittedDims(url) {
 	return err ? {} : fit(dims);
 }
 var palletHook = getModule(Filters.byStrings("toHexString", "toHsl", "palette"), { searchExports: true }) || {};
-var VPPButton_default = ({ className, user, displayProfile }) => {
+var VPPButton_default = ({ className, user: user2, displayProfile }) => {
 	const showOnHover = Settings_default(Settings_default.selectors.showOnHover);
-	const colorFromPfp = palletHook(user.getAvatarURL(displayProfile?.guildId, 80))[0];
+	const colorFromPfp = palletHook(user2.getAvatarURL(displayProfile?.guildId, 80))[0];
 	const handler = async () => {
-		const avatarURL = user.getAvatarURL(displayProfile.guildId, 4096, true);
+		const avatarURL = user2.getAvatarURL(displayProfile.guildId, 4096, true);
 		const bannerURL = displayProfile.getBannerURL({ canAnimate: true, size: 4096 });
 		const color = displayProfile.accentColor ?? (displayProfile.primaryColor || colorFromPfp);
 		const items = [{
@@ -402,12 +418,13 @@ var wrapper;
 waitForModule((a, _, id) => id === 587168).then((match) => {
 	wrapper = match.A;
 });
-var UserProfileBanner = getMangled(Filters.bySource("avatarOffsetX", "foreignObject"), {
+var UserProfileBanner = getMangled(Filters.bySource("themeType", "showGifTag"), {
 	Banner: Filters.byStrings("canUsePremiumProfileCustomization")
 });
 Plugin_default.on(Events.START, () => {
 	Patcher.after(UserProfileBanner, "Banner", (_, [props], ret) => {
 		if (props.themeType !== "MODAL_V2") return ret;
+		const isMe = isSelf(user);
 		return [
 			ret,
 			/* @__PURE__ */
@@ -420,7 +437,7 @@ Plugin_default.on(Events.START, () => {
 				/* @__PURE__ */
 				React.createElement(
 					VPPButton_default, {
-						className: join("VPP-Button", "VPP-float"),
+						className: join("VPP-Button", "VPP-float", { isMe }),
 						user: props.user,
 						displayProfile: props.displayProfile
 					}
