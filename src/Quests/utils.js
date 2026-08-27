@@ -8,6 +8,15 @@ import FluxDispatcher from "@Modules/Dispatcher";
 import { DiscordApi as api } from "@Discord/Modules";
 import {supportedTasks} from "@/consts";
 
+export function getQuestAppId(quest){
+	const id = quest?.config?.application?.id;
+	if(id) return id;
+
+	const taskConfig = quest.config.taskConfig ?? quest.config.taskConfigV2;
+	const apps = Object.values(taskConfig.tasks).find(a => a.applications)?.applications;
+	return apps.find(a => a.id).id
+}
+
 export function isQuestExpired(quest) {
 	return new Date(quest.config.expiresAt) < Date.now();
 }

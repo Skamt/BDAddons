@@ -180,60 +180,37 @@
 	"Enums": {
 		"GuildFeaturesEnum": {
 			"filter": "Filters.byKeys(\"CLYDE_ENABLED\")",
-			"options": "{ searchExports: true }",
-			"fallback": {
-				"CLYDE_ENABLED": "CLYDE_ENABLED"
-			}
+			"options": "{ searchExports: true }"
+			
 		},
 		"EmojiSendAvailabilityEnum": {
 			"filter": "Filters.byKeys(\"GUILD_SUBSCRIPTION_UNAVAILABLE\")",
-			"options": "{ searchExports: true }",
-			"fallback": {
-				"PREMIUM_LOCKED": 2
-			}
+			"options": "{ searchExports: true }"
+			
 		},
 		"EmojiIntentionEnum": {
 			"filter": "Filters.byKeys(\"GUILD_ROLE_BENEFIT_EMOJI\")",
-			"options": "{ searchExports: true }",
-			"fallback": {
-				"CHAT": 3
-			}
+			"options": "{ searchExports: true }"
+			
 		},
 		"DiscordPermissionsEnum": {
 			"filter": "Filters.byKeys(\"ADD_REACTIONS\")",
-			"options": "{ searchExports: true }",
-			"fallback": {
-				"EMBED_LINKS": "16384n",
-				"USE_EXTERNAL_EMOJIS": "262144n"
-			}
+			"options": "{ searchExports: true }"
+			
 		},
 		"StickerTypeEnum": {
 			"filter": "Filters.byKeys(\"GUILD\", \"STANDARD\")",
-			"options": "{ searchExports: true }",
-			"fallback": {
-				"STANDARD": 1,
-				"GUILD": 2
-			}
+			"options": "{ searchExports: true }"
+			
 		},
 		"ProfileTypeEnum": {
 			"filter": "Filters.byKeys(\"POPOUT\", \"SETTINGS\")",
-			"options": "{ searchExports: true }",
-			"fallback": {
-				"POPOUT": 0,
-				"MODAL": 1,
-				"SETTINGS": 2,
-				"PANEL": 3,
-				"CARD": 4
-			}
+			"options": "{ searchExports: true }"
+			
 		},
 		"ChannelTypeEnum": {
 			"filter": "Filters.byKeys(\"GUILD_TEXT\", \"DM\")",
-			"options": "{ searchExports: true }",
-			"fallback": {
-				"GUILD_TEXT": 0,
-				"GUILD_VOICE": 2,
-				"GUILD_CATEGORY": 4
-			}
+			"options": "{ searchExports: true }"
 		}
 	}
 }

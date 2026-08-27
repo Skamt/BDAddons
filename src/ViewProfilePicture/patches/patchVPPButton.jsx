@@ -6,6 +6,7 @@ import ErrorBoundary from "@Components/ErrorBoundary";
 import ErrorIcon from "@Components/icons/ErrorIcon";
 import Logger from "@Utils/Logger";
 import Plugin, { Events } from "@Utils/Plugin";
+import  { isSelf } from "@Utils/User";
 import { Filters, waitForModule, getMangled, getModule } from "@Webpack";
 import VPPButton from "../components/VPPButton";
 
@@ -16,14 +17,21 @@ waitForModule((a, _, id) => id === 587168).then(match => {
 	wrapper = match.A;
 });
 
-const UserProfileBanner = getMangled(Filters.bySource("avatarOffsetX", "foreignObject"), {
+const UserProfileBanner = getMangled(Filters.bySource("themeType", "showGifTag"), {
 	Banner: Filters.byStrings("canUsePremiumProfileCustomization")
 });
 
+
+// const te = s(985240).exports;
 Plugin.on(Events.START, () => {
 	// User Profile Modal_V2
+
+	// Patcher.after(te,"A", (_,[props], ret)=>{
+	// 	return [<input/>,ret]
+	// });
 	Patcher.after(UserProfileBanner, "Banner", (_, [props], ret) => {
 		if (props.themeType !== "MODAL_V2") return ret;
+		const isMe = isSelf(props.user);
 		return [
 			ret,
 			<ErrorBoundary
@@ -31,7 +39,7 @@ Plugin.on(Events.START, () => {
 				plugin={config.info.name}
 				fallback={<ErrorIcon className="VPP-Button" />}>
 				<VPPButton
-					className={join("VPP-Button", "VPP-float")}
+					className={join("VPP-Button", "VPP-float", {isMe})}
 					user={props.user}
 					displayProfile={props.displayProfile}
 				/>

@@ -24,6 +24,11 @@
 	z-index: 3;
 }
 
+.VPP-float.isMe{
+	left:12px;
+	right:unset;
+}
+
 .VPP-Button:hover {
 	background: rgb(1 0 1 / 64%);
 }

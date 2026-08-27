@@ -4,6 +4,8 @@ import { DiscordApi } from "@Discord/Modules";
 import Toast from "@Utils/Toast";
 import { supportedTasks } from "@/consts";
 import Dispatcher from "@Modules/Dispatcher";
+import { getQuestAppId } from "@/utils";
+
 
 export default function (quest) {
 	const { promise, reject, resolve } = Promise.withResolvers();
@@ -12,8 +14,8 @@ export default function (quest) {
 	const taskConfig = quest.config.taskConfig ?? quest.config.taskConfigV2;
 	const taskName = supportedTasks.find(x => taskConfig.tasks[x] != null);
 
-	const applicationId = quest.config.application.id;
-	const applicationName = quest.config.application.name;
+	const applicationId = getQuestAppId(quest);
+	const applicationName = quest?.config?.application?.name || quest?.config?.messages?.gameTitle || "Unknown";
 	const questName = quest.config.messages.questName;
 	const secondsNeeded = taskConfig.tasks[taskName].target;
 	const secondsDone = quest.userStatus?.progress?.[taskName]?.value ?? 0;
