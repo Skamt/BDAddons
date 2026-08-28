@@ -1,21 +1,21 @@
 /**
  * @runAt idle
- * @name NoPushToTalk
+ * @name NoAutoUnread
  * @version 1.0.0
  * @author Skamt
- * @website https://github.com/Skamt/BDAddons/tree/main/NoPushToTalk
- * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/NoPushToTalk/NoPushToTalk.plugin.js
- * @credit https://github.com/Equicord/Equicord/tree/main/src/equicordplugins/noPushToTalk
+ * @website https://github.com/Skamt/BDAddons/tree/main/NoAutoUnread
+ * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/NoAutoUnread/NoAutoUnread.plugin.js
+ * @credit https://github.com/Equicord/Equicord/tree/main/src/equicordplugins/stopAutoUnread
  */
 
 // config:@Config
 var Config_default = {
 	"info": {
-		"name": "NoPushToTalk",
+		"name": "NoAutoUnread",
 		"version": "1.0.0",
-		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/NoPushToTalk/NoPushToTalk.plugin.js",
-		"github": "https://github.com/Skamt/BDAddons/tree/main/NoPushToTalk",
-		"credit": "https://github.com/Equicord/Equicord/tree/main/src/equicordplugins/noPushToTalk",
+		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/NoAutoUnread/NoAutoUnread.plugin.js",
+		"github": "https://github.com/Skamt/BDAddons/tree/main/NoAutoUnread",
+		"credit": "https://github.com/Equicord/Equicord/tree/main/src/equicordplugins/stopAutoUnread",
 		"authors": [{
 			"name": "Skamt"
 		}]
@@ -94,24 +94,14 @@ var Plugin_default = new class extends EventEmitter_default {
 }();
 
 // common/Webpack.js
-var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
-var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
 var getStore = /* @__PURE__ */ (() => Webpack.getStore)();
 
-// MODULES-AUTO-LOADER:@Stores/PermissionVADStore
-var PermissionVADStore_default = getStore("PermissionVADStore");
+// MODULES-AUTO-LOADER:@Stores/UnreadSettingNoticeStore2
+var UnreadSettingNoticeStore2_default = getStore("UnreadSettingNoticeStore2");
 
-// MODULES-AUTO-LOADER:@Modules/DiscordPermissions
-var DiscordPermissions_default = getModule(Filters.byKeys("computePermissions"), { searchExports: false });
-
-// MODULES-AUTO-LOADER:@Enums/DiscordPermissionsEnum
-var DiscordPermissionsEnum_default = getModule(Filters.byKeys("ADD_REACTIONS"), { searchExports: true }) || void 0;
-
-// src/NoPushToTalk/index.js
+// src/NoAutoUnread/index.js
 Plugin_default.on(Events.START, () => {
-	PermissionVADStore_default && Patcher.instead(PermissionVADStore_default, "shouldShowWarning", () => false);
-	PermissionVADStore_default && Patcher.instead(PermissionVADStore_default, "canUseVoiceActivity", () => true);
-	DiscordPermissions_default && Patcher.after(DiscordPermissions_default, "can", (_, [p], ret) => ret || DiscordPermissionsEnum_default.USE_VAD === p);
+	Patcher.instead(UnreadSettingNoticeStore2_default, "maybeAutoUpgradeChannel", () => false);
 });
 Plugin_default.on(Events.STOP, () => {
 	Patcher.unpatchAll();

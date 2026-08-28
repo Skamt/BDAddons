@@ -1,11 +1,12 @@
 /**
  * @runAt idle
  * @name NoProfileThemes
- * @description Empty description
+ * @description Completely removes Nitro profile themes from everyone but yourself
  * @version 1.0.0
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/NoProfileThemes
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/NoProfileThemes/NoProfileThemes.plugin.js
+ * @credit https://github.com/Vendicated/Vencord/tree/main/src/plugins/noProfileThemes
  */
 
 // config:@Config
@@ -13,9 +14,10 @@ var Config_default = {
 	"info": {
 		"name": "NoProfileThemes",
 		"version": "1.0.0",
-		"description": "Empty description",
+		"description": "Completely removes Nitro profile themes from everyone but yourself",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/NoProfileThemes/NoProfileThemes.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/NoProfileThemes",
+		"credit": "https://github.com/Vendicated/Vencord/tree/main/src/plugins/noProfileThemes",
 		"authors": [{
 			"name": "Skamt"
 		}]
