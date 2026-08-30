@@ -176,7 +176,7 @@ var ReadStateStore_default = getStore("ReadStateStore");
 // MODULES-AUTO-LOADER:@Modules/Dispatcher
 var Dispatcher_default = getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: true });
 
-// src/ReadAllNotifications/index.js
+// src/ReadAllNotifications/index.jsx
 function onClick() {
 	const channels = [];
 	Object.values(GuildStore_default.getGuilds()).forEach((guild) => {
@@ -206,16 +206,15 @@ var ReadAllButton = () => /* @__PURE__ */ React_default.createElement(
 	},
 	"Read All"
 );
-Plugin_default.on(Events.START, () => {
-	const { module: module2, key } = ServerList;
-	if (!module2 || !key) return Logger.patchError("ServerList");
-	Patcher.after(module2, key, (_, args, ret) => {
-		const children = Array.isArray(ret.props.children) ? ret.props.children : [ret.props.children];
-		children.push( /* @__PURE__ */ React_default.createElement(ReadAllButton, null));
-		ret.props.children = children;
-	});
+module.exports = () => ({
+	start() {
+		const { module: module2, key } = ServerList;
+		if (!module2 || !key) return Logger.patchError("ServerList");
+		Patcher.after(module2, key, (_, args, ret) => {
+			const children = Array.isArray(ret.props.children) ? ret.props.children : [ret.props.children];
+			children.push( /* @__PURE__ */ React_default.createElement(ReadAllButton, null));
+			ret.props.children = children;
+		});
+	},
+	stop: () => Patcher.unpatchAll()
 });
-Plugin_default.on(Events.STOP, () => {
-	Patcher.unpatchAll();
-});
-module.exports = () => Plugin_default;
