@@ -1,7 +1,7 @@
 /**
  * @runAt idle
  * @name NoNitroUpsell
- * @description Empty description
+ * @description Removes all of Discord's nitro upsells by tricking the client into thinking you have nitro.
  * @version 1.0.0
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/NoNitroUpsell

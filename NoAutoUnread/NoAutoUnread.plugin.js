@@ -1,6 +1,7 @@
 /**
  * @runAt idle
  * @name NoAutoUnread
+ * @description Stops Discord from automatically bumping a channels notification setting to All Messages
  * @version 1.0.0
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/NoAutoUnread

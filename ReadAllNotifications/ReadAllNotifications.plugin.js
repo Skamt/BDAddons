@@ -1,7 +1,7 @@
 /**
  * @runAt idle
  * @name ReadAllNotifications
- * @description Empty description
+ * @description Read all server notifications with a single button click!
  * @version 1.0.0
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/ReadAllNotifications
@@ -14,7 +14,7 @@ var Config_default = {
 	"info": {
 		"name": "ReadAllNotifications",
 		"version": "1.0.0",
-		"description": "Empty description",
+		"description": "Read all server notifications with a single button click!",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/ReadAllNotifications/ReadAllNotifications.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/ReadAllNotifications",
 		"credit": "https://github.com/Vendicated/Vencord/tree/main/src/plugins/readAllNotificationsButton",
@@ -25,12 +25,10 @@ var Config_default = {
 };
 
 // common/Api.js
-var Api = new BdApi(Config_default.info.name);
+var Api = /* @__PURE__ */ (() => new BdApi(Config_default.info.name))();
 var DOM = /* @__PURE__ */ (() => Api.DOM)();
-var React = /* @__PURE__ */ (() => Api.React)();
 var Patcher = /* @__PURE__ */ (() => Api.Patcher)();
 var Logger2 = /* @__PURE__ */ (() => Api.Logger)();
-var Webpack = /* @__PURE__ */ (() => Api.Webpack)();
 
 // common/Utils/Logger.js
 Logger2.patchError = (patchId) => {
@@ -128,6 +126,7 @@ StylesLoader_default.push(`.RAN-Button {
 }`);
 
 // common/React.jsx
+var React = /* @__PURE__ */ (() => BdApi.React)();
 var React_default = /* @__PURE__ */ (() => React)();
 
 // common/Utils/index.js
@@ -139,6 +138,7 @@ function getObjectKey(object = {}, filter) {
 }
 
 // common/Webpack.js
+var Webpack = /* @__PURE__ */ (() => BdApi.Webpack)();
 var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
 var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
 var getStore = /* @__PURE__ */ (() => Webpack.getStore)();
@@ -155,7 +155,7 @@ var Button_default = getModule((a) => a && a.Link && a.Colors, { searchExports: 
 
 // common/Components/Button/index.jsx
 function ButtonComponentFallback(props) {
-	return /* @__PURE__ */ React.createElement("button", { ...props });
+	return /* @__PURE__ */ React_default.createElement("button", { ...props });
 }
 var ManaButton = /* @__PURE__ */ getModule(Filters.byStrings(`"data-mana-component":"button"`), { searchExports: true }) || ButtonComponentFallback;
 var ManaTextButton = /* @__PURE__ */ getModule(Filters.byStrings(`"data-mana-component":"text-button"`), { searchExports: true }) || ButtonComponentFallback;

@@ -1,7 +1,7 @@
 /**
  * @runAt idle
  * @name NoF1
- * @description Empty description
+ * @description Disables F1 help bind
  * @version 1.0.0
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/NoF1

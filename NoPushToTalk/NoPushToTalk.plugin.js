@@ -1,6 +1,7 @@
 /**
  * @runAt idle
  * @name NoPushToTalk
+ * @description Bypasses the push-to-talk requirement for voice activity in channels that enforce it.
  * @version 1.0.0
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/NoPushToTalk
