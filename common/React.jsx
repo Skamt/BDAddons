@@ -1,5 +1,6 @@
-import { ReactDOM, React } from "@Api";
+const React = /*@__PURE__*/ (() => BdApi.React)();;
 
+export const ReactDOM = /*@__PURE__*/ (() => BdApi.ReactDOM)();
 export const useState = /*@__PURE__*/ (() => React.useState)();
 export const createContext = /*@__PURE__*/ (() => React.createContext)();
 export const useContext = /*@__PURE__*/ (() => React.useContext)();
@@ -21,10 +22,10 @@ export default /*@__PURE__*/ (() => React)();
 export const NoopComponent = () => null;
 
 export const LazyComponent = (get) => {
-    const Comp = (props) => {
-        const Component = get() ?? NoopComponent;
-        return <Component {...props} />;
-    };
+	const Comp = (props) => {
+		const Component = get() ?? NoopComponent;
+		return <Component {...props} />;
+	};
 
-    return Comp;
+	return Comp;
 };

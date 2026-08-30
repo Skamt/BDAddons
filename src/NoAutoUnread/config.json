@@ -2,8 +2,8 @@
 	"info": {
 		"name": "NoAutoUnread",
 		"version": "1.0.0",
-		"description": "Empty description",
-		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/StopAutoUnread/StopAutoUnread.plugin.js",
-		"github": "https://github.com/Skamt/BDAddons/tree/main/StopAutoUnread"
+		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/NoAutoUnread/NoAutoUnread.plugin.js",
+		"github": "https://github.com/Skamt/BDAddons/tree/main/NoAutoUnread",
+		"credit": "https://github.com/Equicord/Equicord/tree/main/src/equicordplugins/stopAutoUnread"
 	}
 }

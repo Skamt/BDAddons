@@ -64,6 +64,7 @@ function buildMeta(config) {
 	line("author", config.info.authors.map(a => a.name).join(", "));
 	line("website", config.info.github);
 	line("source", config.info.source);
+	line("credit", config.info.credit);
 	metaString.push(" */");
 	metaString.push("");
 	return metaString.join("\n");

@@ -1,7 +1,8 @@
 import config from "@Config";
-import { Patcher, getOwnerInstance, ReactDOM, React } from "@Api";
+import { Patcher, getOwnerInstance } from "@Api";
+import React, { ReactDOM } from "@React";
 
-export function getObjectKey(object = {}, filter) {
+export  function getObjectKey(object = {}, filter) {
 	for (const key in object) {
 		if (!filter(object[key])) continue;
 		return key;
@@ -16,7 +17,7 @@ export function fit({ width, height, gap = 0.8 }) {
 		width,
 		height,
 		maxHeight: height * gap,
-		maxWidth: width * gap
+		maxWidth: width * gap,
 	};
 }
 
@@ -28,7 +29,7 @@ export function clsx(prefix) {
 	return (...args) =>
 		args
 			.filter(Boolean)
-			.map(a => `${prefix}-${a}`)
+			.map((a) => `${prefix}-${a}`)
 			.join(" ");
 }
 
@@ -46,7 +47,7 @@ function easeInOutSin(time) {
 export function animate(property, element, to, options = {}, cb = () => {}) {
 	const {
 		ease = easeInOutSin,
-		duration = 300 // standard
+		duration = 300, // standard
 	} = options;
 
 	let start = null;
@@ -57,7 +58,7 @@ export function animate(property, element, to, options = {}, cb = () => {}) {
 		cancelled = true;
 	};
 
-	const step = timestamp => {
+	const step = (timestamp) => {
 		if (cancelled) {
 			cb(new Error("Animation cancelled"));
 			return;
@@ -107,18 +108,25 @@ export function debounce(func, wait = 166) {
 export function shallow(objA, objB) {
 	if (Object.is(objA, objB)) return true;
 
-	if (typeof objA !== "object" || objA === null || typeof objB !== "object" || objB === null) return false;
+	if (typeof objA !== "object" || objA === null || typeof objB !== "object" || objB === null)
+		return false;
 
 	const keysA = Object.keys(objA);
 
 	if (keysA.length !== Object.keys(objB).length) return false;
 
-	for (let i = 0; i < keysA.length; i++) if (!Object.prototype.hasOwnProperty.call(objB, keysA[i]) || !Object.is(objA[keysA[i]], objB[keysA[i]])) return false;
+	for (let i = 0; i < keysA.length; i++)
+		if (
+			!Object.prototype.hasOwnProperty.call(objB, keysA[i]) ||
+			!Object.is(objA[keysA[i]], objB[keysA[i]])
+		)
+			return false;
 
 	return true;
 }
 
-export const promiseHandler = promise => promise.then(data => [undefined, data]).catch(err => [err]);
+export const promiseHandler = (promise) =>
+	promise.then((data) => [undefined, data]).catch((err) => [err]);
 
 export function copy(data) {
 	DiscordNative.clipboard.copy(data);
@@ -141,7 +149,7 @@ export class Disposable {
 	}
 
 	Dispose() {
-		this.patches?.forEach(p => p?.());
+		this.patches?.forEach((p) => p?.());
 		this.patches = [];
 	}
 }
@@ -157,7 +165,7 @@ export function reRender(selector) {
 export const nop = () => {};
 
 export function sleep(delay) {
-	return new Promise(done => setTimeout(() => done(), delay * 1000));
+	return new Promise((done) => setTimeout(() => done(), delay * 1000));
 }
 
 export function prettyfiyBytes(bytes, si = false, dp = 1) {
@@ -167,7 +175,9 @@ export function prettyfiyBytes(bytes, si = false, dp = 1) {
 		return `${bytes} B`;
 	}
 
-	const units = si ? ["kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"] : ["KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"];
+	const units = si
+		? ["kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"]
+		: ["KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"];
 	let u = -1;
 	const r = 10 ** dp;
 
@@ -214,7 +224,7 @@ export function getImageDimensions(url) {
 		img.onload = () =>
 			resolve({
 				width: img.width,
-				height: img.height
+				height: img.height,
 			});
 		img.onerror = reject;
 		img.src = url;
@@ -248,7 +258,7 @@ export function random(min, max) {
 
 export function preventDefault(handler) {
 	if (!handler) return nop;
-	return e => {
+	return (e) => {
 		e.preventDefault();
 		e.stopPropagation();
 		handler.apply(null, [e]);

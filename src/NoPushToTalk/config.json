@@ -2,8 +2,8 @@
 	"info": {
 		"name": "NoPushToTalk",
 		"version": "1.0.0",
-		"description": "Bypasses the push-to-talk",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/NoPushToTalk/NoPushToTalk.plugin.js",
-		"github": "https://github.com/Skamt/BDAddons/tree/main/NoPushToTalk"
+		"github": "https://github.com/Skamt/BDAddons/tree/main/NoPushToTalk",
+		"credit": "https://github.com/Equicord/Equicord/tree/main/src/equicordplugins/noPushToTalk"
 	}
 }

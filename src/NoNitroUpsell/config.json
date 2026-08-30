@@ -1,0 +1,10 @@
+{
+	"info": {
+		"name": "NoNitroUpsell",
+		"version": "1.0.0",
+		"description": "Empty description",
+		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/NoNitroUpsell/NoNitroUpsell.plugin.js",
+		"github": "https://github.com/Skamt/BDAddons/tree/main/NoNitroUpsell",
+		"credit":"https://github.com/Equicord/Equicord/tree/main/src/equicordplugins/noNitroUpsell"
+	}
+}

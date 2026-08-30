@@ -1,0 +1,13 @@
+.RAN-Button {
+    color: var(--interactive-icon-default);
+    padding: 0 0.5em;
+	/*margin:5px 0;*/
+    width: 100%;
+    font-size: 14px;
+    white-space: nowrap;
+    box-sizing: border-box;
+}
+
+.RAN-Button:hover {
+    color: var(--interactive-icon-active);
+}
