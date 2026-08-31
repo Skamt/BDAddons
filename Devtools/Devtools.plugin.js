@@ -33,6 +33,19 @@ __export(index_exports, {
 });
 module.exports = __toCommonJS(index_exports);
 
+// common/React.jsx
+var React = /* @__PURE__ */ (() => BdApi.React)();
+var ReactDOM = /* @__PURE__ */ (() => BdApi.ReactDOM)();
+var React_default = /* @__PURE__ */ (() => React)();
+var NoopComponent = () => null;
+var LazyComponent = (get) => {
+	const Comp = (props) => {
+		const Component = get() ?? NoopComponent;
+		return /* @__PURE__ */ React.createElement(Component, { ...props });
+	};
+	return Comp;
+};
+
 // config:@Config
 var Config_default = {
 	"info": {
@@ -48,25 +61,12 @@ var Config_default = {
 };
 
 // common/Api.js
-var Api = new BdApi(Config_default.info.name);
-var React = /* @__PURE__ */ (() => Api.React)();
-var ReactDOM = /* @__PURE__ */ (() => Api.ReactDOM)();
+var Api = /* @__PURE__ */ (() => new BdApi(Config_default.info.name))();
 var Patcher = /* @__PURE__ */ (() => Api.Patcher)();
 var Logger = /* @__PURE__ */ (() => Api.Logger)();
-var Webpack = /* @__PURE__ */ (() => Api.Webpack)();
-var getOwnerInstance = /* @__PURE__ */ (() => Api.ReactUtils.getOwnerInstance.bind(Api.ReactUtils))();
-var getInternalInstance = /* @__PURE__ */ (() => Api.ReactUtils.getInternalInstance.bind(Api.ReactUtils))();
-
-// common/React.jsx
-var React_default = /* @__PURE__ */ (() => React)();
-var NoopComponent = () => null;
-var LazyComponent = (get) => {
-	const Comp = (props) => {
-		const Component = get() ?? NoopComponent;
-		return /* @__PURE__ */ React.createElement(Component, { ...props });
-	};
-	return Comp;
-};
+var UI = /* @__PURE__ */ (() => BdApi.UI)();
+var getOwnerInstance = /* @__PURE__ */ (() => BdApi.ReactUtils.getOwnerInstance.bind(BdApi.ReactUtils))();
+var getInternalInstance = /* @__PURE__ */ (() => BdApi.ReactUtils.getInternalInstance.bind(BdApi.ReactUtils))();
 
 // common/Utils/Logger.js
 Logger.patchError = (patchId) => {
@@ -114,9 +114,11 @@ var ErrorBoundary = class extends React_default.Component {
 var Webpack_exports = {};
 __export(Webpack_exports, {
 	Filters: () => Filters,
+	Webpack: () => Webpack,
 	_getBySource: () => _getBySource,
 	filterModuleAndExport: () => filterModuleAndExport,
 	getById: () => getById,
+	getByKeys: () => getByKeys,
 	getBySource: () => getBySource,
 	getDeclarationAndKey: () => getDeclarationAndKey,
 	getMangled: () => getMangled,
@@ -199,12 +201,12 @@ function easeInOutSin(time) {
 	return (1 + Math.sin(Math.PI * time - Math.PI / 2)) / 2;
 }
 
-function animate(property, element, to, options = {}, cb = () => {}) {
+function animate(property, element, to, options2 = {}, cb = () => {}) {
 	const {
 		ease = easeInOutSin,
 			duration = 300
 		// standard
-	} = options;
+	} = options2;
 	let start = null;
 	const from = element[property];
 	let cancelled = false;
@@ -255,11 +257,13 @@ function debounce(func, wait = 166) {
 
 function shallow(objA, objB) {
 	if (Object.is(objA, objB)) return true;
-	if (typeof objA !== "object" || objA === null || typeof objB !== "object" || objB === null) return false;
+	if (typeof objA !== "object" || objA === null || typeof objB !== "object" || objB === null)
+		return false;
 	const keysA = Object.keys(objA);
 	if (keysA.length !== Object.keys(objB).length) return false;
 	for (let i = 0; i < keysA.length; i++)
-		if (!Object.prototype.hasOwnProperty.call(objB, keysA[i]) || !Object.is(objA[keysA[i]], objB[keysA[i]])) return false;
+		if (!Object.prototype.hasOwnProperty.call(objB, keysA[i]) || !Object.is(objA[keysA[i]], objB[keysA[i]]))
+			return false;
 	return true;
 }
 var promiseHandler = (promise) => promise.then((data) => [void 0, data]).catch((err) => [err]);
@@ -360,7 +364,7 @@ function hook(hook2, ...args) {
 	let v;
 	const b = document.createElement("div");
 	const root = ReactDOM.createRoot(b);
-	root.render(React.createElement(() => (v = hook2(...args), null)));
+	root.render(React_default.createElement(() => (v = hook2(...args), null)));
 	root.unmount(b);
 	return v;
 }
@@ -391,6 +395,7 @@ function preventDefault(handler) {
 }
 
 // common/Webpack.js
+var Webpack = /* @__PURE__ */ (() => BdApi.Webpack)();
 var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
 var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
 var waitForModule = /* @__PURE__ */ (() => Webpack.waitForModule)();
@@ -399,19 +404,22 @@ var getBySource = /* @__PURE__ */ (() => Webpack.getBySource)();
 var getMangled = /* @__PURE__ */ (() => Webpack.getMangled)();
 var getById = /* @__PURE__ */ (() => Webpack.getById)();
 var getStore = /* @__PURE__ */ (() => Webpack.getStore)();
-async function lazy(filter, options) {
-	const { exportsFilter, declarationsFilter, ...rest } = options;
+var getByKeys = /* @__PURE__ */ (() => Webpack.getByKeys)();
+async function lazy(filter, options2) {
+	const { exportsFilter, declarationsFilter, ...rest } = options2;
 	const [err, res] = await promiseHandler(waitForModule(filter, { ...rest, raw: true }));
-	if (err) return;
+	if (err) throw err;
 	const module2 = exportsFilter ? res.exports : res.declarations;
+	if (!module2) throw "Can't find module";
 	const key = getObjectKey(module2, exportsFilter || declarationsFilter);
-	if (key) return { module: module2, key, target: module2[key] };
+	if (!key) throw "Can't find key";
+	return { module: module2, key, target: module2[key] };
 }
 
-function waitForComponent(filter, options) {
+function waitForComponent(filter, options2) {
 	let myValue = () => {};
 	const lazyComponent = LazyComponent(() => myValue);
-	waitForModule(filter, options).then((v) => {
+	waitForModule(filter, options2).then((v) => {
 		myValue = v;
 		Object.assign(lazyComponent, v);
 	});
@@ -423,9 +431,9 @@ function reactRefMemoFilter(type, ...args) {
 	return (target) => target[type] && filter(target[type]);
 }
 
-function getModuleAndKey(filter, options) {
+function getModuleAndKey(filter, options2) {
 	let module2;
-	const target = getModule((entry, m) => filter(entry) ? module2 = m : false, options);
+	const target = getModule((entry, m) => filter(entry) ? module2 = m : false, options2);
 	module2 = module2?.exports;
 	if (!module2) return;
 	const key = Object.keys(module2).find((k) => module2[k] === target);
@@ -433,15 +441,15 @@ function getModuleAndKey(filter, options) {
 	return { module: module2, key };
 }
 
-function getDeclarationAndKey(moduleFilter, declarationFilter, options = {}) {
-	const module2 = getModule(moduleFilter, { ...options, raw: true });
+function getDeclarationAndKey(moduleFilter, declarationFilter, options2 = {}) {
+	const module2 = getModule(moduleFilter, { ...options2, raw: true });
 	if (!module2?.declarations) return;
 	const key = getObjectKey(module2.declarations, declarationFilter);
 	return key ? { key, module: module2.declarations } : void 0;
 }
 
-function filterModuleAndExport(moduleFilter, exportFilter, options) {
-	const module2 = getModule(moduleFilter, { ...options, raw: true });
+function filterModuleAndExport(moduleFilter, exportFilter, options2) {
+	const module2 = getModule(moduleFilter, { ...options2, raw: true });
 	if (!module2) return;
 	const { exports } = module2;
 	const key = Object.keys(exports).find((k) => exportFilter(exports[k]));
@@ -449,8 +457,8 @@ function filterModuleAndExport(moduleFilter, exportFilter, options) {
 	return { module: exports, key, target: exports[key] };
 }
 
-function mapExports(moduleFilter, exportsMap, options) {
-	const module2 = getModule(moduleFilter, { ...options, raw: true });
+function mapExports(moduleFilter, exportsMap, options2) {
+	const module2 = getModule(moduleFilter, { ...options2, raw: true });
 	if (!module2) return {};
 	const { exports } = module2;
 	const res = { module: exports, mangledKeys: {} };
@@ -482,18 +490,40 @@ var Dispatcher_default = getModule(Filters.byKeys("dispatch", "_dispatch"), { se
 // MODULES-AUTO-LOADER:@Modules/TheBigBoyBundle
 var TheBigBoyBundle_default = getModule(Filters.byKeys("openModal", "FormSwitch", "Anchor"), { searchExports: false });
 
-// MODULES-AUTO-LOADER:@Enums/DiscordPermissionsEnum
-var DiscordPermissionsEnum_default = getModule(Filters.byKeys("ADD_REACTIONS"), { searchExports: true }) || {
-	"EMBED_LINKS": "16384n",
-	"USE_EXTERNAL_EMOJIS": "262144n"
+// common/Utils/Notification.js
+function showNotification(title2, content, options2) {
+	UI.showNotification({
+		id: `${Config_default.info.name}-${Math.random().toString(36).slice(2)}`,
+		title: title2 ? `[${Config_default.info.name}] ${title2}` : Config_default.info.name,
+		content,
+		duration: Number.POSITIVE_INFINITY,
+		...options2
+	});
+}
+var Notification_default = {
+	success(title2, content, options2) {
+		showNotification(title2, content, { type: "success", ...options2 });
+	},
+	info(content) {
+		showNotification(title, content, { type: "info", ...options });
+	},
+	warning(content) {
+		showNotification(title, content, { type: "warning", ...options });
+	},
+	error(content) {
+		showNotification(title, content, { type: "error", ...options });
+	}
 };
+
+// MODULES-AUTO-LOADER:@Enums/DiscordPermissionsEnum
+var DiscordPermissionsEnum_default = getModule(Filters.byKeys("ADD_REACTIONS"), { searchExports: true }) || void 0;
 
 // src/Devtools/webpackRequire.js
 var chunkName = Object.keys(window).find((key) => key.startsWith("webpackChunk"));
 var chunk = window[chunkName];
 var webpackreq;
 chunk.push([
-	[Symbol()], {}, (r) => webpackreq = r.b ? r : webpackreq
+	[ /* @__PURE__ */ Symbol()], {}, (r) => webpackreq = r.b ? r : webpackreq
 ]);
 chunk.pop();
 var webpackRequire_default = webpackreq;
@@ -704,8 +734,8 @@ function sanitizeExports(exports) {
 	return false;
 }
 
-function* moduleLookup(filter, options = {}) {
-	const { searchExports = false } = options;
+function* moduleLookup(filter, options2 = {}) {
+	const { searchExports = false } = options2;
 	const gauntlet = searchExports ? doExports : noExports;
 	const keys = Object.keys(webpackRequire_default.c);
 	for (let index = keys.length - 1; index >= 0; index--) {
@@ -717,12 +747,12 @@ function* moduleLookup(filter, options = {}) {
 	}
 }
 
-function getModules(filter, options) {
-	return [...moduleLookup(filter, options)];
+function getModules(filter, options2) {
+	return [...moduleLookup(filter, options2)];
 }
 
-function getModule2(filter, options) {
-	const b = moduleLookup(filter, options);
+function getModule2(filter, options2) {
+	const b = moduleLookup(filter, options2);
 	const res = b.next().value;
 	b.return();
 	return res;
@@ -775,11 +805,13 @@ var Misc = {
 var FormSwitch_default = getModule(Filters.byStrings("note", "tooltipNote"), { searchExports: true });
 
 // common/Components/Switch/index.jsx
-var Switch_default = getModule(Filters.byStrings('"data-toggleable-component":"switch"', 'layout:"horizontal"'), { searchExports: true }) || function SwitchComponentFallback(props) {
-	return /* @__PURE__ */ React.createElement("div", { style: { color: "#fff" } }, props.children, /* @__PURE__ */ React.createElement(
+var Switch_default = getMangled(Filters.bySource("auxiliaryContentPosition", "hasIcon"), {
+	Switch: () => true
+})?.Switch || function SwitchComponentFallback(props) {
+	return /* @__PURE__ */ React_default.createElement("div", { style: { color: "#fff" } }, props.label, /* @__PURE__ */ React_default.createElement(
 		"input", {
 			type: "checkbox",
-			checked: props.value,
+			checked: props.checked,
 			onChange: (e) => props.onChange(e.target.checked)
 		}
 	));
@@ -904,6 +936,10 @@ function getFiber() {
 var MessageActions_default = getModule(Filters.byKeys("jumpToMessage", "_sendMessage"), { searchExports: false });
 
 // common/DiscordModules/Modules.js
+var ComponentDispatch;
+waitForModule((m) => m.dispatchToLastSubscribed, { searchExports: true }).then((a) => {
+	ComponentDispatch = a;
+});
 var transitionTo = /* @__PURE__ */ (() => getModule(Filters.byStrings("transitionTo - Transitioning to"), { searchExports: true }))();
 var ChannelUtils = /* @__PURE__ */ (() => getModule((m) => m.openPrivateChannel))();
 
@@ -992,6 +1028,7 @@ function init() {
 			...BdApi.Webpack,
 			getModuleAndKey
 		},
+		Notification: Notification_default,
 		Utils: {
 			ChannelUtils,
 			transitionTo,
@@ -1058,7 +1095,7 @@ var Devtools = class {
 		enableExp(false);
 	}
 	getSettingsPanel() {
-		return /* @__PURE__ */ React.createElement(
+		return /* @__PURE__ */ React_default.createElement(
 			SettingComponent_default, {
 				settings,
 				enableExp

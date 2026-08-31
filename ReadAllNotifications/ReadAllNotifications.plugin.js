@@ -26,9 +26,9 @@ var Config_default = {
 
 // common/Api.js
 var Api = /* @__PURE__ */ (() => new BdApi(Config_default.info.name))();
-var DOM = /* @__PURE__ */ (() => Api.DOM)();
 var Patcher = /* @__PURE__ */ (() => Api.Patcher)();
 var Logger2 = /* @__PURE__ */ (() => Api.Logger)();
+var DOM = /* @__PURE__ */ (() => Api.DOM)();
 
 // common/Utils/Logger.js
 Logger2.patchError = (patchId) => {
@@ -119,6 +119,7 @@ StylesLoader_default.push(`.RAN-Button {
     font-size: 14px;
     white-space: nowrap;
     box-sizing: border-box;
+    display:block !important;
 }
 
 .RAN-Button:hover {
@@ -126,8 +127,7 @@ StylesLoader_default.push(`.RAN-Button {
 }`);
 
 // common/React.jsx
-var React = /* @__PURE__ */ (() => BdApi.React)();
-var React_default = /* @__PURE__ */ (() => React)();
+var React_default = /* @__PURE__ */ (() => BdApi.React)();
 
 // common/Utils/index.js
 function getObjectKey(object = {}, filter) {
@@ -198,6 +198,7 @@ function onClick() {
 var ServerList = getDeclarationAndKey(Filters.bySource("guild-list-unread-dms"), Filters.byStrings(`"aria-owns":"guild-list-unread-dms"`));
 var ReadAllButton = () => /* @__PURE__ */ React_default.createElement(
 	Button_default2, {
+		style: { display: "none" },
 		className: "RAN-Button",
 		size: Button_default2.Sizes.TINY,
 		look: Button_default2.Looks.BLANK,
@@ -206,15 +207,16 @@ var ReadAllButton = () => /* @__PURE__ */ React_default.createElement(
 	},
 	"Read All"
 );
-module.exports = () => ({
-	start() {
-		const { module: module2, key } = ServerList;
-		if (!module2 || !key) return Logger.patchError("ServerList");
-		Patcher.after(module2, key, (_, args, ret) => {
-			const children = Array.isArray(ret.props.children) ? ret.props.children : [ret.props.children];
-			children.push( /* @__PURE__ */ React_default.createElement(ReadAllButton, null));
-			ret.props.children = children;
-		});
-	},
-	stop: () => Patcher.unpatchAll()
+Plugin_default.on(Events.START, () => {
+	const { module: module2, key } = ServerList;
+	if (!module2 || !key) return Logger.patchError("ServerList");
+	Patcher.after(module2, key, (_, args, ret) => {
+		const children = Array.isArray(ret.props.children) ? ret.props.children : [ret.props.children];
+		children.push( /* @__PURE__ */ React_default.createElement(ReadAllButton, null));
+		ret.props.children = children;
+	});
 });
+Plugin_default.on(Events.STOP, () => {
+	Patcher.unpatchAll();
+});
+module.exports = () => Plugin_default;
