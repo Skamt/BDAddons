@@ -1,7 +1,7 @@
 /**
  * @runAt idle
  * @name NoConfirmPin
- * @description Empty description
+ * @description Disables Conrimation prompt when pinning/unpinning messages
  * @version 1.0.0
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/NoConfirmPin
