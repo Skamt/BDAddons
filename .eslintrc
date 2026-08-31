@@ -31,6 +31,7 @@
 	],
 	"ignorePatterns":["**.css","**.json","**.png","**.md","**.gif","**.svg","**.TODO"],
 	"globals": {
+		"BdApi": "readonly",
 		"config": "readonly",
 		"electron": "readonly",
 		"process": "readonly",

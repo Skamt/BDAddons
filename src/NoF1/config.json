@@ -2,7 +2,7 @@
 	"info": {
 		"name": "NoF1",
 		"version": "1.0.0",
-		"description": "Empty description",
+		"description": "Disables F1 help bind",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/NoF1/NoF1.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/NoF1"
 	}

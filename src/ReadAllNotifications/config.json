@@ -2,7 +2,7 @@
 	"info": {
 		"name": "ReadAllNotifications",
 		"version": "1.0.0",
-		"description": "Empty description",
+		"description": "Read all server notifications with a single button click!",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/ReadAllNotifications/ReadAllNotifications.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/ReadAllNotifications",
 		"credit": "https://github.com/Vendicated/Vencord/tree/main/src/plugins/readAllNotificationsButton"

@@ -1,0 +1,17 @@
+{
+	"info": {
+		"name": "RelationshipNotifier",
+		"version": "1.0.0",
+		"description": "Empty description",
+		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/RelationshipNotifier/RelationshipNotifier.plugin.js",
+		"github": "https://github.com/Skamt/BDAddons/tree/main/RelationshipNotifier"
+	},
+	"settings":{
+		"notices":  false,
+    	"offlineRemovals":  true,
+    	"friends":  true,
+    	"friendRequestCancels": true,
+    	"servers":  true,
+    	"groups":  true
+	}
+}

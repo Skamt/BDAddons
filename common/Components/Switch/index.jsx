@@ -1,4 +1,4 @@
-import { React } from "@Api";
+import React from "@React";
 import { getMangled, Filters } from "@Webpack";
 import FormSwitch from "@Modules/FormSwitch";
 

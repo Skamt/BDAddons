@@ -1,4 +1,4 @@
-import { React } from "@Api";
+import React from "@React";
 import { getModule, Filters } from "@Webpack";
 import Button from "@Modules/Button";
 

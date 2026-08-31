@@ -2,6 +2,27 @@ import UserStore from "@Stores/UserStore";
 import { isValidString } from "@Utils/String";
 import ChannelStore from "@Stores/ChannelStore";
 import GuildMemberStore from "@Stores/GuildMemberStore";
+import SelectedChannelStore from "@Stores/SelectedChannelStore";
+import SelectedGuildStore from "@Stores/SelectedGuildStore";
+import Logger from "@Utils/Logger";
+import FetchUser from "@Modules/FetchUser";
+import {UserProfileActions} from "@Discord/Modules";
+
+export async function openUserProfile(id) {
+    const user = await FetchUser(id);
+    if (!user) return Logger.error("No such user: " + id);
+
+    const guildId = SelectedGuildStore.getGuildId();
+    UserProfileActions.openUserProfileModal({
+        userId: id,
+        guildId,
+        channelId: SelectedChannelStore.getChannelId(),
+        analyticsLocation: {
+            page: guildId ? "Guild Channel" : "DM Channel",
+            section: "Profile Popout"
+        }
+    });
+}
 
 export function isSelf(user) {
 	const currentUser = UserStore.getCurrentUser();

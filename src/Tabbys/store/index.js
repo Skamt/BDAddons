@@ -28,7 +28,7 @@ Store.subscribe(
 	state => state,
 	() => {
 		const user = UserStore.getCurrentUser();
-		Data.save(user.id, Store.state);
+		Data.save(user.id, {...Store.state});
 	},
 	shallow
 );

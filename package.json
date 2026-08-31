@@ -16,19 +16,21 @@
 	"author": "",
 	"license": "ISC",
 	"description": "",
-	"devDependencies": {
-		"deep-object-diff": "^1.1.9",
-		"dotenv": "^16.5.0",
-		"eslint": "^9.30.0",
-		"eslint-plugin-react": "^7.37.5"
-	},
 	"dependencies": {
-		"commander": "^14.0.0",
-		"esbuild": "^0.25.5",
+		"commander": "^15.0.0",
+		"esbuild": "^0.28.2",
 		"esbuild-plugin-import-glob": "^0.1.1",
-		"js-beautify": "^1.15.4"
+		"js-beautify": "^2.0.3"
 	},
-	"optionalDependencies": {
-		"draggabilly": "^3.0.0"
+	"devDependencies": {
+		"@eslint/js": "^10.0.1",
+		"deep-object-diff": "^1.1.9",
+		"dotenv": "^17.4.2",
+		"eslint": "^10.9.1",
+		"eslint-plugin-react": "^7.37.5",
+		"globals": "^17.11.0"
+	},
+	"allowScripts": {
+		"esbuild": false
 	}
 }

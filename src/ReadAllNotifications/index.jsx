@@ -8,6 +8,7 @@ import GuildChannelStore from "@Stores/GuildChannelStore";
 import ActiveJoinedThreadsStore from "@Stores/ActiveJoinedThreadsStore";
 import ReadStateStore from "@Stores/ReadStateStore";
 import Dispatcher from "@Modules/Dispatcher";
+import Plugin, { Events } from "@Utils/Plugin";
 
 function onClick() {
 	const channels = [];
@@ -40,6 +41,7 @@ const ServerList = getDeclarationAndKey(Filters.bySource("guild-list-unread-dms"
 
 const ReadAllButton = () => (
 	<Button
+		style={{display:"none"}}
 		className="RAN-Button"
 		size={Button.Sizes.TINY}
 		look={Button.Looks.BLANK}
@@ -49,16 +51,19 @@ const ReadAllButton = () => (
 	</Button>
 );
 
-module.exports = () => ({
-	start() {
-		const { module, key } = ServerList;
-		if (!module || !key) return Logger.patchError("ServerList");
+Plugin.on(Events.START, () => {
+	const { module, key } = ServerList;
+	if (!module || !key) return Logger.patchError("ServerList");
 
-		Patcher.after(module, key, (_, args, ret) => {
-			const children = Array.isArray(ret.props.children) ? ret.props.children : [ret.props.children];
-			children.push(<ReadAllButton />);
-			ret.props.children = children;
-		});
-	},
-	stop: () => Patcher.unpatchAll()
+	Patcher.after(module, key, (_, args, ret) => {
+		const children = Array.isArray(ret.props.children) ? ret.props.children : [ret.props.children];
+		children.push(<ReadAllButton />);
+		ret.props.children = children;
+	});
 });
+
+Plugin.on(Events.STOP, () => {
+	Patcher.unpatchAll();
+});
+
+module.exports = ()=>Plugin;

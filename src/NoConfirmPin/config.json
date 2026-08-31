@@ -1,0 +1,9 @@
+{
+	"info": {
+		"name": "NoConfirmPin",
+		"version": "1.0.0",
+		"description": "Disables Conrimation prompt when pinning/unpinning messages",
+		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/NoConfirmPin/NoConfirmPin.plugin.js",
+		"github": "https://github.com/Skamt/BDAddons/tree/main/NoConfirmPin"
+	}
+}

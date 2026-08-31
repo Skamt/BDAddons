@@ -1,8 +1,10 @@
-import { Patcher, React } from "@Api";
+import React from "@React";
+import { Patcher } from "@Api";
 import ErrorBoundary from "@Components/ErrorBoundary";
 import Dispatcher from "@Modules/Dispatcher";
 import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
 import * as Utils from "@Utils";
+import Notification from "@Utils/Notification";
 import * as Webpack from "@Webpack";
 import Logger from "@Utils/Logger";
 import DiscordPermissionsEnum from "@Enums/DiscordPermissionsEnum";
@@ -112,6 +114,7 @@ function init() {
 			...BdApi.Webpack,
 			getModuleAndKey
 		},
+		Notification,
 		Utils: {
 			ChannelUtils,
 			transitionTo,

@@ -1,4 +1,4 @@
-import { React } from "@Api";
+import React from "@React";
 import { nop } from "@Utils";
 import Settings from "@Utils/Settings";
 import Switch from "@Components/Switch";
