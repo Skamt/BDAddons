@@ -1,11 +1,12 @@
 /**
  * @runAt idle
  * @name AlwaysTrust
- * @description Empty description
+ * @description Removes the 'untrusted domain/suspicious file/server delete' confirmation prompts
  * @version 1.0.0
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/AlwaysTrust
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/AlwaysTrust/AlwaysTrust.plugin.js
+ * @credit https://github.com/Equicord/Equicord/tree/main/src/plugins/alwaysTrust
  */
 
 // common/React.jsx
@@ -16,9 +17,10 @@ var Config_default = {
 	"info": {
 		"name": "AlwaysTrust",
 		"version": "1.0.0",
-		"description": "Empty description",
+		"description": "Removes the 'untrusted domain/suspicious file/server delete' confirmation prompts",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/AlwaysTrust/AlwaysTrust.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/AlwaysTrust",
+		"credit": "https://github.com/Equicord/Equicord/tree/main/src/plugins/alwaysTrust",
 		"authors": [{
 			"name": "Skamt"
 		}]
