@@ -2,12 +2,15 @@
 	"info": {
 		"name": "AlwaysTrust",
 		"version": "1.0.0",
-		"description": "Empty description",
+		"description": "Removes the 'untrusted domain/suspicious file/server delete' confirmation prompts",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/AlwaysTrust/AlwaysTrust.plugin.js",
-		"github": "https://github.com/Skamt/BDAddons/tree/main/AlwaysTrust"
+		"github": "https://github.com/Skamt/BDAddons/tree/main/AlwaysTrust",
+		"credit":"https://github.com/Equicord/Equicord/tree/main/src/plugins/alwaysTrust"
 	},
 	"settings":{
 		"domain":true,
+		"confirmModal":true,
+		"noDeleteSafety":true,
 		"file":true
 	}
 }
