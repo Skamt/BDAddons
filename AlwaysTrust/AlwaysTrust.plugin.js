@@ -314,11 +314,13 @@ Plugin_default.getSettingsPanel = () => () => [{
 		settingKey: "domain"
 	},
 	{
+		border: true,
 		description: "Download prompt",
 		note: "Remove the 'Potentially Dangerous Download' prompt when opening links",
 		settingKey: "file"
 	},
 	{
+		border: true,
 		description: "Server delete prompt",
 		note: "Removes the enter server name prompt when deleting a server",
 		settingKey: "noDeleteSafety"
