@@ -25,6 +25,8 @@ var Config_default = {
 	},
 	"settings": {
 		"domain": true,
+		"confirmModal": true,
+		"noDeleteSafety": true,
 		"file": true
 	}
 };
@@ -33,23 +35,32 @@ var Config_default = {
 var Api = /* @__PURE__ */ (() => new BdApi(Config_default.info.name))();
 var Data = /* @__PURE__ */ (() => Api.Data)();
 var Patcher = /* @__PURE__ */ (() => Api.Patcher)();
-var Logger = /* @__PURE__ */ (() => Api.Logger)();
+var Logger2 = /* @__PURE__ */ (() => Api.Logger)();
 var DOM = /* @__PURE__ */ (() => Api.DOM)();
 
 // common/Utils/index.js
+function getObjectKey(object = {}, filter) {
+	for (const key in object) {
+		if (!filter(object[key])) continue;
+		return key;
+	}
+}
 var nop = () => {};
 
 // common/Webpack.js
 var Webpack = /* @__PURE__ */ (() => BdApi.Webpack)();
 var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
 var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
+var waitForModule = /* @__PURE__ */ (() => Webpack.waitForModule)();
 var getMangled = /* @__PURE__ */ (() => Webpack.getMangled)();
+var getStore = /* @__PURE__ */ (() => Webpack.getStore)();
+var getByKeys = /* @__PURE__ */ (() => Webpack.getByKeys)();
 
 // common/Utils/Logger.js
-Logger.patchError = (patchId) => {
+Logger2.patchError = (patchId) => {
 	console.error(`%c[${Config_default.info.name}] %cCould not find module for %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
 };
-var Logger_default = Logger;
+var Logger_default = Logger2;
 
 // common/Utils/EventEmitter.js
 var EventEmitter_default = class {
@@ -241,6 +252,9 @@ function SettingSwtich({ settingKey, note, border = false, onChange = nop, descr
 	), border && /* @__PURE__ */ React_default.createElement(Divider, { gap: 15 }));
 }
 
+// MODULES-AUTO-LOADER:@Stores/GuildStore
+var GuildStore_default = getStore("GuildStore");
+
 // src/AlwaysTrust/index.js
 var LinkPrompt = getModule(Filters.bySource(`="MaskedLinkStore",`), {
 	declarationFilter: (a) => a.prototype.isTrustedDomain
@@ -248,9 +262,45 @@ var LinkPrompt = getModule(Filters.bySource(`="MaskedLinkStore",`), {
 var FilePrompt = getMangled(Filters.bySource("github.com", "bitbucket.org", "gitlab.com"), {
 	confirm: () => 1
 });
+var deleteGuild = getByKeys("deleteGuild", "sendTransferOwnershipPincode").deleteGuild;
+
+function GetPropsAndDeleteGuild(id) {
+	const GotGuild = GuildStore_default.getGuild(id);
+	if (!GotGuild) return;
+	DeleteGuild(id, GotGuild.name);
+}
 Plugin_default.on(Events.START, () => {
-	Patcher.after(LinkPrompt.prototype, "isTrustedDomain", (_, __, ret) => Settings_default.state.domain ? true : ret);
+	Patcher.after(
+		LinkPrompt.prototype,
+		"isTrustedDomain",
+		(_, __, ret) => Settings_default.state.domain ? true : ret
+	);
 	Patcher.after(LinkPrompt, "confirm", (_, __, ret) => Settings_default.state.domain ? null : ret);
+	const controller = new AbortController();
+	waitForModule(Filters.bySource("DELETE", "getSectionDefinition"), {
+		signal: controller.signal,
+		raw: true
+	}).then(({ declarations }) => {
+		const key = getObjectKey(declarations, Filters.byStrings("isOwnerWithRequiredMfaLevel"));
+		if (!key) return Logger.patchError("patchChannelAttach");
+		Patcher.after(declarations, key, (_, [__, { guild }], ret) => {
+			if (!Settings_default.state.noDeleteSafety || ret.section !== "DELETE") return;
+			ret.onClick = () => {
+				if (!Settings_default.state.confirmModal) return GetPropsAndDeleteGuild(guild.id);
+				BdApi.UI.showConfirmationModal(
+					"Delete server?",
+					/* @__PURE__ */
+					React_default.createElement(React_default.Fragment, null, "Are you sure you want to delete ", /* @__PURE__ */ React_default.createElement("b", null, guild.name), " ? ", /* @__PURE__ */ React_default.createElement("br", null), " ", /* @__PURE__ */ React_default.createElement("b", null, "This action cannot be undone.")), {
+						danger: true,
+						confirmText: "Delete",
+						cancelText: "Cancel",
+						onConfirm: () => GetPropsAndDeleteGuild(guild.id)
+					}
+				);
+			};
+		});
+	});
+	Plugin_default.once(Events.STOP, () => controller.abort());
 });
 Plugin_default.on(Events.STOP, () => {
 	Patcher.unpatchAll();
@@ -265,6 +315,16 @@ Plugin_default.getSettingsPanel = () => () => [{
 		description: "Download prompt",
 		note: "Remove the 'Potentially Dangerous Download' prompt when opening links",
 		settingKey: "file"
+	},
+	{
+		description: "Server delete prompt",
+		note: "Removes the enter server name prompt when deleting a server",
+		settingKey: "noDeleteSafety"
+	},
+	{
+		description: "Server delete confirm",
+		note: "Show a simpler confirm prompt when deleting a server",
+		settingKey: "confirmModal"
 	}
 ].map(SettingSwtich);
 module.exports = () => Plugin_default;
