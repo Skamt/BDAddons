@@ -3,6 +3,7 @@ import { nop } from "@Utils";
 import Settings from "@Utils/Settings";
 import Switch from "@Components/Switch";
 import Divider from "@Components/Divider";
+
 export default function SettingSwtich({ settingKey, note, border = false, onChange = nop, description, ...rest }) {
 	const [val, set] = Settings.useSetting(settingKey);
 	return (
@@ -15,7 +16,7 @@ export default function SettingSwtich({ settingKey, note, border = false, onChan
 				description={note}
 				onChange={e => {
 					set(e);
-					onChange(e);
+					onChange?.(e);
 				}}
 			/>
 			{border && <Divider gap={15} />}

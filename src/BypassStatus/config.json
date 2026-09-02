@@ -1,0 +1,19 @@
+{
+	"info": {
+		"name": "BypassStatus",
+		"version": "1.0.0",
+		"description": "Still get notifications from specific sources when in do not disturb mode. Right-click on users/channels/guilds to set them to bypass do not disturb mode.",
+		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/BypassStatus/BypassStatus.plugin.js",
+		"github": "https://github.com/Skamt/BDAddons/tree/main/BypassStatus"
+	},
+	"settings":{
+		"guilds":"",
+		"channels":"",
+		"users":"",
+		"allowOutsideOfDms":true,
+		"mentionOnly":true,
+		"notificationSound":true,
+		"respectSilentPings":true,
+		"statusToUse":"dnd"
+	}
+}

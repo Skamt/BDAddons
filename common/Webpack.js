@@ -7,6 +7,7 @@ export const Filters = /*@__PURE__*/ (() => Webpack.Filters)();
 export const waitForModule = /*@__PURE__*/ (() => Webpack.waitForModule)();
 export const modules = /*@__PURE__*/ (() => Webpack.modules)();
 export const getBySource = /*@__PURE__*/ (() => Webpack.getBySource)();
+export const getByPrototypeKeys = /*@__PURE__*/ (() => Webpack.getByPrototypeKeys)();
 export const getMangled = /*@__PURE__*/ (() => Webpack.getMangled)();
 export const getById = /*@__PURE__*/ (() => Webpack.getById)();
 export const getStore = /*@__PURE__*/ (() => Webpack.getStore)();

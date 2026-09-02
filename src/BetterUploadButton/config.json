@@ -1,0 +1,10 @@
+{
+	"info": {
+		"name": "BetterUploadButton",
+		"version": "1.0.0",
+		"description": "Upload with a single click, open menu with right click",
+		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/BetterUploadButton/BetterUploadButton.plugin.js",
+		"github": "https://github.com/Skamt/BDAddons/tree/main/BetterUploadButton",
+		"credit":"https://github.com/Vendicated/Vencord/tree/main/src/plugins/betterUploadButton"
+	}
+}

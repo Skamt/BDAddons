@@ -1,5 +1,6 @@
 import config from "@Config";
-import { Patcher, findInTree, React } from "@Api";
+import React from "@React";
+import { Patcher, findInTree } from "@Api";
 import { getNestedProp } from "@Utils";
 import { join } from "@Utils/css";
 import ErrorBoundary from "@Components/ErrorBoundary";
@@ -17,7 +18,7 @@ waitForModule((a, _, id) => id === 587168).then(match => {
 	wrapper = match.A;
 });
 
-const UserProfileBanner = getMangled(Filters.bySource("themeType", "showGifTag"), {
+const UserProfileBanner = getMangled(Filters.bySource("themeType", "showGifTag", "canUsePremiumProfileCustomization"), {
 	Banner: Filters.byStrings("canUsePremiumProfileCustomization")
 });
 

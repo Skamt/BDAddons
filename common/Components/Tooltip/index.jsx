@@ -1,4 +1,4 @@
-import { React } from "@Api";
+import React from "@React";
 import Tooltip from "@Modules/Tooltip";
 
 export default ({ note, position, children }) => {
