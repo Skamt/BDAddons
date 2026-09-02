@@ -2,7 +2,7 @@
  * @runAt idle
  * @name ViewProfilePicture
  * @description Adds a button to the user popout and profile that allows you to view the Avatar and banner.
- * @version 1.3.15
+ * @version 1.3.16
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js
@@ -12,7 +12,7 @@
 var Config_default = {
 	"info": {
 		"name": "ViewProfilePicture",
-		"version": "1.3.15",
+		"version": "1.3.16",
 		"description": "Adds a button to the user popout and profile that allows you to view the Avatar and banner.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture",
@@ -27,14 +27,12 @@ var Config_default = {
 };
 
 // common/Api.js
-var Api = new BdApi(Config_default.info.name);
-var DOM = /* @__PURE__ */ (() => Api.DOM)();
+var Api = /* @__PURE__ */ (() => new BdApi(Config_default.info.name))();
 var Data = /* @__PURE__ */ (() => Api.Data)();
-var React = /* @__PURE__ */ (() => Api.React)();
 var Patcher = /* @__PURE__ */ (() => Api.Patcher)();
 var Logger = /* @__PURE__ */ (() => Api.Logger)();
-var Webpack = /* @__PURE__ */ (() => Api.Webpack)();
-var findInTree = /* @__PURE__ */ (() => Api.Utils.findInTree)();
+var DOM = /* @__PURE__ */ (() => Api.DOM)();
+var findInTree = /* @__PURE__ */ (() => BdApi.Utils.findInTree)();
 
 // common/Utils/Logger.js
 Logger.patchError = (patchId) => {
@@ -143,6 +141,11 @@ StylesLoader_default.push(`/* View Profile Button */
 	z-index: 3;
 }
 
+.VPP-float.isMe{
+	left:12px;
+	right:unset;
+}
+
 .VPP-Button:hover {
 	background: rgb(1 0 1 / 64%);
 }
@@ -155,6 +158,9 @@ StylesLoader_default.push(`/* View Profile Button */
 	opacity: 1;
 }
 `);
+
+// common/React.jsx
+var React_default = /* @__PURE__ */ (() => BdApi.React)();
 
 // common/Utils/index.js
 function fit({ width, height, gap = 0.8 }) {
@@ -203,9 +209,6 @@ var classNameFactory = (prefix = "", connector = "-") => (...args) => {
 	return Array.from(classNames, (name) => `${prefix}${connector}${name}`).join(" ");
 };
 
-// common/React.jsx
-var React_default = /* @__PURE__ */ (() => React)();
-
 // common/Components/ErrorBoundary/index.jsx
 var ErrorBoundary = class extends React_default.Component {
 	state = { hasError: false, error: null, info: null };
@@ -243,7 +246,7 @@ var ErrorBoundary = class extends React_default.Component {
 };
 
 // common/Components/icons/ErrorIcon/index.jsx
-var ErrorIcon_default = (props) => /* @__PURE__ */ React.createElement("div", { ...props }, /* @__PURE__ */ React.createElement(
+var ErrorIcon_default = (props) => /* @__PURE__ */ React_default.createElement("div", { ...props }, /* @__PURE__ */ React_default.createElement(
 	"svg", {
 		xmlns: "http://www.w3.org/2000/svg",
 		viewBox: "0 0 24 24",
@@ -252,17 +255,18 @@ var ErrorIcon_default = (props) => /* @__PURE__ */ React.createElement("div", { 
 		height: "18"
 	},
 	/* @__PURE__ */
-	React.createElement(
+	React_default.createElement(
 		"path", {
 			d: "M0 0h24v24H0z",
 			fill: "none"
 		}
 	),
 	/* @__PURE__ */
-	React.createElement("path", { d: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" })
+	React_default.createElement("path", { d: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" })
 ));
 
 // common/Webpack.js
+var Webpack = /* @__PURE__ */ (() => BdApi.Webpack)();
 var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
 var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
 var waitForModule = /* @__PURE__ */ (() => Webpack.waitForModule)();
@@ -278,10 +282,26 @@ var ChannelStore_default = getStore("ChannelStore");
 // MODULES-AUTO-LOADER:@Stores/GuildMemberStore
 var GuildMemberStore_default = getStore("GuildMemberStore");
 
+// MODULES-AUTO-LOADER:@Stores/SelectedChannelStore
+var SelectedChannelStore_default = getStore("SelectedChannelStore");
+
+// MODULES-AUTO-LOADER:@Stores/SelectedGuildStore
+var SelectedGuildStore_default = getStore("SelectedGuildStore");
+
+// MODULES-AUTO-LOADER:@Modules/FetchUser
+var FetchUser_default = getModule(Filters.byStrings("USER_UPDATE", "default.getUser", "oldFormErrors"), { searchExports: true });
+
+// common/DiscordModules/Modules.js
+var ComponentDispatch;
+waitForModule((m) => m.dispatchToLastSubscribed, { searchExports: true }).then((a) => {
+	ComponentDispatch = a;
+});
+var MediaViewerModal = /* @__PURE__ */ (() => getMangled("Media Viewer Modal", { MediaViewerModal: (a) => typeof a !== "string" }).MediaViewerModal)();
+
 // common/Utils/User.js
-function isSelf(user2) {
+function isSelf(user) {
 	const currentUser = UserStore_default.getCurrentUser();
-	return user2?.id === currentUser?.id;
+	return user?.id === currentUser?.id;
 }
 
 // common/DiscordModules/zustand.js
@@ -330,12 +350,12 @@ var Tooltip_default = getModule(Filters.byPrototypeKeys("renderTooltip"), { sear
 
 // common/Components/Tooltip/index.jsx
 var Tooltip_default2 = ({ note, position, children }) => {
-	return /* @__PURE__ */ React.createElement(
+	return /* @__PURE__ */ React_default.createElement(
 		Tooltip_default, {
 			text: note,
 			position: position || "top"
 		},
-		(props) => React.cloneElement(children, {
+		(props) => React_default.cloneElement(children, {
 			...props,
 			...children.props
 		})
@@ -344,7 +364,7 @@ var Tooltip_default2 = ({ note, position, children }) => {
 
 // common/Components/icons/ImageIcon/index.jsx
 function ImageIcon(props) {
-	return /* @__PURE__ */ React.createElement(
+	return /* @__PURE__ */ React_default.createElement(
 		"svg", {
 			fill: "currentColor",
 			width: "24",
@@ -353,12 +373,9 @@ function ImageIcon(props) {
 			...props
 		},
 		/* @__PURE__ */
-		React.createElement("path", { d: "M341.333,0H42.667C19.093,0,0,19.093,0,42.667v298.667C0,364.907,19.093,384,42.667,384h298.667 C364.907,384,384,364.907,384,341.333V42.667C384,19.093,364.907,0,341.333,0z M42.667,320l74.667-96l53.333,64.107L245.333,192l96,128H42.667z" })
+		React_default.createElement("path", { d: "M341.333,0H42.667C19.093,0,0,19.093,0,42.667v298.667C0,364.907,19.093,384,42.667,384h298.667 C364.907,384,384,364.907,384,341.333V42.667C384,19.093,364.907,0,341.333,0z M42.667,320l74.667-96l53.333,64.107L245.333,192l96,128H42.667z" })
 	);
 }
-
-// common/DiscordModules/Modules.js
-var MediaViewerModal = /* @__PURE__ */ (() => getMangled("Media Viewer Modal", { MediaViewerModal: (a) => typeof a !== "string" }).MediaViewerModal)();
 
 // MODULES-AUTO-LOADER:@Modules/Color
 var Color_default = getModule(Filters.byKeys("Color", "hex", "hsl"), { searchExports: false });
@@ -383,11 +400,11 @@ async function getFittedDims(url) {
 	return err ? {} : fit(dims);
 }
 var palletHook = getModule(Filters.byStrings("toHexString", "toHsl", "palette"), { searchExports: true }) || {};
-var VPPButton_default = ({ className, user: user2, displayProfile }) => {
+var VPPButton_default = ({ className, user, displayProfile }) => {
 	const showOnHover = Settings_default(Settings_default.selectors.showOnHover);
-	const colorFromPfp = palletHook(user2.getAvatarURL(displayProfile?.guildId, 80))[0];
+	const colorFromPfp = palletHook(user.getAvatarURL(displayProfile?.guildId, 80))[0];
 	const handler = async () => {
-		const avatarURL = user2.getAvatarURL(displayProfile.guildId, 4096, true);
+		const avatarURL = user.getAvatarURL(displayProfile.guildId, 4096, true);
 		const bannerURL = displayProfile.getBannerURL({ canAnimate: true, size: 4096 });
 		const color = displayProfile.accentColor ?? (displayProfile.primaryColor || colorFromPfp);
 		const items = [{
@@ -418,24 +435,24 @@ var wrapper;
 waitForModule((a, _, id) => id === 587168).then((match) => {
 	wrapper = match.A;
 });
-var UserProfileBanner = getMangled(Filters.bySource("themeType", "showGifTag"), {
+var UserProfileBanner = getMangled(Filters.bySource("themeType", "showGifTag", "canUsePremiumProfileCustomization"), {
 	Banner: Filters.byStrings("canUsePremiumProfileCustomization")
 });
 Plugin_default.on(Events.START, () => {
 	Patcher.after(UserProfileBanner, "Banner", (_, [props], ret) => {
 		if (props.themeType !== "MODAL_V2") return ret;
-		const isMe = isSelf(user);
+		const isMe = isSelf(props.user);
 		return [
 			ret,
 			/* @__PURE__ */
-			React.createElement(
+			React_default.createElement(
 				ErrorBoundary, {
 					id: "VPPButton",
 					plugin: Config_default.info.name,
-					fallback: /* @__PURE__ */ React.createElement(ErrorIcon_default, { className: "VPP-Button" })
+					fallback: /* @__PURE__ */ React_default.createElement(ErrorIcon_default, { className: "VPP-Button" })
 				},
 				/* @__PURE__ */
-				React.createElement(
+				React_default.createElement(
 					VPPButton_default, {
 						className: join("VPP-Button", "VPP-float", { isMe }),
 						user: props.user,
@@ -452,14 +469,14 @@ Plugin_default.on(Events.START, () => {
 		const children = Array.isArray(target.props.children) ? target.props.children : [target.props.children];
 		children.unshift(
 			/* @__PURE__ */
-			React.createElement(
+			React_default.createElement(
 				ErrorBoundary, {
 					id: "VPPButton",
 					plugin: Config_default.info.name,
-					fallback: /* @__PURE__ */ React.createElement(ErrorIcon_default, { className: "VPP-Button" })
+					fallback: /* @__PURE__ */ React_default.createElement(ErrorIcon_default, { className: "VPP-Button" })
 				},
 				/* @__PURE__ */
-				React.createElement(
+				React_default.createElement(
 					VPPButton_default, {
 						className: join("VPP-Button"),
 						user: props.user,
@@ -479,7 +496,7 @@ var FormSwitch_default = getModule(Filters.byStrings("note", "tooltipNote"), { s
 var Switch_default = getMangled(Filters.bySource("auxiliaryContentPosition", "hasIcon"), {
 	Switch: () => true
 })?.Switch || function SwitchComponentFallback(props) {
-	return /* @__PURE__ */ React.createElement("div", { style: { color: "#fff" } }, props.label, /* @__PURE__ */ React.createElement(
+	return /* @__PURE__ */ React_default.createElement("div", { style: { color: "#fff" } }, props.label, /* @__PURE__ */ React_default.createElement(
 		"input", {
 			type: "checkbox",
 			checked: props.checked,
@@ -521,7 +538,7 @@ Divider.direction = {
 // common/Components/SettingSwtich/index.jsx
 function SettingSwtich({ settingKey, note, border = false, onChange = nop, description, ...rest }) {
 	const [val, set] = Settings_default.useSetting(settingKey);
-	return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(
+	return /* @__PURE__ */ React_default.createElement(React_default.Fragment, null, /* @__PURE__ */ React_default.createElement(
 		Switch_default, {
 			...rest,
 			hasIcon: true,
@@ -530,10 +547,10 @@ function SettingSwtich({ settingKey, note, border = false, onChange = nop, descr
 			description: note,
 			onChange: (e) => {
 				set(e);
-				onChange(e);
+				onChange?.(e);
 			}
 		}
-	), border && /* @__PURE__ */ React.createElement(Divider, { gap: 15 }));
+	), border && /* @__PURE__ */ React_default.createElement(Divider, { gap: 15 }));
 }
 
 // common/Components/FieldSet/styles.css
