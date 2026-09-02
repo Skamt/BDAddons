@@ -8,6 +8,7 @@ module.exports = () => ({
 	start() {
 		if (!UploadButton) return Logger.patchError("UploadButton");
 		BdApi.Patcher.after("BetterUploadButton", UploadButton, "type", (_, __, ret) => {
+			if (!ret.props?.className?.includes("attachButton")) return ret;
 			return React.cloneElement(ret, {
 				onClick: ret.props.onDoubleClick,
 				onContextMenu: ret.props.onClick
