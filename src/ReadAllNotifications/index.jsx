@@ -14,18 +14,22 @@ function onClick() {
 	const channels = [];
 
 	// biome-ignore lint/complexity/noForEach: <explanation>
-	Object.values(GuildStore.getGuilds()).forEach(guild => {
+	Object.values(GuildStore.getGuilds()).forEach((guild) => {
 		// biome-ignore lint/complexity/noForEach: <explanation>
 		GuildChannelStore.getChannels(guild.id)
 			.SELECTABLE.concat(GuildChannelStore.getChannels(guild.id).VOCAL)
-			.concat(Object.values(ActiveJoinedThreadsStore.getActiveJoinedThreadsForGuild(guild.id)).flatMap(threadChannels => Object.values(threadChannels)))
-			.forEach(c => {
+			.concat(
+				Object.values(ActiveJoinedThreadsStore.getActiveJoinedThreadsForGuild(guild.id)).flatMap(
+					(threadChannels) => Object.values(threadChannels),
+				),
+			)
+			.forEach((c) => {
 				if (!ReadStateStore.hasUnread(c.channel.id)) return;
 
 				channels.push({
 					channelId: c.channel.id,
 					messageId: ReadStateStore.lastMessageId(c.channel.id),
-					readStateType: 0
+					readStateType: 0,
 				});
 			});
 	});
@@ -33,20 +37,24 @@ function onClick() {
 	Dispatcher.dispatch({
 		type: "BULK_ACK",
 		context: "APP",
-		channels: channels
+		channels: channels,
 	});
 }
 
-const ServerList = getDeclarationAndKey(Filters.bySource("guild-list-unread-dms"), Filters.byStrings(`"aria-owns":"guild-list-unread-dms"`));
+const ServerList = getDeclarationAndKey(
+	Filters.bySource("guild-list-unread-dms"),
+	Filters.byStrings(`"aria-owns":"guild-list-unread-dms"`),
+);
 
 const ReadAllButton = () => (
 	<Button
-		style={{display:"none"}}
+		style={{ display: "none" }}
 		className="RAN-Button"
 		size={Button.Sizes.TINY}
 		look={Button.Looks.BLANK}
 		color={Button.Colors.PRIMARY}
-		onClick={onClick}>
+		onClick={onClick}
+	>
 		Read All
 	</Button>
 );
@@ -56,6 +64,7 @@ Plugin.on(Events.START, () => {
 	if (!module || !key) return Logger.patchError("ServerList");
 
 	Patcher.after(module, key, (_, args, ret) => {
+		if (!ret?.props?.children) return;
 		const children = Array.isArray(ret.props.children) ? ret.props.children : [ret.props.children];
 		children.push(<ReadAllButton />);
 		ret.props.children = children;
@@ -66,4 +75,4 @@ Plugin.on(Events.STOP, () => {
 	Patcher.unpatchAll();
 });
 
-module.exports = ()=>Plugin;
+module.exports = () => Plugin;

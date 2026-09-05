@@ -1,0 +1,8 @@
+#settings-menu-BetterDiscord .bd-changelog-button{
+	display:none;
+}
+
+
+[aria-activedescendant^="settings-menu-"] {
+	--custom-floating-layer-max-height:90vh;
+}

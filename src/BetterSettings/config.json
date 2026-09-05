@@ -1,0 +1,14 @@
+{
+	"info": {
+		"name": "BetterSettings",
+		"version": "1.0.0",
+		"description": "Should make settings open faster",
+		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/BetterSettings/BetterSettings.plugin.js",
+		"github": "https://github.com/Skamt/BDAddons/tree/main/BetterSettings"
+	},
+	"settings":{
+		"forceLoad":true,
+		"organizeMenu":true,
+		"disableFade":true
+	}
+}
