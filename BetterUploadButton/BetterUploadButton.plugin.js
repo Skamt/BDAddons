@@ -25,12 +25,11 @@ function reactRefMemoFilter(type, ...args) {
 // src/BetterUploadButton/index.js
 var UploadButton = getModule(reactRefMemoFilter("type", "CHAT_INPUT_BUTTON_NOTIFICATION,"));
 module.exports = () => ({
-	stop() {
-		BdApi.Patcher.unpatchAll("BetterUploadButton");
-	},
+	stop: () => BdApi.Patcher.unpatchAll("BetterUploadButton"),
 	start() {
 		if (!UploadButton) return Logger.patchError("UploadButton");
 		BdApi.Patcher.after("BetterUploadButton", UploadButton, "type", (_, __, ret) => {
+			if (!ret.props?.className?.includes("attachButton")) return ret;
 			return React_default.cloneElement(ret, {
 				onClick: ret.props.onDoubleClick,
 				onContextMenu: ret.props.onClick

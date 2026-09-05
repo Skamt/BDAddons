@@ -211,6 +211,7 @@ Plugin_default.on(Events.START, () => {
 	const { module: module2, key } = ServerList;
 	if (!module2 || !key) return Logger.patchError("ServerList");
 	Patcher.after(module2, key, (_, args, ret) => {
+		if (!ret?.props?.children) return;
 		const children = Array.isArray(ret.props.children) ? ret.props.children : [ret.props.children];
 		children.push( /* @__PURE__ */ React_default.createElement(ReadAllButton, null));
 		ret.props.children = children;
