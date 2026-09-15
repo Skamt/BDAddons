@@ -1,11 +1,11 @@
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 import { Patcher, React } from "@Api";
 import RenderLinkComponent from "@Modules/RenderLinkComponent";
 import Logger from "@Utils/Logger";
 import CopyButtonComponent from "./components/CopyButtonComponent";
 import "./styles";
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	try {
 		if (!RenderLinkComponent) return Logger.patchError("RenderLinkComponent");
 		Patcher.after(RenderLinkComponent, "type", (_, [{ className, href }], returnValue) => {
@@ -18,7 +18,7 @@ Plugin.on(Events.START, () => {
 	}
 });
 
-Plugin.on(Events.STOP, () => {
+Plugin.onStop(() => {
 	Patcher.unpatchAll();
 });
 

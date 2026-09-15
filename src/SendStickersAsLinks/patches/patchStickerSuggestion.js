@@ -1,4 +1,4 @@
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 import { Patcher } from "@Api";
 import Logger from "@Utils/Logger";
 
@@ -6,7 +6,7 @@ import StickerTypeEnum from "@Enums/StickerTypeEnum";
 
 import { StickerSendability } from "../Modules";
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	/**
 	 * Enables suggestions
 	 * */

@@ -3,7 +3,7 @@ import { Patcher } from "@Api";
 import Settings from "@Utils/Settings";
 import Logger from "@Utils/Logger";
 import Toast from "@Utils/Toast";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 
 import { hasEmbedPerms } from "@Utils/Permissions";
 import MessageActions from "@Modules/MessageActions";
@@ -18,7 +18,7 @@ function handleUnsendableSticker({ user, sticker, channel }) {
 	sendStickerAsLink(sticker, channel);
 }
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	if (!MessageActions) return Logger.patchError("SendSticker");
 	const unpatch = Patcher.instead(MessageActions, "sendStickers", (_, args, originalFunc) => {
 		const [channelId, [stickerId]] = args;

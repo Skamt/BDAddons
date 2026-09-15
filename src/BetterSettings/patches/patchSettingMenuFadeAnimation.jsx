@@ -4,9 +4,9 @@ import { getObjectKey, getNestedProp } from "@Utils";
 import Logger from "@Utils/Logger";
 import React from "@React";
 import Settings from "@Utils/Settings";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	const controller = new AbortController();
 	waitForModule(Filters.bySource(`"data-mana-component":"layer-modal"`), {
 		signal: controller.signal,

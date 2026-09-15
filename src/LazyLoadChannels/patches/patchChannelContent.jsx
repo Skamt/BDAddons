@@ -7,13 +7,13 @@ import ErrorBoundary from "@Components/ErrorBoundary";
 import ErrorFallbackComponent from "@/components/ErrorFallbackComponent";
 import LazyLoaderComponent from "@/components/LazyLoaderComponent";
 
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 import ChannelStore from "@Stores/ChannelStore";
 import ChannelsStateManager from "@/ChannelsStateManager";
 
 import { getObjectKey } from "@Utils";
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	const controller = new AbortController();
 	waitForModule(Filters.bySource(`name:"Channel",renderLoader`), { signal: controller.signal, raw: true }).then(({ declarations: ChannelRenderer }) => {
 		const key = getObjectKey(ChannelRenderer, Filters.byStrings("ChannelRenderer"));

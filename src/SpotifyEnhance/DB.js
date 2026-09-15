@@ -1,6 +1,6 @@
 import config from "@Config";
 import Logger from "@Utils/Logger";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 
 const DB = new (class {
 	init() {
@@ -76,11 +76,11 @@ const DB = new (class {
 	}
 })();
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	DB.init();
 });
 
-Plugin.on(Events.STOP, () => {
+Plugin.onStop(() => {
 	DB.dispose();
 });
 

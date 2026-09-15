@@ -1,6 +1,6 @@
 import "./styles";
 import config from "@Config";
-import { React } from "@Api";
+import React from "@React";
 import { concateClassNames } from "@Utils";
 import { getModule, getMangled, Filters } from "@Webpack";
 import ErrorBoundary from "@Components/ErrorBoundary";

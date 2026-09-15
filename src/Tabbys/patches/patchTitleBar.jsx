@@ -5,13 +5,13 @@ import Logger from "@Utils/Logger";
 import { Filters, getModule, getModuleAndKey } from "@Webpack";
 import App from "../components/App";
 import { reRender } from "@Utils";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 import { transitionTo } from "@Discord/Modules";
 
 const TitleBar = getModuleAndKey(Filters.byStrings("PlatformTypes", "windowKey", "title"), { searchExports: true });
 const BaseClasses = getModule(Filters.byKeys("base", "activityPanel"));
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	const { module, key } = TitleBar;
 	if (!module || !key) return Logger.patchError("patchTitleBar");
 	const unpatch = Patcher.after(module, key, (_, [props], ret) => {

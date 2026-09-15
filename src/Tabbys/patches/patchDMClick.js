@@ -7,9 +7,9 @@ import Settings from "@Utils/Settings";
 const DMChannelFilter = Filters.byStrings("navigate", "location", "href", "createHref");
 export const DMChannel = getModule(a => a.render && DMChannelFilter(a.render), { searchExports: true });
 
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	if (!DMChannel) return Logger.patchError("DMChannel");
 	Patcher.before(DMChannel, "render", (_, [props]) => {
 		const path = props.to;

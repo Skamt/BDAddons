@@ -10,7 +10,7 @@ import PresenceStore from "@Stores/PresenceStore";
 import { SpotifyIcon } from "@Components/Icon";
 import Tooltip from "@Components/Tooltip";
 import Settings from "@Utils/Settings";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 
 function SpotifyActivityIndicator({ userId }) {
 	const activityIndicator = Settings(Settings.selectors.activityIndicator);
@@ -36,7 +36,7 @@ const MessageHeaderFilter = Filters.byStrings(
 	"userOverride",
 	"withMentionPrefix",
 );
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	const controller = new AbortController();
 	waitForModule(MessageHeaderFilter, {
 		signal: controller.signal,

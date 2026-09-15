@@ -1,13 +1,13 @@
 import { getModule, Filters } from "@Webpack";
 import { Patcher } from "@Api";
 import Settings from "@Utils/Settings";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 import Logger from "@Utils/Logger";
 import ChannelsStateManager from "../ChannelsStateManager";
 import { getObjectKey } from "@Utils";
 import { waitForModule } from "@Webpack";
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	const controller = new AbortController();
 	waitForModule(Filters.bySource("withGuildIcon", "thread", "collapsed"), 
 		{ signal: controller.signal, raw: true }).then(({ declarations: TreadComponent }) => {

@@ -4,7 +4,7 @@ import Logger from "@Utils/Logger";
 import { copy, Disposable, nop } from "@Utils";
 import { Filters, getMangled, getModule } from "@Webpack";
 import { ContextMenu, Patcher } from "@Api";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 import React from "@React";
 import { sendMessageDirectly, insertText } from "@Utils/Messages";
 

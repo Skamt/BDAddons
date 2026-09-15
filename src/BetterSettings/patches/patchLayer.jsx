@@ -6,7 +6,7 @@ import Logger from "@Utils/Logger";
 import React from "@React";
 import Settings from "@Utils/Settings";
 import { FocusLock, ComponentDispatch } from "@Discord/Modules";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 
 const BaseLayer = getDeclarationAndKey(
 	Filters.bySource("this.renderArtisanalHack()"),
@@ -56,7 +56,7 @@ function prepLayer(props) {
 	return <Layer {...props} />;
 }
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	const { module, key } = BaseLayer;
 	if (!module || !key) return Logger.error("BaseLayer");
 
@@ -71,7 +71,7 @@ Plugin.on(Events.START, () => {
 	run();
 	const unsub = Settings.subscribe(Settings.selectors.disableFade, run);
 
-	Plugin.on(Events.STOP, () => {
+	Plugin.onStop(() => {
 		unsub();
 		module[key] = origin;
 	})

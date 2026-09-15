@@ -2,7 +2,7 @@ import { ContextMenu } from "@Api";
 import React from "@React";
 import { I18n } from "@Discord/Modules";
 import Settings from "@Utils/Settings";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 
 function transformSettingsEntries(list) {
 	const items = [];
@@ -34,10 +34,10 @@ function transformSettingsEntries(list) {
 	return items;
 }
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	const unpatch = ContextMenu.patch("settings-menu", (ret, props) => {
 		if(!Settings.state.organizeMenu) return; 
 		ret.props.children[0] = transformSettingsEntries(ret.props.children[0]);
 	});
-	Plugin.on(Events.STOP, () => unpatch());
+	Plugin.onStop(() => unsub(), {once:true});
 });

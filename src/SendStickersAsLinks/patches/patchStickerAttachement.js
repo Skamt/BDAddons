@@ -3,7 +3,7 @@ import Logger from "@Utils/Logger";
 import MessageActions from "@Modules/MessageActions";
 import { getStickerUrl, sendStickerAsLink, handleSticker } from "../Utils";
 import Dispatcher from "@Modules/Dispatcher";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 
 const replyInterceptor = {
 	handler(a) {
@@ -18,7 +18,7 @@ const replyInterceptor = {
 	}
 };
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	if (!MessageActions) return Logger.patchError("sendMessage");
 	const unpatch = Patcher.before(MessageActions, "sendMessage", (_, args) => {
 		const [channelId, , , attachments] = args;

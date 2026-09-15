@@ -4,11 +4,11 @@ import Logger from "@Utils/Logger";
 import Settings from "@Utils/Settings";
 import { Filters, getDeclarationAndKey } from "@Webpack";
 import SpotifyActivityControls from "@/components/SpotifyActivityControls";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 
 const ActivityComponent = getDeclarationAndKey(Filters.bySource("PRESS_LISTEN_ALONG_ON_SPOTIFY_BUTTON", "PRESS_PLAY_ON_SPOTIFY_BUTTON"), Filters.byStrings("PRESS_LISTEN_ALONG_ON_SPOTIFY_BUTTON", "PRESS_PLAY_ON_SPOTIFY_BUTTON"));
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	const { module, key } = ActivityComponent;
 	if (!module || !key) return Logger.patchError("SpotifyActivityComponent");
 	Patcher.after(module, key, (_, [{ user, activity }]) => {

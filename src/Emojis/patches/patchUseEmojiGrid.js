@@ -3,11 +3,11 @@
 // import EmojiIntentionEnum from "@Enums/EmojiIntentionEnum";
 // import { getModuleAndKey, Filters } from "@Webpack";
 
-// import Plugin, { Events } from "@Utils/Plugin";
+// import Plugin from "@common/Plugin";
 
 // const emojiHooks = getModuleAndKey(Filters.byStrings("gridWidth", "getDisambiguatedEmojiContext", "getFlattenedGuildIds"), { searchExports: true });
 
-// Plugin.on(Events.START, () => {
+// Plugin.onStart(() => {
 // 	const { module, key } = emojiHooks;
 
 // 	if (!module || !key) return Logger.patchError("patchUseEmojiGrid");

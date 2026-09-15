@@ -5,9 +5,9 @@ import Logger from "@Utils/Logger";
 import StickerModule from "@Patch/StickerModule";
 import { isLottieSticker, isAnimatedSticker } from "../Utils";
 
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	const { module, key } = StickerModule;
 	if (!module || !key) return Logger.patchError("GetStickerById");
 	

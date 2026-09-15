@@ -16,11 +16,11 @@ const getConfig = pluginName => `{
 
 const getIndex = pluginName => `import "./styles";
 import "./patches/*";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 import { Patcher } from "@Api";
 
 
-Plugin.on(Events.STOP, () => {
+Plugin.onStop(() => {
 	Patcher.unpatchAll();
 });
 

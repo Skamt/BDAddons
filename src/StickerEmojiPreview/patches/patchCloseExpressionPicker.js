@@ -2,9 +2,9 @@ import { Patcher } from "@Api";
 import Logger from "@Utils/Logger";
 import CloseExpressionPicker from "@Patch/CloseExpressionPicker";
 import Settings from "@Utils/Settings";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	const { module, key } = CloseExpressionPicker;
 	if (!module || !key) return Logger.patchError("CloseExpressionPicker");
 

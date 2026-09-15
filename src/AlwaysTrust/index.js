@@ -1,6 +1,6 @@
 import { Filters, getByKeys, waitForModule, getMangled, getModule } from "@Webpack";
 import React from "@React";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 import { getObjectKey } from "@Utils";
 import { Patcher } from "@Api";
 import Settings from "@Utils/Settings";
@@ -24,7 +24,7 @@ function GetPropsAndDeleteGuild(id) {
 	DeleteGuild(id, GotGuild.name);
 }
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	Patcher.after(LinkPrompt.prototype, "isTrustedDomain", (_, __, ret) =>
 		Settings.state.domain ? true : ret,
 	);
@@ -63,7 +63,7 @@ Plugin.on(Events.START, () => {
 	Plugin.once(Events.STOP, () => controller.abort());
 });
 
-Plugin.on(Events.STOP, () => {
+Plugin.onStop(() => {
 	Patcher.unpatchAll();
 });
 

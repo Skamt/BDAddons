@@ -1,4 +1,4 @@
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 import { Patcher } from "@Api";
 import Logger from "@Utils/Logger";
 import EmojiStore from "@Stores/EmojiStore";
@@ -6,7 +6,7 @@ import EmojisManager from "../EmojisManager";
 
 const emojiContextConstructor = EmojiStore?.getDisambiguatedEmojiContext?.().constructor;
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	if (!emojiContextConstructor) return Logger.patchError("emojiContextConstructor");
 
 	Patcher.after(emojiContextConstructor.prototype, "rebuildFavoriteEmojisWithoutFetchingLatest", (_, args, ret) => {

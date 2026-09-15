@@ -1,4 +1,4 @@
-// import Plugin, { Events } from "@Utils/Plugin";
+// import Plugin from "@common/Plugin";
 // import { React, ContextMenu, Patcher } from "@Api";
 // import { getModule, Filters } from "@Webpack";
 // import Logger from "@Utils/Logger";
@@ -6,7 +6,7 @@
 
 // const bbb = getModule(Filters.byStrings("unfavorite"), { defaultExport: false });
 
-// Plugin.on(Events.START, () => {
+// Plugin.onStart(() => {
 // 	if (!bbb?.Z) return Logger.patchError("patchUnfavoriteEmoji");
 // 	Patcher.after(bbb, "Z", (_, args, ret) => {
 		// console.log(...args);

@@ -4,9 +4,9 @@ import Settings from "@Utils/Settings";
 import Logger from "@Utils/Logger";
 import ChannelsStateManager from "../ChannelsStateManager";
 // import { ChannelComponent } from "@Discord/Modules";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	// if (!ChannelComponent) return Logger.patchError("Channel");
 	const controller = new AbortController();
 

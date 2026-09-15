@@ -3,9 +3,9 @@ import Logger from "@Utils/Logger";
 
 import { StickerSendability } from "../Modules";
 
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	/**
 	 * Make stickers clickable.
 	 **/

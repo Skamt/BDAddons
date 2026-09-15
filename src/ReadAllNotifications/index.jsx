@@ -8,7 +8,7 @@ import GuildChannelStore from "@Stores/GuildChannelStore";
 import ActiveJoinedThreadsStore from "@Stores/ActiveJoinedThreadsStore";
 import ReadStateStore from "@Stores/ReadStateStore";
 import Dispatcher from "@Modules/Dispatcher";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 
 function onClick() {
 	const channels = [];
@@ -59,7 +59,7 @@ const ReadAllButton = () => (
 	</Button>
 );
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	const { module, key } = ServerList;
 	if (!module || !key) return Logger.patchError("ServerList");
 
@@ -71,7 +71,7 @@ Plugin.on(Events.START, () => {
 	});
 });
 
-Plugin.on(Events.STOP, () => {
+Plugin.onStop(() => {
 	Patcher.unpatchAll();
 });
 

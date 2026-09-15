@@ -1,4 +1,4 @@
-
+import { add } from "@Utils/Array";
 
 export const ReactDOM = /*@__PURE__*/ (() => BdApi.ReactDOM)();
 export const useState = /*@__PURE__*/ (() => BdApi.React.useState)();
@@ -15,9 +15,11 @@ export const Children = /*@__PURE__*/ (() => BdApi.React.Children)();
 export const forwardRef = /*@__PURE__*/ (() => BdApi.React.forwardRef)();
 export const useLayoutEffect = /*@__PURE__*/ (() => BdApi.React.useLayoutEffect)();
 export const createPortal = /*@__PURE__*/ (() => BdApi.ReactDOM.createPortal)();
-export const unstable_batchedUpdates = /*@__PURE__*/ (() => BdApi.ReactDOM.unstable_batchedUpdates)();
+export const unstable_batchedUpdates = /*@__PURE__*/ (() =>
+	BdApi.ReactDOM.unstable_batchedUpdates)();
 
-export default /*@__PURE__*/ (() => BdApi.React)();
+const React = /*@__PURE__*/ (() => BdApi.React)();
+export default React;
 
 export const NoopComponent = () => null;
 
@@ -29,3 +31,13 @@ export const LazyComponent = (get) => {
 
 	return Comp;
 };
+
+export function insertChild(el, child, index) {
+	if (!el?.props?.children || !child) return ;
+
+	const children = Array.isArray(el.props.children)
+		? el.props.children
+		: [el.props.children];
+
+	el.props.children = add(children, child, index);
+}

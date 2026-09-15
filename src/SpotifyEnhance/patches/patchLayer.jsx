@@ -7,13 +7,13 @@
 // import { PlayerPlaceEnum } from "@/consts.js";
 // import React from "@React";
 // import Logger from "@Utils/Logger";
-// import Plugin, { Events } from "@Utils/Plugin";
+// import Plugin from "@common/Plugin";
 
 // const AppLayerContainer = getModuleAndKey(a => a.displayName === "AppLayerContainer", { searchExports: true });
 // const Draggable = s(689425).exports.Z;
 // // getBySource("edgeOffsetBottom", "defaultPosition")?.Z;
 
-// Plugin.on(Events.START, () => {
+// Plugin.onStart(() => {
 // 	if (!AppLayerContainer) return Logger.patchError("PIP");
 
 // 	const { module, key } = AppLayerContainer;

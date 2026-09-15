@@ -3,7 +3,7 @@ import { Patcher } from "@Api";
 import { nop } from "@Utils";
 import Settings from "@Utils/Settings";
 
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 const SettingMenuModal = getByKeys("openUserSettings", "USER_SETTINGS_MODAL_KEY");
 const some = getByPrototypeKeys("renderNameZone", { searchExports: true });
 
@@ -20,8 +20,8 @@ let forceLoadSettingsMenu = () => {
 	forceLoadStuff();
 };
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	forceLoadSettingsMenu();
 	const unsub = Settings.subscribe(Settings.selectors.forceLoad, () => forceLoadSettingsMenu());
-	Plugin.on(Events.STOP, () => unsub());
+	Plugin.onStop(() => unsub(), {once:true});
 });

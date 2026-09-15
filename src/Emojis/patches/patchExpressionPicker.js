@@ -4,7 +4,7 @@ import Logger from "@Utils/Logger";
 import React from "@React";
 import ErrorBoundary from "@Components/ErrorBoundary";
 import EmojisComponent from "@/components/EmojisComponent";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 
 const ExpressionPicker = getModule((a) => a?.type?.toString().includes("handleDrawerResizeHandleMouseDown"), { searchExports: false });
 
@@ -13,7 +13,7 @@ const { ExpressionPickerStore } = getMangled("expression-picker-last-active-view
 });
 const VIEW_TYPE = "SAVED_EMOJIS";
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	if (!ExpressionPicker) return Logger.patchError("ExpressionPicker");
 	Patcher.after(ExpressionPicker, "type", (_, args, ret) => {
 		const thing = findInTree(ret, Filters.byKeys("align", "autoInvert"), { walkable: ["props", "children"] });

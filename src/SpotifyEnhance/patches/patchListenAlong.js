@@ -2,9 +2,9 @@ import { Patcher } from "@Api";
 import Settings from "@Utils/Settings";
 import Logger from "@Utils/Logger";
 import SpotifyStore from "@Stores/SpotifyStore";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	if (!SpotifyStore) return Logger.patchError("ListenAlong");
 	Patcher.after(SpotifyStore, "getActiveSocketAndDevice", (_, __, ret) => {
 		if (!Settings.getState().enableListenAlong) return;

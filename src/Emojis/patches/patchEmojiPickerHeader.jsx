@@ -3,7 +3,7 @@ import { getNestedProp, promiseHandler, concateClassNames } from "@Utils";
 import { Filters, getMangled, lazy } from "@Webpack";
 import React from "@React";
 import Logger from "@Utils/Logger";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 import { openEmojiManager } from "@/components/EmojiManager";
 import { SettingIcon } from "@Components/icon";
 import Tooltip from "@Components/Tooltip";

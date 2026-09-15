@@ -1,14 +1,14 @@
 import "./styles";
 import "./patches/*";
 import { Store } from "./Store";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 import SpotifyAPI from "@Utils/SpotifyAPI";
 import React from "@React";
 import SettingComponent from "./components/SettingComponent";
 import { Patcher } from "@Api";
 
 Plugin.getSettingsPanel = () => <SettingComponent />;
-Plugin.on(Events.STOP, () => {
+Plugin.onStop(() => {
 	Patcher.unpatchAll();
 });
 

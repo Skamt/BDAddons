@@ -2,9 +2,9 @@ import { ContextMenu } from "@Api";
 import Settings from "@Utils/Settings";
 import ChannelsStateManager from "@/ChannelsStateManager";
 import ChannelTypeEnum from "@Enums/ChannelTypeEnum";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	const unpatch = [
 		ContextMenu.patch("user-context", (retVal, { channel, targetIsUser }) => {
 			if (targetIsUser) return;

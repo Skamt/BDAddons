@@ -2,7 +2,7 @@ import config from "@Config";
 import { nop } from "@Utils";
 import Logger from "@Utils/Logger";
 import { React, Patcher } from "@Api";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 
 import ExpressionPickerInspector from "@Patch/ExpressionPickerInspector";
 import CloseExpressionPicker from "@Patch/CloseExpressionPicker";
@@ -31,7 +31,7 @@ function getPreviewComponent(graphicPrimary) {
 	);
 }
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	const { module, key } = ExpressionPickerInspector;
 	if (!module || !key) return Logger.patchError("ExpressionPickerInspector");
 	const unpatch = Patcher.after(module, key, (_, [{ graphicPrimary, titlePrimary }], ret) => {

@@ -6,7 +6,7 @@ import GuildRoleStore from "@Stores/GuildRoleStore";
 import SelectedGuildStore from "@Stores/SelectedGuildStore";
 import GuildMemberStore from "@Stores/GuildMemberStore";
 import { MessageHeader } from "@Discord/Modules";
-import Plugin from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 import { promiseHandler } from "@Utils";
 
 let set = new Set();

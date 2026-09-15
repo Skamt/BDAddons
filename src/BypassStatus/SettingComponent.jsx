@@ -5,7 +5,6 @@ import SettingSwtich from "@Components/SettingSwtich";
 import SettingTextInput from "@Components/SettingTextInput";
 import Settings from "@Utils/Settings";
 import FieldSet from "@Components/FieldSet";
-import Divider from "@Components/Divider";
 import Heading from "@Modules/Heading";
 import { RadioGroup } from "@Discord/Modules";
 

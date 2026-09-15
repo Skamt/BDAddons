@@ -1,13 +1,13 @@
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 import { Dispatcher } from "@Discord/Modules";
 import Settings from "@Utils/Settings";
 import { switchLeft, switchRight } from "@/Store/methods";
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	document.addEventListener("keydown", onKeyDown);
 });
 
-Plugin.on(Events.STOP, () => {
+Plugin.onStop(() => {
 	document.removeEventListener("keydown", onKeyDown);
 });
 

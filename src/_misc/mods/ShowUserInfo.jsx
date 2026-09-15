@@ -4,7 +4,7 @@ import Toast from "@Utils/Toast";
 import Logger from "@Utils/Logger";
 import React from "@React";
 import { MessageHeader } from "@Discord/Modules";
-import Plugin from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 import { promiseHandler } from "@Utils";
 // const MessageHeaderFilter = Filters.byStrings("userOverride", "withMentionPrefix");
 

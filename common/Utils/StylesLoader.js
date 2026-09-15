@@ -1,4 +1,4 @@
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 import { DOM } from "@Api";
 
 const styleLoader = {
@@ -8,12 +8,7 @@ const styleLoader = {
 	}
 };
 
-Plugin.on(Events.START, () => {
-	DOM.addStyle(styleLoader._styles.join("\n"));
-});
-
-Plugin.on(Events.STOP, () => {
-	DOM.removeStyle();
-});
+Plugin.onLoad(() => DOM.addStyle(styleLoader._styles.join("\n")));
+Plugin.onStop(() => DOM.removeStyle());
 
 export default styleLoader;

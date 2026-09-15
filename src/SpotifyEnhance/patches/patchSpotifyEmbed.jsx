@@ -6,11 +6,11 @@ import SpotifyEmbedWrapper from "@/components/SpotifyEmbedWrapper";
 import { parseSpotifyUrl } from "@/Utils";
 import { ALLOWD_TYPES } from "@/consts";
 import { MessageStateContext } from "./patchMessageComponentAccessories";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 
 const SpotifyEmbed = getDeclarationAndKey(Filters.bySource("iframe", "playlist", "track"), Filters.byStrings("iframe", "playlist", "track"));
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	const { module, key } = SpotifyEmbed;
 	if (!module || !key) return Logger.patchError("SpotifyEmbed");
 

@@ -5,14 +5,14 @@ import Store from "@/Store";
 import { getNestedProp } from "@Utils";
 import SelectedChannelStore from "@Stores/SelectedChannelStore";
 import { getGuildChannelPath } from "@/utils";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 import Settings from "@Utils/Settings";
 
 const GuildComponent = getBySource("guildsnav", {
 	declarationFilter: Filters.byComponentType(Filters.byStrings("aria-owns=folder-items-","onDragOverChanged"))
 });
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	if (!GuildComponent) return Logger.patchError("GuildComponent");
 	Patcher.after(GuildComponent, "type", (_, [{ guild }], ret) => {
 		const targetProps = getNestedProp(ret, "props.children.1.props.children.props.children.props.children.props.children.props.children.props");

@@ -2,11 +2,11 @@ import { getBySource } from "@Webpack";
 import { getObjectKey } from "@Utils";
 import Logger from "@Utils/Logger";
 import Settings from "@Utils/Settings";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 
 const SettingsMenuTransition = getBySource("headerId:void 0,headerIdIsManaged:!1");
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	const delayKey = getObjectKey(SettingsMenuTransition, Number.isInteger);
 	if (!delayKey) return Logger.patchError("SettingsMenuTransition");
 	const origDelay = SettingsMenuTransition[delayKey];
@@ -20,7 +20,7 @@ Plugin.on(Events.START, () => {
 	run();
 	const unsub = Settings.subscribe(Settings.selectors.disableFade, run);
 
-	Plugin.on(Events.STOP, () => {
+	Plugin.onStop(() => {
 		unsub();
 		SettingsMenuTransition[delayKey] = origDelay;
 	});

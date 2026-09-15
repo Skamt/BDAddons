@@ -2,7 +2,7 @@ import { React, Patcher } from "@Api";
 import Logger from "@Utils/Logger";
 
 import { isSpotifyUrl } from "@/Utils";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 
 import { getObjectKey } from "@Utils";
 import { Filters, waitForModule } from "@Webpack";
@@ -13,7 +13,7 @@ const urlRegex = /((?:https?|steam):\/\/[^\s<]+[^<.,:;"'\]\s])/g;
 
 export const MessageStateContext = React.createContext(null);
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	const controller = new AbortController();
 	waitForModule(Filters.byPrototypeKeys("renderPoll"), { signal: controller.signal, searchExports: true }).then(MessageComponentAccessories => {
 		Patcher.before(MessageComponentAccessories.prototype, "renderEmbeds", (_, args) => {

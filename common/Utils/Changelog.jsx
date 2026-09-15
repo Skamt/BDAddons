@@ -1,6 +1,6 @@
 import { React, Data, UI } from "@Api";
 import config from "@Config";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 import StylesLoader from "@Utils/StylesLoader";
 
 StylesLoader.push(`

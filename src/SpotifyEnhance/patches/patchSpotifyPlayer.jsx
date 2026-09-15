@@ -8,10 +8,10 @@ import { PlayerPlaceEnum } from "@/consts.js";
 import Settings from "@Utils/Settings";
 import { getObjectKey } from "@Utils";
 import { Filters, waitForModule } from "@Webpack";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	waitForModule(Filters.bySource("hasParty"), { raw: true }).then(({ declarations: UserPanelFluxContainer }) => {
 		const key = getObjectKey(UserPanelFluxContainer, a => a?.prototype?.hasParty);
 		if (!key) return Logger.patchError("SpotifyPlayer");

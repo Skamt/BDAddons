@@ -1,8 +1,8 @@
 import Blacklist from "@/blacklist";
 import { ContextMenu } from "@Api";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	const unpatch = [
 		ContextMenu.patch("user-context", (retVal, { user }) => {
 			if (!user.id) return;

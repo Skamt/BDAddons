@@ -3,7 +3,7 @@ import TabSlice from "./tabs";
 import { ensureTab } from "./methods";
 import FolderSlice from "./folders";
 import BookmarkSlice from "./bookmarks";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 import { Data } from "@Api";
 import { getPathName, shallow, debounce } from "@Utils";
 import UserStore from "@Stores/UserStore";
@@ -66,14 +66,14 @@ function hydrateStore() {
 	ensureTab();
 }
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	hydrateStore();
 
 	window.navigation.addEventListener("navigate", onLocationChange);
 	Dispatcher.subscribe("CONNECTION_OPEN", hydrateStore);
 });
 
-Plugin.on(Events.STOP, () => {
+Plugin.onStop(() => {
 	window.navigation.removeEventListener("navigate", onLocationChange);
 	Dispatcher.unsubscribe("CONNECTION_OPEN", hydrateStore);
 });

@@ -30,7 +30,7 @@ export default function SettingTextInput({
 				}}
 				value={val}
 			/>
-			{border && <Divider gap={15} />}
+			{border && <Divider />}
 		</>
 	);
 }

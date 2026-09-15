@@ -1,5 +1,5 @@
 import "./styles";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 import { clsx } from "@Utils";
 import { Data, DOM } from "@Api";
 import { safeQueryAll, safeQuery, safeQueryNode, optimizeCandidates, getCssSelector } from "./utils";
@@ -264,11 +264,11 @@ function onKeyup({ key, shiftKey, ctrlKey }) {
 	else if (key === "Escape") stopPicker();
 }
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	init();
 });
 
-Plugin.on(Events.STOP, () => {
+Plugin.onStop(() => {
 	dispose();
 });
 

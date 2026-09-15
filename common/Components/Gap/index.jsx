@@ -4,7 +4,7 @@ import { classNameFactory } from "@Utils/css";
 
 const c = classNameFactory("gap");
 
-export default function Gap({ direction = "horizontal", gap, className }) {
+export default function Gap({ direction = "horizontal", gap=8, className }) {
 	return (
 		<div
 			style={{ marginTop: gap }}

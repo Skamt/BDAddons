@@ -1,6 +1,6 @@
 import zustand, { subscribeWithSelector } from "@Discord/zustand";
 import { Dispatcher } from "@Discord/Modules";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 
 export const Store = Object.assign(
 	zustand(
@@ -53,10 +53,10 @@ Object.defineProperty(Store, "state", {
 	get: () => Store.getState()
 });
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	Store.init();
 });
 
-Plugin.on(Events.STOP, () => {
+Plugin.onStop(() => {
 	Store.dispose();
 });

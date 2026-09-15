@@ -1,21 +1,20 @@
 {
-	"name": "y",
-	"version": "1.0.0",
-	"main": "index.js",
+	"name": "BDStuff",
+	"version": "3.0.0",
 	"scripts": {
-		"dist": "bun builder/index.js build && bun builder/index.js build -d",
-		"build": "bun builder/index.js build",
-		"new": "bun builder/index.js new",
-		"build:w": "bun builder/index.js build -w",
-		"dev": "bun builder/index.js build -d",
-		"dev:w": "bun builder/index.js build -dw",
+		"dist": "node builder/index.js build && node builder/index.js build -d",
+		"build": "node builder/index.js build",
+		"new": "node builder/index.js new",
+		"build:w": "node builder/index.js build -w",
+		"dev": "node builder/index.js build -d",
+		"dev:w": "node builder/index.js build -dw",
 		"lint": "eslint %INIT_CWD%/**",
-		"list": "bun builder/index.js list"
+		"list": "node builder/index.js list"
 	},
 	"keywords": [],
-	"author": "",
+	"author": "Skamt",
 	"license": "ISC",
-	"description": "",
+	"description": "Mitt BD Stuff",
 	"dependencies": {
 		"commander": "^15.0.0",
 		"esbuild": "^0.28.2",

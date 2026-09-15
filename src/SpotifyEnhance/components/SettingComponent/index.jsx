@@ -7,7 +7,7 @@ import SettingSwtich from "@Components/SettingSwtich";
 import { RadioGroup } from "@Discord/Modules";
 import Settings from "@Utils/Settings";
 import { PlayerButtonsEnum, PlayerPlaceEnum, EmbedStyleEnum } from "@/consts.js";
-import Plugin from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 
 function SpotifyEmbedOptions() {
 	const [val, set] = Settings.useSetting("spotifyEmbed");

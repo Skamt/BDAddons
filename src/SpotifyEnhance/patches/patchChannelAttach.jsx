@@ -5,7 +5,7 @@ import Logger from "@Utils/Logger";
 import { Store } from "@/Store";
 import Flex from "@Components/Flex";
 import { ListenIcon, ImageIcon } from "@Components/Icon";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 
 const { Item: MenuItem } = ContextMenu;
 
@@ -21,7 +21,7 @@ function MenuLabel({ label, icon }) {
 	);
 }
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	const controller = new AbortController();
 
 	waitForModule(Filters.bySource("Plus Button"), { signal: controller.signal, raw: true }).then(({ declarations: ChannelAttachMenu }) => {

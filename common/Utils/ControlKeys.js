@@ -1,4 +1,4 @@
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 const ControlKeys = {
 	init() {
 		this.subs = ["keydown", "keyup"].map(event => {
@@ -21,11 +21,11 @@ const ControlKeys = {
 	}
 };
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	ControlKeys.init();
 });
 
-Plugin.on(Events.STOP, () => {
+Plugin.onStop(() => {
 	ControlKeys.clean();
 });
 

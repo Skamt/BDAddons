@@ -1,11 +1,11 @@
 import "./patches/*";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 import { Patcher } from "@Api";
 import React from "@React";
 import SettingComponent from "./components/SettingComponent";
 
 Plugin.getSettingsPanel = () => <SettingComponent />;
-Plugin.on(Events.STOP, () => {
+Plugin.onStop(() => {
 	Patcher.unpatchAll();
 });
 

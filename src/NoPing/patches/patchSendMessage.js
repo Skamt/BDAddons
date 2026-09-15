@@ -3,9 +3,9 @@ import Settings from "@Utils/Settings";
 import Logger from "@Utils/Logger";
 import Blacklist from "@/blacklist";
 import MessageActions from "@Modules/MessageActions";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	if (!MessageActions) return Logger.patchError("patchSendMessage");
 	Patcher.before(MessageActions, "_sendMessage", (_, args) => {
 		if (!Settings.state.silent) return;

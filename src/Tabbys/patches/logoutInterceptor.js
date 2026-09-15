@@ -1,7 +1,7 @@
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 import { Dispatcher } from "@Discord/Modules";
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	function interceptor(e) {
 		if (e.type !== "LOGOUT") return;
 		e.goHomeAfterSwitching = false;

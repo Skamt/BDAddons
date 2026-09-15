@@ -5,11 +5,11 @@ import ErrorBoundary from "@Components/ErrorBoundary";
 import Logger from "@Utils/Logger";
 import FloatingWindowContainer from "@/components/FloatingWindowContainer";
 import { getModuleAndKey } from "@Webpack";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 
 const AppLayerContainer = getModuleAndKey(a => a.displayName === "AppLayerContainer", { searchExports: true });
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	if (!AppLayerContainer) return Logger.patchError("FloatingWindowContainer");
 
 	const { module, key } = AppLayerContainer;

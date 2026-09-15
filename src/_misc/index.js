@@ -52,10 +52,10 @@ const mods = [
 
 if (console.context) console = console.context();
 
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 
 let controller;
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	controller =  new AbortController();
 	for (const mod of mods) {
 		try {
@@ -66,7 +66,7 @@ Plugin.on(Events.START, () => {
 	}
 });
 
-Plugin.on(Events.STOP, () => {
+Plugin.onStop(() => {
 	Patcher.unpatchAll();
 	controller.abort();
 	for (const mod of mods) {

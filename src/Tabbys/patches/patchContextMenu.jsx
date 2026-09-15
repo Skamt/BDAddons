@@ -9,7 +9,7 @@ import { getPathName, nop } from "@Utils";
 import { BookmarkOutlinedIcon, PlusIcon } from "@Components/Icon";
 import ChannelStore from "@Stores/ChannelStore";
 import { addBookmarkAt, addToFolderAt } from "@/Store/methods";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 
 export function channelPath(...args) {
 	return `/channels/${args.filter(Boolean).join("/")}`;
@@ -76,7 +76,7 @@ function menu(path) {
 	return menu;
 }
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	const unpatch = [
 		...["thread-context", "channel-context"].map(context =>
 			ContextMenu.patch(context, (retVal, { channel, targetIsUser }) => {

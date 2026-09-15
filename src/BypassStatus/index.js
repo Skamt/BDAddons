@@ -13,7 +13,7 @@ import { getCurrentChannel } from "@Utils/Channel";
 import SettingComponent from "./SettingComponent";
 import PatchContextMenu from "./patchContextMenu";
 import { playMessageNotificationSounce } from "@/utils";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 import React from "@React";
 
 const SILENT_PING_FLAG = 1 << 12;
@@ -71,7 +71,7 @@ function shouldNotify(message, guildId, channelId, currentUser) {
 	if (notifyGuild || notifyChannel) return true;
 }
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	Flux.init({
 		async MESSAGE_CREATE({ message, guildId, channelId }) {
 			try {
@@ -102,7 +102,7 @@ Plugin.on(Events.START, () => {
 	PatchContextMenu.init();
 });
 
-Plugin.on(Events.STOP, () => {
+Plugin.onStop(() => {
 	Flux.dispose();
 	PatchContextMenu.dispose();
 });

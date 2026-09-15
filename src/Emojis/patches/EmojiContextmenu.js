@@ -1,8 +1,8 @@
 import { getInternalInstance, ContextMenu } from "@Api";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 import { sendEmojiDirectly, insertEmoji } from "../Utils";
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	const unpatch = [
 		ContextMenu.patch("expression-picker", (retVal, props) => {
 			const iProps = getInternalInstance(props.target)?.pendingProps;

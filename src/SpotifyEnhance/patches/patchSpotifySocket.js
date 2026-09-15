@@ -2,7 +2,7 @@ import { Patcher } from "@Api";
 import Logger from "@Utils/Logger";
 
 import { Store } from "@/Store";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 import { getObjectKey } from "@Utils";
 import { Filters, waitForModule } from "@Webpack";
 

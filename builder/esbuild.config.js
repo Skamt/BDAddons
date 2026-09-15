@@ -10,6 +10,7 @@ const jsconfig = pluginRoot => ({
 		"paths": {
 			"@/*": [`${pluginRoot}/*`],
 			"@Api": ["./common/Api"],
+			"@common/*": ["./common/*"],
 			"@Webpack": ["./common/Webpack"],
 			"@React": ["./common/React"],
 			"@Utils": ["./common/Utils"],

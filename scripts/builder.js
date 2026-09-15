@@ -10,22 +10,6 @@ const pkg = require(resolve("package.json"));
 const { pluginsFolder, releaseFolder, baseConfig } = pkg.buildConfig;
 const pluginsDir = resolve(pluginsFolder);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 function getPluginObject(pluginNameOrDir) {
 	const pluginPath = resolve(pluginsDir, pluginNameOrDir);
 	const isDirExists = existsSync(pluginPath);

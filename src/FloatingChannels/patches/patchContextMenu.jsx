@@ -2,12 +2,12 @@ import { Store } from "@/Store";
 import { buildWindow } from "@/utils";
 import { ContextMenu } from "@Api";
 import config from "@Config";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 import { Filters, getModule } from "@Webpack";
 
 const ChannelActions = getModule(Filters.byKeys("actions", "fetchMessages"));
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	let unpatch = [
 		...["thread-context", "user-context", "channel-context"].map(context =>
 			ContextMenu.patch(context, (retVal, ag) => {

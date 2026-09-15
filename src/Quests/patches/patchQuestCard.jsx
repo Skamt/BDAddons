@@ -1,7 +1,7 @@
 import { getDeclarationAndKey, waitForModule, Filters } from "@Webpack";
 import { Patcher } from "@Api";
 import Logger from "@Utils/Logger";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 import { getObjectKey, preventDefault } from "@Utils";
 import Button from "@Components/Button";
 import React from "@React";

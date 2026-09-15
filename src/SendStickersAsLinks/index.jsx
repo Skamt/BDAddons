@@ -1,6 +1,6 @@
 import "./styles";
 import "./patches/*";
-import Plugin from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 import React from "@React";
 import SettingComponent from "./components/SettingComponent";
 

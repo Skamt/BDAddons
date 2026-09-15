@@ -1,5 +1,5 @@
 import QuestStore from "@Stores/QuestStore";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 import { isQuestExpired, isQuestClaimed, isOrbsQuest, isQuestCompleted, isQuestAccepted } from "@/utils";
 import { transitionTo } from "@Discord/Modules";
 import solveAll from "@/questTypes/all";
@@ -54,12 +54,12 @@ function onQuestStoreChange() {
 	notifyOfNewQuests();
 }
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	patch();
 	notifyOfNewQuests();
 	QuestStore.addChangeListener(onQuestStoreChange);
 });
 
-Plugin.on(Events.STOP, () => {
+Plugin.onStop(() => {
 	QuestStore.removeChangeListener(onQuestStoreChange);
 });

@@ -4,7 +4,7 @@ import Logger from "@Utils/Logger";
 
 export default class ErrorBoundary extends React.Component {
 	state = { hasError: false, error: null, info: null };
-	
+
 	componentDidCatch(error, info) {
 		this.setState({ error, info, hasError: true });
 		const errorMessage = `\n\t${error?.message || ""}${(info?.componentStack || "").split("\n").slice(0, 20).join("\n")}`;
@@ -44,3 +44,4 @@ export default class ErrorBoundary extends React.Component {
 		return this.props.fallback ? this.renderFallback() : this.renderErrorBoundary();
 	}
 }
+

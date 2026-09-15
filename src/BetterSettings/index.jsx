@@ -1,13 +1,11 @@
 import "./styles";
 import "./patches/*";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 import React from "@React";
 import { Patcher } from "@Api";
 import FieldSet from "@Components/FieldSet";
 import SettingSwtich from "@Components/SettingSwtich";
 import "@/forceLoadSettings";
-
-
 
 Plugin.getSettingsPanel = () => () => (
 	<FieldSet contentGap={8}>
@@ -27,9 +25,5 @@ Plugin.getSettingsPanel = () => () => (
 		].map(SettingSwtich)}
 	</FieldSet>
 );
-
-Plugin.on(Events.STOP, () => {
-	Patcher.unpatchAll();
-});
 
 module.exports = () => Plugin;

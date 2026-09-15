@@ -3,13 +3,13 @@ import Logger from "@Utils/Logger";
 import { Filters, getModule } from "@Webpack";
 import { getNestedProp } from "@Utils";
 import Store from "@/Store";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 import Settings from "@Utils/Settings";
 
 const channelFilter = Filters.byStrings("href", "children", "onClick", "onKeyPress", "focusProps");
 const channelComponent = getModule(a => a.render && channelFilter(a.render), { searchExports: true });
 
-Plugin.on(Events.START, () => {
+Plugin.onStart(() => {
 	if (!channelComponent) return Logger.patchError("channelComponent");
 	Patcher.after(channelComponent, "render", (_, [props], ret) => {
 		const origClick = getNestedProp(ret, "props.children.props.onClick");

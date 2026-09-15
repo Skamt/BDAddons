@@ -9,12 +9,12 @@ import "./patches/patchEmojiPickerHeader";
 
 import { Patcher } from "@Api";
 import React from "@React";
-import Plugin, { Events } from "@Utils/Plugin";
+import Plugin from "@common/Plugin";
 import SettingComponent from "./components/SettingComponent";
 
 Plugin.getSettingsPanel = () => <SettingComponent />;
 
-Plugin.on(Events.STOP, () => {
+Plugin.onStop(() => {
 	Patcher.unpatchAll();
 });
 
