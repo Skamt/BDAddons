@@ -22,13 +22,19 @@ module.exports = () => ({
 	stop() {},
 	start() {
 		if (!NitroManager) return Logger.patchError("NitroManager");
-		let propertyDescriptor = null;
-		propertyDescriptor = Object.getOwnPropertyDescriptor(NitroManager.prototype, "canUsePremiumProfileCustomization");
+		const propertyDescriptor = Object.getOwnPropertyDescriptor(
+			NitroManager.prototype,
+			"canUsePremiumProfileCustomization"
+		);
 		Object.defineProperty(NitroManager.prototype, "canUsePremiumProfileCustomization", {
 			get() {
 				return BdApi.Webpack.Stores.UserStore.getCurrentUser().id === this.userId;
 			}
 		});
-		this.stop = () => Object.defineProperty(NitroManager.prototype, "canUsePremiumProfileCustomization", propertyDescriptor);
+		this.stop = () => Object.defineProperty(
+			NitroManager.prototype,
+			"canUsePremiumProfileCustomization",
+			propertyDescriptor
+		);
 	}
 });

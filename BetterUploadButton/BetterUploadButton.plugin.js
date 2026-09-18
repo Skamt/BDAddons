@@ -10,7 +10,8 @@
  */
 
 // common/React.jsx
-var React_default = /* @__PURE__ */ (() => BdApi.React)();
+var React = /* @__PURE__ */ (() => BdApi.React)();
+var React_default = React;
 
 // common/Webpack.js
 var Webpack = /* @__PURE__ */ (() => BdApi.Webpack)();

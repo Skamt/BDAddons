@@ -16,6 +16,7 @@ var Config_default = {
 		"description": "Should make settings open faster",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/BetterSettings/BetterSettings.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/BetterSettings",
+		"creddit": "https://github.com/Vendicated/Vencord/tree/main/src/plugins/betterSettings",
 		"authors": [{
 			"name": "Skamt"
 		}]
@@ -36,69 +37,33 @@ var Logger = /* @__PURE__ */ (() => Api.Logger)();
 var DOM = /* @__PURE__ */ (() => Api.DOM)();
 
 // common/Utils/Logger.js
-Logger.patchError = (patchId) => {
-	console.error(`%c[${Config_default.info.name}] %cCould not find module for %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
-};
 var Logger_default = Logger;
+var patchError = (...args) => Logger.error("Could not patch SettingsMenuTransition", ...args);
 
-// common/Utils/EventEmitter.js
-var EventEmitter_default = class {
-	constructor() {
-		this.listeners = {};
-	}
-	isInValid(event, handler) {
-		return typeof event !== "string" || typeof handler !== "function";
-	}
-	once(event, handler) {
-		if (this.isInValid(event, handler)) return;
-		if (!this.listeners[event]) this.listeners[event] = /* @__PURE__ */ new Set();
-		const wrapper = () => {
-			handler();
-			this.off(event, wrapper);
-		};
-		this.listeners[event].add(wrapper);
-	}
-	on(event, handler) {
-		if (this.isInValid(event, handler)) return;
-		if (!this.listeners[event]) this.listeners[event] = /* @__PURE__ */ new Set();
-		this.listeners[event].add(handler);
-		return () => this.off(event, handler);
-	}
-	off(event, handler) {
-		if (this.isInValid(event, handler)) return;
-		if (!this.listeners[event]) return;
-		this.listeners[event].delete(handler);
-		if (this.listeners[event].size !== 0) return;
-		delete this.listeners[event];
-	}
-	emit(event, ...payload) {
-		if (!this.listeners[event]) return;
-		for (const listener of this.listeners[event]) {
-			try {
-				listener.apply(null, payload);
-			} catch (err) {
-				Logger_default.error(`Could not run listener for ${event}`, err);
-			}
+// common/Plugin.js
+var target = new EventTarget();
+
+function wrap(handler2) {
+	return (e) => {
+		try {
+			handler2.apply(null, e);
+		} catch (err) {
+			Logger_default.error(`Could not run [${e.type}] handler`, { handler: handler2 }, "\n", err);
 		}
-	}
-};
-
-// common/Utils/Plugin.js
-var Events = {
-	START: "START",
-	STOP: "STOP"
-};
-var Plugin_default = new class extends EventEmitter_default {
-	stopped = true;
+	};
+}
+var Plugin_default = {
+	onLoad: (handler2, props) => target.addEventListener("LOAD", wrap(handler2), props),
+	onStart: (handler2, props) => target.addEventListener("START", wrap(handler2), props),
+	onStop: (handler2, props) => target.addEventListener("STOP", wrap(handler2), props),
 	start() {
-		this.emit(Events.START);
-		this.stopped = false;
-	}
+		target.dispatchEvent(new Event("LOAD"));
+		target.dispatchEvent(new Event("START"));
+	},
 	stop() {
-		this.emit(Events.STOP);
-		this.stopped = true;
+		target.dispatchEvent(new Event("STOP"));
 	}
-}();
+};
 
 // common/Utils/StylesLoader.js
 var styleLoader = {
@@ -107,12 +72,8 @@ var styleLoader = {
 		this._styles.push(styles);
 	}
 };
-Plugin_default.on(Events.START, () => {
-	DOM.addStyle(styleLoader._styles.join("\n"));
-});
-Plugin_default.on(Events.STOP, () => {
-	DOM.removeStyle();
-});
+Plugin_default.onLoad(() => DOM.addStyle(styleLoader._styles.join("\n")));
+Plugin_default.onStop(() => DOM.removeStyle());
 var StylesLoader_default = styleLoader;
 
 // src/BetterSettings/styles.css
@@ -126,15 +87,17 @@ StylesLoader_default.push(`#settings-menu-BetterDiscord .bd-changelog-button{
 }`);
 
 // common/React.jsx
-var React_default = /* @__PURE__ */ (() => BdApi.React)();
+var React = /* @__PURE__ */ (() => BdApi.React)();
+var React_default = React;
 
 // common/Utils/index.js
 function getObjectKey(object = {}, filter) {
-	for (const key in object) {
-		if (!filter(object[key])) continue;
-		return key;
+	for (const key2 in object) {
+		if (!filter(object[key2])) continue;
+		return key2;
 	}
 }
+var promiseHandler = (promise) => promise.then((data) => [void 0, data]).catch((err) => [err]);
 
 function getNestedProp(obj, path) {
 	return path.split(".").reduce((ob, prop) => ob?.[prop], obj);
@@ -154,8 +117,8 @@ var getByKeys = /* @__PURE__ */ (() => Webpack.getByKeys)();
 function getDeclarationAndKey(moduleFilter, declarationFilter, options = {}) {
 	const module2 = getModule(moduleFilter, { ...options, raw: true });
 	if (!module2?.declarations) return;
-	const key = getObjectKey(module2.declarations, declarationFilter);
-	return key ? { key, module: module2.declarations } : void 0;
+	const key2 = getObjectKey(module2.declarations, declarationFilter);
+	return key2 ? { key: key2, module: module2.declarations } : void 0;
 }
 
 // common/Utils/css.js
@@ -170,14 +133,17 @@ var classNameFactory = (prefix = "", connector = "-") => (...args) => {
 };
 
 // common/DiscordModules/zustand.js
-var { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
+var zustand = /* @__PURE__ */ (() => getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
 	_: Filters.byStrings("subscribe"),
 	zustand: () => true
-});
-var subscribeWithSelector = getModule(Filters.byStrings("getState", "equalityFn", "fireImmediately"), { searchExports: true });
+})?.zustand)();
+var subscribeWithSelector = /* @__PURE__ */ (() => getModule(Filters.byStrings("getState", "equalityFn", "fireImmediately"), {
+	searchExports: true
+}))();
 
 function create(initialState) {
-	const Store = zustand(initialState);
+	const Store = /* @__PURE__ */ zustand(initialState);
+	/* @__PURE__ */
 	Object.defineProperty(Store, "state", {
 		configurable: false,
 		get: () => Store.getState()
@@ -186,41 +152,46 @@ function create(initialState) {
 }
 
 // common/Utils/Settings.js
-var SettingsStore = create(subscribeWithSelector(() => Object.assign(Config_default.settings, Data.load("settings") || {})));
-((state) => {
+var Settings_default = /* @__PURE__ */ (() => {
+	const SettingsStore = create(
+		subscribeWithSelector(() => Object.assign(Config_default.settings || {}, Data.load("settings") || {}))
+	);
+	const state = SettingsStore.getInitialState();
 	const selectors = {};
 	const actions = {};
-	for (const [key, value] of Object.entries(state)) {
-		actions[`set${key}`] = (newValue) => SettingsStore.setState({
-			[key]: newValue });
-		selectors[key] = (state2) => state2[key];
+	for (const [key2, value] of Object.entries(state)) {
+		actions[`set${key2}`] = (newValue) => SettingsStore.setState({
+			[key2]: newValue });
+		selectors[key2] = (state2) => state2[key2];
 	}
 	Object.defineProperty(SettingsStore, "selectors", { value: Object.assign(selectors) });
 	Object.assign(SettingsStore, actions);
-})(SettingsStore.getInitialState());
-SettingsStore.subscribe(
-	(state) => state,
-	() => Data.save("settings", SettingsStore.state)
-);
-Object.assign(SettingsStore, {
-	useSetting: (key) => {
-		const val = SettingsStore((state) => state[key]);
-		return [val, SettingsStore[`set${key}`]];
-	}
-});
-var Settings_default = SettingsStore;
+	SettingsStore.subscribe(
+		(state2) => state2,
+		() => Data.save("settings", SettingsStore.state)
+	);
+	Object.assign(SettingsStore, {
+		useSetting: (key2) => {
+			const val = SettingsStore((state2) => state2[key2]);
+			return [val, SettingsStore[`set${key2}`]];
+		}
+	});
+	return SettingsStore;
+})();
 
 // common/DiscordModules/Modules.js
 var ComponentDispatch = /* @__PURE__ */ (() => {
-	const filter = (m) => m.dispatchToLastSubscribed;
-	const d = getModule(filter, { searchExports: true });
-	if (d) return d;
-	waitForModule(filter).then((a) => {
+	waitForModule((m) => m.dispatchToLastSubscribed, { searchExports: true }).then((a) => {
 		ComponentDispatch = a;
 	});
 })();
+var FocusLock = /* @__PURE__ */ (() => {
+	waitForModule(Filters.bySource(".containerRef,{disableReturn")).then((a) => {
+		const key2 = getObjectKey(a, Filters.byStrings("containerRef"));
+		FocusLock = a[key2];
+	});
+})();
 var I18n = /* @__PURE__ */ (() => getByKeys("intl", "t"))();
-var FocusLock = /* @__PURE__ */ (() => getMangled(Filters.bySource(".containerRef,{keyboardModeEnabled:"), { FocusLock: Filters.byStrings("containerRef") }).FocusLock)();
 
 // src/BetterSettings/patches/patchLayer.jsx
 var BaseLayer = getDeclarationAndKey(
@@ -260,70 +231,125 @@ function prepLayer(props) {
 	try {
 		[FocusLock, ComponentDispatch, Classes.layer].forEach((e) => e.test);
 	} catch {
-		Logger_default.error("Failed to find some components");
 		return props.children;
 	}
 	return /* @__PURE__ */ React_default.createElement(Layer, { ...props });
 }
-Plugin_default.on(Events.START, () => {
-	const { module: module2, key } = BaseLayer;
-	if (!module2 || !key) return Logger_default.error("BaseLayer");
-	const origin = module2[key];
+Plugin_default.onStart(() => {
+	const { module: module2, key: key2 } = BaseLayer;
+	if (!module2 || !key2) return Logger_default.error("BaseLayer");
+	const origin = module2[key2];
 
 	function run() {
 		if (!Settings_default.state.disableFade) {
-			module2[key] = origin;
-		} else module2[key] = prepLayer;
+			module2[key2] = origin;
+		} else module2[key2] = prepLayer;
 	}
 	run();
 	const unsub = Settings_default.subscribe(Settings_default.selectors.disableFade, run);
-	Plugin_default.on(Events.STOP, () => {
+	Plugin_default.onStop(() => {
 		unsub();
-		module2[key] = origin;
+		module2[key2] = origin;
 	});
 });
 
+// common/Patcher/shared.js
+var patch = /* @__PURE__ */ (() => {
+	Plugin_default.onStop(() => Patcher.unpatchAll());
+	return function patch2(type, object, key2, callback, once) {
+		if (!isValid(object, key2))
+			return Logger.error("Could not perform a patch, missing arguments", arguments);
+		const caller = {
+			after: (context, args, ret) => callback({ context, args, ret }),
+			before: (context, args) => callback({ context, args }),
+			instead: (context, args, fn) => callback({ context, args, fn })
+		} [type];
+		if (once) {
+			const unpatch = Patcher[type](object, key2, (...args) => {
+				unpatch();
+				caller.apply(null, args);
+			});
+		} else return Patcher[type](object, key2, caller);
+	};
+})();
+
+function isValid(object, key2) {
+	return object && key2 && key2 in object;
+}
+
+// common/Patcher/lazy.js
+var abortController = /* @__PURE__ */ (() => {
+	Plugin_default.onStart(() => abortController = new AbortController());
+	Plugin_default.onStop(() => abortController.abort());
+	return new AbortController();
+})();
+async function lazy2(type, callback, { once, sourceFilter, exportsFilter, decFilter, ...rest } = {}) {
+	if (!callback || !type || !sourceFilter || !(exportsFilter || decFilter)) {
+		return Logger.error("lazyPatch has missing Arguments", arguments);
+	}
+	const promisedModule = waitForModule(sourceFilter, {
+		...rest,
+		raw: true,
+		signal: abortController.signal
+	});
+	const [err, res] = await promiseHandler(promisedModule);
+	if (err || !res) {
+		return;
+	}
+	const object = exportsFilter ? res.exports : res.declarations;
+	const key2 = getObjectKey(object, exportsFilter || decFilter);
+	patch(type, object, key2, callback, once);
+}
+var after = (opts, callback) => lazy2("after", callback, opts);
+
+// common/Patcher/index.js
+var after2 = (...args) => patch("after", ...args);
+
 // src/BetterSettings/patches/patchSettingMenuFadeAnimation.jsx
-Plugin_default.on(Events.START, () => {
-	const controller = new AbortController();
-	waitForModule(Filters.bySource(`"data-mana-component":"layer-modal"`), {
-		signal: controller.signal,
-		raw: true
-	}).then(({ exports: exp }) => {
-		const key = getObjectKey(exp, () => true);
-		if (!key) return Logger_default.patchError("SettingsMenuFadeAnimation");
-		Patcher.after(exp, key, (_, arg, ret) => {
+Plugin_default.onStart(() => {
+	after({
+			sourceFilter: Filters.bySource(`"data-mana-component":"layer-modal"`),
+			exportsFilter: () => true
+		},
+		({ ret }) => {
 			if (!Settings_default.state.disableFade) return;
-			const target = getNestedProp(
+			const target2 = getNestedProp(
 				ret,
 				"props.children.props.children.props.children.props.children.props"
 			);
-			if (!target) return;
-			const unpatch = Patcher.after(target, "children", (_2, arg2, ret2) => {
-				unpatch();
-				return /* @__PURE__ */ React_default.createElement("div", { ...ret2.props, style: {} });
-			});
-		});
-	});
-	Plugin_default.once(Events.STOP, () => controller.abort());
+			if (!target2) return;
+			after2(target2, "children", ({ ret: ret2 }) => /* @__PURE__ */ React_default.createElement("div", { ...ret2.props, style: {} }), true);
+		}
+	);
 });
+
+// common/Patcher/contextmenu.js
+var patches = [];
+Plugin_default.onStop(() => {
+	patches.filter(Boolean).forEach((a) => a());
+	patches = [];
+});
+var contextmenu_default = (id, callback) => {
+	const undo = ContextMenu.patch(id, callback);
+	patches.push(undo);
+};
 
 // src/BetterSettings/patches/patchSettingsContextMenu.jsx
 function transformSettingsEntries(list) {
 	const items = [];
 	for (const item of list) {
-		const { key, props } = item;
+		const { key: key2, props } = item;
 		if (!props) continue;
-		if (key === "profile_section") {
+		if (key2 === "profile_section") {
 			items.push(item);
 			items.push(ContextMenu.buildItem({ type: "separator" }));
 			continue;
 		}
-		if (key === "user_section" || key?.endsWith("_section") && props.label) {
-			const label = key === "user_section" ? I18n.intl.string(I18n.t.cduTBL) : props.label;
+		if (key2 === "user_section" || key2?.endsWith("_section") && props.label) {
+			const label = key2 === "user_section" ? I18n.intl.string(I18n.t.cduTBL) : props.label;
 			items.push(
 				/* @__PURE__ */
-				React_default.createElement(ContextMenu.Item, { ...props, key, label, id: String(label) }, props.children)
+				React_default.createElement(ContextMenu.Item, { ...props, key: key2, label, id: String(label) }, props.children)
 			);
 			continue;
 		}
@@ -331,51 +357,48 @@ function transformSettingsEntries(list) {
 	}
 	return items;
 }
-Plugin_default.on(Events.START, () => {
-	const unpatch = ContextMenu.patch("settings-menu", (ret, props) => {
+Plugin_default.onStart(() => {
+	contextmenu_default("settings-menu", (ret, props) => {
 		if (!Settings_default.state.organizeMenu) return;
 		ret.props.children[0] = transformSettingsEntries(ret.props.children[0]);
 	});
-	Plugin_default.on(Events.STOP, () => unpatch());
 });
 
 // src/BetterSettings/patches/patchSettingsMenuTransition.js
 var SettingsMenuTransition = getBySource("headerId:void 0,headerIdIsManaged:!1");
-Plugin_default.on(Events.START, () => {
-	const delayKey = getObjectKey(SettingsMenuTransition, Number.isInteger);
-	if (!delayKey) return Logger_default.patchError("SettingsMenuTransition");
-	const origDelay = SettingsMenuTransition[delayKey];
+var key = getObjectKey(SettingsMenuTransition, Number.isInteger);
+Plugin_default.onStart(function handler() {
+	if (!isValid(SettingsMenuTransition, key)) return patchError(handler);
+	const origDelay = SettingsMenuTransition[key];
 
 	function run() {
 		if (!Settings_default.state.disableFade) {
-			SettingsMenuTransition[delayKey] = origDelay;
-		} else SettingsMenuTransition[delayKey] = 0;
+			SettingsMenuTransition[key] = origDelay;
+		} else SettingsMenuTransition[key] = 0;
 	}
 	run();
 	const unsub = Settings_default.subscribe(Settings_default.selectors.disableFade, run);
-	Plugin_default.on(Events.STOP, () => {
-		unsub();
-		SettingsMenuTransition[delayKey] = origDelay;
-	});
+	Plugin_default.onStop(
+		() => {
+			unsub();
+			SettingsMenuTransition[key] = origDelay;
+		}, { once: true }
+	);
 });
 
 // src/BetterSettings/patches/patchStandardSidebarView.jsx
-var ServerSettings = Plugin_default.on(Events.START, async () => {
-	const controller = new AbortController();
-	waitForModule(Filters.bySource("SCROLLABLE_CUSTOM"), {
-		signal: controller.signal,
-		raw: true
-	}).then(({ declarations }) => {
-		const key = getObjectKey(declarations, Filters.byStrings("noticeRegionHiddenSidebar"));
-		if (!key) return Logger_default.patchError("patchServerSettings");
-		Patcher.after(declarations, key, (_, arg, ret) => {
+Plugin_default.onStart(() => {
+	after({
+			sourceFilter: Filters.bySource("SCROLLABLE_CUSTOM"),
+			decFilter: Filters.byStrings("noticeRegionHiddenSidebar")
+		},
+		function patchStandardSidebar({ ret }) {
 			if (!Settings_default.state.disableFade) return;
 			const animatedDiv = getNestedProp(ret, "props.children.props.children.0");
 			if (!animatedDiv) return;
 			ret.props.children = /* @__PURE__ */ React_default.createElement("div", { ...animatedDiv.props });
-		});
-	});
-	Plugin_default.once(Events.STOP, () => controller.abort());
+		}
+	);
 });
 
 // common/Components/FieldSet/styles.css
@@ -500,20 +523,20 @@ var some = getByPrototypeKeys("renderNameZone", { searchExports: true });
 var instance = some ? new some() : null;
 async function forceLoadStuff() {
 	await BdApi.Utils.loadEntry(SettingMenuModal.openUserSettings);
-	instance && await BdApi.Utils.loadEntry(instance.handleOpenSettingsContextMenu);
+	await BdApi.Utils.loadEntry(instance.handleOpenSettingsContextMenu);
 }
 var forceLoadSettingsMenu = () => {
 	if (!Settings_default.state.forceLoad) return;
 	forceLoadSettingsMenu = nop;
 	forceLoadStuff();
 };
-Plugin_default.on(Events.START, () => {
+Plugin_default.onStart(() => {
 	forceLoadSettingsMenu();
 	const unsub = Settings_default.subscribe(Settings_default.selectors.forceLoad, () => forceLoadSettingsMenu());
-	Plugin_default.on(Events.STOP, () => unsub());
+	Plugin_default.onStop(() => unsub(), { once: true });
 });
 
-// src/BetterSettings/index.js
+// src/BetterSettings/index.jsx
 Plugin_default.getSettingsPanel = () => () => /* @__PURE__ */ React_default.createElement(FieldSet, { contentGap: 8 }, [{
 		description: "Organizes Settings contextmenu",
 		settingKey: "organizeMenu"
@@ -527,7 +550,4 @@ Plugin_default.getSettingsPanel = () => () => /* @__PURE__ */ React_default.crea
 		settingKey: "forceLoad"
 	}
 ].map(SettingSwtich));
-Plugin_default.on(Events.STOP, () => {
-	Patcher.unpatchAll();
-});
 module.exports = () => Plugin_default;
