@@ -1,18 +1,17 @@
 import { Filters } from "@Webpack";
-import { lazyAfter } from "@Utils/Patcher";
+import { after } from "@common/Patcher/lazy";
 import { getNestedProp } from "@Utils";
-import Logger from "@Utils/Logger";
 import React from "@React";
 import Settings from "@Utils/Settings";
 import Plugin from "@common/Plugin";
 
 Plugin.onStart(() => {
-	lazyAfter(
+	after(
 		{
 			sourceFilter: Filters.bySource("SCROLLABLE_CUSTOM"),
 			decFilter: Filters.byStrings("noticeRegionHiddenSidebar"),
 		},
-		function patchServerSettings({ ret }) {
+		function patchStandardSidebar({ ret }) {
 			if (!Settings.state.disableFade) return;
 			const animatedDiv = getNestedProp(ret, "props.children.props.children.0");
 			if (!animatedDiv) return;

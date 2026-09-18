@@ -20,9 +20,9 @@ function getPlugins() {
 	return readdirSync(global.pluginsFolder).map(getPluginObject).filter(Boolean);
 }
 
-const promiseHandler = promise => promise.then(data => [undefined, data]).catch(err => [err]);
+const promiseHandler = (promise) => promise.then((data) => [undefined, data]).catch((err) => [err]);
 
-const isObject = item => item && typeof item === "object" && !Array.isArray(item);
+const isObject = (item) => item && typeof item === "object" && !Array.isArray(item);
 
 function mergeDeep(target, ...sources) {
 	if (!sources.length) return target;
@@ -33,12 +33,12 @@ function mergeDeep(target, ...sources) {
 			if (isObject(source[key])) {
 				if (!target[key])
 					Object.assign(target, {
-						[key]: {}
+						[key]: {},
 					});
 				mergeDeep(target[key], source[key]);
 			} else {
 				Object.assign(target, {
-					[key]: source[key]
+					[key]: source[key],
 				});
 			}
 		}
@@ -61,7 +61,7 @@ function buildMeta(config) {
 	line("name", config.info.name);
 	line("description", config.info.description);
 	line("version", config.info.version);
-	line("author", config.info.authors.map(a => a.name).join(", "));
+	line("author", config.info.authors.map((a) => a.name).join(", "));
 	line("website", config.info.github);
 	line("source", config.info.source);
 	line("credit", config.info.credit);
@@ -82,7 +82,14 @@ async function buildConfig(pkgPath, pluginConfigPath) {
 	return config;
 }
 
+function buildReadme(config) {
+	let content = `# ${config.info.name}`;
+	if (config.info.credit) content += ` [credit](${config.info.credit})`;
+	content += `\n\n${config.info.description}`
+	return content;
+}
 
+module.exports.buildReadme = buildReadme;
 module.exports.buildConfig = buildConfig;
 module.exports.parseJSON = parseJSON;
 module.exports.promiseHandler = promiseHandler;

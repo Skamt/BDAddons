@@ -14,7 +14,7 @@ const BaseLayer = getDeclarationAndKey(
 );
 
 const Classes = getByKeys("animating", "baseLayer", "bg", "layer", "layers");
-const cl = classNameFactory("","");
+const cl = classNameFactory("", "");
 
 function Layer({ mode, baseLayer = false, ...props }) {
 	const hidden = mode === "HIDDEN";
@@ -49,7 +49,7 @@ function prepLayer(props) {
 	try {
 		[FocusLock, ComponentDispatch, Classes.layer].forEach((e) => e.test);
 	} catch {
-		Logger.error("Failed to find some components");
+		DEV: Logger.error("Failed to find some components");
 		return props.children;
 	}
 
@@ -74,5 +74,5 @@ Plugin.onStart(() => {
 	Plugin.onStop(() => {
 		unsub();
 		module[key] = origin;
-	})
+	});
 });

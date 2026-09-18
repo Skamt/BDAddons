@@ -1,5 +1,6 @@
 import { waitForModule, Filters } from "@Webpack";
-import { Patcher } from "@Api";
+import { after as lazyAfter } from "@common/Patcher/lazy";
+import { after } from "@common/Patcher";
 import { getObjectKey, getNestedProp } from "@Utils";
 import Logger from "@Utils/Logger";
 import React from "@React";
@@ -7,26 +8,21 @@ import Settings from "@Utils/Settings";
 import Plugin from "@common/Plugin";
 
 Plugin.onStart(() => {
-	const controller = new AbortController();
-	waitForModule(Filters.bySource(`"data-mana-component":"layer-modal"`), {
-		signal: controller.signal,
-		raw: true,
-	}).then(({ exports: exp }) => {
-		const key = getObjectKey(exp, () => true);
-		if (!key) return Logger.patchError("SettingsMenuFadeAnimation");
-
-		Patcher.after(exp, key, (_, arg, ret) => {
+	lazyAfter(
+		{
+			sourceFilter: Filters.bySource(`"data-mana-component":"layer-modal"`),
+			exportsFilter: () => true,
+		},
+		({ ret }) => {
 			if (!Settings.state.disableFade) return;
+
 			const target = getNestedProp(
 				ret,
 				"props.children.props.children.props.children.props.children.props",
 			);
 			if (!target) return;
-			const unpatch = Patcher.after(target, "children", (_, arg, ret) => {
-				unpatch();
-				return <div {...ret.props} style={{}} />;
-			});
-		});
-	});
-	Plugin.once(Events.STOP, () => controller.abort());
+
+			after(target, "children", ({ ret }) => <div {...ret.props} style={{}} />, true);
+		},
+	);
 });

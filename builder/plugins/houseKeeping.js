@@ -1,5 +1,5 @@
 const { buildConfig } = require("../helpers");
-const { parseJSON, buildMeta, mergeDeep } = require("../helpers");
+const { parseJSON, buildReadme, buildMeta, mergeDeep } = require("../helpers");
 const { mkdir, writeFile } = require("node:fs/promises");
 const { existsSync } = require("node:fs");
 const { resolve, dirname } = require("node:path");
@@ -32,6 +32,13 @@ const beautifyConfig = {
 	indent_empty_lines: false
 };
 
+function writReadme( config) {
+	const readmeFilePath = resolve(global.releaseFolder, config.info.name, "README.md");
+	console.log(readmeFilePath);
+	if (existsSync(readmeFilePath)) return;
+	return wf(readmeFilePath, buildReadme(config));
+}
+
 module.exports = pluginRoot => {
 	return {
 		name: "houseKeeping",
@@ -48,6 +55,7 @@ module.exports = pluginRoot => {
 				if (!text) return;
 				const output = `${buildMeta(config)}\n${beautify(text, beautifyConfig)}`;
 				await wf(outfile, output);
+				await writReadme(config);
 			});
 		}
 	};

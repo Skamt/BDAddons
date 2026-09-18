@@ -11,26 +11,27 @@ import MessageStore from "@Stores/MessageStore";
 import { ChannelUtils, transitionTo } from "@Discord/Modules";
 import { getCurrentChannel } from "@Utils/Channel";
 import SettingComponent from "./SettingComponent";
-import PatchContextMenu from "./patchContextMenu";
+import patchContextMenu from "./patchContextMenu";
 import { playMessageNotificationSounce } from "@/utils";
 import Plugin from "@common/Plugin";
 import React from "@React";
 
 const SILENT_PING_FLAG = 1 << 12;
 
-function showNotification(message, guildId) {
+function showNotification(msg, guildId) {
 	try {
+		const message = Object.assign({}, msg);
 		const channel = ChannelStore.getChannel(message.channel_id);
-		// const channelRegex = /<#(\d{19})>/g;
-		// const userRegex = /<@(\d{18})>/g;
+		const channelRegex = /<#(\d{19})>/g;
+		const userRegex = /<@(\d{18})>/g;
 
-		// message.content = message.content.replace(channelRegex, (match, channelId) => {
-		// 	return `#${ChannelStore.getChannel(channelId)?.name}`;
-		// });
+		message.content = message.content.replace(channelRegex, (match, channelId) => {
+			return `#${ChannelStore.getChannel(channelId)?.name}`;
+		});
 
-		// message.content = message.content.replace(userRegex, (match, userId) => {
-		// 	return `@${UserStore.getUser(userId).globalName}`;
-		// });
+		message.content = message.content.replace(userRegex, (match, userId) => {
+			return `@${UserStore.getUser(userId).globalName}`;
+		});
 
 		BdApi.UI.showNotification({
 			id: `BypassStatus-${Math.random().toString(36).slice(2)}`,
@@ -99,12 +100,11 @@ Plugin.onStart(() => {
 		},
 	});
 
-	PatchContextMenu.init();
+	patchContextMenu();
 });
 
 Plugin.onStop(() => {
 	Flux.dispose();
-	PatchContextMenu.dispose();
 });
 
 Plugin.getSettingsPanel = () => <SettingComponent />;

@@ -5,14 +5,11 @@ import { create, subscribeWithSelector } from "@Discord/zustand";
 import { Data } from "@Api";
 import { shallow } from "@Utils";
 
-const SettingsStore = /*@__PURE__*/ (() =>
-	create(
+export default /*@__PURE__*/ (() => {
+	const SettingsStore = create(
 		subscribeWithSelector(() => Object.assign(config.settings || {}, Data.load("settings") || {})),
-	))();
+	);
 
-export default SettingsStore;
-
-Plugin.onLoad(() => {
 	const state = SettingsStore.getInitialState();
 	const selectors = {};
 	const actions = {};
@@ -41,4 +38,6 @@ Plugin.onLoad(() => {
 		window.BDPluginSettings = window.BDPluginSettings || {};
 		window.BDPluginSettings[config.info.name] = SettingsStore;
 	}
-});
+
+	return SettingsStore;
+})();

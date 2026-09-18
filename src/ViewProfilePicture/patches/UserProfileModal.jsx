@@ -10,7 +10,7 @@ const UserProfileModal = getModule(Filters.byKeys("Overlay", "render"));
 
 Plugin.onStart(() => {
 	before(UserProfileModal, "render", ({ args: [props] }) => {
-		const target = useMemo(() => props?.children.find(a => a?.props?.children && !a?.props?.className), [props.children]);
+		const target = useMemo(() => props?.children.find(a => a?.props?.children && !a?.props?.className), [props?.children]);
 		if (!target) return;
 
 		props.className = `${props.className} VPP-container`;

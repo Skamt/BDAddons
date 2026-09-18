@@ -1,3 +1,4 @@
+import patch from "@common/Patcher/contextmenu";
 import { ContextMenu } from "@Api";
 import React from "@React";
 import { I18n } from "@Discord/Modules";
@@ -35,9 +36,8 @@ function transformSettingsEntries(list) {
 }
 
 Plugin.onStart(() => {
-	const unpatch = ContextMenu.patch("settings-menu", (ret, props) => {
-		if(!Settings.state.organizeMenu) return; 
+	patch("settings-menu", (ret, props) => {
+		if (!Settings.state.organizeMenu) return;
 		ret.props.children[0] = transformSettingsEntries(ret.props.children[0]);
 	});
-	Plugin.onStop(() => unsub(), {once:true});
 });

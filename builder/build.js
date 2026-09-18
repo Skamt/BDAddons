@@ -65,13 +65,12 @@ async function buildAll() {
 program
 	.command("build [pluginName]")
 	.alias("b")
-	.option("-p, --prod", "builds at release location")
 	.option("-d, --dev", "builds at BetterDiscord location")
 	.option("-w, --watch", "enable watch mode")
 	.option("-a, --all", "build all plugins")
 	.description("builds a given plugin")
 	.action((target, { watch, all, prod, dev }) => {
-		global.prod = prod;
+
 		global.dev = dev;
 		global.watch = watch;
 		
