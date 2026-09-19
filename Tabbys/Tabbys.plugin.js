@@ -2,17 +2,68 @@
  * @runAt idle
  * @name Tabbys
  * @description Adds Browser like tabs/bookmarks for channels
- * @version 1.0.13
+ * @version 1.0.14
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/Tabbys
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/Tabbys/Tabbys.plugin.js
  */
 
+// common/Utils/Array.js
+function set(array, index, item) {
+	return array.toSpliced(index, 1, item);
+}
+
+function remove(array, index) {
+	return array.toSpliced(index, 1);
+}
+
+function removeMany(array, indices) {
+	return array.filter((_, i) => indices.indexOf(i) === -1);
+}
+
+function add(array, item, index) {
+	return array.toSpliced(index ?? array.length, 0, item);
+}
+
+function slice(array, from, to) {
+	return array.slice(from, to);
+}
+
+function arrayMove(array, from, to) {
+	const newArray = array.slice();
+	newArray.splice(to, 0, newArray.splice(from, 1)[0]);
+	return newArray;
+}
+
+function meta2(array, filter) {
+	const index = array.findIndex(filter);
+	if (index === -1) return { items: null };
+	return {
+		index,
+		length: array.length,
+		item: array[index],
+		isSingle: array.length === 1,
+		isFirst: index === 0,
+		isLast: index === array.length - 1,
+		nextItem: array[index + 1],
+		previousItem: array[index - 1]
+	};
+}
+
+// common/React.jsx
+var useState = /* @__PURE__ */ (() => BdApi.React.useState)();
+var useContext = /* @__PURE__ */ (() => BdApi.React.useContext)();
+var useEffect = /* @__PURE__ */ (() => BdApi.React.useEffect)();
+var useRef = /* @__PURE__ */ (() => BdApi.React.useRef)();
+var React = /* @__PURE__ */ (() => BdApi.React)();
+var React_default = React;
+var NoopComponent = () => null;
+
 // config:@Config
 var Config_default = {
 	"info": {
 		"name": "Tabbys",
-		"version": "1.0.13",
+		"version": "1.0.14",
 		"description": "Adds Browser like tabs/bookmarks for channels",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/Tabbys/Tabbys.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/Tabbys",
@@ -48,95 +99,39 @@ var Config_default = {
 };
 
 // common/Api.js
-var Api = new BdApi(Config_default.info.name);
-var DOM = /* @__PURE__ */ (() => Api.DOM)();
+var Api = /* @__PURE__ */ (() => new BdApi(Config_default.info.name))();
 var Data = /* @__PURE__ */ (() => Api.Data)();
-var React = /* @__PURE__ */ (() => Api.React)();
 var Patcher = /* @__PURE__ */ (() => Api.Patcher)();
 var ContextMenu = /* @__PURE__ */ (() => Api.ContextMenu)();
 var Logger = /* @__PURE__ */ (() => Api.Logger)();
-var Webpack = /* @__PURE__ */ (() => Api.Webpack)();
-var getOwnerInstance = /* @__PURE__ */ (() => Api.ReactUtils.getOwnerInstance.bind(Api.ReactUtils))();
-
-// common/React.jsx
-var useState = /* @__PURE__ */ (() => React.useState)();
-var useContext = /* @__PURE__ */ (() => React.useContext)();
-var useEffect = /* @__PURE__ */ (() => React.useEffect)();
-var useRef = /* @__PURE__ */ (() => React.useRef)();
-var React_default = /* @__PURE__ */ (() => React)();
-var NoopComponent = () => null;
-var LazyComponent = (get) => {
-	const Comp = (props) => {
-		const Component = get() ?? NoopComponent;
-		return /* @__PURE__ */ React.createElement(Component, { ...props });
-	};
-	return Comp;
-};
+var DOM = /* @__PURE__ */ (() => Api.DOM)();
+var getOwnerInstance = /* @__PURE__ */ (() => BdApi.ReactUtils.getOwnerInstance.bind(BdApi.ReactUtils))();
 
 // common/Utils/Logger.js
-Logger.patchError = (patchId) => {
-	console.error(`%c[${Config_default.info.name}] %cCould not find module for %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
-};
 var Logger_default = Logger;
 
-// common/Utils/EventEmitter.js
-var EventEmitter_default = class {
-	constructor() {
-		this.listeners = {};
-	}
-	isInValid(event, handler) {
-		return typeof event !== "string" || typeof handler !== "function";
-	}
-	once(event, handler) {
-		if (this.isInValid(event, handler)) return;
-		if (!this.listeners[event]) this.listeners[event] = /* @__PURE__ */ new Set();
-		const wrapper = () => {
-			handler();
-			this.off(event, wrapper);
-		};
-		this.listeners[event].add(wrapper);
-	}
-	on(event, handler) {
-		if (this.isInValid(event, handler)) return;
-		if (!this.listeners[event]) this.listeners[event] = /* @__PURE__ */ new Set();
-		this.listeners[event].add(handler);
-		return () => this.off(event, handler);
-	}
-	off(event, handler) {
-		if (this.isInValid(event, handler)) return;
-		if (!this.listeners[event]) return;
-		this.listeners[event].delete(handler);
-		if (this.listeners[event].size !== 0) return;
-		delete this.listeners[event];
-	}
-	emit(event, ...payload) {
-		if (!this.listeners[event]) return;
-		for (const listener of this.listeners[event]) {
-			try {
-				listener.apply(null, payload);
-			} catch (err) {
-				Logger_default.error(`Could not run listener for ${event}`, err);
-			}
-		}
-	}
-};
+// common/Plugin.js
+var target = /* @__PURE__ */ (() => new EventTarget())();
 
-// common/Utils/Plugin.js
-var Events = {
-	START: "START",
-	STOP: "STOP"
-};
-var Plugin_default = new class extends EventEmitter_default {
-	stopped = true;
+function wrap(handler) {
+	return (e2) => {
+		try {
+			handler.apply(null, e2);
+		} catch (err) {
+			Logger_default.error(`Could not run [${e2.type}] handler`, { handler }, "\n", err);
+		}
+	};
+}
+var Plugin_default = {
+	onStart: (handler, props) => target.addEventListener("START", wrap(handler), props),
+	onStop: (handler, props) => target.addEventListener("STOP", wrap(handler), props),
 	start() {
-		this.emit(Events.START);
-		this.stopped = false;
-	}
+		target.dispatchEvent(new Event("START"));
+	},
 	stop() {
-		this.emit(Events.STOP);
-		this.stopped = true;
+		target.dispatchEvent(new Event("STOP"));
 	}
-}();
+};
 
 // common/Utils/StylesLoader.js
 var styleLoader = {
@@ -145,12 +140,8 @@ var styleLoader = {
 		this._styles.push(styles);
 	}
 };
-Plugin_default.on(Events.START, () => {
-	DOM.addStyle(styleLoader._styles.join("\n"));
-});
-Plugin_default.on(Events.STOP, () => {
-	DOM.removeStyle();
-});
+Plugin_default.onStart(() => DOM.addStyle(styleLoader._styles.join("\n")));
+Plugin_default.onStop(() => DOM.removeStyle());
 var StylesLoader_default = styleLoader;
 
 // src/Tabbys/styles.css
@@ -285,6 +276,34 @@ StylesLoader_default.push(`:root {
 }
 `);
 
+// common/Patcher/shared.js
+var patch = /* @__PURE__ */ (() => {
+	Plugin_default.onStop(() => Patcher.unpatchAll());
+	return function patch2(type, object, key, callback, once) {
+		if (!isValid(object, key))
+			return Logger.error("Could not perform a patch, missing arguments", arguments);
+		const caller = {
+			after: (context, args, ret) => callback({ context, args, ret }),
+			before: (context, args) => callback({ context, args }),
+			instead: (context, args, fn) => callback({ context, args, fn })
+		} [type];
+		if (once) {
+			const unpatch = Patcher[type](object, key, (...args) => {
+				unpatch();
+				caller.apply(null, args);
+			});
+		} else return Patcher[type](object, key, caller);
+	};
+})();
+
+function isValid(object, key) {
+	return object && key && key in object;
+}
+
+// common/Patcher/index.js
+var after = (...args) => patch("after", ...args);
+var before = (...args) => patch("before", ...args);
+
 // common/Utils/index.js
 function clsx(prefix) {
 	return (...args) => args.filter(Boolean).map((a) => `${prefix}-${a}`).join(" ");
@@ -314,11 +333,13 @@ function debounce(func, wait = 166) {
 
 function shallow(objA, objB) {
 	if (Object.is(objA, objB)) return true;
-	if (typeof objA !== "object" || objA === null || typeof objB !== "object" || objB === null) return false;
+	if (typeof objA !== "object" || objA === null || typeof objB !== "object" || objB === null)
+		return false;
 	const keysA = Object.keys(objA);
 	if (keysA.length !== Object.keys(objB).length) return false;
 	for (let i = 0; i < keysA.length; i++)
-		if (!Object.prototype.hasOwnProperty.call(objB, keysA[i]) || !Object.is(objA[keysA[i]], objB[keysA[i]])) return false;
+		if (!Object.prototype.hasOwnProperty.call(objB, keysA[i]) || !Object.is(objA[keysA[i]], objB[keysA[i]]))
+			return false;
 	return true;
 }
 
@@ -331,15 +352,20 @@ function getNestedProp(obj, path2) {
 }
 
 function reRender(selector) {
-	const target = document.querySelector(selector)?.parentElement;
-	if (!target) return;
-	const instance = getOwnerInstance(target);
-	const unpatch = Patcher.instead(instance, "render", () => unpatch());
+	const target2 = document.querySelector(selector)?.parentElement;
+	if (!target2) return;
+	const instance = getOwnerInstance(target2);
+	if (!instance) return;
+	const unpatch = BdApi.Patcher.instead("RE_RENDER", instance, "render", (a) => unpatch());
 	instance.forceUpdate(() => instance.forceUpdate());
 }
 var nop = () => {};
 
-// common/Webpack.js
+// common/consts.js
+var LAZY_DISCORD_COMPONENT_WRAPPER = "LazyDiscordComponentWrapper";
+
+// common/Webpack.jsx
+var Webpack = /* @__PURE__ */ (() => BdApi.Webpack)();
 var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
 var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
 var waitForModule = /* @__PURE__ */ (() => Webpack.waitForModule)();
@@ -347,27 +373,30 @@ var getBySource = /* @__PURE__ */ (() => Webpack.getBySource)();
 var getMangled = /* @__PURE__ */ (() => Webpack.getMangled)();
 var getStore = /* @__PURE__ */ (() => Webpack.getStore)();
 
-function waitForComponent(filter, options) {
-	let myValue = () => {};
-	const lazyComponent = LazyComponent(() => myValue);
-	waitForModule(filter, options).then((v) => {
-		myValue = v;
-		Object.assign(lazyComponent, v);
-	});
-	return lazyComponent;
+function Suspended({ promise, fallback, ...props }) {
+	const comp = React_default.use(promise);
+	if (comp) return React_default.createElement(comp, props);
+	return /* @__PURE__ */ React_default.createElement("fallback", null);
+}
+
+function waitForComponent2(filter, options, fallback = NoopComponent) {
+	const promise = waitForModule(filter, options);
+	const placeHolderComponent = (props) => /* @__PURE__ */ React_default.createElement(React_default.Suspense, { fallback: /* @__PURE__ */ React_default.createElement("fallback", null) }, /* @__PURE__ */ React_default.createElement(Suspended, { ...props, fallback, promise }));
+	placeHolderComponent.displayName = LAZY_DISCORD_COMPONENT_WRAPPER;
+	return placeHolderComponent;
 }
 
 function reactRefMemoFilter(type, ...args) {
 	const filter = Filters.byStrings(...args);
-	return (target) => target[type] && filter(target[type]);
+	return (target2) => target2[type] && filter(target2[type]);
 }
 
 function getModuleAndKey(filter, options) {
 	let module2;
-	const target = getModule((entry, m2) => filter(entry) ? module2 = m2 : false, options);
+	const target2 = getModule((entry, m2) => filter(entry) ? module2 = m2 : false, options);
 	module2 = module2?.exports;
 	if (!module2) return;
-	const key = Object.keys(module2).find((k) => module2[k] === target);
+	const key = Object.keys(module2).find((k) => module2[k] === target2);
 	if (!key) return;
 	return { module: module2, key };
 }
@@ -380,14 +409,17 @@ var IconsUtils = /* @__PURE__ */ (() => getModule((a) => a.getChannelIconURL))()
 var ChannelUtils = /* @__PURE__ */ (() => getModule((m2) => m2.openPrivateChannel))();
 
 // common/DiscordModules/zustand.js
-var { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
+var zustand = /* @__PURE__ */ (() => getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
 	_: Filters.byStrings("subscribe"),
 	zustand: () => true
-});
-var subscribeWithSelector = getModule(Filters.byStrings("getState", "equalityFn", "fireImmediately"), { searchExports: true });
+})?.zustand)();
+var subscribeWithSelector = /* @__PURE__ */ (() => getModule(Filters.byStrings("getState", "equalityFn", "fireImmediately"), {
+	searchExports: true
+}))();
 
 function create(initialState2) {
-	const Store2 = zustand(initialState2);
+	const Store2 = /* @__PURE__ */ zustand(initialState2);
+	/* @__PURE__ */
 	Object.defineProperty(Store2, "state", {
 		configurable: false,
 		get: () => Store2.getState()
@@ -396,8 +428,11 @@ function create(initialState2) {
 }
 
 // common/Utils/Settings.js
-var SettingsStore = create(subscribeWithSelector(() => Object.assign(Config_default.settings, Data.load("settings") || {})));
-((state) => {
+var Settings_default = /* @__PURE__ */ (() => {
+	const SettingsStore = create(
+		subscribeWithSelector(() => Object.assign(Config_default.settings || {}, Data.load("settings") || {}))
+	);
+	const state = SettingsStore.getInitialState();
 	const selectors = {};
 	const actions = {};
 	for (const [key, value] of Object.entries(state)) {
@@ -407,60 +442,18 @@ var SettingsStore = create(subscribeWithSelector(() => Object.assign(Config_defa
 	}
 	Object.defineProperty(SettingsStore, "selectors", { value: Object.assign(selectors) });
 	Object.assign(SettingsStore, actions);
-})(SettingsStore.getInitialState());
-SettingsStore.subscribe(
-	(state) => state,
-	() => Data.save("settings", SettingsStore.state)
-);
-Object.assign(SettingsStore, {
-	useSetting: (key) => {
-		const val = SettingsStore((state) => state[key]);
-		return [val, SettingsStore[`set${key}`]];
-	}
-});
-var Settings_default = SettingsStore;
-
-// common/Utils/Array.js
-function set(array, index, item) {
-	return array.toSpliced(index, 1, item);
-}
-
-function remove(array, index) {
-	return array.toSpliced(index, 1);
-}
-
-function removeMany(array, indices) {
-	return array.filter((_, i) => indices.indexOf(i) === -1);
-}
-
-function add(array, item, index) {
-	return array.toSpliced(index ?? array.length, 0, item);
-}
-
-function slice(array, from, to) {
-	return array.slice(from, to);
-}
-
-function arrayMove(array, from, to) {
-	const newArray = array.slice();
-	newArray.splice(to, 0, newArray.splice(from, 1)[0]);
-	return newArray;
-}
-
-function meta2(array, filter) {
-	const index = array.findIndex(filter);
-	if (index === -1) return { items: null };
-	return {
-		index,
-		length: array.length,
-		item: array[index],
-		isSingle: array.length === 1,
-		isFirst: index === 0,
-		isLast: index === array.length - 1,
-		nextItem: array[index + 1],
-		previousItem: array[index - 1]
-	};
-}
+	SettingsStore.subscribe(
+		(state2) => state2,
+		() => Data.save("settings", SettingsStore.state)
+	);
+	Object.assign(SettingsStore, {
+		useSetting: (key) => {
+			const val = SettingsStore((state2) => state2[key]);
+			return [val, SettingsStore[`set${key}`]];
+		}
+	});
+	return SettingsStore;
+})();
 
 // MODULES-AUTO-LOADER:@Stores/UserStore
 var UserStore_default = getStore("UserStore");
@@ -479,6 +472,15 @@ var ChannelStore_default = getStore("ChannelStore");
 
 // MODULES-AUTO-LOADER:@Stores/GuildMemberStore
 var GuildMemberStore_default = getStore("GuildMemberStore");
+
+// MODULES-AUTO-LOADER:@Stores/SelectedChannelStore
+var SelectedChannelStore_default = getStore("SelectedChannelStore");
+
+// MODULES-AUTO-LOADER:@Stores/SelectedGuildStore
+var SelectedGuildStore_default = getStore("SelectedGuildStore");
+
+// MODULES-AUTO-LOADER:@Modules/FetchUser
+var FetchUser_default = getModule(Filters.byStrings("USER_UPDATE", "default.getUser", "oldFormErrors"), { searchExports: true });
 
 // common/Utils/User.js
 function getUserName(userObject = {}) {
@@ -515,53 +517,14 @@ var pathTypes = {
 var UserGuildJoinRequestStore_default = getStore("UserGuildJoinRequestStore");
 
 // common/DiscordModules/Enums.js
-var GuildFeaturesEnum = getModule(Filters.byKeys("CLYDE_ENABLED"), { searchExports: true }) || {
-	"CLYDE_ENABLED": "CLYDE_ENABLED"
-};
-var EmojiSendAvailabilityEnum = getModule(Filters.byKeys("GUILD_SUBSCRIPTION_UNAVAILABLE"), { searchExports: true }) || {
-	"PREMIUM_LOCKED": 2
-};
-var EmojiIntentionEnum = getModule(Filters.byKeys("GUILD_ROLE_BENEFIT_EMOJI"), { searchExports: true }) || {
-	"CHAT": 3
-};
-var DiscordPermissionsEnum = getModule(Filters.byKeys("ADD_REACTIONS"), { searchExports: true }) || {
-	"EMBED_LINKS": "16384n",
-	"USE_EXTERNAL_EMOJIS": "262144n"
-};
-var StickerTypeEnum = getModule(Filters.byKeys("GUILD", "STANDARD"), { searchExports: true }) || {
-	"STANDARD": 1,
-	"GUILD": 2
-};
-var ProfileTypeEnum = getModule(Filters.byKeys("POPOUT", "SETTINGS"), { searchExports: true }) || {
-	"POPOUT": 0,
-	"MODAL": 1,
-	"SETTINGS": 2,
-	"PANEL": 3,
-	"CARD": 4
-};
-var ChannelTypeEnum = getModule(Filters.byKeys("GUILD_TEXT", "DM"), { searchExports: true }) || {
-	"GUILD_CATEGORY": 4,
-	"0": "GUILD_TEXT",
-	"1": "DM",
-	"2": "GUILD_VOICE",
-	"3": "GROUP_DM",
-	"4": "GUILD_CATEGORY",
-	"5": "GUILD_ANNOUNCEMENT",
-	"6": "GUILD_STORE",
-	"10": "ANNOUNCEMENT_THREAD",
-	"11": "PUBLIC_THREAD",
-	"12": "PRIVATE_THREAD",
-	"13": "GUILD_STAGE_VOICE",
-	"14": "GUILD_DIRECTORY",
-	"15": "GUILD_FORUM",
-	"16": "GUILD_MEDIA",
-	"17": "LOBBY",
-	"18": "DM_SDK",
-	"10000": "UNKNOWN"
-};
-
-// MODULES-AUTO-LOADER:@Stores/SelectedChannelStore
-var SelectedChannelStore_default = getStore("SelectedChannelStore");
+var GuildFeaturesEnum = getModule(Filters.byKeys("CLYDE_ENABLED"), { searchExports: true });
+var EmojiSendAvailabilityEnum = getModule(Filters.byKeys("GUILD_SUBSCRIPTION_UNAVAILABLE"), { searchExports: true });
+var EmojiIntentionEnum = getModule(Filters.byKeys("GUILD_ROLE_BENEFIT_EMOJI"), { searchExports: true });
+var DiscordPermissionsEnum = getModule(Filters.byKeys("ADD_REACTIONS"), { searchExports: true });
+var StickerTypeEnum = getModule(Filters.byKeys("GUILD", "STANDARD"), { searchExports: true });
+var ProfileTypeEnum = getModule(Filters.byKeys("POPOUT", "SETTINGS"), { searchExports: true });
+var ChannelTypeEnum = getModule(Filters.byKeys("GUILD_TEXT", "DM"), { searchExports: true });
+var RelationshipTypeEnum = getModule(Filters.byKeys("FRIEND", "PENDING_INCOMING"), { searchExports: true });
 
 // src/Tabbys/utils.js
 var valueToPx = (e2) => `${Math.round(e2)}px`;
@@ -741,7 +704,7 @@ function sort(pos) {
 	return (index) => pos === "after" ? index + 1 : index;
 }
 
-// src/Tabbys/Store/tabs.js
+// src/Tabbys/store/tabs.js
 var getters = {
 	getFirstTab() {
 		return this.state.tabs[0];
@@ -854,7 +817,7 @@ var tabs_default = {
 	}
 };
 
-// src/Tabbys/Store/folders.js
+// src/Tabbys/store/folders.js
 var getters2 = {
 	getFolderIndex(folderId) {
 		return this.state.folders.findIndex((a) => a.id === folderId);
@@ -957,7 +920,7 @@ var folders_default = {
 	}
 };
 
-// src/Tabbys/Store/bookmarks.js
+// src/Tabbys/store/bookmarks.js
 var getters3 = {
 	getBookmarkIndex(id) {
 		return this.state.bookmarks.findIndex((bookmark) => bookmark.id === id);
@@ -1014,7 +977,7 @@ var bookmarks_default = {
 	}
 };
 
-// src/Tabbys/Store/index.js
+// src/Tabbys/store/index.js
 var initialState = {
 	...tabs_default.state,
 	...folders_default.state,
@@ -1029,7 +992,7 @@ Store.subscribe(
 	(state) => state,
 	() => {
 		const user = UserStore_default.getCurrentUser();
-		Data.save(user.id, Store.state);
+		Data.save(user.id, { ...Store.state });
 	},
 	shallow
 );
@@ -1063,58 +1026,58 @@ function hydrateStore() {
 	Store.setState({ ...userData });
 	ensureTab();
 }
-Plugin_default.on(Events.START, () => {
+Plugin_default.onStart(() => {
 	hydrateStore();
 	window.navigation.addEventListener("navigate", onLocationChange);
 	Dispatcher.subscribe("CONNECTION_OPEN", hydrateStore);
 });
-Plugin_default.on(Events.STOP, () => {
+Plugin_default.onStop(() => {
 	window.navigation.removeEventListener("navigate", onLocationChange);
 	Dispatcher.unsubscribe("CONNECTION_OPEN", hydrateStore);
 });
-var Store_default = Store;
+var store_default = Store;
 
 // src/Tabbys/Store/methods.js
 function switchLeft() {
-	const selectedMeta = Store_default.getTabMeta(Store_default.state.selectedId);
-	const target = selectedMeta.previousItem ?? Store_default.getLastTab();
-	if (!target) return;
-	Store_default.setSelectedId(target.id);
+	const selectedMeta = store_default.getTabMeta(store_default.state.selectedId);
+	const target2 = selectedMeta.previousItem ?? store_default.getLastTab();
+	if (!target2) return;
+	store_default.setSelectedId(target2.id);
 }
 
 function switchRight() {
-	const selectedMeta = Store_default.getTabMeta(Store_default.state.selectedId);
-	const target = selectedMeta.nextItem ?? Store_default.getFirstTab();
-	if (!target) return;
-	Store_default.setSelectedId(target.id);
+	const selectedMeta = store_default.getTabMeta(store_default.state.selectedId);
+	const target2 = selectedMeta.nextItem ?? store_default.getFirstTab();
+	if (!target2) return;
+	store_default.setSelectedId(target2.id);
 }
 
 function isDescendent(parentId, childId) {
-	const child = Store_default.getFolder(childId);
+	const child = store_default.getFolder(childId);
 	if (!child.parentId) return false;
 	if (child.parentId === parentId) return true;
 	return isDescendent(parentId, child.parentId);
 }
 
 function deleteBookmark(itemId, parentId) {
-	if (parentId) Store_default.removeItemFromFolder(parentId, itemId);
-	else Store_default.removeBookmark(itemId);
+	if (parentId) store_default.removeItemFromFolder(parentId, itemId);
+	else store_default.removeBookmark(itemId);
 }
 
 function deleteFolder(folderId, itemId, parentId) {
-	Store_default.deleteFolder(folderId);
+	store_default.deleteFolder(folderId);
 	deleteBookmark(itemId, parentId);
 }
 
 function getBookmark(bookmarkId, folderId) {
-	return folderId ? Store_default.getFolderItem(folderId, bookmarkId) : Store_default.getBookmark(bookmarkId);
+	return folderId ? store_default.getFolderItem(folderId, bookmarkId) : store_default.getBookmark(bookmarkId);
 }
 
 function setBookmarkName(bookmarkId, name, parentId) {
 	const bookmark = getBookmark(bookmarkId, parentId);
 	if (!bookmark) return;
-	if (parentId) Store_default.updateFolderItem(parentId, bookmarkId, { name });
-	else Store_default.updateBookmark(bookmarkId, { name });
+	if (parentId) store_default.updateFolderItem(parentId, bookmarkId, { name });
+	else store_default.updateBookmark(bookmarkId, { name });
 }
 
 function getBookmarkNameState(bookmarkId, parentId) {
@@ -1125,14 +1088,14 @@ function getBookmarkNameState(bookmarkId, parentId) {
 function toggleBookmarkNameState(bookmarkId, parentId) {
 	const bookmark = getBookmark(bookmarkId, parentId);
 	if (!bookmark) return;
-	if (parentId) Store_default.updateFolderItem(parentId, bookmarkId, { noName: !bookmark.noName });
-	else Store_default.updateBookmark(bookmarkId, { noName: !bookmark.noName });
+	if (parentId) store_default.updateFolderItem(parentId, bookmarkId, { noName: !bookmark.noName });
+	else store_default.updateBookmark(bookmarkId, { noName: !bookmark.noName });
 }
 
 function ensureTab() {
-	if (Store_default.getTabsCount() > 0) return;
+	if (store_default.getTabsCount() > 0) return;
 	const tab = createFromPath(location.pathname);
-	Store_default.setState({ tabs: [tab], selectedId: tab.id });
+	store_default.setState({ tabs: [tab], selectedId: tab.id });
 }
 
 function openBookmark(bookmarkId, folderId) {
@@ -1142,56 +1105,56 @@ function openBookmark(bookmarkId, folderId) {
 
 function setTabFromBookmark(tabId, bookmarkId, folderId) {
 	const { noName, id, ...bookmark } = getBookmark(bookmarkId, folderId) || {};
-	if (bookmark) Store_default.updateTab(tabId, bookmark);
-	Store_default.setSelectedId(tabId);
+	if (bookmark) store_default.updateTab(tabId, bookmark);
+	store_default.setSelectedId(tabId);
 }
 
 function addFolder(name) {
 	if (!name) return;
 	const folder = createFolder(name);
 	const bookmark = createBookmarkFolder(folder.id);
-	Store_default.setState({
-		folders: add(Store_default.state.folders, folder),
-		bookmarks: add(Store_default.state.bookmarks, bookmark)
+	store_default.setState({
+		folders: add(store_default.state.folders, folder),
+		bookmarks: add(store_default.state.bookmarks, bookmark)
 	});
 }
 
 function addSubFolder(name, parentId) {
 	if (!name) return;
 	const folder = createFolder(name);
-	Store_default.setState({ folders: add(Store_default.state.folders, folder) });
-	Store_default.addFolderToFolder(parentId, folder.id);
+	store_default.setState({ folders: add(store_default.state.folders, folder) });
+	store_default.addFolderToFolder(parentId, folder.id);
 }
 
 function removeTabsToRight(id) {
-	const { item, index, isLast, isSingle } = Store_default.getTabMeta(id);
+	const { item, index, isLast, isSingle } = store_default.getTabMeta(id);
 	if (!item || isLast || isSingle) return;
-	const newSelected = Store_default.getSelectedTabIndex() < index + 1 ? Store_default.state.selectedId : id;
-	Store_default.setState({
-		tabs: slice(Store_default.state.tabs, 0, index + 1),
+	const newSelected = store_default.getSelectedTabIndex() < index + 1 ? store_default.state.selectedId : id;
+	store_default.setState({
+		tabs: slice(store_default.state.tabs, 0, index + 1),
 		selectedId: newSelected,
 		lastSelectedIdAfterNewTab: null
 	});
 }
 
 function removeTabsToLeft(id) {
-	const { item, index, isFirst, isSingle, length } = Store_default.getTabMeta(id);
+	const { item, index, isFirst, isSingle, length } = store_default.getTabMeta(id);
 	if (!item || isFirst || isSingle) return;
-	const newSelected = Store_default.getSelectedTabIndex() > index ? Store_default.state.selectedId : id;
-	Store_default.setState({
-		tabs: slice(Store_default.state.tabs, index, length),
+	const newSelected = store_default.getSelectedTabIndex() > index ? store_default.state.selectedId : id;
+	store_default.setState({
+		tabs: slice(store_default.state.tabs, index, length),
 		selectedId: newSelected,
 		lastSelectedIdAfterNewTab: null
 	});
 }
 
 function removeOtherTabs(id) {
-	const tab = Store_default.getTab(id);
-	if (tab) Store_default.setState({ tabs: [tab], selectedId: tab.id, lastSelectedIdAfterNewTab: null });
+	const tab = store_default.getTab(id);
+	if (tab) store_default.setState({ tabs: [tab], selectedId: tab.id, lastSelectedIdAfterNewTab: null });
 }
 
 function openTabAt(path2, targetId, pos) {
-	Store_default.addTabBy(createFromPath(path2), targetId, sort(pos));
+	store_default.addTabBy(createFromPath(path2), targetId, sort(pos));
 }
 
 function openBookmarkAt(bookmarkId, targetId, pos, folderId) {
@@ -1200,58 +1163,51 @@ function openBookmarkAt(bookmarkId, targetId, pos, folderId) {
 }
 
 function addBookmarkAt(path2, targetId, pos) {
-	Store_default.addBookmarkBy(createFromPath(path2), targetId, sort(pos));
+	store_default.addBookmarkBy(createFromPath(path2), targetId, sort(pos));
 }
 
 function bookmarkTabAt(tabId, targetId, pos) {
-	const { path: path2 } = Store_default.getTab(tabId) || {};
+	const { path: path2 } = store_default.getTab(tabId) || {};
 	if (path2) addBookmarkAt(path2, targetId, pos);
 }
 
 function moveSubBookmarkToBookmarksAt(itemId, parentId, targetId, pos) {
-	const subBookmark = Store_default.getFolderItem(parentId, itemId);
+	const subBookmark = store_default.getFolderItem(parentId, itemId);
 	if (!subBookmark) return;
-	Store_default.addBookmarkBy(createFrom(subBookmark, { parentId: null }), targetId, sort(pos));
-	Store_default.removeItemFromFolder(parentId, itemId);
+	store_default.addBookmarkBy(createFrom(subBookmark, { parentId: null }), targetId, sort(pos));
+	store_default.removeItemFromFolder(parentId, itemId);
 }
 
 function moveSubFolderToBookmarksAt(subFolderId, itemId, parentId, targetId, pos) {
 	const folder = createBookmarkFolder(subFolderId);
-	Store_default.addBookmarkBy(folder, targetId, sort(pos));
-	Store_default.removeItemFromFolder(parentId, itemId);
-	Store_default.updateFolder(subFolderId, { parentId: null });
+	store_default.addBookmarkBy(folder, targetId, sort(pos));
+	store_default.removeItemFromFolder(parentId, itemId);
+	store_default.updateFolder(subFolderId, { parentId: null });
 }
 
 function addToFolderAt(path2, folderId, targetId, pos) {
-	return Store_default.addToFolderBy(folderId, createSubBookmark(folderId, path2), targetId, sort(pos));
+	return store_default.addToFolderBy(folderId, createSubBookmark(folderId, path2), targetId, sort(pos));
 }
 
 function addTabToFolderAt(tabId, folderId, targetId, pos) {
-	const { path: path2 } = Store_default.getTab(tabId) || {};
+	const { path: path2 } = store_default.getTab(tabId) || {};
 	if (path2) addToFolderAt(path2, folderId, targetId, pos);
 }
 
 function moveBookmarkToFolderAt(itemId, targetFolderId, parentId, targetId, pos) {
 	const bookmark = getBookmark(itemId, parentId);
 	deleteBookmark(itemId, parentId);
-	Store_default.addToFolderBy(targetFolderId, createFrom(bookmark, { parentId: targetFolderId }), targetId, sort(pos));
+	store_default.addToFolderBy(targetFolderId, createFrom(bookmark, { parentId: targetFolderId }), targetId, sort(pos));
 }
 
 function moveFolderToFolderAt(folderId, itemId, targetFolderId, parentId, targetId, pos) {
 	if (isDescendent(folderId, targetFolderId)) return;
 	deleteBookmark(itemId, parentId);
-	Store_default.addToFolderBy(targetFolderId, createBookmarkFolder(folderId, targetFolderId), targetId, sort(pos));
-	Store_default.updateFolder(folderId, { parentId: targetFolderId });
+	store_default.addToFolderBy(targetFolderId, createBookmarkFolder(folderId, targetFolderId), targetId, sort(pos));
+	store_default.updateFolder(folderId, { parentId: targetFolderId });
 }
 
 // src/Tabbys/patches/keybinds.js
-Plugin_default.on(Events.START, () => {
-	document.addEventListener("keydown", onKeyDown);
-});
-Plugin_default.on(Events.STOP, () => {
-	document.removeEventListener("keydown", onKeyDown);
-});
-
 function onKeyDown(e2) {
 	if (!Settings_default.state.tabSwitch) return;
 	if (e2.key !== "Tab" || !e2.ctrlKey) return;
@@ -1259,36 +1215,51 @@ function onKeyDown(e2) {
 	if (e2.shiftKey) switchLeft();
 	else switchRight();
 }
+Plugin_default.onStart(() => document.addEventListener("keydown", onKeyDown));
+Plugin_default.onStop(() => document.removeEventListener("keydown", onKeyDown));
 
 // src/Tabbys/patches/logoutInterceptor.js
-Plugin_default.on(Events.START, () => {
-	function interceptor(e2) {
-		if (e2.type !== "LOGOUT") return;
-		e2.goHomeAfterSwitching = false;
-	}
+function interceptor(e2) {
+	if (e2.type !== "LOGOUT") return;
+	e2.goHomeAfterSwitching = false;
+}
+Plugin_default.onStart(() => {
 	Dispatcher.addInterceptor(interceptor);
-	Plugin_default.once(Events.STOP, () => {
-		const index = Dispatcher._interceptors.indexOf(interceptor);
-		Dispatcher._interceptors.splice(index, 1);
-	});
+	Plugin_default.onStop(
+		() => {
+			const index = Dispatcher._interceptors.indexOf(interceptor);
+			Dispatcher._interceptors.splice(index, 1);
+		}, { once: true }
+	);
 });
 
 // src/Tabbys/patches/patchChannelClick.js
-var channelFilter = Filters.byStrings("href", "children", "onClick", "onKeyPress", "focusProps");
-var channelComponent = getModule((a) => a.render && channelFilter(a.render), { searchExports: true });
-Plugin_default.on(Events.START, () => {
-	if (!channelComponent) return Logger_default.patchError("channelComponent");
-	Patcher.after(channelComponent, "render", (_, [props], ret) => {
+var channelComponent = getModule(
+	reactRefMemoFilter("render", "children", "onClick", "onKeyPress", "focusProps"), { searchExports: true }
+);
+Plugin_default.onStart(() => {
+	after(channelComponent, "render", ({ args: [props], ret }) => {
 		const origClick = getNestedProp(ret, "props.children.props.onClick");
 		const path2 = props.href;
 		if (!path2 || !origClick) return ret;
 		ret.props.children.props.onClick = (e2) => {
 			e2.preventDefault();
-			if (e2.ctrlKey && Settings_default.state.ctrlClickChannel) Store_default.newTab(path2);
+			if (e2.ctrlKey && Settings_default.state.ctrlClickChannel) store_default.newTab(path2);
 			else origClick?.(e2);
 		};
 	});
 });
+
+// common/Patcher/contextmenu.js
+var patches = [];
+Plugin_default.onStop(() => {
+	patches.filter(Boolean).forEach((a) => a());
+	patches = [];
+});
+var contextmenu_default = (id, callback) => {
+	const undo = ContextMenu.patch(id, callback);
+	patches.push(undo);
+};
 
 // common/Utils/css.js
 function join2(...args) {
@@ -1310,18 +1281,24 @@ var classNameFactory = (prefix = "", connector = "-") => (...args) => {
 	return Array.from(classNames, (name) => `${prefix}${connector}${name}`).join(" ");
 };
 
-// src/Tabbys/contextmenus/helper.jsx
-var c = classNameFactory(`${Config_default.info.name}-menuitem`);
-
-function wrapMenuItem(item) {
-	if (!item?.label) return item;
-	const tag = item.label.toLowerCase().replace(/^[^a-z]+|[^\w-]+/gi, "-");
-	return {
-		id: c(tag),
-		className: c(tag),
-		...item
-	};
+// src/Tabbys/components/PromptModal/styles.css
+StylesLoader_default.push(`.create-folder-modal-content {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: var(--modal-vertical-padding) var(--modal-horizontal-padding);
 }
+
+.create-folder-modal-footer {
+	gap: 12px;
+	align-items: center;
+}
+
+.transparent-background.transparent-background {
+	background: transparent;
+	border: unset;
+}
+`);
 
 // common/Components/Icon/index.jsx
 function svg(svgProps, ...paths) {
@@ -1381,6 +1358,266 @@ var ShopIcon = /* @__PURE__ */ svg(null, "M21 11.42V19a3 3 0 0 1-3 3h-2.75a.25.2
 var NitroIcon = /* @__PURE__ */ svg(null, "M16.23 12c0 1.29-.95 2.25-2.22 2.25A2.18 2.18 0 0 1 11.8 12c0-1.29.95-2.25 2.22-2.25 1.27 0 2.22.96 2.22 2.25ZM23 12c0 5.01-4 9-8.99 9a8.93 8.93 0 0 1-8.75-6.9H3.34l-.9-4.2H5.3c.26-.96.68-1.89 1.21-2.7H1.89L1 3h12.74C19.13 3 23 6.99 23 12Zm-4.26 0c0-2.67-2.1-4.8-4.73-4.8A4.74 4.74 0 0 0 9.28 12c0 2.67 2.1 4.8 4.73 4.8a4.74 4.74 0 0 0 4.73-4.8Z");
 var IdIcon = /* @__PURE__ */ svg(null, "M15.3 14.48c-.46.45-1.08.67-1.86.67h-1.39V9.2h1.39c.78 0 1.4.22 1.86.67.46.45.68 1.22.68 2.31 0 1.1-.22 1.86-.68 2.31Z", /* @__PURE__ */ path({ fillRule: "evenodd" }, "M5 2a3 3 0 0 0-3 3v14a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3V5a3 3 0 0 0-3-3H5Zm1 15h2.04V7.34H6V17Zm4-9.66V17h3.44c1.46 0 2.6-.42 3.38-1.25.8-.83 1.2-2.02 1.2-3.58s-.4-2.75-1.2-3.58c-.79-.83-1.92-1.25-3.38-1.25H10Z"));
 
+// MODULES-AUTO-LOADER:@Modules/Heading
+var Heading_default = getModule((a) => a?.render?.toString().includes("data-excessive-heading-level"), { searchExports: true });
+
+// MODULES-AUTO-LOADER:@Modules/Button
+var Button_default = getModule((a) => a && a.Link && a.Colors, { searchExports: true });
+
+// common/Components/Button/index.jsx
+function ButtonComponentFallback(props) {
+	return /* @__PURE__ */ React_default.createElement("button", { ...props });
+}
+var ManaButton = /* @__PURE__ */ getModule(Filters.byStrings(`"data-mana-component":"button"`), { searchExports: true }) || ButtonComponentFallback;
+var ManaTextButton = /* @__PURE__ */ getModule(Filters.byStrings(`"data-mana-component":"text-button"`), { searchExports: true }) || ButtonComponentFallback;
+
+// common/Components/TextInput/index.jsx
+var TextInput = getModule(Filters.byStrings("showCharacterCount", "clearable"), { searchExports: true });
+var TextInput_default = TextInput || function TextInputFallback(props) {
+	return /* @__PURE__ */ React_default.createElement("div", { style: { color: "#fff" } }, /* @__PURE__ */ React_default.createElement(
+		"input", {
+			...props,
+			type: "text",
+			onChange: (e2) => props.onChange?.(e2.target.value)
+		}
+	));
+};
+
+// common/Components/ErrorBoundary/index.jsx
+var ErrorBoundary_default = (props) => /* @__PURE__ */ React_default.createElement(BdApi.Components.ErrorBoundary, { ...props, name: Config_default?.info?.name });
+
+// common/Components/FieldSet/styles.css
+StylesLoader_default.push(`.fieldset-container {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.fieldset-label {
+	margin-bottom: 12px;
+}
+
+.fieldset-description {
+	margin-bottom: 12px;
+}
+
+.fieldset-label + .fieldset-description{
+	margin-top:-8px;
+	margin-bottom: 0;
+}
+
+.fieldset-content {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	justify-content: flex-start;
+}
+`);
+
+// common/Components/FieldSet/index.jsx
+var c = classNameFactory("fieldset");
+
+function FieldSet({ label, description, children, contentGap = 16 }) {
+	return /* @__PURE__ */ React_default.createElement("fieldset", { className: c("container") }, label && /* @__PURE__ */ React_default.createElement(
+		Heading_default, {
+			className: c("label"),
+			tag: "legend",
+			variant: "text-lg/medium"
+		},
+		label
+	), description && /* @__PURE__ */ React_default.createElement(
+		Heading_default, {
+			className: c("description"),
+			variant: "text-sm/normal",
+			color: "text-secondary"
+		},
+		description
+	), /* @__PURE__ */ React_default.createElement("div", { className: c("content"), style: { gap: contentGap } }, children));
+}
+
+// common/Utils/Modals/styles.css
+StylesLoader_default.push(`.transparent-background.transparent-background{
+	background: transparent;
+	border:unset;
+}`);
+
+// common/Utils/Modals/index.jsx
+var ModalActions = getModule((a) => a.useModalsStore);
+var Modals = /* @__PURE__ */ getMangled( /* @__PURE__ */ Filters.bySource("MODAL_ROOT", "transitionState"), {
+	ModalRoot: /* @__PURE__ */ Filters.byStrings("transitionState"),
+	ModalFooter: /* @__PURE__ */ Filters.byStrings(".HORIZONTAL_REVERSE"),
+	ModalContent: /* @__PURE__ */ Filters.byStrings("scrollbarType", "scrollerRef"),
+	ModalHeader: /* @__PURE__ */ Filters.byStrings("headerIdIsManaged", "headerId", ".HORIZONTAL"),
+	Animations: (a) => a.SUBTLE,
+	Sizes: (a) => a.DYNAMIC,
+	ModalCloseButton: Filters.byStrings("withCircleBackground")
+});
+
+// src/Tabbys/components/PromptModal/index.jsx
+var c2 = clsx("create-folder-modal");
+
+function PromptModal({ modalProps, required, title, placeholder, label, initialValue = "", onSubmit }) {
+	const [val, setVal] = useState(initialValue);
+	const [submitted, setSubmitted] = useState(false);
+	const inputRef = useRef();
+	const saveHandler = (e2) => {
+		e2.preventDefault();
+		setSubmitted(true);
+		try {
+			onSubmit?.(val);
+			modalProps.onClose?.();
+		} finally {
+			setSubmitted(false);
+		}
+	};
+	const resetHandler = () => {
+		setVal("");
+		inputRef.current.focus();
+	};
+	return /* @__PURE__ */ React_default.createElement("form", { onSubmit: saveHandler }, /* @__PURE__ */ React_default.createElement(
+		Modals.ModalRoot, {
+			...modalProps,
+			fullscreenOnMobile: false,
+			className: c2("root")
+		},
+		/* @__PURE__ */
+		React_default.createElement(Modals.ModalHeader, { separator: true }, /* @__PURE__ */ React_default.createElement(
+			Heading_default, {
+				variant: "heading-lg/semibold",
+				style: { flexGrow: 1 }
+			},
+			title
+		), /* @__PURE__ */ React_default.createElement(Modals.ModalCloseButton, { onClick: modalProps.onClose })),
+		/* @__PURE__ */
+		React_default.createElement("div", { className: c2("content") }, /* @__PURE__ */ React_default.createElement(FieldSet, { label }, /* @__PURE__ */ React_default.createElement(
+			TextInput_default, {
+				inputRef,
+				value: val,
+				onChange: setVal,
+				fullWidth: true,
+				required,
+				placeholder: placeholder || initialValue,
+				autoFocus: true
+			}
+		)), /* @__PURE__ */ React_default.createElement(
+			ManaTextButton, {
+				text: "Reset Name",
+				textVariant: "text-sm/medium",
+				type: "button",
+				onClick: resetHandler
+			}
+		)),
+		/* @__PURE__ */
+		React_default.createElement(
+			Modals.ModalFooter, {
+				className: c2("footer"),
+				separator: true
+			},
+			/* @__PURE__ */
+			React_default.createElement(
+				ManaButton, {
+					text: "Save",
+					disable: submitted,
+					onClick: saveHandler
+				}
+			),
+			/* @__PURE__ */
+			React_default.createElement(
+				ManaTextButton, {
+					text: "Cancel",
+					onClick: modalProps.onClose
+				}
+			)
+		)
+	));
+}
+
+function openPromptModal(props) {
+	ModalActions.openModal((e2) => /* @__PURE__ */ React_default.createElement(ErrorBoundary_default, null, /* @__PURE__ */ React_default.createElement(
+		PromptModal, {
+			modalProps: e2,
+			...props
+		}
+	)));
+}
+
+// src/Tabbys/contextmenus/shared.js
+function MarkAsReadItem(channelId, hasUnread) {
+	return !channelId ? [] : [{
+			action: () => channelId && Dispatcher.dispatch({
+				type: "CHANNEL_ACK",
+				channelId,
+				force: true
+			}),
+			label: "Mark as read",
+			disabled: !hasUnread
+		},
+		{ type: "separator" }
+	];
+}
+
+function createFolder2(parentId) {
+	openPromptModal({
+		title: "Create Folder",
+		placeholder: "New Folder Name",
+		label: "New Folder Name",
+		required: true,
+		onSubmit: (name) => {
+			if (!name) return;
+			if (parentId) return addSubFolder(name, parentId);
+			addFolder(name);
+		}
+	});
+}
+
+function copyItem(type, content) {
+	const label = {
+		channel: "Copy Channel ID",
+		user: "Copy User ID",
+		guild: "Copy Server ID",
+		path: "Copy path"
+	} [type];
+	const item = {
+		action: () => copy(content),
+		label
+	};
+	if (type !== "path") item.leadingAccessory = { type: "icon", icon: IdIcon };
+	return item;
+}
+
+// src/Tabbys/contextmenus/helper.jsx
+var c3 = classNameFactory(`${Config_default.info.name}-menuitem`);
+
+function wrapMenuItem(item) {
+	if (!item?.label) return item;
+	const tag = item.label.toLowerCase().replace(/^[^a-z]+|[^\w-]+/gi, "-");
+	return {
+		id: c3(tag),
+		className: c3(tag),
+		...item
+	};
+}
+
+function getFolders(transformer) {
+	const items = [];
+	for (let i = 0; i < store_default.state.folders.length; i++) {
+		const folder = store_default.state.folders[i];
+		const item = transformer(folder.id, folder.name);
+		if (item) items.push(item);
+	}
+	return sanitize(items);
+}
+
+function getCopies({ guildId, userId, path: path2, channelId }) {
+	const items = [];
+	if (channelId) items.push(copyItem("channel", channelId));
+	if (guildId) items.push(copyItem("guild", guildId));
+	if (userId) items.push(copyItem("user", userId));
+	if (path2) items.push(copyItem("path", path2));
+	return sanitize(items);
+}
+var sanitize = (items) => items.filter(Boolean).map(wrapMenuItem);
+
 // src/Tabbys/patches/patchContextMenu.jsx
 function channelPath(...args) {
 	return `/channels/${args.filter(Boolean).join("/")}`;
@@ -1407,23 +1644,23 @@ function menu(path2) {
 	const { showBookmarkbar, showTabbar } = Settings_default.state;
 	if (!showBookmarkbar && !showTabbar) return;
 	const menu2 = [ContextMenu.buildItem({ type: "separator" })];
-	const folders = Store_default.state.folders.map(
+	const folders = store_default.state.folders.map(
 		({ id: id2, name }) => wrapMenuItem({
 			action: () => addToFolderAt(path2, id2),
 			label: name,
-			icon: BookmarkOutlinedIcon
+			leadingAccessory: { type: "icon", icon: BookmarkOutlinedIcon }
 		})
 	);
 	const bookmark = {
 		action: () => addBookmarkAt(path2),
 		label: "Bookmark channel",
 		type: folders.length > 0 ? "submenu" : null,
-		icon: folders.length > 0 ? nop : BookmarkOutlinedIcon,
+		leadingAccessory: { type: "icon", icon: folders.length > 0 ? nop : BookmarkOutlinedIcon },
 		items: folders
 	};
 	const tab = {
-		action: () => Store_default.newTab(path2),
-		icon: PlusIcon,
+		action: () => store_default.newTab(path2),
+		leadingAccessory: { type: "icon", icon: PlusIcon },
 		label: "Open in new Tab"
 	};
 	const id = `${Config_default.info.name}-channel-options`;
@@ -1440,47 +1677,44 @@ function menu(path2) {
 		);
 	return menu2;
 }
-Plugin_default.on(Events.START, () => {
-	const unpatch = [
-		...["thread-context", "channel-context"].map(
-			(context) => ContextMenu.patch(context, (retVal, { channel, targetIsUser }) => {
-				if (!channel || targetIsUser) return;
-				const path2 = getPath(channel);
-				if (!path2) return;
-				retVal.props.children.push(...menu(path2));
-			})
-		),
-		ContextMenu.patch("channel-mention-context", (retVal, { originalLink }) => {
-			const path2 = getPathName(originalLink);
-			if (!path2) return;
-			retVal.props.children.push(...menu(path2));
-		}),
-		ContextMenu.patch("user-context", (retVal, { user }) => {
-			if (user.email) return;
-			const channel = ChannelStore_default.getDMChannelFromUserId(user.id);
-			if (!channel) return;
+Plugin_default.onStart(() => {
+	const navIds = ["thread-context", "channel-context"];
+	for (let i = 0; i < navIds.length; i++) {
+		const navId = navIds[i];
+		contextmenu_default(navId, (retVal, { channel, targetIsUser }) => {
+			if (!channel || targetIsUser) return;
 			const path2 = getPath(channel);
 			if (!path2) return;
 			retVal.props.children.push(...menu(path2));
-		})
-	];
-	Plugin_default.once(Events.STOP, () => {
-		unpatch.forEach((a) => a && typeof a === "function" && a());
+		});
+	}
+	contextmenu_default("channel-mention-context", (retVal, { originalLink }) => {
+		const path2 = getPathName(originalLink);
+		if (!path2) return;
+		retVal.props.children.push(...menu(path2));
+	});
+	contextmenu_default("user-context", (retVal, { user }) => {
+		if (user.email) return;
+		const channel = ChannelStore_default.getDMChannelFromUserId(user.id);
+		if (!channel) return;
+		const path2 = getPath(channel);
+		if (!path2) return;
+		retVal.props.children.push(...menu(path2));
 	});
 });
 
 // src/Tabbys/patches/patchDMClick.js
-var DMChannelFilter = Filters.byStrings("navigate", "location", "href", "createHref");
-var DMChannel = getModule((a) => a.render && DMChannelFilter(a.render), { searchExports: true });
-Plugin_default.on(Events.START, () => {
-	if (!DMChannel) return Logger_default.patchError("DMChannel");
-	Patcher.before(DMChannel, "render", (_, [props]) => {
+var DMChannel = getModule(
+	reactRefMemoFilter("render", "navigate", "location", "href", "createHref"), { searchExports: true }
+);
+Plugin_default.onStart(() => {
+	before(DMChannel, "render", ({ args: [props] }) => {
 		const path2 = props.to;
 		if (!path2) return;
 		props.onClick = (e2) => {
 			if (e2.ctrlKey && Settings_default.state.ctrlClickChannel) {
 				e2.preventDefault();
-				Store_default.newTab(path2);
+				store_default.newTab(path2);
 			}
 		};
 	});
@@ -1490,56 +1724,19 @@ Plugin_default.on(Events.START, () => {
 var GuildComponent = getBySource("guildsnav", {
 	declarationFilter: Filters.byComponentType(Filters.byStrings("aria-owns=folder-items-", "onDragOverChanged"))
 });
-Plugin_default.on(Events.START, () => {
-	if (!GuildComponent) return Logger_default.patchError("GuildComponent");
-	Patcher.after(GuildComponent, "type", (_, [{ guild }], ret) => {
+Plugin_default.onStart(() => {
+	after(GuildComponent, "type", ({ args: [{ guild }], ret }) => {
 		const targetProps = getNestedProp(ret, "props.children.1.props.children.props.children.props.children.props.children.props.children.props");
 		if (!targetProps) return ret;
 		const origClick = targetProps.onClick;
 		const path2 = getGuildChannelPath(guild.id);
 		targetProps.onClick = (e2) => {
 			e2.preventDefault();
-			if (e2.ctrlKey && Settings_default.state.ctrlClickChannel) Store_default.newTab(path2);
+			if (e2.ctrlKey && Settings_default.state.ctrlClickChannel) store_default.newTab(path2);
 			else origClick?.(e2);
 		};
 	});
 });
-
-// common/Components/ErrorBoundary/index.jsx
-var ErrorBoundary = class extends React_default.Component {
-	state = { hasError: false, error: null, info: null };
-	componentDidCatch(error, info) {
-		this.setState({ error, info, hasError: true });
-		const errorMessage = `
-	${error?.message || ""}${(info?.componentStack || "").split("\n").slice(0, 20).join("\n")}`;
-		console.error(`%c[${Config_default?.info?.name || "Unknown Plugin"}] %cthrew an exception at %c[${this.props.id}]
-`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
-	}
-	renderErrorBoundary() {
-		return /* @__PURE__ */ React_default.createElement("div", { style: { background: "#292c2c", padding: "20px", borderRadius: "10px" } }, /* @__PURE__ */ React_default.createElement("b", { style: { color: "#e0e1e5" } }, "An error has occured while rendering ", /* @__PURE__ */ React_default.createElement("span", { style: { color: "orange" } }, this.props.id)));
-	}
-	renderFallback() {
-		if (React_default.isValidElement(this.props.fallback)) {
-			if (this.props.passMetaProps)
-				this.props.fallback.props = {
-					id: this.props.id,
-					plugin: Config_default?.info?.name || "Unknown Plugin",
-					...this.props.fallback.props
-				};
-			return this.props.fallback;
-		}
-		return /* @__PURE__ */ React_default.createElement(
-			this.props.fallback, {
-				id: this.props.id,
-				plugin: Config_default?.info?.name || "Unknown Plugin"
-			}
-		);
-	}
-	render() {
-		if (!this.state.hasError) return this.props.children;
-		return this.props.fallback ? this.renderFallback() : this.renderErrorBoundary();
-	}
-};
 
 // src/Tabbys/components/App/styles.css
 StylesLoader_default.push(`div:has(> .tabbys-app-container):not(#a) {
@@ -1742,13 +1939,13 @@ function getElRect(el) {
 	return rect;
 }
 
-function getElMeta(target) {
-	if (!target) return;
+function getElMeta(target2) {
+	if (!target2) return;
 	const res = {
-		parentMeta: getElRect(target.parentElement),
-		nextSiblingMeta: getElRect(target.nextElementSibling),
-		previousSiblingMeta: getElRect(target.previousElementSibling),
-		targetMeta: getElRect(target)
+		parentMeta: getElRect(target2.parentElement),
+		nextSiblingMeta: getElRect(target2.nextElementSibling),
+		previousSiblingMeta: getElRect(target2.previousElementSibling),
+		targetMeta: getElRect(target2)
 	};
 	return res;
 }
@@ -1832,7 +2029,7 @@ function useIsScrollable() {
 	}, []);
 	return [scrollerNode, isOverflowing];
 }
-var c2 = clsx("scroller");
+var c4 = clsx("scroller");
 
 function TabsScroller({ items, renderItem, shouldScroll, scrollTo, onScrollToEnd, containerClassName, contentClassName, endScrollButtonClassName, scrollButtonClassName, startScrollButtonClassName, getScrollSize }) {
 	const [ref, isOverflowing] = useIsScrollable();
@@ -1858,27 +2055,27 @@ function TabsScroller({ items, renderItem, shouldScroll, scrollTo, onScrollToEnd
 		if (index == null) return;
 		const scrollerNode = ref.current;
 		if (!scrollerNode) return;
-		const target = scrollerNode.children[index];
-		if (!target) return;
-		const { parentMeta, targetMeta, nextSiblingMeta, previousSiblingMeta } = getElMeta(target);
+		const target2 = scrollerNode.children[index];
+		if (!target2) return;
+		const { parentMeta, targetMeta, nextSiblingMeta, previousSiblingMeta } = getElMeta(target2);
 		if (!nextSiblingMeta) return scroll(targetMeta.right + targetMeta.width - parentMeta.right);
 		if (!previousSiblingMeta) return scroll(targetMeta.left - targetMeta.width - parentMeta.left);
 		if (targetMeta.left < parentMeta.left) return scroll(previousSiblingMeta.right - parentMeta.left);
 		if (targetMeta.right > parentMeta.right) return scroll(nextSiblingMeta.left - parentMeta.right);
 	}
-	return /* @__PURE__ */ React_default.createElement("div", { className: join2(c2("container"), containerClassName) }, isOverflowing && // biome-ignore lint/a11y/useButtonType: <explanation>
+	return /* @__PURE__ */ React_default.createElement("div", { className: join2(c4("container"), containerClassName) }, isOverflowing && // biome-ignore lint/a11y/useButtonType: <explanation>
 		/* @__PURE__ */
 		React_default.createElement(
 			"button", {
 				onClick: () => scroll(-1 * scrollDelta()),
-				className: join2(c2("btn", "btn-start"), "icon-wrapper", "rounded-full", scrollButtonClassName, startScrollButtonClassName)
+				className: join2(c4("btn", "btn-start"), "icon-wrapper", "rounded-full", scrollButtonClassName, startScrollButtonClassName)
 			},
 			/* @__PURE__ */
 			React_default.createElement(ArrowIcon, null)
 		), /* @__PURE__ */ React_default.createElement(
 			"div", {
 				ref,
-				className: join2(c2("content"), contentClassName)
+				className: join2(c4("content"), contentClassName)
 			},
 			items.map((item, index) => renderItem(item, index))
 		), isOverflowing && // biome-ignore lint/a11y/useButtonType: <explanation>
@@ -1886,7 +2083,7 @@ function TabsScroller({ items, renderItem, shouldScroll, scrollTo, onScrollToEnd
 		React_default.createElement(
 			"button", {
 				onClick: () => scroll(scrollDelta()),
-				className: join2(c2("btn", "btn-end"), "icon-wrapper", "rounded-full", scrollButtonClassName, endScrollButtonClassName)
+				className: join2(c4("btn", "btn-end"), "icon-wrapper", "rounded-full", scrollButtonClassName, endScrollButtonClassName)
 			},
 			/* @__PURE__ */
 			React_default.createElement(ArrowIcon, null)
@@ -2025,18 +2222,18 @@ StylesLoader_default.push(`.dnd-droppable.dnd-dragInProgress {
 `);
 
 // src/Tabbys/components/DND/Sortables/DroppableMarkup.jsx
-var c3 = classNameFactory("dnd");
+var c5 = classNameFactory("dnd");
 
 function DroppableMarkup({ isOver, canDrop, dropRef, draggedIsMe, dragInProgress, pos }) {
 	return /* @__PURE__ */ React_default.createElement(
 		"div", {
 			ref: dropRef,
-			className: c3("droppable", pos, !draggedIsMe && canDrop && isOver && "over", canDrop && dragInProgress && "dragInProgress")
+			className: c5("droppable", pos, !draggedIsMe && canDrop && isOver && "over", canDrop && dragInProgress && "dragInProgress")
 		}
 	);
 }
 
-// src/Tabbys/components/DND/shared.js
+// src/Tabbys/components/DND/shared.jsx
 var DragSource;
 var DropTarget;
 waitForModule(Filters.byStrings("drag-source", "collect"), { searchExports: true }).then((a) => DragSource = a);
@@ -2103,7 +2300,7 @@ var Tab = makeDroppable(
 		const itemType = monitor.getItemType();
 		switch (itemType) {
 			case DNDTypes.TAB:
-				return Store_default.reOrderTabs(dropped.id, me.id, me.pos);
+				return store_default.reOrderTabs(dropped.id, me.id, me.pos);
 			case DNDTypes.BOOKMARK:
 				return openBookmarkAt(dropped.id, me.id, me.pos);
 			case DNDTypes.SUB_BOOKMARK:
@@ -2138,7 +2335,7 @@ var Bookmark = makeDroppable(
 		switch (itemType) {
 			case DNDTypes.BOOKMARK:
 			case DNDTypes.FOLDER:
-				return Store_default.reOrderBookmarks(dropped.id, me.id, me.pos);
+				return store_default.reOrderBookmarks(dropped.id, me.id, me.pos);
 			case DNDTypes.TAB:
 				return bookmarkTabAt(dropped.id, me.id, me.pos);
 			case DNDTypes.SUB_BOOKMARK:
@@ -2175,12 +2372,12 @@ var SubBookmark = makeDroppable(
 		const itemType = monitor.getItemType();
 		switch (itemType) {
 			case DNDTypes.SUB_BOOKMARK: {
-				if (me.parentId === dropped.parentId) Store_default.reOrderFolder(me.parentId, dropped.id, me.id, me.pos);
+				if (me.parentId === dropped.parentId) store_default.reOrderFolder(me.parentId, dropped.id, me.id, me.pos);
 				else moveBookmarkToFolderAt(dropped.id, me.parentId, dropped.parentId, me.id, me.pos);
 				return;
 			}
 			case DNDTypes.SUB_FOLDER: {
-				if (me.parentId === dropped.parentId) Store_default.reOrderFolder(me.parentId, dropped.id, me.id, me.pos);
+				if (me.parentId === dropped.parentId) store_default.reOrderFolder(me.parentId, dropped.id, me.id, me.pos);
 				else moveFolderToFolderAt(dropped.folderId, dropped.id, me.parentId, dropped.parentId, me.id, me.pos);
 				return;
 			}
@@ -2224,7 +2421,7 @@ var DroppableTab = makeDroppable(
 			case DNDTypes.SUB_BOOKMARK:
 				return setTabFromBookmark(me.id, dropped.id, dropped.parentId);
 			case DNDTypes.DRAGGABLE_GUILD_CHANNEL:
-				return Store_default.setTabPath(me.id, `/channels/${dropped.guildId}/${dropped.id}`);
+				return store_default.setTabPath(me.id, `/channels/${dropped.guildId}/${dropped.id}`);
 		}
 	}
 );
@@ -2256,345 +2453,85 @@ var Folder_default = (comp) => makeDroppable(
 	}
 )(comp);
 
-// src/Tabbys/components/PromptModal/styles.css
-StylesLoader_default.push(`.create-folder-modal-content {
-	display: flex;
-	flex-direction: column;
-	gap: 8px;
-	padding: var(--modal-vertical-padding) var(--modal-horizontal-padding);
-}
-
-.create-folder-modal-footer {
-	gap: 12px;
-	align-items: center;
-}
-
-.transparent-background.transparent-background {
-	background: transparent;
-	border: unset;
-}
-`);
-
-// MODULES-AUTO-LOADER:@Modules/Heading
-var Heading_default = getModule((a) => a?.render?.toString().includes("data-excessive-heading-level"), { searchExports: true });
-
-// MODULES-AUTO-LOADER:@Modules/Button
-var Button_default = getModule((a) => a && a.Link && a.Colors, { searchExports: true });
-
-// common/Components/Button/index.jsx
-function ButtonComponentFallback(props) {
-	return /* @__PURE__ */ React.createElement("button", { ...props });
-}
-var ManaButton = /* @__PURE__ */ getModule(Filters.byStrings(`"data-mana-component":"button"`), { searchExports: true }) || ButtonComponentFallback;
-var ManaTextButton = /* @__PURE__ */ getModule(Filters.byStrings(`"data-mana-component":"text-button"`), { searchExports: true }) || ButtonComponentFallback;
-
-// common/Components/TextInput/index.jsx
-var TextInput = getModule(Filters.byStrings("showCharacterCount", "clearable"), { searchExports: true });
-var TextInput_default = TextInput || function TextInputFallback(props) {
-	return /* @__PURE__ */ React_default.createElement("div", { style: { color: "#fff" } }, /* @__PURE__ */ React_default.createElement(
-		"input", {
-			...props,
-			type: "text",
-			onChange: (e2) => props.onChange?.(e2.target.value)
-		}
-	));
-};
-
-// common/Components/FieldSet/styles.css
-StylesLoader_default.push(`.fieldset-container {
-	display: flex;
-	flex-direction: column;
-	gap: 16px;
-}
-
-.fieldset-label {
-	margin-bottom: 12px;
-}
-
-.fieldset-description {
-	margin-bottom: 12px;
-}
-
-.fieldset-label + .fieldset-description{
-	margin-top:-8px;
-	margin-bottom: 0;
-}
-
-.fieldset-content {
-	display: flex;
-	flex-direction: column;
-	width: 100%;
-	justify-content: flex-start;
-}
-`);
-
-// common/Components/FieldSet/index.jsx
-var c4 = classNameFactory("fieldset");
-
-function FieldSet({ label, description, children, contentGap = 16 }) {
-	return /* @__PURE__ */ React_default.createElement("fieldset", { className: c4("container") }, label && /* @__PURE__ */ React_default.createElement(
-		Heading_default, {
-			className: c4("label"),
-			tag: "legend",
-			variant: "text-lg/medium"
-		},
-		label
-	), description && /* @__PURE__ */ React_default.createElement(
-		Heading_default, {
-			className: c4("description"),
-			variant: "text-sm/normal",
-			color: "text-secondary"
-		},
-		description
-	), /* @__PURE__ */ React_default.createElement("div", { className: c4("content"), style: { gap: contentGap } }, children));
-}
-
-// common/Utils/Modals/styles.css
-StylesLoader_default.push(`.transparent-background.transparent-background{
-	background: transparent;
-	border:unset;
-}`);
-
-// common/Utils/Modals/index.jsx
-var ModalActions = getModule((a) => a.useModalsStore);
-var Modals = /* @__PURE__ */ getMangled( /* @__PURE__ */ Filters.bySource("MODAL_ROOT", "transitionState"), {
-	ModalRoot: /* @__PURE__ */ Filters.byStrings("transitionState"),
-	ModalFooter: /* @__PURE__ */ Filters.byStrings(".HORIZONTAL_REVERSE"),
-	ModalContent: /* @__PURE__ */ Filters.byStrings("scrollbarType", "scrollerRef"),
-	ModalHeader: /* @__PURE__ */ Filters.byStrings("headerIdIsManaged", "headerId", ".HORIZONTAL"),
-	Animations: (a) => a.SUBTLE,
-	Sizes: (a) => a.DYNAMIC,
-	ModalCloseButton: Filters.byStrings("withCircleBackground")
-});
-
-// src/Tabbys/components/PromptModal/index.jsx
-var c5 = clsx("create-folder-modal");
-
-function PromptModal({ modalProps, required, title, placeholder, label, initialValue = "", onSubmit }) {
-	const [val, setVal] = useState(initialValue);
-	const [submitted, setSubmitted] = useState(false);
-	const inputRef = useRef();
-	const saveHandler = (e2) => {
-		e2.preventDefault();
-		setSubmitted(true);
-		try {
-			onSubmit?.(val);
-			modalProps.onClose?.();
-		} finally {
-			setSubmitted(false);
-		}
-	};
-	const resetHandler = () => {
-		setVal("");
-		inputRef.current.focus();
-	};
-	return /* @__PURE__ */ React_default.createElement("form", { onSubmit: saveHandler }, /* @__PURE__ */ React_default.createElement(
-		Modals.ModalRoot, {
-			...modalProps,
-			fullscreenOnMobile: false,
-			className: c5("root")
-		},
-		/* @__PURE__ */
-		React_default.createElement(Modals.ModalHeader, { separator: true }, /* @__PURE__ */ React_default.createElement(
-			Heading_default, {
-				variant: "heading-lg/semibold",
-				style: { flexGrow: 1 }
-			},
-			title
-		), /* @__PURE__ */ React_default.createElement(Modals.ModalCloseButton, { onClick: modalProps.onClose })),
-		/* @__PURE__ */
-		React_default.createElement("div", { className: c5("content") }, /* @__PURE__ */ React_default.createElement(FieldSet, { label }, /* @__PURE__ */ React_default.createElement(
-			TextInput_default, {
-				inputRef,
-				value: val,
-				onChange: setVal,
-				fullWidth: true,
-				required,
-				placeholder: placeholder || initialValue,
-				autoFocus: true
-			}
-		)), /* @__PURE__ */ React_default.createElement(
-			ManaTextButton, {
-				text: "Reset Name",
-				textVariant: "text-sm/medium",
-				type: "button",
-				onClick: resetHandler
-			}
-		)),
-		/* @__PURE__ */
-		React_default.createElement(
-			Modals.ModalFooter, {
-				className: c5("footer"),
-				separator: true
-			},
-			/* @__PURE__ */
-			React_default.createElement(
-				ManaButton, {
-					text: "Save",
-					disable: submitted,
-					onClick: saveHandler
-				}
-			),
-			/* @__PURE__ */
-			React_default.createElement(
-				ManaTextButton, {
-					text: "Cancel",
-					onClick: modalProps.onClose
-				}
-			)
-		)
-	));
-}
-
-function openPromptModal(props) {
-	ModalActions.openModal((e2) => /* @__PURE__ */ React_default.createElement(ErrorBoundary, null, /* @__PURE__ */ React_default.createElement(
-		PromptModal, {
-			modalProps: e2,
-			...props
-		}
-	)));
-}
-
-// src/Tabbys/contextmenus/shared.js
-function MarkAsReadItem(channelId, hasUnread) {
-	return {
-		action: () => channelId && Dispatcher.dispatch({
-			type: "CHANNEL_ACK",
-			channelId,
-			force: true
-		}),
-		label: "Mark as read",
-		disabled: !hasUnread
-	};
-}
-
-function createFolder2(parentId) {
-	openPromptModal({
-		title: "Create Folder",
-		placeholder: "New Folder Name",
-		label: "New Folder Name",
-		required: true,
-		onSubmit: (name) => {
-			if (!name) return;
-			if (parentId) return addSubFolder(name, parentId);
-			addFolder(name);
-		}
-	});
-}
-
-function CopyChannelIdItem(id) {
-	return {
-		action: () => copy(id),
-		label: "Copy Channel ID",
-		icon: IdIcon
-	};
-}
-
-function CopyUserIdItem(id) {
-	return {
-		action: () => copy(id),
-		label: "Copy User ID",
-		icon: IdIcon
-	};
-}
-
-function CopyGuildIdItem(id) {
-	return {
-		action: () => copy(id),
-		label: "Copy Server ID",
-		icon: IdIcon
-	};
-}
-
-function CopyPathItem(path2) {
-	return {
-		action: () => copy(path2),
-		label: "Copy Path"
-	};
-}
-
 // src/Tabbys/contextmenus/TabContextMenu.jsx
 function TabContextMenu_default(id, { path: path2, channelId, userId, guildId, hasUnread }) {
-	const canClose = Store_default.getTabsCount() > 1;
-	const folders = Store_default.state.folders.map(
-		({ id: folderId, name }) => wrapMenuItem({
-			action: () => addTabToFolderAt(id, folderId),
-			label: name,
-			icon: BookmarkOutlinedIcon
-		})
-	);
-	const copies = [CopyPathItem(path2), channelId && CopyChannelIdItem(channelId), guildId && CopyGuildIdItem(guildId), userId && CopyUserIdItem(userId)].filter(Boolean).map(wrapMenuItem);
+	const canClose = store_default.getTabsCount() > 1;
+	const folders = getFolders((folderId, name) => ({
+		action: () => addTabToFolderAt(id, folderId),
+		label: name,
+		icon: BookmarkOutlinedIcon
+	}));
 	const Menu2 = ContextMenu.buildMenu(
-		[
-			MarkAsReadItem(channelId, hasUnread),
-			{ type: "separator" },
+		sanitize([
+			...MarkAsReadItem(channelId, hasUnread),
 			{
-				action: () => Store_default.addTabToRight(id),
+				action: () => store_default.addTabToRight(id),
 				label: "New tab to right",
-				icon: VectorIcon
+				leadingAccessory: { type: "icon", icon: VectorIcon }
 			},
 			{
-				action: () => Store_default.addTabToLeft(id),
+				action: () => store_default.addTabToLeft(id),
 				label: "New tab to left",
-				icon: VectorIcon
-			},
-			{
-				type: "submenu",
-				label: "Move",
-				items: [{
-						action: () => Store_default.moveRight(id),
-						label: "Move right",
-						icon: VectorIcon
-					},
-					{
-						action: () => Store_default.moveLeft(id),
-						label: "Move Left",
-						icon: VectorIcon
-					}
-				].filter(Boolean).map(wrapMenuItem)
+				leadingAccessory: { type: "icon", icon: VectorIcon }
 			},
 			{ type: "separator" },
 			{
-				action: () => Store_default.duplicateTab(id),
+				action: () => store_default.duplicateTab(id),
 				label: "Duplicate tab",
-				icon: DuplicateIcon
+				leadingAccessory: { type: "icon", icon: DuplicateIcon }
 			},
 			{
 				label: "Bookmark tab",
 				action: () => bookmarkTabAt(id),
 				type: folders.length > 0 ? "submenu" : null,
-				icon: folders.length > 0 ? nop : BookmarkOutlinedIcon,
+				leadingAccessory: { type: "icon", icon: BookmarkOutlinedIcon },
 				items: folders
 			},
 			{ type: "separator" },
-			...copies,
+			...getCopies({ path: path2, channelId, userId, guildId }),
+			{ type: "separator" },
+			{
+				type: "submenu",
+				label: "Move",
+				items: sanitize([{
+						action: () => store_default.moveRight(id),
+						label: "Move right",
+						leadingAccessory: { type: "icon", icon: VectorIcon }
+					},
+					{
+						action: () => store_default.moveLeft(id),
+						label: "Move Left",
+						leadingAccessory: { type: "icon", icon: VectorIcon }
+					}
+				])
+			},
 			canClose && { type: "separator" },
 			canClose && {
 				type: "submenu",
 				label: "Close",
-				action: () => Store_default.removeTab(id),
+				action: () => store_default.removeTab(id),
 				color: "danger",
-				items: [{
+				items: sanitize([{
 						action: () => removeTabsToRight(id),
 						label: "Close Tabs to Right",
-						icon: VectorIcon,
+						leadingAccessory: { type: "icon", icon: VectorIcon },
 						color: "danger"
 					},
 					{
 						action: () => removeTabsToLeft(id),
 						label: "Close Tabs to Left",
-						icon: VectorIcon,
+						leadingAccessory: { type: "icon", icon: VectorIcon },
 						color: "danger"
 					},
 					{
 						action: () => removeOtherTabs(id),
 						label: "Close Other Tabs",
-						icon: LightiningIcon,
+						leadingAccessory: { type: "icon", icon: LightiningIcon },
 						color: "danger"
 					}
-				].filter(Boolean).map(wrapMenuItem)
+				])
 			}
-		].filter(Boolean).map(wrapMenuItem)
+		])
 	);
 	return (props) => /* @__PURE__ */ React_default.createElement(Menu2, { ...props });
 }
@@ -2654,12 +2591,12 @@ var Tooltip_default = getModule(Filters.byPrototypeKeys("renderTooltip"), { sear
 
 // common/Components/Tooltip/index.jsx
 var Tooltip_default2 = ({ note, position, children }) => {
-	return /* @__PURE__ */ React.createElement(
+	return /* @__PURE__ */ React_default.createElement(
 		Tooltip_default, {
 			text: note,
 			position: position || "top"
 		},
-		(props) => React.cloneElement(children, {
+		(props) => React_default.cloneElement(children, {
 			...props,
 			...children.props
 		})
@@ -2667,7 +2604,7 @@ var Tooltip_default2 = ({ note, position, children }) => {
 };
 
 // src/Tabbys/components/TypingDots/index.jsx
-var TypingDots = waitForComponent(reactRefMemoFilter("type", "dotRadius", "className"), { searchExports: true });
+var TypingDots = waitForComponent2(reactRefMemoFilter("type", "dotRadius", "className"), { searchExports: true });
 
 function TypingDots_default({ users }) {
 	const typingUsersNames = users?.map(getUserName).join(", ");
@@ -2813,7 +2750,7 @@ function Channel({ name, channelName, guildId, channelId }) {
 var PresenceStore_default = getStore("PresenceStore");
 
 // common/Components/UserAvatar/index.jsx
-var UserAvatar = waitForComponent(reactRefMemoFilter("type", "statusColor", "isTyping"), { searchExports: true });
+var UserAvatar = waitForComponent2(reactRefMemoFilter("type", "statusColor", "isTyping"), { searchExports: true });
 var UserAvatar_default = ({ id, size, src }) => {
 	const [status2, isMobile] = useStateFromStores_default([PresenceStore_default], () => [PresenceStore_default.getStatus(id), PresenceStore_default.isMobileOnline(id)], [id]);
 	return /* @__PURE__ */ React_default.createElement(
@@ -2967,19 +2904,19 @@ function Content({ type, ...props }) {
 var c7 = classNameFactory("tab");
 
 function Tab2({ id, isOver, canDrop, isDragging, dragRef, dropRef }) {
-	const tab = Store_default((state) => Store_default.getTab(id), shallow);
+	const tab = store_default((state) => store_default.getTab(id), shallow);
 	const { guildId, userId, path: path2, channelId } = tab;
 	const shouldHightLight = Settings_default(Settings_default.selectors.highlightTabUnread);
 	const hasUnread = useStateFromStores_default([ReadStateStore_default], () => shouldHightLight && ReadStateStore_default.hasUnread(channelId), [shouldHightLight, channelId]);
-	const isSelected = Store_default(Store_default.selectors.selectedId) === id;
-	const isSingle = Store_default(Store_default.selectors.isSingle);
+	const isSelected = store_default(store_default.selectors.selectedId) === id;
+	const isSingle = store_default(store_default.selectors.isSingle);
 	const onClick = (e2) => {
 		e2.stopPropagation();
-		Store_default.setSelectedId(id);
+		store_default.setSelectedId(id);
 	};
 	const onCloseClick = (e2) => {
 		e2.stopPropagation();
-		Store_default.removeTab(id);
+		store_default.removeTab(id);
 	};
 	const contextmenuHandler = (e2) => {
 		ContextMenu.open(e2, TabContextMenu_default(id, { userId, path: path2, guildId, channelId, hasUnread }), {
@@ -2990,7 +2927,7 @@ function Tab2({ id, isOver, canDrop, isDragging, dragRef, dropRef }) {
 	const onMiddleClick = (e2) => {
 		if (e2.button !== 1) return;
 		e2.preventDefault();
-		Store_default.removeTab(id);
+		store_default.removeTab(id);
 	};
 	return /* @__PURE__ */ React_default.createElement(
 		"div", {
@@ -3075,13 +3012,13 @@ var c8 = clsx("tabbar");
 
 function TabBar() {
 	const [tabMinWidth, tabWidth] = Settings_default((_) => [_.tabMinWidth, _.tabWidth], shallow);
-	const tabs = Store_default(Store_default.selectors.tabs, (a, b) => a.length === b.length && !a.some((_, i) => a[i].id !== b[i].id));
-	const selectedId = Store_default(Store_default.selectors.selectedId);
-	const selectedIndex = Store_default.getSelectedTabIndex();
+	const tabs = store_default(store_default.selectors.tabs, (a, b) => a.length === b.length && !a.some((_, i) => a[i].id !== b[i].id));
+	const selectedId = store_default(store_default.selectors.selectedId);
+	const selectedIndex = store_default.getSelectedTabIndex();
 	const newTabHandler = (e2) => {
 		e2.preventDefault();
 		e2.stopPropagation();
-		Store_default.newTab();
+		store_default.newTab();
 	};
 	return /* @__PURE__ */ React_default.createElement(
 		"div", {
@@ -3195,13 +3132,13 @@ function renameBookmark(id, parentId) {
 }
 
 function BookmarkContextMenu_default(id, { path: path2, channelId, userId, guildId, parentId, hasUnread }) {
-	const folders = Store_default.state.folders.map(({ id: folderId, name }) => {
+	const folders = getFolders((folderId, name) => {
 		if (folderId === parentId) return;
 		return {
 			action: () => moveBookmarkToFolderAt(id, folderId, parentId),
 			label: name
 		};
-	}).filter(Boolean).map(wrapMenuItem);
+	});
 	if (parentId) {
 		if (folders.length) folders.push({ type: "separator" });
 		folders.push({
@@ -3209,25 +3146,24 @@ function BookmarkContextMenu_default(id, { path: path2, channelId, userId, guild
 			label: "Move To BookmarkBar"
 		});
 	}
-	const hasFolders = folders.length > 0;
-	const copies = [
-		CopyPathItem(path2),
-		channelId && CopyChannelIdItem(channelId),
-		guildId && CopyGuildIdItem(guildId),
-		userId && CopyUserIdItem(userId)
-	].filter(Boolean).map(wrapMenuItem);
 	const Menu2 = ContextMenu.buildMenu(
-		[
-			MarkAsReadItem(channelId, hasUnread),
+		sanitize([
+			...MarkAsReadItem(channelId, hasUnread),
 			{
 				action: () => openTabAt(path2),
 				label: "Open in new Tab",
-				icon: PlusIcon
+				leadingAccessory: { type: "icon", icon: PlusIcon }
 			},
 			{
 				action: () => renameBookmark(id, parentId),
 				label: "Rename",
-				icon: PenIcon
+				leadingAccessory: { type: "icon", icon: PenIcon }
+			},
+			{ type: "separator" },
+			folders.length > 0 && {
+				type: "submenu",
+				label: "Move to folder",
+				items: folders
 			},
 			{
 				type: "toggle",
@@ -3236,26 +3172,21 @@ function BookmarkContextMenu_default(id, { path: path2, channelId, userId, guild
 				action: () => toggleBookmarkNameState(id, parentId)
 			},
 			{ type: "separator" },
-			hasFolders && {
-				type: "submenu",
-				label: "Move",
-				items: folders
-			},
+			...getCopies({ path: path2, channelId, userId, guildId }),
+			{ type: "separator" },
 			{
 				action: () => createFolder2(parentId),
 				label: parentId ? "Create Sub Folder" : "Create Folder",
-				icon: PlusIcon
+				leadingAccessory: { type: "icon", icon: PlusIcon }
 			},
-			{ type: "separator" },
-			...copies,
 			{ type: "separator" },
 			{
 				color: "danger",
 				label: "Delete Bookmark",
-				icon: TrashBinIcon,
+				leadingAccessory: { type: "icon", icon: TrashBinIcon },
 				action: () => deleteBookmark(id, parentId)
 			}
-		].filter(Boolean).map(wrapMenuItem)
+		])
 	);
 	return (props) => /* @__PURE__ */ React_default.createElement(Menu2, { ...props });
 }
@@ -3263,7 +3194,7 @@ function BookmarkContextMenu_default(id, { path: path2, channelId, userId, guild
 // src/Tabbys/components/Bookmark/index.jsx
 function BaseBookmark({ id, parentId, dragRef, onClose, className }) {
 	const shouldHightLight = Settings_default(Settings_default.selectors.highlightBookmarkUnread);
-	const bookmark = Store_default((state) => parentId ? Store_default.getFolderItem(parentId, id) : Store_default.getBookmark(id), shallow) || {};
+	const bookmark = store_default((state) => parentId ? store_default.getFolderItem(parentId, id) : store_default.getBookmark(id), shallow) || {};
 	const { noName, guildId, userId, path: path2, channelId } = bookmark;
 	const hasUnread = useStateFromStores_default([ReadStateStore_default], () => shouldHightLight && ReadStateStore_default.hasUnread(channelId), [shouldHightLight, channelId]);
 	const isSubBookmark = !!parentId;
@@ -3276,13 +3207,13 @@ function BaseBookmark({ id, parentId, dragRef, onClose, className }) {
 	const onClick = (e2) => {
 		e2.stopPropagation();
 		onClose?.();
-		if (e2.ctrlKey) Store_default.newTab(path2);
+		if (e2.ctrlKey) store_default.newTab(path2);
 		else openBookmark(id, parentId);
 	};
 	const onMiddleClick = (e2) => {
 		if (e2.button !== 1) return;
 		e2.preventDefault();
-		Store_default.newTab(path2);
+		store_default.newTab(path2);
 	};
 	const contextmenuHandler = (e2) => {
 		ContextMenu.open(e2, BookmarkContextMenu_default(id, { path: path2, guildId, userId, parentId, channelId, hasUnread }), {
@@ -3418,7 +3349,7 @@ StylesLoader_default.push(`.folder-container {
 
 // src/Tabbys/contextmenus/FolderContextMenu.jsx
 function FolderContextMenu_default(id, { folderId, parentId }) {
-	const folders = Store_default.state.folders.map(({ id: targetFolderId, name }) => {
+	const folders = getFolders((targetFolderId, name) => {
 		if (targetFolderId === folderId) return;
 		if (targetFolderId === parentId) return;
 		if (isDescendent(folderId, targetFolderId)) return;
@@ -3426,7 +3357,7 @@ function FolderContextMenu_default(id, { folderId, parentId }) {
 			action: () => moveFolderToFolderAt(folderId, id, targetFolderId, parentId),
 			label: name
 		};
-	}).filter(Boolean).map(wrapMenuItem);
+	});
 	if (parentId) {
 		if (folders.length) folders.push({ type: "separator" });
 		folders.push({
@@ -3436,14 +3367,14 @@ function FolderContextMenu_default(id, { folderId, parentId }) {
 	}
 	const hasFolders = folders.length > 0;
 	const Menu2 = ContextMenu.buildMenu(
-		[{
+		sanitize([{
 				action: () => createFolder2(folderId),
 				label: "Create Sub Folder",
-				icon: PlusIcon
+				leadingAccessory: { type: "icon", icon: PlusIcon }
 			},
 			{
 				action: () => {
-					const folder = Store_default.getFolder(folderId);
+					const folder = store_default.getFolder(folderId);
 					if (!folder) return;
 					openPromptModal({
 						title: "Edit Folder Name",
@@ -3451,11 +3382,11 @@ function FolderContextMenu_default(id, { folderId, parentId }) {
 						placeholder: folder.name,
 						initialValue: folder.name,
 						required: true,
-						onSubmit: (name) => name && Store_default.setFolderName(folderId, name)
+						onSubmit: (name) => name && store_default.setFolderName(folderId, name)
 					});
 				},
 				label: "Rename Folder",
-				icon: PlusIcon
+				leadingAccessory: { type: "icon", icon: PlusIcon }
 			},
 			hasFolders && {
 				type: "submenu",
@@ -3468,10 +3399,10 @@ function FolderContextMenu_default(id, { folderId, parentId }) {
 			{
 				color: "danger",
 				label: "Delete Folder",
-				icon: TrashBinIcon,
+				leadingAccessory: { type: "icon", icon: TrashBinIcon },
 				action: () => deleteFolder(folderId, id, parentId)
 			}
-		].filter(Boolean).map(wrapMenuItem)
+		])
 	);
 	return (props) => /* @__PURE__ */ React_default.createElement(Menu2, { ...props });
 }
@@ -3521,7 +3452,7 @@ function BaseFolder({ id, channelIds, folderId, parentId, name, className, child
 var c10 = classNameFactory("folder");
 
 function SubFolder({ id, folderId, parentId, dragRef, dropRef, onClose, ...props }) {
-	const { name, items } = Store_default((state) => Store_default.getFolder(folderId), shallow) || {};
+	const { name, items } = store_default((state) => store_default.getFolder(folderId), shallow) || {};
 	return /* @__PURE__ */ React_default.createElement(
 		Popout_default, {
 			position: "right",
@@ -3586,7 +3517,7 @@ function FolderPopoutMenu({ folderId, items, onClose }) {
 
 // src/Tabbys/components/Folder/Folder.jsx
 function Folder({ id, folderId, dropRef, dragRef, ...props }) {
-	const { name, items } = Store_default((state) => Store_default.getFolder(folderId), shallow) || {};
+	const { name, items } = store_default((state) => store_default.getFolder(folderId), shallow) || {};
 	return /* @__PURE__ */ React_default.createElement(
 		Popout_default, {
 			position: "bottom",
@@ -3643,13 +3574,13 @@ function NoBookmarks() {
 }
 
 function BookmarkBarWrapAround() {
-	const bookmarks = Store_default(Store_default.selectors.bookmarks, shallow);
+	const bookmarks = store_default(store_default.selectors.bookmarks, shallow);
 	const content = bookmarks.map(({ id, folderId }) => getItem({}, id, folderId));
 	return /* @__PURE__ */ React_default.createElement("div", { className: c12("container") }, /* @__PURE__ */ React_default.createElement("div", { className: c12("content", "wrap") }, content.length > 0 ? content : /* @__PURE__ */ React_default.createElement(NoBookmarks, null), /* @__PURE__ */ React_default.createElement(DragHandle, null)));
 }
 
 function BookmarkBarOverflowMenu() {
-	const bookmarks = Store_default(Store_default.selectors.bookmarks, shallow);
+	const bookmarks = store_default(store_default.selectors.bookmarks, shallow);
 	const contentRef = useRef();
 	const [overflowedItems, setOverflowedItems] = useState([]);
 	useEffect(() => {
@@ -3735,10 +3666,40 @@ function BookmarkBar() {
 // MODULES-AUTO-LOADER:@Modules/Slider
 var Slider_default = getModule(Filters.byPrototypeKeys("renderMark"), { searchExports: true });
 
-// common/Components/SettingSlider/index.jsx
-function SettingSlider({ settingKey, label, description, ...props }) {
-	const [val, set2] = Settings_default.useSetting(settingKey);
+// common/Components/Divider/styles.css
+StylesLoader_default.push(`.divider-horizontal {
+	border-top: thin solid var(--border-subtle);
+	align-self: stretch;
+	margin:var(--divider-gap) var(--divider-gutter) var(--divider-gap) var(--divider-gutter) ;
+}
+
+.divider-vertical {
+	border-left: thin solid var(--border-subtle);
+	align-self: stretch;
+	margin:var(--divider-gutter) var(--divider-gap) var(--divider-gutter) var(--divider-gap);
+}
+`);
+
+// common/Components/Divider/index.jsx
+var c13 = classNameFactory("divider");
+
+function Divider({ gap = 15, gutter = 0, direction = Divider.direction.HORIZONTAL }) {
 	return /* @__PURE__ */ React_default.createElement(
+		"div", {
+			style: { "--divider-gap": `${gap}px`, "--divider-gutter": `${gutter}%` },
+			className: c13("base", direction)
+		}
+	);
+}
+Divider.direction = {
+	HORIZONTAL: "horizontal",
+	VERTICAL: "vertical"
+};
+
+// common/Components/SettingSlider/index.jsx
+function SettingSlider({ settingKey, border, label, description, ...props }) {
+	const [val, set2] = Settings_default.useSetting(settingKey);
+	return /* @__PURE__ */ React_default.createElement(React_default.Fragment, null, /* @__PURE__ */ React_default.createElement(
 		Slider_default, {
 			...props,
 			mini: true,
@@ -3747,11 +3708,11 @@ function SettingSlider({ settingKey, label, description, ...props }) {
 			initialValue: val,
 			onValueChange: (e2) => set2(Math.round(e2))
 		}
-	);
+	), border && /* @__PURE__ */ React_default.createElement(Divider, null));
 }
 
 // src/Tabbys/contextmenus/SettingsContextMenu.jsx
-var c13 = classNameFactory(`${Config_default.info.name}-menuitem`);
+var c14 = classNameFactory(`${Config_default.info.name}-menuitem`);
 var { Separator, CheckboxItem, RadioItem, ControlItem, Group, Item, Menu } = ContextMenu;
 
 function ContextMenuToggle({ settingKey, label, color }) {
@@ -3760,7 +3721,7 @@ function ContextMenuToggle({ settingKey, label, color }) {
 		CheckboxItem, {
 			color,
 			label,
-			id: c13(label, settingKey),
+			id: c14(label, settingKey),
 			checked: state,
 			action: () => {
 				setState(!state);
@@ -3774,98 +3735,59 @@ function ContextMenuSlider({ settingKey, label, ...rest }) {
 	const [val] = Settings_default.useSetting(settingKey);
 	return /* @__PURE__ */ React_default.createElement(
 		ControlItem, {
-			id: c13(settingKey),
+			id: c14(settingKey),
 			label: `${label}: ${val}px`,
-			control: () => /* @__PURE__ */ React_default.createElement("div", { style: { padding: "0 8px" } }, /* @__PURE__ */ React_default.createElement(
-				SettingSlider, {
-					...rest,
-					settingKey,
-					onValueRender: valueToPx
-				}
-			))
+			control: () => /* @__PURE__ */ React_default.createElement("div", { style: { padding: "0 8px" } }, /* @__PURE__ */ React_default.createElement(SettingSlider, { ...rest, settingKey, onValueRender: valueToPx }))
 		}
 	);
 }
 
 function status() {
 	function genStatusToggles(type) {
-		return /* @__PURE__ */ React_default.createElement(React_default.Fragment, null, /* @__PURE__ */ React_default.createElement(
-			Item, {
-				label: `${type}:`,
-				id: c13(type),
-				disabled: true
-			}
-		), [
+		return /* @__PURE__ */ React_default.createElement(Item, { label: type, id: c14(type) }, [
 			{ settingKey: `show${type}Pings`, label: "Pings" },
 			{ settingKey: `show${type}Unreads`, label: "Unreads" },
 			{ settingKey: `show${type}Typing`, label: "Typings" },
 			{ settingKey: `highlight${type}Unread`, label: "Highlight Unread" }
 		].map(ContextMenuToggle));
 	}
-	return /* @__PURE__ */ React_default.createElement(
-		Item, {
-			label: "Status",
-			id: c13("status")
-		},
-		genStatusToggles("Tab"),
-		/* @__PURE__ */
-		React_default.createElement(Separator, null),
-		genStatusToggles("Bookmark"),
-		/* @__PURE__ */
-		React_default.createElement(Separator, null),
-		genStatusToggles("Folder")
-	);
+	return /* @__PURE__ */ React_default.createElement(Item, { label: "Status", id: c14("status") }, genStatusToggles("Tab"), genStatusToggles("Bookmark"), genStatusToggles("Folder"));
 }
 
 function appearence() {
-	return /* @__PURE__ */ React_default.createElement(
-		Item, {
-			label: "Appearence",
-			id: c13("appearence")
+	return /* @__PURE__ */ React_default.createElement(Item, { label: "Appearence", id: c14("appearence") }, [{
+			settingKey: "size",
+			label: "UI Size",
+			minValue: 24,
+			maxValue: 32
 		},
-		[{
-				settingKey: "size",
-				label: "UI Size",
-				minValue: 24,
-				maxValue: 32
-			},
-			{
-				label: "Tab width",
-				settingKey: "tabWidth",
-				minValue: 50,
-				maxValue: 250
-			},
-			{
-				label: "Tab min width",
-				settingKey: "tabMinWidth",
-				minValue: 50,
-				maxValue: 250
-			}
-		].map(ContextMenuSlider),
-		/* @__PURE__ */
-		React_default.createElement(Separator, null),
-		[
-			{ settingKey: "showTabbar", label: "Show Tabbar" },
-			{ settingKey: "showBookmarkbar", label: "Show Bookmarks" },
-			{ settingKey: "keepTitle", label: "Keep TitleBar" },
-			{ settingKey: "privacyMode", label: "Privacy Mode" },
-			{ settingKey: "showSettingsButton", label: "Show Settings button", color: "danger" }
-		].map(ContextMenuToggle)
-	);
+		{
+			label: "Tab width",
+			settingKey: "tabWidth",
+			minValue: 50,
+			maxValue: 250
+		},
+		{
+			label: "Tab min width",
+			settingKey: "tabMinWidth",
+			minValue: 50,
+			maxValue: 250
+		}
+	].map(ContextMenuSlider), /* @__PURE__ */ React_default.createElement(Separator, null), [
+		{ settingKey: "showTabbar", label: "Show Tabbar" },
+		{ settingKey: "showBookmarkbar", label: "Show Bookmarks" },
+		{ settingKey: "keepTitle", label: "Keep TitleBar" },
+		{ settingKey: "privacyMode", label: "Privacy Mode" },
+		{ settingKey: "showSettingsButton", label: "Show Settings button", color: "danger" }
+	].map(ContextMenuToggle));
 }
 
 function SettingsContextMenu_default() {
-	return /* @__PURE__ */ React_default.createElement(Menu, null, appearence(), status(), /* @__PURE__ */ React_default.createElement(
-		Item, {
-			label: "Functionality",
-			id: c13("functionality")
-		},
-		[
-			{ settingKey: "bookmarkOverflowWrap", label: "Wrap Bookmarks" },
-			{ settingKey: "ctrlClickChannel", label: "Ctrl+Click channel" },
-			{ settingKey: "tabSwitch", label: "Tab switch keybinds" }
-		].map(ContextMenuToggle)
-	));
+	return /* @__PURE__ */ React_default.createElement(Menu, null, appearence(), status(), /* @__PURE__ */ React_default.createElement(Item, { label: "Functionality", id: c14("functionality") }, [
+		{ settingKey: "bookmarkOverflowWrap", label: "Wrap Bookmarks" },
+		{ settingKey: "ctrlClickChannel", label: "Ctrl+Click channel" },
+		{ settingKey: "tabSwitch", label: "Tab switch keybinds" }
+	].map(ContextMenuToggle)));
 }
 
 // src/Tabbys/components/SettingsButton/index.jsx
@@ -3891,7 +3813,7 @@ function SettingsButton() {
 }
 
 // src/Tabbys/components/App/index.jsx
-var c14 = classNameFactory("tabbys-app");
+var c15 = classNameFactory("tabbys-app");
 
 function App({ leading, title, trailing }) {
 	const [size, privacyMode, keepTitle, showTabbar, showBookmarkbar, showSettingsButton] = Settings_default((_) => [_.size, _.privacyMode, _.keepTitle, _.showTabbar, _.showBookmarkbar, _.showSettingsButton], shallow);
@@ -3900,40 +3822,32 @@ function App({ leading, title, trailing }) {
 			style: {
 				"--size": `${size}px`
 			},
-			className: c14("container", { showTabbar, showBookmarkbar, keepTitle, privacyMode })
+			className: c15("container", { showTabbar, showBookmarkbar, keepTitle, privacyMode })
 		},
-		keepTitle && /* @__PURE__ */ React_default.createElement("div", { className: c14("leading") }, [leading, title]),
-		showTabbar && /* @__PURE__ */ React_default.createElement("div", { className: c14("tabbar") }, /* @__PURE__ */ React_default.createElement(TabBar, null)),
+		keepTitle && /* @__PURE__ */ React_default.createElement("div", { className: c15("leading") }, [leading, title]),
+		showTabbar && /* @__PURE__ */ React_default.createElement("div", { className: c15("tabbar") }, /* @__PURE__ */ React_default.createElement(TabBar, null)),
 		/* @__PURE__ */
-		React_default.createElement("div", { className: c14("trailing") }, React_default.cloneElement(trailing, {
+		React_default.createElement("div", { className: c15("trailing") }, React_default.cloneElement(trailing, {
 			children: [showSettingsButton && /* @__PURE__ */ React_default.createElement(SettingsButton, null), ...trailing.props.children]
 		})),
-		showBookmarkbar && /* @__PURE__ */ React_default.createElement("div", { className: join2(c14("bookmarkbar")) }, /* @__PURE__ */ React_default.createElement(BookmarkBar, null))
+		showBookmarkbar && /* @__PURE__ */ React_default.createElement("div", { className: join2(c15("bookmarkbar")) }, /* @__PURE__ */ React_default.createElement(BookmarkBar, null))
 	);
 }
 
 // src/Tabbys/patches/patchTitleBar.jsx
-var TitleBar = getModuleAndKey(Filters.byStrings("PlatformTypes", "windowKey", "title"), { searchExports: true });
+var TitleBar = getModuleAndKey(Filters.byStrings("PlatformTypes", "windowKey", "title"), {
+	searchExports: true
+});
 var BaseClasses = getModule(Filters.byKeys("base", "activityPanel"));
-Plugin_default.on(Events.START, () => {
+Plugin_default.onStart(() => {
 	const { module: module2, key } = TitleBar;
-	if (!module2 || !key) return Logger_default.patchError("patchTitleBar");
-	const unpatch = Patcher.after(module2, key, (_, [props], ret) => {
+	after(module2, key, ({ args: [props], ret }) => {
 		if (props.windowKey?.startsWith("DISCORD_")) return ret;
 		const [leading, title, trailing] = ret?.props?.children || [];
-		return /* @__PURE__ */ React_default.createElement(ErrorBoundary, null, /* @__PURE__ */ React_default.createElement(
-			App, {
-				leading,
-				title,
-				trailing
-			}
-		));
+		return /* @__PURE__ */ React_default.createElement(ErrorBoundary_default, null, /* @__PURE__ */ React_default.createElement(App, { leading, title, trailing }));
 	});
-	reRender(`.${BaseClasses.base}`);
-	Plugin_default.once(Events.STOP, () => {
-		unpatch?.();
-		reRender(`.${BaseClasses.base}`);
-	});
+	setTimeout(() => reRender(`.${BaseClasses.base}`), 250);
+	Plugin_default.onStop(() => reRender(`.${BaseClasses.base}`), { once: true });
 });
 
 // common/Components/Collapsible/styles.css
@@ -4015,26 +3929,26 @@ StylesLoader_default.push(`.collapsible-container * {
 `);
 
 // common/Components/Collapsible/index.jsx
-var c15 = classNameFactory("collapsible");
+var c16 = classNameFactory("collapsible");
 
 function Collapsible({ title, children }) {
 	const [open, setOpen] = React_default.useState(false);
-	return /* @__PURE__ */ React_default.createElement("div", { className: c15("container", { open }) }, /* @__PURE__ */ React_default.createElement(
+	return /* @__PURE__ */ React_default.createElement("div", { className: c16("container", { open }) }, /* @__PURE__ */ React_default.createElement(
 		"div", {
-			className: c15("header"),
+			className: c16("header"),
 			onClick: () => setOpen(!open)
 		},
 		/* @__PURE__ */
 		React_default.createElement(
 			Heading_default, {
-				className: c15("title"),
+				className: c16("title"),
 				tag: "h5"
 			},
 			title
 		),
 		/* @__PURE__ */
-		React_default.createElement("div", { className: c15("icon") }, /* @__PURE__ */ React_default.createElement(ArrowIcon, null))
-	), /* @__PURE__ */ React_default.createElement("div", { className: c15("body") }, children));
+		React_default.createElement("div", { className: c16("icon") }, /* @__PURE__ */ React_default.createElement(ArrowIcon, null))
+	), /* @__PURE__ */ React_default.createElement("div", { className: c16("body") }, children));
 }
 
 // MODULES-AUTO-LOADER:@Modules/FormSwitch
@@ -4044,7 +3958,7 @@ var FormSwitch_default = getModule(Filters.byStrings("note", "tooltipNote"), { s
 var Switch_default = getMangled(Filters.bySource("auxiliaryContentPosition", "hasIcon"), {
 	Switch: () => true
 })?.Switch || function SwitchComponentFallback(props) {
-	return /* @__PURE__ */ React.createElement("div", { style: { color: "#fff" } }, props.label, /* @__PURE__ */ React.createElement(
+	return /* @__PURE__ */ React_default.createElement("div", { style: { color: "#fff" } }, props.label, /* @__PURE__ */ React_default.createElement(
 		"input", {
 			type: "checkbox",
 			checked: props.checked,
@@ -4053,40 +3967,10 @@ var Switch_default = getMangled(Filters.bySource("auxiliaryContentPosition", "ha
 	));
 };
 
-// common/Components/Divider/styles.css
-StylesLoader_default.push(`.divider-horizontal {
-	border-top: thin solid var(--border-subtle);
-	align-self: stretch;
-	margin:var(--divider-gap) var(--divider-gutter) var(--divider-gap) var(--divider-gutter) ;
-}
-
-.divider-vertical {
-	border-left: thin solid var(--border-subtle);
-	align-self: stretch;
-	margin:var(--divider-gutter) var(--divider-gap) var(--divider-gutter) var(--divider-gap);
-}
-`);
-
-// common/Components/Divider/index.jsx
-var c16 = classNameFactory("divider");
-
-function Divider({ gap = 15, gutter = 0, direction = Divider.direction.HORIZONTAL }) {
-	return /* @__PURE__ */ React_default.createElement(
-		"div", {
-			style: { "--divider-gap": `${gap}px`, "--divider-gutter": `${gutter}%` },
-			className: c16("base", direction)
-		}
-	);
-}
-Divider.direction = {
-	HORIZONTAL: "horizontal",
-	VERTICAL: "vertical"
-};
-
 // common/Components/SettingSwtich/index.jsx
 function SettingSwtich({ settingKey, note, border = false, onChange = nop, description, ...rest }) {
 	const [val, set2] = Settings_default.useSetting(settingKey);
-	return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(
+	return /* @__PURE__ */ React_default.createElement(React_default.Fragment, null, /* @__PURE__ */ React_default.createElement(
 		Switch_default, {
 			...rest,
 			hasIcon: true,
@@ -4095,10 +3979,10 @@ function SettingSwtich({ settingKey, note, border = false, onChange = nop, descr
 			description: note,
 			onChange: (e2) => {
 				set2(e2);
-				onChange(e2);
+				onChange?.(e2);
 			}
 		}
-	), border && /* @__PURE__ */ React.createElement(Divider, { gap: 15 }));
+	), border && /* @__PURE__ */ React_default.createElement(Divider, { gap: 15 }));
 }
 
 // src/Tabbys/components/SettingComponent/index.jsx
@@ -4163,7 +4047,4 @@ function SettingComponent() {
 
 // src/Tabbys/index.jsx
 Plugin_default.getSettingsPanel = () => /* @__PURE__ */ React_default.createElement(SettingComponent, null);
-Plugin_default.on(Events.STOP, () => {
-	Patcher.unpatchAll();
-});
 module.exports = () => Plugin_default;
