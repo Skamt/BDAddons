@@ -38,11 +38,7 @@ function ContextMenuSlider({ settingKey, label, ...rest }) {
 			label={`${label}: ${val}px`}
 			control={() => (
 				<div style={{ padding: "0 8px" }}>
-					<SettingSlider
-						{...rest}
-						settingKey={settingKey}
-						onValueRender={valueToPx}
-					/>
+					<SettingSlider {...rest} settingKey={settingKey} onValueRender={valueToPx} />
 				</div>
 			)}
 		/>
@@ -52,30 +48,21 @@ function ContextMenuSlider({ settingKey, label, ...rest }) {
 function status() {
 	function genStatusToggles(type) {
 		return (
-			<>
-				<Item
-					label={`${type}:`}
-					id={c(type)}
-					disabled={true}
-				/>
+			<Item label={type} id={c(type)}>
 				{[
 					{ settingKey: `show${type}Pings`, label: "Pings" },
 					{ settingKey: `show${type}Unreads`, label: "Unreads" },
 					{ settingKey: `show${type}Typing`, label: "Typings" },
-					{ settingKey: `highlight${type}Unread`, label: "Highlight Unread" }
+					{ settingKey: `highlight${type}Unread`, label: "Highlight Unread" },
 				].map(ContextMenuToggle)}
-			</>
+			</Item>
 		);
 	}
 
 	return (
-		<Item
-			label="Status"
-			id={c("status")}>
+		<Item label="Status" id={c("status")}>
 			{genStatusToggles("Tab")}
-			<Separator />
 			{genStatusToggles("Bookmark")}
-			<Separator />
 			{genStatusToggles("Folder")}
 		</Item>
 	);
@@ -83,28 +70,26 @@ function status() {
 
 function appearence() {
 	return (
-		<Item
-			label="Appearence"
-			id={c("appearence")}>
+		<Item label="Appearence" id={c("appearence")}>
 			{[
 				{
 					settingKey: "size",
 					label: "UI Size",
 					minValue: 24,
-					maxValue: 32
+					maxValue: 32,
 				},
 				{
 					label: "Tab width",
 					settingKey: "tabWidth",
 					minValue: 50,
-					maxValue: 250
+					maxValue: 250,
 				},
 				{
 					label: "Tab min width",
 					settingKey: "tabMinWidth",
 					minValue: 50,
-					maxValue: 250
-				}
+					maxValue: 250,
+				},
 			].map(ContextMenuSlider)}
 
 			<Separator />
@@ -114,7 +99,7 @@ function appearence() {
 				{ settingKey: "showBookmarkbar", label: "Show Bookmarks" },
 				{ settingKey: "keepTitle", label: "Keep TitleBar" },
 				{ settingKey: "privacyMode", label: "Privacy Mode" },
-				{ settingKey: "showSettingsButton", label: "Show Settings button", color: "danger" }
+				{ settingKey: "showSettingsButton", label: "Show Settings button", color: "danger" },
 			].map(ContextMenuToggle)}
 		</Item>
 	);
@@ -125,13 +110,11 @@ export default function () {
 		<Menu>
 			{appearence()}
 			{status()}
-			<Item
-				label="Functionality"
-				id={c("functionality")}>
+			<Item label="Functionality" id={c("functionality")}>
 				{[
 					{ settingKey: "bookmarkOverflowWrap", label: "Wrap Bookmarks" },
 					{ settingKey: "ctrlClickChannel", label: "Ctrl+Click channel" },
-					{ settingKey: "tabSwitch", label: "Tab switch keybinds" }
+					{ settingKey: "tabSwitch", label: "Tab switch keybinds" },
 				].map(ContextMenuToggle)}
 			</Item>
 		</Menu>

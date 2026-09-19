@@ -1,5 +1,6 @@
 import config from "@Config";
 import { ContextMenu } from "@Api";
+import patchContextMenu from "@common/Patcher/contextmenu";
 import Settings from "@Utils/Settings";
 import { wrapMenuItem } from "@/contextmenus/helper";
 import Store from "@/Store";
@@ -42,22 +43,22 @@ function menu(path) {
 		wrapMenuItem({
 			action: () => addToFolderAt(path, id),
 			label: name,
-			icon: BookmarkOutlinedIcon
-		})
+			leadingAccessory: { type: "icon", icon: BookmarkOutlinedIcon },
+		}),
 	);
 
 	const bookmark = {
 		action: () => addBookmarkAt(path),
 		label: "Bookmark channel",
 		type: folders.length > 0 ? "submenu" : null,
-		icon: folders.length > 0 ? nop : BookmarkOutlinedIcon,
-		items: folders
+		leadingAccessory: { type: "icon", icon: folders.length > 0 ? nop : BookmarkOutlinedIcon },
+		items: folders,
 	};
 
 	const tab = {
 		action: () => Store.newTab(path),
-		icon: PlusIcon,
-		label: "Open in new Tab"
+		leadingAccessory: { type: "icon", icon: PlusIcon },
+		label: "Open in new Tab",
 	};
 
 	const id = `${config.info.name}-channel-options`;
@@ -69,39 +70,36 @@ function menu(path) {
 				type: "submenu",
 				id,
 				label: config.info.name,
-				items: [tab, bookmark]
-			})
+				items: [tab, bookmark],
+			}),
 		);
 
 	return menu;
 }
 
 Plugin.onStart(() => {
-	const unpatch = [
-		...["thread-context", "channel-context"].map(context =>
-			ContextMenu.patch(context, (retVal, { channel, targetIsUser }) => {
-				if (!channel || targetIsUser) return;
-				const path = getPath(channel);
-				if (!path) return;
-				retVal.props.children.push(...menu(path));
-			})
-		),
-		ContextMenu.patch("channel-mention-context", (retVal, { originalLink }) => {
-			const path = getPathName(originalLink);
-			if (!path) return;
-			retVal.props.children.push(...menu(path));
-		}),
-		ContextMenu.patch("user-context", (retVal, { user }) => {
-			if (user.email) return;
-			const channel = ChannelStore.getDMChannelFromUserId(user.id);
-			if (!channel) return;
+	const navIds = ["thread-context", "channel-context"];
+	for (let i = 0; i < navIds.length; i++) {
+		const navId = navIds[i];
+		patchContextMenu(navId, (retVal, { channel, targetIsUser }) => {
+			if (!channel || targetIsUser) return;
 			const path = getPath(channel);
 			if (!path) return;
 			retVal.props.children.push(...menu(path));
-		})
-	];
+		});
+	}
 
-	Plugin.once(Events.STOP, () => {
-		unpatch.forEach(a => a && typeof a === "function" && a());
+	patchContextMenu("channel-mention-context", (retVal, { originalLink }) => {
+		const path = getPathName(originalLink);
+		if (!path) return;
+		retVal.props.children.push(...menu(path));
+	});
+	patchContextMenu("user-context", (retVal, { user }) => {
+		if (user.email) return;
+		const channel = ChannelStore.getDMChannelFromUserId(user.id);
+		if (!channel) return;
+		const path = getPath(channel);
+		if (!path) return;
+		retVal.props.children.push(...menu(path));
 	});
 });

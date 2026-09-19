@@ -1,4 +1,5 @@
 import config from "@Config";
+
 export const Api = /*@__PURE__*/ (() => new BdApi(config.info.name))();
 
 export const Data = /*@__PURE__*/ (() => Api.Data)();

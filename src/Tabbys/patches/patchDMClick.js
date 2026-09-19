@@ -1,21 +1,20 @@
-import { Patcher } from "@Api";
-import Logger from "@Utils/Logger";
-import { Filters, getModule } from "@Webpack";
+import Plugin from "@common/Plugin";
+import { before } from "@common/Patcher";
+import { reactRefMemoFilter, getModule } from "@Webpack";
 import Store from "@/Store";
 import Settings from "@Utils/Settings";
 
-const DMChannelFilter = Filters.byStrings("navigate", "location", "href", "createHref");
-export const DMChannel = getModule(a => a.render && DMChannelFilter(a.render), { searchExports: true });
-
-import Plugin from "@common/Plugin";
+const DMChannel = getModule(
+	reactRefMemoFilter("render", "navigate", "location", "href", "createHref"),
+	{ searchExports: true },
+);
 
 Plugin.onStart(() => {
-	if (!DMChannel) return Logger.patchError("DMChannel");
-	Patcher.before(DMChannel, "render", (_, [props]) => {
+	before(DMChannel, "render", ({args:[props]}) => {
 		const path = props.to;
 		if (!path) return;
-		props.onClick = e => {
-			if (e.ctrlKey&& Settings.state.ctrlClickChannel) {
+		props.onClick = (e) => {
+			if (e.ctrlKey && Settings.state.ctrlClickChannel) {
 				e.preventDefault();
 				Store.newTab(path);
 			}

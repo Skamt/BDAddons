@@ -1,6 +1,6 @@
 import Logger from "@Utils/Logger";
 
-const target = new EventTarget();
+const target = /*@__PURE__*/ (() => new EventTarget())();
 
 function wrap(handler) {
 	return (e) => {
@@ -13,11 +13,9 @@ function wrap(handler) {
 }
 
 export default {
-	onLoad: (handler, props) => target.addEventListener("LOAD", wrap(handler), props),
 	onStart: (handler, props) => target.addEventListener("START", wrap(handler), props),
 	onStop: (handler, props) => target.addEventListener("STOP", wrap(handler), props),
 	start() {
-		target.dispatchEvent(new Event("LOAD"));
 		target.dispatchEvent(new Event("START"));
 	},
 	stop() {

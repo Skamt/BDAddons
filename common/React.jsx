@@ -19,6 +19,7 @@ export const unstable_batchedUpdates = /*@__PURE__*/ (() =>
 	BdApi.ReactDOM.unstable_batchedUpdates)();
 
 const React = /*@__PURE__*/ (() => BdApi.React)();
+
 export default React;
 
 export const NoopComponent = () => null;
@@ -33,11 +34,9 @@ export const LazyComponent = (get) => {
 };
 
 export function insertChild(el, child, index) {
-	if (!el?.props?.children || !child) return ;
+	if (!el?.props?.children || !child) return;
 
-	const children = Array.isArray(el.props.children)
-		? el.props.children
-		: [el.props.children];
+	const children = Array.isArray(el.props.children) ? el.props.children : [el.props.children];
 
 	el.props.children = add(children, child, index);
 }

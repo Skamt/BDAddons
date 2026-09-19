@@ -1,20 +1,17 @@
-import { Patcher } from "@Api";
-import Logger from "@Utils/Logger";
-import { getBySource, getById,Filters } from "@Webpack";
+import { after } from "@common/Patcher";
+import { getBySource, Filters } from "@Webpack";
 import Store from "@/Store";
 import { getNestedProp } from "@Utils";
-import SelectedChannelStore from "@Stores/SelectedChannelStore";
 import { getGuildChannelPath } from "@/utils";
 import Plugin from "@common/Plugin";
 import Settings from "@Utils/Settings";
 
 const GuildComponent = getBySource("guildsnav", {
-	declarationFilter: Filters.byComponentType(Filters.byStrings("aria-owns=folder-items-","onDragOverChanged"))
+	declarationFilter: Filters.byComponentType(Filters.byStrings("aria-owns=folder-items-", "onDragOverChanged"))
 });
 
 Plugin.onStart(() => {
-	if (!GuildComponent) return Logger.patchError("GuildComponent");
-	Patcher.after(GuildComponent, "type", (_, [{ guild }], ret) => {
+	after(GuildComponent, "type", ({ args: [{ guild }], ret }) => {
 		const targetProps = getNestedProp(ret, "props.children.1.props.children.props.children.props.children.props.children.props.children.props");
 
 		if (!targetProps) return ret;

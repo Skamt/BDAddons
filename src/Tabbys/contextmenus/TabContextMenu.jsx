@@ -3,73 +3,67 @@ import Store from "@/Store";
 import { Dispatcher } from "@Discord/Modules";
 import { BookmarkOutlinedIcon, DuplicateIcon, LightiningIcon, VectorIcon } from "@Components/Icon";
 import React from "@React";
-import { wrapMenuItem } from "./helper";
-import { nop } from "@Utils";
+import { sanitize, getCopies, getFolders, wrapMenuItem } from "./helper";
+
 import { bookmarkTabAt, removeTabsToRight, removeOtherTabs, removeTabsToLeft, addTabToFolderAt } from "@/Store/methods";
-import { CopyPathItem, CopyUserIdItem, CopyGuildIdItem, CopyChannelIdItem, MarkAsReadItem } from "./shared";
+import { copyItem, MarkAsReadItem } from "./shared";
 
 export default function (id, { path, channelId, userId, guildId, hasUnread }) {
 	const canClose = Store.getTabsCount() > 1;
 
-	const folders = Store.state.folders.map(({ id: folderId, name }) =>
-		wrapMenuItem({
-			action: () => addTabToFolderAt(id, folderId),
-			label: name,
-			icon: BookmarkOutlinedIcon
-		})
-	);
-
-	const copies = [CopyPathItem(path), channelId && CopyChannelIdItem(channelId), guildId && CopyGuildIdItem(guildId), userId && CopyUserIdItem(userId)].filter(Boolean).map(wrapMenuItem);
+	const folders = getFolders((folderId, name) => ({
+		action: () => addTabToFolderAt(id, folderId),
+		label: name,
+		icon: BookmarkOutlinedIcon
+	}));
 
 	const Menu = ContextMenu.buildMenu(
-		[
-			MarkAsReadItem(channelId, hasUnread),
-			{ type: "separator" },
+		sanitize([
+			...MarkAsReadItem(channelId, hasUnread),
+
 			{
 				action: () => Store.addTabToRight(id),
 				label: "New tab to right",
-				icon: VectorIcon
+				leadingAccessory: { type: "icon", icon: VectorIcon }
 			},
 			{
 				action: () => Store.addTabToLeft(id),
 				label: "New tab to left",
-				icon: VectorIcon
-			},
-			{
-				type: "submenu",
-				label: "Move",
-				items: [
-					{
-						action: () => Store.moveRight(id),
-						label: "Move right",
-						icon: VectorIcon
-					},
-					{
-						action: () => Store.moveLeft(id),
-						label: "Move Left",
-						icon: VectorIcon
-					}
-				]
-					.filter(Boolean)
-					.map(wrapMenuItem)
+				leadingAccessory: { type: "icon", icon: VectorIcon }
 			},
 			{ type: "separator" },
 			{
 				action: () => Store.duplicateTab(id),
 				label: "Duplicate tab",
-				icon: DuplicateIcon
+				leadingAccessory: { type: "icon", icon: DuplicateIcon }
 			},
 			{
 				label: "Bookmark tab",
 				action: () => bookmarkTabAt(id),
 				type: folders.length > 0 ? "submenu" : null,
-				icon: folders.length > 0 ? nop : BookmarkOutlinedIcon,
+				leadingAccessory: { type: "icon", icon: BookmarkOutlinedIcon },
 				items: folders
 			},
 
 			{ type: "separator" },
-			...copies,
-
+			...getCopies({ path, channelId, userId, guildId }),
+			{ type: "separator" },
+			{
+				type: "submenu",
+				label: "Move",
+				items: sanitize([
+					{
+						action: () => Store.moveRight(id),
+						label: "Move right",
+						leadingAccessory: { type: "icon", icon: VectorIcon }
+					},
+					{
+						action: () => Store.moveLeft(id),
+						label: "Move Left",
+						leadingAccessory: { type: "icon", icon: VectorIcon }
+					}
+				])
+			},
 			canClose && { type: "separator" },
 
 			canClose && {
@@ -77,33 +71,30 @@ export default function (id, { path, channelId, userId, guildId, hasUnread }) {
 				label: "Close",
 				action: () => Store.removeTab(id),
 				color: "danger",
-				items: [
+				items: sanitize([
 					{
 						action: () => removeTabsToRight(id),
 						label: "Close Tabs to Right",
-						icon: VectorIcon,
+						leadingAccessory: { type: "icon", icon: VectorIcon },
 						color: "danger"
 					},
 					{
 						action: () => removeTabsToLeft(id),
 						label: "Close Tabs to Left",
-						icon: VectorIcon,
+						leadingAccessory: { type: "icon", icon: VectorIcon },
 						color: "danger"
 					},
 					{
 						action: () => removeOtherTabs(id),
 						label: "Close Other Tabs",
-						icon: LightiningIcon,
+						leadingAccessory: { type: "icon", icon: LightiningIcon },
 						color: "danger"
 					}
-				]
-					.filter(Boolean)
-					.map(wrapMenuItem)
+				])
 			}
-		]
-			.filter(Boolean)
-			.map(wrapMenuItem)
+		])
 	);
 
 	return props => <Menu {...props} />;
 }
+

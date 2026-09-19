@@ -8,7 +8,7 @@ const styleLoader = {
 	}
 };
 
-Plugin.onLoad(() => DOM.addStyle(styleLoader._styles.join("\n")));
+Plugin.onStart(() => DOM.addStyle(styleLoader._styles.join("\n")));
 Plugin.onStop(() => DOM.removeStyle());
 
 export default styleLoader;

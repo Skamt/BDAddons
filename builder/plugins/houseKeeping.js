@@ -34,7 +34,6 @@ const beautifyConfig = {
 
 function writReadme( config) {
 	const readmeFilePath = resolve(global.releaseFolder, config.info.name, "README.md");
-	console.log(readmeFilePath);
 	if (existsSync(readmeFilePath)) return;
 	return wf(readmeFilePath, buildReadme(config));
 }

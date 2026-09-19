@@ -1,21 +1,21 @@
-import { Patcher } from "@Api";
-import Logger from "@Utils/Logger";
-import { Filters, getModule } from "@Webpack";
+import { after } from "@common/Patcher";
+import { reactRefMemoFilter, getModule } from "@Webpack";
 import { getNestedProp } from "@Utils";
 import Store from "@/Store";
 import Plugin from "@common/Plugin";
 import Settings from "@Utils/Settings";
 
-const channelFilter = Filters.byStrings("href", "children", "onClick", "onKeyPress", "focusProps");
-const channelComponent = getModule(a => a.render && channelFilter(a.render), { searchExports: true });
+const channelComponent = getModule(
+	reactRefMemoFilter("render", "children", "onClick", "onKeyPress", "focusProps"),
+	{ searchExports: true },
+);
 
 Plugin.onStart(() => {
-	if (!channelComponent) return Logger.patchError("channelComponent");
-	Patcher.after(channelComponent, "render", (_, [props], ret) => {
+	after(channelComponent, "render", ({ args: [props], ret }) => {
 		const origClick = getNestedProp(ret, "props.children.props.onClick");
 		const path = props.href;
 		if (!path || !origClick) return ret;
-		ret.props.children.props.onClick = e => {
+		ret.props.children.props.onClick = (e) => {
 			e.preventDefault();
 			if (e.ctrlKey && Settings.state.ctrlClickChannel) Store.newTab(path);
 			else origClick?.(e);

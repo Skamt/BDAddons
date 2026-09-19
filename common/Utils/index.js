@@ -1,6 +1,7 @@
 import config from "@Config";
 import { Patcher, getOwnerInstance } from "@Api";
 import React, { ReactDOM } from "@React";
+import { instead } from "@common/Patcher";
 
 export function getObjectKey(object = {}, filter) {
 	for (const key in object) {
@@ -158,7 +159,8 @@ export function reRender(selector) {
 	const target = document.querySelector(selector)?.parentElement;
 	if (!target) return;
 	const instance = getOwnerInstance(target);
-	const unpatch = Patcher.instead(instance, "render", () => unpatch());
+	if (!instance) return;
+	const unpatch = BdApi.Patcher.instead("RE_RENDER", instance, "render", (a) => unpatch());
 	instance.forceUpdate(() => instance.forceUpdate());
 }
 

@@ -7,8 +7,5 @@ import SettingComponent from "./components/SettingComponent";
 
 Plugin.getSettingsPanel = () => <SettingComponent />;
 
-Plugin.onStop(() => {
-	Patcher.unpatchAll();
-});
 
 module.exports = () => Plugin;

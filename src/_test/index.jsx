@@ -1,10 +1,8 @@
 import Plugin from "@common/Plugin";
-// import { before, instead, after } from "@common/Patcher/lazy";
-// import { promiseHandler } from "@Utils";
 
-Plugin.onStart( (e) => {
-	// debugger;
-	// before();
+
+Plugin.onStart((e) => {
 });
 
 module.exports = () => Plugin;
+

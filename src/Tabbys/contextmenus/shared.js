@@ -5,17 +5,20 @@ import { copy } from "@Utils";
 import { IdIcon } from "@Components/Icon";
 
 export function MarkAsReadItem(channelId, hasUnread) {
-	return {
-		action: () =>
-			channelId &&
-			Dispatcher.dispatch({
-				type: "CHANNEL_ACK",
-				channelId,
-				force: true
-			}),
-		label: "Mark as read",
-		disabled: !hasUnread
-	};
+	return !channelId ? []: [
+		{
+			action: () =>
+				channelId &&
+				Dispatcher.dispatch({
+					type: "CHANNEL_ACK",
+					channelId,
+					force: true,
+				}),
+			label: "Mark as read",
+			disabled: !hasUnread,
+		},
+		{ type: "separator" },
+	];
 }
 
 export function createFolder(parentId) {
@@ -24,41 +27,26 @@ export function createFolder(parentId) {
 		placeholder: "New Folder Name",
 		label: "New Folder Name",
 		required: true,
-		onSubmit: name => {
+		onSubmit: (name) => {
 			if (!name) return;
 			if (parentId) return addSubFolder(name, parentId);
 			addFolder(name);
-		}
+		},
 	});
 }
 
-export function CopyChannelIdItem(id) {
-	return {
-		action: () => copy(id),
-		label: "Copy Channel ID",
-		icon: IdIcon
-	};
-}
+export function copyItem(type, content) {
+	const label = {
+		channel: "Copy Channel ID",
+		user: "Copy User ID",
+		guild: "Copy Server ID",
+		path: "Copy path",
+	}[type];
 
-export function CopyUserIdItem(id) {
-	return {
-		action: () => copy(id),
-		label: "Copy User ID",
-		icon: IdIcon
+	const item = {
+		action: () => copy(content),
+		label,
 	};
-}
-
-export function CopyGuildIdItem(id) {
-	return {
-		action: () => copy(id),
-		label: "Copy Server ID",
-		icon: IdIcon
-	};
-}
-
-export function CopyPathItem(path) {
-	return {
-		action: () => copy(path),
-		label: "Copy Path"
-	};
+	if (type !== "path") item.leadingAccessory = { type: "icon", icon: IdIcon };
+	return item;
 }
