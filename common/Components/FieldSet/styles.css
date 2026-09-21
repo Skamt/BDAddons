@@ -4,6 +4,7 @@
 	gap: 16px;
 }
 
+
 .fieldset-label {
 	margin-bottom: 12px;
 }
@@ -19,7 +20,14 @@
 
 .fieldset-content {
 	display: flex;
-	flex-direction: column;
 	width: 100%;
 	justify-content: flex-start;
+}
+
+.fieldset-content.fieldset-horizontal {
+	flex-direction: row;
+}
+
+.fieldset-content.fieldset-vertical {
+	flex-direction: column;
 }

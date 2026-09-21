@@ -1,15 +1,35 @@
 import { findInTree, getInternalInstance } from "@Api";
 import { Filters, getModule } from "@Webpack";
+import { openLink, copy, getPathName } from "@Utils";
+import Store from "@/store";
+import React from "@React";
+import { insertText, sendMessageDirectly } from "@Utils/Messages";
+import SelectedChannelStore from "@Stores/SelectedChannelStore";
+import Toast from "@Utils/Toast";
 
-function getPathName(url) {
-	try {
-		return new URL(url).pathname;
-	} catch {}
+export function spotifyCopy(content) {
+	if (!content) return Toast.error("Copy failed!");
+	copy(content);
+	Toast.success("Copied!");
 }
+
+export const copySpotifyUrl = url => spotifyCopy(sanitizeSpotifyLink(url))
+export const openSpotifyUrl = url => openLink(sanitizeSpotifyLink(url))
+
+export function spotifyShare(content) {
+	if (!content) return Toast.error("Share failed");
+	const id = SelectedChannelStore.getCurrentlySelectedChannelId();
+	if (!id) return Toast.info("There is no Selected Channel");
+
+	sendMessageDirectly(content, id).catch((a) => {
+		insertText(content);
+	});
+}
+
 
 export function parseSpotifyUrl(url) {
 	const path = getPathName(url);
-	if (typeof url !== "string" || !path) return undefined;
+	if (!path) return undefined;
 	const urlFrags = path.split("/");
 	return [urlFrags.pop(), urlFrags.pop()];
 }
@@ -31,43 +51,20 @@ export function isSpotifyUrl(url) {
 	}
 }
 
-const activityPanelClasses = getModule(Filters.byKeys("activityPanel", "panels"), { searchExports: false });
+const activityPanelClasses = getModule(Filters.byKeys("activityPanel", "panels"), {
+	searchExports: false,
+});
 
-export const getFluxContainer = (() => {
-	let userAreaFluxContainer = undefined;
-
-	function tryGetFluxContainer() {
-		if(userAreaFluxContainer) return userAreaFluxContainer;
-		const el = document.querySelector(`.${activityPanelClasses.panels}`);
-		if (!el) return;
-		const instance = getInternalInstance(el);
-		if (!instance) return;
-		const res = findInTree(instance, a => a?.type?.prototype?.hasParty, { walkable: ["child", "sibling"] });
-		if (!res) return;
-		return res;
-	}
-
-	return () => {
-		userAreaFluxContainer = tryGetFluxContainer();
-		if (userAreaFluxContainer) return Promise.resolve(userAreaFluxContainer);
-
-		return new Promise(resolve => {
-			const interval = setInterval(() => {
-				userAreaFluxContainer = tryGetFluxContainer();
-				if (!userAreaFluxContainer) return;
-				resolve(userAreaFluxContainer);
-				clearInterval(interval);
-			}, 500);
-
-			/* Fail safe */
-			setTimeout(() => {
-				resolve(null);
-				clearInterval(interval);
-			}, 60 * 1000);
-		});
-	};
-})();
-
+export function useGetRessource(type, id) {
+	const [state, setState] = React.useState(null);
+	React.useEffect(() => {
+		(async () => {
+			const data = await Store.Api.getRessource(type, id);
+			if (data) setState(data);
+		})();
+	}, []);
+	return state;
+}
 
 export const parsers = {
 	track(obj) {
@@ -75,10 +72,10 @@ export const parsers = {
 			id: obj.id,
 			thumbnail: obj.album.images,
 			rawTitle: obj.name,
-			rawDescription: `${obj.artists.map(a => a.name).join(", ")} · ${obj.name} · ${new Date(obj.album.release_date).getFullYear()}`,
+			rawDescription: `${obj.artists.map((a) => a.name).join(", ")} · ${obj.name} · ${new Date(obj.album.release_date).getFullYear()}`,
 			url: obj.external_urls.spotify,
 			preview_url: obj.preview_url,
-			explicit: obj.explicit
+			explicit: obj.explicit,
 		};
 	},
 	playlist(obj) {
@@ -88,12 +85,12 @@ export const parsers = {
 			rawTitle: obj.name,
 			url: obj.external_urls.spotify,
 			rawDescription: `${obj.name} · ${obj.tracks.total} songs · ${obj.followers.total} likes`,
-			followers:obj.followers.total,
-			total_tracks:obj.tracks.total,
-			owner:{
-				name:obj.owner.display_name,
-				id:obj.owner.id
-			}
+			followers: obj.followers.total,
+			total_tracks: obj.tracks.total,
+			owner: {
+				name: obj.owner.display_name,
+				id: obj.owner.id,
+			},
 		};
 	},
 	album(obj) {
@@ -102,9 +99,9 @@ export const parsers = {
 			thumbnail: obj.images,
 			rawTitle: obj.name,
 			url: obj.external_urls.spotify,
-			rawDescription: `${obj.artists.map(a => a.name).join(", ")} · ${obj.name} · ${obj.total_tracks} songs · ${new Date(obj.release_date).getFullYear()}`,
-			total_tracks:obj.total_tracks,
-			popularity:obj.popularity,
+			rawDescription: `${obj.artists.map((a) => a.name).join(", ")} · ${obj.name} · ${obj.total_tracks} songs · ${new Date(obj.release_date).getFullYear()}`,
+			total_tracks: obj.total_tracks,
+			popularity: obj.popularity,
 		};
 	},
 	artist(obj) {
@@ -137,14 +134,14 @@ export const parsers = {
 			publisher: obj.publisher,
 			languages: obj.languages,
 			is_externally_hosted: obj.is_externally_hosted,
-			total_episodes:obj.total_episodes
+			total_episodes: obj.total_episodes,
 		};
 	},
 	episode(obj) {
 		return {
 			id: obj.id,
 			url: obj.external_urls.spotify,
-			preview_url:obj.audio_preview_url,
+			preview_url: obj.audio_preview_url,
 			thumbnail: obj.images,
 			rawTitle: obj.name,
 			rawDescription: obj.description,
@@ -154,5 +151,5 @@ export const parsers = {
 			duration_ms: obj.duration_ms,
 			is_externally_hosted: obj.is_externally_hosted,
 		};
-	}
+	},
 };

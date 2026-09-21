@@ -1,6 +1,6 @@
-import { Patcher, React } from "@Api";
+import React from "@React";
+import {after} from "@common/Patcher";
 import ErrorBoundary from "@Components/ErrorBoundary";
-import Logger from "@Utils/Logger";
 import Settings from "@Utils/Settings";
 import { Filters, getDeclarationAndKey } from "@Webpack";
 import SpotifyActivityControls from "@/components/SpotifyActivityControls";
@@ -9,9 +9,7 @@ import Plugin from "@common/Plugin";
 const ActivityComponent = getDeclarationAndKey(Filters.bySource("PRESS_LISTEN_ALONG_ON_SPOTIFY_BUTTON", "PRESS_PLAY_ON_SPOTIFY_BUTTON"), Filters.byStrings("PRESS_LISTEN_ALONG_ON_SPOTIFY_BUTTON", "PRESS_PLAY_ON_SPOTIFY_BUTTON"));
 
 Plugin.onStart(() => {
-	const { module, key } = ActivityComponent;
-	if (!module || !key) return Logger.patchError("SpotifyActivityComponent");
-	Patcher.after(module, key, (_, [{ user, activity }]) => {
+	after(...ActivityComponent, ({args:[{ user, activity }]}) => {
 		if (!Settings.getState().activity) return;
 		if (activity?.name.toLowerCase() !== "spotify") return;
 

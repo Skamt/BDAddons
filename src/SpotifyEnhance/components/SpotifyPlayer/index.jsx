@@ -1,9 +1,9 @@
 import "./styles";
 import React from "@React";
-import SpotifyPlayerControls from "../SpotifyPlayerControls";
-import TrackMediaDetails from "../TrackMediaDetails";
+import SpotifyPlayerControls from "./SpotifyPlayerControls";
+import TrackMediaDetails from "./TrackMediaDetails";
 import TrackTimeLine from "../TrackTimeLine";
-import { Store } from "@/Store";
+import Store from "@/store";
 import Settings from "@Utils/Settings";
 import { shallow } from "@Utils";
 
@@ -17,7 +17,7 @@ export default React.memo(function SpotifyPlayer() {
 
 	if (!player || !isActive || !mediaType) return;
 
-	const { bannerMd, bannerSm, bannerLg } = Store.state.getSongBanners();
+	const { bannerMd, bannerSm, bannerLg } = Store.getSongBanners();
 
 	let className = "spotify-player-container";
 	if (playerCompactMode) className += " compact";

@@ -1,8 +1,7 @@
 import React from "@React";
-import { EmbedStyleEnum } from "../../consts.js";
+import { EmbedStyleEnum } from "@/consts.js";
 import Settings from "@Utils/Settings";
-import SpotifyControls from "../SpotifyControls";
-import SpotifyEmbed from "../SpotifyEmbed";
+import SpotifyEmbed, { SpotifyEmbedControls } from "../SpotifyEmbed";
 
 export default function SpotifyEmbedWrapper({ id, type, embedObject, embedComponent }) {
 	const spotifyEmbed = Settings(Settings.selectors.spotifyEmbed);
@@ -12,27 +11,12 @@ export default function SpotifyEmbedWrapper({ id, type, embedObject, embedCompon
 			return [
 				embedComponent,
 				// eslint-disable-next-line react/jsx-key
-				<SpotifyControls
-					id={id}
-					type={type}
-					embed={embedObject}
-				/>
+				<SpotifyEmbedControls id={id} type={type} embed={embedObject} />,
 			];
 		case EmbedStyleEnum.REPLACE:
-			return (
-				<SpotifyEmbed
-					id={id}
-					type={type}
-				/>
-			);
+			return <SpotifyEmbed id={id} type={type} />;
 		case EmbedStyleEnum.HIDE:
-			return (
-				<SpotifyControls
-					id={id}
-					type={type}
-					embed={embedObject}
-				/>
-			);
+			return <SpotifyEmbedControls id={id} type={type} embed={embedObject} />;
 	}
 	return embedComponent;
 }

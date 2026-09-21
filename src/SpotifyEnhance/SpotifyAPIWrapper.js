@@ -4,7 +4,7 @@ import Logger from "@Utils/Logger";
 import Toast from "@Utils/Toast";
 import DB from "./DB";
 import { promiseHandler } from "@Utils";
-import { parsers } from "./Utils";
+import { parsers } from "@/utils";
 
 async function _requestHandler(action) {
 	let repeat = 1;

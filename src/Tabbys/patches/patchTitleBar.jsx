@@ -14,9 +14,8 @@ const TitleBar = getModuleAndKey(Filters.byStrings("PlatformTypes", "windowKey",
 const BaseClasses = getModule(Filters.byKeys("base", "activityPanel"));
 
 Plugin.onStart(() => {
-	const { module, key } = TitleBar;
 
-	after(module, key, ({ args: [props], ret }) => {
+	after(...TitleBar, ({ args: [props], ret }) => {
 		if (props.windowKey?.startsWith("DISCORD_")) return ret;
 		const [leading, title, trailing] = ret?.props?.children || [];
 
@@ -27,7 +26,8 @@ Plugin.onStart(() => {
 		);
 	});
 
-	setTimeout(() => reRender(`.${BaseClasses.base}`), 250);
+	reRender(`.bar_c38106[data-window-chrome]`)
 
-	Plugin.onStop(() => reRender(`.${BaseClasses.base}`), { once: true });
 });
+
+	Plugin.onStop(() => reRender(`.tabbys-app-container`));

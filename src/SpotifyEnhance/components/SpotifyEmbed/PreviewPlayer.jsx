@@ -2,6 +2,7 @@ import React from "@React";
 import Tooltip from "@Components/Tooltip";
 import Toast from "@Utils/Toast";
 import { PlayIcon, PauseIcon } from "@Components/Icon";
+import ControlButton from "../ControlButton";
 
 class audioPlayer {
 	constructor(src) {
@@ -50,7 +51,7 @@ class audioPlayer {
 
 export default class extends React.Component {
 	state = {
-		isPlaying: false
+		isPlaying: false,
 	};
 
 	constructor() {
@@ -81,29 +82,21 @@ export default class extends React.Component {
 	}
 
 	render() {
-		const { playPauseTooltip, playPauseHandler, playPauseIcon, playPauseClassName } = {
+		const props = {
 			true: {
-				playPauseTooltip: "Pause preview",
-				playPauseClassName: "spotify-embed-btn spotify-embed-preview-pause",
-				playPauseHandler: this.pauseHandler,
-				playPauseIcon: <PauseIcon />
+				tooltip: "Pause preview",
+				className: "spotify-embed-btn spotify-embed-preview-pause",
+				onClick: this.pauseHandler,
+				value: <PauseIcon />,
 			},
 			false: {
-				playPauseTooltip: "Play preview",
-				playPauseClassName: "spotify-embed-btn spotify-embed-preview-play",
-				playPauseHandler: this.playHandler,
-				playPauseIcon: <PlayIcon />
-			}
+				tooltip: "Play preview",
+				className: "spotify-embed-btn spotify-embed-preview-play",
+				onClick: this.playHandler,
+				value: <PlayIcon />,
+			},
 		}[this.state.isPlaying];
 
-		return (
-			<Tooltip note={playPauseTooltip}>
-				<div
-					onClick={playPauseHandler}
-					className={playPauseClassName}>
-					{playPauseIcon}
-				</div>
-			</Tooltip>
-		);
+		return <ControlButton {...props} />;
 	}
 }

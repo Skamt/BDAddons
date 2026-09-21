@@ -1,22 +1,15 @@
-import { Patcher, React } from "@Api";
-import { getFluxContainer } from "../Utils";
+import React from "@React";
+import { after } from "@common/Patcher";
 import SpotifyPlayer from "@/components/SpotifyPlayer";
 import UserStore from "@Stores/UserStore";
 import Logger from "@Utils/Logger";
 import ErrorBoundary from "@Components/ErrorBoundary";
-import { PlayerPlaceEnum } from "@/consts.js";
-import Settings from "@Utils/Settings";
-import { getObjectKey } from "@Utils";
-import { Filters, waitForModule } from "@Webpack";
+import { Filters, lazy } from "@Webpack";
 import Plugin from "@common/Plugin";
 
-
 Plugin.onStart(() => {
-	waitForModule(Filters.bySource("hasParty"), { raw: true }).then(({ declarations: UserPanelFluxContainer }) => {
-		const key = getObjectKey(UserPanelFluxContainer, a => a?.prototype?.hasParty);
-		if (!key) return Logger.patchError("SpotifyPlayer");
-
-		Patcher.after(UserPanelFluxContainer[key].prototype, "render", (_, __, ret) => {
+	lazy(Filters.bySource("hasParty"), { decFilter: a => a?.prototype?.hasParty }).then(([m, k]) => {
+		after(m[k].prototype, "render", ({ret}) => {
 			DEV: {
 				console.log(ret);
 			}

@@ -1,10 +1,7 @@
-import { Patcher } from "@Api";
-import { getObjectKey } from "@Utils";
-import { Filters, waitForModule } from "@Webpack";
+import { after } from "@common/Patcher";
+import { Filters, lazy } from "@Webpack";
 import React from "@React";
-import Logger from "@Utils/Logger";
 import ErrorBoundary from "@Components/ErrorBoundary";
-// import MessageHeader from "@Patch/MessageHeader";
 import useStateFromStores from "@Modules/useStateFromStores";
 import PresenceStore from "@Stores/PresenceStore";
 import { SpotifyIcon } from "@Components/Icon";
@@ -23,37 +20,22 @@ function SpotifyActivityIndicator({ userId }) {
 
 	return (
 		<Tooltip note={`${spotifyActivity.details} - ${spotifyActivity.state}`}>
-			<SpotifyIcon
-				width="20"
-				height="20"
-				class="spotifyActivityIndicatorIcon"
-			/>
+			<SpotifyIcon width="20" height="20" class="spotifyActivityIndicatorIcon" />
 		</Tooltip>
 	);
 }
 
-const MessageHeaderFilter = Filters.byStrings(
-	"userOverride",
-	"withMentionPrefix",
-);
 Plugin.onStart(() => {
-	const controller = new AbortController();
-	waitForModule(MessageHeaderFilter, {
-		signal: controller.signal,
-		raw: true,
-		searchExports: false,
-	}).then(({ exports: MessageHeader }) => {
-		const key = getObjectKey(MessageHeader, MessageHeaderFilter);
-
-		if (!key) return Logger.patchError("MessageHeader");
-		Patcher.after(MessageHeader, key, (_, [{ message }], ret) => {
-			const userId = message.author.id;
-			ret.props.children.push(
-				<ErrorBoundary id="SpotifyActivityIndicator">
-					<SpotifyActivityIndicator userId={userId} />
-				</ErrorBoundary>,
-			);
-		});
-	});
-	Plugin.once(Events.STOP, () => controller.abort());
+	lazy(Filters.byStrings("userOverride", "withMentionPrefix"), { searchExports: false }).then(
+		(MessageHeader) => {
+			after(...MessageHeader, ({ args: [{ message }], ret }) => {
+				const userId = message.author.id;
+				ret.props.children.push(
+					<ErrorBoundary id="SpotifyActivityIndicator">
+						<SpotifyActivityIndicator userId={userId} />
+					</ErrorBoundary>,
+				);
+			});
+		}
+	);
 });

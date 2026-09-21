@@ -5,7 +5,7 @@ import { classNameFactory } from "@Utils/css";
 
 const c = classNameFactory("fieldset");
 
-export default function FieldSet({ label, description, children, contentGap=16 }) {
+export default function FieldSet({ label, description, children, gap = 15, direction = FieldSet.direction.VERTICAL}) {
 	return (
 		<fieldset className={c("container")}>
 			{label && (
@@ -24,7 +24,16 @@ export default function FieldSet({ label, description, children, contentGap=16 }
 					{description}
 				</Heading>
 			)}
-			<div className={c("content")} style={{gap:contentGap}}>{children}</div>
+			<div
+				className={c("content", direction )}
+				style={{ gap }}>
+				{children}
+			</div>
 		</fieldset>
 	);
 }
+
+FieldSet.direction = {
+	HORIZONTAL: "horizontal",
+	VERTICAL: "vertical"
+};

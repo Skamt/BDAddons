@@ -4,56 +4,50 @@ import Tooltip from "@Components/Tooltip";
 import { AddToQueueIcon, CopyIcon, ImageIcon, ListenIcon, SpotifyIcon } from "@Components/Icon";
 import useStateFromStores from "@Modules/useStateFromStores";
 import AccessibilityStore from "@Stores/AccessibilityStore";
-import { fit, preventDefault, shallow } from "@Utils";
+import { fit, shallow } from "@Utils";
 import { ImageComponent } from "@Utils/ImageModal";
 import { openModal } from "@Utils/Modals";
+import { spotifyCopy, copySpotifyUrl, openSpotifyUrl, useGetRessource } from "@/utils";
 import Settings from "@Utils/Settings";
-import { Store } from "@/Store";
+import Store from "@/store";
 import PreviewPlayer from "./PreviewPlayer";
 import TrackTimeLine from "../TrackTimeLine";
+import { classNameFactory } from "@Utils/css";
+const c = classNameFactory("spotify-embed");
 
-function useGetRessource(type, id) {
-	const [state, setState] = React.useState(null);
-	React.useEffect(() => {
-		(async () => {
-			const data = await Store.Api.getRessource(type, id);
-			if (data) setState(data);
-		})();
-	}, []);
-	return state;
-}
+import ControlButton from "../ControlButton";
+
 
 export default ({ id, type }) => {
 	const data = useGetRessource(type, id);
 	const { thumbnail, rawTitle, rawDescription, url, preview_url } = data || {};
 	const embedBannerBackground = Settings(Settings.selectors.embedBannerBackground);
-	const useReducedMotion = useStateFromStores([AccessibilityStore], () => AccessibilityStore.useReducedMotion);
+	const useReducedMotion = useStateFromStores(
+		[AccessibilityStore],
+		() => AccessibilityStore.useReducedMotion,
+	);
 
-	const [isPlaying, isActive] = Store(_ => [_.isPlaying, _.isActive], shallow);
+	const [isPlaying, isActive] = Store((_) => [_.isPlaying, _.isActive], shallow);
 	const mediaId = Store(Store.selectors.mediaId, (n, o) => n === o || (n !== id && o !== id));
 
 	const isThis = mediaId === id;
 
 	const listenBtn = type !== "show" && (
-		<Tooltip note={`Play ${type}`}>
-			{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-			<div
-				onClick={preventDefault(() => Store.Api.listen(type, id, rawTitle))}
-				className="spotify-embed-btn spotify-embed-btn-listen">
-				<ListenIcon />
-			</div>
-		</Tooltip>
+		<ControlButton
+			tooltip={`Play ${type}`}
+			onClick={() => Store.Api.listen(type, id, rawTitle)}
+			className={c("btn", "btn-listen")}
+			value={<ListenIcon />}
+		/>
 	);
 
 	const queueBtn = (type === "track" || type === "episode") && (
-		<Tooltip note={`Add ${type} to queue`}>
-			{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-			<div
-				onClick={preventDefault(() => Store.Api.queue(type, id, rawTitle))}
-				className="spotify-embed-btn spotify-embed-btn-addToQueue">
-				<AddToQueueIcon />
-			</div>
-		</Tooltip>
+		<ControlButton
+			tooltip={`Add ${type} to queue`}
+			onClick={() => Store.Api.queue(type, id, rawTitle)}
+			className={c("btn", "btn-addToQueue")}
+			value={<AddToQueueIcon />}
+		/>
 	);
 
 	let className = "spotify-embed-container";
@@ -63,7 +57,7 @@ export default ({ id, type }) => {
 	const banner = {
 		bannerSm: thumbnail?.[2],
 		bannerMd: thumbnail?.[1],
-		bannerLg: thumbnail?.[0]
+		bannerLg: thumbnail?.[0],
 	};
 
 	const bannerStyleObj = {};
@@ -72,23 +66,17 @@ export default ({ id, type }) => {
 	if (banner.bannerLg) bannerStyleObj["--banner-lg"] = `url(${banner.bannerLg?.url})`;
 
 	return (
-		<div
-			className={className}
-			style={bannerStyleObj}>
+		<div className={className} style={bannerStyleObj}>
 			<Tooltip note="View">
-				{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 				<div
-					onClick={preventDefault(() => {
+					onClick={() => {
 						const { url, ...rest } = banner.bannerLg;
 						openModal(
 							<div className="spotify-banner-modal">
-								<ImageComponent
-									url={url}
-									{...fit(rest)}
-								/>
-							</div>
+								<ImageComponent url={url} {...fit(rest)} />
+							</div>,
 						);
-					})}
+					}}
 					className="spotify-embed-thumbnail"
 				/>
 			</Tooltip>
@@ -103,30 +91,34 @@ export default ({ id, type }) => {
 				<div className="spotify-embed-controls">
 					{((isThis && isActive && !isPlaying) || (!isThis && isActive)) && [listenBtn, queueBtn]}
 					{isThis && isActive && isPlaying && <TrackTimeLine />}
-					<Tooltip note="Copy link">
-						<div
-							onClick={preventDefault(() => Store.Utils.copySpotifyLink(url))}
-							className="spotify-embed-btn spotify-embed-btn-copy">
-							<CopyIcon />
-						</div>
-					</Tooltip>
-					<Tooltip note="Copy banner">
-						<div
-							onClick={preventDefault(() => Store.Utils.copySpotifyLink(banner.bannerLg?.url))}
-							className="spotify-embed-btn spotify-embed-btn-copy">
-							<ImageIcon />
-						</div>
-					</Tooltip>
+
+					<ControlButton
+						tooltip="Copy link"
+						onClick={() => copySpotifyUrl(url)}
+						className={c("btn", "btn-copy-url")}
+						value={<CopyIcon />}
+					/>
+
+					<ControlButton
+						tooltip="Copy banner"
+						onClick={() => spotifyCopy(banner.bannerLg?.url)}
+						className={c("btn", "btn-copy-banner")}
+						value={<ImageIcon />}
+					/>
+
 					{preview_url && <PreviewPlayer src={preview_url} />}
 				</div>
 			)}
-			<Tooltip note="Play on Spotify">
-				<div
-					onClick={preventDefault(() => Store.Utils.openSpotifyLink(url))}
-					className="spotify-embed-spotifyIcon">
-					<SpotifyIcon />
-				</div>
-			</Tooltip>
+
+			<ControlButton
+				tooltip="Play on Spotify"
+				onClick={() => openSpotifyUrl(url)}
+				className={c("spotifyIcon")}
+				value={<SpotifyIcon />}
+			/>
 		</div>
 	);
 };
+
+
+export {default as SpotifyEmbedControls} from "./SpotifyEmbedControls";

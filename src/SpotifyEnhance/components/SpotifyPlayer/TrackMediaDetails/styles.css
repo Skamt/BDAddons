@@ -47,8 +47,9 @@
 	gap: 5px;
 }
 
-.spotify-player-album span,
-.spotify-player-artist span {
+.spotify-player-album,
+.spotify-player-artist {
+	padding: 0;
 	color: var(--SpotifyEnhance-text-sub);
 }
 

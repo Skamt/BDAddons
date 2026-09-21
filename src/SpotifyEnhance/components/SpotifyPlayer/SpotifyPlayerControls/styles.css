@@ -2,16 +2,15 @@
 	display: flex;
 	justify-content: space-between;
 	width: 100%;
-	overflow: hidden;
 }
 
 .spotify-player-controls svg {
-	width: 16px;
-	height: 16px;
+	width: 15px;
+	height: 15px;
 }
 
 .spotify-player-controls-btn {
-	padding: 3px !important;
+	padding: 5px !important;
 	color: #ccc;
 	transition: all 100ms linear;
 	border-radius: 5px;

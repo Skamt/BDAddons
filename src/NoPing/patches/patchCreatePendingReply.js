@@ -8,10 +8,10 @@ import Settings from "@Utils/Settings";
 const ReplyFunctions = getModuleAndKey(Filters.byStrings("CREATE_PENDING_REPLY", "dispatch"), { searchExports: true });
 
 Plugin.onStart(() => {
-	const { module, key } = ReplyFunctions;
-	if (!module || !key) return Logger.patchError("patchCreatePendingReply");
+	// const { module, key } = ReplyFunctions;
+	// if (!module || !key) return Logger.patchError("patchCreatePendingReply");
 
-	Patcher.before(module, key, (_, [args]) => {
+	Patcher.before(...ReplyFunctions, (_, [args]) => {
 		if (Blacklist.has(args.message.author.id)) args.shouldMention = false;
 		if (Settings.state.mentionToggle) args.showMentionToggle = true;
 	});

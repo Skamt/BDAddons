@@ -1,16 +1,10 @@
-import { Patcher } from "@Api";
-import Logger from "@Utils/Logger";
+import { after } from "@common/PAtcher";
 import CloseExpressionPicker from "@Patch/CloseExpressionPicker";
 import Settings from "@Utils/Settings";
 import Plugin from "@common/Plugin";
 
 Plugin.onStart(() => {
-	const { module, key } = CloseExpressionPicker;
-	if (!module || !key) return Logger.patchError("CloseExpressionPicker");
-
-	const unpatch = Patcher.after(module, key, (_, args, ret) => {
+	after(...CloseExpressionPicker, (_, args, ret) => {
 		Settings.setpreviewState(Settings.state.previewDefaultState);
 	});
-
-	Plugin.once(Events.STOP, unpatch);
 });

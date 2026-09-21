@@ -17,8 +17,6 @@ export function switchRight(){
 	Store.setSelectedId(target.id);
 }
 
-
-
 export function isDescendent(parentId, childId) {
 	const child = Store.getFolder(childId);
 	if (!child.parentId) return false;

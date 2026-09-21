@@ -1,7 +1,7 @@
 import "./styles";
 import React from "@React";
 import Slider from "@Modules/Slider";
-import { Store } from "@/Store";
+import Store from "@/store";
 import { shallow } from "@Utils";
 
 function formatMsToTime(ms) {
@@ -21,7 +21,7 @@ export default () => {
 		if (sliderRef.current?.state?.active) return;
 		const pos = Math.floor(e);
 		Store.positionInterval.stop();
-		Store.state.setPosition(pos);
+		Store.setPosition(pos);
 		Store.Api.seek(pos);
 	},100);
 

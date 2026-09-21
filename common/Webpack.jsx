@@ -1,7 +1,8 @@
 import React, { NoopComponent, LazyComponent } from "@React";
 import Logger from "@Utils/Logger";
 import { promiseHandler, getObjectKey } from "@Utils";
-import { LAZY_DISCORD_COMPONENT_WRAPPER } from "@common/consts";
+import { MISSING_ARGUMENTS, UNDEFINED_OBJECT_OR_KEY, PATCH_ERROR, LAZY_DISCORD_COMPONENT_WRAPPER } from "@common/consts";
+import Plugin from "@common/Plugin";
 
 export const Webpack = /*@__PURE__*/ (() => BdApi.Webpack)();
 export const getModule = /*@__PURE__*/ (() => Webpack.getModule)();
@@ -14,6 +15,36 @@ export const getMangled = /*@__PURE__*/ (() => Webpack.getMangled)();
 export const getById = /*@__PURE__*/ (() => Webpack.getById)();
 export const getStore = /*@__PURE__*/ (() => Webpack.getStore)();
 export const getByKeys = /*@__PURE__*/ (() => Webpack.getByKeys)();
+
+let abortController = /*@__PURE__*/ (() => {
+	Plugin.onStart(() => (abortController = new AbortController()));
+	Plugin.onStop(() => abortController.abort());
+	return new AbortController();
+})();
+
+export function lazy(filter, { decFilter, ...options } = {}) {
+	if (!filter) return Logger.error(`[Webpack lazy] ${MISSING_ARGUMENTS}`);
+
+	const { promise, resolve } = Promise.withResolvers();
+	waitForModule(filter, {
+		...options,
+		raw: true,
+		fatal: false,
+		signal: abortController.signal,
+	})
+		.then((module) => {
+			if (!module) throw "waitForModule resolved with undefined";
+
+			const object = decFilter ? module.declarations : module.exports;
+			const key = getObjectKey(object, decFilter || filter);
+			if (!object || !key) throw UNDEFINED_OBJECT_OR_KEY;
+
+			resolve([object, key]);
+		})
+		.catch((err) => Logger.error(PATCH_ERROR, err));
+
+	return promise;
+}
 
 function Suspended({ promise, fallback, ...props }) {
 	const comp = React.use(promise);
@@ -47,16 +78,16 @@ export function _waitForComponent(filter, options) {
 	return lazyComponent;
 }
 
-export async function lazy(filter, options) {
-	const { exportsFilter, declarationsFilter, ...rest } = options;
-	const [err, res] = await promiseHandler(waitForModule(filter, { ...rest, raw: true }));
-	if (err) throw err;
-	const module = exportsFilter ? res.exports : res.declarations;
-	if (!module) throw "Can't find module";
-	const key = getObjectKey(module, exportsFilter || declarationsFilter);
-	if (!key) throw "Can't find key";
-	return { module, key, target: module[key] };
-}
+// export async function lazy(filter, options) {
+// 	const { exportsFilter, declarationsFilter, ...rest } = options;
+// 	const [err, res] = await promiseHandler(waitForModule(filter, { ...rest, raw: true }));
+// 	if (err || !res) return;
+// 	const module = exportsFilter ? res.exports : res.declarations;
+// 	if (!module) return ;
+// 	const key = getObjectKey(module, exportsFilter || declarationsFilter);
+// 	if (!key) return;
+// 	return { module, key, target: module[key] };
+// }
 
 export function reactRefMemoFilter(type, ...args) {
 	const filter = Filters.byStrings(...args);
@@ -70,14 +101,14 @@ export function getModuleAndKey(filter, options) {
 	if (!module) return;
 	const key = Object.keys(module).find((k) => module[k] === target);
 	if (!key) return;
-	return { module, key };
+	return [module, key];
 }
 
 export function getDeclarationAndKey(moduleFilter, declarationFilter, options = {}) {
 	const module = getModule(moduleFilter, { ...options, raw: true });
 	if (!module?.declarations) return;
 	const key = getObjectKey(module.declarations, declarationFilter);
-	return key ? { key, module: module.declarations } : undefined;
+	return key ? [module.declarations, key] : undefined;
 }
 
 export function filterModuleAndExport(moduleFilter, exportFilter, options) {

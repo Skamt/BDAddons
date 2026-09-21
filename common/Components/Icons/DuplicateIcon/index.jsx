@@ -1,4 +1,4 @@
-import { React } from "@Api";
+import React from "@React";
 export default function Duplicate() {
 	return (
 		<svg

@@ -10,10 +10,10 @@ import Plugin from "@common/Plugin";
 const AppLayerContainer = getModuleAndKey(a => a.displayName === "AppLayerContainer", { searchExports: true });
 
 Plugin.onStart(() => {
-	if (!AppLayerContainer) return Logger.patchError("FloatingWindowContainer");
+	// if (!AppLayerContainer) return Logger.patchError("FloatingWindowContainer");
+	// const { module, key } = AppLayerContainer;
 
-	const { module, key } = AppLayerContainer;
-	Patcher.after(module, key, (_, __, ret) => {
+	Patcher.after(...AppLayerContainer, (_, __, ret) => {
 		return [
 			ret,
 			// biome-ignore lint/correctness/useJsxKeyInIterable: <explanation>

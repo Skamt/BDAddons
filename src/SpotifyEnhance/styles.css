@@ -6,6 +6,14 @@
 	--SpotifyEnhance-font: gg sans, Helvetica Neue, helvetica, arial, Hiragino Kaku Gothic Pro, Meiryo, MS Gothic;
 }
 
+.pointer:hover{
+	cursor: pointer;
+}
+
+.outline:hover{
+	text-decoration: underline;
+}
+
 .flexCenterCenter {
 	display: flex;
 	align-items: center;

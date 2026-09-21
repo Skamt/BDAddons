@@ -22,6 +22,6 @@ global.baseConfig = baseConfig;
 const windows = process.env.APPDATA;
 const mac = process.env.HOME + "/Library/Application Support";
 const linux = process.env.XDG_CONFIG_HOME ? process.env.XDG_CONFIG_HOME : process.env.HOME + "/.config";
-const bdFolder = process.env.BDFOLDER || `${process.platform == "win32" ? windows : process.platform == "darwin" ? mac : linux}/BetterDiscord/`;
+const bdFolder = `${process.platform == "win32" ? windows : process.platform == "darwin" ? mac : linux}/BetterDiscord/`;
 
 global.bdFolder = bdFolder;

@@ -3,15 +3,15 @@ import { ImageComponent } from "@Utils/ImageModal";
 import { openModal } from "@Utils/Modals";
 import Toast from "@Utils/Toast";
 import Tooltip from "@Components/Tooltip";
-import { Store } from "@/Store";
+import Store from "@/store";
 import { fit } from "@Utils";
 
 export default function TrackBanner() {
-	const { bannerLg: bannerObj } = Store.state.getSongBanners();
+	const { bannerLg } = Store.getSongBanners();
 
 	const thumbnailClickHandler = () => {
-		if (!bannerObj.url) return Toast.error("Could not open banner");
-		const { url, ...rest } = bannerObj;
+		if (!bannerLg.url) return Toast.error("Could not open banner");
+		const { url, ...rest } = bannerLg;
 
 		openModal(
 			<div className="spotify-banner-modal">
