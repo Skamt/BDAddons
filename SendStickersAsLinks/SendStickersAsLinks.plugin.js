@@ -30,79 +30,38 @@ var Config_default = {
 };
 
 // common/Api.js
-var Api = new BdApi(Config_default.info.name);
-var UI = /* @__PURE__ */ (() => Api.UI)();
-var DOM = /* @__PURE__ */ (() => Api.DOM)();
+var Api = /* @__PURE__ */ (() => new BdApi(Config_default.info.name))();
 var Data = /* @__PURE__ */ (() => Api.Data)();
-var React = /* @__PURE__ */ (() => Api.React)();
 var Patcher = /* @__PURE__ */ (() => Api.Patcher)();
 var Logger = /* @__PURE__ */ (() => Api.Logger)();
-var Webpack = /* @__PURE__ */ (() => Api.Webpack)();
+var DOM = /* @__PURE__ */ (() => Api.DOM)();
+var UI = /* @__PURE__ */ (() => BdApi.UI)();
 
 // common/Utils/Logger.js
-Logger.patchError = (patchId) => {
-	console.error(`%c[${Config_default.info.name}] %cCould not find module for %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
-};
 var Logger_default = Logger;
 
-// common/Utils/EventEmitter.js
-var EventEmitter_default = class {
-	constructor() {
-		this.listeners = {};
-	}
-	isInValid(event, handler) {
-		return typeof event !== "string" || typeof handler !== "function";
-	}
-	once(event, handler) {
-		if (this.isInValid(event, handler)) return;
-		if (!this.listeners[event]) this.listeners[event] = /* @__PURE__ */ new Set();
-		const wrapper = () => {
-			handler();
-			this.off(event, wrapper);
-		};
-		this.listeners[event].add(wrapper);
-	}
-	on(event, handler) {
-		if (this.isInValid(event, handler)) return;
-		if (!this.listeners[event]) this.listeners[event] = /* @__PURE__ */ new Set();
-		this.listeners[event].add(handler);
-		return () => this.off(event, handler);
-	}
-	off(event, handler) {
-		if (this.isInValid(event, handler)) return;
-		if (!this.listeners[event]) return;
-		this.listeners[event].delete(handler);
-		if (this.listeners[event].size !== 0) return;
-		delete this.listeners[event];
-	}
-	emit(event, ...payload) {
-		if (!this.listeners[event]) return;
-		for (const listener of this.listeners[event]) {
-			try {
-				listener.apply(null, payload);
-			} catch (err) {
-				Logger_default.error(`Could not run listener for ${event}`, err);
-			}
-		}
-	}
-};
+// common/Plugin.js
+var target = /* @__PURE__ */ (() => new EventTarget())();
 
-// common/Utils/Plugin.js
-var Events = {
-	START: "START",
-	STOP: "STOP"
-};
-var Plugin_default = new class extends EventEmitter_default {
-	stopped = true;
+function wrap(handler) {
+	return (e) => {
+		try {
+			handler.apply(null, e);
+		} catch (err) {
+			Logger_default.error(`Could not run [${e.type}] handler`, { handler }, "\n", err);
+		}
+	};
+}
+var Plugin_default = {
+	onStart: (handler, props) => target.addEventListener("START", wrap(handler), props),
+	onStop: (handler, props) => target.addEventListener("STOP", wrap(handler), props),
 	start() {
-		this.emit(Events.START);
-		this.stopped = false;
-	}
+		target.dispatchEvent(new Event("START"));
+	},
 	stop() {
-		this.emit(Events.STOP);
-		this.stopped = true;
+		target.dispatchEvent(new Event("STOP"));
 	}
-}();
+};
 
 // common/Utils/StylesLoader.js
 var styleLoader = {
@@ -111,12 +70,8 @@ var styleLoader = {
 		this._styles.push(styles);
 	}
 };
-Plugin_default.on(Events.START, () => {
-	DOM.addStyle(styleLoader._styles.join("\n"));
-});
-Plugin_default.on(Events.STOP, () => {
-	DOM.removeStyle();
-});
+Plugin_default.onStart(() => DOM.addStyle(styleLoader._styles.join("\n")));
+Plugin_default.onStop(() => DOM.removeStyle());
 var StylesLoader_default = styleLoader;
 
 // src/SendStickersAsLinks/styles.css
@@ -141,12 +96,43 @@ StylesLoader_default.push(`.animatedSticker{
 }`);
 
 // common/React.jsx
-var React_default = /* @__PURE__ */ (() => React)();
+var React = /* @__PURE__ */ (() => BdApi.React)();
+var React_default = React;
 
 // common/Utils/index.js
+function hasOwn(object, key) {
+	return object && key && key in object;
+}
 var nop = () => {};
 
-// common/Webpack.js
+// common/Patcher/shared.js
+Plugin_default.onStop(() => Patcher.unpatchAll());
+
+function patchOnce(type, object, key, callback) {
+	const unpatch = Patcher[type](object, key, (...args) => {
+		unpatch();
+		callback.apply(null, args);
+	});
+}
+
+function patch(type, object, key, callback, once) {
+	if (!hasOwn(object, key))
+		return Logger.error("Could not perform a patch, missing arguments", arguments);
+	const caller = {
+		after: (context, args, ret) => callback({ context, args, ret }),
+		before: (context, args) => callback({ context, args }),
+		instead: (context, args, fn) => callback({ context, args, fn })
+	} [type];
+	return once ? patchOnce(type, object, key, caller) : Patcher[type](object, key, caller);
+}
+
+// common/Patcher/index.js
+var after = (...args) => patch("after", ...args);
+var before = (...args) => patch("before", ...args);
+var instead = (...args) => patch("instead", ...args);
+
+// common/Webpack.jsx
+var Webpack = /* @__PURE__ */ (() => BdApi.Webpack)();
 var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
 var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
 var getMangled = /* @__PURE__ */ (() => Webpack.getMangled)();
@@ -154,39 +140,37 @@ var getStore = /* @__PURE__ */ (() => Webpack.getStore)();
 
 function getModuleAndKey(filter, options) {
 	let module2;
-	const target = getModule((entry, m) => filter(entry) ? module2 = m : false, options);
+	const target2 = getModule((entry, m) => filter(entry) ? module2 = m : false, options);
 	module2 = module2?.exports;
 	if (!module2) return;
-	const key = Object.keys(module2).find((k) => module2[k] === target);
+	const key = Object.keys(module2).find((k) => module2[k] === target2);
 	if (!key) return;
-	return { module: module2, key };
+	return [module2, key];
 }
 
 // MODULES-AUTO-LOADER:@Modules/DiscordPermissions
-var DiscordPermissions_default = getModule(Filters.byKeys("computePermissions"), { searchExports: false });
+var DiscordPermissions_default = /* @__PURE__ */ (() => getModule(Filters.byKeys("computePermissions"), { searchExports: false }))();
 
 // MODULES-AUTO-LOADER:@Enums/DiscordPermissionsEnum
-var DiscordPermissionsEnum_default = getModule(Filters.byKeys("ADD_REACTIONS"), { searchExports: true }) || {
-	"EMBED_LINKS": "16384n",
-	"USE_EXTERNAL_EMOJIS": "262144n"
-};
+var DiscordPermissionsEnum_default = /* @__PURE__ */ (() => getModule(Filters.byKeys("ADD_REACTIONS"), { searchExports: true }) || void 0)();
 
 // src/SendStickersAsLinks/patches/patchChannelGuildPermissions.js
-Plugin_default.on(Events.START, () => {
-	if (!DiscordPermissions_default) return Logger_default.patchError("ChannelGuildPermissions");
-	const unpatch = Patcher.after(DiscordPermissions_default, "can", (_, [permission], ret) => ret || DiscordPermissionsEnum_default.USE_EXTERNAL_EMOJIS === permission);
-	Plugin_default.once(Events.STOP, unpatch);
+Plugin_default.onStart(() => {
+	after(DiscordPermissions_default, "can", ({ args: [permission], ret }) => ret || DiscordPermissionsEnum_default.USE_EXTERNAL_EMOJIS === permission);
 });
 
 // common/DiscordModules/zustand.js
-var { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
+var zustand = /* @__PURE__ */ (() => getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
 	_: Filters.byStrings("subscribe"),
 	zustand: () => true
-});
-var subscribeWithSelector = getModule(Filters.byStrings("getState", "equalityFn", "fireImmediately"), { searchExports: true });
+})?.zustand)();
+var subscribeWithSelector = /* @__PURE__ */ (() => getModule(Filters.byStrings("getState", "equalityFn", "fireImmediately"), {
+	searchExports: true
+}))();
 
 function create(initialState) {
-	const Store = zustand(initialState);
+	const Store = /* @__PURE__ */ zustand(initialState);
+	/* @__PURE__ */
 	Object.defineProperty(Store, "state", {
 		configurable: false,
 		get: () => Store.getState()
@@ -195,29 +179,32 @@ function create(initialState) {
 }
 
 // common/Utils/Settings.js
-var SettingsStore = create(subscribeWithSelector(() => Object.assign(Config_default.settings, Data.load("settings") || {})));
-((state) => {
+var Settings_default = /* @__PURE__ */ (() => {
+	const SettingsStore = create(
+		subscribeWithSelector(() => Object.assign(Config_default.settings || {}, Data.load("settings") || {}))
+	);
+	const state = SettingsStore.getInitialState();
 	const selectors = {};
 	const actions = {};
-	for (const [key, value] of Object.entries(state)) {
+	for (const key of Object.keys(state)) {
 		actions[`set${key}`] = (newValue) => SettingsStore.setState({
 			[key]: newValue });
 		selectors[key] = (state2) => state2[key];
 	}
 	Object.defineProperty(SettingsStore, "selectors", { value: Object.assign(selectors) });
 	Object.assign(SettingsStore, actions);
-})(SettingsStore.getInitialState());
-SettingsStore.subscribe(
-	(state) => state,
-	() => Data.save("settings", SettingsStore.state)
-);
-Object.assign(SettingsStore, {
-	useSetting: (key) => {
-		const val = SettingsStore((state) => state[key]);
-		return [val, SettingsStore[`set${key}`]];
-	}
-});
-var Settings_default = SettingsStore;
+	SettingsStore.subscribe(
+		(state2) => state2,
+		() => Data.save("settings", SettingsStore.state)
+	);
+	Object.assign(SettingsStore, {
+		useSetting: (key) => {
+			const val = SettingsStore((state2) => state2[key]);
+			return [val, SettingsStore[`set${key}`]];
+		}
+	});
+	return SettingsStore;
+})();
 
 // common/Utils/Toast.js
 function showToast(content, type) {
@@ -248,32 +235,25 @@ function hasEmbedPerms(channel, user) {
 }
 
 // MODULES-AUTO-LOADER:@Modules/MessageActions
-var MessageActions_default = getModule(Filters.byKeys("jumpToMessage", "_sendMessage"), { searchExports: false });
-
-// src/SendStickersAsLinks/Constants.js
-var Constants_default = {
-	sendLottieStickerErrorMessage: "Official Discord Stickers are not supported.",
-	missingEmbedPermissionsErrorMessage: "Missing Embed Permissions",
-	disabledAnimatedStickersErrorMessage: "You have disabled animated stickers in settings."
-};
+var MessageActions_default = /* @__PURE__ */ (() => getModule(Filters.byKeys("jumpToMessage", "_sendMessage"), { searchExports: false }))();
 
 // MODULES-AUTO-LOADER:@Stores/UserStore
-var UserStore_default = getStore("UserStore");
+var UserStore_default = /* @__PURE__ */ (() => getStore("UserStore"))();
 
 // MODULES-AUTO-LOADER:@Stores/StickersStore
-var StickersStore_default = getStore("StickersStore");
+var StickersStore_default = /* @__PURE__ */ (() => getStore("StickersStore"))();
 
 // MODULES-AUTO-LOADER:@Stores/ChannelStore
-var ChannelStore_default = getStore("ChannelStore");
+var ChannelStore_default = /* @__PURE__ */ (() => getStore("ChannelStore"))();
 
 // MODULES-AUTO-LOADER:@Modules/Dispatcher
-var Dispatcher_default = getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: true });
+var Dispatcher_default = /* @__PURE__ */ (() => getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: true }))();
 
 // MODULES-AUTO-LOADER:@Stores/PendingReplyStore
-var PendingReplyStore_default = getStore("PendingReplyStore");
+var PendingReplyStore_default = /* @__PURE__ */ (() => getStore("PendingReplyStore"))();
 
 // MODULES-AUTO-LOADER:@Stores/SelectedChannelStore
-var SelectedChannelStore_default = getStore("SelectedChannelStore");
+var SelectedChannelStore_default = /* @__PURE__ */ (() => getStore("SelectedChannelStore"))();
 
 // common/Utils/Messages.js
 function getReply(channelId) {
@@ -346,12 +326,10 @@ var StickerFormatEnum = {
 function sendStickerAsLink(sticker, channel) {
 	const content = getStickerUrl(sticker);
 	if (!Settings_default.state.sendDirectly) return insertText(content);
-	try {
-		sendMessageDirectly(content, channel.id);
-	} catch {
-		insertText(content);
+	sendMessageDirectly(content, channel.id).catch(() => {
 		Toast_default.error("Could not send directly.");
-	}
+		insertText(content);
+	});
 }
 
 function getStickerUrl(sticker) {
@@ -386,19 +364,19 @@ function handleSticker(channelId, stickerId) {
 
 // src/SendStickersAsLinks/patches/patchSendSticker.js
 function handleUnsendableSticker({ user, sticker, channel }) {
-	if (isAnimatedSticker(sticker) && !Settings_default.state.shouldSendAnimatedStickers) return Toast_default.info(Constants_default.disabledAnimatedStickersErrorMessage);
-	if (!hasEmbedPerms(channel, user) && !Settings_default.state.ignoreEmbedPermissions) return Toast_default.info(Constants_default.missingEmbedPermissionsErrorMessage);
+	if (isAnimatedSticker(sticker) && !Settings_default.state.shouldSendAnimatedStickers)
+		return Toast_default.info("You have disabled animated stickers in settings.");
+	if (!hasEmbedPerms(channel, user) && !Settings_default.state.ignoreEmbedPermissions)
+		return Toast_default.info("Missing Embed Permissions");
 	sendStickerAsLink(sticker, channel);
 }
-Plugin_default.on(Events.START, () => {
-	if (!MessageActions_default) return Logger_default.patchError("SendSticker");
-	const unpatch = Patcher.instead(MessageActions_default, "sendStickers", (_, args, originalFunc) => {
+Plugin_default.onStart(() => {
+	instead(MessageActions_default, "sendStickers", ({ context, args, fn }) => {
 		const [channelId, [stickerId]] = args;
 		const stickerObj = handleSticker(channelId, stickerId);
-		if (stickerObj.isSendable) originalFunc.apply(_, args);
+		if (stickerObj.isSendable) fn.apply(context, args);
 		else handleUnsendableSticker(stickerObj);
 	});
-	Plugin_default.once(Events.STOP, unpatch);
 });
 
 // src/SendStickersAsLinks/patches/patchStickerAttachement.js
@@ -414,9 +392,8 @@ var replyInterceptor = {
 		Dispatcher_default._interceptors.splice(Dispatcher_default._interceptors.indexOf(this.handler), 1);
 	}
 };
-Plugin_default.on(Events.START, () => {
-	if (!MessageActions_default) return Logger_default.patchError("sendMessage");
-	const unpatch = Patcher.before(MessageActions_default, "sendMessage", (_, args) => {
+Plugin_default.onStart(() => {
+	before(MessageActions_default, "sendMessage", ({ args }) => {
 		const [channelId, , , attachments] = args;
 		if (attachments?.stickerIds?.filter) {
 			const [stickerId] = attachments.stickerIds;
@@ -431,66 +408,47 @@ Plugin_default.on(Events.START, () => {
 			}
 		}
 	});
-	Plugin_default.once(Events.STOP, unpatch);
 });
 
 // src/SendStickersAsLinks/patches/patchStickerClickability.js
-Plugin_default.on(Events.START, () => {
-	if (!StickerSendability) return Logger_default.patchError("StickerClickability");
-	const unpatch = Patcher.after(StickerSendability, "isSendableSticker", () => true);
-	Plugin_default.once(Events.STOP, unpatch);
-});
+Plugin_default.onStart(() => after(StickerSendability, "isSendableSticker", () => true));
 
 // MODULES-AUTO-LOADER:@Patch/StickerModule
-var StickerModule_default = getModuleAndKey(Filters.byStrings("sticker", "withLoadingIndicator"), { searchExports: false }) || {};
+var StickerModule_default = /* @__PURE__ */ (() => getModuleAndKey(Filters.byStrings("sticker", "withLoadingIndicator"), { searchExports: false }) || {})();
 
 // src/SendStickersAsLinks/patches/patchStickerComponent.js
-Plugin_default.on(Events.START, () => {
-	const { module: module2, key } = StickerModule_default;
-	if (!module2 || !key) return Logger_default.patchError("GetStickerById");
-	const unpatch = Patcher.after(module2, key, (_, args, returnValue) => {
-		const { size, sticker } = returnValue.props.children[0].props;
+Plugin_default.onStart(
+	() => after(...StickerModule_default, ({ ret }) => {
+		const { size, sticker } = ret.props.children[0].props;
 		if (size === 96) {
 			if (Settings_default.state.shouldHighlightAnimated && !isLottieSticker(sticker) && isAnimatedSticker(sticker)) {
-				returnValue.props.children[0].props.className += " animatedSticker";
+				ret.props.children[0].props.className += " animatedSticker";
 			}
 		}
-	});
-	Plugin_default.once(Events.STOP, unpatch);
-});
+	})
+);
 
 // MODULES-AUTO-LOADER:@Enums/StickerTypeEnum
-var StickerTypeEnum_default = getModule(Filters.byKeys("GUILD", "STANDARD"), { searchExports: true }) || {
-	"STANDARD": 1,
-	"GUILD": 2
-};
+var StickerTypeEnum_default = /* @__PURE__ */ (() => getModule(Filters.byKeys("GUILD", "STANDARD"), { searchExports: true }) || void 0)();
 
 // src/SendStickersAsLinks/patches/patchStickerSuggestion.js
-Plugin_default.on(Events.START, () => {
-	if (!StickerSendability) return Logger_default.patchError("StickerSuggestion");
-	const unpatch = Patcher.after(StickerSendability, "getStickerSendability", (_, args, returnValue) => {
+Plugin_default.onStart(
+	() => after(StickerSendability, "getStickerSendability", ({ args, ret }) => {
 		if (args[0].type === StickerTypeEnum_default.GUILD) {
 			const { SENDABLE } = StickerSendability.StickersSendabilityEnum;
-			return returnValue !== SENDABLE ? SENDABLE : returnValue;
+			return ret !== SENDABLE ? SENDABLE : ret;
 		}
-	});
-	Plugin_default.once(Events.STOP, unpatch);
-});
-
-// MODULES-AUTO-LOADER:@Modules/Heading
-var Heading_default = getModule((a) => a?.render?.toString().includes("data-excessive-heading-level"), { searchExports: true });
+	})
+);
 
 // MODULES-AUTO-LOADER:@Modules/Slider
-var Slider_default = getModule(Filters.byPrototypeKeys("renderMark"), { searchExports: true });
-
-// MODULES-AUTO-LOADER:@Modules/FormSwitch
-var FormSwitch_default = getModule(Filters.byStrings("note", "tooltipNote"), { searchExports: true });
+var Slider_default = /* @__PURE__ */ (() => getModule(Filters.byPrototypeKeys("renderMark"), { searchExports: true }))();
 
 // common/Components/Switch/index.jsx
 var Switch_default = getMangled(Filters.bySource("auxiliaryContentPosition", "hasIcon"), {
 	Switch: () => true
 })?.Switch || function SwitchComponentFallback(props) {
-	return /* @__PURE__ */ React.createElement("div", { style: { color: "#fff" } }, props.label, /* @__PURE__ */ React.createElement(
+	return /* @__PURE__ */ React_default.createElement("div", { style: { color: "#fff" } }, props.label, /* @__PURE__ */ React_default.createElement(
 		"input", {
 			type: "checkbox",
 			checked: props.checked,
@@ -514,15 +472,16 @@ StylesLoader_default.push(`.divider-horizontal {
 `);
 
 // common/Utils/css.js
-var classNameFactory = (prefix = "", connector = "-") => (...args) => {
+function transform(...args) {
 	const classNames = /* @__PURE__ */ new Set();
 	for (const arg of args) {
 		if (arg && typeof arg === "string") classNames.add(arg);
 		else if (Array.isArray(arg)) arg.forEach((name) => classNames.add(name));
 		else if (arg && typeof arg === "object") Object.entries(arg).forEach(([name, value]) => value && classNames.add(name));
 	}
-	return Array.from(classNames, (name) => `${prefix}${connector}${name}`).join(" ");
-};
+	return classNames;
+}
+var classNameFactory = (prefix = "", connector = "-") => (...args) => Array.from(transform(...args), (name) => `${prefix}${connector}${name}`).join(" ");
 
 // common/Components/Divider/index.jsx
 var c = classNameFactory("divider");
@@ -543,7 +502,7 @@ Divider.direction = {
 // common/Components/SettingSwtich/index.jsx
 function SettingSwtich({ settingKey, note, border = false, onChange = nop, description, ...rest }) {
 	const [val, set] = Settings_default.useSetting(settingKey);
-	return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(
+	return /* @__PURE__ */ React_default.createElement(React_default.Fragment, null, /* @__PURE__ */ React_default.createElement(
 		Switch_default, {
 			...rest,
 			hasIcon: true,
@@ -552,10 +511,10 @@ function SettingSwtich({ settingKey, note, border = false, onChange = nop, descr
 			description: note,
 			onChange: (e) => {
 				set(e);
-				onChange(e);
+				onChange?.(e);
 			}
 		}
-	), border && /* @__PURE__ */ React.createElement(Divider, { gap: 15 }));
+	), border && /* @__PURE__ */ React_default.createElement(Divider, { gap: 15 }));
 }
 
 // common/Components/FieldSet/styles.css
@@ -564,6 +523,7 @@ StylesLoader_default.push(`.fieldset-container {
 	flex-direction: column;
 	gap: 16px;
 }
+
 
 .fieldset-label {
 	margin-bottom: 12px;
@@ -580,16 +540,25 @@ StylesLoader_default.push(`.fieldset-container {
 
 .fieldset-content {
 	display: flex;
-	flex-direction: column;
 	width: 100%;
 	justify-content: flex-start;
 }
-`);
+
+.fieldset-content.fieldset-horizontal {
+	flex-direction: row;
+}
+
+.fieldset-content.fieldset-vertical {
+	flex-direction: column;
+}`);
+
+// MODULES-AUTO-LOADER:@Modules/Heading
+var Heading_default = /* @__PURE__ */ (() => getModule((a) => a?.render?.toString().includes("data-excessive-heading-level"), { searchExports: true }))();
 
 // common/Components/FieldSet/index.jsx
 var c2 = classNameFactory("fieldset");
 
-function FieldSet({ label, description, children, contentGap = 16 }) {
+function FieldSet({ label, description, children, gap = 15, direction = FieldSet.direction.VERTICAL }) {
 	return /* @__PURE__ */ React_default.createElement("fieldset", { className: c2("container") }, label && /* @__PURE__ */ React_default.createElement(
 		Heading_default, {
 			className: c2("label"),
@@ -604,8 +573,18 @@ function FieldSet({ label, description, children, contentGap = 16 }) {
 			color: "text-secondary"
 		},
 		description
-	), /* @__PURE__ */ React_default.createElement("div", { className: c2("content"), style: { gap: contentGap } }, children));
+	), /* @__PURE__ */ React_default.createElement(
+		"div", {
+			className: c2("content", direction),
+			style: { gap }
+		},
+		children
+	));
 }
+FieldSet.direction = {
+	HORIZONTAL: "horizontal",
+	VERTICAL: "vertical"
+};
 
 // src/SendStickersAsLinks/components/SettingComponent.jsx
 var sizes = [80, 100, 128, 160];

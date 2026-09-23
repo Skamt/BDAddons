@@ -27,73 +27,35 @@ var Config_default = {
 // common/Api.js
 var Api = /* @__PURE__ */ (() => new BdApi(Config_default.info.name))();
 var Patcher = /* @__PURE__ */ (() => Api.Patcher)();
-var Logger2 = /* @__PURE__ */ (() => Api.Logger)();
+var Logger = /* @__PURE__ */ (() => Api.Logger)();
 var DOM = /* @__PURE__ */ (() => Api.DOM)();
 
 // common/Utils/Logger.js
-Logger2.patchError = (patchId) => {
-	console.error(`%c[${Config_default.info.name}] %cCould not find module for %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
-};
-var Logger_default = Logger2;
+var Logger_default = Logger;
+var patchError = (...args) => Logger.error("Could not patch SettingsMenuTransition", ...args);
 
-// common/Utils/EventEmitter.js
-var EventEmitter_default = class {
-	constructor() {
-		this.listeners = {};
-	}
-	isInValid(event, handler) {
-		return typeof event !== "string" || typeof handler !== "function";
-	}
-	once(event, handler) {
-		if (this.isInValid(event, handler)) return;
-		if (!this.listeners[event]) this.listeners[event] = /* @__PURE__ */ new Set();
-		const wrapper = () => {
-			handler();
-			this.off(event, wrapper);
-		};
-		this.listeners[event].add(wrapper);
-	}
-	on(event, handler) {
-		if (this.isInValid(event, handler)) return;
-		if (!this.listeners[event]) this.listeners[event] = /* @__PURE__ */ new Set();
-		this.listeners[event].add(handler);
-		return () => this.off(event, handler);
-	}
-	off(event, handler) {
-		if (this.isInValid(event, handler)) return;
-		if (!this.listeners[event]) return;
-		this.listeners[event].delete(handler);
-		if (this.listeners[event].size !== 0) return;
-		delete this.listeners[event];
-	}
-	emit(event, ...payload) {
-		if (!this.listeners[event]) return;
-		for (const listener of this.listeners[event]) {
-			try {
-				listener.apply(null, payload);
-			} catch (err) {
-				Logger_default.error(`Could not run listener for ${event}`, err);
-			}
+// common/Plugin.js
+var target = /* @__PURE__ */ (() => new EventTarget())();
+
+function wrap(handler) {
+	return (e) => {
+		try {
+			handler.apply(null, e);
+		} catch (err) {
+			Logger_default.error(`Could not run [${e.type}] handler`, { handler }, "\n", err);
 		}
-	}
-};
-
-// common/Utils/Plugin.js
-var Events = {
-	START: "START",
-	STOP: "STOP"
-};
-var Plugin_default = new class extends EventEmitter_default {
-	stopped = true;
+	};
+}
+var Plugin_default = {
+	onStart: (handler, props) => target.addEventListener("START", wrap(handler), props),
+	onStop: (handler, props) => target.addEventListener("STOP", wrap(handler), props),
 	start() {
-		this.emit(Events.START);
-		this.stopped = false;
-	}
+		target.dispatchEvent(new Event("START"));
+	},
 	stop() {
-		this.emit(Events.STOP);
-		this.stopped = true;
+		target.dispatchEvent(new Event("STOP"));
 	}
-}();
+};
 
 // common/Utils/StylesLoader.js
 var styleLoader = {
@@ -102,12 +64,8 @@ var styleLoader = {
 		this._styles.push(styles);
 	}
 };
-Plugin_default.on(Events.START, () => {
-	DOM.addStyle(styleLoader._styles.join("\n"));
-});
-Plugin_default.on(Events.STOP, () => {
-	DOM.removeStyle();
-});
+Plugin_default.onStart(() => DOM.addStyle(styleLoader._styles.join("\n")));
+Plugin_default.onStop(() => DOM.removeStyle());
 var StylesLoader_default = styleLoader;
 
 // src/ReadAllNotifications/styles.css
@@ -127,7 +85,8 @@ StylesLoader_default.push(`.RAN-Button {
 }`);
 
 // common/React.jsx
-var React_default = /* @__PURE__ */ (() => BdApi.React)();
+var React = /* @__PURE__ */ (() => BdApi.React)();
+var React_default = React;
 
 // common/Utils/index.js
 function getObjectKey(object = {}, filter) {
@@ -137,7 +96,7 @@ function getObjectKey(object = {}, filter) {
 	}
 }
 
-// common/Webpack.js
+// common/Webpack.jsx
 var Webpack = /* @__PURE__ */ (() => BdApi.Webpack)();
 var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
 var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
@@ -147,34 +106,32 @@ function getDeclarationAndKey(moduleFilter, declarationFilter, options = {}) {
 	const module2 = getModule(moduleFilter, { ...options, raw: true });
 	if (!module2?.declarations) return;
 	const key = getObjectKey(module2.declarations, declarationFilter);
-	return key ? { key, module: module2.declarations } : void 0;
+	return key ? [module2.declarations, key] : void 0;
 }
 
 // MODULES-AUTO-LOADER:@Modules/Button
-var Button_default = getModule((a) => a && a.Link && a.Colors, { searchExports: true });
+var Button_default = /* @__PURE__ */ (() => getModule((a) => a && a.Link && a.Colors, { searchExports: true }))();
 
 // common/Components/Button/index.jsx
 function ButtonComponentFallback(props) {
 	return /* @__PURE__ */ React_default.createElement("button", { ...props });
 }
-var ManaButton = /* @__PURE__ */ getModule(Filters.byStrings(`"data-mana-component":"button"`), { searchExports: true }) || ButtonComponentFallback;
-var ManaTextButton = /* @__PURE__ */ getModule(Filters.byStrings(`"data-mana-component":"text-button"`), { searchExports: true }) || ButtonComponentFallback;
 var Button_default2 = Button_default || ButtonComponentFallback;
 
 // MODULES-AUTO-LOADER:@Stores/GuildStore
-var GuildStore_default = getStore("GuildStore");
+var GuildStore_default = /* @__PURE__ */ (() => getStore("GuildStore"))();
 
 // MODULES-AUTO-LOADER:@Stores/GuildChannelStore
-var GuildChannelStore_default = getStore("GuildChannelStore");
+var GuildChannelStore_default = /* @__PURE__ */ (() => getStore("GuildChannelStore"))();
 
 // MODULES-AUTO-LOADER:@Stores/ActiveJoinedThreadsStore
-var ActiveJoinedThreadsStore_default = getStore("ActiveJoinedThreadsStore");
+var ActiveJoinedThreadsStore_default = /* @__PURE__ */ (() => getStore("ActiveJoinedThreadsStore"))();
 
 // MODULES-AUTO-LOADER:@Stores/ReadStateStore
-var ReadStateStore_default = getStore("ReadStateStore");
+var ReadStateStore_default = /* @__PURE__ */ (() => getStore("ReadStateStore"))();
 
 // MODULES-AUTO-LOADER:@Modules/Dispatcher
-var Dispatcher_default = getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: true });
+var Dispatcher_default = /* @__PURE__ */ (() => getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: true }))();
 
 // src/ReadAllNotifications/index.jsx
 function onClick() {
@@ -195,8 +152,7 @@ function onClick() {
 		channels
 	});
 }
-var ServerList = getDeclarationAndKey(Filters.bySource("guild-list-unread-dms"), Filters.byStrings(`"aria-owns":"guild-list-unread-dms"`));
-var ReadAllButton = () => /* @__PURE__ */ React_default.createElement(
+var ReadAllButton = /* @__PURE__ */ React_default.createElement(
 	Button_default2, {
 		style: { display: "none" },
 		className: "RAN-Button",
@@ -207,9 +163,10 @@ var ReadAllButton = () => /* @__PURE__ */ React_default.createElement(
 	},
 	"Read All"
 );
-Plugin_default.on(Events.START, () => {
+var ServerList = getDeclarationAndKey(Filters.bySource("guild-list-unread-dms"), Filters.byStrings(`"aria-owns":"guild-list-unread-dms"`));
+Plugin_default.onStart(() => {
 	const { module: module2, key } = ServerList;
-	if (!module2 || !key) return Logger.patchError("ServerList");
+	if (!module2 || !key) return patchError("ServerList");
 	Patcher.after(module2, key, (_, args, ret) => {
 		if (!ret?.props?.children) return;
 		const children = Array.isArray(ret.props.children) ? ret.props.children : [ret.props.children];
@@ -217,7 +174,5 @@ Plugin_default.on(Events.START, () => {
 		ret.props.children = children;
 	});
 });
-Plugin_default.on(Events.STOP, () => {
-	Patcher.unpatchAll();
-});
+Plugin_default.onStop(() => Patcher.unpatchAll());
 module.exports = () => Plugin_default;

@@ -9,20 +9,20 @@
  * @credit https://github.com/Equicord/Equicord/tree/main/src/equicordplugins/noPushToTalk
  */
 
-// common/Webpack.js
+// common/Webpack.jsx
 var Webpack = /* @__PURE__ */ (() => BdApi.Webpack)();
 var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
 var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
 var getStore = /* @__PURE__ */ (() => Webpack.getStore)();
 
 // MODULES-AUTO-LOADER:@Stores/PermissionVADStore
-var PermissionVADStore_default = getStore("PermissionVADStore");
+var PermissionVADStore_default = /* @__PURE__ */ (() => getStore("PermissionVADStore"))();
 
 // MODULES-AUTO-LOADER:@Modules/DiscordPermissions
-var DiscordPermissions_default = getModule(Filters.byKeys("computePermissions"), { searchExports: false });
+var DiscordPermissions_default = /* @__PURE__ */ (() => getModule(Filters.byKeys("computePermissions"), { searchExports: false }))();
 
 // MODULES-AUTO-LOADER:@Enums/DiscordPermissionsEnum
-var DiscordPermissionsEnum_default = getModule(Filters.byKeys("ADD_REACTIONS"), { searchExports: true }) || void 0;
+var DiscordPermissionsEnum_default = /* @__PURE__ */ (() => getModule(Filters.byKeys("ADD_REACTIONS"), { searchExports: true }) || void 0)();
 
 // src/NoPushToTalk/index.js
 module.exports = () => ({

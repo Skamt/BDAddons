@@ -11,7 +11,7 @@
 
 // common/React.jsx
 var React = /* @__PURE__ */ (() => BdApi.React)();
-var React_default = /* @__PURE__ */ (() => React)();
+var React_default = React;
 
 // config:@Config
 var Config_default = {
@@ -36,21 +36,24 @@ var Api = /* @__PURE__ */ (() => new BdApi(Config_default.info.name))();
 var Data = /* @__PURE__ */ (() => Api.Data)();
 var Patcher = /* @__PURE__ */ (() => Api.Patcher)();
 
-// common/Webpack.js
+// common/Webpack.jsx
 var Webpack = /* @__PURE__ */ (() => BdApi.Webpack)();
 var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
 var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
 var getMangled = /* @__PURE__ */ (() => Webpack.getMangled)();
 
 // common/DiscordModules/zustand.js
-var { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
+var zustand = /* @__PURE__ */ (() => getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
 	_: Filters.byStrings("subscribe"),
 	zustand: () => true
-});
-var subscribeWithSelector = getModule(Filters.byStrings("getState", "equalityFn", "fireImmediately"), { searchExports: true });
+})?.zustand)();
+var subscribeWithSelector = /* @__PURE__ */ (() => getModule(Filters.byStrings("getState", "equalityFn", "fireImmediately"), {
+	searchExports: true
+}))();
 
 function create(initialState) {
-	const Store = zustand(initialState);
+	const Store = /* @__PURE__ */ zustand(initialState);
+	/* @__PURE__ */
 	Object.defineProperty(Store, "state", {
 		configurable: false,
 		get: () => Store.getState()
@@ -59,36 +62,37 @@ function create(initialState) {
 }
 
 // common/Utils/Settings.js
-var SettingsStore = create(subscribeWithSelector(() => Object.assign(Config_default.settings, Data.load("settings") || {})));
-((state) => {
+var Settings_default = /* @__PURE__ */ (() => {
+	const SettingsStore = create(
+		subscribeWithSelector(() => Object.assign(Config_default.settings || {}, Data.load("settings") || {}))
+	);
+	const state = SettingsStore.getInitialState();
 	const selectors = {};
 	const actions = {};
-	for (const [key, value] of Object.entries(state)) {
+	for (const key of Object.keys(state)) {
 		actions[`set${key}`] = (newValue) => SettingsStore.setState({
 			[key]: newValue });
 		selectors[key] = (state2) => state2[key];
 	}
 	Object.defineProperty(SettingsStore, "selectors", { value: Object.assign(selectors) });
 	Object.assign(SettingsStore, actions);
-})(SettingsStore.getInitialState());
-SettingsStore.subscribe(
-	(state) => state,
-	() => Data.save("settings", SettingsStore.state)
-);
-Object.assign(SettingsStore, {
-	useSetting: (key) => {
-		const val = SettingsStore((state) => state[key]);
-		return [val, SettingsStore[`set${key}`]];
-	}
-});
-var Settings_default = SettingsStore;
+	SettingsStore.subscribe(
+		(state2) => state2,
+		() => Data.save("settings", SettingsStore.state)
+	);
+	Object.assign(SettingsStore, {
+		useSetting: (key) => {
+			const val = SettingsStore((state2) => state2[key]);
+			return [val, SettingsStore[`set${key}`]];
+		}
+	});
+	return SettingsStore;
+})();
 
 // MODULES-AUTO-LOADER:@Modules/Slider
-var Slider_default = getModule(Filters.byPrototypeKeys("renderMark"), { searchExports: true });
+var Slider_default = /* @__PURE__ */ (() => getModule(Filters.byPrototypeKeys("renderMark"), { searchExports: true }))();
 
 // src/NotificationVolume/index.jsx
-var WebAudioSound = getModule((a) => a.WebAudioSound)?.WebAudioSound;
-
 function SettingComponent() {
 	const [val, set] = Settings_default.useSetting("notificationVolume");
 	return /* @__PURE__ */ React_default.createElement(
@@ -103,18 +107,15 @@ function SettingComponent() {
 		}
 	);
 }
+var WebAudioSound = getModule((a) => a.WebAudioSound)?.WebAudioSound;
 module.exports = () => ({
 	start() {
-		if (!WebAudioSound) return Logger.patchError("WebAudioSound");
-		Patcher.after(
-			WebAudioSound.prototype,
-			"ensureAudio",
-			(_, __, ret) => {
-				ret.then((audio) => {
-					audio.volume *= Settings_default.state.notificationVolume / 100;
-				});
-			}
-		);
+		if (!WebAudioSound) return console.error("[NotificationVolume] Could not patch WebAudioSound");
+		Patcher.after(WebAudioSound.prototype, "ensureAudio", (_, __, ret) => {
+			ret.then((audio) => {
+				audio.volume *= Settings_default.state.notificationVolume / 100;
+			});
+		});
 	},
 	stop: () => Patcher.unpatchAll(),
 	getSettingsPanel: () => /* @__PURE__ */ React_default.createElement(SettingComponent, null)

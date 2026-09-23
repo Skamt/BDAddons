@@ -13,7 +13,7 @@
 var React = /* @__PURE__ */ (() => BdApi.React)();
 var React_default = React;
 
-// common/Webpack.js
+// common/Webpack.jsx
 var Webpack = /* @__PURE__ */ (() => BdApi.Webpack)();
 var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
 var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
@@ -26,10 +26,10 @@ function reactRefMemoFilter(type, ...args) {
 // src/BetterUploadButton/index.js
 var UploadButton = getModule(reactRefMemoFilter("type", "CHAT_INPUT_BUTTON_NOTIFICATION,"));
 module.exports = () => ({
-	stop: () => BdApi.Patcher.unpatchAll("BetterUploadButton"),
+	stop: () => {},
 	start() {
-		if (!UploadButton) return Logger.patchError("UploadButton");
-		BdApi.Patcher.after("BetterUploadButton", UploadButton, "type", (_, __, ret) => {
+		if (!UploadButton) return console.error("[BetterUploadButton] Could not patch UploadButton");
+		this.stop = BdApi.Patcher.after("BetterUploadButton", UploadButton, "type", (_, __, ret) => {
 			if (!ret.props?.className?.includes("attachButton")) return ret;
 			return React_default.cloneElement(ret, {
 				onClick: ret.props.onDoubleClick,

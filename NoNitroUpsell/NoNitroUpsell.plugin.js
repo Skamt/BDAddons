@@ -9,17 +9,17 @@
  * @credit https://github.com/Equicord/Equicord/tree/main/src/equicordplugins/noNitroUpsell
  */
 
-// common/Webpack.js
+// common/Webpack.jsx
 var Webpack = /* @__PURE__ */ (() => BdApi.Webpack)();
 var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
 var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
 var getStore = /* @__PURE__ */ (() => Webpack.getStore)();
 
 // MODULES-AUTO-LOADER:@Stores/OverridePremiumTypeStore
-var OverridePremiumTypeStore_default = getStore("OverridePremiumTypeStore");
+var OverridePremiumTypeStore_default = /* @__PURE__ */ (() => getStore("OverridePremiumTypeStore"))();
 
 // MODULES-AUTO-LOADER:@Modules/Dispatcher
-var Dispatcher_default = getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: true });
+var Dispatcher_default = /* @__PURE__ */ (() => getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: true }))();
 
 // src/NoNitroUpsell/index.js
 function onConnectionOpen() {

@@ -8,8 +8,14 @@
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/BypassStatus/BypassStatus.plugin.js
  */
 
+// common/Utils/Array.js
+var loop = (array, callback) => {
+	for (let i = 0; i < array.length; i++) callback(array[i], i);
+};
+
 // common/React.jsx
-var React_default = /* @__PURE__ */ (() => BdApi.React)();
+var React = /* @__PURE__ */ (() => BdApi.React)();
+var React_default = React;
 
 // config:@Config
 var Config_default = {
@@ -42,20 +48,45 @@ var ContextMenu = /* @__PURE__ */ (() => Api.ContextMenu)();
 var Logger = /* @__PURE__ */ (() => Api.Logger)();
 var DOM = /* @__PURE__ */ (() => Api.DOM)();
 
+// common/Utils/Logger.js
+var Logger_default = Logger;
+
 // common/Utils/index.js
 var nop = () => {};
 
-// common/Webpack.js
+// common/Plugin.js
+var target = /* @__PURE__ */ (() => new EventTarget())();
+
+function wrap(handler) {
+	return (e) => {
+		try {
+			handler.apply(null, e);
+		} catch (err) {
+			Logger_default.error(`Could not run [${e.type}] handler`, { handler }, "\n", err);
+		}
+	};
+}
+var Plugin_default = {
+	onStart: (handler, props) => target.addEventListener("START", wrap(handler), props),
+	onStop: (handler, props) => target.addEventListener("STOP", wrap(handler), props),
+	start() {
+		target.dispatchEvent(new Event("START"));
+	},
+	stop() {
+		target.dispatchEvent(new Event("STOP"));
+	}
+};
+
+// common/Webpack.jsx
 var Webpack = /* @__PURE__ */ (() => BdApi.Webpack)();
 var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
 var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
-var waitForModule = /* @__PURE__ */ (() => Webpack.waitForModule)();
 var getByPrototypeKeys = /* @__PURE__ */ (() => Webpack.getByPrototypeKeys)();
 var getMangled = /* @__PURE__ */ (() => Webpack.getMangled)();
 var getStore = /* @__PURE__ */ (() => Webpack.getStore)();
 
 // MODULES-AUTO-LOADER:@Modules/Dispatcher
-var Dispatcher_default = getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: true });
+var Dispatcher_default = /* @__PURE__ */ (() => getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: true }))();
 
 // common/Utils/Flux.js
 var Flux_default = new class {
@@ -75,21 +106,18 @@ var Flux_default = new class {
 	}
 }();
 
-// common/Utils/Logger.js
-Logger.patchError = (patchId) => {
-	console.error(`%c[${Config_default.info.name}] %cCould not find module for %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
-};
-var Logger_default = Logger;
-
 // common/DiscordModules/zustand.js
-var { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
+var zustand = /* @__PURE__ */ (() => getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
 	_: Filters.byStrings("subscribe"),
 	zustand: () => true
-});
-var subscribeWithSelector = getModule(Filters.byStrings("getState", "equalityFn", "fireImmediately"), { searchExports: true });
+})?.zustand)();
+var subscribeWithSelector = /* @__PURE__ */ (() => getModule(Filters.byStrings("getState", "equalityFn", "fireImmediately"), {
+	searchExports: true
+}))();
 
 function create(initialState) {
-	const Store = zustand(initialState);
+	const Store = /* @__PURE__ */ zustand(initialState);
+	/* @__PURE__ */
 	Object.defineProperty(Store, "state", {
 		configurable: false,
 		get: () => Store.getState()
@@ -98,247 +126,62 @@ function create(initialState) {
 }
 
 // common/Utils/Settings.js
-var SettingsStore = create(subscribeWithSelector(() => Object.assign(Config_default.settings, Data.load("settings") || {})));
-((state) => {
+var Settings_default = /* @__PURE__ */ (() => {
+	const SettingsStore = create(
+		subscribeWithSelector(() => Object.assign(Config_default.settings || {}, Data.load("settings") || {}))
+	);
+	const state = SettingsStore.getInitialState();
 	const selectors = {};
 	const actions = {};
-	for (const [key, value] of Object.entries(state)) {
+	for (const key of Object.keys(state)) {
 		actions[`set${key}`] = (newValue) => SettingsStore.setState({
 			[key]: newValue });
 		selectors[key] = (state2) => state2[key];
 	}
 	Object.defineProperty(SettingsStore, "selectors", { value: Object.assign(selectors) });
 	Object.assign(SettingsStore, actions);
-})(SettingsStore.getInitialState());
-SettingsStore.subscribe(
-	(state) => state,
-	() => Data.save("settings", SettingsStore.state)
-);
-Object.assign(SettingsStore, {
-	useSetting: (key) => {
-		const val = SettingsStore((state) => state[key]);
-		return [val, SettingsStore[`set${key}`]];
-	}
-});
-var Settings_default = SettingsStore;
+	SettingsStore.subscribe(
+		(state2) => state2,
+		() => Data.save("settings", SettingsStore.state)
+	);
+	Object.assign(SettingsStore, {
+		useSetting: (key) => {
+			const val = SettingsStore((state2) => state2[key]);
+			return [val, SettingsStore[`set${key}`]];
+		}
+	});
+	return SettingsStore;
+})();
 
 // MODULES-AUTO-LOADER:@Stores/WindowStore
-var WindowStore_default = getStore("WindowStore");
+var WindowStore_default = /* @__PURE__ */ (() => getStore("WindowStore"))();
 
 // MODULES-AUTO-LOADER:@Stores/UserStore
-var UserStore_default = getStore("UserStore");
+var UserStore_default = /* @__PURE__ */ (() => getStore("UserStore"))();
 
 // MODULES-AUTO-LOADER:@Stores/PresenceStore
-var PresenceStore_default = getStore("PresenceStore");
+var PresenceStore_default = /* @__PURE__ */ (() => getStore("PresenceStore"))();
 
 // MODULES-AUTO-LOADER:@Stores/ChannelStore
-var ChannelStore_default = getStore("ChannelStore");
-
-// MODULES-AUTO-LOADER:@Stores/ChannelActionCreators
-var ChannelActionCreators_default = getStore("ChannelActionCreators");
-
-// MODULES-AUTO-LOADER:@Stores/MessageStore
-var MessageStore_default = getStore("MessageStore");
+var ChannelStore_default = /* @__PURE__ */ (() => getStore("ChannelStore"))();
 
 // common/DiscordModules/Modules.js
-var ComponentDispatch;
-waitForModule((m) => m.dispatchToLastSubscribed, { searchExports: true }).then((a) => {
-	ComponentDispatch = a;
-});
 var transitionTo = /* @__PURE__ */ (() => getModule(Filters.byStrings("transitionTo - Transitioning to"), { searchExports: true }))();
 var RadioGroup = /* @__PURE__ */ (() => getMangled('data-toggleable-component":"radiogroup', { radioGroup: Filters.byStrings("label", "required") }).radioGroup)();
 
-// MODULES-AUTO-LOADER:@Stores/GuildMemberStore
-var GuildMemberStore_default = getStore("GuildMemberStore");
-
 // MODULES-AUTO-LOADER:@Stores/SelectedChannelStore
-var SelectedChannelStore_default = getStore("SelectedChannelStore");
+var SelectedChannelStore_default = /* @__PURE__ */ (() => getStore("SelectedChannelStore"))();
 
-// MODULES-AUTO-LOADER:@Stores/SelectedGuildStore
-var SelectedGuildStore_default = getStore("SelectedGuildStore");
-
-// MODULES-AUTO-LOADER:@Modules/FetchUser
-var FetchUser_default = getModule(Filters.byStrings("USER_UPDATE", "default.getUser", "oldFormErrors"), { searchExports: true });
-
-// MODULES-AUTO-LOADER:@Stores/GuildStore
-var GuildStore_default = getStore("GuildStore");
+// common/Utils/User.js
+function isSelf(user) {
+	const currentUser = UserStore_default.getCurrentUser();
+	return user?.id === currentUser?.id;
+}
 
 // common/Utils/Channel.js
 function getCurrentChannel() {
 	return ChannelStore_default.getChannel(SelectedChannelStore_default.getChannelId());
 }
-
-// common/Utils/EventEmitter.js
-var EventEmitter_default = class {
-	constructor() {
-		this.listeners = {};
-	}
-	isInValid(event, handler) {
-		return typeof event !== "string" || typeof handler !== "function";
-	}
-	once(event, handler) {
-		if (this.isInValid(event, handler)) return;
-		if (!this.listeners[event]) this.listeners[event] = /* @__PURE__ */ new Set();
-		const wrapper = () => {
-			handler();
-			this.off(event, wrapper);
-		};
-		this.listeners[event].add(wrapper);
-	}
-	on(event, handler) {
-		if (this.isInValid(event, handler)) return;
-		if (!this.listeners[event]) this.listeners[event] = /* @__PURE__ */ new Set();
-		this.listeners[event].add(handler);
-		return () => this.off(event, handler);
-	}
-	off(event, handler) {
-		if (this.isInValid(event, handler)) return;
-		if (!this.listeners[event]) return;
-		this.listeners[event].delete(handler);
-		if (this.listeners[event].size !== 0) return;
-		delete this.listeners[event];
-	}
-	emit(event, ...payload) {
-		if (!this.listeners[event]) return;
-		for (const listener of this.listeners[event]) {
-			try {
-				listener.apply(null, payload);
-			} catch (err) {
-				Logger_default.error(`Could not run listener for ${event}`, err);
-			}
-		}
-	}
-};
-
-// common/Utils/Plugin.js
-var Events = {
-	START: "START",
-	STOP: "STOP"
-};
-var Plugin_default = new class extends EventEmitter_default {
-	stopped = true;
-	start() {
-		this.emit(Events.START);
-		this.stopped = false;
-	}
-	stop() {
-		this.emit(Events.STOP);
-		this.stopped = true;
-	}
-}();
-
-// common/Utils/StylesLoader.js
-var styleLoader = {
-	_styles: [],
-	push(styles) {
-		this._styles.push(styles);
-	}
-};
-Plugin_default.on(Events.START, () => {
-	DOM.addStyle(styleLoader._styles.join("\n"));
-});
-Plugin_default.on(Events.STOP, () => {
-	DOM.removeStyle();
-});
-var StylesLoader_default = styleLoader;
-
-// common/Components/Collapsible/styles.css
-StylesLoader_default.push(`.collapsible-container * {
-	box-sizing: border-box;
-}
-
-.collapsible-container {
-	gap: 0px 20px;
-	display: grid;
-	grid-template-rows: min-content 0fr;
-	transition: grid-template-rows 200ms linear;
-	user-select: none;
-	color: var(--text-secondary);
-	background: var(--background-mod-subtle);
-	border-radius: 8px;
-	margin-bottom: 5px;
-}
-
-.collapsible-open {
-	grid-template-rows: min-content 1fr;
-	color: var(--text-primary);
-}
-
-.collapsible-header {
-	background: var(--background-mod-subtle);
-	padding: 10px;
-	gap: 8px;
-	display: flex;
-	border-radius: inherit;
-	align-items: center;
-	min-width: 0;
-}
-
-.collapsible-header:hover {
-	background: var(--background-mod-normal);
-}
-
-.collapsible-header:active {
-	background: var(--background-mod-faint);
-}
-
-.collapsible-icon {
-	display: flex;
-	flex: 0 0 auto;
-	rotate: 0deg;
-	transition: rotate 150ms linear;
-	color: inherit;
-}
-
-.collapsible-title {
-	flex: 1 1 0;
-	text-transform: capitalize;
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	pointer-events: none;
-	color: inherit;
-}
-
-.collapsible-body {
-	transition: padding 0ms 200ms;
-	overflow: hidden;
-}
-
-.collapsible-open > .collapsible-header {
-	border-radius: 8px 8px 0 0;
-	background: var(--background-mod-strong);
-}
-
-.collapsible-open > .collapsible-body {
-	padding: 15px;
-	transition: none;
-}
-
-.collapsible-open > .collapsible-header > .collapsible-icon {
-	rotate: 90deg;
-}
-`);
-
-// common/Utils/css.js
-var classNameFactory = (prefix = "", connector = "-") => (...args) => {
-	const classNames = /* @__PURE__ */ new Set();
-	for (const arg of args) {
-		if (arg && typeof arg === "string") classNames.add(arg);
-		else if (Array.isArray(arg)) arg.forEach((name) => classNames.add(name));
-		else if (arg && typeof arg === "object") Object.entries(arg).forEach(([name, value]) => value && classNames.add(name));
-	}
-	return Array.from(classNames, (name) => `${prefix}${connector}${name}`).join(" ");
-};
-
-// MODULES-AUTO-LOADER:@Modules/Heading
-var Heading_default = getModule((a) => a?.render?.toString().includes("data-excessive-heading-level"), { searchExports: true });
-
-// common/Components/Collapsible/index.jsx
-var c = classNameFactory("collapsible");
-
-// MODULES-AUTO-LOADER:@Modules/FormSwitch
-var FormSwitch_default = getModule(Filters.byStrings("note", "tooltipNote"), { searchExports: true });
 
 // common/Components/Switch/index.jsx
 var Switch_default = getMangled(Filters.bySource("auxiliaryContentPosition", "hasIcon"), {
@@ -352,6 +195,17 @@ var Switch_default = getMangled(Filters.bySource("auxiliaryContentPosition", "ha
 		}
 	));
 };
+
+// common/Utils/StylesLoader.js
+var styleLoader = {
+	_styles: [],
+	push(styles) {
+		this._styles.push(styles);
+	}
+};
+Plugin_default.onStart(() => DOM.addStyle(styleLoader._styles.join("\n")));
+Plugin_default.onStop(() => DOM.removeStyle());
+var StylesLoader_default = styleLoader;
 
 // common/Components/Divider/styles.css
 StylesLoader_default.push(`.divider-horizontal {
@@ -367,14 +221,26 @@ StylesLoader_default.push(`.divider-horizontal {
 }
 `);
 
+// common/Utils/css.js
+function transform(...args) {
+	const classNames = /* @__PURE__ */ new Set();
+	for (const arg of args) {
+		if (arg && typeof arg === "string") classNames.add(arg);
+		else if (Array.isArray(arg)) arg.forEach((name) => classNames.add(name));
+		else if (arg && typeof arg === "object") Object.entries(arg).forEach(([name, value]) => value && classNames.add(name));
+	}
+	return classNames;
+}
+var classNameFactory = (prefix = "", connector = "-") => (...args) => Array.from(transform(...args), (name) => `${prefix}${connector}${name}`).join(" ");
+
 // common/Components/Divider/index.jsx
-var c2 = classNameFactory("divider");
+var c = classNameFactory("divider");
 
 function Divider({ gap = 15, gutter = 0, direction = Divider.direction.HORIZONTAL }) {
 	return /* @__PURE__ */ React_default.createElement(
 		"div", {
 			style: { "--divider-gap": `${gap}px`, "--divider-gutter": `${gutter}%` },
-			className: c2("base", direction)
+			className: c("base", direction)
 		}
 	);
 }
@@ -413,6 +279,9 @@ var TextInput_default = TextInput || function TextInputFallback(props) {
 	));
 };
 
+// MODULES-AUTO-LOADER:@Modules/Heading
+var Heading_default = /* @__PURE__ */ (() => getModule((a) => a?.render?.toString().includes("data-excessive-heading-level"), { searchExports: true }))();
+
 // common/Components/SettingTextInput/index.jsx
 function SettingTextInput({
 	settingKey,
@@ -422,18 +291,18 @@ function SettingTextInput({
 	onChange = nop,
 	...rest
 }) {
-	const [val, set] = React_default.useState(Settings_default.state[settingKey]);
+	const [val, setVal] = React_default.useState(Settings_default.state[settingKey]);
 	return /* @__PURE__ */ React_default.createElement(React_default.Fragment, null, label && /* @__PURE__ */ React_default.createElement(Heading_default, { tag: "legend", variant: "text-md/medium" }, label), /* @__PURE__ */ React_default.createElement(
 		TextInput_default, {
 			...rest,
 			onChange: (e) => {
-				set(e);
+				setVal(e);
 				Settings_default[`set${settingKey}`](processValue(e));
 				onChange?.(e);
 			},
 			value: val
 		}
-	), border && /* @__PURE__ */ React_default.createElement(Divider, { gap: 15 }));
+	), border && /* @__PURE__ */ React_default.createElement(Divider, null));
 }
 
 // common/Components/FieldSet/styles.css
@@ -442,6 +311,7 @@ StylesLoader_default.push(`.fieldset-container {
 	flex-direction: column;
 	gap: 16px;
 }
+
 
 .fieldset-label {
 	margin-bottom: 12px;
@@ -458,32 +328,48 @@ StylesLoader_default.push(`.fieldset-container {
 
 .fieldset-content {
 	display: flex;
-	flex-direction: column;
 	width: 100%;
 	justify-content: flex-start;
 }
-`);
+
+.fieldset-content.fieldset-horizontal {
+	flex-direction: row;
+}
+
+.fieldset-content.fieldset-vertical {
+	flex-direction: column;
+}`);
 
 // common/Components/FieldSet/index.jsx
-var c3 = classNameFactory("fieldset");
+var c2 = classNameFactory("fieldset");
 
-function FieldSet({ label, description, children, contentGap = 16 }) {
-	return /* @__PURE__ */ React_default.createElement("fieldset", { className: c3("container") }, label && /* @__PURE__ */ React_default.createElement(
+function FieldSet({ label, description, children, gap = 15, direction = FieldSet.direction.VERTICAL }) {
+	return /* @__PURE__ */ React_default.createElement("fieldset", { className: c2("container") }, label && /* @__PURE__ */ React_default.createElement(
 		Heading_default, {
-			className: c3("label"),
+			className: c2("label"),
 			tag: "legend",
 			variant: "text-lg/medium"
 		},
 		label
 	), description && /* @__PURE__ */ React_default.createElement(
 		Heading_default, {
-			className: c3("description"),
+			className: c2("description"),
 			variant: "text-sm/normal",
 			color: "text-secondary"
 		},
 		description
-	), /* @__PURE__ */ React_default.createElement("div", { className: c3("content"), style: { gap: contentGap } }, children));
+	), /* @__PURE__ */ React_default.createElement(
+		"div", {
+			className: c2("content", direction),
+			style: { gap }
+		},
+		children
+	));
 }
+FieldSet.direction = {
+	HORIZONTAL: "horizontal",
+	VERTICAL: "vertical"
+};
 
 // src/BypassStatus/SettingComponent.jsx
 function Status() {
@@ -571,48 +457,47 @@ var SettingComponent_default = () => /* @__PURE__ */ React_default.createElement
 	}
 ].map(SettingSwtich), /* @__PURE__ */ React_default.createElement(Status, null)));
 
+// common/Patcher/contextmenu.js
+var contextmenuUnPatches = [];
+Plugin_default.onStop(() => {
+	contextmenuUnPatches.filter(Boolean).forEach((a) => a());
+	contextmenuUnPatches = [];
+});
+var patch = (id, callback) => {
+	const undo = ContextMenu.patch(id, callback);
+	contextmenuUnPatches.push(undo);
+};
+var contextmenu_default = ContextMenu;
+
 // src/BypassStatus/patchContextMenu.js
-var patchContextMenu_default = {
-	dispose() {
-		this.handlers?.forEach?.((h) => h());
-		this.handlers = null;
-	},
-	init() {
-		this.handlers = [
-			...["user", "guild", "channel"].map(
-				(id) => ContextMenu.patch(
-					`${id}-context`,
-					(retVal) => retVal.props.children.splice(-1, 0, ContextMenu.buildItem({ type: "separator" }))
-				)
-			),
-			...["user", "guild", "channel"].map((id) => {
-				return ContextMenu.patch(`${id}-context`, (retVal, props) => {
-					const type = props[id];
-					if (!type) return;
-					const enabled = Settings_default.state[`${id}s`].split(", ").includes(type.id);
-					if (id === "user" && type.id === UserStore_default.getCurrentUser().id) return;
-					retVal.props.children.splice(
-						-1,
-						0,
-						ContextMenu.buildItem({
-							id: `status-${id}-bypass`,
-							type: "toggle",
-							// icon: enabled ? EnabledIcon : DisabledIcon,
-							// leadingAccessory: { type: "icon", icon: enabled ? EnabledIcon : DisabledIcon },
-							label: `${enabled ? "Remove" : "Add"} Status Bypass`,
-							active: enabled,
-							action: () => {
-								let bypasses = Settings_default.state[`${id}s`].split(", ");
-								if (enabled) bypasses = bypasses.filter((id2) => id2 !== type.id);
-								else bypasses.push(type.id);
-								Settings_default[`set${id}s`](bypasses.filter((id2) => id2.trim() !== "").join(", "));
-							}
-						})
-					);
-				});
-			})
-		];
-	}
+var patchContextMenu_default = () => {
+	const ids = ["user", "guild", "channel"];
+	loop(ids, (id) => patch(`${id}-context`, (ret) => ret.props.children.splice(-1, 0, contextmenu_default.buildItem({ type: "separator" }))));
+	loop(
+		ids,
+		(id) => patch(`${id}-context`, (ret, props) => {
+			const type = props[id];
+			if (!type) return;
+			const enabled = Settings_default.state[`${id}s`].split(", ").includes(type.id);
+			if (id === "user" && isSelf(type)) return;
+			ret.props.children.splice(
+				-1,
+				0,
+				contextmenu_default.buildItem({
+					id: `status-${id}-bypass`,
+					type: "toggle",
+					label: `${enabled ? "Remove" : "Add"} Status Bypass`,
+					active: enabled,
+					action: () => {
+						let bypasses = Settings_default.state[`${id}s`].split(", ");
+						if (enabled) bypasses = bypasses.filter((id2) => id2 !== type.id);
+						else bypasses.push(type.id);
+						Settings_default[`set${id}s`](bypasses.filter((id2) => id2.trim() !== "").join(", "));
+					}
+				})
+			);
+		})
+	);
 };
 
 // src/BypassStatus/utils.js
@@ -622,12 +507,21 @@ function playMessageNotificationSounce() {
 	new WebAudioSound("message1", "message1", 1, "default").play();
 }
 
-// src/BypassStatus/index.js
+// src/BypassStatus/index.jsx
 var SILENT_PING_FLAG = 1 << 12;
 
-function showNotification(message, guildId) {
+function showNotification(msg, guildId) {
 	try {
+		const message = Object.assign({}, msg);
 		const channel = ChannelStore_default.getChannel(message.channel_id);
+		const channelRegex = /<#(\d{19})>/g;
+		const userRegex = /<@(\d{18})>/g;
+		message.content = message.content.replace(channelRegex, (match, channelId) => {
+			return `#${ChannelStore_default.getChannel(channelId)?.name}`;
+		});
+		message.content = message.content.replace(userRegex, (match, userId) => {
+			return `@${UserStore_default.getUser(userId).globalName}`;
+		});
 		BdApi.UI.showNotification({
 			id: `BypassStatus-${Math.random().toString(36).slice(2)}`,
 			title: `${message.author.globalName} ${guildId ? `(#${channel?.name}, ${ChannelStore_default.getChannel(channel?.parent_id)?.name})` : ""}`,
@@ -661,7 +555,7 @@ function shouldNotify(message, guildId, channelId, currentUser) {
 	const notifyChannel = Settings_default.state.channels.split(", ").includes(channelId);
 	if (notifyGuild || notifyChannel) return true;
 }
-Plugin_default.on(Events.START, () => {
+Plugin_default.onStart(() => {
 	Flux_default.init({
 		async MESSAGE_CREATE({ message, guildId, channelId }) {
 			try {
@@ -671,21 +565,17 @@ Plugin_default.on(Events.START, () => {
 				if (message.state === "SENDING" || message.content === "" || message.author.id === currentUser.id || channelId === currentChannelId && WindowStore_default.isFocused() || userStatus !== Settings_default.state.statusToUse) {
 					return;
 				}
-				if (Settings_default.state.respectSilentPings && message.flags & SILENT_PING_FLAG) {
-					return;
-				}
-				if (shouldNotify(message, guildId, channelId, currentUser))
-					showNotification(message, guildId);
+				if (Settings_default.state.respectSilentPings && message.flags & SILENT_PING_FLAG) return;
+				if (shouldNotify(message, guildId, channelId, currentUser)) showNotification(message, guildId);
 			} catch (error) {
 				Logger_default.error("Failed to handle message: ", error);
 			}
 		}
 	});
-	patchContextMenu_default.init();
+	patchContextMenu_default();
 });
-Plugin_default.on(Events.STOP, () => {
+Plugin_default.onStop(() => {
 	Flux_default.dispose();
-	patchContextMenu_default.dispose();
 });
 Plugin_default.getSettingsPanel = () => /* @__PURE__ */ React_default.createElement(SettingComponent_default, null);
 module.exports = () => Plugin_default;

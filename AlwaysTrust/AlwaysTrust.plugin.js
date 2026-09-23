@@ -10,7 +10,8 @@
  */
 
 // common/React.jsx
-var React_default = /* @__PURE__ */ (() => BdApi.React)();
+var React = /* @__PURE__ */ (() => BdApi.React)();
+var React_default = React;
 
 // config:@Config
 var Config_default = {
@@ -37,10 +38,17 @@ var Config_default = {
 var Api = /* @__PURE__ */ (() => new BdApi(Config_default.info.name))();
 var Data = /* @__PURE__ */ (() => Api.Data)();
 var Patcher = /* @__PURE__ */ (() => Api.Patcher)();
-var Logger2 = /* @__PURE__ */ (() => Api.Logger)();
+var Logger = /* @__PURE__ */ (() => Api.Logger)();
 var DOM = /* @__PURE__ */ (() => Api.DOM)();
 
+// common/Utils/Logger.js
+var Logger_default = Logger;
+
 // common/Utils/index.js
+function hasOwn(object, key) {
+	return object && key && key in object;
+}
+
 function getObjectKey(object = {}, filter) {
 	for (const key in object) {
 		if (!filter(object[key])) continue;
@@ -49,7 +57,35 @@ function getObjectKey(object = {}, filter) {
 }
 var nop = () => {};
 
-// common/Webpack.js
+// common/consts.js
+var UNDEFINED_OBJECT_OR_KEY = "Undefined object or key";
+var PATCH_ERROR = "Could not perform a patch";
+var MISSING_ARGUMENTS = "Missing arguments";
+
+// common/Plugin.js
+var target = /* @__PURE__ */ (() => new EventTarget())();
+
+function wrap(handler) {
+	return (e) => {
+		try {
+			handler.apply(null, e);
+		} catch (err) {
+			Logger_default.error(`Could not run [${e.type}] handler`, { handler }, "\n", err);
+		}
+	};
+}
+var Plugin_default = {
+	onStart: (handler, props) => target.addEventListener("START", wrap(handler), props),
+	onStop: (handler, props) => target.addEventListener("STOP", wrap(handler), props),
+	start() {
+		target.dispatchEvent(new Event("START"));
+	},
+	stop() {
+		target.dispatchEvent(new Event("STOP"));
+	}
+};
+
+// common/Webpack.jsx
 var Webpack = /* @__PURE__ */ (() => BdApi.Webpack)();
 var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
 var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
@@ -57,81 +93,66 @@ var waitForModule = /* @__PURE__ */ (() => Webpack.waitForModule)();
 var getMangled = /* @__PURE__ */ (() => Webpack.getMangled)();
 var getStore = /* @__PURE__ */ (() => Webpack.getStore)();
 var getByKeys = /* @__PURE__ */ (() => Webpack.getByKeys)();
+var abortController = /* @__PURE__ */ (() => {
+	Plugin_default.onStart(() => abortController = new AbortController());
+	Plugin_default.onStop(() => abortController.abort());
+	return new AbortController();
+})();
 
-// common/Utils/Logger.js
-Logger2.patchError = (patchId) => {
-	console.error(`%c[${Config_default.info.name}] %cCould not find module for %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
-};
-var Logger_default = Logger2;
+function lazy(filter, { decFilter, ...options } = {}) {
+	if (!filter) return Logger_default.error(`[Webpack lazy] ${MISSING_ARGUMENTS}`);
+	const { promise, resolve } = Promise.withResolvers();
+	waitForModule(filter, {
+		...options,
+		raw: true,
+		fatal: false,
+		signal: abortController.signal
+	}).then((module2) => {
+		if (!module2) throw "waitForModule resolved with undefined";
+		const object = decFilter ? module2.declarations : module2.exports;
+		const key = getObjectKey(object, decFilter || filter);
+		if (!object || !key) throw UNDEFINED_OBJECT_OR_KEY;
+		resolve([object, key]);
+	}).catch((err) => Logger_default.error(PATCH_ERROR, err));
+	return promise;
+}
 
-// common/Utils/EventEmitter.js
-var EventEmitter_default = class {
-	constructor() {
-		this.listeners = {};
-	}
-	isInValid(event, handler) {
-		return typeof event !== "string" || typeof handler !== "function";
-	}
-	once(event, handler) {
-		if (this.isInValid(event, handler)) return;
-		if (!this.listeners[event]) this.listeners[event] = /* @__PURE__ */ new Set();
-		const wrapper = () => {
-			handler();
-			this.off(event, wrapper);
-		};
-		this.listeners[event].add(wrapper);
-	}
-	on(event, handler) {
-		if (this.isInValid(event, handler)) return;
-		if (!this.listeners[event]) this.listeners[event] = /* @__PURE__ */ new Set();
-		this.listeners[event].add(handler);
-		return () => this.off(event, handler);
-	}
-	off(event, handler) {
-		if (this.isInValid(event, handler)) return;
-		if (!this.listeners[event]) return;
-		this.listeners[event].delete(handler);
-		if (this.listeners[event].size !== 0) return;
-		delete this.listeners[event];
-	}
-	emit(event, ...payload) {
-		if (!this.listeners[event]) return;
-		for (const listener of this.listeners[event]) {
-			try {
-				listener.apply(null, payload);
-			} catch (err) {
-				Logger_default.error(`Could not run listener for ${event}`, err);
-			}
-		}
-	}
-};
+// common/Patcher/shared.js
+Plugin_default.onStop(() => Patcher.unpatchAll());
 
-// common/Utils/Plugin.js
-var Events = {
-	START: "START",
-	STOP: "STOP"
-};
-var Plugin_default = new class extends EventEmitter_default {
-	stopped = true;
-	start() {
-		this.emit(Events.START);
-		this.stopped = false;
-	}
-	stop() {
-		this.emit(Events.STOP);
-		this.stopped = true;
-	}
-}();
+function patchOnce(type, object, key, callback) {
+	const unpatch = Patcher[type](object, key, (...args) => {
+		unpatch();
+		callback.apply(null, args);
+	});
+}
+
+function patch(type, object, key, callback, once) {
+	if (!hasOwn(object, key))
+		return Logger.error("Could not perform a patch, missing arguments", arguments);
+	const caller = {
+		after: (context, args, ret) => callback({ context, args, ret }),
+		before: (context, args) => callback({ context, args }),
+		instead: (context, args, fn) => callback({ context, args, fn })
+	} [type];
+	return once ? patchOnce(type, object, key, caller) : Patcher[type](object, key, caller);
+}
+
+// common/Patcher/index.js
+var after = (...args) => patch("after", ...args);
 
 // common/DiscordModules/zustand.js
-var { zustand } = getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
+var zustand = /* @__PURE__ */ (() => getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
 	_: Filters.byStrings("subscribe"),
 	zustand: () => true
-});
-var subscribeWithSelector = getModule(Filters.byStrings("getState", "equalityFn", "fireImmediately"), { searchExports: true });
+})?.zustand)();
+var subscribeWithSelector = /* @__PURE__ */ (() => getModule(Filters.byStrings("getState", "equalityFn", "fireImmediately"), {
+	searchExports: true
+}))();
 
 function create(initialState) {
-	const Store = zustand(initialState);
+	const Store = /* @__PURE__ */ zustand(initialState);
+	/* @__PURE__ */
 	Object.defineProperty(Store, "state", {
 		configurable: false,
 		get: () => Store.getState()
@@ -140,32 +161,32 @@ function create(initialState) {
 }
 
 // common/Utils/Settings.js
-var SettingsStore = create(subscribeWithSelector(() => Object.assign(Config_default.settings, Data.load("settings") || {})));
-((state) => {
+var Settings_default = /* @__PURE__ */ (() => {
+	const SettingsStore = create(
+		subscribeWithSelector(() => Object.assign(Config_default.settings || {}, Data.load("settings") || {}))
+	);
+	const state = SettingsStore.getInitialState();
 	const selectors = {};
 	const actions = {};
-	for (const [key, value] of Object.entries(state)) {
+	for (const key of Object.keys(state)) {
 		actions[`set${key}`] = (newValue) => SettingsStore.setState({
 			[key]: newValue });
 		selectors[key] = (state2) => state2[key];
 	}
 	Object.defineProperty(SettingsStore, "selectors", { value: Object.assign(selectors) });
 	Object.assign(SettingsStore, actions);
-})(SettingsStore.getInitialState());
-SettingsStore.subscribe(
-	(state) => state,
-	() => Data.save("settings", SettingsStore.state)
-);
-Object.assign(SettingsStore, {
-	useSetting: (key) => {
-		const val = SettingsStore((state) => state[key]);
-		return [val, SettingsStore[`set${key}`]];
-	}
-});
-var Settings_default = SettingsStore;
-
-// MODULES-AUTO-LOADER:@Modules/FormSwitch
-var FormSwitch_default = getModule(Filters.byStrings("note", "tooltipNote"), { searchExports: true });
+	SettingsStore.subscribe(
+		(state2) => state2,
+		() => Data.save("settings", SettingsStore.state)
+	);
+	Object.assign(SettingsStore, {
+		useSetting: (key) => {
+			const val = SettingsStore((state2) => state2[key]);
+			return [val, SettingsStore[`set${key}`]];
+		}
+	});
+	return SettingsStore;
+})();
 
 // common/Components/Switch/index.jsx
 var Switch_default = getMangled(Filters.bySource("auxiliaryContentPosition", "hasIcon"), {
@@ -187,12 +208,8 @@ var styleLoader = {
 		this._styles.push(styles);
 	}
 };
-Plugin_default.on(Events.START, () => {
-	DOM.addStyle(styleLoader._styles.join("\n"));
-});
-Plugin_default.on(Events.STOP, () => {
-	DOM.removeStyle();
-});
+Plugin_default.onStart(() => DOM.addStyle(styleLoader._styles.join("\n")));
+Plugin_default.onStop(() => DOM.removeStyle());
 var StylesLoader_default = styleLoader;
 
 // common/Components/Divider/styles.css
@@ -210,15 +227,16 @@ StylesLoader_default.push(`.divider-horizontal {
 `);
 
 // common/Utils/css.js
-var classNameFactory = (prefix = "", connector = "-") => (...args) => {
+function transform(...args) {
 	const classNames = /* @__PURE__ */ new Set();
 	for (const arg of args) {
 		if (arg && typeof arg === "string") classNames.add(arg);
 		else if (Array.isArray(arg)) arg.forEach((name) => classNames.add(name));
 		else if (arg && typeof arg === "object") Object.entries(arg).forEach(([name, value]) => value && classNames.add(name));
 	}
-	return Array.from(classNames, (name) => `${prefix}${connector}${name}`).join(" ");
-};
+	return classNames;
+}
+var classNameFactory = (prefix = "", connector = "-") => (...args) => Array.from(transform(...args), (name) => `${prefix}${connector}${name}`).join(" ");
 
 // common/Components/Divider/index.jsx
 var c = classNameFactory("divider");
@@ -248,44 +266,32 @@ function SettingSwtich({ settingKey, note, border = false, onChange = nop, descr
 			description: note,
 			onChange: (e) => {
 				set(e);
-				onChange(e);
+				onChange?.(e);
 			}
 		}
 	), border && /* @__PURE__ */ React_default.createElement(Divider, { gap: 15 }));
 }
 
 // MODULES-AUTO-LOADER:@Stores/GuildStore
-var GuildStore_default = getStore("GuildStore");
+var GuildStore_default = /* @__PURE__ */ (() => getStore("GuildStore"))();
 
-// src/AlwaysTrust/index.js
-var LinkPrompt = getModule(Filters.bySource(`="MaskedLinkStore",`), {
-	declarationFilter: (a) => a.prototype.isTrustedDomain
-});
-var FilePrompt = getMangled(Filters.bySource("github.com", "bitbucket.org", "gitlab.com"), {
-	confirm: () => 1
-});
-var deleteGuild = getByKeys("deleteGuild", "sendTransferOwnershipPincode").deleteGuild;
+// src/AlwaysTrust/index.jsx
+var LinkPrompt = getModule(Filters.bySource(`="MaskedLinkStore",`), { declarationFilter: (a) => a?.prototype?.isTrustedDomain });
+var FilePrompt = getMangled(Filters.bySource("github.com", "bitbucket.org", "gitlab.com"), { confirm: () => 1 });
+var deleteGuild = getByKeys("deleteGuild", "sendTransferOwnershipPincode")?.deleteGuild;
 
 function GetPropsAndDeleteGuild(id) {
 	const GotGuild = GuildStore_default.getGuild(id);
 	if (!GotGuild) return;
-	DeleteGuild(id, GotGuild.name);
+	deleteGuild(id, GotGuild.name);
 }
-Plugin_default.on(Events.START, () => {
-	Patcher.after(
-		LinkPrompt.prototype,
-		"isTrustedDomain",
-		(_, __, ret) => Settings_default.state.domain ? true : ret
-	);
-	Patcher.after(LinkPrompt, "confirm", (_, __, ret) => Settings_default.state.domain ? null : ret);
-	const controller = new AbortController();
-	waitForModule(Filters.bySource("DELETE", "getSectionDefinition"), {
-		signal: controller.signal,
-		raw: true
-	}).then(({ declarations }) => {
-		const key = getObjectKey(declarations, Filters.byStrings("isOwnerWithRequiredMfaLevel"));
-		if (!key) return Logger.patchError("patchChannelAttach");
-		Patcher.after(declarations, key, (_, [__, { guild }], ret) => {
+Plugin_default.onStart(() => {
+	after(LinkPrompt.prototype, "isTrustedDomain", ({ ret }) => Settings_default.state.domain ? true : ret);
+	after(FilePrompt, "confirm", ({ ret }) => Settings_default.state.file ? null : ret);
+	lazy(Filters.bySource("DELETE", "getSectionDefinition"), {
+		decFilter: Filters.byStrings("isOwnerWithRequiredMfaLevel")
+	}).then((GuildDelete) => {
+		after(...GuildDelete, ({ args: [, { guild }], ret }) => {
 			if (!Settings_default.state.noDeleteSafety || ret.section !== "DELETE") return;
 			ret.onClick = () => {
 				if (!Settings_default.state.confirmModal) return GetPropsAndDeleteGuild(guild.id);
@@ -302,10 +308,6 @@ Plugin_default.on(Events.START, () => {
 			};
 		});
 	});
-	Plugin_default.once(Events.STOP, () => controller.abort());
-});
-Plugin_default.on(Events.STOP, () => {
-	Patcher.unpatchAll();
 });
 Plugin_default.getSettingsPanel = () => () => [{
 		border: true,

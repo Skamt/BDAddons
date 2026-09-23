@@ -6,7 +6,12 @@
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/Quests
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/Quests/Quests.plugin.js
+ * @credit https://gist.github.com/aamiaa/204cd9d42013ded9faf646fae7f89fbb
  */
+
+// common/React.jsx
+var React = /* @__PURE__ */ (() => BdApi.React)();
+var React_default = React;
 
 // config:@Config
 var Config_default = {
@@ -16,6 +21,7 @@ var Config_default = {
 		"description": "Empty description",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/Quests/Quests.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/Quests",
+		"credit": "https://gist.github.com/aamiaa/204cd9d42013ded9faf646fae7f89fbb",
 		"authors": [{
 			"name": "Skamt"
 		}]
@@ -23,15 +29,13 @@ var Config_default = {
 };
 
 // common/Api.js
-var Api = new BdApi(Config_default.info.name);
-var UI = /* @__PURE__ */ (() => Api.UI)();
-var React = /* @__PURE__ */ (() => Api.React)();
+var Api = /* @__PURE__ */ (() => new BdApi(Config_default.info.name))();
 var Patcher = /* @__PURE__ */ (() => Api.Patcher)();
 var Logger = /* @__PURE__ */ (() => Api.Logger)();
-var Webpack = /* @__PURE__ */ (() => Api.Webpack)();
+var UI = /* @__PURE__ */ (() => BdApi.UI)();
 
-// common/React.jsx
-var React_default = /* @__PURE__ */ (() => React)();
+// common/Utils/Logger.js
+var Logger_default = Logger;
 
 // common/Utils/index.js
 function getObjectKey(object = {}, filter) {
@@ -46,8 +50,7 @@ function sleep(delay) {
 	return new Promise((done) => setTimeout(() => done(), delay * 1e3));
 }
 
-function preventDefault(handler) {
-	if (!handler) return nop;
+function preventDefault(handler = nop) {
 	return (e) => {
 		e.preventDefault();
 		e.stopPropagation();
@@ -55,87 +58,44 @@ function preventDefault(handler) {
 	};
 }
 
-// common/Webpack.js
+// common/Plugin.js
+var target = /* @__PURE__ */ (() => new EventTarget())();
+
+function wrap(handler) {
+	return (e) => {
+		try {
+			handler.apply(null, e);
+		} catch (err) {
+			Logger_default.error(`Could not run [${e.type}] handler`, { handler }, "\n", err);
+		}
+	};
+}
+var Plugin_default = {
+	onStart: (handler, props) => target.addEventListener("START", wrap(handler), props),
+	onStop: (handler, props) => target.addEventListener("STOP", wrap(handler), props),
+	start() {
+		target.dispatchEvent(new Event("START"));
+	},
+	stop() {
+		target.dispatchEvent(new Event("STOP"));
+	}
+};
+
+// common/Webpack.jsx
+var Webpack = /* @__PURE__ */ (() => BdApi.Webpack)();
 var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
 var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
 var waitForModule = /* @__PURE__ */ (() => Webpack.waitForModule)();
 var getMangled = /* @__PURE__ */ (() => Webpack.getMangled)();
 var getStore = /* @__PURE__ */ (() => Webpack.getStore)();
 
-// common/Utils/Logger.js
-Logger.patchError = (patchId) => {
-	console.error(`%c[${Config_default.info.name}] %cCould not find module for %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
-};
-var Logger_default = Logger;
-
-// common/Utils/EventEmitter.js
-var EventEmitter_default = class {
-	constructor() {
-		this.listeners = {};
-	}
-	isInValid(event, handler) {
-		return typeof event !== "string" || typeof handler !== "function";
-	}
-	once(event, handler) {
-		if (this.isInValid(event, handler)) return;
-		if (!this.listeners[event]) this.listeners[event] = /* @__PURE__ */ new Set();
-		const wrapper = () => {
-			handler();
-			this.off(event, wrapper);
-		};
-		this.listeners[event].add(wrapper);
-	}
-	on(event, handler) {
-		if (this.isInValid(event, handler)) return;
-		if (!this.listeners[event]) this.listeners[event] = /* @__PURE__ */ new Set();
-		this.listeners[event].add(handler);
-		return () => this.off(event, handler);
-	}
-	off(event, handler) {
-		if (this.isInValid(event, handler)) return;
-		if (!this.listeners[event]) return;
-		this.listeners[event].delete(handler);
-		if (this.listeners[event].size !== 0) return;
-		delete this.listeners[event];
-	}
-	emit(event, ...payload) {
-		if (!this.listeners[event]) return;
-		for (const listener of this.listeners[event]) {
-			try {
-				listener.apply(null, payload);
-			} catch (err) {
-				Logger_default.error(`Could not run listener for ${event}`, err);
-			}
-		}
-	}
-};
-
-// common/Utils/Plugin.js
-var Events = {
-	START: "START",
-	STOP: "STOP"
-};
-var Plugin_default = new class extends EventEmitter_default {
-	stopped = true;
-	start() {
-		this.emit(Events.START);
-		this.stopped = false;
-	}
-	stop() {
-		this.emit(Events.STOP);
-		this.stopped = true;
-	}
-}();
-
 // MODULES-AUTO-LOADER:@Modules/Button
-var Button_default = getModule((a) => a && a.Link && a.Colors, { searchExports: true });
+var Button_default = /* @__PURE__ */ (() => getModule((a) => a && a.Link && a.Colors, { searchExports: true }))();
 
 // common/Components/Button/index.jsx
 function ButtonComponentFallback(props) {
-	return /* @__PURE__ */ React.createElement("button", { ...props });
+	return /* @__PURE__ */ React_default.createElement("button", { ...props });
 }
-var ManaButton = /* @__PURE__ */ getModule(Filters.byStrings(`"data-mana-component":"button"`), { searchExports: true }) || ButtonComponentFallback;
-var ManaTextButton = /* @__PURE__ */ getModule(Filters.byStrings(`"data-mana-component":"text-button"`), { searchExports: true }) || ButtonComponentFallback;
 var Button_default2 = Button_default || ButtonComponentFallback;
 
 // common/Utils/Toast.js
@@ -158,10 +118,10 @@ var Toast_default = {
 };
 
 // MODULES-AUTO-LOADER:@Stores/ChannelStore
-var ChannelStore_default = getStore("ChannelStore");
+var ChannelStore_default = /* @__PURE__ */ (() => getStore("ChannelStore"))();
 
 // MODULES-AUTO-LOADER:@Stores/GuildChannelStore
-var GuildChannelStore_default = getStore("GuildChannelStore");
+var GuildChannelStore_default = /* @__PURE__ */ (() => getStore("GuildChannelStore"))();
 
 // common/DiscordModules/Modules.js
 var DiscordApi = /* @__PURE__ */ (() => getMangled("HTTPUtils", { api: Filters.byKeys("get", "del", "patch", "put") }))();
@@ -193,13 +153,50 @@ async function activity_default(quest) {
 }
 
 // MODULES-AUTO-LOADER:@Stores/GameStore
-var GameStore_default = getStore("GameStore");
+var GameStore_default = /* @__PURE__ */ (() => getStore("GameStore"))();
 
 // MODULES-AUTO-LOADER:@Stores/RunningGameStore
-var RunningGameStore_default = getStore("RunningGameStore");
+var RunningGameStore_default = /* @__PURE__ */ (() => getStore("RunningGameStore"))();
 
 // MODULES-AUTO-LOADER:@Modules/Dispatcher
-var Dispatcher_default = getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: true });
+var Dispatcher_default = /* @__PURE__ */ (() => getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: true }))();
+
+// MODULES-AUTO-LOADER:@Stores/QuestStore
+var QuestStore_default = /* @__PURE__ */ (() => getStore("QuestStore"))();
+
+// src/Quests/utils.js
+function getQuestAppId(quest) {
+	const id = quest?.config?.application?.id;
+	if (id) return id;
+	const taskConfig = quest.config.taskConfig ?? quest.config.taskConfigV2;
+	const apps = Object.values(taskConfig.tasks).find((a) => a.applications)?.applications;
+	return apps.find((a) => a.id).id;
+}
+
+function isQuestExpired(quest) {
+	return new Date(quest.config.expiresAt) < Date.now();
+}
+
+function isQuestCompleted(quest) {
+	return quest.userStatus?.completedAt;
+}
+
+function isQuestClaimed(quest) {
+	return quest.userStatus?.claimedAt;
+}
+
+function isQuestAccepted(quest) {
+	return quest.userStatus?.enrolledAt;
+}
+
+function isOrbsQuest(quest) {
+	return quest.config.rewardsConfig.rewards.some((a) => a.type === 4);
+}
+
+function isQuestSupported(quest) {
+	const config = quest.config.taskConfig ?? quest.config.taskConfigV2;
+	return supportedTasks.find((task) => Object.keys(config.tasks).includes(task));
+}
 
 // src/Quests/questTypes/play.js
 function play_default(quest) {
@@ -207,8 +204,8 @@ function play_default(quest) {
 	const pid = Math.floor(Math.random() * 3e4) + 1e3;
 	const taskConfig = quest.config.taskConfig ?? quest.config.taskConfigV2;
 	const taskName = supportedTasks.find((x) => taskConfig.tasks[x] != null);
-	const applicationId = quest.config.application.id;
-	const applicationName = quest.config.application.name;
+	const applicationId = getQuestAppId(quest);
+	const applicationName = quest?.config?.application?.name || quest?.config?.messages?.gameTitle || "Unknown";
 	const questName = quest.config.messages.questName;
 	const secondsNeeded = taskConfig.tasks[taskName].target;
 	const secondsDone = quest.userStatus?.progress?.[taskName]?.value ?? 0;
@@ -306,38 +303,6 @@ async function questTypes_default(quest) {
 	}
 }
 
-// MODULES-AUTO-LOADER:@Stores/ApplicationStreamingStore
-var ApplicationStreamingStore_default = getStore("ApplicationStreamingStore");
-
-// MODULES-AUTO-LOADER:@Stores/QuestStore
-var QuestStore_default = getStore("QuestStore");
-
-// src/Quests/utils.js
-function isQuestExpired(quest) {
-	return new Date(quest.config.expiresAt) < Date.now();
-}
-
-function isQuestCompleted(quest) {
-	return quest.userStatus?.completedAt;
-}
-
-function isQuestClaimed(quest) {
-	return quest.userStatus?.claimedAt;
-}
-
-function isQuestAccepted(quest) {
-	return quest.userStatus?.enrolledAt;
-}
-
-function isOrbsQuest(quest) {
-	return quest.config.rewardsConfig.rewards.some((a) => a.type === 4);
-}
-
-function isQuestSupported(quest) {
-	const config = quest.config.taskConfig ?? quest.config.taskConfigV2;
-	return supportedTasks.find((task) => Object.keys(config.tasks).includes(task));
-}
-
 // src/Quests/patches/patchQuestCard.jsx
 function CompleteQuest({ quest }) {
 	const [completing, setCompleting] = React_default.useState(false);
@@ -362,16 +327,22 @@ function CompleteQuest({ quest }) {
 	);
 }
 Plugin_default.on(Events.START, async () => {
-	const QuestCard = await waitForModule(Filters.bySource("isInFeaturedSection", "sourceQuestContent", "questEnrollmentBlockedUntil", "enabledQuestStates"), { raw: true });
+	const QuestCard = await waitForModule(Filters.bySource("isQuestEnrollmentBlocked", "questNameHeadingId", "questOrQuests"), { raw: true });
 	if (!QuestCard) return Logger_default.patchError("QuestCard");
-	const declarationFilter = Filters.byStrings("isClaimingReward", "sourceQuestContent", "questEnrollmentBlockedUntil", "enabledQuestStates");
+	const declarationFilter = Filters.byStrings("sourceQuestContent", "questEnrollmentBlockedUntil");
 	const key = getObjectKey(QuestCard.declarations, declarationFilter);
 	if (!key) return Logger_default.patchError("QuestCard");
 	Patcher.after(QuestCard.declarations, key, (_, [props], ret) => {
 		if (!isQuestAccepted(props.quest) || isQuestCompleted(props.quest)) return;
-		ret.props.children.push( /* @__PURE__ */ React_default.createElement(CompleteQuest, { quest: props.quest }));
+		pushChild(ret, /* @__PURE__ */ React_default.createElement(CompleteQuest, { quest: props.quest }));
 	});
 });
+
+function pushChild(target2, child) {
+	const children = Array.isArray(target2.props.children) ? target2.props.children : [target2.props.children];
+	children.push(child);
+	target2.props.children = children;
+}
 
 // src/Quests/questTypes/all.js
 async function all_default() {
@@ -439,17 +410,17 @@ function onQuestStoreChange() {
 	patch();
 	notifyOfNewQuests();
 }
-Plugin_default.on(Events.START, () => {
+Plugin_default.onStart(() => {
 	patch();
 	notifyOfNewQuests();
 	QuestStore_default.addChangeListener(onQuestStoreChange);
 });
-Plugin_default.on(Events.STOP, () => {
+Plugin_default.onStop(() => {
 	QuestStore_default.removeChangeListener(onQuestStoreChange);
 });
 
 // src/Quests/index.js
-Plugin_default.on(Events.STOP, () => {
+Plugin_default.onStop(() => {
 	Patcher.unpatchAll();
 });
 module.exports = () => Plugin_default;

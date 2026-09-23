@@ -9,12 +9,12 @@
  * @credit https://github.com/Equicord/Equicord/tree/main/src/equicordplugins/stopAutoUnread
  */
 
-// common/Webpack.js
+// common/Webpack.jsx
 var Webpack = /* @__PURE__ */ (() => BdApi.Webpack)();
 var getStore = /* @__PURE__ */ (() => Webpack.getStore)();
 
 // MODULES-AUTO-LOADER:@Stores/UnreadSettingNoticeStore2
-var UnreadSettingNoticeStore2_default = getStore("UnreadSettingNoticeStore2");
+var UnreadSettingNoticeStore2_default = /* @__PURE__ */ (() => getStore("UnreadSettingNoticeStore2"))();
 
 // src/NoAutoUnread/index.js
 module.exports = () => ({

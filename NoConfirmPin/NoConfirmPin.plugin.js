@@ -8,7 +8,7 @@
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/NoConfirmPin/NoConfirmPin.plugin.js
  */
 
-// common/Webpack.js
+// common/Webpack.jsx
 var Webpack = /* @__PURE__ */ (() => BdApi.Webpack)();
 var getByKeys = /* @__PURE__ */ (() => Webpack.getByKeys)();
 

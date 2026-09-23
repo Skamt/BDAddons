@@ -1,4 +1,5 @@
 /**
+ * @runAt idle
  * @name HideStuff
  * @description let's you pick and hide elements
  * @version 1.0.0
@@ -22,72 +23,36 @@ var Config_default = {
 };
 
 // common/Api.js
-var Api = new BdApi(Config_default.info.name);
-var DOM = /* @__PURE__ */ (() => Api.DOM)();
+var Api = /* @__PURE__ */ (() => new BdApi(Config_default.info.name))();
 var Data = /* @__PURE__ */ (() => Api.Data)();
 var Logger = /* @__PURE__ */ (() => Api.Logger)();
+var DOM = /* @__PURE__ */ (() => Api.DOM)();
 
 // common/Utils/Logger.js
-Logger.patchError = (patchId) => {
-	console.error(`%c[${Config_default.info.name}] %cCould not find module for %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
-};
 var Logger_default = Logger;
 
-// common/Utils/EventEmitter.js
-var EventEmitter_default = class {
-	constructor() {
-		this.listeners = {};
-	}
-	isInValid(event, handler) {
-		return typeof event !== "string" || typeof handler !== "function";
-	}
-	once(event, handler) {
-		if (this.isInValid(event, handler)) return;
-		if (!this.listeners[event]) this.listeners[event] = /* @__PURE__ */ new Set();
-		const wrapper = () => {
-			handler();
-			this.off(event, wrapper);
-		};
-		this.listeners[event].add(wrapper);
-	}
-	on(event, handler) {
-		if (this.isInValid(event, handler)) return;
-		if (!this.listeners[event]) this.listeners[event] = /* @__PURE__ */ new Set();
-		this.listeners[event].add(handler);
-		return () => this.off(event, handler);
-	}
-	off(event, handler) {
-		if (this.isInValid(event, handler)) return;
-		if (!this.listeners[event]) return;
-		this.listeners[event].delete(handler);
-		if (this.listeners[event].size !== 0) return;
-		delete this.listeners[event];
-	}
-	emit(event, ...payload) {
-		if (!this.listeners[event]) return;
-		for (const listener of this.listeners[event]) {
-			try {
-				listener.apply(null, payload);
-			} catch (err) {
-				Logger_default.error(`Could not run listener for ${event}`, err);
-			}
-		}
-	}
-};
+// common/Plugin.js
+var target = /* @__PURE__ */ (() => new EventTarget())();
 
-// common/Utils/Plugin.js
-var Events = {
-	START: "START",
-	STOP: "STOP"
-};
-var Plugin_default = new class extends EventEmitter_default {
+function wrap(handler) {
+	return (e) => {
+		try {
+			handler.apply(null, e);
+		} catch (err) {
+			Logger_default.error(`Could not run [${e.type}] handler`, { handler }, "\n", err);
+		}
+	};
+}
+var Plugin_default = {
+	onStart: (handler, props) => target.addEventListener("START", wrap(handler), props),
+	onStop: (handler, props) => target.addEventListener("STOP", wrap(handler), props),
 	start() {
-		this.emit(Events.START);
-	}
+		target.dispatchEvent(new Event("START"));
+	},
 	stop() {
-		this.emit(Events.STOP);
+		target.dispatchEvent(new Event("STOP"));
 	}
-}();
+};
 
 // common/Utils/StylesLoader.js
 var styleLoader = {
@@ -96,12 +61,8 @@ var styleLoader = {
 		this._styles.push(styles);
 	}
 };
-Plugin_default.on(Events.START, () => {
-	DOM.addStyle(styleLoader._styles.join("\n"));
-});
-Plugin_default.on(Events.STOP, () => {
-	DOM.removeStyle();
-});
+Plugin_default.onStart(() => DOM.addStyle(styleLoader._styles.join("\n")));
+Plugin_default.onStop(() => DOM.removeStyle());
 var StylesLoader_default = styleLoader;
 
 // src/HideStuff/styles.css
@@ -671,10 +632,10 @@ function onKeyup({ key, shiftKey, ctrlKey }) {
 	if ((key === "p" || key === "P") && shiftKey && ctrlKey) startPicker();
 	else if (key === "Escape") stopPicker();
 }
-Plugin_default.on(Events.START, () => {
+Plugin_default.onStart(() => {
 	init();
 });
-Plugin_default.on(Events.STOP, () => {
+Plugin_default.onStop(() => {
 	dispose();
 });
 module.exports = () => Plugin_default;

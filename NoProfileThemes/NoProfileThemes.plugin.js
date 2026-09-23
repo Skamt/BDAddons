@@ -9,7 +9,7 @@
  * @credit https://github.com/Vendicated/Vencord/tree/main/src/plugins/noProfileThemes
  */
 
-// common/Webpack.js
+// common/Webpack.jsx
 var Webpack = /* @__PURE__ */ (() => BdApi.Webpack)();
 var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
 var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
@@ -21,7 +21,7 @@ var NitroManager = getModule(Filters.bySource("hasThemeColors(){"), {
 module.exports = () => ({
 	stop() {},
 	start() {
-		if (!NitroManager) return Logger.patchError("NitroManager");
+		if (!NitroManager) return console.error("[NoProfileThemes] Could not patch NitroManager");
 		const propertyDescriptor = Object.getOwnPropertyDescriptor(
 			NitroManager.prototype,
 			"canUsePremiumProfileCustomization"

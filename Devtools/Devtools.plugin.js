@@ -12,9 +12,9 @@ var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __export = (target, all) => {
+var __export = (target2, all) => {
 	for (var name in all)
-		__defProp(target, name, { get: all[name], enumerable: true });
+		__defProp(target2, name, { get: all[name], enumerable: true });
 };
 var __copyProps = (to, from, except, desc) => {
 	if (from && typeof from === "object" || typeof from === "function") {
@@ -34,9 +34,9 @@ __export(index_exports, {
 module.exports = __toCommonJS(index_exports);
 
 // common/React.jsx
-var React = /* @__PURE__ */ (() => BdApi.React)();
 var ReactDOM = /* @__PURE__ */ (() => BdApi.ReactDOM)();
-var React_default = /* @__PURE__ */ (() => React)();
+var React = /* @__PURE__ */ (() => BdApi.React)();
+var React_default = React;
 var NoopComponent = () => null;
 var LazyComponent = (get) => {
 	const Comp = (props) => {
@@ -68,57 +68,20 @@ var UI = /* @__PURE__ */ (() => BdApi.UI)();
 var getOwnerInstance = /* @__PURE__ */ (() => BdApi.ReactUtils.getOwnerInstance.bind(BdApi.ReactUtils))();
 var getInternalInstance = /* @__PURE__ */ (() => BdApi.ReactUtils.getInternalInstance.bind(BdApi.ReactUtils))();
 
-// common/Utils/Logger.js
-Logger.patchError = (patchId) => {
-	console.error(`%c[${Config_default.info.name}] %cCould not find module for %c[${patchId}]`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;");
-};
-var Logger_default = Logger;
-
 // common/Components/ErrorBoundary/index.jsx
-var ErrorBoundary = class extends React_default.Component {
-	state = { hasError: false, error: null, info: null };
-	componentDidCatch(error, info) {
-		this.setState({ error, info, hasError: true });
-		const errorMessage = `
-	${error?.message || ""}${(info?.componentStack || "").split("\n").slice(0, 20).join("\n")}`;
-		console.error(`%c[${Config_default?.info?.name || "Unknown Plugin"}] %cthrew an exception at %c[${this.props.id}]
-`, "color: #3a71c1;font-weight: bold;", "", "color: red;font-weight: bold;", errorMessage);
-	}
-	renderErrorBoundary() {
-		return /* @__PURE__ */ React_default.createElement("div", { style: { background: "#292c2c", padding: "20px", borderRadius: "10px" } }, /* @__PURE__ */ React_default.createElement("b", { style: { color: "#e0e1e5" } }, "An error has occured while rendering ", /* @__PURE__ */ React_default.createElement("span", { style: { color: "orange" } }, this.props.id)));
-	}
-	renderFallback() {
-		if (React_default.isValidElement(this.props.fallback)) {
-			if (this.props.passMetaProps)
-				this.props.fallback.props = {
-					id: this.props.id,
-					plugin: Config_default?.info?.name || "Unknown Plugin",
-					...this.props.fallback.props
-				};
-			return this.props.fallback;
-		}
-		return /* @__PURE__ */ React_default.createElement(
-			this.props.fallback, {
-				id: this.props.id,
-				plugin: Config_default?.info?.name || "Unknown Plugin"
-			}
-		);
-	}
-	render() {
-		if (!this.state.hasError) return this.props.children;
-		return this.props.fallback ? this.renderFallback() : this.renderErrorBoundary();
-	}
-};
+var ErrorBoundary_default = (props) => /* @__PURE__ */ React_default.createElement(BdApi.Components.ErrorBoundary, { ...props, name: Config_default?.info?.name });
 
-// common/Webpack.js
+// common/Webpack.jsx
 var Webpack_exports = {};
 __export(Webpack_exports, {
 	Filters: () => Filters,
 	Webpack: () => Webpack,
 	_getBySource: () => _getBySource,
+	_waitForComponent: () => _waitForComponent,
 	filterModuleAndExport: () => filterModuleAndExport,
 	getById: () => getById,
 	getByKeys: () => getByKeys,
+	getByPrototypeKeys: () => getByPrototypeKeys,
 	getBySource: () => getBySource,
 	getDeclarationAndKey: () => getDeclarationAndKey,
 	getMangled: () => getMangled,
@@ -132,6 +95,9 @@ __export(Webpack_exports, {
 	waitForComponent: () => waitForComponent,
 	waitForModule: () => waitForModule
 });
+
+// common/Utils/Logger.js
+var Logger_default = Logger;
 
 // common/Utils/index.js
 var Utils_exports = {};
@@ -151,18 +117,25 @@ __export(Utils_exports, {
 	getNestedProp: () => getNestedProp,
 	getObjectKey: () => getObjectKey,
 	getPathName: () => getPathName,
+	hasOwn: () => hasOwn,
 	hook: () => hook,
 	isSnowflake: () => isSnowflake,
 	nop: () => nop,
+	openLink: () => openLink,
 	parseSnowflake: () => parseSnowflake,
 	prettyfiyBytes: () => prettyfiyBytes,
 	preventDefault: () => preventDefault,
 	promiseHandler: () => promiseHandler,
 	random: () => random,
 	reRender: () => reRender,
+	reRenderFiber: () => reRenderFiber,
 	shallow: () => shallow,
 	sleep: () => sleep
 });
+
+function hasOwn(object, key) {
+	return object && key && key in object;
+}
 
 function getObjectKey(object = {}, filter) {
 	for (const key in object) {
@@ -170,6 +143,7 @@ function getObjectKey(object = {}, filter) {
 		return key;
 	}
 }
+var openLink = (link) => link && window.open(link, "_blank");
 
 function fit({ width, height, gap = 0.8 }) {
 	const ratio = Math.min(innerWidth / width, innerHeight / height);
@@ -190,23 +164,22 @@ function concateClassNames(...args) {
 function clsx(prefix) {
 	return (...args) => args.filter(Boolean).map((a) => `${prefix}-${a}`).join(" ");
 }
-
-function getPathName(url) {
+var getPathName = (url) => {
 	try {
 		return new URL(url).pathname;
 	} catch {}
-}
+};
 
 function easeInOutSin(time) {
 	return (1 + Math.sin(Math.PI * time - Math.PI / 2)) / 2;
 }
 
-function animate(property, element, to, options2 = {}, cb = () => {}) {
+function animate(property, element, to, options = {}, cb = () => {}) {
 	const {
 		ease = easeInOutSin,
 			duration = 300
 		// standard
-	} = options2;
+	} = options;
 	let start = null;
 	const from = element[property];
 	let cancelled = false;
@@ -290,12 +263,61 @@ var Disposable = class {
 		this.patches = [];
 	}
 };
+var SyncLane = 2;
+
+function markPath(fiber) {
+	fiber.lanes |= SyncLane;
+	if (fiber.alternate) fiber.alternate.lanes |= SyncLane;
+	let node = fiber.return;
+	while (node) {
+		node.childLanes |= SyncLane;
+		if (node.alternate) node.alternate.childLanes |= SyncLane;
+		node = node.return;
+	}
+}
+
+function findUpdater(fiber) {
+	let node = fiber;
+	while (node) {
+		const inst = node.stateNode;
+		if (inst && typeof inst.forceUpdate === "function") {
+			return () => inst.forceUpdate();
+		}
+		let hook2 = node.memoizedState;
+		while (hook2) {
+			const state = hook2.memoizedState;
+			if (hook2.queue?.dispatch && state !== null && typeof state === "object") {
+				const dispatch = hook2.queue.dispatch;
+				return () => dispatch(Array.isArray(state) ? [...state] : { ...state });
+			}
+			hook2 = hook2.next;
+		}
+		node = node.return;
+	}
+	return null;
+}
+
+function forceUpdateFiber(fiber) {
+	if (!fiber) return false;
+	const update = findUpdater(fiber);
+	if (!update) return false;
+	markPath(fiber);
+	ReactDOM.flushSync(update);
+	return true;
+}
+
+function reRenderFiber(selector) {
+	const target2 = document.querySelector(selector)?.parentElement;
+	if (!target2) return;
+	forceUpdateFiber(getInternalInstance(target2));
+}
 
 function reRender(selector) {
-	const target = document.querySelector(selector)?.parentElement;
-	if (!target) return;
-	const instance = getOwnerInstance(target);
-	const unpatch = Patcher.instead(instance, "render", () => unpatch());
+	const target2 = document.querySelector(selector)?.parentElement;
+	if (!target2) return;
+	const instance = getOwnerInstance(target2);
+	if (!instance) return;
+	const unpatch = BdApi.Patcher.instead("RE_RENDER", instance, "render", () => unpatch());
 	instance.forceUpdate(() => instance.forceUpdate());
 }
 var nop = () => {};
@@ -385,8 +407,7 @@ function random(min, max) {
 	return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function preventDefault(handler) {
-	if (!handler) return nop;
+function preventDefault(handler = nop) {
 	return (e) => {
 		e.preventDefault();
 		e.stopPropagation();
@@ -394,32 +415,94 @@ function preventDefault(handler) {
 	};
 }
 
-// common/Webpack.js
+// common/consts.js
+var UNDEFINED_OBJECT_OR_KEY = "Undefined object or key";
+var PATCH_ERROR = "Could not perform a patch";
+var MISSING_ARGUMENTS = "Missing arguments";
+var LAZY_DISCORD_COMPONENT_WRAPPER = "LazyDiscordComponentWrapper";
+
+// common/Plugin.js
+var target = /* @__PURE__ */ (() => new EventTarget())();
+
+function wrap(handler) {
+	return (e) => {
+		try {
+			handler.apply(null, e);
+		} catch (err) {
+			Logger_default.error(`Could not run [${e.type}] handler`, { handler }, "\n", err);
+		}
+	};
+}
+var Plugin_default = {
+	onStart: (handler, props) => target.addEventListener("START", wrap(handler), props),
+	onStop: (handler, props) => target.addEventListener("STOP", wrap(handler), props),
+	start() {
+		target.dispatchEvent(new Event("START"));
+	},
+	stop() {
+		target.dispatchEvent(new Event("STOP"));
+	}
+};
+
+// common/Webpack.jsx
 var Webpack = /* @__PURE__ */ (() => BdApi.Webpack)();
 var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
 var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
 var waitForModule = /* @__PURE__ */ (() => Webpack.waitForModule)();
 var modules = /* @__PURE__ */ (() => Webpack.modules)();
 var getBySource = /* @__PURE__ */ (() => Webpack.getBySource)();
+var getByPrototypeKeys = /* @__PURE__ */ (() => Webpack.getByPrototypeKeys)();
 var getMangled = /* @__PURE__ */ (() => Webpack.getMangled)();
 var getById = /* @__PURE__ */ (() => Webpack.getById)();
 var getStore = /* @__PURE__ */ (() => Webpack.getStore)();
 var getByKeys = /* @__PURE__ */ (() => Webpack.getByKeys)();
-async function lazy(filter, options2) {
-	const { exportsFilter, declarationsFilter, ...rest } = options2;
-	const [err, res] = await promiseHandler(waitForModule(filter, { ...rest, raw: true }));
-	if (err) throw err;
-	const module2 = exportsFilter ? res.exports : res.declarations;
-	if (!module2) throw "Can't find module";
-	const key = getObjectKey(module2, exportsFilter || declarationsFilter);
-	if (!key) throw "Can't find key";
-	return { module: module2, key, target: module2[key] };
+var abortController = /* @__PURE__ */ (() => {
+	Plugin_default.onStart(() => abortController = new AbortController());
+	Plugin_default.onStop(() => abortController.abort());
+	return new AbortController();
+})();
+
+function lazy(filter, { decFilter, ...options } = {}) {
+	if (!filter) return Logger_default.error(`[Webpack lazy] ${MISSING_ARGUMENTS}`);
+	const { promise, resolve } = Promise.withResolvers();
+	waitForModule(filter, {
+		...options,
+		raw: true,
+		fatal: false,
+		signal: abortController.signal
+	}).then((module2) => {
+		if (!module2) throw "waitForModule resolved with undefined";
+		const object = decFilter ? module2.declarations : module2.exports;
+		const key = getObjectKey(object, decFilter || filter);
+		if (!object || !key) throw UNDEFINED_OBJECT_OR_KEY;
+		resolve([object, key]);
+	}).catch((err) => Logger_default.error(PATCH_ERROR, err));
+	return promise;
 }
 
-function waitForComponent(filter, options2) {
+function Suspended({ promise, fallback, ...props }) {
+	const comp = React_default.use(promise);
+	if (comp) return React_default.createElement(comp, props);
+	return fallback;
+}
+
+function waitForComponent(filter, options, Fallback = NoopComponent) {
+	const promise = waitForModule(filter, options);
+	const placeHolderComponent = (props) => /* @__PURE__ */ React_default.createElement(React_default.Suspense, { fallback: /* @__PURE__ */ React_default.createElement(Fallback, null) }, /* @__PURE__ */ React_default.createElement(
+		Suspended, {
+			...props,
+			fallback: /* @__PURE__ */ React_default.createElement(Fallback, null),
+			promise
+		}
+	));
+	placeHolderComponent.displayName = LAZY_DISCORD_COMPONENT_WRAPPER;
+	return placeHolderComponent;
+}
+
+function _waitForComponent(filter, options) {
 	let myValue = () => {};
 	const lazyComponent = LazyComponent(() => myValue);
-	waitForModule(filter, options2).then((v) => {
+	waitForModule(filter, options).then((v) => {
 		myValue = v;
 		Object.assign(lazyComponent, v);
 	});
@@ -428,28 +511,28 @@ function waitForComponent(filter, options2) {
 
 function reactRefMemoFilter(type, ...args) {
 	const filter = Filters.byStrings(...args);
-	return (target) => target[type] && filter(target[type]);
+	return (target2) => target2[type] && filter(target2[type]);
 }
 
-function getModuleAndKey(filter, options2) {
+function getModuleAndKey(filter, options) {
 	let module2;
-	const target = getModule((entry, m) => filter(entry) ? module2 = m : false, options2);
+	const target2 = getModule((entry, m) => filter(entry) ? module2 = m : false, options);
 	module2 = module2?.exports;
 	if (!module2) return;
-	const key = Object.keys(module2).find((k) => module2[k] === target);
+	const key = Object.keys(module2).find((k) => module2[k] === target2);
 	if (!key) return;
-	return { module: module2, key };
+	return [module2, key];
 }
 
-function getDeclarationAndKey(moduleFilter, declarationFilter, options2 = {}) {
-	const module2 = getModule(moduleFilter, { ...options2, raw: true });
+function getDeclarationAndKey(moduleFilter, declarationFilter, options = {}) {
+	const module2 = getModule(moduleFilter, { ...options, raw: true });
 	if (!module2?.declarations) return;
 	const key = getObjectKey(module2.declarations, declarationFilter);
-	return key ? { key, module: module2.declarations } : void 0;
+	return key ? [module2.declarations, key] : void 0;
 }
 
-function filterModuleAndExport(moduleFilter, exportFilter, options2) {
-	const module2 = getModule(moduleFilter, { ...options2, raw: true });
+function filterModuleAndExport(moduleFilter, exportFilter, options) {
+	const module2 = getModule(moduleFilter, { ...options, raw: true });
 	if (!module2) return;
 	const { exports } = module2;
 	const key = Object.keys(exports).find((k) => exportFilter(exports[k]));
@@ -457,8 +540,8 @@ function filterModuleAndExport(moduleFilter, exportFilter, options2) {
 	return { module: exports, key, target: exports[key] };
 }
 
-function mapExports(moduleFilter, exportsMap, options2) {
-	const module2 = getModule(moduleFilter, { ...options2, raw: true });
+function mapExports(moduleFilter, exportsMap, options) {
+	const module2 = getModule(moduleFilter, { ...options, raw: true });
 	if (!module2) return {};
 	const { exports } = module2;
 	const res = { module: exports, mangledKeys: {} };
@@ -485,38 +568,35 @@ function _getBySource(filter) {
 }
 
 // MODULES-AUTO-LOADER:@Modules/Dispatcher
-var Dispatcher_default = getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: true });
-
-// MODULES-AUTO-LOADER:@Modules/TheBigBoyBundle
-var TheBigBoyBundle_default = getModule(Filters.byKeys("openModal", "FormSwitch", "Anchor"), { searchExports: false });
+var Dispatcher_default = /* @__PURE__ */ (() => getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: true }))();
 
 // common/Utils/Notification.js
-function showNotification(title2, content, options2) {
+function showNotification(title, content, options) {
 	UI.showNotification({
 		id: `${Config_default.info.name}-${Math.random().toString(36).slice(2)}`,
-		title: title2 ? `[${Config_default.info.name}] ${title2}` : Config_default.info.name,
+		title: title ? `[${Config_default.info.name}] ${title}` : Config_default.info.name,
 		content,
 		duration: Number.POSITIVE_INFINITY,
-		...options2
+		...options
 	});
 }
 var Notification_default = {
-	success(title2, content, options2) {
-		showNotification(title2, content, { type: "success", ...options2 });
+	success(title, content, options) {
+		showNotification(title, content, { type: "success", ...options });
 	},
-	info(content) {
+	info(title, content, options) {
 		showNotification(title, content, { type: "info", ...options });
 	},
-	warning(content) {
+	warning(title, content, options) {
 		showNotification(title, content, { type: "warning", ...options });
 	},
-	error(content) {
+	error(title, content, options) {
 		showNotification(title, content, { type: "error", ...options });
 	}
 };
 
 // MODULES-AUTO-LOADER:@Enums/DiscordPermissionsEnum
-var DiscordPermissionsEnum_default = getModule(Filters.byKeys("ADD_REACTIONS"), { searchExports: true }) || void 0;
+var DiscordPermissionsEnum_default = /* @__PURE__ */ (() => getModule(Filters.byKeys("ADD_REACTIONS"), { searchExports: true }) || void 0)();
 
 // src/Devtools/webpackRequire.js
 var chunkName = Object.keys(window).find((key) => key.startsWith("webpackChunk"));
@@ -712,14 +792,14 @@ function noExports(filter, module2, exports) {
 function doExports(filter, module2, exports) {
 	if (typeof exports !== "object" && typeof exports !== "function") return;
 	for (const entryKey in exports) {
-		let target = null;
+		let target2 = null;
 		try {
-			target = exports[entryKey];
+			target2 = exports[entryKey];
 		} catch {
 			continue;
 		}
-		if (sanitizeExports(target)) continue;
-		if (filter(target, module2, module2.id)) return { target, entryKey, module: new Module(module2.id, module2) };
+		if (sanitizeExports(target2)) continue;
+		if (filter(target2, module2, module2.id)) return { target: target2, entryKey, module: new Module(module2.id, module2) };
 	}
 }
 
@@ -734,8 +814,8 @@ function sanitizeExports(exports) {
 	return false;
 }
 
-function* moduleLookup(filter, options2 = {}) {
-	const { searchExports = false } = options2;
+function* moduleLookup(filter, options = {}) {
+	const { searchExports = false } = options;
 	const gauntlet = searchExports ? doExports : noExports;
 	const keys = Object.keys(webpackRequire_default.c);
 	for (let index = keys.length - 1; index >= 0; index--) {
@@ -747,12 +827,12 @@ function* moduleLookup(filter, options2 = {}) {
 	}
 }
 
-function getModules(filter, options2) {
-	return [...moduleLookup(filter, options2)];
+function getModules(filter, options) {
+	return [...moduleLookup(filter, options)];
 }
 
-function getModule2(filter, options2) {
-	const b = moduleLookup(filter, options2);
+function getModule2(filter, options) {
+	const b = moduleLookup(filter, options);
 	const res = b.next().value;
 	b.return();
 	return res;
@@ -800,9 +880,6 @@ var Misc = {
 		};
 	})()
 };
-
-// MODULES-AUTO-LOADER:@Modules/FormSwitch
-var FormSwitch_default = getModule(Filters.byStrings("note", "tooltipNote"), { searchExports: true });
 
 // common/Components/Switch/index.jsx
 var Switch_default = getMangled(Filters.bySource("auxiliaryContentPosition", "hasIcon"), {
@@ -933,13 +1010,9 @@ function getFiber() {
 }
 
 // MODULES-AUTO-LOADER:@Modules/MessageActions
-var MessageActions_default = getModule(Filters.byKeys("jumpToMessage", "_sendMessage"), { searchExports: false });
+var MessageActions_default = /* @__PURE__ */ (() => getModule(Filters.byKeys("jumpToMessage", "_sendMessage"), { searchExports: false }))();
 
 // common/DiscordModules/Modules.js
-var ComponentDispatch;
-waitForModule((m) => m.dispatchToLastSubscribed, { searchExports: true }).then((a) => {
-	ComponentDispatch = a;
-});
 var transitionTo = /* @__PURE__ */ (() => getModule(Filters.byStrings("transitionTo - Transitioning to"), { searchExports: true }))();
 var ChannelUtils = /* @__PURE__ */ (() => getModule((m) => m.openPrivateChannel))();
 
@@ -957,9 +1030,9 @@ var d = (() => {
 		return true;
 	}
 
-	function getElement(target) {
-		if (typeof target === "string" && isValidCSSSelector(target)) return document.querySelector(target);
-		if (target instanceof HTMLElement) return target;
+	function getElement(target2) {
+		if (typeof target2 === "string" && isValidCSSSelector(target2)) return document.querySelector(target2);
+		if (target2 instanceof HTMLElement) return target2;
 		return void 0;
 	}
 
@@ -983,8 +1056,8 @@ var d = (() => {
 		return output;
 	}
 
-	function getCssRulesForElement(target, noCache) {
-		const el = getElement(target);
+	function getCssRulesForElement(target2, noCache) {
+		const el = getElement(target2);
 		if (!el) return;
 		if (!noCache && cache.has(el)) return cache.get(el);
 		const data = getCssRules(el);
@@ -1032,7 +1105,7 @@ function init() {
 		Utils: {
 			ChannelUtils,
 			transitionTo,
-			ErrorBoundary,
+			ErrorBoundary: ErrorBoundary_default,
 			...Utils_exports,
 			...utils_exports,
 			...d,
