@@ -1,5 +1,3 @@
-import { findInTree, getInternalInstance } from "@Api";
-import { Filters, getModule } from "@Webpack";
 import { openLink, copy, getPathName } from "@Utils";
 import Store from "@/store";
 import React from "@React";
@@ -13,19 +11,18 @@ export function spotifyCopy(content) {
 	Toast.success("Copied!");
 }
 
-export const copySpotifyUrl = url => spotifyCopy(sanitizeSpotifyLink(url))
-export const openSpotifyUrl = url => openLink(sanitizeSpotifyLink(url))
+export const copySpotifyUrl = (url) => spotifyCopy(sanitizeSpotifyLink(url));
+export const openSpotifyUrl = (url) => openLink(sanitizeSpotifyLink(url));
 
 export function spotifyShare(content) {
 	if (!content) return Toast.error("Share failed");
 	const id = SelectedChannelStore.getCurrentlySelectedChannelId();
 	if (!id) return Toast.info("There is no Selected Channel");
 
-	sendMessageDirectly(content, id).catch((a) => {
+	sendMessageDirectly(content, id).catch(() => {
 		insertText(content);
 	});
 }
-
 
 export function parseSpotifyUrl(url) {
 	const path = getPathName(url);
@@ -51,10 +48,6 @@ export function isSpotifyUrl(url) {
 	}
 }
 
-const activityPanelClasses = getModule(Filters.byKeys("activityPanel", "panels"), {
-	searchExports: false,
-});
-
 export function useGetRessource(type, id) {
 	const [state, setState] = React.useState(null);
 	React.useEffect(() => {
@@ -62,7 +55,7 @@ export function useGetRessource(type, id) {
 			const data = await Store.Api.getRessource(type, id);
 			if (data) setState(data);
 		})();
-	}, []);
+	}, [id, type]);
 	return state;
 }
 

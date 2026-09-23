@@ -1,3 +1,4 @@
+/* eslint-disable @eslint-react/no-clone-element */
 import "./styles";
 import config from "@Config";
 import React from "@React";

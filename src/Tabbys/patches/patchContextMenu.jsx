@@ -1,6 +1,6 @@
 import config from "@Config";
-import { ContextMenu } from "@Api";
-import patchContextMenu from "@common/Patcher/contextmenu";
+
+import ContextMenu, { patch, patchMultiple } from "@common/Patcher/contextmenu";
 import Settings from "@Utils/Settings";
 import { wrapMenuItem } from "@/contextmenus/helper";
 import Store from "@/Store";
@@ -78,23 +78,19 @@ function menu(path) {
 }
 
 Plugin.onStart(() => {
-	const navIds = ["thread-context", "channel-context"];
-	for (let i = 0; i < navIds.length; i++) {
-		const navId = navIds[i];
-		patchContextMenu(navId, (retVal, { channel, targetIsUser }) => {
-			if (!channel || targetIsUser) return;
-			const path = getPath(channel);
-			if (!path) return;
-			retVal.props.children.push(...menu(path));
-		});
-	}
+	patchMultiple(["thread-context", "channel-context"], (retVal, { channel, targetIsUser }) => {
+		if (!channel || targetIsUser) return;
+		const path = getPath(channel);
+		if (!path) return;
+		retVal.props.children.push(...menu(path));
+	});
 
-	patchContextMenu("channel-mention-context", (retVal, { originalLink }) => {
+	patch("channel-mention-context", (retVal, { originalLink }) => {
 		const path = getPathName(originalLink);
 		if (!path) return;
 		retVal.props.children.push(...menu(path));
 	});
-	patchContextMenu("user-context", (retVal, { user }) => {
+	patch("user-context", (retVal, { user }) => {
 		if (user.email) return;
 		const channel = ChannelStore.getDMChannelFromUserId(user.id);
 		if (!channel) return;

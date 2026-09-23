@@ -1,17 +1,15 @@
 import "./styles";
-import React from "@React";
 import ControlButton from "@/components/ControlButton";
 import HoverPopout from "@Components/HoverPopout";
-import Tooltip from "@Components/Tooltip";
-import { MuteVolumeIcon, NextIcon, PauseIcon, CopyIcon, PlayIcon, PreviousIcon, RepeatIcon, RepeatOneIcon, ShareIcon, ShuffleIcon, VolumeIcon, ImageIcon, ListenIcon, AddToQueueIcon } from "@Components/Icon";
+import { MuteVolumeIcon, NextIcon, PauseIcon, PlayIcon, PreviousIcon, RepeatIcon, RepeatOneIcon, ShareIcon, ShuffleIcon, VolumeIcon } from "@Components/Icon";
 
+import React from "@React";
 import { PlayerButtonsEnum } from "@/consts.js";
 import { storeContextMenu } from "@/contextmenu.js";
-import { spotifyShare } from "@/utils";
-import { ContextMenu } from "@Api";
 import Store from "@/store";
+import { ContextMenu } from "@Api";
+import { shallow } from "@Utils";
 import Settings from "@Utils/Settings";
-import { copy, shallow } from "@Utils";
 import { classNameFactory } from "@Utils/css";
 const c = classNameFactory("spotify-player-controls");
 
@@ -58,9 +56,8 @@ const repeatObj = {
 
 export default () => {
 	const playerButtons = Settings(Settings.selectors.playerButtons, shallow);
-	const [isPlaying, shuffle, repeat, volume] = Store(_ => [_.isPlaying, _.shuffle, _.repeat, _.volume], shallow);
+	const [isPlaying, shuffle, repeat] = Store(_ => [_.isPlaying, _.shuffle, _.repeat], shallow);
 	const actions = Store(Store.selectors.actions, shallow);
-	const context = Store(Store.selectors.context, (n, o) => n?.uri === o?.uri);
 	const { bannerLg } = Store.getSongBanners();
 
 	const { toggling_shuffle, toggling_repeat_track, skipping_next, skipping_prev } = actions || {};
@@ -86,9 +83,8 @@ export default () => {
 				playerButtons[PlayerButtonsEnum.SHUFFLE] && {
 					tooltip: "Shuffle",
 					value: <ShuffleIcon />,
-					className: c("btn", "shuffle"),
+					className: c("btn", "shuffle", { enabled: shuffle }),
 					disabled: toggling_shuffle,
-					active: shuffle,
 					onClick: shuffleHandler
 				},
 				playerButtons[PlayerButtonsEnum.PREVIOUS] && {
@@ -115,41 +111,35 @@ export default () => {
 				playerButtons[PlayerButtonsEnum.REPEAT] && {
 					tooltip: repeatTooltip,
 					value: repeatIcon,
-					className: c("btn", "repeat"),
+					className: c("btn", "repeat", { enabled: repeatActive }),
 					disabled: toggling_repeat_track,
-					active: repeatActive,
 					onClick: repeatHandler
 				}
 			]
 				.filter(Boolean)
 				.map(ControlButton)}
-			{playerButtons[PlayerButtonsEnum.VOLUME] && <Volume volume={volume} />}
+			{playerButtons[PlayerButtonsEnum.VOLUME] && <Volume />}
 		</div>
 	);
 };
 
-function Volume({ volume }) {
-	const [val, setVal] = React.useState(volume);
-	const [active, setActive] = React.useState(false);
+function Volume() {
+	const volume = Store(Store.selectors.volume, shallow);
+	const [uiVolume, setUiVolume] = React.useState(volume);
 	const volumeRef = React.useRef(volume || 25);
 
-	React.useEffect(() => {
-		if (volume) volumeRef.current = volume;
-		if (!active) setVal(volume);
-	}, [volume]);
-
 	const volumeMuteHandler = () => {
-		const target = val ? 0 : volumeRef.current;
+		const target = uiVolume ? 0 : volumeRef.current;
 		Store.Api.volume(target).then(() => {
-			setVal(target);
+			setUiVolume(target);
 		});
 	};
 
-	const volumeOnChange = e => setVal(Math.round(e.target.value));
-	const volumeOnMouseDown = () => setActive(true);
+	const volumeOnChange = e => setUiVolume(Math.round(e.target.value));
 	const volumeOnMouseUp = () => {
-		setActive(false);
-		Store.Api.volume(val).then(() => (volumeRef.current = val));
+		Store.Api.volume(uiVolume).then(() => {
+			volumeRef.current = uiVolume;
+		});
 	};
 
 	return (
@@ -157,17 +147,16 @@ function Volume({ volume }) {
 			popout={() => (
 				<div className={c("volume-slider-wrapper")}>
 					<input
-						value={val}
+						value={uiVolume}
 						onChange={volumeOnChange}
 						onMouseUp={volumeOnMouseUp}
-						onMouseDown={volumeOnMouseDown}
 						type="range"
 						step="1"
 						min="0"
 						max="100"
 						className={c("volume-slider")}
 					/>
-					<div className={c("volume-label")}>{val}</div>
+					<div className={c("volume-label")}>{uiVolume}</div>
 				</div>
 			)}
 			position="top"
@@ -177,7 +166,7 @@ function Volume({ volume }) {
 			<ControlButton
 				className={c("btn", "volume")}
 				onClick={volumeMuteHandler}
-				value={val ? <VolumeIcon /> : <MuteVolumeIcon />}
+				value={uiVolume ? <VolumeIcon /> : <MuteVolumeIcon />}
 			/>
 		</HoverPopout>
 	);

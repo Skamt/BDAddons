@@ -1,6 +1,5 @@
 import React from "@React";
 import { getMangled, Filters } from "@Webpack";
-import FormSwitch from "@Modules/FormSwitch";
 
 export default getMangled(Filters.bySource("auxiliaryContentPosition", "hasIcon"), {
 	Switch: () => true,

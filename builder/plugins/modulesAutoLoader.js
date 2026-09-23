@@ -2,7 +2,6 @@ const { resolve } = require("node:path");
 const DiscordModules = require(resolve(global.appRoot, "DiscordModules.json"));
 
 const regex = /@(Patch|Modules|Enums|Stores)\/(.+)/;
-const filter = id => id.match(regex);
 
 function getModuleInfo(id) {
 	const [, target, moduleName] = id.match(regex);
@@ -13,22 +12,23 @@ const ModulesHandler = {
 	resolve(moduleName, type) {
 		const { filter, options } = DiscordModules.Modules[moduleName];
 		const accessor = type === "Patch" ? "getModuleAndKey" : "getModule";
-		const faileSafe = type === "Patch" ? " || {};" : "";
+		const faileSafe = type === "Patch" ? " || {}" : "";
 		const isFilter = filter.includes("Filters.") ? "Filters," : "";
-		return `import { {{filter}}${accessor} } from "@Webpack"; export default ${accessor}(${filter},${options})${faileSafe}`.replace("{{filter}}", isFilter);
+		return `import { {{filter}}${accessor} } from "@Webpack"; export default /* @__PURE__ */ 
+		(() => ${accessor}(${filter},${options})${faileSafe})();`.replace("{{filter}}", isFilter);
 	}
 };
 
 const StoresHandler = {
 	resolve(moduleName) {
-		return `import { getStore } from "@Webpack"; export default getStore("${moduleName}");`;
+		return `import { getStore } from "@Webpack"; export default /* @__PURE__ */ (() => getStore("${moduleName}"))();`;
 	}
 };
 
 const EnumsHandler = {
 	resolve(moduleName) {
 		const { filter, options, fallback } = DiscordModules.Enums[moduleName];
-		return `import { Filters, getModule } from "@Webpack"; export default getModule(${filter},${options}) || ${JSON.stringify(fallback, null, 4)};`;
+		return `import { Filters, getModule } from "@Webpack"; export default /* @__PURE__ */ (() => getModule(${filter},${options}) || ${JSON.stringify(fallback, null, 4)})();`;
 	}
 };
 

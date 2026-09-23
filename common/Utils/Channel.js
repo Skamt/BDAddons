@@ -1,12 +1,11 @@
-import { getModule } from "@Webpack";
-import { getUserAvatar, getUserName } from "@Utils/User";
+import { getUserName } from "@Utils/User";
 import GuildStore from "@Stores/GuildStore";
 import ChannelStore from "@Stores/ChannelStore";
 import SelectedChannelStore from "@Stores/SelectedChannelStore";
 import { IconsUtils } from "@Discord/Modules";
 
 export function getCurrentChannel() {
-    return ChannelStore.getChannel(SelectedChannelStore.getChannelId());
+	return ChannelStore.getChannel(SelectedChannelStore.getChannelId());
 }
 
 export function getGroupDmName(channelId) {

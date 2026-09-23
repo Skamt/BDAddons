@@ -2,8 +2,6 @@ import "./styles";
 import "./patches/*";
 import React from "@React";
 import { Patcher } from "@Api";
-
-import ChannelsStateManager from "./ChannelsStateManager";
 import ChannelHandlers from "./ChannelHandlers";
 import Dispatcher from "@Modules/Dispatcher";
 import ChannelActions from "@Modules/ChannelActions";

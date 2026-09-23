@@ -1,13 +1,21 @@
 import { ContextMenu } from "@Api";
 import Plugin from "@common/Plugin";
 
-let patches = [];
+let contextmenuUnPatches = [];
 Plugin.onStop(() => {
-	patches.filter(Boolean).forEach((a) => a());
-	patches = [];
+	contextmenuUnPatches.filter(Boolean).forEach(a => a());
+	contextmenuUnPatches = [];
 });
 
-export default (id, callback) => {
+export const patch = (id, callback) => {
 	const undo = ContextMenu.patch(id, callback);
-	patches.push(undo);
+	contextmenuUnPatches.push(undo);
 };
+
+export const patchMultiple = (navIds, callback) => {
+	for (let i = 0; i < navIds.length; i++) {
+		patch(navIds[i], callback);
+	}
+};
+
+export default ContextMenu;

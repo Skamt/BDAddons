@@ -1,5 +1,4 @@
-import patch from "@common/Patcher/contextmenu";
-import { ContextMenu } from "@Api";
+import ContextMenu, { patch } from "@common/Patcher/contextmenu";
 import React from "@React";
 import { I18n } from "@Discord/Modules";
 import Settings from "@Utils/Settings";
@@ -22,9 +21,13 @@ function transformSettingsEntries(list) {
 			const label = key === "user_section" ? I18n.intl.string(I18n.t.cduTBL) : props.label;
 
 			items.push(
-				<ContextMenu.Item {...props} key={key} label={label} id={String(label)}>
+				<ContextMenu.Item
+					key={key}
+					{...props}
+					label={label}
+					id={String(label)}>
 					{props.children}
-				</ContextMenu.Item>,
+				</ContextMenu.Item>
 			);
 			continue;
 		}
@@ -36,7 +39,7 @@ function transformSettingsEntries(list) {
 }
 
 Plugin.onStart(() => {
-	patch("settings-menu", (ret, props) => {
+	patch("settings-menu", ret => {
 		if (!Settings.state.organizeMenu) return;
 		ret.props.children[0] = transformSettingsEntries(ret.props.children[0]);
 	});

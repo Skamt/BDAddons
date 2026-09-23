@@ -1,4 +1,3 @@
-/* eslint-disable react/jsx-key */
 import React from "@React";
 
 function svg(svgProps, ...paths) {

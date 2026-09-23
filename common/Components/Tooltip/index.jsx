@@ -7,6 +7,7 @@ export default ({ note, position, children }) => {
 			text={note}
 			position={position || "top"}>
 			{props =>
+				// eslint-disable-next-line @eslint-react/no-clone-element
 				React.cloneElement(children, {
 					...props,
 					...children.props

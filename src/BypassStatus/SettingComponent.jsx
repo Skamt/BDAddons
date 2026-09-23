@@ -1,6 +1,5 @@
 import config from "@Config";
 import React from "@React";
-import Collapsible from "@Components/Collapsible";
 import SettingSwtich from "@Components/SettingSwtich";
 import SettingTextInput from "@Components/SettingTextInput";
 import Settings from "@Utils/Settings";

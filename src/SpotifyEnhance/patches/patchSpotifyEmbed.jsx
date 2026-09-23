@@ -12,7 +12,7 @@ const SpotifyEmbed = getDeclarationAndKey(Filters.bySource("iframe", "playlist",
 
 Plugin.onStart(() => {
 	after(...SpotifyEmbed, ({ args: [{ embed }], ret }) => {
-		const messageState = React.useContext(MessageStateContext);
+		const messageState = React.use(MessageStateContext);
 		if (messageState !== "SENT") return null;
 		const [id, type] = parseSpotifyUrl(embed.url) || [];
 		if (!ALLOWD_TYPES.includes(type)) return;

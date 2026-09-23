@@ -1,6 +1,6 @@
 import React, { NoopComponent, LazyComponent } from "@React";
 import Logger from "@Utils/Logger";
-import { promiseHandler, getObjectKey } from "@Utils";
+import { getObjectKey } from "@Utils";
 import { MISSING_ARGUMENTS, UNDEFINED_OBJECT_OR_KEY, PATCH_ERROR, LAZY_DISCORD_COMPONENT_WRAPPER } from "@common/consts";
 import Plugin from "@common/Plugin";
 
@@ -30,9 +30,9 @@ export function lazy(filter, { decFilter, ...options } = {}) {
 		...options,
 		raw: true,
 		fatal: false,
-		signal: abortController.signal,
+		signal: abortController.signal
 	})
-		.then((module) => {
+		.then(module => {
 			if (!module) throw "waitForModule resolved with undefined";
 
 			const object = decFilter ? module.declarations : module.exports;
@@ -41,7 +41,7 @@ export function lazy(filter, { decFilter, ...options } = {}) {
 
 			resolve([object, key]);
 		})
-		.catch((err) => Logger.error(PATCH_ERROR, err));
+		.catch(err => Logger.error(PATCH_ERROR, err));
 
 	return promise;
 }
@@ -50,15 +50,19 @@ function Suspended({ promise, fallback, ...props }) {
 	const comp = React.use(promise);
 	if (comp) return React.createElement(comp, props);
 	DEV: Logger.error("Promise resolved with undefined");
-	return <fallback />;
+	return fallback;
 }
 
-export function waitForComponent(filter, options, fallback = NoopComponent) {
+export function waitForComponent(filter, options, Fallback = NoopComponent) {
 	const promise = waitForModule(filter, options);
 
-	const placeHolderComponent = (props) => (
-		<React.Suspense fallback={<fallback />}>
-			<Suspended {...props} fallback={fallback} promise={promise} />
+	const placeHolderComponent = props => (
+		<React.Suspense fallback={<Fallback />}>
+			<Suspended
+				{...props}
+				fallback={<Fallback />}
+				promise={promise}
+			/>
 		</React.Suspense>
 	);
 	placeHolderComponent.displayName = LAZY_DISCORD_COMPONENT_WRAPPER;
@@ -70,7 +74,7 @@ export function _waitForComponent(filter, options) {
 
 	const lazyComponent = LazyComponent(() => myValue);
 
-	waitForModule(filter, options).then((v) => {
+	waitForModule(filter, options).then(v => {
 		myValue = v;
 		Object.assign(lazyComponent, v);
 	});
@@ -91,7 +95,7 @@ export function _waitForComponent(filter, options) {
 
 export function reactRefMemoFilter(type, ...args) {
 	const filter = Filters.byStrings(...args);
-	return (target) => target[type] && filter(target[type]);
+	return target => target[type] && filter(target[type]);
 }
 
 export function getModuleAndKey(filter, options) {
@@ -99,7 +103,7 @@ export function getModuleAndKey(filter, options) {
 	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
 	module = module?.exports;
 	if (!module) return;
-	const key = Object.keys(module).find((k) => module[k] === target);
+	const key = Object.keys(module).find(k => module[k] === target);
 	if (!key) return;
 	return [module, key];
 }
@@ -115,7 +119,7 @@ export function filterModuleAndExport(moduleFilter, exportFilter, options) {
 	const module = getModule(moduleFilter, { ...options, raw: true });
 	if (!module) return;
 	const { exports } = module;
-	const key = Object.keys(exports).find((k) => exportFilter(exports[k]));
+	const key = Object.keys(exports).find(k => exportFilter(exports[k]));
 	if (!key) return {};
 	return { module: exports, key, target: exports[key] };
 }

@@ -1,13 +1,10 @@
-import config from "@Config";
 import { DiscordPopout } from "@Discord/Modules";
 import React, { useRef, useCallback } from "@React";
-import { concateClassNames } from "@Utils";
 
-export default ({ children, targetElementRef, ...props }) => {
+export default Object.assign(({ children, targetElementRef, ...props }) => {
 	const ref = useRef();
 	const helperRef = useCallback((e) => {
-		if (!e) return;
-		ref.current = e.nextSibling;
+		if (e) ref.current = e.nextElementSibling;
 	}, []);
 
 	return (
@@ -18,18 +15,17 @@ export default ({ children, targetElementRef, ...props }) => {
 			animation={DiscordPopout.Animation.FADE}
 			spacing={4}
 			{...props}
-			targetElementRef={targetElementRef || ref}
-		>
+			targetElementRef={targetElementRef || ref}>
 			{(p) => {
 				return targetElementRef ? (
 					children(p)
 				) : (
 					<>
-						<span ref={helperRef} />
+						<span ref={helperRef} style={{ display: "contents" }} />
 						{children(p)}
 					</>
 				);
 			}}
 		</DiscordPopout>
 	);
-};
+}, DiscordPopout);

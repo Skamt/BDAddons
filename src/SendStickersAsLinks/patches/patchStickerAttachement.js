@@ -1,7 +1,6 @@
-import { Patcher } from "@Api";
-import Logger from "@Utils/Logger";
+import { before } from "@common/Patcher";
 import MessageActions from "@Modules/MessageActions";
-import { getStickerUrl, sendStickerAsLink, handleSticker } from "../Utils";
+import { sendStickerAsLink, handleSticker } from "../Utils";
 import Dispatcher from "@Modules/Dispatcher";
 import Plugin from "@common/Plugin";
 
@@ -15,12 +14,11 @@ const replyInterceptor = {
 	},
 	off() {
 		Dispatcher._interceptors.splice(Dispatcher._interceptors.indexOf(this.handler), 1);
-	}
+	},
 };
 
 Plugin.onStart(() => {
-	if (!MessageActions) return Logger.patchError("sendMessage");
-	const unpatch = Patcher.before(MessageActions, "sendMessage", (_, args) => {
+	before(MessageActions, "sendMessage", ({ args }) => {
 		const [channelId, , , attachments] = args;
 		if (attachments?.stickerIds?.filter) {
 			const [stickerId] = attachments.stickerIds;
@@ -35,5 +33,4 @@ Plugin.onStart(() => {
 			}
 		}
 	});
-	Plugin.once(Events.STOP, unpatch);
 });

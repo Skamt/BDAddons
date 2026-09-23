@@ -22,7 +22,7 @@
 	scale: 1.1;
 }
 
-.spotify-player-controls-btn.enabled {
+.spotify-player-controls-btn.spotify-player-controls-enabled {
 	color: var(--SpotifyEnhance-spotify-green);
 }
 

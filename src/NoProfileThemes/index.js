@@ -6,7 +6,7 @@ const NitroManager = getModule(Filters.bySource("hasThemeColors(){"), {
 module.exports = () => ({
 	stop() {},
 	start() {
-		if (!NitroManager) return Logger.patchError("NitroManager");
+		if (!NitroManager) return console.error("[NoProfileThemes] Could not patch NitroManager");
 		const propertyDescriptor = Object.getOwnPropertyDescriptor(
 			NitroManager.prototype,
 			"canUsePremiumProfileCustomization",

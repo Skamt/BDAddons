@@ -1,9 +1,7 @@
 import config from "@Config";
-import Plugin from "@common/Plugin";
 import React from "@React";
 import { create, subscribeWithSelector } from "@Discord/zustand";
 import { Data } from "@Api";
-import { shallow } from "@Utils";
 
 export default /*@__PURE__*/ (() => {
 	const SettingsStore = create(
@@ -14,7 +12,7 @@ export default /*@__PURE__*/ (() => {
 	const selectors = {};
 	const actions = {};
 
-	for (const [key, value] of Object.entries(state)) {
+	for (const key of Object.keys(state)) {
 		actions[`set${key}`] = (newValue) => SettingsStore.setState({ [key]: newValue });
 		selectors[key] = (state) => state[key];
 	}

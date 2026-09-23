@@ -14,9 +14,4 @@ export const PlayerButtonsEnum = {
 	VOLUME: "Volume"
 };
 
-export const PlayerPlaceEnum = {
-	PIP: "PIP",
-	USERAREA: "USERAREA",
-};
-
 export const ALLOWD_TYPES = ["track", "playlist", "album", "artist", "user", "show", "episode"];

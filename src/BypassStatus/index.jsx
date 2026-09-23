@@ -1,4 +1,3 @@
-// import "./styles";
 import Flux from "@Utils/Flux";
 import Logger from "@Utils/Logger";
 import Settings from "@Utils/Settings";
@@ -6,9 +5,7 @@ import WindowStore from "@Stores/WindowStore";
 import UserStore from "@Stores/UserStore";
 import PresenceStore from "@Stores/PresenceStore";
 import ChannelStore from "@Stores/ChannelStore";
-import ChannelActionCreators from "@Stores/ChannelActionCreators";
-import MessageStore from "@Stores/MessageStore";
-import { ChannelUtils, transitionTo } from "@Discord/Modules";
+import { transitionTo } from "@Discord/Modules";
 import { getCurrentChannel } from "@Utils/Channel";
 import SettingComponent from "./SettingComponent";
 import patchContextMenu from "./patchContextMenu";
@@ -47,9 +44,9 @@ function showNotification(msg, guildId) {
 					dontClose: !true,
 					onClick() {
 						transitionTo(`/channels/${guildId ?? "@me"}/${message.channel_id}/${message.id}`);
-					},
-				},
-			],
+					}
+				}
+			]
 		});
 
 		if (Settings.state.notificationSound) playMessageNotificationSounce();
@@ -59,7 +56,7 @@ function showNotification(msg, guildId) {
 }
 
 function shouldNotify(message, guildId, channelId, currentUser) {
-	const isMentioned = message.mentions.some((user) => user.id === currentUser.id);
+	const isMentioned = message.mentions.some(user => user.id === currentUser.id);
 	if (!isMentioned && Settings.state.mentionOnly) return false;
 
 	if (Settings.state.users.split(", ").includes(message.author.id)) {
@@ -79,25 +76,16 @@ Plugin.onStart(() => {
 				const currentUser = UserStore.getCurrentUser();
 				const userStatus = PresenceStore.getStatus(currentUser.id);
 				const currentChannelId = getCurrentChannel()?.id ?? "0";
-				if (
-					message.state === "SENDING" ||
-					message.content === "" ||
-					message.author.id === currentUser.id ||
-					(channelId === currentChannelId && WindowStore.isFocused()) ||
-					userStatus !== Settings.state.statusToUse
-				) {
+				if (message.state === "SENDING" || message.content === "" || message.author.id === currentUser.id || (channelId === currentChannelId && WindowStore.isFocused()) || userStatus !== Settings.state.statusToUse) {
 					return;
 				}
-				if (Settings.state.respectSilentPings && message.flags & SILENT_PING_FLAG) {
-					return;
-				}
+				if (Settings.state.respectSilentPings && message.flags & SILENT_PING_FLAG) return;
 
-				if (shouldNotify(message, guildId, channelId, currentUser))
-					showNotification(message, guildId);
+				if (shouldNotify(message, guildId, channelId, currentUser)) showNotification(message, guildId);
 			} catch (error) {
 				Logger.error("Failed to handle message: ", error);
 			}
-		},
+		}
 	});
 
 	patchContextMenu();

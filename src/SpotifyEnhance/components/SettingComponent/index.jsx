@@ -1,13 +1,12 @@
-import config from "@Config";
-import React from "@React";
+import { EmbedStyleEnum, PlayerButtonsEnum  } from "@/consts.js";
 import Collapsible from "@Components/Collapsible";
-import Gap from "@Components/Gap";
 import FieldSet from "@Components/FieldSet";
+import Gap from "@Components/Gap";
 import SettingSwtich from "@Components/SettingSwtich";
+import config from "@Config";
 import { RadioGroup } from "@Discord/Modules";
+import React from "@React";
 import Settings from "@Utils/Settings";
-import { PlayerButtonsEnum, PlayerPlaceEnum, EmbedStyleEnum } from "@/consts.js";
-import Plugin from "@common/Plugin";
 
 function SpotifyEmbedOptions() {
 	const [val, set] = Settings.useSetting("spotifyEmbed");
@@ -30,29 +29,6 @@ function SpotifyEmbedOptions() {
 			orientation={"horizontal"}
 			value={val}
 			onChange={e => set(e.value)}
-		/>
-	);
-}
-
-function SpotifyPLayerOptions() {
-	const [val, set] = Settings.useSetting("spotifyPlayerPlace");
-	return (
-		<RadioGroup
-			options={[
-				{
-					value: PlayerPlaceEnum.PIP,
-					name: "PIP: place the player in a draggable picture-in-picture"
-				},
-				{
-					value: PlayerPlaceEnum.USERAREA,
-					name: "USERAREA: place the player in the user area (bottom left)"
-				}
-			]}
-			orientation={"horizontal"}
-			value={val}
-			onChange={e => {
-				set(e.value);
-			}}
 		/>
 	);
 }
@@ -112,10 +88,6 @@ export default function SettingComponent() {
 			<Collapsible title="Spotify embed style">
 				<SpotifyEmbedOptions />
 			</Collapsible>
-			<Gap gap={15} />
-			{/*<Collapsible title="Spotify player placement">
-				<SpotifyPLayerOptions />
-			</Collapsible>*/}
 		</div>
 	);
 }

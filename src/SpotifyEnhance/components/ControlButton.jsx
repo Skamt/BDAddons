@@ -3,7 +3,7 @@ import { preventDefault } from "@Utils";
 import Button from "@Components/Button";
 import Tooltip from "@Components/Tooltip";
 
-export default function ControlButton({ className, ref, active, onClick, tooltip, value, ...rest }) {
+export default function ControlButton({ className, ref, onClick, tooltip, value, ...rest }) {
 	const btn = (
 		<Button
 			onClick={preventDefault(onClick)}

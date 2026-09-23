@@ -1,22 +1,18 @@
-import { getModule, Filters } from "@Webpack";
-import { Patcher } from "@Api";
+import { Filters } from "@Webpack";
+import { after } from "@common/Patcher";
+import { lazy } from "@Webpack";
 import Settings from "@Utils/Settings";
 import Plugin from "@common/Plugin";
-import Logger from "@Utils/Logger";
 import ChannelsStateManager from "../ChannelsStateManager";
-import { getObjectKey } from "@Utils";
-import { waitForModule } from "@Webpack";
 
 Plugin.onStart(() => {
-	const controller = new AbortController();
-	waitForModule(Filters.bySource("withGuildIcon", "thread", "collapsed"), 
-		{ signal: controller.signal, raw: true }).then(({ declarations: TreadComponent }) => {
-		const key = getObjectKey(TreadComponent, Filters.byComponentType(Filters.byStrings("0nZpiF", "isThread", "collapsed")));
-		if (!key) return Logger.patchError("TreadComponent");
-		Patcher.after(TreadComponent[key], "type", (_, [{ thread }], ret) => {
+	lazy(Filters.bySource("withGuildIcon", "thread", "collapsed"), {
+		decFilter: Filters.byComponentType(Filters.byStrings("0nZpiF", "isThread", "collapsed")),
+	}).then(([TreadComponent, key]) => {
+		after(TreadComponent[key], "type", ({ args: [{ thread }], ret }) => {
 			if (!Settings.state.autoloadedChannelIndicator) return;
-			if (ChannelsStateManager.getChannelstate(thread.guild_id, thread.id)) ret.props.className += " autoload";
+			if (ChannelsStateManager.getChannelstate(thread.guild_id, thread.id))
+				ret.props.className += " autoload";
 		});
 	});
-	Plugin.once(Events.STOP, () => controller.abort());
 });

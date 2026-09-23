@@ -1,34 +1,26 @@
-import config from "@Config";
 import React from "@React";
-import { Patcher } from "@Api";
-import { Filters, waitForModule } from "@Webpack";
-import Logger from "@Utils/Logger";
+import { after } from "@common/Patcher";
+import { lazy } from "@Webpack";
+import { Filters } from "@Webpack";
 import ErrorBoundary from "@Components/ErrorBoundary";
 import ErrorFallbackComponent from "@/components/ErrorFallbackComponent";
 import LazyLoaderComponent from "@/components/LazyLoaderComponent";
-
 import Plugin from "@common/Plugin";
 import ChannelStore from "@Stores/ChannelStore";
-import ChannelsStateManager from "@/ChannelsStateManager";
-
-import { getObjectKey } from "@Utils";
 
 Plugin.onStart(() => {
-	const controller = new AbortController();
-	waitForModule(Filters.bySource(`name:"Channel",renderLoader`), { signal: controller.signal, raw: true }).then(({ declarations: ChannelRenderer }) => {
-		const key = getObjectKey(ChannelRenderer, Filters.byStrings("ChannelRenderer"));
-		if (!key) return Logger.patchError("ChannelRenderer");
-
-		Patcher.after(ChannelRenderer, key, (_, [{ match: { params: { channelId, guildId } } }],ret) => {
+	lazy(Filters.bySource(`name:"Channel",renderLoader`), 
+		{ decFilter: Filters.byStrings("ChannelRenderer") })
+	.then(ChannelRenderer => {
+		after(...ChannelRenderer, ({ args, ret }) => {
+			const channelId = args[0]?.match?.params?.channelId;
 			const channel = ChannelStore.getChannel(channelId);
 			if (!channel) return ret;
-						
+
 			return (
 				<ErrorBoundary
 					id="LazyLoaderComponent"
-					passMetaProps
-					fallback={ErrorFallbackComponent}
-					plugin={config.info.name}>
+					fallback={ErrorFallbackComponent}>
 					<LazyLoaderComponent
 						key={channelId}
 						channel={channel}
@@ -38,5 +30,4 @@ Plugin.onStart(() => {
 			);
 		});
 	});
-	Plugin.once(Events.STOP, () => controller.abort());
 });

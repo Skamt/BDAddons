@@ -1,4 +1,3 @@
-import config from "@Config";
 import React from "@React";
 import Settings from "@Utils/Settings";
 import Slider from "@Modules/Slider";

@@ -1,5 +1,5 @@
 import Plugin from "@common/Plugin";
-import { add } from "@Utils/Array";
+import Logger from "@Utils/Logger";
 
 const cache = new Map();
 

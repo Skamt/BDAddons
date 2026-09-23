@@ -3,19 +3,8 @@ import { storeContextMenu } from "@/contextmenu.js";
 import React from "@React";
 import { Filters, lazy } from "@Webpack";
 import Store from "@/store";
-import Flex from "@Components/Flex";
-import { ListenIcon, ImageIcon } from "@Components/Icon";
 import Plugin from "@common/Plugin";
 import { after } from "@common/Patcher";
-
-function MenuLabel({ label, icon }) {
-	return (
-		<Flex direction={Flex.Direction.HORIZONTAL} align={Flex.Align.CENTER} style={{ gap: 8 }}>
-			{icon}
-			<div>{label}</div>
-		</Flex>
-	);
-}
 
 Plugin.onStart(() => {
 	lazy(Filters.bySource("Plus Button"), { decFilter: Filters.byStrings("Plus Button") }).then(
@@ -26,7 +15,7 @@ Plugin.onStart(() => {
 				if (!Array.isArray(ret?.props?.children)) return;
 
 				ret.props.children.push(
-					ContextMenu.buildItem({type:"separator"}),
+					ContextMenu.buildItem({ type: "separator" }),
 					...storeContextMenu(
 						Store.getSongUrl(),
 						Store.getSongBanners().bannerLg.url,

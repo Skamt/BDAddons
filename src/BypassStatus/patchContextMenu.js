@@ -1,14 +1,13 @@
-import { ContextMenu } from "@Api";
-import patch from "@common/Patcher/contextmenu";
+import { loop } from "@Utils/Array";
+import ContextMenu, { patch } from "@common/Patcher/contextmenu";
 import Settings from "@Utils/Settings";
-import {isSelf} from "@Utils/User";
+import { isSelf } from "@Utils/User";
 
 export default () => {
 	const ids = ["user", "guild", "channel"];
 
-	for (let i = 0; i < ids.length; i++) {
-		const id = ids[i];
-		patch(`${id}-context`, ret => ret.props.children.splice(-1, 0, ContextMenu.buildItem({ type: "separator" })));
+	loop(ids, id => patch(`${id}-context`, ret => ret.props.children.splice(-1, 0, ContextMenu.buildItem({ type: "separator" }))));
+	loop(ids, id =>
 		patch(`${id}-context`, (ret, props) => {
 			const type = props[id];
 			if (!type) return;
@@ -32,6 +31,6 @@ export default () => {
 					}
 				})
 			);
-		});
-	}
+		})
+	);
 };

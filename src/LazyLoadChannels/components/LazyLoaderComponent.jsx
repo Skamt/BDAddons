@@ -1,17 +1,14 @@
-import React from "@React";
-import { reRender } from "@Utils";
-import ChannelsStateManager from "../ChannelsStateManager";
-import Switch from "@Components/Switch";
+import { loadChannel, shouldLoad } from "@/utils";
 import Button from "@Components/Button";
-import { COMPONENT_ID } from "../Constants";
 import FieldSet from "@Components/FieldSet";
-import { shouldLoad, loadChannel } from "@/utils";
-import ControlKeys from "@Utils/ControlKeys";
-import Settings from "@Utils/Settings";
+import Switch from "@Components/Switch";
+import React from "@React";
+import ChannelsStateManager from "../ChannelsStateManager";
+import { COMPONENT_ID } from "../Constants";
 
 export default ({ channel, ret }) => {
 	const [checked, setChecked] = React.useState(false);
-	const [load, setLoad] = React.useState(shouldLoad(channel));
+	const [load, setLoad] = React.useState(() => shouldLoad(channel));
 	const isDm = channel.guild_id === null;
 
 	const loadChannelHandler = () => {
@@ -23,23 +20,18 @@ export default ({ channel, ret }) => {
 	return load ? (
 		ret
 	) : (
-		<div
-			id={COMPONENT_ID}
-			style={{ "visibility": "hidden", "height": "100%" }}>
+		<div id={COMPONENT_ID} style={{ visibility: "hidden", height: "100%" }}>
 			<div className="logo" />
 			{isDm ? (
 				<div className="DM">
-					<div className="DMName">{channel.rawRecipients.map(a => `@${a.username}`).join(", ")}</div>
+					<div className="DMName">
+						{channel.rawRecipients.map((a) => `@${a.username}`).join(", ")}
+					</div>
 				</div>
 			) : (
 				<div className="channel">
 					<div className="channelIcon">
-						<svg
-							role="img"
-							aria-label="channel-icon"
-							width="24"
-							height="24"
-							viewBox="0 0 24 24">
+						<svg role="img" aria-label="channel-icon" width="24" height="24" viewBox="0 0 24 24">
 							<path
 								fill="currentColor"
 								fillRule="evenodd"
@@ -53,14 +45,16 @@ export default ({ channel, ret }) => {
 			)}
 			<div className="title">Lazy loading is Enabled!</div>
 			<div className="description">
-				This channel is lazy loaded, If you want to auto load this channel in the future, make sure you enable <b>Auto load</b> down below before you load it.
+				This channel is lazy loaded, If you want to auto load this channel in the future, make sure
+				you enable <b>Auto load</b> down below before you load it.
 			</div>
 			<div className="controls">
 				<FieldSet contentGap={8}>
 					<Button
 						onClick={loadChannelHandler}
 						color={Button?.Colors?.GREEN}
-						size={Button?.Sizes?.LARGE}>
+						size={Button?.Sizes?.LARGE}
+					>
 						Load Channel
 					</Button>
 

@@ -13,7 +13,7 @@ export default function SettingTextInput({
 	onChange = nop,
 	...rest
 }) {
-	const [val, set] = React.useState(Settings.state[settingKey]);
+	const [val, setVal] = React.useState(Settings.state[settingKey]);
 	return (
 		<>
 			{label && (
@@ -24,7 +24,7 @@ export default function SettingTextInput({
 			<TextInput
 				{...rest}
 				onChange={(e) => {
-					set(e)
+					setVal(e)
 					Settings[`set${settingKey}`](processValue(e));
 					onChange?.(e);
 				}}

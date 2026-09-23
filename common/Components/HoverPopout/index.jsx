@@ -1,5 +1,4 @@
-import config from "@Config";
-import React, { Children, useEffect, useRef, useState } from "@React";
+import React, { Children, useEffect,  useState } from "@React";
 import { concateClassNames } from "@Utils";
 import { useTimer } from "@Utils/Hooks";
 import Popout from "@Components/Popout";
@@ -13,10 +12,13 @@ export default function HoverPopout({ children, popout, delay = 150, popoutWrapp
 			clearLeave();
 			clearEnter();
 		},
-		[]
+		[clearEnter, clearLeave]
 	);
+
+	// eslint-disable-next-line @eslint-react/no-children-only
 	const child = Children.only(children);
-	const content = e =>
+	const content = () =>
+		// eslint-disable-next-line @eslint-react/no-clone-element
 		React.cloneElement(child, {
 			onMouseEnter: e => {
 				clearLeave();

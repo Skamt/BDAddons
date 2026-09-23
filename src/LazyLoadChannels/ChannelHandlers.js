@@ -1,8 +1,6 @@
-import ControlKeys from "@Utils/ControlKeys";
 import ChannelsStateManager from "@/ChannelsStateManager";
 import { shouldLoad, loadChannel } from "@/utils";
 import Dispatcher from "@Modules/Dispatcher";
-import Settings from "@Utils/Settings";
 import ChannelStore from "@Stores/ChannelStore";
 
 export default new (class {

@@ -1,6 +1,5 @@
 import React from "@React";
 import Settings from "@Utils/Settings";
-import Heading from "@Modules/Heading";
 import Slider from "@Modules/Slider";
 import SettingSwtich from "@Components/SettingSwtich";
 import FieldSet from "@Components/FieldSet";

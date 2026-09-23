@@ -54,46 +54,36 @@ StylesLoader.push(`
     opacity: .5;
 }`);
 
-function ChangelogComponent({ id, changelog }) {
-	React.useEffect(() => {
-		BdApi.DOM.addStyle(id, changelogStyles);
-		return () => BdApi.DOM.removeStyle(id);
-	}, []);
-	return <div id="changelog-container">{changelog}</div>;
-}
-
 function showChangelog() {
 	if (!config.changelog || !Array.isArray(config.changelog)) return;
 	const changelog = config.changelog.map(({ type, items }) => [
 		// biome-ignore lint/correctness/useJsxKeyInIterable: <explanation>
-		<h3
-			style={{ color: `var(--${type})` }}
-			className="title">
+		<h3 style={{ color: `var(--${type})` }} className="title">
 			{type}
 		</h3>,
 		// biome-ignore lint/correctness/useJsxKeyInIterable: <explanation>
 		<ul>
-			{items.map(item => (
+			{items.map((item) => (
 				// biome-ignore lint/correctness/useJsxKeyInIterable: <explanation>
 				<li>{item}</li>
 			))}
-		</ul>
+		</ul>,
 	]);
 
 	UI.showConfirmationModal(
 		`${config.info.name} v${config.info.version}`,
-		<ChangelogComponent
-			id={`Changelog-${config.info.name}`}
-			changelog={changelog}
-		/>
+		<div id="changelog-container">{changelog}</div>,
 	);
 }
 
-Plugin.once("START", () => {
-	const { version = config.info.version, changelog = false } = Data.load("metadata") || {};
+Plugin.onStart(
+	() => {
+		const { version = config.info.version, changelog = false } = Data.load("metadata") || {};
 
-	if (version !== config.info.version || !changelog) {
-		Data.save("metadata", { version: config.info.version, changelog: true });
-		return showChangelog;
-	}
-});
+		if (version !== config.info.version || !changelog) {
+			Data.save("metadata", { version: config.info.version, changelog: true });
+			return showChangelog;
+		}
+	},
+	{ once: true },
+);

@@ -1,5 +1,4 @@
 import { getByPrototypeKeys, getByKeys } from "@Webpack";
-import { Patcher } from "@Api";
 import { nop } from "@Utils";
 import Settings from "@Utils/Settings";
 import Plugin from "@common/Plugin";

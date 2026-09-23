@@ -1,5 +1,5 @@
 import useStateFromStores from "@Modules/useStateFromStores";
-import React, { LazyComponent } from "@React";
+import React from "@React";
 import PresenceStore from "@Stores/PresenceStore";
 import { reactRefMemoFilter, waitForComponent } from "@Webpack";
 

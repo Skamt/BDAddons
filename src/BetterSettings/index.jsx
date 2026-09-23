@@ -2,7 +2,6 @@ import "./styles";
 import "./patches/*";
 import Plugin from "@common/Plugin";
 import React from "@React";
-import { Patcher } from "@Api";
 import FieldSet from "@Components/FieldSet";
 import SettingSwtich from "@Components/SettingSwtich";
 import "@/forceLoadSettings";

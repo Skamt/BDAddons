@@ -34,7 +34,7 @@ Plugin.onStart(() => {
 			after(MessageComponentAccessories.prototype, "renderEmbeds", ({ args: [message], ret }) => {
 				if (!ret || !message?.state) return;
 				return (
-					<MessageStateContext.Provider value={message.state}>{ret}</MessageStateContext.Provider>
+					<MessageStateContext value={message.state}>{ret}</MessageStateContext>
 				);
 			});
 		},

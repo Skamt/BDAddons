@@ -1,13 +1,9 @@
-import { Patcher } from "@Api";
-import Logger from "@Utils/Logger";
+import { after } from "@common/Patcher";
 import DiscordPermissions from "@Modules/DiscordPermissions";
 import DiscordPermissionsEnum from "@Enums/DiscordPermissionsEnum";
 
 import Plugin from "@common/Plugin";
 
 Plugin.onStart(() => {
-	if (!DiscordPermissions) return Logger.patchError("ChannelGuildPermissions");
-	const unpatch = Patcher.after(DiscordPermissions, "can", (_, [permission], ret) => ret || DiscordPermissionsEnum.USE_EXTERNAL_EMOJIS === permission);
-
-	Plugin.once(Events.STOP, unpatch);
+	after(DiscordPermissions, "can", ({args:[permission], ret}) => ret || DiscordPermissionsEnum.USE_EXTERNAL_EMOJIS === permission);
 });

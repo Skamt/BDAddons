@@ -1,5 +1,4 @@
 import React from "@React";
-import Tooltip from "@Components/Tooltip";
 import Toast from "@Utils/Toast";
 import { PlayIcon, PauseIcon } from "@Components/Icon";
 import ControlButton from "../ControlButton";

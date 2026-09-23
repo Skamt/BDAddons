@@ -4,6 +4,7 @@ export const ReactDOM = /*@__PURE__*/ (() => BdApi.ReactDOM)();
 export const useState = /*@__PURE__*/ (() => BdApi.React.useState)();
 export const createContext = /*@__PURE__*/ (() => BdApi.React.createContext)();
 export const useContext = /*@__PURE__*/ (() => BdApi.React.useContext)();
+export const use = /*@__PURE__*/ (() => BdApi.React.use)();
 export const useEffect = /*@__PURE__*/ (() => BdApi.React.useEffect)();
 export const useRef = /*@__PURE__*/ (() => BdApi.React.useRef)();
 export const memo = /*@__PURE__*/ (() => BdApi.React.memo)();

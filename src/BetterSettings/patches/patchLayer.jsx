@@ -1,13 +1,11 @@
 import { getByKeys, Filters, getDeclarationAndKey } from "@Webpack";
-import { Patcher } from "@Api";
-import { getNestedProp } from "@Utils";
 import { classNameFactory } from "@Utils/css";
-import Logger from "@Utils/Logger";
+import Logger, { patchError } from "@Utils/Logger";
 import React from "@React";
 import Settings from "@Utils/Settings";
 import { FocusLock, ComponentDispatch } from "@Discord/Modules";
 import Plugin from "@common/Plugin";
-import {LAZY_DISCORD_COMPONENT_WRAPPER} from "@common/const";
+import { LAZY_DISCORD_COMPONENT_WRAPPER } from "@common/consts";
 
 const BaseLayer = getDeclarationAndKey(
 	Filters.bySource("this.renderArtisanalHack()"),
@@ -48,7 +46,7 @@ function Layer({ mode, baseLayer = false, ...props }) {
 
 function prepLayer(props) {
 	try {
-		if(FocusLock.displayName === LAZY_DISCORD_COMPONENT_WRAPPER) throw "";
+		if (FocusLock.displayName === LAZY_DISCORD_COMPONENT_WRAPPER) throw "";
 		[ComponentDispatch, Classes.layer].forEach((e) => e.test);
 	} catch {
 		DEV: Logger.error("Failed to find some components");
@@ -59,8 +57,8 @@ function prepLayer(props) {
 }
 
 Plugin.onStart(() => {
-	const { module, key } = BaseLayer;
-	if (!module || !key) return Logger.error("BaseLayer");
+	const [ module, key ] = BaseLayer;
+	if (!module || !key) return patchError("BaseLayer");
 
 	const origin = module[key];
 
@@ -73,8 +71,11 @@ Plugin.onStart(() => {
 	run();
 	const unsub = Settings.subscribe(Settings.selectors.disableFade, run);
 
-	Plugin.onStop(() => {
-		unsub();
-		module[key] = origin;
-	});
+	Plugin.onStop(
+		() => {
+			unsub();
+			module[key] = origin;
+		},
+		{ once: true },
+	);
 });

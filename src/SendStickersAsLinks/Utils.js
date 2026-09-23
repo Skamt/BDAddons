@@ -28,12 +28,12 @@ export function sendStickerAsLink(sticker, channel) {
 
 	if (!Settings.state.sendDirectly) return insertText(content);
 
-	try {
-		sendMessageDirectly(content, channel.id);
-	} catch {
-		insertText(content);
+	sendMessageDirectly(content, channel.id).catch(() => {
 		Toast.error("Could not send directly.");
-	}
+		insertText(content);
+	});
+
+
 }
 
 export function getStickerUrl(sticker) {

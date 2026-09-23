@@ -1,16 +1,16 @@
 import { getBySource } from "@Webpack";
-import { getObjectKey } from "@Utils";
-import { isValid } from "@common/Patcher/shared";
-import {patchError} from "@Utils/Logger";
+import { hasOwn, getObjectKey } from "@Utils";
+
+import { patchError } from "@Utils/Logger";
 import Settings from "@Utils/Settings";
 import Plugin from "@common/Plugin";
-import { UNDEFINED_OBJECT_OR_KEY } from "@common/consts";
+import { PATCH_ERROR } from "@common/consts";
 
 const SettingsMenuTransition = getBySource("headerId:void 0,headerIdIsManaged:!1");
 const key = getObjectKey(SettingsMenuTransition, Number.isInteger);
 
-Plugin.onStart(function handler() {
-	if (!isValid(SettingsMenuTransition, key))	return patchError(handler);
+Plugin.onStart(() => {
+	if (!hasOwn(SettingsMenuTransition, key)) return patchError(PATCH_ERROR);
 
 	const origDelay = SettingsMenuTransition[key];
 
