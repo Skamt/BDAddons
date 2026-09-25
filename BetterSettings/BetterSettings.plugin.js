@@ -88,7 +88,6 @@ StylesLoader_default.push(`#settings-menu-BetterDiscord .bd-changelog-button{
 // common/React.jsx
 var React = /* @__PURE__ */ (() => BdApi.React)();
 var React_default = React;
-var NoopComponent = () => null;
 
 // common/Utils/index.js
 function hasOwn(object, key2) {
@@ -111,7 +110,6 @@ var nop = () => {};
 var UNDEFINED_OBJECT_OR_KEY = "Undefined object or key";
 var PATCH_ERROR = "Could not perform a patch";
 var MISSING_ARGUMENTS = "Missing arguments";
-var LAZY_DISCORD_COMPONENT_WRAPPER = "LazyDiscordComponentWrapper";
 
 // common/Webpack.jsx
 var Webpack = /* @__PURE__ */ (() => BdApi.Webpack)();
@@ -142,27 +140,8 @@ function lazy(filter, { decFilter, ...options } = {}) {
 		const key2 = getObjectKey(object, decFilter || filter);
 		if (!object || !key2) throw UNDEFINED_OBJECT_OR_KEY;
 		resolve([object, key2]);
-	}).catch((err) => Logger_default.error(PATCH_ERROR, err));
+	}).catch((cause) => Logger_default.warn(new Error(PATCH_ERROR, { cause })));
 	return promise;
-}
-
-function Suspended({ promise, fallback, ...props }) {
-	const comp = React_default.use(promise);
-	if (comp) return React_default.createElement(comp, props);
-	return fallback;
-}
-
-function waitForComponent(filter, options, Fallback = NoopComponent) {
-	const promise = waitForModule(filter, options);
-	const placeHolderComponent = (props) => /* @__PURE__ */ React_default.createElement(React_default.Suspense, { fallback: /* @__PURE__ */ React_default.createElement(Fallback, null) }, /* @__PURE__ */ React_default.createElement(
-		Suspended, {
-			...props,
-			fallback: /* @__PURE__ */ React_default.createElement(Fallback, null),
-			promise
-		}
-	));
-	placeHolderComponent.displayName = LAZY_DISCORD_COMPONENT_WRAPPER;
-	return placeHolderComponent;
 }
 
 function getDeclarationAndKey(moduleFilter, declarationFilter, options = {}) {
@@ -194,8 +173,7 @@ var subscribeWithSelector = /* @__PURE__ */ (() => getModule(Filters.byStrings("
 }))();
 
 function create(initialState) {
-	const Store = /* @__PURE__ */ zustand(initialState);
-	/* @__PURE__ */
+	const Store = zustand(initialState);
 	Object.defineProperty(Store, "state", {
 		configurable: false,
 		get: () => Store.getState()
@@ -237,7 +215,7 @@ var ComponentDispatch = /* @__PURE__ */ (() => {
 		ComponentDispatch = a;
 	});
 })();
-var FocusLock = /* @__PURE__ */ (() => waitForComponent(Filters.bySource(".containerRef,{disableReturn")))();
+var FocusLock = /* @__PURE__ */ (() => getModule(Filters.byStrings(".containerRef,{disableReturn"), { searchExports: true }))();
 var I18n = /* @__PURE__ */ (() => getByKeys("intl", "t"))();
 
 // src/BetterSettings/patches/patchLayer.jsx
@@ -276,8 +254,7 @@ function Layer({ mode, baseLayer = false, ...props }) {
 
 function prepLayer(props) {
 	try {
-		if (FocusLock.displayName === LAZY_DISCORD_COMPONENT_WRAPPER) throw "";
-		[ComponentDispatch, Classes.layer].forEach((e) => e.test);
+		[FocusLock, ComponentDispatch, Classes.layer].forEach((e) => e.test);
 	} catch {
 		return props.children;
 	}
