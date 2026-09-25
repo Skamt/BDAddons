@@ -2,7 +2,7 @@ import { patch } from "./shared";
 import { nop } from "@Utils";
 import Settings from "@Utils/Settings";
 
-const getSettingsPatcher = (type) => {
+const getSettingsPatcher = type => {
 	let unpatch = nop;
 	return (object, key, callback, settingsKey) => {
 		function _patch() {

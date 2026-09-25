@@ -12,6 +12,7 @@
 		"shouldSendAnimatedEmojis":false,
 		"sendEmojiAsPng":false,
 		"shouldHihglightAnimatedEmojis":true,
-		"emojiSize":48
+		"emojiSize":48,
+		"emojiRenderSize":80
 	}
 }

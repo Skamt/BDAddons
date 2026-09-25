@@ -1,31 +1,26 @@
-import { getInternalInstance, ContextMenu } from "@Api";
+import { insertChild } from "@React";
+import { getInternalInstance } from "@Api";
 import Plugin from "@common/Plugin";
+import ContextMenu, { patch } from "@common/Patcher/contextmenu";
 import { sendEmojiDirectly, insertEmoji } from "../Utils";
 
 Plugin.onStart(() => {
-	const unpatch = [
-		ContextMenu.patch("expression-picker", (retVal, props) => {
-			const iProps = getInternalInstance(props.target)?.pendingProps;
-			const id = iProps?.["data-type"] === "emoji" && iProps["data-id"];
-			if(!id) return;
-			
-			const MenuItems = [
-				ContextMenu.buildItem({
-					label: "Send directly",
-					action: () => sendEmojiDirectly(id)
-				}),
-				ContextMenu.buildItem({
-					label: "Insert url",
-					action: () => insertEmoji(id)
-				})
-			];
+	patch("expression-picker", (ret, props) => {
+		const iProps = getInternalInstance(props.target)?.pendingProps;
+		const id = iProps?.["data-type"] === "emoji" && iProps["data-id"];
+		if (!id) return;
 
-			if (Array.isArray(retVal.props.children)) retVal.props.children.unshift(MenuItems);
-				else retVal.props.children = [MenuItems, retVal.props.children];
-		})
-	];
+		const MenuItems = [
+			ContextMenu.buildItem({
+				label: "Send directly",
+				action: () => sendEmojiDirectly(id),
+			}),
+			ContextMenu.buildItem({
+				label: "Insert url",
+				action: () => insertEmoji(id),
+			}),
+		];
 
-	Plugin.once(Events.STOP, () => {
-		unpatch.forEach(a => a && typeof a === "function" && a());
+		insertChild(ret, MenuItems, 0);
 	});
 });

@@ -1,0 +1,55 @@
+import { findInTree } from "@Api";
+import { after, afterOnce } from "@common/Patcher";
+import { Filters, getMangled, getModule } from "@Webpack";
+import Logger from "@Utils/Logger";
+import React from "@React";
+import ErrorBoundary from "@Components/ErrorBoundary";
+import EmojisList from "@/components/EmojisList";
+import Plugin from "@common/Plugin";
+
+const ExpressionPicker = getModule(a => a?.type?.toString().includes("handleDrawerResizeHandleMouseDown"), { searchExports: false });
+
+const { ExpressionPickerStore } = getMangled("expression-picker-last-active-view", {
+	ExpressionPickerStore: a => a.getState
+});
+const VIEW_TYPE = "SAVED_EMOJIS";
+
+Plugin.onStart(() => {
+	if (!ExpressionPicker) return Logger.patchError("ExpressionPicker");
+	after(ExpressionPicker, "type", ({ ret }) => {
+		const thing = findInTree(ret, Filters.byKeys("align", "autoInvert"), { walkable: ["props", "children"] });
+		if (!thing?.children) return ret;
+
+		afterOnce(thing, "children", ({ ret }) => {
+			const body = findInTree(ret, el => el?.[0]?.type === "nav", { walkable: ["props", "children"] });
+			const head = findInTree(body, el => el?.[0]?.props?.["aria-selected"] !== void 0, { walkable: ["props", "children"] });
+
+			const TabButtonComponent = head?.[0]?.type?.type;
+			if (!TabButtonComponent) return;
+
+			const activeView = ExpressionPickerStore.getState().activeView;
+			const selected = VIEW_TYPE === activeView;
+
+			head.push(
+				<ErrorBoundary id="EmojisList-TabButtonComponent">
+					<TabButtonComponent
+						id={VIEW_TYPE}
+						aria-controls={VIEW_TYPE}
+						aria-selected={selected}
+						viewType={VIEW_TYPE}
+						isActive={selected}>
+						My Tab
+					</TabButtonComponent>
+				</ErrorBoundary>
+			);
+
+			if (selected) {
+				body.push(
+					<ErrorBoundary id="EmojisList">
+						<EmojisList />
+					</ErrorBoundary>
+				);
+			}
+		});
+	});
+});

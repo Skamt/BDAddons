@@ -1,5 +1,7 @@
 import { Data } from "@Api";
 
+const target = new EventTarget;
+
 function buildEmojiObj({ animated, name, id }) {
 	return {
 		"animated": animated ? true : false,
@@ -83,13 +85,33 @@ function commit() {
 	EmojisManager.emojis = emojisMap.parsedEmojis;
 	// console.log(emojisMap);
 	Data.save("emojis", cleaned);
+
+	target.dispatchEvent(new Event("CHANGED"));
 }
+
+function off(listener){
+	target.removeEventListener("CHANGED", listener );
+}
+
+function on(listener, props){
+	target.addEventListener("CHANGED", listener , props);
+	return () => off(listener);
+}
+
+function getEmojis(){
+	return EmojisManager.emojis ;
+}
+
+
 
 const EmojisManager = {
 	_state: emojisMap,
 	add,
 	remove,
 	commit,
+	on,
+	getEmojis,
+	off,
 	has,
 	update,
 	getById,

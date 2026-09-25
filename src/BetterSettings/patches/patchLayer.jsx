@@ -5,7 +5,6 @@ import React from "@React";
 import Settings from "@Utils/Settings";
 import { FocusLock, ComponentDispatch } from "@Discord/Modules";
 import Plugin from "@common/Plugin";
-import { LAZY_DISCORD_COMPONENT_WRAPPER } from "@common/consts";
 
 const BaseLayer = getDeclarationAndKey(
 	Filters.bySource("this.renderArtisanalHack()"),
@@ -46,8 +45,7 @@ function Layer({ mode, baseLayer = false, ...props }) {
 
 function prepLayer(props) {
 	try {
-		if (FocusLock.displayName === LAZY_DISCORD_COMPONENT_WRAPPER) throw "";
-		[ComponentDispatch, Classes.layer].forEach((e) => e.test);
+		[FocusLock, ComponentDispatch, Classes.layer].forEach((e) => e.test);
 	} catch {
 		DEV: Logger.error("Failed to find some components");
 		return props.children;

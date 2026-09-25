@@ -1,18 +1,14 @@
-import { Patcher } from "@Api";
-import { getNestedProp, promiseHandler, concateClassNames } from "@Utils";
+import { after } from "@common/Patcher";
 import { getMangled } from "@Webpack";
 import React from "@React";
-import Logger from "@Utils/Logger";
 import Plugin from "@common/Plugin";
 import { ContextMenu } from "@Api";
 import EmojisManager from "@/EmojisManager";
 
-const EmojiComponentModule = getMangled("Unknown Src for Emoji", {
-	Emoji: (a) => true,
-});
+const EmojiComponentModule = getMangled("Unknown Src for Emoji", { Emoji: () => true });
 
-Plugin.on(Events.START, async () => {
-	Patcher.after(EmojiComponentModule, "Emoji", (_, [props], ret) => {
+Plugin.onStart(async () => {
+	after(EmojiComponentModule, "Emoji", ({ args: [props], ret }) => {
 		if (props.src) return ret;
 		ret.props.onContextMenu = (e) => {
 			const Menu = ContextMenu.buildMenu([

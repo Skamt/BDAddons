@@ -34,7 +34,7 @@ function CompleteQuest({ quest }) {
 	);
 }
 
-Plugin.on(Events.START, async () => {
+Plugin.onStart(async () => {
 	const QuestCard = await waitForModule(Filters.bySource("isQuestEnrollmentBlocked", "questNameHeadingId", "questOrQuests"),{ raw: true },);
 
 	if (!QuestCard) return Logger.patchError("QuestCard");

@@ -25,8 +25,7 @@ function getPreviewComponent(graphicPrimary) {
 }
 
 Plugin.onStart(() => {
-	const {module, key} = ExpressionPickerInspector;
-	after(module, key, (_, [{ graphicPrimary, titlePrimary }], ret) => {
+	after(...ExpressionPickerInspector, ({args:[{ graphicPrimary, titlePrimary }], ret}) => {
 		if (titlePrimary?.toLowerCase().includes("upload")) return;
 		return (
 			<ErrorBoundary id="PreviewComponent" fallback={ret}>

@@ -41,7 +41,7 @@ export function lazy(filter, { decFilter, ...options } = {}) {
 
 			resolve([object, key]);
 		})
-		.catch(err => Logger.error(PATCH_ERROR, err));
+		.catch(cause => Logger.warn(new Error(PATCH_ERROR, { cause })));
 
 	return promise;
 }

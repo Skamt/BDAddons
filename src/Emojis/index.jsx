@@ -1,28 +1,19 @@
 import "./styles";
 // import "./patches/*";
+// import "./patches/EmojiContextmenu";
+// import "./patches/patchEmojiInChat";
 import "./patches/patchExpressionPicker";
-import "./patches/patchIsEmojiDisabled";
+// import "./patches/patchIsEmojiDisabled";
 // import "./patches/patchFavoriteEmojis";
-import "./patches/EmojiContextmenu";
-import "./patches/patchEmojiInChat";
-import "./patches/patchEmojiPickerHeader";
+// import "./patches/patchEmojiPickerHeader";
 
-import { Patcher } from "@Api";
-import React from "@React";
+// import { Patcher } from "@Api";
+// import React from "@React";
 import Plugin from "@common/Plugin";
-import SettingComponent from "./components/SettingComponent";
+// import SettingComponent from "./components/SettingComponent";
 
-Plugin.getSettingsPanel = () => <SettingComponent />;
+// Plugin.getSettingsPanel = () => <SettingComponent />;
 
-Plugin.onStop(() => {
-	Patcher.unpatchAll();
-});
+
 
 module.exports = () => Plugin;
-
-// import patchGetEmojiUnavailableReason from "./patches/patchGetEmojiUnavailableReason";
-// import patchIsEmojiFiltered from "./patches/patchIsEmojiFiltered";
-// import patchExpressionPicker from "./patches/patchExpressionPicker";
-// import patchHighlightAnimatedEmoji from "./patches/patchHighlightAnimatedEmoji";
-// import patchEmojiUtils from "./patches/patchEmojiUtils";
-// import patchUseEmojiGrid from "./patches/patchUseEmojiGrid";
