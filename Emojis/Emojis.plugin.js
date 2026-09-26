@@ -299,46 +299,6 @@ function getCopyContextMenuItem(id, name) {
 // MODULES-AUTO-LOADER:@Stores/EmojiStore
 var EmojiStore_default = /* @__PURE__ */ (() => getStore("EmojiStore"))();
 
-// src/Emojis/patches/EmojiContextmenu.js
-Plugin_default.onStart(() => {
-	patch("expression-picker", (ret, props) => {
-		const iProps = getInternalInstance(props.target)?.pendingProps;
-		const id = iProps?.["data-type"] === "emoji" && iProps["data-id"];
-		if (!id) return;
-		const emoji = EmojiStore_default.getCustomEmojiById(id);
-		insertChild(ret, [
-			getContextMenuItem("send", id, emoji.animated),
-			getContextMenuItem("insert", id, emoji.animated),
-			getCopyContextMenuItem(id, emoji.name)
-		].map(contextmenu_default.buildItem.bind(contextmenu_default)), 0);
-	});
-});
-
-// common/Patcher/shared.js
-Plugin_default.onStop(() => Patcher.unpatchAll());
-
-function patchOnce(type, object, key, callback) {
-	const unpatch = Patcher[type](object, key, (...args) => {
-		unpatch();
-		callback.apply(null, args);
-	});
-}
-
-function patch2(type, object, key, callback, once) {
-	if (!hasOwn(object, key))
-		return Logger.error("Could not perform a patch, missing arguments", arguments);
-	const caller = {
-		after: (context, args, ret) => callback({ context, args, ret }),
-		before: (context, args) => callback({ context, args }),
-		instead: (context, args, fn) => callback({ context, args, fn })
-	} [type];
-	return once ? patchOnce(type, object, key, caller) : Patcher[type](object, key, caller);
-}
-
-// common/Patcher/index.js
-var after = (...args) => patch2("after", ...args);
-var afterOnce = (...args) => patch2("after", ...args, true);
-
 // src/Emojis/EmojisManager.js
 var target2 = new EventTarget();
 
@@ -448,6 +408,61 @@ var EmojisManager = {
 	emojis: emojisMap.parsedEmojis
 };
 var EmojisManager_default = EmojisManager;
+
+// src/Emojis/patches/EmojiContextmenu.js
+Plugin_default.onStart(() => {
+	patch("expression-picker", (ret, props) => {
+		const iProps = getInternalInstance(props.target)?.pendingProps;
+		const id = iProps?.["data-type"] === "emoji" && iProps["data-id"];
+		if (!id) return;
+		const emoji = EmojiStore_default.getCustomEmojiById(id);
+		insertChild(
+			ret,
+			[
+				getContextMenuItem("send", id, emoji.animated),
+				getContextMenuItem("insert", id, emoji.animated),
+				getCopyContextMenuItem(id, emoji.name),
+				{ type: "separator" },
+				{
+					label: "Save",
+					action: () => {
+						EmojisManager_default.add({
+							animated: emoji.animated,
+							name: (emoji.name || emoji["aria-describedby"]).replace(/:/g, ""),
+							id
+						});
+						EmojisManager_default.commit();
+					}
+				}
+			].map(contextmenu_default.buildItem.bind(contextmenu_default)),
+			0
+		);
+	});
+});
+
+// common/Patcher/shared.js
+Plugin_default.onStop(() => Patcher.unpatchAll());
+
+function patch2(type, object, key, callback) {
+	if (!hasOwn(object, key))
+		return Logger.error("Could not perform a patch, missing arguments", arguments);
+	const caller = {
+		after: (context, args, ret) => callback({ context, args, ret }),
+		before: (context, args) => callback({ context, args }),
+		instead: (context, args, fn) => callback({ context, args, fn })
+	} [type];
+	return Patcher[type](object, key, caller);
+}
+
+// common/Patcher/index.js
+function once(type, object, key, callback) {
+	const unpatch = patch2(type, object, key, (...args) => {
+		unpatch();
+		callback.apply(null, args);
+	});
+}
+var after = (...args) => patch2("after", ...args);
+var afterOnce = (...args) => once("after", ...args);
 
 // src/Emojis/patches/patchEmojiInChat.jsx
 var EmojiComponentModule = getMangled("Unknown Src for Emoji", { Emoji: () => true });
@@ -788,7 +803,7 @@ Plugin_default.onStart(() => {
 						viewType: VIEW_TYPE,
 						isActive: selected
 					},
-					"My Tab"
+					"Saved Emojis"
 				))
 			);
 			if (selected) {
