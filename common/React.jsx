@@ -7,6 +7,7 @@ export const useContext = /*@__PURE__*/ (() => BdApi.React.useContext)();
 export const use = /*@__PURE__*/ (() => BdApi.React.use)();
 export const useEffect = /*@__PURE__*/ (() => BdApi.React.useEffect)();
 export const useRef = /*@__PURE__*/ (() => BdApi.React.useRef)();
+export const useSyncExternalStore = /*@__PURE__*/ (() => BdApi.React.useSyncExternalStore)();
 export const memo = /*@__PURE__*/ (() => BdApi.React.memo)();
 export const useCallback = /*@__PURE__*/ (() => BdApi.React.useCallback)();
 export const cloneElement = /*@__PURE__*/ (() => BdApi.React.cloneElement)();

@@ -1,7 +1,5 @@
-// import "./styles";
 import Store from "@/Store";
-import { FolderIcon } from "@Components/Icon";
-import React, { useEffect, useState } from "@React";
+import React from "@React";
 import { shallow } from "@Utils";
 import Popout from "@Components/Popout";
 import FolderPopoutMenu from "./FolderPopoutMenu";
@@ -11,7 +9,7 @@ import { BookmarkSortable, FolderDroppable } from "@/components/DND";
 import { DNDTypes } from "@/consts";
 
 function Folder({ id, folderId, dropRef, dragRef, ...props }) {
-	const { name, items } = Store(state => Store.getFolder(folderId), shallow) || {};
+	const { name, items } = Store(() => Store.getFolder(folderId), shallow) || {};
 	return (
 		<Popout
 			position="bottom"

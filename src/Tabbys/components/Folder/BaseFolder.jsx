@@ -1,7 +1,6 @@
 import "./styles";
-import Store from "@/Store";
 import { FolderIcon } from "@Components/Icon";
-import React, { useEffect, useState } from "@React";
+import React from "@React";
 import { classNameFactory, join } from "@Utils/css";
 import { ContextMenu } from "@Api";
 import FolderContextMenu from "@/contextmenus/FolderContextMenu";

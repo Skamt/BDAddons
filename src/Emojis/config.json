@@ -7,11 +7,6 @@
 		"github": "https://github.com/Skamt/BDAddons/tree/main/Emojis"
 	},
 	"settings":{
-		"sendDirectly":false,
-		"ignoreEmbedPermissions":false,
-		"shouldSendAnimatedEmojis":false,
-		"sendEmojiAsPng":false,
-		"shouldHihglightAnimatedEmojis":true,
 		"emojiSize":48,
 		"emojiRenderSize":80
 	}

@@ -1,6 +1,6 @@
 import "./styles";
 import React from "@React";
-import { classNameFactory, join } from "@Utils/css";
+import { classNameFactory } from "@Utils/css";
 
 const c = classNameFactory("dnd");
 

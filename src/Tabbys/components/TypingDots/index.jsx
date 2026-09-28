@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "@React";
+import React from "@React";
 import {  waitForComponent, reactRefMemoFilter } from "@Webpack";
 import { getUserName } from "@Utils/User";
 

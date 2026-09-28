@@ -1,29 +1,26 @@
 import { getByKeys, Filters, getDeclarationAndKey } from "@Webpack";
 import { classNameFactory } from "@Utils/css";
 import Logger, { patchError } from "@Utils/Logger";
-import React from "@React";
+import React, { useRef, useEffect } from "@React";
 import Settings from "@Utils/Settings";
 import { FocusLock, ComponentDispatch } from "@Discord/Modules";
 import Plugin from "@common/Plugin";
 
-const BaseLayer = getDeclarationAndKey(
-	Filters.bySource("this.renderArtisanalHack()"),
-	Filters.byPrototypeKeys("animateIn"),
-);
+const BaseLayer = getDeclarationAndKey(Filters.bySource("this.renderArtisanalHack()"), Filters.byPrototypeKeys("animateIn"));
 
 const Classes = getByKeys("animating", "baseLayer", "bg", "layer", "layers");
 const cl = classNameFactory("", "");
 
 function Layer({ mode, baseLayer = false, ...props }) {
 	const hidden = mode === "HIDDEN";
-	const containerRef = React.useRef(null);
+	const containerRef = useRef(null);
 
-	React.useEffect(
+	useEffect(
 		() => () => {
 			ComponentDispatch.dispatch("LAYER_POP_START");
 			ComponentDispatch.dispatch("LAYER_POP_COMPLETE");
 		},
-		[],
+		[]
 	);
 
 	const node = (
@@ -33,7 +30,7 @@ function Layer({ mode, baseLayer = false, ...props }) {
 			className={cl({
 				[Classes.layer]: true,
 				[Classes.baseLayer]: baseLayer,
-				"stop-animations": hidden,
+				"stop-animations": hidden
 			})}
 			style={{ opacity: hidden ? 0 : undefined }}
 			{...props}
@@ -45,7 +42,7 @@ function Layer({ mode, baseLayer = false, ...props }) {
 
 function prepLayer(props) {
 	try {
-		[FocusLock, ComponentDispatch, Classes.layer].forEach((e) => e.test);
+		[FocusLock, ComponentDispatch, Classes.layer].forEach(e => e.test);
 	} catch {
 		DEV: Logger.error("Failed to find some components");
 		return props.children;
@@ -55,7 +52,7 @@ function prepLayer(props) {
 }
 
 Plugin.onStart(() => {
-	const [ module, key ] = BaseLayer;
+	const [module, key] = BaseLayer;
 	if (!module || !key) return patchError("BaseLayer");
 
 	const origin = module[key];
@@ -74,6 +71,6 @@ Plugin.onStart(() => {
 			unsub();
 			module[key] = origin;
 		},
-		{ once: true },
+		{ once: true }
 	);
 });

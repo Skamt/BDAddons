@@ -26,6 +26,7 @@ export default /*@__PURE__*/ (() => {
 	);
 
 	Object.assign(SettingsStore, {
+		// eslint-disable-next-line @eslint-react/no-unnecessary-use-prefix
 		useSetting: (key) => {
 			const val = SettingsStore((state) => state[key]);
 			return [val, SettingsStore[`set${key}`]];

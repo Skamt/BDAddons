@@ -1,17 +1,13 @@
-import Store from "@/Store";
 import config from "@Config";
 import SettingSlider from "@Components/SettingSlider";
 import { valueToPx } from "@/utils";
 import { ContextMenu } from "@Api";
-import { CloseIcon, PenIcon, PlusIcon } from "@Components/Icon";
 import React, { useState } from "@React";
 import Settings from "@Utils/Settings";
 import { classNameFactory } from "@Utils/css";
 const c = classNameFactory(`${config.info.name}-menuitem`);
 
-const { Separator, CheckboxItem, RadioItem, ControlItem, Group, Item, Menu } = ContextMenu;
-
-import Slider from "@Modules/Slider";
+const { Separator, CheckboxItem, ControlItem, Item, Menu } = ContextMenu;
 
 function ContextMenuToggle({ settingKey, label, color }) {
 	const [state, setState] = useState(Settings.state[settingKey]);
@@ -38,7 +34,11 @@ function ContextMenuSlider({ settingKey, label, ...rest }) {
 			label={`${label}: ${val}px`}
 			control={() => (
 				<div style={{ padding: "0 8px" }}>
-					<SettingSlider {...rest} settingKey={settingKey} onValueRender={valueToPx} />
+					<SettingSlider
+						{...rest}
+						settingKey={settingKey}
+						onValueRender={valueToPx}
+					/>
 				</div>
 			)}
 		/>
@@ -48,19 +48,23 @@ function ContextMenuSlider({ settingKey, label, ...rest }) {
 function status() {
 	function genStatusToggles(type) {
 		return (
-			<Item label={type} id={c(type)}>
+			<Item
+				label={type}
+				id={c(type)}>
 				{[
 					{ settingKey: `show${type}Pings`, label: "Pings" },
 					{ settingKey: `show${type}Unreads`, label: "Unreads" },
 					{ settingKey: `show${type}Typing`, label: "Typings" },
-					{ settingKey: `highlight${type}Unread`, label: "Highlight Unread" },
+					{ settingKey: `highlight${type}Unread`, label: "Highlight Unread" }
 				].map(ContextMenuToggle)}
 			</Item>
 		);
 	}
 
 	return (
-		<Item label="Status" id={c("status")}>
+		<Item
+			label="Status"
+			id={c("status")}>
 			{genStatusToggles("Tab")}
 			{genStatusToggles("Bookmark")}
 			{genStatusToggles("Folder")}
@@ -70,26 +74,28 @@ function status() {
 
 function appearence() {
 	return (
-		<Item label="Appearence" id={c("appearence")}>
+		<Item
+			label="Appearence"
+			id={c("appearence")}>
 			{[
 				{
 					settingKey: "size",
 					label: "UI Size",
 					minValue: 24,
-					maxValue: 32,
+					maxValue: 32
 				},
 				{
 					label: "Tab width",
 					settingKey: "tabWidth",
 					minValue: 50,
-					maxValue: 250,
+					maxValue: 250
 				},
 				{
 					label: "Tab min width",
 					settingKey: "tabMinWidth",
 					minValue: 50,
-					maxValue: 250,
-				},
+					maxValue: 250
+				}
 			].map(ContextMenuSlider)}
 
 			<Separator />
@@ -99,7 +105,7 @@ function appearence() {
 				{ settingKey: "showBookmarkbar", label: "Show Bookmarks" },
 				{ settingKey: "keepTitle", label: "Keep TitleBar" },
 				{ settingKey: "privacyMode", label: "Privacy Mode" },
-				{ settingKey: "showSettingsButton", label: "Show Settings button", color: "danger" },
+				{ settingKey: "showSettingsButton", label: "Show Settings button", color: "danger" }
 			].map(ContextMenuToggle)}
 		</Item>
 	);
@@ -110,11 +116,13 @@ export default function () {
 		<Menu>
 			{appearence()}
 			{status()}
-			<Item label="Functionality" id={c("functionality")}>
+			<Item
+				label="Functionality"
+				id={c("functionality")}>
 				{[
 					{ settingKey: "bookmarkOverflowWrap", label: "Wrap Bookmarks" },
 					{ settingKey: "ctrlClickChannel", label: "Ctrl+Click channel" },
-					{ settingKey: "tabSwitch", label: "Tab switch keybinds" },
+					{ settingKey: "tabSwitch", label: "Tab switch keybinds" }
 				].map(ContextMenuToggle)}
 			</Item>
 		</Menu>

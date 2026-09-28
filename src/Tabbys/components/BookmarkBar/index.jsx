@@ -39,8 +39,9 @@ export function BookmarkBarWrapAround() {
 
 	return (
 		<div className={c("container")}>
-			<div className={c("content", "wrap")}>{content.length > 0 ? content : <NoBookmarks />}
-			<DragHandle />
+			<div className={c("content", "wrap")}>
+				{content.length > 0 ? content : <NoBookmarks />}
+				<DragHandle />
 			</div>
 		</div>
 	);
@@ -95,7 +96,7 @@ export function BookmarkBarOverflowMenu() {
 		};
 	}, []);
 
-	const content = bookmarks.map(({ id, folderId }, index) => {
+	const content = bookmarks.map(({ id, folderId }) => {
 		const hidden = overflowedItems.find(a => a === id);
 		return getItem({ className: c({ hidden }) }, id, folderId);
 	});

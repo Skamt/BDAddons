@@ -3,7 +3,6 @@ import { pathTypes } from "@/consts";
 import ChannelStore from "@Stores/ChannelStore";
 import UserStore from "@Stores/UserStore";
 import UserGuildJoinRequestStore from "@Stores/UserGuildJoinRequestStore";
-import { ChannelTypeEnum } from "@Discord/Enums";
 import { transitionTo, ChannelUtils } from "@Discord/Modules";
 import SelectedChannelStore from "@Stores/SelectedChannelStore";
 
@@ -123,14 +122,6 @@ export function navigate({ type, channelId, path, userId }) {
 
 	return transitionTo(path);
 }
-
-const avatarSizes = {
-	32: "SIZE_24",
-	30: "SIZE_20",
-	28: "SIZE_20",
-	26: "SIZE_16",
-	24: "SIZE_16"
-};
 
 export function getSize(e) {
 	if (e >= 32) return { size: 24, avatarSize: "SIZE_24" };

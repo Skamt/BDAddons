@@ -38,7 +38,7 @@ Plugin.onStart(() => {
 						aria-selected={selected}
 						viewType={VIEW_TYPE}
 						isActive={selected}>
-						My Tab
+						Saved Emojis
 					</TabButtonComponent>
 				</ErrorBoundary>
 			);

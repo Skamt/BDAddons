@@ -3,7 +3,7 @@ import ControlButton from "@/components/ControlButton";
 import HoverPopout from "@Components/HoverPopout";
 import { MuteVolumeIcon, NextIcon, PauseIcon, PlayIcon, PreviousIcon, RepeatIcon, RepeatOneIcon, ShareIcon, ShuffleIcon, VolumeIcon } from "@Components/Icon";
 
-import React from "@React";
+import React, {useRef,useState} from "@React";
 import { PlayerButtonsEnum } from "@/consts.js";
 import { storeContextMenu } from "@/contextmenu.js";
 import Store from "@/store";
@@ -125,8 +125,8 @@ export default () => {
 
 function Volume() {
 	const volume = Store(Store.selectors.volume, shallow);
-	const [uiVolume, setUiVolume] = React.useState(volume);
-	const volumeRef = React.useRef(volume || 25);
+	const [uiVolume, setUiVolume] = useState(volume);
+	const volumeRef = useRef(volume || 25);
 
 	const volumeMuteHandler = () => {
 		const target = uiVolume ? 0 : volumeRef.current;

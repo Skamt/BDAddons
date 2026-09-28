@@ -2,13 +2,13 @@ import { loadChannel, shouldLoad } from "@/utils";
 import Button from "@Components/Button";
 import FieldSet from "@Components/FieldSet";
 import Switch from "@Components/Switch";
-import React from "@React";
+import React, {useState} from "@React";
 import ChannelsStateManager from "../ChannelsStateManager";
 import { COMPONENT_ID } from "../Constants";
 
 export default ({ channel, ret }) => {
-	const [checked, setChecked] = React.useState(false);
-	const [load, setLoad] = React.useState(() => shouldLoad(channel));
+	const [checked, setChecked] = useState(false);
+	const [load, setLoad] = useState(() => shouldLoad(channel));
 	const isDm = channel.guild_id === null;
 
 	const loadChannelHandler = () => {

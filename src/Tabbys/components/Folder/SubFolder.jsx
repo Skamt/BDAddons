@@ -1,8 +1,7 @@
 import Store from "@/Store";
-import { FolderIcon } from "@Components/Icon";
-import React, { useEffect, useState } from "@React";
+import React from "@React";
 import { shallow } from "@Utils";
-import { classNameFactory, join } from "@Utils/css";
+import { classNameFactory } from "@Utils/css";
 import Popout from "@Components/Popout";
 import FolderPopoutMenu from "./FolderPopoutMenu";
 import BaseFolder from "./BaseFolder";
@@ -14,7 +13,7 @@ const c = classNameFactory("folder");
 
 function SubFolder({ id, folderId, parentId, dragRef, dropRef, onClose, ...props }) {
 	// const { isDragging, isOver, canDrop, folderDropRef, dragRef } = props;
-	const { name, items } = Store(state => Store.getFolder(folderId), shallow) || {};
+	const { name, items } = Store(() => Store.getFolder(folderId), shallow) || {};
 
 	return (
 		<Popout

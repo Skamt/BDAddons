@@ -78,6 +78,7 @@ Plugin.onStop(() => {
 	Dispatcher.unsubscribe("CONNECTION_OPEN", hydrateStore);
 });
 
+// eslint-disable-next-line no-unused-vars
 import { diff, addedDiff, deletedDiff, updatedDiff, detailedDiff } from "deep-object-diff";
 DEV: {
 	Store.subscribe(

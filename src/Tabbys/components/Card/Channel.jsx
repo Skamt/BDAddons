@@ -2,7 +2,6 @@ import React from "@React";
 import useStateFromStores from "@Modules/useStateFromStores";
 import ChannelStore from "@Stores/ChannelStore";
 import { getGuildIcon } from "@Utils/Channel";
-import { join } from "@Utils/css";
 import Settings from "@Utils/Settings";
 import { getSize } from "@/utils";
 import Markup from "./Markup";

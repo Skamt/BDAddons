@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "@React";
+import React, { useState, useEffect, use } from "@React";
 import useStateFromStores from "@Modules/useStateFromStores";
 import ContextMenuStore from "@Stores/ContextMenuStore";
 import LayerStore from "@Stores/LayerStore";
@@ -16,7 +16,7 @@ const { ExpressionPickerStore } = getMangled("expression-picker-last-active-view
 
 function usePopoutListener() {
 	const [hasPopout, setHasPopout] = useState(false);
-	const { windowDispatch } = useContext(BasePopout.contextType);
+	const { windowDispatch } = use(BasePopout.contextType);
 
 	useEffect(() => {
 		function show() {

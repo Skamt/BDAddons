@@ -17,7 +17,7 @@ import { Content, HideTitleContext } from "@/components/Card";
 
 function BaseBookmark({ id, parentId, dragRef, onClose, className }) {
 	const shouldHightLight = Settings(Settings.selectors.highlightBookmarkUnread);
-	const bookmark = Store(state => (parentId ? Store.getFolderItem(parentId, id) : Store.getBookmark(id)), shallow) || {};
+	const bookmark = Store(() => (parentId ? Store.getFolderItem(parentId, id) : Store.getBookmark(id)), shallow) || {};
 	const { noName, guildId, userId, path, channelId } = bookmark;
 	const hasUnread = useStateFromStores([ReadStateStore], () => shouldHightLight && ReadStateStore.hasUnread(channelId), [shouldHightLight, channelId]);
 	const isSubBookmark = !!parentId;
@@ -60,9 +60,9 @@ function BaseBookmark({ id, parentId, dragRef, onClose, className }) {
 			onContextMenu={contextmenuHandler}
 			className={join("bookmark-container", "card", isSubBookmark && "folder-item", className, { hasUnread })}
 			onClick={onClick}>
-			<HideTitleContext.Provider value={noName}>
+			<HideTitleContext value={noName}>
 				<Content {...bookmark} />
-			</HideTitleContext.Provider>
+			</HideTitleContext>
 			<ChannelStatus
 				type="Bookmark"
 				channelIds={[channelId]}

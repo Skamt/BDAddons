@@ -1,8 +1,8 @@
-import React from "@React";
+import React, { use } from "@React";
 import { HideTitleContext } from "./context";
 
 export default function Markup({ icon, title }) {
-	const hideTitle = React.useContext(HideTitleContext);
+	const hideTitle = use(HideTitleContext);
 	return (
 		<>
 			{icon}

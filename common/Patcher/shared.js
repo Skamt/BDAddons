@@ -4,18 +4,11 @@ import Plugin from "@common/Plugin";
 
 Plugin.onStop(() => Patcher.unpatchAll());
 
-function patchOnce(type, object, key, callback) {
-	const unpatch = Patcher[type](object, key, (...args) => {
-		unpatch();
-		callback.apply(null, args);
-	});
-}
-
-export function patch(type, object, key, callback, once) {
+export function patch(type, object, key, callback) {
 	if (!hasOwn(object, key))
 		return Logger.error("Could not perform a patch, missing arguments", arguments);
 
-	DEV: Logger.log("[Patch]", arguments);
+	DEV: Logger.warn("[Patch]", arguments);
 
 	const caller = {
 		after: (context, args, ret) => callback({ context, args, ret }),
@@ -23,5 +16,5 @@ export function patch(type, object, key, callback, once) {
 		instead: (context, args, fn) => callback({ context, args, fn }),
 	}[type];
 
-	return once ? patchOnce(type, object, key, caller) : Patcher[type](object, key, caller);
+	return Patcher[type](object, key, caller);
 }

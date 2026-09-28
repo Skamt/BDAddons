@@ -1,5 +1,5 @@
 import "./styles";
-import React from "@React";
+import React, {useMemo} from "@React";
 import Button from "@Components/Button";
 import ControlButton from "../ControlButton";
 import Popout from "@Components/Popout";
@@ -27,7 +27,7 @@ export default ({ activity, user }) => {
 	const userPlayActivityState = useSpotifyPlayAction(activity, user);
 	const isActive = Store(Store.selectors.isActive);
 	const url = `https://open.spotify.com/track/${activity?.sync_id}`;
-	const bannerUrl = React.useMemo(() => `https://i.scdn.co/image/${activity?.assets?.large_image?.replace("spotify:", "")}`, [activity?.assets?.large_image]);
+	const bannerUrl = useMemo(() => `https://i.scdn.co/image/${activity?.assets?.large_image?.replace("spotify:", "")}`, [activity?.assets?.large_image]);
 
 	return (
 		<div className={c("controls")}>

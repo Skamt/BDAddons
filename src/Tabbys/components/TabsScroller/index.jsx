@@ -4,20 +4,21 @@ import { animate, getElMeta, isScrollable } from "@Utils/HTMLElement";
 import { join } from "@Utils/css";
 import { clsx, debounce } from "@Utils";
 import { ArrowIcon } from "@Components/Icon";
+const c = clsx("scroller");
 
 function useIsScrollable() {
 	const [isOverflowing, setIsOverflowing] = useState(false);
-	const scrollerNode = useRef();
+	const scrollerNodeRef = useRef();
 
 	useEffect(() => {
-		const node = scrollerNode.current;
+		const node = scrollerNodeRef.current;
 		if (!node) return;
-		scrollerNode.current = node;
+		scrollerNodeRef.current = node;
 		setIsOverflowing(isScrollable(node));
 	}, []);
 
 	useEffect(() => {
-		const node = scrollerNode.current;
+		const node = scrollerNodeRef.current;
 		if (!node) return;
 
 		const overflowListener = debounce(() => setIsOverflowing(isScrollable(node)));
@@ -35,44 +36,39 @@ function useIsScrollable() {
 		};
 	}, []);
 
-	return [scrollerNode, isOverflowing];
+	return [scrollerNodeRef.current, isOverflowing, scrollerNodeRef];
 }
 
-const c = clsx("scroller");
+function scroll(el, scrollValue) {
+	if (!el) return;
+	animate("scrollLeft", el, el.scrollLeft + scrollValue);
+}
 
-export default function TabsScroller({ items, renderItem, shouldScroll, scrollTo, onScrollToEnd, containerClassName, contentClassName, endScrollButtonClassName, scrollButtonClassName, startScrollButtonClassName, getScrollSize }) {
-	const [ref, isOverflowing] = useIsScrollable();
+function scrollItemIntoView(scrollerNode, index) {
+	if (index == null) return;
+
+	if (!scrollerNode) return;
+	const target = scrollerNode.children[index];
+	if (!target) return;
+	const { parentMeta, targetMeta, nextSiblingMeta, previousSiblingMeta } = getElMeta(target);
+
+	if (!nextSiblingMeta) return scroll(scrollerNode, targetMeta.right + targetMeta.width - parentMeta.right);
+	if (!previousSiblingMeta) return scroll(scrollerNode, targetMeta.left - targetMeta.width - parentMeta.left);
+	if (targetMeta.left < parentMeta.left) return scroll(scrollerNode, previousSiblingMeta.right - parentMeta.left);
+	if (targetMeta.right > parentMeta.right) return scroll(scrollerNode, nextSiblingMeta.left - parentMeta.right);
+}
+
+export default function TabsScroller({ items, renderItem, shouldScroll, scrollTo, containerClassName, contentClassName }) {
+	const [scrollerNode, isOverflowing, ref] = useIsScrollable();
 
 	useEffect(() => {
-		setTimeout(() => {
-			scrollItemIntoView(scrollTo);
-		}, 0);
-	}, [shouldScroll]);
-
-	function scroll(scrollValue) {
-		const scrollerNode = ref.current;
-		if (!scrollerNode) return;
-		animate("scrollLeft", ref.current, scrollerNode.scrollLeft + scrollValue);
-	}
+		// eslint-disable-next-line @eslint-react/web-api-no-leaked-timeout
+		setTimeout(() => scrollItemIntoView(scrollerNode, scrollTo), 0);
+	}, [scrollTo, scrollerNode, shouldScroll]);
 
 	function scrollDelta() {
-		const scrollerNode = ref.current;
 		if (!scrollerNode) return;
-		return getScrollSize ? getScrollSize(scrollerNode) : scrollerNode.clientWidth / 2;
-	}
-
-	function scrollItemIntoView(index) {
-		if (index == null) return;
-		const scrollerNode = ref.current;
-		if (!scrollerNode) return;
-		const target = scrollerNode.children[index];
-		if (!target) return;
-		const { parentMeta, targetMeta, nextSiblingMeta, previousSiblingMeta } = getElMeta(target);
-
-		if (!nextSiblingMeta) return scroll(targetMeta.right + targetMeta.width - parentMeta.right);
-		if (!previousSiblingMeta) return scroll(targetMeta.left - targetMeta.width - parentMeta.left);
-		if (targetMeta.left < parentMeta.left) return scroll(previousSiblingMeta.right - parentMeta.left);
-		if (targetMeta.right > parentMeta.right) return scroll(nextSiblingMeta.left - parentMeta.right);
+		return scrollerNode.clientWidth / 2;
 	}
 
 	return (
@@ -80,8 +76,8 @@ export default function TabsScroller({ items, renderItem, shouldScroll, scrollTo
 			{isOverflowing && (
 				// biome-ignore lint/a11y/useButtonType: <explanation>
 				<button
-					onClick={() => scroll(-1 * scrollDelta())}
-					className={join(c("btn", "btn-start"), "icon-wrapper", "rounded-full", scrollButtonClassName, startScrollButtonClassName)}>
+					onClick={() => scroll(scrollerNode, -1 * scrollDelta())}
+					className={join(c("btn", "btn-start"), "icon-wrapper", "rounded-full")}>
 					<ArrowIcon />
 				</button>
 			)}
@@ -93,8 +89,8 @@ export default function TabsScroller({ items, renderItem, shouldScroll, scrollTo
 			{isOverflowing && (
 				// biome-ignore lint/a11y/useButtonType: <explanation>
 				<button
-					onClick={() => scroll(scrollDelta())}
-					className={join(c("btn", "btn-end"), "icon-wrapper", "rounded-full", scrollButtonClassName, endScrollButtonClassName)}>
+					onClick={() => scroll(scrollerNode, scrollDelta())}
+					className={join(c("btn", "btn-end"), "icon-wrapper", "rounded-full")}>
 					<ArrowIcon />
 				</button>
 			)}

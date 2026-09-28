@@ -1,5 +1,5 @@
 import "./styles";
-import React, { useEffect, useState } from "@React";
+import React from "@React";
 import { PlusIcon } from "@Components/Icon";
 import TabsScroller from "@/components/TabsScroller";
 import Tab from "@/components/Tab";

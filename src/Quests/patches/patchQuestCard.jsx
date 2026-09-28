@@ -1,16 +1,16 @@
-import { getDeclarationAndKey, waitForModule, Filters } from "@Webpack";
+import {  waitForModule, Filters } from "@Webpack";
 import { Patcher } from "@Api";
 import Logger from "@Utils/Logger";
 import Plugin from "@common/Plugin";
 import { getObjectKey, preventDefault } from "@Utils";
 import Button from "@Components/Button";
-import React from "@React";
+import React, {useState} from "@React";
 import Toast from "@Utils/Toast";
 import completeQuest from "@/questTypes";
 import { isQuestCompleted, isQuestAccepted } from "@/utils";
 
 function CompleteQuest({ quest }) {
-	const [completing, setCompleting] = React.useState(false);
+	const [completing, setCompleting] = useState(false);
 	const questHandler = async () => {
 		try {
 			setCompleting(true);

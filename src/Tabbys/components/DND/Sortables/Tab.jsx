@@ -1,5 +1,4 @@
 import DroppableMarkup from "./DroppableMarkup";
-import { DropTarget } from "@Discord/Modules";
 import { DNDTypes } from "@/consts";
 import Store from "@/Store";
 import { openTabAt, openBookmarkAt } from "@/Store/methods";

@@ -1,8 +1,8 @@
-import React from "@React";
+import React, {useState} from "@React";
 import Switch from "@Components/Switch";
 
 export default function ({ settings, enableExp }) {
-	const [enabled, setEnabled] = React.useState(settings.expEnabled);
+	const [enabled, setEnabled] = useState(settings.expEnabled);
 
 	return (
 		<Switch

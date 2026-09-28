@@ -1,12 +1,11 @@
 import { ContextMenu } from "@Api";
 import Store from "@/Store";
-import { Dispatcher } from "@Discord/Modules";
 import { BookmarkOutlinedIcon, DuplicateIcon, LightiningIcon, VectorIcon } from "@Components/Icon";
 import React from "@React";
-import { sanitize, getCopies, getFolders, wrapMenuItem } from "./helper";
+import { sanitize, getCopies, getFolders } from "./helper";
 
 import { bookmarkTabAt, removeTabsToRight, removeOtherTabs, removeTabsToLeft, addTabToFolderAt } from "@/Store/methods";
-import { copyItem, MarkAsReadItem } from "./shared";
+import { MarkAsReadItem } from "./shared";
 
 export default function (id, { path, channelId, userId, guildId, hasUnread }) {
 	const canClose = Store.getTabsCount() > 1;
@@ -97,4 +96,3 @@ export default function (id, { path, channelId, userId, guildId, hasUnread }) {
 
 	return props => <Menu {...props} />;
 }
-

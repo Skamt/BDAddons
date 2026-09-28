@@ -1,6 +1,6 @@
 import { openLink, copy, getPathName } from "@Utils";
 import Store from "@/store";
-import React from "@React";
+import React, { useEffect, useState } from "@React";
 import { insertText, sendMessageDirectly } from "@Utils/Messages";
 import SelectedChannelStore from "@Stores/SelectedChannelStore";
 import Toast from "@Utils/Toast";
@@ -11,8 +11,8 @@ export function spotifyCopy(content) {
 	Toast.success("Copied!");
 }
 
-export const copySpotifyUrl = (url) => spotifyCopy(sanitizeSpotifyLink(url));
-export const openSpotifyUrl = (url) => openLink(sanitizeSpotifyLink(url));
+export const copySpotifyUrl = url => spotifyCopy(sanitizeSpotifyLink(url));
+export const openSpotifyUrl = url => openLink(sanitizeSpotifyLink(url));
 
 export function spotifyShare(content) {
 	if (!content) return Toast.error("Share failed");
@@ -49,8 +49,8 @@ export function isSpotifyUrl(url) {
 }
 
 export function useGetRessource(type, id) {
-	const [state, setState] = React.useState(null);
-	React.useEffect(() => {
+	const [state, setState] = useState(null);
+	useEffect(() => {
 		(async () => {
 			const data = await Store.Api.getRessource(type, id);
 			if (data) setState(data);
@@ -65,10 +65,10 @@ export const parsers = {
 			id: obj.id,
 			thumbnail: obj.album.images,
 			rawTitle: obj.name,
-			rawDescription: `${obj.artists.map((a) => a.name).join(", ")} · ${obj.name} · ${new Date(obj.album.release_date).getFullYear()}`,
+			rawDescription: `${obj.artists.map(a => a.name).join(", ")} · ${obj.name} · ${new Date(obj.album.release_date).getFullYear()}`,
 			url: obj.external_urls.spotify,
 			preview_url: obj.preview_url,
-			explicit: obj.explicit,
+			explicit: obj.explicit
 		};
 	},
 	playlist(obj) {
@@ -82,8 +82,8 @@ export const parsers = {
 			total_tracks: obj.tracks.total,
 			owner: {
 				name: obj.owner.display_name,
-				id: obj.owner.id,
-			},
+				id: obj.owner.id
+			}
 		};
 	},
 	album(obj) {
@@ -92,9 +92,9 @@ export const parsers = {
 			thumbnail: obj.images,
 			rawTitle: obj.name,
 			url: obj.external_urls.spotify,
-			rawDescription: `${obj.artists.map((a) => a.name).join(", ")} · ${obj.name} · ${obj.total_tracks} songs · ${new Date(obj.release_date).getFullYear()}`,
+			rawDescription: `${obj.artists.map(a => a.name).join(", ")} · ${obj.name} · ${obj.total_tracks} songs · ${new Date(obj.release_date).getFullYear()}`,
 			total_tracks: obj.total_tracks,
-			popularity: obj.popularity,
+			popularity: obj.popularity
 		};
 	},
 	artist(obj) {
@@ -104,7 +104,7 @@ export const parsers = {
 			rawTitle: obj.name,
 			rawDescription: `${obj.name} · ${obj.followers.total} followers · ${obj.popularity} popularity`,
 			url: obj.external_urls.spotify,
-			popularity: obj.popularity,
+			popularity: obj.popularity
 		};
 	},
 	user(obj) {
@@ -113,7 +113,7 @@ export const parsers = {
 			thumbnail: obj.images,
 			rawTitle: obj.display_name,
 			rawDescription: `${obj.display_name} · ${obj.followers.total} followers`,
-			url: obj.external_urls.spotify,
+			url: obj.external_urls.spotify
 		};
 	},
 	show(obj) {
@@ -127,7 +127,7 @@ export const parsers = {
 			publisher: obj.publisher,
 			languages: obj.languages,
 			is_externally_hosted: obj.is_externally_hosted,
-			total_episodes: obj.total_episodes,
+			total_episodes: obj.total_episodes
 		};
 	},
 	episode(obj) {
@@ -142,7 +142,7 @@ export const parsers = {
 			release_date: obj.release_date,
 			explicit: obj.explicit,
 			duration_ms: obj.duration_ms,
-			is_externally_hosted: obj.is_externally_hosted,
+			is_externally_hosted: obj.is_externally_hosted
 		};
-	},
+	}
 };

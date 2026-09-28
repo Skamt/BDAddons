@@ -112,7 +112,7 @@ export default {
 			const { selectedId, lastSelectedIdAfterNewTab, tabs } = this.state;
 			if (tabs.length === 1) return; // keep at least one tab
 
-			const { index, nextItem: next, previousItem: previous, isSingle } = this.getTabMeta(id);
+			const { index, nextItem: next, previousItem: previous } = this.getTabMeta(id);
 			const isSelected = selectedId === id;
 			const newSelected = !isSelected ? selectedId : lastSelectedIdAfterNewTab ? lastSelectedIdAfterNewTab : next ? next.id : previous.id;
 			this.setState({

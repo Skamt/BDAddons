@@ -63,12 +63,10 @@ export default {
 		...getters,
 		...setters,
 
-	
 		reOrderFolder(folderId, fromId, toId, pos) {
 			const items = this.getFolderItems(folderId);
 			this.setFolderItems(folderId, reOrder(items, fromId, toId, pos));
 		},
-		
 
 		addToFolderBy(folderId, bookmark, targetId, fn) {
 			const items = this.getFolderItems(folderId);
@@ -89,7 +87,6 @@ export default {
 
 			const itemIndex = this.getFolderItemIndex(folderId, itemId);
 			if (itemIndex === -1) return;
-			const item = folder.items[itemIndex];
 
 			this.updateFolder(folderId, { items: remove(folder.items, itemIndex) });
 		},
@@ -117,6 +114,6 @@ export default {
 			const indices = getIndices(folderId);
 
 			this.setState({ folders: removeMany(folders, [folderIndex, ...indices]) });
-		}	
+		}
 	}
 };

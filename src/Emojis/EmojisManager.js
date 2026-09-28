@@ -1,6 +1,6 @@
 import { Data } from "@Api";
 
-const target = new EventTarget;
+const target = new EventTarget();
 
 function buildEmojiObj({ animated, name, id }) {
 	return {
@@ -37,12 +37,12 @@ function has(id) {
 	return !!getById(id);
 }
 
-function getById(id){
-	return emojisMap.parsedEmojis[emojisMap.indexMap[id]]
+function getById(id) {
+	return emojisMap.parsedEmojis[emojisMap.indexMap[id]];
 }
 
-function getByIndex(index){
-	return emojisMap.parsedEmojis[index]
+function getByIndex(index) {
+	return emojisMap.parsedEmojis[index];
 }
 
 function add({ animated, name, id }) {
@@ -52,7 +52,6 @@ function add({ animated, name, id }) {
 	emojisMap.parsedEmojis.unshift(parsedEmoji);
 	// emojisMap.indexMap[id] = 0;
 }
-
 
 function remove(id) {
 	if (!has(id)) return;
@@ -83,26 +82,23 @@ function commit() {
 		emojisMap.indexMap[id] = index;
 	}
 	EmojisManager.emojis = emojisMap.parsedEmojis;
-	// console.log(emojisMap);
 	Data.save("emojis", cleaned);
 
 	target.dispatchEvent(new Event("CHANGED"));
 }
 
-function off(listener){
-	target.removeEventListener("CHANGED", listener );
+function off(listener) {
+	target.removeEventListener("CHANGED", listener);
 }
 
-function on(listener, props){
-	target.addEventListener("CHANGED", listener , props);
+function on(listener, props) {
+	target.addEventListener("CHANGED", listener, props);
 	return () => off(listener);
 }
 
-function getEmojis(){
-	return EmojisManager.emojis ;
+function getEmojis() {
+	return EmojisManager.emojis;
 }
-
-
 
 const EmojisManager = {
 	_state: emojisMap,
@@ -116,50 +112,11 @@ const EmojisManager = {
 	update,
 	getById,
 	getByIndex,
-	emojis:emojisMap.parsedEmojis
+	emojis: emojisMap.parsedEmojis
 };
 
 DEV: {
 	window.EmojisManager = EmojisManager;
 }
 
-// console.log(EmojisManager);
-
 export default EmojisManager;
-// (() => {
-// 	const Emojis = Object.create(null);
-
-// 	Emojis.emojis = savedEmojis.map(emoji => {
-// 		const [animated, name, id] = emoji.split(":");
-// 		return buildEmojiObj({ animated, name, id });
-// 	});
-
-// 	function commit() {
-// 		Data.save("emojis", savedEmojis);
-// 	}
-
-// 	Emojis.add = function ({ animated, name, id }) {
-// 		const index = Emojis.emojis.findIndex(e => e.id === id);
-// 		if (index !== -1) return;
-// 		Emojis.emojis.push(buildEmojiObj({ animated, name, id }));
-// 		savedEmojis.push(serializeEmoji({ animated, name, id }));
-// 		commit();
-// 	};
-
-// 	Emojis.remove = function (id) {
-// 		const emojiIndex = Emojis.emojis.findIndex(e => e.id === id);
-// 		const savedEmojisIndex = savedEmojis.findIndex(e => e.id.includes(id));
-// 		if (emojiIndex === -1) return;
-// 		if (savedEmojisIndex === -1) return;
-
-// 		Emojis.emojis.splice(emojiIndex, 1);
-// 		savedEmojis.splice(savedEmojisIndex, 1);
-// 		commit();
-// 	};
-
-// 	Emojis.has = function (id) {
-// 		return -1 !== Emojis.emojis.findIndex(e => e.id === id);
-// 	};
-
-// 	return Emojis;
-// })();

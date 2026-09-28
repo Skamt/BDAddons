@@ -30,7 +30,7 @@ export function makeDroppable(types, drop) {
 			return (
 				<Comp
 					{...props}
-					dropRef={a => {}}
+					dropRef={() => {}}
 				/>
 			);
 		};
@@ -53,7 +53,7 @@ export function makeDraggable(type) {
 			return (
 				<Comp
 					{...props}
-					dragRef={a => {}}
+					dragRef={() => {}}
 				/>
 			);
 		};

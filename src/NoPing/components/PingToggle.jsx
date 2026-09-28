@@ -1,10 +1,10 @@
-import React from "@React";
+import React, {useState} from "@React";
 import Divider from "@Components/Divider";
 import Heading from "@Modules/Heading";
 import Blacklist from "@/blacklist";
 
 export default function PingToggle({userId}) {
-	const [has, setHas] = React.useState(Blacklist.has(userId));
+	const [has, setHas] = useState(Blacklist.has(userId));
 	
 	const toggleHandler = e =>{
 		Blacklist.toggle(userId)

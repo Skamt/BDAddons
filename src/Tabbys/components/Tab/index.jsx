@@ -16,13 +16,13 @@ import { Content } from "@/components/Card";
 const c = classNameFactory("tab");
 
 function Tab({ id, isOver, canDrop, isDragging, dragRef, dropRef }) {
-	const tab = Store(state => Store.getTab(id), shallow);
+	const tab = Store(() => Store.getTab(id), shallow);
 	const { guildId, userId, path, channelId } = tab;
 
 	const shouldHightLight = Settings(Settings.selectors.highlightTabUnread);
 	const hasUnread = useStateFromStores([ReadStateStore], () => shouldHightLight && ReadStateStore.hasUnread(channelId), [shouldHightLight, channelId]);
 	const isSelected = Store(Store.selectors.selectedId) === id;
-	const isSingle = Store(Store.selectors.isSingle);
+	
 
 	const onClick = e => {
 		e.stopPropagation();

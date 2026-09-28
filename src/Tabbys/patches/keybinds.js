@@ -1,5 +1,4 @@
 import Plugin from "@common/Plugin";
-import { Dispatcher } from "@Discord/Modules";
 import Settings from "@Utils/Settings";
 import { switchLeft, switchRight } from "@/Store/methods";
 

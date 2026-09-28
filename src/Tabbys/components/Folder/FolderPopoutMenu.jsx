@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "@React";
+import React from "@React";
 import SubFolder from "./SubFolder";
-import {SubBookmark} from "@/components/Bookmark";
-import { classNameFactory, join } from "@Utils/css";
+import { SubBookmark } from "@/components/Bookmark";
+import { classNameFactory } from "@Utils/css";
 
 const c = classNameFactory("folder");
 
@@ -16,7 +16,7 @@ export default function FolderPopoutMenu({ folderId, items, onClose }) {
 				items.map(item => {
 					return item.folderId ? (
 						<SubFolder
-							onClose={onClose || e.closePopout}
+							onClose={onClose}
 							parentId={folderId}
 							folderId={item.folderId}
 							id={item.id}
@@ -24,7 +24,7 @@ export default function FolderPopoutMenu({ folderId, items, onClose }) {
 						/>
 					) : (
 						<SubBookmark
-							onClose={onClose || e.closePopout}
+							onClose={onClose}
 							parentId={folderId}
 							id={item.id}
 							key={item.id}

@@ -1,5 +1,5 @@
 import "./styles";
-import React from "@React";
+import React, {useState,useRef,useEffect} from "@React";
 import Slider from "@Modules/Slider";
 import Store from "@/store";
 import { shallow } from "@Utils";
@@ -11,8 +11,8 @@ function formatMsToTime(ms) {
 
 export default () => {
 	const [position, duration] = Store(_ => [_.position, _.duration], shallow);
-	const sliderRef = React.useRef();
-	React.useEffect(() => {
+	const sliderRef = useRef();
+	useEffect(() => {
 		if (sliderRef.current?.state?.active) return;
 		sliderRef.current?.setState({ value: position < 1000 ? 0 : position });
 	}, [position]);
@@ -49,7 +49,7 @@ export default () => {
 };
 
 function Duration({ duration, position }) {
-	const [toggle, setToggle] = React.useState(false);
+	const [toggle, setToggle] = useState(false);
 	const clickHandler = () => setToggle(!toggle);
 
 	return (

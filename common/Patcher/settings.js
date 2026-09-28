@@ -1,18 +1,21 @@
 import { patch } from "./shared";
-import { nop } from "@Utils";
 import Settings from "@Utils/Settings";
 
 const getSettingsPatcher = type => {
-	let unpatch = nop;
+	const unpatchMap = new Map;
 	return (object, key, callback, settingsKey) => {
+		if(!callback || !settingsKey) return;
 		function _patch() {
-			if (!Settings.state[settingsKey]) unpatch();
-			else unpatch = patch(type, object, key, callback);
+			if (!Settings.state[settingsKey]) unpatchMap.get(callback)?.();
+			else unpatchMap.set(callback, patch(type, object, key, callback)) ;
 		}
 
 		_patch();
 		const unsub = Settings.subscribe(Settings.selectors[settingsKey], _patch);
-		Plugin.onStop(unsub, { once: true });
+		Plugin.onStop(()=>{
+			unsub();
+			unpatchMap.delete(callback);
+		}, { once: true });
 	};
 };
 

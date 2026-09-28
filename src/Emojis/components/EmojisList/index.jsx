@@ -3,21 +3,21 @@ import EmojisManager from "@/EmojisManager";
 import { ContextMenu } from "@Api";
 import GridScroller from "@Components/GridScroller";
 import TextInput from "@Components/TextInput";
+import Heading from "@Modules/Heading";
 import { MagnifyingGlassIcon } from "@Components/Icon";
 import Tooltip from "@Components/Tooltip";
-import React, { useMemo, useEffect, useRef, useState } from "@React";
-import { clsx, copy } from "@Utils";
-import { getEmojiUrl, insertEmoji, sendEmojiDirectly } from "@/Utils";
+import React, { useSyncExternalStore, useMemo, useEffect, useRef, useState } from "@React";
+import { clsx } from "@Utils";
+import { getContextMenuItem, getCopyContextMenuItem, buildEmojiUrl, sendDirectly } from "@/Utils";
 import Settings from "@Utils/Settings";
 
 const c = clsx("emoji-list");
 
-const desiredColumns = 10;
 const desiredEmojiSize = 80;
 const gap = 12;
 
-function getColNumberFromWidth(width, itemWidth, maxColumns) {
-	return Math.min(Math.max(Math.floor(width / itemWidth), 1), maxColumns);
+function getColNumberFromWidth(width, itemWidth, gap) {
+	return Math.floor((width + gap) / (itemWidth + gap));
 }
 
 export default function EmojisComponent() {
@@ -27,12 +27,12 @@ export default function EmojisComponent() {
 	const emojiRenderSize = Settings(Settings.selectors.emojiRenderSize) || desiredEmojiSize;
 	const ref = useRef();
 	const scrollerRef = useRef();
-	const emojis = React.useSyncExternalStore(EmojisManager.on, EmojisManager.getEmojis);
+	const emojis = useSyncExternalStore(EmojisManager.on, EmojisManager.getEmojis);
 
 	const filteredEmojis = useMemo(() => emojis.filter(a => a.name.toLowerCase().includes(val.toLowerCase())), [emojis, val]);
 
-	const columns = useMemo(() => getColNumberFromWidth(width - gap * (desiredColumns - 1), emojiRenderSize, desiredColumns), [emojiRenderSize, width]);
-	console.log(scrollerRef);
+	const columns = useMemo(() => getColNumberFromWidth(width, emojiRenderSize, gap), [emojiRenderSize, width]);
+
 	useEffect(() => {
 		const node = ref.current;
 		if (!node) return;
@@ -50,7 +50,6 @@ export default function EmojisComponent() {
 		setWidth(node.clientWidth);
 	}, []);
 
-
 	useEffect(() => {
 		scrollerRef?.current?.scrollToTop();
 	}, [val]);
@@ -60,68 +59,83 @@ export default function EmojisComponent() {
 			ref={ref}
 			style={{ "--emoji-size": emojiRenderSize }}
 			className={c("container")}>
-			<div className={c("header")}>
-				<TextInput
-					clearable={true}
-					autoFocus={true}
-					fullWidth={true}
-					placeholder="Search Emojis"
-					leading={({ color }) => (
-						<MagnifyingGlassIcon
-							width="16"
-							height="16"
-							color={color.css ?? color}
+			{!filteredEmojis.length ? (
+				<Heading
+					className={c("empty")}
+					tag="h1"
+					variant="text-md/medium">
+					No Saved Emojis
+				</Heading>
+			) : (
+				<>
+					<div className={c("header")}>
+						<TextInput
+							clearable={true}
+							autoFocus={true}
+							fullWidth={true}
+							placeholder="Search Emojis"
+							leading={({ color }) => (
+								<MagnifyingGlassIcon
+									width="16"
+									height="16"
+									color={color.css ?? color}
+								/>
+							)}
+							onChange={c => setVal(c)}
+							value={val}
 						/>
-					)}
-					onChange={c => setVal(c)}
-					value={val}
-				/>
-			</div>
-			<div className={c("body")}>
-				<GridScroller
-					ref={scrollerRef}
-					style={{ width }}
-					className={c("emojis-list")}
-					columns={columns}
-					itemGutter={gap}
-					getItemKey={(_, index) => filteredEmojis[index].id}
-					sections={[filteredEmojis.length]}
-					getItemHeight={() => emojiRenderSize}
-					renderItem={(_, index, style) => {
-						const emoji = filteredEmojis[index];
-						return (
-							<EmojiCard
-								style={style}
-								key={emoji.id}
-								{...emoji}
-							/>
-						);
-					}}
-				/>
-			</div>
+					</div>
+					<div className={c("body")}>
+						<GridScroller
+							ref={scrollerRef}
+							style={{ width }}
+							className={c("emojis-list")}
+							columns={columns}
+							fade={true}
+							itemGutter={gap}
+							getItemKey={(_, index) => filteredEmojis[index].id}
+							sections={[filteredEmojis.length]}
+							getItemHeight={() => emojiRenderSize}
+							renderItem={(_, index, style) => {
+								const emoji = filteredEmojis[index];
+								return (
+									<EmojiCard
+										style={style}
+										key={emoji.id}
+										{...emoji}
+									/>
+								);
+							}}
+						/>
+					</div>
+				</>
+			)}
 		</div>
 	);
 }
 
 function EmojiCard({ animated, name, id, style }) {
 	const [hover, setHover] = useState(false);
-	const EmojiContextMenu = React.useMemo(() => {
+	const EmojiContextMenu = useMemo(() => {
 		// eslint-disable-next-line @eslint-react/static-components
-		const Menu = ContextMenu.buildMenu([
-			{ label: "Send directly", action: () => sendEmojiDirectly(id) },
-			{ label: "Copy url", action: () => copy(getEmojiUrl(id)) },
-			{ label: "Insert url", action: () => insertEmoji(id) },
-			{
-				label: "Delete",
-				action: () => {
-					EmojisManager.remove(id);
-					EmojisManager.commit();
+		const Menu = ContextMenu.buildMenu(
+			[
+				getContextMenuItem("send", id, animated),
+				getContextMenuItem("insert", id, animated),
+
+				getCopyContextMenuItem(id, name),
+				{
+					label: "Delete",
+					action: () => {
+						EmojisManager.remove(id);
+						EmojisManager.commit();
+					}
 				}
-			}
-		]);
+			].filter(Boolean)
+		);
 		// eslint-disable-next-line @eslint-react/static-components
 		return props => <Menu {...props} />;
-	}, [id]);
+	}, [animated, id, name]);
 
 	return (
 		<div
@@ -134,13 +148,13 @@ function EmojiCard({ animated, name, id, style }) {
 					align: "left"
 				});
 			}}
-			onClick={() => sendEmojiDirectly(id)}
+			onClick={() => sendDirectly(id)}
 			className={c("emoji-card", animated && "emoji-card-animated")}>
 			<Tooltip note={name}>
 				<div className={c("emoji-img")}>
 					<img
 						alt={name}
-						src={getEmojiUrl(id, hover && animated, 80)}
+						src={buildEmojiUrl(id, hover && animated, 80)}
 					/>
 				</div>
 			</Tooltip>

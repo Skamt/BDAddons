@@ -5,6 +5,15 @@
 	box-sizing: border-box;
 }
 
+.emoji-list-empty {
+	display: flex;
+	align-items:center;
+	justify-content:center;
+	flex:1;
+	font-size: 1.2rem;
+	color: var(--interactive-text-default);
+}
+
 .emoji-list-header {
 	background-color: var(--background-surface-high);
 	border-bottom: 1px solid var(--border-subtle);
@@ -21,7 +30,6 @@
 	display:flex;
 }
 
-
 .emoji-list-emoji-card {
 	border-radius: 8px;
 	padding: 2px;
@@ -29,15 +37,14 @@
 	box-sizing: border-box;
 	display: flex;
 	flex-direction: column;
-	gap: 5px;
-	height: var(--emoji-size);
-	width: var(--emoji-size);
 	position: relative;
+
 }
 
-.emoji-list-emoji-card-animated .emoji-list-emoji-img:before {
+.emoji-list-emoji-card-animated:before {
 	content: "";
 	border: 1px dashed orange;
+	border-radius: inherit;
 	inset: 0;
 	position: absolute;
 }

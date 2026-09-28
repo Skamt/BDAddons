@@ -1,6 +1,6 @@
 import { ContextMenu } from "@Api";
 import React from "@React";
-import { TrashBinIcon, PenIcon, PlusIcon } from "@Components/Icon";
+import { TrashBinIcon,  PlusIcon } from "@Components/Icon";
 import { openPromptModal } from "@/components/PromptModal";
 import Store from "@/Store";
 import {
@@ -10,7 +10,7 @@ import {
 	deleteFolder,
 } from "@/Store/methods";
 import { createFolder } from "./shared";
-import { getFolders, sanitize, wrapMenuItem } from "./helper";
+import { getFolders, sanitize } from "./helper";
 
 export default function (id, { folderId, parentId }) {
 	const folders = getFolders((targetFolderId, name) => {

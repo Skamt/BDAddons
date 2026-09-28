@@ -2,22 +2,11 @@ import { ContextMenu } from "@Api";
 import React from "@React";
 import { TrashBinIcon, PenIcon, PlusIcon } from "@Components/Icon";
 import { openPromptModal } from "@/components/PromptModal";
-import Store from "@/Store";
 
-import { sanitize, getCopies, getFolders, wrapMenuItem } from "./helper";
-import {
-	deleteBookmark,
-	moveSubBookmarkToBookmarksAt,
-	moveBookmarkToFolderAt,
-	addFolder,
-	getBookmark,
-	openTabAt,
-	setBookmarkName,
-	toggleBookmarkNameState,
-	getBookmarkNameState,
-} from "@/Store/methods";
+import { sanitize, getCopies, getFolders } from "./helper";
+import { deleteBookmark, moveSubBookmarkToBookmarksAt, moveBookmarkToFolderAt, getBookmark, openTabAt, setBookmarkName, toggleBookmarkNameState, getBookmarkNameState } from "@/Store/methods";
 
-import { copyItem, createFolder, MarkAsReadItem } from "./shared";
+import { createFolder, MarkAsReadItem } from "./shared";
 
 function renameBookmark(id, parentId) {
 	const bookmark = getBookmark(id, parentId);
@@ -27,7 +16,7 @@ function renameBookmark(id, parentId) {
 		label: "Bookmark Name",
 		placeholder: bookmark.username || "",
 		initialValue: bookmark.name,
-		onSubmit: (name) => setBookmarkName(id, name, parentId),
+		onSubmit: name => setBookmarkName(id, name, parentId)
 	});
 }
 
@@ -36,7 +25,7 @@ export default function (id, { path, channelId, userId, guildId, parentId, hasUn
 		if (folderId === parentId) return;
 		return {
 			action: () => moveBookmarkToFolderAt(id, folderId, parentId),
-			label: name,
+			label: name
 		};
 	});
 
@@ -44,7 +33,7 @@ export default function (id, { path, channelId, userId, guildId, parentId, hasUn
 		if (folders.length) folders.push({ type: "separator" });
 		folders.push({
 			action: () => moveSubBookmarkToBookmarksAt(id, parentId),
-			label: "Move To BookmarkBar",
+			label: "Move To BookmarkBar"
 		});
 	}
 
@@ -54,13 +43,12 @@ export default function (id, { path, channelId, userId, guildId, parentId, hasUn
 			{
 				action: () => openTabAt(path),
 				label: "Open in new Tab",
-				leadingAccessory: { type: "icon", icon: PlusIcon },
+				leadingAccessory: { type: "icon", icon: PlusIcon }
 			},
 			{
-
 				action: () => renameBookmark(id, parentId),
 				label: "Rename",
-				leadingAccessory: { type: "icon", icon: PenIcon },
+				leadingAccessory: { type: "icon", icon: PenIcon }
 			},
 
 			{ type: "separator" },
@@ -68,13 +56,13 @@ export default function (id, { path, channelId, userId, guildId, parentId, hasUn
 			folders.length > 0 && {
 				type: "submenu",
 				label: "Move to folder",
-				items: folders,
+				items: folders
 			},
 			{
 				type: "toggle",
 				label: "Hide Name",
 				active: getBookmarkNameState(id, parentId),
-				action: () => toggleBookmarkNameState(id, parentId),
+				action: () => toggleBookmarkNameState(id, parentId)
 			},
 			{ type: "separator" },
 			...getCopies({ path, channelId, userId, guildId }),
@@ -83,7 +71,7 @@ export default function (id, { path, channelId, userId, guildId, parentId, hasUn
 			{
 				action: () => createFolder(parentId),
 				label: parentId ? "Create Sub Folder" : "Create Folder",
-				leadingAccessory: { type: "icon", icon: PlusIcon },
+				leadingAccessory: { type: "icon", icon: PlusIcon }
 			},
 
 			{ type: "separator" },
@@ -91,10 +79,10 @@ export default function (id, { path, channelId, userId, guildId, parentId, hasUn
 				color: "danger",
 				label: "Delete Bookmark",
 				leadingAccessory: { type: "icon", icon: TrashBinIcon },
-				action: () => deleteBookmark(id, parentId),
-			},
-		]),
+				action: () => deleteBookmark(id, parentId)
+			}
+		])
 	);
 
-	return (props) => <Menu {...props} />;
+	return props => <Menu {...props} />;
 }

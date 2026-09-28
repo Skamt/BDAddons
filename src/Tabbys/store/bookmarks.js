@@ -8,9 +8,6 @@ const getters = {
 	getBookmark(id) {
 		return this.state.bookmarks[this.getBookmarkIndex(id)];
 	},
-	getBookmarkMeta(id) {
-		return meta(this.state.bookmarks, bookmark => bookmark.id === id);
-	},
 	getBookmarksCount() {
 		return this.state.bookmarks.length;
 	}

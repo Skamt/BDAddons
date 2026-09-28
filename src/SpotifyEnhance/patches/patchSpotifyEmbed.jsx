@@ -1,4 +1,4 @@
-import React from "@React";
+import React, {use} from "@React";
 import { after } from "@common/Patcher";
 import { getDeclarationAndKey, Filters } from "@Webpack";
 import ErrorBoundary from "@Components/ErrorBoundary";
@@ -12,7 +12,7 @@ const SpotifyEmbed = getDeclarationAndKey(Filters.bySource("iframe", "playlist",
 
 Plugin.onStart(() => {
 	after(...SpotifyEmbed, ({ args: [{ embed }], ret }) => {
-		const messageState = React.use(MessageStateContext);
+		const messageState = use(MessageStateContext);
 		if (messageState !== "SENT") return null;
 		const [id, type] = parseSpotifyUrl(embed.url) || [];
 		if (!ALLOWD_TYPES.includes(type)) return;

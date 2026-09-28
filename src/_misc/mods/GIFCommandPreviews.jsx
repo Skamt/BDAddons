@@ -50,7 +50,6 @@ export default class GIFCommandPreviews extends Disposable {
 			}),
 			
 			Patcher.after(GIFIntegration.prototype, "renderContent", (_, args, ret) => {
-				// const ref = React.useRef();
 				return (
 					<ErrorBoundary id="GIF-Stuff">
 						{/*<div ref={ref}>*/}

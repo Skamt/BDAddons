@@ -69,6 +69,7 @@ export function openBookmark(bookmarkId, folderId) {
 }
 
 export function setTabFromBookmark(tabId, bookmarkId, folderId) {
+	// eslint-disable-next-line no-unused-vars
 	const { noName, id, ...bookmark } = getBookmark(bookmarkId, folderId) || {};
 	if (bookmark) Store.updateTab(tabId, bookmark);
 

@@ -1,7 +1,5 @@
 import "./styles";
-import { getModule } from "@Webpack";
-import React, { useEffect, useRef, useState } from "@React";
-import { UndoIcon, TrashBinIcon } from "@Components/icon";
+import React, { useRef, useState } from "@React";
 import Heading from "@Modules/Heading";
 import { ManaTextButton, ManaButton } from "@Components/Button";
 import TextInput from "@Components/TextInput";

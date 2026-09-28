@@ -1,8 +1,6 @@
 import { DNDTypes } from "@/consts";
-import Store from "@/Store";
 import { moveFolderToFolderAt, moveBookmarkToFolderAt, addToFolderAt, addTabToFolderAt } from "@/Store/methods";
-import { makeDraggable, makeDroppable } from "../shared";
-import { getGuildChannelPath } from "@/utils";
+import { makeDroppable } from "../shared";
 export default comp =>
 	makeDroppable(
 		[DNDTypes.DRAGGABLE_GUILD_CHANNEL, DNDTypes.BOOKMARK, DNDTypes.SUB_BOOKMARK, DNDTypes.TAB, DNDTypes.FOLDER, DNDTypes.SUB_FOLDER],

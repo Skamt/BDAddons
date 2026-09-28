@@ -1,4 +1,4 @@
-import React, { useRef } from "@React";
+import React, { useEffect, useRef } from "@React";
 import Settings from "@Utils/Settings";
 import { DiscordPopout } from "@Discord/Modules";
 import { PREVIEW_SIZE } from "../Constants";
@@ -6,7 +6,7 @@ import { PREVIEW_SIZE } from "../Constants";
 export default ({ target, previewComponent }) => {
 	const [show, setShow] = Settings.useSetting("previewState");
 	const ref = useRef();
-	React.useEffect(() => {
+	useEffect(() => {
 		function keyupHandler(e) {
 			if (e.key === "Control") {
 				setShow(!show);
@@ -14,7 +14,7 @@ export default ({ target, previewComponent }) => {
 		}
 		document.addEventListener("keyup", keyupHandler);
 		return () => document.removeEventListener("keyup", keyupHandler);
-	}, [show]);
+	}, [setShow, show]);
 
 	return (
 		<DiscordPopout

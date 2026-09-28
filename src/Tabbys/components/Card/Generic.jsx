@@ -1,6 +1,5 @@
-import { join } from "@Utils/css";
 import React from "@React";
-import { ChannelsIcon, AppsIcon, ShopIcon, QuestsIcon, NitroIcon, ServersIcon } from "@Components/Icon";
+import { AppsIcon, ShopIcon, QuestsIcon, NitroIcon, ServersIcon } from "@Components/Icon";
 import { pathTypes } from "@/consts";
 import Markup from "./Markup";
 import Icon from "./Icon";
