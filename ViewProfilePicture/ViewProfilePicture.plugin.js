@@ -2,7 +2,7 @@
  * @runAt idle
  * @name ViewProfilePicture
  * @description Adds a button to the user popout and profile that allows you to view the Avatar and banner.
- * @version 1.3.16
+ * @version 1.3.17
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js
@@ -12,7 +12,7 @@
 var Config_default = {
 	"info": {
 		"name": "ViewProfilePicture",
-		"version": "1.3.16",
+		"version": "1.3.17",
 		"description": "Adds a button to the user popout and profile that allows you to view the Avatar and banner.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture",
@@ -183,6 +183,10 @@ function fit({ width, height, gap = 0.8 }) {
 	};
 }
 var promiseHandler = (promise) => promise.then((data) => [void 0, data]).catch((err) => [err]);
+
+function getNestedProp(obj, path2) {
+	return path2.split(".").reduce((ob, prop) => ob?.[prop], obj);
+}
 var nop = () => {};
 
 function getImageDimensions(url) {
@@ -228,8 +232,7 @@ var subscribeWithSelector = /* @__PURE__ */ (() => getModule(Filters.byStrings("
 }))();
 
 function create(initialState) {
-	const Store = /* @__PURE__ */ zustand(initialState);
-	/* @__PURE__ */
+	const Store = zustand(initialState);
 	Object.defineProperty(Store, "state", {
 		configurable: false,
 		get: () => Store.getState()
@@ -257,6 +260,7 @@ var Settings_default = /* @__PURE__ */ (() => {
 		() => Data.save("settings", SettingsStore.state)
 	);
 	Object.assign(SettingsStore, {
+		// eslint-disable-next-line @eslint-react/no-unnecessary-use-prefix
 		useSetting: (key) => {
 			const val = SettingsStore((state2) => state2[key]);
 			return [val, SettingsStore[`set${key}`]];
@@ -286,7 +290,7 @@ var Tooltip_default2 = ({ note, position, children }) => {
 };
 
 // common/Components/icon/index.jsx
-function svg(svgProps, ...paths) {
+function svg(svgProps, ...paths2) {
 	return (comProps) => (
 		// biome-ignore lint/a11y/noSvgWithoutTitle: <explanation>
 		/* @__PURE__ */
@@ -299,7 +303,7 @@ function svg(svgProps, ...paths) {
 				...svgProps,
 				...comProps
 			},
-			paths.map((p) => typeof p === "string" ? /* @__PURE__ */ path(null, p) : p)
+			paths2.map((p) => typeof p === "string" ? path(null, p) : p)
 		)
 	);
 }
@@ -312,7 +316,7 @@ function path(props, d) {
 		}
 	);
 }
-var ImageIcon = /* @__PURE__ */ svg({ viewBox: "-50 -50 484 484" }, "M341.333,0H42.667C19.093,0,0,19.093,0,42.667v298.667C0,364.907,19.093,384,42.667,384h298.667 C364.907,384,384,364.907,384,341.333V42.667C384,19.093,364.907,0,341.333,0z M42.667,320l74.667-96l53.333,64.107L245.333,192l96,128H42.667z");
+var ImageIcon = /* @__PURE__ */ (() => svg({ viewBox: "-50 -50 484 484" }, "M341.333,0H42.667C19.093,0,0,19.093,0,42.667v298.667C0,364.907,19.093,384,42.667,384h298.667 C364.907,384,384,364.907,384,341.333V42.667C384,19.093,364.907,0,341.333,0z M42.667,320l74.667-96l53.333,64.107L245.333,192l96,128H42.667z"))();
 
 // common/Utils/Color.js
 function colorToImg(c3) {
@@ -373,14 +377,7 @@ var VPPButton_default = ({ className, user, displayProfile }) => {
 // common/Patcher/shared.js
 Plugin_default.onStop(() => Patcher.unpatchAll());
 
-function patchOnce(type, object, key, callback) {
-	const unpatch = Patcher[type](object, key, (...args) => {
-		unpatch();
-		callback.apply(null, args);
-	});
-}
-
-function patch(type, object, key, callback, once) {
+function patch(type, object, key, callback) {
 	if (!hasOwn(object, key))
 		return Logger.error("Could not perform a patch, missing arguments", arguments);
 	const caller = {
@@ -388,7 +385,7 @@ function patch(type, object, key, callback, once) {
 		before: (context, args) => callback({ context, args }),
 		instead: (context, args, fn) => callback({ context, args, fn })
 	} [type];
-	return once ? patchOnce(type, object, key, caller) : Patcher[type](object, key, caller);
+	return Patcher[type](object, key, caller);
 }
 
 // common/Patcher/index.js
@@ -422,10 +419,14 @@ Plugin_default.onStart(() => {
 
 // src/ViewProfilePicture/patches/UserProfileModal.jsx
 var UserProfileModal = getModule(Filters.byKeys("Overlay", "render"));
+var paths = {
+	SIDEBAR: "2.props.children.0",
+	POPOUT: "2"
+};
 Plugin_default.onStart(() => {
 	before(UserProfileModal, "render", ({ args: [props] }) => {
-		const target2 = useMemo(() => props?.children.find((a) => a?.props?.children && !a?.props?.className), [props?.children]);
-		if (!target2) return;
+		const target2 = useMemo(() => getNestedProp(props.children, paths[props.themeType] || ""), [props]);
+		if (!target2) return Logger_default.warn("Unsupported themeType", props.themeType);
 		props.className = `${props.className} VPP-container`;
 		insertChild(
 			target2,

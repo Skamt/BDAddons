@@ -2,7 +2,7 @@
  * @runAt idle
  * @name SpotifyEnhance
  * @description All in one better spotify-discord experience.
- * @version 1.1.17
+ * @version 1.1.18
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js
@@ -12,7 +12,7 @@
 var Config_default = {
 	"info": {
 		"name": "SpotifyEnhance",
-		"version": "1.1.17",
+		"version": "1.1.18",
 		"description": "All in one better spotify-discord experience.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance",
@@ -137,6 +137,7 @@ StylesLoader_default.push(`:root {
 
 // common/React.jsx
 var useState = /* @__PURE__ */ (() => BdApi.React.useState)();
+var use = /* @__PURE__ */ (() => BdApi.React.use)();
 var useEffect = /* @__PURE__ */ (() => BdApi.React.useEffect)();
 var useRef = /* @__PURE__ */ (() => BdApi.React.useRef)();
 var useCallback = /* @__PURE__ */ (() => BdApi.React.useCallback)();
@@ -159,7 +160,7 @@ function svg(svgProps, ...paths) {
 				...svgProps,
 				...comProps
 			},
-			paths.map((p) => typeof p === "string" ? /* @__PURE__ */ path(null, p) : p)
+			paths.map((p) => typeof p === "string" ? path(null, p) : p)
 		)
 	);
 }
@@ -172,28 +173,25 @@ function path(props, d) {
 		}
 	);
 }
-var AddToQueueIcon = /* @__PURE__ */ svg({ viewBox: "-1 -1 18 18" }, "M16 15H2v-1.5h14V15zm0-4.5H2V9h14v1.5zm-8.034-6A5.484 5.484 0 0 1 7.187 6H13.5a2.5 2.5 0 0 0 0-5H7.966c.159.474.255.978.278 1.5H13.5a1 1 0 1 1 0 2H7.966zM2 2V0h1.5v2h2v1.5h-2v2H2v-2H0V2h2z");
-var ArrowIcon = /* @__PURE__ */ svg(null, "M9.71069 18.2929C10.1012 18.6834 10.7344 18.6834 11.1249 18.2929L16.0123 13.4006C16.7927 12.6195 16.7924 11.3537 16.0117 10.5729L11.1213 5.68254C10.7308 5.29202 10.0976 5.29202 9.70708 5.68254C9.31655 6.07307 9.31655 6.70623 9.70708 7.09676L13.8927 11.2824C14.2833 11.6729 14.2833 12.3061 13.8927 12.6966L9.71069 16.8787C9.32016 17.2692 9.32016 17.9023 9.71069 18.2929Z");
-var CopyIcon = /* @__PURE__ */ svg(null, "M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1z", "M15 5H8c-1.1 0-1.99.9-1.99 2L6 21c0 1.1.89 2 1.99 2H19c1.1 0 2-.9 2-2V11l-6-6zM8 21V7h6v5h5v9H8z");
-var ExternalLinkIcon = /* @__PURE__ */ svg({ viewBox: "0 0 16 16" }, "M1 2.75A.75.75 0 0 1 1.75 2H7v1.5H2.5v11h10.219V9h1.5v6.25a.75.75 0 0 1-.75.75H1.75a.75.75 0 0 1-.75-.75V2.75z", "M15 1v4.993a.75.75 0 1 1-1.5 0V3.56L8.78 8.28a.75.75 0 0 1-1.06-1.06l4.72-4.72h-2.433a.75.75 0 0 1 0-1.5H15z");
-var ImageIcon = /* @__PURE__ */ svg({ viewBox: "-50 -50 484 484" }, "M341.333,0H42.667C19.093,0,0,19.093,0,42.667v298.667C0,364.907,19.093,384,42.667,384h298.667 C364.907,384,384,364.907,384,341.333V42.667C384,19.093,364.907,0,341.333,0z M42.667,320l74.667-96l53.333,64.107L245.333,192l96,128H42.667z");
-var ListenAlongIcon = /* @__PURE__ */ svg(null, "M11.8 14a6.1 6.1 0 0 0 0 6H3v-2c0-2.7 5.3-4 8-4h.8zm-.8-2c-2.2 0-4-1.8-4-4s1.8-4 4-4 4 1.8 4 4-1.8 4-4 4zm6 1c2.2 0 4 1.8 4 4s-1.8 4-4 4-4-1.8-4-4 1.8-4 4-4zm-1 6.2l3-2.2-3-2.2v4.4z");
-var ListenIcon = /* @__PURE__ */ svg(null, "M22 16.53C22 18.3282 20.2485 19.7837 18.089 19.7837C15.9285 19.7837 14.5396 18.3277 14.5396 16.53C14.5396 14.7319 15.9286 13.2746 18.089 13.2746C18.7169 13.2746 19.3089 13.4013 19.8353 13.6205V5.814L9.46075 7.32352V18.7449C9.46075 20.5424 7.70957 22 5.54941 22C3.38871 22 2 20.5443 2 18.7456C2 16.9481 3.3892 15.4898 5.54941 15.4898C6.17823 15.4898 6.76966 15.6162 7.29604 15.836C7.29604 11.3608 7.29604 8.5366 7.29604 4.1395L21.9996 2L22 16.53Z");
-var MuteVolumeIcon = /* @__PURE__ */ svg({ viewBox: "0 0 16 16" }, "M13.86 5.47a.75.75 0 0 0-1.061 0l-1.47 1.47-1.47-1.47A.75.75 0 0 0 8.8 6.53L10.269 8l-1.47 1.47a.75.75 0 1 0 1.06 1.06l1.47-1.47 1.47 1.47a.75.75 0 0 0 1.06-1.06L12.39 8l1.47-1.47a.75.75 0 0 0 0-1.06z", "M10.116 1.5A.75.75 0 0 0 8.991.85l-6.925 4a3.642 3.642 0 0 0-1.33 4.967 3.639 3.639 0 0 0 1.33 1.332l6.925 4a.75.75 0 0 0 1.125-.649v-1.906a4.73 4.73 0 0 1-1.5-.694v1.3L2.817 9.852a2.141 2.141 0 0 1-.781-2.92c.187-.324.456-.594.78-.782l5.8-3.35v1.3c.45-.313.956-.55 1.5-.694V1.5z");
-var NextIcon = /* @__PURE__ */ svg({ viewBox: "0 0 16 16" }, "M12.7 1a.7.7 0 0 0-.7.7v5.15L2.05 1.107A.7.7 0 0 0 1 1.712v12.575a.7.7 0 0 0 1.05.607L12 9.149V14.3a.7.7 0 0 0 .7.7h1.6a.7.7 0 0 0 .7-.7V1.7a.7.7 0 0 0-.7-.7h-1.6z");
-var PauseIcon = /* @__PURE__ */ svg({ viewBox: "0 0 16 16" }, "M2.7 1a.7.7 0 0 0-.7.7v12.6a.7.7 0 0 0 .7.7h2.6a.7.7 0 0 0 .7-.7V1.7a.7.7 0 0 0-.7-.7H2.7zm8 0a.7.7 0 0 0-.7.7v12.6a.7.7 0 0 0 .7.7h2.6a.7.7 0 0 0 .7-.7V1.7a.7.7 0 0 0-.7-.7h-2.6z");
-var PlayIcon = /* @__PURE__ */ svg({ viewBox: "0 0 16 16" }, "M3 1.713a.7.7 0 0 1 1.05-.607l10.89 6.288a.7.7 0 0 1 0 1.212L4.05 14.894A.7.7 0 0 1 3 14.288V1.713z");
-var PreviousIcon = /* @__PURE__ */ svg({ viewBox: "0 0 16 16" }, "M3.3 1a.7.7 0 0 1 .7.7v5.15l9.95-5.744a.7.7 0 0 1 1.05.606v12.575a.7.7 0 0 1-1.05.607L4 9.149V14.3a.7.7 0 0 1-.7.7H1.7a.7.7 0 0 1-.7-.7V1.7a.7.7 0 0 1 .7-.7h1.6z");
+var AddToQueueIcon = /* @__PURE__ */ (() => svg({ viewBox: "-1 -1 18 18" }, "M16 15H2v-1.5h14V15zm0-4.5H2V9h14v1.5zm-8.034-6A5.484 5.484 0 0 1 7.187 6H13.5a2.5 2.5 0 0 0 0-5H7.966c.159.474.255.978.278 1.5H13.5a1 1 0 1 1 0 2H7.966zM2 2V0h1.5v2h2v1.5h-2v2H2v-2H0V2h2z"))();
+var ArrowIcon = /* @__PURE__ */ (() => svg(null, "M9.71069 18.2929C10.1012 18.6834 10.7344 18.6834 11.1249 18.2929L16.0123 13.4006C16.7927 12.6195 16.7924 11.3537 16.0117 10.5729L11.1213 5.68254C10.7308 5.29202 10.0976 5.29202 9.70708 5.68254C9.31655 6.07307 9.31655 6.70623 9.70708 7.09676L13.8927 11.2824C14.2833 11.6729 14.2833 12.3061 13.8927 12.6966L9.71069 16.8787C9.32016 17.2692 9.32016 17.9023 9.71069 18.2929Z"))();
+var CopyIcon = /* @__PURE__ */ (() => svg(null, "M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1z", "M15 5H8c-1.1 0-1.99.9-1.99 2L6 21c0 1.1.89 2 1.99 2H19c1.1 0 2-.9 2-2V11l-6-6zM8 21V7h6v5h5v9H8z"))();
+var ExternalLinkIcon = /* @__PURE__ */ (() => svg({ viewBox: "0 0 16 16" }, "M1 2.75A.75.75 0 0 1 1.75 2H7v1.5H2.5v11h10.219V9h1.5v6.25a.75.75 0 0 1-.75.75H1.75a.75.75 0 0 1-.75-.75V2.75z", "M15 1v4.993a.75.75 0 1 1-1.5 0V3.56L8.78 8.28a.75.75 0 0 1-1.06-1.06l4.72-4.72h-2.433a.75.75 0 0 1 0-1.5H15z"))();
+var ImageIcon = /* @__PURE__ */ (() => svg({ viewBox: "-50 -50 484 484" }, "M341.333,0H42.667C19.093,0,0,19.093,0,42.667v298.667C0,364.907,19.093,384,42.667,384h298.667 C364.907,384,384,364.907,384,341.333V42.667C384,19.093,364.907,0,341.333,0z M42.667,320l74.667-96l53.333,64.107L245.333,192l96,128H42.667z"))();
+var ListenAlongIcon = /* @__PURE__ */ (() => svg(null, "M11.8 14a6.1 6.1 0 0 0 0 6H3v-2c0-2.7 5.3-4 8-4h.8zm-.8-2c-2.2 0-4-1.8-4-4s1.8-4 4-4 4 1.8 4 4-1.8 4-4 4zm6 1c2.2 0 4 1.8 4 4s-1.8 4-4 4-4-1.8-4-4 1.8-4 4-4zm-1 6.2l3-2.2-3-2.2v4.4z"))();
+var ListenIcon = /* @__PURE__ */ (() => svg(null, "M22 16.53C22 18.3282 20.2485 19.7837 18.089 19.7837C15.9285 19.7837 14.5396 18.3277 14.5396 16.53C14.5396 14.7319 15.9286 13.2746 18.089 13.2746C18.7169 13.2746 19.3089 13.4013 19.8353 13.6205V5.814L9.46075 7.32352V18.7449C9.46075 20.5424 7.70957 22 5.54941 22C3.38871 22 2 20.5443 2 18.7456C2 16.9481 3.3892 15.4898 5.54941 15.4898C6.17823 15.4898 6.76966 15.6162 7.29604 15.836C7.29604 11.3608 7.29604 8.5366 7.29604 4.1395L21.9996 2L22 16.53Z"))();
+var MuteVolumeIcon = /* @__PURE__ */ (() => svg({ viewBox: "0 0 16 16" }, "M13.86 5.47a.75.75 0 0 0-1.061 0l-1.47 1.47-1.47-1.47A.75.75 0 0 0 8.8 6.53L10.269 8l-1.47 1.47a.75.75 0 1 0 1.06 1.06l1.47-1.47 1.47 1.47a.75.75 0 0 0 1.06-1.06L12.39 8l1.47-1.47a.75.75 0 0 0 0-1.06z", "M10.116 1.5A.75.75 0 0 0 8.991.85l-6.925 4a3.642 3.642 0 0 0-1.33 4.967 3.639 3.639 0 0 0 1.33 1.332l6.925 4a.75.75 0 0 0 1.125-.649v-1.906a4.73 4.73 0 0 1-1.5-.694v1.3L2.817 9.852a2.141 2.141 0 0 1-.781-2.92c.187-.324.456-.594.78-.782l5.8-3.35v1.3c.45-.313.956-.55 1.5-.694V1.5z"))();
+var NextIcon = /* @__PURE__ */ (() => svg({ viewBox: "0 0 16 16" }, "M12.7 1a.7.7 0 0 0-.7.7v5.15L2.05 1.107A.7.7 0 0 0 1 1.712v12.575a.7.7 0 0 0 1.05.607L12 9.149V14.3a.7.7 0 0 0 .7.7h1.6a.7.7 0 0 0 .7-.7V1.7a.7.7 0 0 0-.7-.7h-1.6z"))();
+var PauseIcon = /* @__PURE__ */ (() => svg({ viewBox: "0 0 16 16" }, "M2.7 1a.7.7 0 0 0-.7.7v12.6a.7.7 0 0 0 .7.7h2.6a.7.7 0 0 0 .7-.7V1.7a.7.7 0 0 0-.7-.7H2.7zm8 0a.7.7 0 0 0-.7.7v12.6a.7.7 0 0 0 .7.7h2.6a.7.7 0 0 0 .7-.7V1.7a.7.7 0 0 0-.7-.7h-2.6z"))();
+var PlayIcon = /* @__PURE__ */ (() => svg({ viewBox: "0 0 16 16" }, "M3 1.713a.7.7 0 0 1 1.05-.607l10.89 6.288a.7.7 0 0 1 0 1.212L4.05 14.894A.7.7 0 0 1 3 14.288V1.713z"))();
+var PreviousIcon = /* @__PURE__ */ (() => svg({ viewBox: "0 0 16 16" }, "M3.3 1a.7.7 0 0 1 .7.7v5.15l9.95-5.744a.7.7 0 0 1 1.05.606v12.575a.7.7 0 0 1-1.05.607L4 9.149V14.3a.7.7 0 0 1-.7.7H1.7a.7.7 0 0 1-.7-.7V1.7a.7.7 0 0 1 .7-.7h1.6z"))();
 var RepeatPath = "M0 4.75A3.75 3.75 0 0 1 3.75 1h8.5A3.75 3.75 0 0 1 16 4.75v5a3.75 3.75 0 0 1-3.75 3.75H9.81l1.018 1.018a.75.75 0 1 1-1.06 1.06L6.939 12.75l2.829-2.828a.75.75 0 1 1 1.06 1.06L9.811 12h2.439a2.25 2.25 0 0 0 2.25-2.25v-5a2.25 2.25 0 0 0-2.25-2.25h-8.5A2.25 2.25 0 0 0 1.5 4.75v5A2.25 2.25 0 0 0 3.75 12H5v1.5H3.75A3.75 3.75 0 0 1 0 9.75v-5z";
-var RepeatIcon = /* @__PURE__ */ svg({ viewBox: "0 0 16 16" }, RepeatPath);
-var RepeatOneIcon = /* @__PURE__ */ svg({ viewBox: "0 0 16 16" }, RepeatPath, "M9.12 8V1H7.787c-.128.72-.76 1.293-1.787 1.313V3.36h1.57V8h1.55z");
-var ShareIcon = /* @__PURE__ */ svg(null, "M13.803 5.33333C13.803 3.49238 15.3022 2 17.1515 2C19.0008 2 20.5 3.49238 20.5 5.33333C20.5 7.17428 19.0008 8.66667 17.1515 8.66667C16.2177 8.66667 15.3738 8.28596 14.7671 7.67347L10.1317 10.8295C10.1745 11.0425 10.197 11.2625 10.197 11.4872C10.197 11.9322 10.109 12.3576 9.94959 12.7464L15.0323 16.0858C15.6092 15.6161 16.3473 15.3333 17.1515 15.3333C19.0008 15.3333 20.5 16.8257 20.5 18.6667C20.5 20.5076 19.0008 22 17.1515 22C15.3022 22 13.803 20.5076 13.803 18.6667C13.803 18.1845 13.9062 17.7255 14.0917 17.3111L9.05007 13.9987C8.46196 14.5098 7.6916 14.8205 6.84848 14.8205C4.99917 14.8205 3.5 13.3281 3.5 11.4872C3.5 9.64623 4.99917 8.15385 6.84848 8.15385C7.9119 8.15385 8.85853 8.64725 9.47145 9.41518L13.9639 6.35642C13.8594 6.03359 13.803 5.6896 13.803 5.33333Z");
-var ShuffleIcon = /* @__PURE__ */ svg({ viewBox: "0 0 16 16" }, "M13.151.922a.75.75 0 1 0-1.06 1.06L13.109 3H11.16a3.75 3.75 0 0 0-2.873 1.34l-6.173 7.356A2.25 2.25 0 0 1 .39 12.5H0V14h.391a3.75 3.75 0 0 0 2.873-1.34l6.173-7.356a2.25 2.25 0 0 1 1.724-.804h1.947l-1.017 1.018a.75.75 0 0 0 1.06 1.06L15.98 3.75 13.15.922zM.391 3.5H0V2h.391c1.109 0 2.16.49 2.873 1.34L4.89 5.277l-.979 1.167-1.796-2.14A2.25 2.25 0 0 0 .39 3.5z", "m7.5 10.723.98-1.167.957 1.14a2.25 2.25 0 0 0 1.724.804h1.947l-1.017-1.018a.75.75 0 1 1 1.06-1.06l2.829 2.828-2.829 2.828a.75.75 0 1 1-1.06-1.06L13.109 13H11.16a3.75 3.75 0 0 1-2.873-1.34l-.787-.938z");
-var SpotifyIcon = /* @__PURE__ */ svg(
-	null,
-	"M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 9.34784 20.9464 6.8043 19.0711 4.92893C17.1957 3.05357 14.6522 2 12 2ZM16.5625 16.4375C16.3791 16.7161 16.0145 16.8107 15.7188 16.6562C13.375 15.2188 10.4062 14.9062 6.9375 15.6875C6.71979 15.7377 6.49182 15.668 6.33945 15.5046C6.18709 15.3412 6.13348 15.1089 6.19883 14.8952C6.26417 14.6816 6.43854 14.519 6.65625 14.4688C10.4688 13.5938 13.7188 13.9688 16.375 15.5938C16.5149 15.6781 16.6141 15.816 16.6495 15.9755C16.685 16.1349 16.6535 16.3019 16.5625 16.4375ZM17.8125 13.6875C17.7053 13.8622 17.5328 13.9869 17.3333 14.0338C17.1338 14.0807 16.9238 14.0461 16.75 13.9375C14.0625 12.2812 9.96875 11.8125 6.78125 12.7812C6.5133 12.8594 6.22401 12.7887 6.02236 12.5957C5.8207 12.4027 5.73731 12.1168 5.80361 11.8457C5.8699 11.5746 6.0758 11.3594 6.34375 11.2812C9.96875 10.1875 14.5 10.7188 17.5625 12.625C17.9134 12.8575 18.0229 13.3229 17.8125 13.6875ZM17.9062 10.875C14.6875 8.96875 9.375 8.78125 6.28125 9.71875C5.81691 9.79284 5.36952 9.5115 5.23513 9.0609C5.10074 8.61031 5.32093 8.12986 5.75 7.9375C9.28125 6.875 15.1562 7.0625 18.875 9.28125C19.0893 9.40709 19.2434 9.61436 19.3023 9.85577C19.3612 10.0972 19.3198 10.3521 19.1875 10.5625C18.9054 10.9822 18.3499 11.1177 17.9062 10.875Z"
-);
-var VolumeIcon = /* @__PURE__ */ svg({ viewBox: "0 0 16 16" }, "M9.741.85a.75.75 0 0 1 .375.65v13a.75.75 0 0 1-1.125.65l-6.925-4a3.642 3.642 0 0 1-1.33-4.967 3.639 3.639 0 0 1 1.33-1.332l6.925-4a.75.75 0 0 1 .75 0zm-6.924 5.3a2.139 2.139 0 0 0 0 3.7l5.8 3.35V2.8l-5.8 3.35zm8.683 4.29V5.56a2.75 2.75 0 0 1 0 4.88z", "M11.5 13.614a5.752 5.752 0 0 0 0-11.228v1.55a4.252 4.252 0 0 1 0 8.127v1.55z");
+var RepeatIcon = /* @__PURE__ */ (() => svg({ viewBox: "0 0 16 16" }, RepeatPath))();
+var RepeatOneIcon = /* @__PURE__ */ (() => svg({ viewBox: "0 0 16 16" }, RepeatPath, "M9.12 8V1H7.787c-.128.72-.76 1.293-1.787 1.313V3.36h1.57V8h1.55z"))();
+var ShareIcon = /* @__PURE__ */ (() => svg(null, "M13.803 5.33333C13.803 3.49238 15.3022 2 17.1515 2C19.0008 2 20.5 3.49238 20.5 5.33333C20.5 7.17428 19.0008 8.66667 17.1515 8.66667C16.2177 8.66667 15.3738 8.28596 14.7671 7.67347L10.1317 10.8295C10.1745 11.0425 10.197 11.2625 10.197 11.4872C10.197 11.9322 10.109 12.3576 9.94959 12.7464L15.0323 16.0858C15.6092 15.6161 16.3473 15.3333 17.1515 15.3333C19.0008 15.3333 20.5 16.8257 20.5 18.6667C20.5 20.5076 19.0008 22 17.1515 22C15.3022 22 13.803 20.5076 13.803 18.6667C13.803 18.1845 13.9062 17.7255 14.0917 17.3111L9.05007 13.9987C8.46196 14.5098 7.6916 14.8205 6.84848 14.8205C4.99917 14.8205 3.5 13.3281 3.5 11.4872C3.5 9.64623 4.99917 8.15385 6.84848 8.15385C7.9119 8.15385 8.85853 8.64725 9.47145 9.41518L13.9639 6.35642C13.8594 6.03359 13.803 5.6896 13.803 5.33333Z"))();
+var ShuffleIcon = /* @__PURE__ */ (() => svg({ viewBox: "0 0 16 16" }, "M13.151.922a.75.75 0 1 0-1.06 1.06L13.109 3H11.16a3.75 3.75 0 0 0-2.873 1.34l-6.173 7.356A2.25 2.25 0 0 1 .39 12.5H0V14h.391a3.75 3.75 0 0 0 2.873-1.34l6.173-7.356a2.25 2.25 0 0 1 1.724-.804h1.947l-1.017 1.018a.75.75 0 0 0 1.06 1.06L15.98 3.75 13.15.922zM.391 3.5H0V2h.391c1.109 0 2.16.49 2.873 1.34L4.89 5.277l-.979 1.167-1.796-2.14A2.25 2.25 0 0 0 .39 3.5z", "m7.5 10.723.98-1.167.957 1.14a2.25 2.25 0 0 0 1.724.804h1.947l-1.017-1.018a.75.75 0 1 1 1.06-1.06l2.829 2.828-2.829 2.828a.75.75 0 1 1-1.06-1.06L13.109 13H11.16a3.75 3.75 0 0 1-2.873-1.34l-.787-.938z"))();
+var SpotifyIcon = /* @__PURE__ */ (() => svg(null, "M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 9.34784 20.9464 6.8043 19.0711 4.92893C17.1957 3.05357 14.6522 2 12 2ZM16.5625 16.4375C16.3791 16.7161 16.0145 16.8107 15.7188 16.6562C13.375 15.2188 10.4062 14.9062 6.9375 15.6875C6.71979 15.7377 6.49182 15.668 6.33945 15.5046C6.18709 15.3412 6.13348 15.1089 6.19883 14.8952C6.26417 14.6816 6.43854 14.519 6.65625 14.4688C10.4688 13.5938 13.7188 13.9688 16.375 15.5938C16.5149 15.6781 16.6141 15.816 16.6495 15.9755C16.685 16.1349 16.6535 16.3019 16.5625 16.4375ZM17.8125 13.6875C17.7053 13.8622 17.5328 13.9869 17.3333 14.0338C17.1338 14.0807 16.9238 14.0461 16.75 13.9375C14.0625 12.2812 9.96875 11.8125 6.78125 12.7812C6.5133 12.8594 6.22401 12.7887 6.02236 12.5957C5.8207 12.4027 5.73731 12.1168 5.80361 11.8457C5.8699 11.5746 6.0758 11.3594 6.34375 11.2812C9.96875 10.1875 14.5 10.7188 17.5625 12.625C17.9134 12.8575 18.0229 13.3229 17.8125 13.6875ZM17.9062 10.875C14.6875 8.96875 9.375 8.78125 6.28125 9.71875C5.81691 9.79284 5.36952 9.5115 5.23513 9.0609C5.10074 8.61031 5.32093 8.12986 5.75 7.9375C9.28125 6.875 15.1562 7.0625 18.875 9.28125C19.0893 9.40709 19.2434 9.61436 19.3023 9.85577C19.3612 10.0972 19.3198 10.3521 19.1875 10.5625C18.9054 10.9822 18.3499 11.1177 17.9062 10.875Z"))();
+var VolumeIcon = /* @__PURE__ */ (() => svg({ viewBox: "0 0 16 16" }, "M9.741.85a.75.75 0 0 1 .375.65v13a.75.75 0 0 1-1.125.65l-6.925-4a3.642 3.642 0 0 1-1.33-4.967 3.639 3.639 0 0 1 1.33-1.332l6.925-4a.75.75 0 0 1 .75 0zm-6.924 5.3a2.139 2.139 0 0 0 0 3.7l5.8 3.35V2.8l-5.8 3.35zm8.683 4.29V5.56a2.75 2.75 0 0 1 0 4.88z", "M11.5 13.614a5.752 5.752 0 0 0 0-11.228v1.55a4.252 4.252 0 0 1 0 8.127v1.55z"))();
 
 // common/Utils/index.js
 function hasOwn(object, key) {
@@ -201,10 +199,8 @@ function hasOwn(object, key) {
 }
 
 function getObjectKey(object = {}, filter) {
-	for (const key in object) {
-		if (!filter(object[key])) continue;
-		return key;
-	}
+	for (const key in object)
+		if (filter(object[key])) return key;
 }
 var openLink = (link) => link && window.open(link, "_blank");
 
@@ -231,13 +227,11 @@ var getPathName = (url) => {
 
 function shallow(objA, objB) {
 	if (Object.is(objA, objB)) return true;
-	if (typeof objA !== "object" || objA === null || typeof objB !== "object" || objB === null)
-		return false;
+	if (typeof objA !== "object" || objA === null || typeof objB !== "object" || objB === null) return false;
 	const keysA = Object.keys(objA);
 	if (keysA.length !== Object.keys(objB).length) return false;
 	for (let i = 0; i < keysA.length; i++)
-		if (!Object.prototype.hasOwnProperty.call(objB, keysA[i]) || !Object.is(objA[keysA[i]], objB[keysA[i]]))
-			return false;
+		if (!Object.prototype.hasOwnProperty.call(objB, keysA[i]) || !Object.is(objA[keysA[i]], objB[keysA[i]])) return false;
 	return true;
 }
 var promiseHandler = (promise) => promise.then((data) => [void 0, data]).catch((err) => [err]);
@@ -441,7 +435,7 @@ function lazy(filter, { decFilter, ...options } = {}) {
 		const key = getObjectKey(object, decFilter || filter);
 		if (!object || !key) throw UNDEFINED_OBJECT_OR_KEY;
 		resolve([object, key]);
-	}).catch((err) => Logger_default.error(PATCH_ERROR, err));
+	}).catch((cause) => Logger_default.warn(new Error(PATCH_ERROR, { cause })));
 	return promise;
 }
 
@@ -450,11 +444,14 @@ function reactRefMemoFilter(type, ...args) {
 	return (target2) => target2[type] && filter(target2[type]);
 }
 
+function findKey(obj, filter) {
+	const key = getObjectKey(obj, filter);
+	return key ? [obj, key] : [];
+}
+
 function getDeclarationAndKey(moduleFilter, declarationFilter, options = {}) {
 	const module2 = getModule(moduleFilter, { ...options, raw: true });
-	if (!module2?.declarations) return;
-	const key = getObjectKey(module2.declarations, declarationFilter);
-	return key ? [module2.declarations, key] : void 0;
+	return findKey(module2.declarations, declarationFilter);
 }
 
 // MODULES-AUTO-LOADER:@Modules/RefreshToken
@@ -644,8 +641,8 @@ function isSpotifyUrl(url) {
 }
 
 function useGetRessource(type, id) {
-	const [state, setState] = React_default.useState(null);
-	React_default.useEffect(() => {
+	const [state, setState] = useState(null);
+	useEffect(() => {
 		(async () => {
 			const data = await store_default.Api.getRessource(type, id);
 			if (data) setState(data);
@@ -1002,8 +999,7 @@ var subscribeWithSelector = /* @__PURE__ */ (() => getModule(Filters.byStrings("
 }))();
 
 function create(initialState) {
-	const Store2 = /* @__PURE__ */ zustand(initialState);
-	/* @__PURE__ */
+	const Store2 = zustand(initialState);
 	Object.defineProperty(Store2, "state", {
 		configurable: false,
 		get: () => Store2.getState()
@@ -1161,14 +1157,7 @@ var storeContextMenu = (...args) => {
 // common/Patcher/shared.js
 Plugin_default.onStop(() => Patcher.unpatchAll());
 
-function patchOnce(type, object, key, callback) {
-	const unpatch = Patcher[type](object, key, (...args) => {
-		unpatch();
-		callback.apply(null, args);
-	});
-}
-
-function patch(type, object, key, callback, once) {
+function patch(type, object, key, callback) {
 	if (!hasOwn(object, key))
 		return Logger.error("Could not perform a patch, missing arguments", arguments);
 	const caller = {
@@ -1176,7 +1165,7 @@ function patch(type, object, key, callback, once) {
 		before: (context2, args) => callback({ context: context2, args }),
 		instead: (context2, args, fn) => callback({ context: context2, args, fn })
 	} [type];
-	return once ? patchOnce(type, object, key, caller) : Patcher[type](object, key, caller);
+	return Patcher[type](object, key, caller);
 }
 
 // common/Patcher/index.js
@@ -1224,6 +1213,7 @@ var Settings_default = /* @__PURE__ */ (() => {
 		() => Data.save("settings", SettingsStore.state)
 	);
 	Object.assign(SettingsStore, {
+		// eslint-disable-next-line @eslint-react/no-unnecessary-use-prefix
 		useSetting: (key) => {
 			const val = SettingsStore((state2) => state2[key]);
 			return [val, SettingsStore[`set${key}`]];
@@ -1426,7 +1416,7 @@ var SpotifyActivityControls_default = ({ activity, user }) => {
 	const userPlayActivityState = useSpotifyPlayAction(activity, user);
 	const isActive = store_default(store_default.selectors.isActive);
 	const url = `https://open.spotify.com/track/${activity?.sync_id}`;
-	const bannerUrl = React_default.useMemo(() => `https://i.scdn.co/image/${activity?.assets?.large_image?.replace("spotify:", "")}`, [activity?.assets?.large_image]);
+	const bannerUrl = useMemo(() => `https://i.scdn.co/image/${activity?.assets?.large_image?.replace("spotify:", "")}`, [activity?.assets?.large_image]);
 	return /* @__PURE__ */ React_default.createElement("div", { className: c("controls") }, /* @__PURE__ */ React_default.createElement(
 		ControlButton, {
 			tooltip: userPlayActivityState.tooltip || userPlayActivityState.label,
@@ -1922,8 +1912,8 @@ function formatMsToTime(ms) {
 }
 var TrackTimeLine_default = () => {
 	const [position, duration] = store_default((_) => [_.position, _.duration], shallow);
-	const sliderRef = React_default.useRef();
-	React_default.useEffect(() => {
+	const sliderRef = useRef();
+	useEffect(() => {
 		if (sliderRef.current?.state?.active) return;
 		sliderRef.current?.setState({ value: position < 1e3 ? 0 : position });
 	}, [position]);
@@ -1956,7 +1946,7 @@ var TrackTimeLine_default = () => {
 };
 
 function Duration({ duration, position }) {
-	const [toggle, setToggle] = React_default.useState(false);
+	const [toggle, setToggle] = useState(false);
 	const clickHandler = () => setToggle(!toggle);
 	return /* @__PURE__ */ React_default.createElement(
 		"div", {
@@ -2177,10 +2167,10 @@ function SpotifyEmbedWrapper({ id, type, embedObject, embedComponent }) {
 }
 
 // src/SpotifyEnhance/patches/patchSpotifyEmbed.jsx
-var SpotifyEmbed = getDeclarationAndKey(Filters.bySource("iframe", "playlist", "track"), Filters.byStrings("iframe", "playlist", "track"));
+var SpotifyEmbed = getDeclarationAndKey(Filters.bySource("resourceType", "PLAYLIST", "playlist"), Filters.byStrings("resourceType", "PLAYLIST", "playlist"));
 Plugin_default.onStart(() => {
 	after(...SpotifyEmbed, ({ args: [{ embed }], ret }) => {
-		const messageState = React_default.use(MessageStateContext);
+		const messageState = use(MessageStateContext);
 		if (messageState !== "SENT") return null;
 		const [id, type] = parseSpotifyUrl(embed.url) || [];
 		if (!ALLOWD_TYPES.includes(type)) return;
@@ -2540,8 +2530,8 @@ var SpotifyPlayerControls_default = () => {
 
 function Volume() {
 	const volume = store_default(store_default.selectors.volume, shallow);
-	const [uiVolume, setUiVolume] = React_default.useState(volume);
-	const volumeRef = React_default.useRef(volume || 25);
+	const [uiVolume, setUiVolume] = useState(volume);
+	const volumeRef = useRef(volume || 25);
 	const volumeMuteHandler = () => {
 		const target2 = uiVolume ? 0 : volumeRef.current;
 		store_default.Api.volume(target2).then(() => {
