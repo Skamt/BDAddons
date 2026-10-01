@@ -266,8 +266,35 @@ function preventDefault(handler = nop) {
 	};
 }
 
+// common/Utils/Tasks.js
+var queue = (fn, concurrent) => {
+	const queue2 = [];
+	let runningCount = 0;
+	const next = async () => {
+		if (runningCount >= concurrent || queue2.length === 0)
+			return;
+		const { resolve, reject, args } = queue2.shift();
+		try {
+			runningCount++;
+			resolve(await fn(...args));
+		} catch (error) {
+			reject(error);
+		} finally {
+			runningCount--;
+			next();
+		}
+	};
+	return (...args) => {
+		const { promise, resolve, reject } = Promise.withResolvers();
+		queue2.push({ resolve, reject, args });
+		next();
+		return promise;
+	};
+};
+
 // common/Utils/SpotifyAPI.js
 var API_ENDPOINT = "https://api.spotify.com/v1";
+var fetch = queue(window.fetch, 3);
 async function wrappedFetch(url, options) {
 	const [fetchError, response] = await promiseHandler(fetch(url, options));
 	if (fetchError) {
@@ -334,7 +361,7 @@ var FetchRequestBuilder = class {
 		return wrappedFetch(this.url, this.options);
 	}
 };
-var SpotifyClientAPI = class {
+var SpotifyAPI_default = new class SpotifyClientAPI {
 	constructor(credentials = {}) {
 		this.credentials = credentials;
 	}
@@ -399,9 +426,7 @@ var SpotifyClientAPI = class {
 	getRessource(type, id) {
 		return this.getRequestBuilder().setPath(`/${type}s/${id}`).setMethod("GET").build().run();
 	}
-	//...
-};
-var SpotifyAPI_default = new SpotifyClientAPI();
+}();
 
 // common/consts.js
 var UNDEFINED_OBJECT_OR_KEY = "Undefined object or key";
@@ -739,7 +764,7 @@ var parsers = {
 };
 
 // src/SpotifyEnhance/SpotifyAPIWrapper.js
-async function _requestHandler(action) {
+async function requestHandler(action) {
 	let repeat = 1;
 	do {
 		const [actionError, actionResponse] = await promiseHandler(action());
@@ -755,23 +780,6 @@ async function _requestHandler(action) {
 	} while (repeat--);
 	throw new Error("Could not fulfill request");
 }
-var requestHandler = (() => {
-	let awaiterPromise = Promise.resolve();
-	return async (...args) => {
-		const { promise, resolve } = Promise.withResolvers();
-		const tempPromise = awaiterPromise;
-		awaiterPromise = promise;
-		await tempPromise;
-		try {
-			const res = await _requestHandler(...args);
-			resolve();
-			return res;
-		} catch (e) {
-			resolve();
-			throw e;
-		}
-	};
-})();
 
 function ressourceActions(prop) {
 	const { success, error } = {
