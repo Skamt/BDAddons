@@ -1,200 +1,37 @@
 import React from "@React";
-import { Patcher } from "@Api";
+import "./patches/*";
+import Plugin from "@common/Plugin";
 import ErrorBoundary from "@Components/ErrorBoundary";
-import Dispatcher from "@Modules/Dispatcher";
-import TheBigBoyBundle from "@Modules/TheBigBoyBundle";
+import DiscordModules from "@Modules/all";
+import * as modules from "@Discord/Modules";
 import * as Utils from "@Utils";
 import Notification from "@Utils/Notification";
 import * as Webpack from "@Webpack";
-import Logger from "@Utils/Logger";
-import DiscordPermissionsEnum from "@Enums/DiscordPermissionsEnum";
-import { getModuleAndKey } from "@Webpack";
-import { Modules } from "./Modules";
-import { Misc } from "./Misc";
-import SettingComponent from "./SettingComponent";
-import { Sources } from "./Sources";
-import { Stores } from "./Stores";
+
 import * as utils from "./utils";
-import webpackRequire from "./webpackRequire";
-import MessageActions from "@Modules/MessageActions";
+import webpack from "./webpack";
 
-import { transitionTo, ChannelUtils } from "@Discord/Modules";
-
-const d = (() => {
-	const cache = new WeakMap();
-	const emptyDoc = document.createDocumentFragment();
-
-	function isValidCSSSelector(selector) {
-		try {
-			emptyDoc.querySelector(selector);
-		} catch {
-			return false;
-		}
-		return true;
-	}
-
-	function getElement(target) {
-		if (typeof target === "string" && isValidCSSSelector(target)) return document.querySelector(target);
-
-		if (target instanceof HTMLElement) return target;
-
-		return undefined;
-	}
-
-	function getCssRules(el) {
-		const output = {};
-		for (let i = 0; i < document.styleSheets.length; i++) {
-			const stylesheet = document.styleSheets[i];
-			const { rules } = stylesheet;
-			const ID = stylesheet.href || stylesheet.ownerNode.id || i;
-			output[ID] = {};
-			// biome-ignore lint/complexity/noForEach: <explanation>
-			el.classList.forEach(c => {
-				output[ID][c] = [];
-				for (let j = 0; j < rules.length; j++) {
-					const rule = rules[j];
-					if (rule.cssText.includes(c)) output[ID][c].push(rule);
-				}
-				if (output[ID][c].length === 0) delete output[ID][c];
-			});
-			if (Object.keys(output[ID]).length === 0) delete output[ID];
-		}
-		return output;
-	}
-
-	function getCssRulesForElement(target, noCache) {
-		const el = getElement(target);
-
-		if (!el) return;
-
-		if (!noCache && cache.has(el)) return cache.get(el);
-
-		const data = getCssRules(el);
-		cache.set(el, data);
-		return data;
-	}
-
-	// get scroller styles for an element
-	function scrollerStylesForElement(el) {
-		const output = [];
-		const styles = getCssRulesForElement(el);
-		for (const cssStyleRules of Object.values(styles)) {
-			for (const rules of Object.values(cssStyleRules)) {
-				for (let i = 0; i < rules.length; i++) {
-					const rule = rules[i];
-					if (rule.selectorText?.includes("-webkit-scrollbar")) output.push(rule);
-				}
-			}
-		}
-		return output;
-	}
-
-	return {
-		getCssRulesForElement,
-		scrollerStylesForElement
-	};
-})();
-
-function dispatcherEventInterceptor(eventName, fn) {
-	const index = Dispatcher._interceptors.length;
-	Dispatcher.addInterceptor(e => {
-		if (e.type !== eventName) return;
-		try {
-			fn(e);
-		} catch {}
-	});
-	return () => Dispatcher._interceptors.splice(index, 1);
-}
+if (console.context) console = console.context();
 
 function init() {
-	
-	
-	window.s = Object.assign(id => Modules.moduleById(id), {
-		bd:{
-			...BdApi.Webpack,
-			getModuleAndKey
-		},
+	window.s = Object.assign(webpack, {
 		Notification,
 		Utils: {
-			ChannelUtils,
-			transitionTo,
 			ErrorBoundary,
 			...Utils,
-			...utils,
-			...d,
-			dispatcherEventInterceptor
+			...utils
 		},
 		Webpack,
-		r: webpackRequire,
-		...Misc,
-		...Stores,
-		...Sources,
-		...Modules,
-		DiscordModules: {
-			MessageActions,
-			Dispatcher,
-			
-			DiscordPermissionsEnum
-		}
+		DiscordModules: { DiscordModules, modules }
 	});
-
 }
 
-const settings = {
-	expEnabled: false
-};
+Plugin.onStart(() => {
+	init();
+});
 
-const DeveloperExperimentStore = Stores.getStore("DeveloperExperimentStore");
-const ExperimentStore = Stores.getStore("ExperimentStore");
-const UserStore = Stores.getStore("UserStore").store;
+Plugin.onStop(() => {
+	"s" in window && delete window.s;
+});
 
-function updateStores() {
-	try {
-		DeveloperExperimentStore.events.actionHandler.CONNECTION_OPEN();
-		ExperimentStore.events.actionHandler.OVERLAY_INITIALIZE({
-			user: UserStore.getCurrentUser()
-		});
-		ExperimentStore.events.storeDidChange();
-	} catch {}
-}
-
-const enableExp = (() => {
-	let unpatch = () => {};
-	return function enableExp(b) {
-		if (!b) {
-			unpatch?.();
-			UserStore.getCurrentUser().flags = 256;
-		} else {
-			unpatch = Patcher.after(UserStore, "getCurrentUser", (_, __, ret) => {
-				if (!ret) return;
-				ret.flags = 1;
-			});
-		}
-
-		updateStores();
-	};
-})();
-
-export default class Devtools {
-	start() {
-		try {
-			init();
-		} catch (e) {
-			Logger.error(e);
-		}
-	}
-
-	stop() {
-		"s" in window && delete window.s;
-		enableExp(false);
-	}
-
-	getSettingsPanel() {
-		return (
-			<SettingComponent
-				settings={settings}
-				enableExp={enableExp}
-			/>
-		);
-	}
-}
+module.exports = () => Plugin;

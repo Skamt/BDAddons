@@ -1,4 +1,5 @@
 import { Modules } from "./Modules";
+import { Decs } from "./Decs";
 import { Sources } from "./Sources";
 import Dispatcher from "@Modules/Dispatcher";
 
@@ -25,28 +26,13 @@ class Store {
 		});
 	}
 
-
-	// get store() {
-		
-	// 	for (const key of ["Z", "ZP", "default"]) if (key in this.module.exports) 
-	// 		return this.module.exports[key];
-	// }
-
-	// get localVars() {
-	// 	return this.store.__getLocalVars();
-	// }
-
 	get events() {
 		return Stores.getStoreListeners(this.name);
 	}
 }
 
-// const Zustand = Sources.getSource("/ServerSideRendering|^Deno\\//");
-
-
-const FluxStore = Modules.getModule(a => a.Store, {searchExports:true})?.target.Store;
+const FluxStore = Modules.getModule(a => a.Store, { searchExports: true })?.target.Store;
 const stores = FluxStore.getAll();
-
 
 export const Stores = {
 	getStore(storeName) {
@@ -61,23 +47,34 @@ export const Stores = {
 		const nodes = Dispatcher._actionHandlers._dependencyGraph.nodes;
 		const storeHandlers = Object.values(nodes).filter(({ name }) => name === storeName);
 		return {
-			events:storeHandlers[0],
-			store:Stores.getStore(storeName)
+			events: storeHandlers[0],
+			store: Stores.getStore(storeName)
 		};
 	},
 	getSortedStores: (() => {
 		let stores = null;
 		return function getSortedStores(force) {
 			if (!stores || force) {
-				stores = Modules.getModule(a => a?.Store,{searchExports:true}).target.Store.getAll()
+				stores = Modules.getModule(a => a?.Store, { searchExports: true })
+					.target.Store.getAll()
 					.map(store => [store.getName(), store])
 					.sort((a, b) => a[0].localeCompare(b[0]))
-					.map(([a,b]) => ({[a]:b}));
+					.map(([a, b]) => ({ [a]: b }));
 			}
 			return stores;
 		};
 	})(),
-	// getZustanStores(){
-	// 	return Zustand.module.modulesUsingThisModule;
-	// }
+	getZustanStores() {
+		const stores = Decs.getDecs(dec => dec && typeof dec === "function" && dec.getState && dec.setState && dec.getInitialState);
+
+		return Object.values(stores).map(val => {
+			const state = val.dec.getState();
+
+			return Object.assign({}, state, {
+				get _mod() {
+					return val;
+				}
+			});
+		});
+	}
 };

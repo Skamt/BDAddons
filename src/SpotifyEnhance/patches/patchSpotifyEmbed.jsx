@@ -8,7 +8,7 @@ import { ALLOWD_TYPES } from "@/consts";
 import { MessageStateContext } from "./patchMessageComponentAccessories";
 import Plugin from "@common/Plugin";
 
-const SpotifyEmbed = getDeclarationAndKey(Filters.bySource("iframe", "playlist", "track"), Filters.byStrings("iframe", "playlist", "track"));
+const SpotifyEmbed = getDeclarationAndKey(Filters.bySource("resourceType", "PLAYLIST", "playlist"), Filters.byStrings("resourceType", "PLAYLIST", "playlist"));
 
 Plugin.onStart(() => {
 	after(...SpotifyEmbed, ({ args: [{ embed }], ret }) => {

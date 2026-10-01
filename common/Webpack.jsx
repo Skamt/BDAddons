@@ -82,37 +82,24 @@ export function _waitForComponent(filter, options) {
 	return lazyComponent;
 }
 
-// export async function lazy(filter, options) {
-// 	const { exportsFilter, declarationsFilter, ...rest } = options;
-// 	const [err, res] = await promiseHandler(waitForModule(filter, { ...rest, raw: true }));
-// 	if (err || !res) return;
-// 	const module = exportsFilter ? res.exports : res.declarations;
-// 	if (!module) return ;
-// 	const key = getObjectKey(module, exportsFilter || declarationsFilter);
-// 	if (!key) return;
-// 	return { module, key, target: module[key] };
-// }
-
 export function reactRefMemoFilter(type, ...args) {
 	const filter = Filters.byStrings(...args);
 	return target => target[type] && filter(target[type]);
 }
 
+export function findKey(obj, filter) {
+	const key = getObjectKey(obj, filter);
+	return key ? [obj, key] : [];
+}
+
 export function getModuleAndKey(filter, options) {
-	let module;
-	const target = getModule((entry, m) => (filter(entry) ? (module = m) : false), options);
-	module = module?.exports;
-	if (!module) return;
-	const key = Object.keys(module).find(k => module[k] === target);
-	if (!key) return;
-	return [module, key];
+	const { exports } = getModule(filter, { ...options, raw: true }) || {};
+	return findKey(exports, filter);
 }
 
 export function getDeclarationAndKey(moduleFilter, declarationFilter, options = {}) {
 	const module = getModule(moduleFilter, { ...options, raw: true });
-	if (!module?.declarations) return;
-	const key = getObjectKey(module.declarations, declarationFilter);
-	return key ? [module.declarations, key] : undefined;
+	return findKey(module.declarations, declarationFilter);
 }
 
 export function filterModuleAndExport(moduleFilter, exportFilter, options) {
@@ -122,32 +109,4 @@ export function filterModuleAndExport(moduleFilter, exportFilter, options) {
 	const key = Object.keys(exports).find(k => exportFilter(exports[k]));
 	if (!key) return {};
 	return { module: exports, key, target: exports[key] };
-}
-
-export function mapExports(moduleFilter, exportsMap, options) {
-	const module = getModule(moduleFilter, { ...options, raw: true });
-	if (!module) return {};
-	const { exports } = module;
-	const res = { module: exports, mangledKeys: {} };
-	for (const [mapKey, filter] of Object.entries(exportsMap)) {
-		for (const [exportKey, val] of Object.entries(exports)) {
-			if (!filter(val)) continue;
-			res[mapKey] = val;
-			res.mangledKeys[mapKey] = exportKey;
-			break;
-		}
-	}
-	return res;
-}
-
-export function _getBySource(filter) {
-	let moduleId = null;
-	for (const [id, loader] of Object.entries(modules)) {
-		if (filter(loader.toString())) {
-			moduleId = id;
-			break;
-		}
-	}
-
-	return getModule((_, __, id) => id === moduleId);
 }

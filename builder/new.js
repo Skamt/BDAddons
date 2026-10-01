@@ -1,5 +1,4 @@
 const { program } = require("commander");
-const { getPlugins } = require("./helpers");
 
 const fs = require("fs");
 const path = require("path");
@@ -14,14 +13,13 @@ const getConfig = pluginName => `{
 	}
 }`;
 
-const getIndex = pluginName => `import "./styles";
-import "./patches/*";
+const getIndex = () => `import "./patches/*";
 import Plugin from "@common/Plugin";
-import { Patcher } from "@Api";
+import { after } from "@common/Patcher";
 
 
 Plugin.onStop(() => {
-	Patcher.unpatchAll();
+	after();
 });
 
 module.exports = () => Plugin;
@@ -35,11 +33,11 @@ program
 	.action(pluginName => {
 		if (!pluginName) return console.log("Must provide plugin name");
 		console.log(`Creating ${pluginName}`);
-		const pluginsFolderPath = path.join(pluginsFolder, pluginName);
-		
+		const pluginsFolderPath = path.join(global.pluginsFolder, pluginName);
+
 		if (!fs.existsSync(pluginsFolderPath)) fs.mkdirSync(pluginsFolderPath);
 		fs.writeFileSync(path.join(pluginsFolderPath, "config.json"), getConfig(pluginName));
-		fs.writeFileSync(path.join(pluginsFolderPath, "index.js"), getIndex(pluginName));
-		fs.writeFileSync(path.join(pluginsFolderPath, "styles.css"), "");
+		fs.writeFileSync(path.join(pluginsFolderPath, "index.js"), getIndex());
+		// fs.writeFileSync(path.join(pluginsFolderPath, "styles.css"), "");
 		console.log("Done!");
 	});

@@ -1,5 +1,6 @@
 import webpackRequire from "./webpackRequire";
 import { Modules } from "./Modules";
+import { saveFile } from "@Utils/fs";
 
 class Source {
 	constructor(id, loader) {
@@ -17,9 +18,8 @@ class Source {
 
 	get saveSourceToDesktop() {
 		try {
-			const fs = require("fs");
 			const path = `${process.env.USERPROFILE}\\Desktop\\${this.id}.js`;
-			fs.writeFileSync(path, this.code, "utf8");
+			saveFile(path, this.code);
 
 			return `Saved to: ${path}`;
 		} catch (e) {
@@ -28,22 +28,18 @@ class Source {
 	}
 }
 
-
-
 function sourceById(id) {
 	return new Source(id, webpackRequire.m[id]);
 }
 
 function* sourceLookup(...args) {
 	const strArr = args;
-	const invert = typeof args[args.length - 1] === "boolean" ? args.pop() : false;
-
 	for (const [id, source] of Object.entries(webpackRequire.m)) {
-		const sourceCode = source.toString().replace(/^\d+/,"function");
+		const sourceCode = source.toString().replace(/^\d+/, "function");
 		const result = strArr.every(str => sourceCode.includes(str));
-		if (invert ^ result) yield new Source(id, source);
+		if (!result) continue;
+		yield new Source(id, source);
 	}
-
 }
 
 function getSources(...args) {
@@ -57,15 +53,12 @@ function getSource(...args) {
 	return res;
 }
 
-
 function getSourceByFunc(func) {
 	return getSources(String(func));
 }
 
 export const Sources = {
-	getWebpackSources() {
-		return webpackRequire.m;
-	},
+	getWebpackSources: () => webpackRequire.m,
 	sourceById,
 	getSource,
 	getSources,

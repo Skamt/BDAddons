@@ -6,7 +6,7 @@ import DB from "./DB";
 import { promiseHandler } from "@Utils";
 import { parsers } from "@/utils";
 
-async function _requestHandler(action) {
+async function requestHandler(action) {
 	let repeat = 1;
 	do {
 		const [actionError, actionResponse] = await promiseHandler(action());
@@ -26,27 +26,6 @@ async function _requestHandler(action) {
 
 	throw new Error("Could not fulfill request");
 }
-
-const requestHandler = (() => {
-	let awaiterPromise = Promise.resolve();
-
-	return async (...args) => {
-		/* Slopy queue, i know */
-		const { promise, resolve } = Promise.withResolvers();
-		const tempPromise = awaiterPromise;
-		awaiterPromise = promise;
-
-		await tempPromise;
-		try {
-			const res = await _requestHandler(...args);
-			resolve();
-			return res;
-		} catch (e) {
-			resolve();
-			throw e;
-		}
-	};
-})();
 
 function ressourceActions(prop) {
 	const { success, error } = {
@@ -78,7 +57,7 @@ async function fetchRessource(type, id) {
 
 async function getRessourceWithCache(type, id) {
 	/* no fetching if we can't cache */
-	if(!DB.db) return; 
+	if (!DB.db) return;
 	const cachedData = await DB.get(type, id);
 	if (cachedData) return cachedData;
 

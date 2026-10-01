@@ -50,7 +50,7 @@ const mods = [
 	// new RefreshChannel(),
 ];
 
-if (console.context) console = console.context();
+
 
 import Plugin from "@common/Plugin";
 

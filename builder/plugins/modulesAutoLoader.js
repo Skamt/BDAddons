@@ -8,6 +8,22 @@ function getModuleInfo(id) {
 	return [target, moduleName];
 }
 
+function getAll(){
+	const res = [];
+	const keys = Object.keys(DiscordModules);
+	for (let i = keys.length - 1; i >= 0; i--) {
+		const kindKey = keys[i];
+		const target = DiscordModules[kindKey];
+		const targetKeys = Object.keys(target);
+		for (let p = targetKeys.length - 1; p >= 0; p--) {
+			const itemKey = targetKeys[p];
+			const { filter, options } = target[itemKey];
+			res.push(`${itemKey}:getModule(${filter},${options})`);
+		}
+	}
+	return `import { Filters, getModule } from "@Webpack"; export default {${res.join(",\n")}}`
+}
+
 const ModulesHandler = {
 	resolve(moduleName, type) {
 		const { filter, options } = DiscordModules.Modules[moduleName];
@@ -40,7 +56,8 @@ module.exports = function modulesAutoLoader() {
 			build.onResolve({ filter: regex }, ({ path }) => ({ path, namespace }));
 			build.onLoad({ filter: regex, namespace }, ({ path: id }) => {
 				const [target, moduleName] = getModuleInfo(id);
-
+				if(moduleName === "all")
+					return { contents: getAll(), resolveDir: __dirname }; 
 				switch (target) {
 					case "Patch":
 					case "Modules":

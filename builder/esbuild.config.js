@@ -54,7 +54,7 @@ module.exports = ({ watch, config, entryPoint, outputFile, pluginRoot }) => {
 			react: "@React",
 			"react-dom": "@React",
 		},
-		external: ["electron"],
+		external: ["fs","electron"],
 		logLevel: !watch ? "silent" : "warning",
 		platform: "browser",
 		jsx: "transform",

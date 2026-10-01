@@ -1,6 +1,9 @@
 import { promiseHandler, buildUrl } from "@Utils";
 import Logger from "@Utils/Logger";
 const API_ENDPOINT = "https://api.spotify.com/v1";
+import { queue } from "@Utils/Tasks";
+
+const fetch = queue(window.fetch, 3);
 
 async function wrappedFetch(url, options) {
 	const [fetchError, response] = await promiseHandler(fetch(url, options));
@@ -14,7 +17,7 @@ async function wrappedFetch(url, options) {
 		throw (
 			result?.error || {
 				message: "Unknown error",
-				status: response.status,
+				status: response.status
 			}
 		);
 	}
@@ -28,7 +31,7 @@ async function wrappedFetch(url, options) {
 function buildFetchRequestOptions(builderObj) {
 	const options = {
 		method: builderObj.method,
-		headers: builderObj.headers,
+		headers: builderObj.headers
 	};
 
 	if (builderObj.body) options.body = JSON.stringify(builderObj.body);
@@ -85,7 +88,7 @@ class FetchRequestBuilder {
 	}
 }
 
-class SpotifyClientAPI {
+export default new (class SpotifyClientAPI {
 	constructor(credentials = {}) {
 		this.credentials = credentials;
 	}
@@ -132,39 +135,19 @@ class SpotifyClientAPI {
 	}
 
 	seek(ms) {
-		return this.getRequestBuilder()
-			.setPath("/me/player/seek")
-			.setMethod("PUT")
-			.setParams({ position_ms: ms })
-			.build()
-			.run();
+		return this.getRequestBuilder().setPath("/me/player/seek").setMethod("PUT").setParams({ position_ms: ms }).build().run();
 	}
 
 	shuffle(state) {
-		return this.getRequestBuilder()
-			.setPath("/me/player/shuffle")
-			.setMethod("PUT")
-			.setParams({ state })
-			.build()
-			.run();
+		return this.getRequestBuilder().setPath("/me/player/shuffle").setMethod("PUT").setParams({ state }).build().run();
 	}
 
 	volume(volume_percent) {
-		return this.getRequestBuilder()
-			.setPath("/me/player/volume")
-			.setMethod("PUT")
-			.setParams({ volume_percent })
-			.build()
-			.run();
+		return this.getRequestBuilder().setPath("/me/player/volume").setMethod("PUT").setParams({ volume_percent }).build().run();
 	}
 
 	repeat(state) {
-		return this.getRequestBuilder()
-			.setPath("/me/player/repeat")
-			.setMethod("PUT")
-			.setParams({ state })
-			.build()
-			.run();
+		return this.getRequestBuilder().setPath("/me/player/repeat").setMethod("PUT").setParams({ state }).build().run();
 	}
 
 	listen(type, id) {
@@ -173,12 +156,7 @@ class SpotifyClientAPI {
 		if (type === "track" || type === "episode") body = { uris: [`spotify:${type}:${id}`] };
 		else body = { context_uri: `spotify:${type}:${id}` };
 
-		return this.getRequestBuilder()
-			.setPath("/me/player/play")
-			.setMethod("PUT")
-			.setBody(body)
-			.build()
-			.run();
+		return this.getRequestBuilder().setPath("/me/player/play").setMethod("PUT").setBody(body).build().run();
 	}
 
 	queue(type, id) {
@@ -201,8 +179,4 @@ class SpotifyClientAPI {
 	getRessource(type, id) {
 		return this.getRequestBuilder().setPath(`/${type}s/${id}`).setMethod("GET").build().run();
 	}
-
-	//...
-}
-
-export default new SpotifyClientAPI();
+})();

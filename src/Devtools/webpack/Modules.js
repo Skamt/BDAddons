@@ -1,5 +1,6 @@
 import webpackRequire from "./webpackRequire";
 import { Sources } from "./Sources";
+import {mkdir, saveFile} from "@Utils/fs";
 
 const defineModuleGetter = (obj, id) =>
 	Object.defineProperty(obj, id, {
@@ -18,25 +19,6 @@ class Module {
 		this.loader = source.loader;
 	}
 
-	get exportsUses() {
-		const keys = Object.keys(this.exports);
-		const t= this;
-		const ret = {};
-
-		for (let i = keys.length - 1; i >= 0; i--) {
-			const key = keys[i];
-			Object.defineProperty(ret, key, {
-				enumerable: true,
-				get() {
-					return Object.keys(t.modulesUsingThisModule).filter((id) => {
-						const code = t.modulesUsingThisModule[id].code;
-						return exportInModule(code, t.id, key)
-					}).reduce((acc, id) => defineModuleGetter(acc, id), {});
-				}
-			});
-		}
-		return ret;
-	}
 
 	get code() {
 		return this.loader.toString().replace(/^\d+/,"function");
@@ -52,10 +34,8 @@ class Module {
 
 	get saveSourceToDesktop() {
 		try {
-			const fs = require("fs");
 			const path = `${process.env.USERPROFILE}\\Desktop\\${this.id}.js`;
-			fs.writeFileSync(path, this.code, "utf8");
-
+			saveFile(path, this.code);
 			return `Saved to: ${path}`;
 		} catch (e) {
 			return e;
@@ -63,18 +43,18 @@ class Module {
 	}
 	get saveAllToDesktop() {
 		try {
-			const fs = require("fs");
 			const path = `${process.env.USERPROFILE}\\Desktop\\${this.id}`;
-			if (!fs.existsSync(path)) fs.mkdirSync(path);
-			fs.writeFileSync(`${path}\\__MAIN-${this.id}.js`, this.code, "utf8");
-			fs.mkdirSync(`${path}\\modulesUsingThisModule`);
-			fs.mkdirSync(`${path}\\imports`);
+			
+			saveFile(`${path}\\__MAIN-${this.id}.js`, this.code);
+			mkdir(`${path}\\modulesUsingThisModule`);
+			mkdir(`${path}\\imports`);
+
 			{
 				const modules = Object.entries(this.modulesUsingThisModule);
 				for (let i = modules.length - 1; i >= 0; i--) {
 					const [id, module] = modules[i];
 					const code = module.code;
-					fs.writeFileSync(`${path}\\modulesUsingThisModule\\${id}.js`, code, "utf8");
+					saveFile(`${path}\\modulesUsingThisModule\\${id}.js`, code);
 				}
 			}
 
@@ -83,9 +63,10 @@ class Module {
 				for (let i = modules.length - 1; i >= 0; i--) {
 					const [id, module] = modules[i];
 					const code = module.code;
-					fs.writeFileSync(`${path}\\imports\\${id}.js`, code, "utf8");
+					saveFile(`${path}\\imports\\${id}.js`, code);
 				}
 			}
+
 			return `Saved to: ${path}`;
 		} catch (e) {
 			return e;
@@ -93,9 +74,7 @@ class Module {
 	}
 }
 
-function getWebpackModules() {
-	return webpackRequire.c;
-}
+
 
 function moduleById(id) {
 	const module = webpackRequire.c[id];
@@ -115,17 +94,6 @@ function modulesImportedInModuleById(id) {
 	return imports.map(id => id[1]);
 }
 
-function exportInModule(code, id, key){
-	const args = code.match(/\((.+?)\)/i)?.[1];
-	if (args?.length > 5 || !args) return [];
-	const req = args.split(",")[2];
-	const re = new RegExp(`([a-zA-Z_$][a-zA-Z_$0-9]*)=${req}\\(${id}\\)`);
-	const [, identifier] = Array.from(code.match(re));
-
-	return code.includes(`${identifier}.${key}`);
-}
-
-
 
 function modulesImportingModuleById(id) {
 	return Object.keys(Sources.getWebpackSources()).filter(sourceId => modulesImportedInModuleById(sourceId).includes(`${id}`));
@@ -138,7 +106,7 @@ function noExports(filter, module, exports) {
 function doExports(filter, module, exports) {
 	if (typeof exports !== "object" && typeof exports !== "function") return;
 	for (const entryKey in exports) {
-		let target = null;
+		let target;
 		try {
 			target = exports[entryKey];
 		} catch {
@@ -189,7 +157,6 @@ function getModule(filter, options) {
 export const Modules = {
 	moduleById,
 	moduleLookup,
-	getWebpackModules,
 	modulesImportedInModuleById,
 	modulesImportingModuleById,
 	getModules,
