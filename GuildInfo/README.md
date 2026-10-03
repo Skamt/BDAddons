@@ -1,0 +1,3 @@
+# GuildInfo
+
+Empty description
