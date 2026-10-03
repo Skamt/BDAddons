@@ -86,6 +86,8 @@ StylesLoader_default.push(`#settings-menu-BetterDiscord .bd-changelog-button{
 }`);
 
 // common/React.jsx
+var useEffect = /* @__PURE__ */ (() => BdApi.React.useEffect)();
+var useRef = /* @__PURE__ */ (() => BdApi.React.useRef)();
 var React = /* @__PURE__ */ (() => BdApi.React)();
 var React_default = React;
 
@@ -95,10 +97,8 @@ function hasOwn(object, key2) {
 }
 
 function getObjectKey(object = {}, filter) {
-	for (const key2 in object) {
-		if (!filter(object[key2])) continue;
-		return key2;
-	}
+	for (const key2 in object)
+		if (filter(object[key2])) return key2;
 }
 
 function getNestedProp(obj, path) {
@@ -144,11 +144,14 @@ function lazy(filter, { decFilter, ...options } = {}) {
 	return promise;
 }
 
+function findKey(obj, filter) {
+	const key2 = getObjectKey(obj, filter);
+	return key2 ? [obj, key2] : [];
+}
+
 function getDeclarationAndKey(moduleFilter, declarationFilter, options = {}) {
 	const module2 = getModule(moduleFilter, { ...options, raw: true });
-	if (!module2?.declarations) return;
-	const key2 = getObjectKey(module2.declarations, declarationFilter);
-	return key2 ? [module2.declarations, key2] : void 0;
+	return findKey(module2.declarations, declarationFilter);
 }
 
 // common/Utils/css.js
@@ -201,6 +204,7 @@ var Settings_default = /* @__PURE__ */ (() => {
 		() => Data.save("settings", SettingsStore.state)
 	);
 	Object.assign(SettingsStore, {
+		// eslint-disable-next-line @eslint-react/no-unnecessary-use-prefix
 		useSetting: (key2) => {
 			const val = SettingsStore((state2) => state2[key2]);
 			return [val, SettingsStore[`set${key2}`]];
@@ -219,17 +223,14 @@ var FocusLock = /* @__PURE__ */ (() => getModule(Filters.byStrings(".containerRe
 var I18n = /* @__PURE__ */ (() => getByKeys("intl", "t"))();
 
 // src/BetterSettings/patches/patchLayer.jsx
-var BaseLayer = getDeclarationAndKey(
-	Filters.bySource("this.renderArtisanalHack()"),
-	Filters.byPrototypeKeys("animateIn")
-);
+var BaseLayer = getDeclarationAndKey(Filters.bySource("this.renderArtisanalHack()"), Filters.byPrototypeKeys("animateIn"));
 var Classes = getByKeys("animating", "baseLayer", "bg", "layer", "layers");
 var cl = classNameFactory("", "");
 
 function Layer({ mode, baseLayer = false, ...props }) {
 	const hidden = mode === "HIDDEN";
-	const containerRef = React_default.useRef(null);
-	React_default.useEffect(
+	const containerRef = useRef(null);
+	useEffect(
 		() => () => {
 			ComponentDispatch.dispatch("LAYER_POP_START");
 			ComponentDispatch.dispatch("LAYER_POP_COMPLETE");
@@ -283,14 +284,7 @@ Plugin_default.onStart(() => {
 // common/Patcher/shared.js
 Plugin_default.onStop(() => Patcher.unpatchAll());
 
-function patchOnce(type, object, key2, callback) {
-	const unpatch = Patcher[type](object, key2, (...args) => {
-		unpatch();
-		callback.apply(null, args);
-	});
-}
-
-function patch(type, object, key2, callback, once) {
+function patch(type, object, key2, callback) {
 	if (!hasOwn(object, key2))
 		return Logger.error("Could not perform a patch, missing arguments", arguments);
 	const caller = {
@@ -298,12 +292,18 @@ function patch(type, object, key2, callback, once) {
 		before: (context, args) => callback({ context, args }),
 		instead: (context, args, fn) => callback({ context, args, fn })
 	} [type];
-	return once ? patchOnce(type, object, key2, caller) : Patcher[type](object, key2, caller);
+	return Patcher[type](object, key2, caller);
 }
 
 // common/Patcher/index.js
+function once(type, object, key2, callback) {
+	const unpatch = patch(type, object, key2, (...args) => {
+		unpatch();
+		callback.apply(null, args);
+	});
+}
 var after = (...args) => patch("after", ...args);
-var afterOnce = (...args) => patch("after", ...args, true);
+var afterOnce = (...args) => once("after", ...args);
 
 // src/BetterSettings/patches/patchSettingMenuFadeAnimation.jsx
 Plugin_default.onStart(() => {
@@ -539,7 +539,7 @@ function SettingSwtich({ settingKey, note, border = false, onChange = nop, descr
 }
 
 // src/BetterSettings/forceLoadSettings.js
-var SettingMenuModal = getByKeys("openUserSettings", "USER_SETTINGS_MODAL_KEY");
+var SettingMenuModal = getByKeys("openUserSettings");
 var some = getByPrototypeKeys("renderNameZone", { searchExports: true });
 var instance = some ? new some() : null;
 async function forceLoadStuff() {
