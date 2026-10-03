@@ -1,3 +1,4 @@
+import { getInternalInstance, getOwnerInstance } from "@Api";
 import { add } from "@Utils/Array";
 
 export const ReactDOM = /*@__PURE__*/ (() => BdApi.ReactDOM)();
@@ -41,4 +42,71 @@ export function insertChild(el, child, index) {
 	const children = Array.isArray(el.props.children) ? el.props.children : [el.props.children];
 
 	el.props.children = add(children, child, index);
+}
+
+
+const SyncLane = 0b0010; // React 18: lane 1 is SyncHydrationLane, 2 is SyncLane
+
+/** Mark fiber + its whole ancestor path so no memo/bailout can skip it. */
+function markPath(fiber) {
+	fiber.lanes |= SyncLane;
+	if (fiber.alternate) fiber.alternate.lanes |= SyncLane;
+
+	let node = fiber.return;
+	while (node) {
+		node.childLanes |= SyncLane;
+		if (node.alternate) node.alternate.childLanes |= SyncLane;
+		node = node.return;
+	}
+}
+
+/** Nearest ancestor (inclusive) that can actually schedule an update. */
+function findUpdater(fiber) {
+	let node = fiber;
+	while (node) {
+		const inst = node.stateNode;
+		if (inst && typeof inst.forceUpdate === "function") {
+			return () => inst.forceUpdate();
+		}
+
+		let hook = node.memoizedState;
+		while (hook) {
+			const state = hook.memoizedState;
+			// queue is null for useMemo/useCallback/useRef — only state hooks have a dispatch
+			if (hook.queue?.dispatch && state !== null && typeof state === "object") {
+				const dispatch = hook.queue.dispatch;
+				return () => dispatch(Array.isArray(state) ? [...state] : { ...state });
+			}
+			hook = hook.next;
+		}
+
+		node = node.return;
+	}
+	return null;
+}
+
+function forceUpdateFiber(fiber) {
+	if (!fiber) return false;
+
+	const update = findUpdater(fiber);
+	if (!update) return false;
+
+	markPath(fiber);
+	ReactDOM.flushSync(update);
+	return true;
+}
+
+export function reRenderFiber(selector) {
+	const target = document.querySelector(selector)?.parentElement;
+	if (!target) return;
+	forceUpdateFiber(getInternalInstance(target));
+}
+
+export function reRender(selector) {
+	const target = document.querySelector(selector)?.parentElement;
+	if (!target) return;
+	const instance = getOwnerInstance(target);
+	if (!instance) return;
+	const unpatch = BdApi.Patcher.instead("RE_RENDER", instance, "render", () => unpatch());
+	instance.forceUpdate(() => instance.forceUpdate());
 }

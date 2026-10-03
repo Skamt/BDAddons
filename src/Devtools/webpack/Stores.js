@@ -47,8 +47,8 @@ export const Stores = {
 		const nodes = Dispatcher._actionHandlers._dependencyGraph.nodes;
 		const storeHandlers = Object.values(nodes).filter(({ name }) => name === storeName);
 		return {
+			get store(){ return Stores.getStore(storeName)},
 			events: storeHandlers[0],
-			store: Stores.getStore(storeName)
 		};
 	},
 	getSortedStores: (() => {

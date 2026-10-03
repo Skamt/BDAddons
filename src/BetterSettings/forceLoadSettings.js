@@ -3,7 +3,7 @@ import { nop } from "@Utils";
 import Settings from "@Utils/Settings";
 import Plugin from "@common/Plugin";
 
-const SettingMenuModal = getByKeys("openUserSettings", "USER_SETTINGS_MODAL_KEY");
+const SettingMenuModal = getByKeys("openUserSettings");
 const some = getByPrototypeKeys("renderNameZone", { searchExports: true });
 
 const instance = some ? new some() : null;

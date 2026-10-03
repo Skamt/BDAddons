@@ -6,7 +6,7 @@ export const slice = (array, from, to) => array.slice(from, to);
 
 
 export const loop = (array, callback) => {
-	for (let i = 0; i < array.length; i++) callback(array[i], i);
+	for (let i = 0; i < array.length; i++) callback(array[i], i, array);
 };
 
 export function arrayMove(array, from, to) {
