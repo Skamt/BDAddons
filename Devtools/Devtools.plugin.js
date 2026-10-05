@@ -8,13 +8,15 @@
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/Devtools/Devtools.plugin.js
  */
 
+var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
 var __export = (target2, all) => {
-	for (var name in all)
-		__defProp(target2, name, { get: all[name], enumerable: true });
+	for (var name2 in all)
+		__defProp(target2, name2, { get: all[name2], enumerable: true });
 };
 var __copyProps = (to, from, except, desc) => {
 	if (from && typeof from === "object" || typeof from === "function") {
@@ -24,27 +26,14 @@ var __copyProps = (to, from, except, desc) => {
 	}
 	return to;
 };
-var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
-
-// src/Devtools/index.jsx
-var index_exports = {};
-__export(index_exports, {
-	default: () => Devtools
-});
-module.exports = __toCommonJS(index_exports);
-
-// common/React.jsx
-var ReactDOM = /* @__PURE__ */ (() => BdApi.ReactDOM)();
-var React = /* @__PURE__ */ (() => BdApi.React)();
-var React_default = React;
-var NoopComponent = () => null;
-var LazyComponent = (get) => {
-	const Comp = (props) => {
-		const Component = get() ?? NoopComponent;
-		return /* @__PURE__ */ React.createElement(Component, { ...props });
-	};
-	return Comp;
-};
+var __toESM = (mod, isNodeMode, target2) => (target2 = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+	// If the importer is in node compatibility mode or this is not an ESM
+	// file that has been converted to a CommonJS file using a Babel-
+	// compatible transform (i.e. "__esModule" has not been set), then set
+	// "default" to the CommonJS "module.exports" for node compatibility.
+	isNodeMode || !mod || !mod.__esModule ? __defProp(target2, "default", { value: mod, enumerable: true }) : target2,
+	mod
+));
 
 // config:@Config
 var Config_default = {
@@ -62,23 +51,39 @@ var Config_default = {
 
 // common/Api.js
 var Api = /* @__PURE__ */ (() => new BdApi(Config_default.info.name))();
-var Patcher = /* @__PURE__ */ (() => Api.Patcher)();
+var ContextMenu = /* @__PURE__ */ (() => Api.ContextMenu)();
 var Logger = /* @__PURE__ */ (() => Api.Logger)();
 var UI = /* @__PURE__ */ (() => BdApi.UI)();
-var getOwnerInstance = /* @__PURE__ */ (() => BdApi.ReactUtils.getOwnerInstance.bind(BdApi.ReactUtils))();
+var findInTree = /* @__PURE__ */ (() => BdApi.Utils.findInTree)();
 var getInternalInstance = /* @__PURE__ */ (() => BdApi.ReactUtils.getInternalInstance.bind(BdApi.ReactUtils))();
 
-// common/Components/ErrorBoundary/index.jsx
-var ErrorBoundary_default = (props) => /* @__PURE__ */ React_default.createElement(BdApi.Components.ErrorBoundary, { ...props, name: Config_default?.info?.name });
+// common/React.jsx
+var ReactDOM = /* @__PURE__ */ (() => BdApi.ReactDOM)();
+var React = /* @__PURE__ */ (() => BdApi.React)();
+var React_default = React;
+var NoopComponent = () => null;
+var LazyComponent = (get) => {
+	const Comp = (props) => {
+		const Component = get() ?? NoopComponent;
+		return /* @__PURE__ */ React.createElement(Component, { ...props });
+	};
+	return Comp;
+};
+
+// common/Utils/Object.js
+function getObjectKey(object = {}, filter) {
+	for (const key in object)
+		if (filter(object[key])) return key;
+}
 
 // common/Webpack.jsx
 var Webpack_exports = {};
 __export(Webpack_exports, {
 	Filters: () => Filters,
 	Webpack: () => Webpack,
-	_getBySource: () => _getBySource,
 	_waitForComponent: () => _waitForComponent,
 	filterModuleAndExport: () => filterModuleAndExport,
+	findKey: () => findKey,
 	getById: () => getById,
 	getByKeys: () => getByKeys,
 	getByPrototypeKeys: () => getByPrototypeKeys,
@@ -89,7 +94,6 @@ __export(Webpack_exports, {
 	getModuleAndKey: () => getModuleAndKey,
 	getStore: () => getStore,
 	lazy: () => lazy,
-	mapExports: () => mapExports,
 	modules: () => modules,
 	reactRefMemoFilter: () => reactRefMemoFilter,
 	waitForComponent: () => waitForComponent,
@@ -98,6 +102,129 @@ __export(Webpack_exports, {
 
 // common/Utils/Logger.js
 var Logger_default = Logger;
+
+// common/consts.js
+var UNDEFINED_OBJECT_OR_KEY = "Undefined object or key";
+var PATCH_ERROR = "Could not perform a patch";
+var MISSING_ARGUMENTS = "Missing arguments";
+var LAZY_DISCORD_COMPONENT_WRAPPER = "LazyDiscordComponentWrapper";
+
+// common/Plugin.js
+var target = /* @__PURE__ */ (() => new EventTarget())();
+
+function wrap(handler) {
+	return (e) => {
+		try {
+			handler.apply(null, e);
+		} catch (err) {
+			Logger_default.error(`Could not run [${e.type}] handler`, { handler }, "\n", err);
+		}
+	};
+}
+var Plugin_default = {
+	onStart: (handler, props) => target.addEventListener("START", wrap(handler), props),
+	onStop: (handler, props) => target.addEventListener("STOP", wrap(handler), props),
+	start() {
+		setTimeout(target.dispatchEvent(new Event("START")));
+	},
+	stop() {
+		setTimeout(target.dispatchEvent(new Event("STOP")));
+	}
+};
+
+// common/Webpack.jsx
+var Webpack = /* @__PURE__ */ (() => BdApi.Webpack)();
+var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
+var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
+var waitForModule = /* @__PURE__ */ (() => Webpack.waitForModule)();
+var modules = /* @__PURE__ */ (() => Webpack.modules)();
+var getBySource = /* @__PURE__ */ (() => Webpack.getBySource)();
+var getByPrototypeKeys = /* @__PURE__ */ (() => Webpack.getByPrototypeKeys)();
+var getMangled = /* @__PURE__ */ (() => Webpack.getMangled)();
+var getById = /* @__PURE__ */ (() => Webpack.getById)();
+var getStore = /* @__PURE__ */ (() => Webpack.getStore)();
+var getByKeys = /* @__PURE__ */ (() => Webpack.getByKeys)();
+var abortController = /* @__PURE__ */ (() => {
+	Plugin_default.onStart(() => abortController = new AbortController());
+	Plugin_default.onStop(() => abortController.abort());
+	return new AbortController();
+})();
+
+function lazy(filter, { decFilter, ...options } = {}) {
+	if (!filter) return Logger_default.error(`[Webpack lazy] ${MISSING_ARGUMENTS}`);
+	const { promise, resolve } = Promise.withResolvers();
+	waitForModule(filter, {
+		...options,
+		raw: true,
+		fatal: false,
+		signal: abortController.signal
+	}).then((module2) => {
+		if (!module2) throw "waitForModule resolved with undefined";
+		const object = decFilter ? module2.declarations : module2.exports;
+		const key = getObjectKey(object, decFilter || filter);
+		if (!object || !key) throw UNDEFINED_OBJECT_OR_KEY;
+		resolve([object, key]);
+	}).catch((cause) => Logger_default.warn(new Error(PATCH_ERROR, { cause })));
+	return promise;
+}
+
+function Suspended({ promise, fallback, ...props }) {
+	const comp = React_default.use(promise);
+	if (comp) return React_default.createElement(comp, props);
+	return fallback;
+}
+
+function waitForComponent(filter, options, Fallback = NoopComponent) {
+	const promise = waitForModule(filter, options);
+	const placeHolderComponent = (props) => /* @__PURE__ */ React_default.createElement(React_default.Suspense, { fallback: /* @__PURE__ */ React_default.createElement(Fallback, null) }, /* @__PURE__ */ React_default.createElement(
+		Suspended, {
+			...props,
+			fallback: /* @__PURE__ */ React_default.createElement(Fallback, null),
+			promise
+		}
+	));
+	placeHolderComponent.displayName = LAZY_DISCORD_COMPONENT_WRAPPER;
+	return placeHolderComponent;
+}
+
+function _waitForComponent(filter, options) {
+	let myValue = () => {};
+	const lazyComponent = LazyComponent(() => myValue);
+	waitForModule(filter, options).then((v) => {
+		myValue = v;
+		Object.assign(lazyComponent, v);
+	});
+	return lazyComponent;
+}
+
+function reactRefMemoFilter(type, ...args) {
+	const filter = Filters.byStrings(...args);
+	return (target2) => target2[type] && filter(target2[type]);
+}
+
+function findKey(obj, filter) {
+	const key = getObjectKey(obj, filter);
+	return key ? [obj, key] : [];
+}
+
+function getModuleAndKey(filter, options) {
+	const { exports: exports2 } = getModule(filter, { ...options, raw: true }) || {};
+	return findKey(exports2, filter);
+}
+
+function getDeclarationAndKey(moduleFilter, declarationFilter, options = {}) {
+	const module2 = getModule(moduleFilter, { ...options, raw: true });
+	return findKey(module2.declarations, declarationFilter);
+}
+
+function filterModuleAndExport(moduleFilter, exportFilter, options) {
+	const module2 = getModule(moduleFilter, { ...options, raw: true });
+	if (!module2) return;
+	const { exports: exports2 } = module2;
+	const key = Object.keys(exports2).find((k) => exportFilter(exports2[k]));
+	if (!key) return {};
+	return { module: exports2, key, target: exports2[key] };
+}
 
 // common/Utils/index.js
 var Utils_exports = {};
@@ -114,12 +241,10 @@ __export(Utils_exports, {
 	fit: () => fit,
 	genUrlParamsFromArray: () => genUrlParamsFromArray,
 	getImageDimensions: () => getImageDimensions,
-	getNestedProp: () => getNestedProp,
-	getObjectKey: () => getObjectKey,
 	getPathName: () => getPathName,
-	hasOwn: () => hasOwn,
 	hook: () => hook,
 	isSnowflake: () => isSnowflake,
+	memoize: () => memoize,
 	nop: () => nop,
 	openLink: () => openLink,
 	parseSnowflake: () => parseSnowflake,
@@ -127,22 +252,9 @@ __export(Utils_exports, {
 	preventDefault: () => preventDefault,
 	promiseHandler: () => promiseHandler,
 	random: () => random,
-	reRender: () => reRender,
-	reRenderFiber: () => reRenderFiber,
 	shallow: () => shallow,
 	sleep: () => sleep
 });
-
-function hasOwn(object, key) {
-	return object && key && key in object;
-}
-
-function getObjectKey(object = {}, filter) {
-	for (const key in object) {
-		if (!filter(object[key])) continue;
-		return key;
-	}
-}
 var openLink = (link) => link && window.open(link, "_blank");
 
 function fit({ width, height, gap = 0.8 }) {
@@ -230,23 +342,17 @@ function debounce(func, wait = 166) {
 
 function shallow(objA, objB) {
 	if (Object.is(objA, objB)) return true;
-	if (typeof objA !== "object" || objA === null || typeof objB !== "object" || objB === null)
-		return false;
+	if (typeof objA !== "object" || objA === null || typeof objB !== "object" || objB === null) return false;
 	const keysA = Object.keys(objA);
 	if (keysA.length !== Object.keys(objB).length) return false;
 	for (let i = 0; i < keysA.length; i++)
-		if (!Object.prototype.hasOwnProperty.call(objB, keysA[i]) || !Object.is(objA[keysA[i]], objB[keysA[i]]))
-			return false;
+		if (!Object.prototype.hasOwnProperty.call(objB, keysA[i]) || !Object.is(objA[keysA[i]], objB[keysA[i]])) return false;
 	return true;
 }
 var promiseHandler = (promise) => promise.then((data) => [void 0, data]).catch((err) => [err]);
 
 function copy(data) {
 	DiscordNative.clipboard.copy(data);
-}
-
-function getNestedProp(obj, path) {
-	return path.split(".").reduce((ob, prop) => ob?.[prop], obj);
 }
 var BrokenAddon = class {
 	stop() {}
@@ -263,63 +369,6 @@ var Disposable = class {
 		this.patches = [];
 	}
 };
-var SyncLane = 2;
-
-function markPath(fiber) {
-	fiber.lanes |= SyncLane;
-	if (fiber.alternate) fiber.alternate.lanes |= SyncLane;
-	let node = fiber.return;
-	while (node) {
-		node.childLanes |= SyncLane;
-		if (node.alternate) node.alternate.childLanes |= SyncLane;
-		node = node.return;
-	}
-}
-
-function findUpdater(fiber) {
-	let node = fiber;
-	while (node) {
-		const inst = node.stateNode;
-		if (inst && typeof inst.forceUpdate === "function") {
-			return () => inst.forceUpdate();
-		}
-		let hook2 = node.memoizedState;
-		while (hook2) {
-			const state = hook2.memoizedState;
-			if (hook2.queue?.dispatch && state !== null && typeof state === "object") {
-				const dispatch = hook2.queue.dispatch;
-				return () => dispatch(Array.isArray(state) ? [...state] : { ...state });
-			}
-			hook2 = hook2.next;
-		}
-		node = node.return;
-	}
-	return null;
-}
-
-function forceUpdateFiber(fiber) {
-	if (!fiber) return false;
-	const update = findUpdater(fiber);
-	if (!update) return false;
-	markPath(fiber);
-	ReactDOM.flushSync(update);
-	return true;
-}
-
-function reRenderFiber(selector) {
-	const target2 = document.querySelector(selector)?.parentElement;
-	if (!target2) return;
-	forceUpdateFiber(getInternalInstance(target2));
-}
-
-function reRender(selector) {
-	const target2 = document.querySelector(selector)?.parentElement;
-	if (!target2) return;
-	const instance = getOwnerInstance(target2);
-	if (!instance) return;
-	const unpatch = BdApi.Patcher.instead("RE_RENDER", instance, "render", () => unpatch());
-	instance.forceUpdate(() => instance.forceUpdate());
-}
 var nop = () => {};
 
 function sleep(delay) {
@@ -414,161 +463,161 @@ function preventDefault(handler = nop) {
 		handler.apply(null, [e]);
 	};
 }
-
-// common/consts.js
-var UNDEFINED_OBJECT_OR_KEY = "Undefined object or key";
-var PATCH_ERROR = "Could not perform a patch";
-var MISSING_ARGUMENTS = "Missing arguments";
-var LAZY_DISCORD_COMPONENT_WRAPPER = "LazyDiscordComponentWrapper";
-
-// common/Plugin.js
-var target = /* @__PURE__ */ (() => new EventTarget())();
-
-function wrap(handler) {
-	return (e) => {
-		try {
-			handler.apply(null, e);
-		} catch (err) {
-			Logger_default.error(`Could not run [${e.type}] handler`, { handler }, "\n", err);
-		}
+var makeKey = (...args) => {
+	return args.map((o) => JSON.stringify(o)).join("");
+};
+var memoize = (func) => {
+	const cache = /* @__PURE__ */ new Map();
+	return (...args) => {
+		const key = makeKey(...args);
+		if (!cache.has(key)) cache.set(key, func(...args));
+		return cache.get(key);
 	};
-}
-var Plugin_default = {
-	onStart: (handler, props) => target.addEventListener("START", wrap(handler), props),
-	onStop: (handler, props) => target.addEventListener("STOP", wrap(handler), props),
-	start() {
-		target.dispatchEvent(new Event("START"));
-	},
-	stop() {
-		target.dispatchEvent(new Event("STOP"));
-	}
 };
 
-// common/Webpack.jsx
-var Webpack = /* @__PURE__ */ (() => BdApi.Webpack)();
-var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
-var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
-var waitForModule = /* @__PURE__ */ (() => Webpack.waitForModule)();
-var modules = /* @__PURE__ */ (() => Webpack.modules)();
-var getBySource = /* @__PURE__ */ (() => Webpack.getBySource)();
-var getByPrototypeKeys = /* @__PURE__ */ (() => Webpack.getByPrototypeKeys)();
-var getMangled = /* @__PURE__ */ (() => Webpack.getMangled)();
-var getById = /* @__PURE__ */ (() => Webpack.getById)();
-var getStore = /* @__PURE__ */ (() => Webpack.getStore)();
-var getByKeys = /* @__PURE__ */ (() => Webpack.getByKeys)();
-var abortController = /* @__PURE__ */ (() => {
-	Plugin_default.onStart(() => abortController = new AbortController());
-	Plugin_default.onStop(() => abortController.abort());
-	return new AbortController();
-})();
+// common/Patcher/contextmenu.js
+var contextmenuUnPatches = [];
+Plugin_default.onStop(() => {
+	contextmenuUnPatches.filter(Boolean).forEach((a) => a());
+	contextmenuUnPatches = [];
+});
+var patch = (id, callback) => {
+	const undo = ContextMenu.patch(id, callback);
+	contextmenuUnPatches.push(undo);
+};
 
-function lazy(filter, { decFilter, ...options } = {}) {
-	if (!filter) return Logger_default.error(`[Webpack lazy] ${MISSING_ARGUMENTS}`);
-	const { promise, resolve } = Promise.withResolvers();
-	waitForModule(filter, {
-		...options,
-		raw: true,
-		fatal: false,
-		signal: abortController.signal
-	}).then((module2) => {
-		if (!module2) throw "waitForModule resolved with undefined";
-		const object = decFilter ? module2.declarations : module2.exports;
-		const key = getObjectKey(object, decFilter || filter);
-		if (!object || !key) throw UNDEFINED_OBJECT_OR_KEY;
-		resolve([object, key]);
-	}).catch((err) => Logger_default.error(PATCH_ERROR, err));
-	return promise;
-}
-
-function Suspended({ promise, fallback, ...props }) {
-	const comp = React_default.use(promise);
-	if (comp) return React_default.createElement(comp, props);
-	return fallback;
-}
-
-function waitForComponent(filter, options, Fallback = NoopComponent) {
-	const promise = waitForModule(filter, options);
-	const placeHolderComponent = (props) => /* @__PURE__ */ React_default.createElement(React_default.Suspense, { fallback: /* @__PURE__ */ React_default.createElement(Fallback, null) }, /* @__PURE__ */ React_default.createElement(
-		Suspended, {
-			...props,
-			fallback: /* @__PURE__ */ React_default.createElement(Fallback, null),
-			promise
-		}
-	));
-	placeHolderComponent.displayName = LAZY_DISCORD_COMPONENT_WRAPPER;
-	return placeHolderComponent;
-}
-
-function _waitForComponent(filter, options) {
-	let myValue = () => {};
-	const lazyComponent = LazyComponent(() => myValue);
-	waitForModule(filter, options).then((v) => {
-		myValue = v;
-		Object.assign(lazyComponent, v);
+// src/Devtools/patches/contextmenus.js
+Plugin_default.onStart(() => {
+	patch("*", (ret) => {
+		const target2 = findInTree(ret, (a) => a.navId, { walkable: ["children", "props"] });
+		if (!target2) return console.error("ContextmenusNavId", ret);
+		const MenuItem = BdApi.ContextMenu.buildItem({
+			label: target2.navId,
+			action() {
+				copy(target2.navId);
+			}
+		});
+		if (Array.isArray(target2.children)) target2.children.push(MenuItem);
+		else target2.children = [target2.children, MenuItem];
 	});
-	return lazyComponent;
-}
+});
 
-function reactRefMemoFilter(type, ...args) {
-	const filter = Filters.byStrings(...args);
-	return (target2) => target2[type] && filter(target2[type]);
-}
+// common/Components/ErrorBoundary/index.jsx
+var ErrorBoundary_default = (props) => /* @__PURE__ */ React_default.createElement(BdApi.Components.ErrorBoundary, { ...props, name: Config_default?.info?.name });
 
-function getModuleAndKey(filter, options) {
-	let module2;
-	const target2 = getModule((entry, m) => filter(entry) ? module2 = m : false, options);
-	module2 = module2?.exports;
-	if (!module2) return;
-	const key = Object.keys(module2).find((k) => module2[k] === target2);
-	if (!key) return;
-	return [module2, key];
-}
+// MODULES-AUTO-LOADER:@Modules/all
+var all_default = {
+	ChannelTypeEnum: getModule(Filters.byKeys("GUILD_TEXT", "DM"), { searchExports: true }),
+	ProfileTypeEnum: getModule(Filters.byKeys("POPOUT", "SETTINGS"), { searchExports: true }),
+	StickerTypeEnum: getModule(Filters.byKeys("GUILD", "STANDARD"), { searchExports: true }),
+	DiscordPermissionsEnum: getModule(Filters.byKeys("ADD_REACTIONS"), { searchExports: true }),
+	EmojiIntentionEnum: getModule(Filters.byKeys("GUILD_ROLE_BENEFIT_EMOJI"), { searchExports: true }),
+	EmojiSendAvailabilityEnum: getModule(Filters.byKeys("GUILD_SUBSCRIPTION_UNAVAILABLE"), { searchExports: true }),
+	GuildFeaturesEnum: getModule(Filters.byKeys("CLYDE_ENABLED"), { searchExports: true }),
+	TheBigBoyBundle: getModule(Filters.byKeys("openModal", "FormSwitch", "Anchor"), { searchExports: false }),
+	RenderLinkComponent: getModule((m) => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false }),
+	ModalSize: getModule(Filters.byKeys("DYNAMIC", "SMALL", "LARGE"), { searchExports: true }),
+	ModalRoot: getModule(Filters.byStrings("rootWithShadow", "MODAL"), { searchExports: true }),
+	ModalCarousel: getModule(Filters.byPrototypeKeys("navigateTo", "preloadImage"), { searchExports: false }),
+	ImageModal: getModule(Filters.byStrings("renderLinkComponent", "zoomThumbnailPlaceholder"), { searchExports: true }),
+	Dispatcher: getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: true }),
+	Color: getModule(Filters.byKeys("Color", "hex", "hsl"), { searchExports: false }),
+	ChannelActions: getModule(Filters.byKeys("actions", "fetchMessages"), { searchExports: true }),
+	ChannelComponent: getModule(Filters.byStrings("hasActiveThreads", "channelTypeOverride"), { searchExports: true }),
+	ChannelContent: getModule((m) => m.type && m.type.toString?.().includes("messageGroupSpacing"), { searchExports: false }),
+	CreateChannel: getModule((m) => m.createChannel, { searchExports: false }),
+	MessageActions: getModule(Filters.byKeys("jumpToMessage", "_sendMessage"), { searchExports: false }),
+	ExpressionPickerInspector: getModule(Filters.byStrings("graphicPrimary", "titlePrimary"), { searchExports: false }),
+	CloseExpressionPicker: getModule(Filters.byStrings("activeView:null,activeViewType:null"), { searchExports: true }),
+	StickerSendability: getModule(Filters.byKeys("StickerSendability", "getStickerSendability"), { searchExports: false }),
+	DiscordPermissions: getModule(Filters.byKeys("computePermissions"), { searchExports: false }),
+	StickerModule: getModule(Filters.byStrings("sticker", "withLoadingIndicator"), { searchExports: false }),
+	ChannelSettings: getModule(Filters.byKeys("updateChannelOverrideSettings"), { searchExports: false }),
+	GuildTooltip: getModule(Filters.byStrings("includeActivity", "listItemTooltip"), { searchExports: false }),
+	DiscordUtils: getModule(Filters.byKeys("getDiscordUtils"), { searchExports: false }),
+	Analytics: getModule(Filters.byKeys("AnalyticEventConfigs"), { searchExports: false }),
+	MessageHeader: getModule(Filters.byStrings("userOverride", "withMentionPrefix"), { searchExports: false }),
+	EmojiFunctions: getModule(Filters.byKeys("getEmojiUnavailableReason"), { searchExports: true }),
+	MentionComponent: getModule(Filters.byStrings("backgroundColor", "color", "interactive", "wrapper"), { searchExports: false }),
+	FetchUser: getModule(Filters.byStrings("USER_UPDATE", "default.getUser", "oldFormErrors"), { searchExports: true }),
+	ChannelLink: getModule((m) => m && m.render && Filters.byStrings("ENTER", "SPACE", "charCode")(m.render), { searchExports: false }),
+	EmbedComponent: getModule((m) => m.prototype.getSpoilerStyles, { searchExports: false }),
+	RefreshToken: getModule(Filters.byStrings("CONNECTION_ACCESS_TOKEN"), { searchExports: true }),
+	TimeBar: getModule((a) => a.prototype.render && a.defaultProps.themed === false, { searchExports: false }),
+	useStateFromStores: getModule(Filters.byStrings("getStateFromStores"), { searchExports: true }),
+	TreadComponent: getModule((a) => a?.type?.toString().includes("GUILD_CHANNEL_LIST"), { searchExports: false }),
+	zustand: getModule(Filters.byStrings("useStore, api"), { searchExports: false }),
+	openModal: getModule(Filters.byStrings("onCloseCallback", "onCloseRequest", "modalKey", "backdropStyle"), { searchExports: true }),
+	Tooltip: getModule(Filters.byPrototypeKeys("renderTooltip"), { searchExports: true }),
+	Popout: getModule(Filters.byPrototypeKeys("shouldShowPopout", "toggleShow"), { searchExports: true }),
+	Heading: getModule((a) => a?.render?.toString().includes("data-excessive-heading-level"), { searchExports: true }),
+	Button: getModule((a) => a && a.Link && a.Colors, { searchExports: true }),
+	FormSwitch: getModule(Filters.byStrings("note", "tooltipNote"), { searchExports: true }),
+	Spinner: getModule((a) => a?.Type?.CHASING_DOTS, { searchExports: true }),
+	Slider: getModule(Filters.byPrototypeKeys("renderMark"), { searchExports: true }),
+	FormText: getModule((a) => a?.Types?.LABEL_DESCRIPTOR, { searchExports: true }),
+	RadioGroup: getModule((a) => a?.Sizes?.NOT_SET === "", { searchExports: true }),
+	Anchor: getModule(Filters.byKeys("Anchor"), { searchExports: true })
+};
 
-function getDeclarationAndKey(moduleFilter, declarationFilter, options = {}) {
-	const module2 = getModule(moduleFilter, { ...options, raw: true });
-	if (!module2?.declarations) return;
-	const key = getObjectKey(module2.declarations, declarationFilter);
-	return key ? [module2.declarations, key] : void 0;
-}
-
-function filterModuleAndExport(moduleFilter, exportFilter, options) {
-	const module2 = getModule(moduleFilter, { ...options, raw: true });
-	if (!module2) return;
-	const { exports } = module2;
-	const key = Object.keys(exports).find((k) => exportFilter(exports[k]));
-	if (!key) return {};
-	return { module: exports, key, target: exports[key] };
-}
-
-function mapExports(moduleFilter, exportsMap, options) {
-	const module2 = getModule(moduleFilter, { ...options, raw: true });
-	if (!module2) return {};
-	const { exports } = module2;
-	const res = { module: exports, mangledKeys: {} };
-	for (const [mapKey, filter] of Object.entries(exportsMap)) {
-		for (const [exportKey, val] of Object.entries(exports)) {
-			if (!filter(val)) continue;
-			res[mapKey] = val;
-			res.mangledKeys[mapKey] = exportKey;
-			break;
-		}
-	}
-	return res;
-}
-
-function _getBySource(filter) {
-	let moduleId = null;
-	for (const [id, loader] of Object.entries(modules)) {
-		if (filter(loader.toString())) {
-			moduleId = id;
-			break;
-		}
-	}
-	return getModule((_, __, id) => id === moduleId);
-}
-
-// MODULES-AUTO-LOADER:@Modules/Dispatcher
-var Dispatcher_default = /* @__PURE__ */ (() => getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: true }))();
+// common/DiscordModules/Modules.js
+var Modules_exports = {};
+__export(Modules_exports, {
+	Anchor: () => Anchor,
+	ChannelComponent: () => ChannelComponent,
+	ChannelUtils: () => ChannelUtils,
+	Color: () => Color,
+	ComponentDispatch: () => ComponentDispatch,
+	DiscordApi: () => DiscordApi,
+	DiscordPopout: () => DiscordPopout,
+	Dispatcher: () => Dispatcher,
+	DragSource: () => DragSource,
+	DropTarget: () => DropTarget,
+	FieldWrapper: () => FieldWrapper,
+	FocusLock: () => FocusLock,
+	GroupDmAvatar: () => GroupDmAvatar,
+	I18n: () => I18n,
+	IconsUtils: () => IconsUtils,
+	Markdown: () => Markdown,
+	MediaViewerModal: () => MediaViewerModal,
+	MessageHeader: () => MessageHeader,
+	RadioGroup: () => RadioGroup,
+	SearchableSelect: () => SearchableSelect,
+	Spinner: () => Spinner,
+	UserProfileActions: () => UserProfileActions,
+	transitionTo: () => transitionTo,
+	useDrag: () => useDrag,
+	useDrop: () => useDrop
+});
+var ComponentDispatch = /* @__PURE__ */ (() => {
+	waitForModule((m) => m.dispatchToLastSubscribed, { searchExports: true }).then((a) => {
+		ComponentDispatch = a;
+	});
+})();
+var FocusLock = /* @__PURE__ */ (() => getModule(Filters.byStrings(".containerRef,{disableReturn"), { searchExports: true }))();
+var Spinner = /* @__PURE__ */ (() => getModule((a) => a?.Type?.CHASING_DOTS, { searchExports: true }))();
+var Color = /* @__PURE__ */ (() => getModule(Filters.byKeys("Color", "hex", "hsl"), { searchExports: false }))();
+var SearchableSelect = /* @__PURE__ */ (() => getMangled(`"multiple":"single",required:`, { SearchableSelect: Filters.byStrings(`"multiple":"single",required:`) }).SearchableSelect)();
+var I18n = /* @__PURE__ */ (() => getByKeys("intl", "t"))();
+var DiscordPopout = /* @__PURE__ */ (() => getModule((a) => a?.prototype?.render && a.Animation, { searchExports: true }))();
+var DiscordApi = /* @__PURE__ */ (() => getMangled("HTTPUtils", { api: Filters.byKeys("get", "del", "patch", "put") }))();
+var Dispatcher = /* @__PURE__ */ (() => getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: true }))();
+var Markdown = /* @__PURE__ */ (() => getModule(Filters.byKeys("parseEmbedTitle", "defaultRules")))();
+var Anchor = /* @__PURE__ */ (() => getModule(Filters.byKeys("Anchor")).Anchor)();
+var UserProfileActions = /* @__PURE__ */ (() => getByKeys("openUserProfileModal", "closeUserProfileModal"))();
+var transitionTo = /* @__PURE__ */ (() => getModule(Filters.byStrings("transitionTo - Transitioning to"), { searchExports: true }))();
+var GroupDmAvatar = /* @__PURE__ */ (() => getModule(reactRefMemoFilter("type", "channel", "recipients", "isTyping", "status"), { searchExports: true }))();
+var DragSource = /* @__PURE__ */ (() => getModule(Filters.byStrings("drag-source", "collect"), { searchExports: true }))();
+var DropTarget = /* @__PURE__ */ (() => getModule(Filters.byStrings("drop-target", "collect"), { searchExports: true }))();
+var useDrag = /* @__PURE__ */ (() => getModule(Filters.byStrings("useDrag::"), { searchExports: true }))();
+var useDrop = /* @__PURE__ */ (() => getModule(Filters.byStrings(".options);return(0,"), { searchExports: true }))();
+var FieldWrapper = /* @__PURE__ */ (() => getModule(reactRefMemoFilter("render", "fieldWrapper", "title", "titleId"), { searchExports: true }))();
+var IconsUtils = /* @__PURE__ */ (() => getModule((a) => a.getChannelIconURL))();
+var ChannelUtils = /* @__PURE__ */ (() => getModule((m) => m.openPrivateChannel))();
+var RadioGroup = /* @__PURE__ */ (() => getMangled('data-toggleable-component":"radiogroup', { radioGroup: Filters.byStrings("label", "required") }).radioGroup)();
+var MediaViewerModal = /* @__PURE__ */ (() => getMangled("Media Viewer Modal", { MediaViewerModal: (a) => typeof a !== "string" }).MediaViewerModal)();
+var ChannelComponent = () => getModule(reactRefMemoFilter("render", "hasActiveThreads"), { searchExports: true });
+var MessageHeader = /* @__PURE__ */ (() => lazy(Filters.byStrings("userOverride", "withMentionPrefix"), { searchExports: false }))();
 
 // common/Utils/Notification.js
 function showNotification(title, content, options) {
@@ -595,395 +644,19 @@ var Notification_default = {
 	}
 };
 
-// MODULES-AUTO-LOADER:@Enums/DiscordPermissionsEnum
-var DiscordPermissionsEnum_default = /* @__PURE__ */ (() => getModule(Filters.byKeys("ADD_REACTIONS"), { searchExports: true }) || void 0)();
-
-// src/Devtools/webpackRequire.js
-var chunkName = Object.keys(window).find((key) => key.startsWith("webpackChunk"));
-var chunk = window[chunkName];
-var webpackreq;
-chunk.push([
-	[ /* @__PURE__ */ Symbol()], {}, (r) => webpackreq = r.b ? r : webpackreq
-]);
-chunk.pop();
-var webpackRequire_default = webpackreq;
-
-// src/Devtools/Sources.js
-var Source = class {
-	constructor(id, loader) {
-		this.id = id;
-		this.loader = loader;
-	}
-	get module() {
-		return Modules.moduleById(this.id);
-	}
-	get code() {
-		return this.loader.toString();
-	}
-	get saveSourceToDesktop() {
-		try {
-			const fs = require("fs");
-			const path = `${process.env.USERPROFILE}\\Desktop\\${this.id}.js`;
-			fs.writeFileSync(path, this.code, "utf8");
-			return `Saved to: ${path}`;
-		} catch (e) {
-			return e;
-		}
-	}
-};
-
-function sourceById(id) {
-	return new Source(id, webpackRequire_default.m[id]);
-}
-
-function* sourceLookup(...args) {
-	const strArr = args;
-	const invert = typeof args[args.length - 1] === "boolean" ? args.pop() : false;
-	for (const [id, source] of Object.entries(webpackRequire_default.m)) {
-		const sourceCode = source.toString().replace(/^\d+/, "function");
-		const result = strArr.every((str) => sourceCode.includes(str));
-		if (invert ^ result) yield new Source(id, source);
-	}
-}
-
-function getSources(...args) {
-	return [...sourceLookup(...args)];
-}
-
-function getSource(...args) {
-	const b = sourceLookup(...args);
-	const res = b.next().value;
-	b.return();
-	return res;
-}
-
-function getSourceByFunc(func) {
-	return getSources(String(func));
-}
-var Sources = {
-	getWebpackSources() {
-		return webpackRequire_default.m;
-	},
-	sourceById,
-	getSource,
-	getSources,
-	getSourceByFunc
-};
-
-// src/Devtools/Modules.js
-var defineModuleGetter = (obj, id) => Object.defineProperty(obj, id, {
-	enumerable: true,
-	get() {
-		return Modules.moduleById(id);
-	}
-});
-var Module = class {
-	constructor(id, module2) {
-		this.id = id;
-		this.rawModule = module2;
-		this.exports = module2.exports;
-		const source = Sources.sourceById(id);
-		this.loader = source.loader;
-	}
-	get exportsUses() {
-		const keys = Object.keys(this.exports);
-		const t = this;
-		const ret = {};
-		for (let i = keys.length - 1; i >= 0; i--) {
-			const key = keys[i];
-			Object.defineProperty(ret, key, {
-				enumerable: true,
-				get() {
-					return Object.keys(t.modulesUsingThisModule).filter((id) => {
-						const code = t.modulesUsingThisModule[id].code;
-						return exportInModule(code, t.id, key);
-					}).reduce((acc, id) => defineModuleGetter(acc, id), {});
-				}
-			});
-		}
-		return ret;
-	}
-	get code() {
-		return this.loader.toString().replace(/^\d+/, "function");
-	}
-	get imports() {
-		return Modules.modulesImportedInModuleById(this.id).reduce((acc, id) => defineModuleGetter(acc, id), {});
-	}
-	get modulesUsingThisModule() {
-		return Modules.modulesImportingModuleById(this.id).reduce((acc, id) => defineModuleGetter(acc, id), {});
-	}
-	get saveSourceToDesktop() {
-		try {
-			const fs = require("fs");
-			const path = `${process.env.USERPROFILE}\\Desktop\\${this.id}.js`;
-			fs.writeFileSync(path, this.code, "utf8");
-			return `Saved to: ${path}`;
-		} catch (e) {
-			return e;
-		}
-	}
-	get saveAllToDesktop() {
-		try {
-			const fs = require("fs");
-			const path = `${process.env.USERPROFILE}\\Desktop\\${this.id}`;
-			if (!fs.existsSync(path)) fs.mkdirSync(path);
-			fs.writeFileSync(`${path}\\__MAIN-${this.id}.js`, this.code, "utf8");
-			fs.mkdirSync(`${path}\\modulesUsingThisModule`);
-			fs.mkdirSync(`${path}\\imports`);
-			{
-				const modules2 = Object.entries(this.modulesUsingThisModule);
-				for (let i = modules2.length - 1; i >= 0; i--) {
-					const [id, module2] = modules2[i];
-					const code = module2.code;
-					fs.writeFileSync(`${path}\\modulesUsingThisModule\\${id}.js`, code, "utf8");
-				}
-			} {
-				const modules2 = Object.entries(this.imports);
-				for (let i = modules2.length - 1; i >= 0; i--) {
-					const [id, module2] = modules2[i];
-					const code = module2.code;
-					fs.writeFileSync(`${path}\\imports\\${id}.js`, code, "utf8");
-				}
-			}
-			return `Saved to: ${path}`;
-		} catch (e) {
-			return e;
-		}
-	}
-};
-
-function getWebpackModules() {
-	return webpackRequire_default.c;
-}
-
-function moduleById(id) {
-	const module2 = webpackRequire_default.c[id];
-	if (!module2) return;
-	return new Module(id, module2);
-}
-
-function modulesImportedInModuleById(id) {
-	const { code } = Sources.sourceById(id);
-	const args = code.match(/\((.+?)\)/i)?.[1];
-	if (args?.length > 5 || !args) return [];
-	const req = args.split(",")[2];
-	const re = new RegExp(`(?:\\s|\\(|,|=)${req}\\("?(\\d+)"?\\)`, "g");
-	const imports = Array.from(code.matchAll(re));
-	return imports.map((id2) => id2[1]);
-}
-
-function exportInModule(code, id, key) {
-	const args = code.match(/\((.+?)\)/i)?.[1];
-	if (args?.length > 5 || !args) return [];
-	const req = args.split(",")[2];
-	const re = new RegExp(`([a-zA-Z_$][a-zA-Z_$0-9]*)=${req}\\(${id}\\)`);
-	const [, identifier] = Array.from(code.match(re));
-	return code.includes(`${identifier}.${key}`);
-}
-
-function modulesImportingModuleById(id) {
-	return Object.keys(Sources.getWebpackSources()).filter((sourceId) => modulesImportedInModuleById(sourceId).includes(`${id}`));
-}
-
-function noExports(filter, module2, exports) {
-	if (filter(exports, module2, module2.id)) return new Module(module2.id, module2);
-}
-
-function doExports(filter, module2, exports) {
-	if (typeof exports !== "object" && typeof exports !== "function") return;
-	for (const entryKey in exports) {
-		let target2 = null;
-		try {
-			target2 = exports[entryKey];
-		} catch {
-			continue;
-		}
-		if (sanitizeExports(target2)) continue;
-		if (filter(target2, module2, module2.id)) return { target: target2, entryKey, module: new Module(module2.id, module2) };
-	}
-}
-
-function sanitizeExports(exports) {
-	if (!exports) return true;
-	if (exports === Symbol) return true;
-	if (exports.TypedArray) return true;
-	if (exports === window) return true;
-	if (exports instanceof Window) return true;
-	if (exports === document.documentElement) return true;
-	if (exports[Symbol.toStringTag] === "DOMTokenList") return true;
-	return false;
-}
-
-function* moduleLookup(filter, options = {}) {
-	const { searchExports = false } = options;
-	const gauntlet = searchExports ? doExports : noExports;
-	const keys = Object.keys(webpackRequire_default.c);
-	for (let index = keys.length - 1; index >= 0; index--) {
-		const module2 = webpackRequire_default.c[keys[index]];
-		const { exports } = module2;
-		if (sanitizeExports(exports)) continue;
-		const match = gauntlet(filter, module2, exports);
-		if (match) yield match;
-	}
-}
-
-function getModules(filter, options) {
-	return [...moduleLookup(filter, options)];
-}
-
-function getModule2(filter, options) {
-	const b = moduleLookup(filter, options);
-	const res = b.next().value;
-	b.return();
-	return res;
-}
-var Modules = {
-	moduleById,
-	moduleLookup,
-	getWebpackModules,
-	modulesImportedInModuleById,
-	modulesImportingModuleById,
-	getModules,
-	getModule: getModule2
-};
-
-// src/Devtools/Misc.js
-var Misc = {
-	// getAllCssModules(){
-	// 	return cssModulesId.map(Modules.moduleById);
-	// },
-	getAllAssets() {
-		return Modules.getModules((a) => typeof a.exports === "string" && a.exports.match(/\/assets\/.+/)).map((a) => a.exports);
-	},
-	getEventListeners(eventName) {
-		const nodes = Dispatcher_default._actionHandlers._dependencyGraph.nodes;
-		const subs = Dispatcher_default._subscriptions;
-		return {
-			stores: Object.values(nodes).map((a) => a.actionHandler[eventName] && a).filter(Boolean),
-			subs: [eventName, subs[eventName]]
-		};
-	},
-	getEventListenersFuzzy(str = "") {
-		str = str.toLowerCase();
-		const nodes = Dispatcher_default._actionHandlers._dependencyGraph.nodes;
-		const subs = Dispatcher_default._subscriptions;
-		return {
-			stores: Object.values(nodes).filter((a) => Object.keys(a.actionHandler).some((key) => key.toLowerCase().includes(str))),
-			subs: Object.entries(subs).filter(([key]) => key.toLowerCase().includes(str)).map((a) => a)
-		};
-	},
-	getGraph: /* @__PURE__ */ (() => {
-		let graph = null;
-		return function getGraph(refresh = false) {
-			if (graph === null || refresh) graph = Object.keys(Modules.getWebpackModules()).map((a) => ({ id: a, modules: Modules.modulesImportedInModuleById(a) }));
-			return graph;
-		};
-	})()
-};
-
-// common/Components/Switch/index.jsx
-var Switch_default = getMangled(Filters.bySource("auxiliaryContentPosition", "hasIcon"), {
-	Switch: () => true
-})?.Switch || function SwitchComponentFallback(props) {
-	return /* @__PURE__ */ React_default.createElement("div", { style: { color: "#fff" } }, props.label, /* @__PURE__ */ React_default.createElement(
-		"input", {
-			type: "checkbox",
-			checked: props.checked,
-			onChange: (e) => props.onChange(e.target.checked)
-		}
-	));
-};
-
-// src/Devtools/SettingComponent.jsx
-function SettingComponent_default({ settings: settings2, enableExp: enableExp2 }) {
-	const [enabled, setEnabled] = React_default.useState(settings2.expEnabled);
-	return /* @__PURE__ */ React_default.createElement(
-		Switch_default, {
-			value: enabled,
-			hideBorder: false,
-			onChange: (e) => {
-				settings2.expEnabled = e;
-				setEnabled(e);
-				enableExp2(e);
-			}
-		},
-		"enableExperiments"
-	);
-}
-
-// src/Devtools/Stores.js
-var Store = class {
-	constructor(store) {
-		this.store = store;
-		this.module = Sources.getSourceByFunc(store.constructor)?.[0].module;
-		this.name = this.store.getName();
-		this.methods = {};
-		const _this = this;
-		Object.getOwnPropertyNames(this.store.__proto__).forEach((key) => {
-			if (key === "constructor") return;
-			const func = this.store[key];
-			if (typeof func !== "function") return;
-			if (func.length === 0)
-				return Object.defineProperty(this.methods, key, {
-					get() {
-						return _this.store[key]();
-					}
-				});
-			this.methods[key] = func;
-		});
-	}
-	// get store() {
-	// 	for (const key of ["Z", "ZP", "default"]) if (key in this.module.exports) 
-	// 		return this.module.exports[key];
-	// }
-	// get localVars() {
-	// 	return this.store.__getLocalVars();
-	// }
-	get events() {
-		return Stores.getStoreListeners(this.name);
-	}
-};
-var FluxStore = Modules.getModule((a) => a.Store, { searchExports: true })?.target.Store;
-var stores = FluxStore.getAll();
-var Stores = {
-	getStore(storeName) {
-		const module2 = stores.find((a) => a.getName() === storeName);
-		if (!module2) return void 0;
-		return new Store(module2);
-	},
-	getStoreFuzzy(str = "") {
-		return stores.filter((a) => a.getName().toLowerCase().includes(str)).map((store) => new Store(store));
-	},
-	getStoreListeners(storeName) {
-		const nodes = Dispatcher_default._actionHandlers._dependencyGraph.nodes;
-		const storeHandlers = Object.values(nodes).filter(({ name }) => name === storeName);
-		return {
-			events: storeHandlers[0],
-			store: Stores.getStore(storeName)
-		};
-	},
-	getSortedStores: /* @__PURE__ */ (() => {
-		let stores2 = null;
-		return function getSortedStores(force) {
-			if (!stores2 || force) {
-				stores2 = Modules.getModule((a) => a?.Store, { searchExports: true }).target.Store.getAll().map((store) => [store.getName(), store]).sort((a, b) => a[0].localeCompare(b[0])).map(([a, b]) => ({
-					[a]: b }));
-			}
-			return stores2;
-		};
-	})()
-	// getZustanStores(){
-	// 	return Zustand.module.modulesUsingThisModule;
-	// }
-};
-
 // src/Devtools/utils.js
 var utils_exports = {};
 __export(utils_exports, {
+	d: () => d,
+	dispatcherEventInterceptor: () => dispatcherEventInterceptor,
 	getFiber: () => getFiber,
 	walkFiber: () => walkFiber
 });
 
+// MODULES-AUTO-LOADER:@Modules/Dispatcher
+var Dispatcher_default = /* @__PURE__ */ (() => getModule(Filters.byKeys("dispatch", "_dispatch"), { searchExports: true }))();
+
+// src/Devtools/utils.js
 function walkFiber(filter = (a) => a, depth, el) {
 	el ??= $0;
 	depth = depth < 1 || !depth ? 1 : depth;
@@ -1009,14 +682,16 @@ function getFiber() {
 	return getInternalInstance($0);
 }
 
-// MODULES-AUTO-LOADER:@Modules/MessageActions
-var MessageActions_default = /* @__PURE__ */ (() => getModule(Filters.byKeys("jumpToMessage", "_sendMessage"), { searchExports: false }))();
-
-// common/DiscordModules/Modules.js
-var transitionTo = /* @__PURE__ */ (() => getModule(Filters.byStrings("transitionTo - Transitioning to"), { searchExports: true }))();
-var ChannelUtils = /* @__PURE__ */ (() => getModule((m) => m.openPrivateChannel))();
-
-// src/Devtools/index.jsx
+function dispatcherEventInterceptor(eventName, fn) {
+	const index = Dispatcher_default._interceptors.length;
+	Dispatcher_default.addInterceptor((e) => {
+		if (e.type !== eventName) return;
+		try {
+			fn(e);
+		} catch {}
+	});
+	return () => Dispatcher_default._interceptors.splice(index, 1);
+}
 var d = (() => {
 	const cache = /* @__PURE__ */ new WeakMap();
 	const emptyDoc = document.createDocumentFragment();
@@ -1084,95 +759,421 @@ var d = (() => {
 	};
 })();
 
-function dispatcherEventInterceptor(eventName, fn) {
-	const index = Dispatcher_default._interceptors.length;
-	Dispatcher_default.addInterceptor((e) => {
-		if (e.type !== eventName) return;
-		try {
-			fn(e);
-		} catch {}
-	});
-	return () => Dispatcher_default._interceptors.splice(index, 1);
+// src/Devtools/webpack/webpackRequire.js
+var chunkName = Object.keys(window).find((key) => key.startsWith("webpackChunk"));
+var chunk = window[chunkName];
+var webpackreq;
+chunk.push([
+	[ /* @__PURE__ */ Symbol()], {}, (r) => webpackreq = r.b ? r : webpackreq
+]);
+chunk.pop();
+var webpackRequire_default = webpackreq;
+
+// common/Utils/fs.js
+var import_fs = __toESM(require("fs"));
+
+function saveFile(path, content) {
+	import_fs.default.writeFileSync(path, content, "utf8");
 }
+
+function mkdir(path) {
+	if (!import_fs.default.existsSync(path)) import_fs.default.mkdirSync(path);
+}
+
+// src/Devtools/webpack/Modules.js
+var defineModuleGetter = (obj, id) => Object.defineProperty(obj, id, {
+	enumerable: true,
+	get() {
+		return Modules.moduleById(id);
+	}
+});
+var Module = class {
+	constructor(id, module2) {
+		this.id = id;
+		this.rawModule = module2;
+		this.exports = module2.exports;
+		const source = Sources.sourceById(id);
+		this.loader = source.loader;
+	}
+	get code() {
+		return this.loader.toString().replace(/^\d+/, "function");
+	}
+	get imports() {
+		return Modules.modulesImportedInModuleById(this.id).reduce((acc, id) => defineModuleGetter(acc, id), {});
+	}
+	get modulesUsingThisModule() {
+		return Modules.modulesImportingModuleById(this.id).reduce((acc, id) => defineModuleGetter(acc, id), {});
+	}
+	get saveSourceToDesktop() {
+		try {
+			const path = `${process.env.USERPROFILE}\\Desktop\\${this.id}.js`;
+			saveFile(path, this.code);
+			return `Saved to: ${path}`;
+		} catch (e) {
+			return e;
+		}
+	}
+	get saveAllToDesktop() {
+		try {
+			const path = `${process.env.USERPROFILE}\\Desktop\\${this.id}`;
+			saveFile(`${path}\\__MAIN-${this.id}.js`, this.code);
+			mkdir(`${path}\\modulesUsingThisModule`);
+			mkdir(`${path}\\imports`);
+			{
+				const modules2 = Object.entries(this.modulesUsingThisModule);
+				for (let i = modules2.length - 1; i >= 0; i--) {
+					const [id, module2] = modules2[i];
+					const code = module2.code;
+					saveFile(`${path}\\modulesUsingThisModule\\${id}.js`, code);
+				}
+			} {
+				const modules2 = Object.entries(this.imports);
+				for (let i = modules2.length - 1; i >= 0; i--) {
+					const [id, module2] = modules2[i];
+					const code = module2.code;
+					saveFile(`${path}\\imports\\${id}.js`, code);
+				}
+			}
+			return `Saved to: ${path}`;
+		} catch (e) {
+			return e;
+		}
+	}
+};
+
+function moduleById(id) {
+	const module2 = webpackRequire_default.c[id];
+	if (!module2) return;
+	return new Module(id, module2);
+}
+
+function modulesImportedInModuleById(id) {
+	const { code } = Sources.sourceById(id);
+	const args = code.match(/\((.+?)\)/i)?.[1];
+	if (args?.length > 5 || !args) return [];
+	const req = args.split(",")[2];
+	const re = new RegExp(`(?:\\s|\\(|,|=)${req}\\("?(\\d+)"?\\)`, "g");
+	const imports = Array.from(code.matchAll(re));
+	return imports.map((id2) => id2[1]);
+}
+
+function modulesImportingModuleById(id) {
+	return Object.keys(Sources.getWebpackSources()).filter((sourceId) => modulesImportedInModuleById(sourceId).includes(`${id}`));
+}
+
+function noExports(filter, module2, exports2) {
+	if (filter(exports2, module2, module2.id)) return new Module(module2.id, module2);
+}
+
+function doExports(filter, module2, exports2) {
+	if (typeof exports2 !== "object" && typeof exports2 !== "function") return;
+	for (const entryKey in exports2) {
+		let target2;
+		try {
+			target2 = exports2[entryKey];
+		} catch {
+			continue;
+		}
+		if (sanitizeExports(target2)) continue;
+		if (filter(target2, module2, module2.id)) return { target: target2, entryKey, module: new Module(module2.id, module2) };
+	}
+}
+
+function sanitizeExports(exports2) {
+	if (!exports2) return true;
+	if (exports2 === Symbol) return true;
+	if (exports2.TypedArray) return true;
+	if (exports2 === window) return true;
+	if (exports2 instanceof Window) return true;
+	if (exports2 === document.documentElement) return true;
+	if (exports2[Symbol.toStringTag] === "DOMTokenList") return true;
+	return false;
+}
+
+function* moduleLookup(filter, options = {}) {
+	const { searchExports = false } = options;
+	const gauntlet = searchExports ? doExports : noExports;
+	const keys = Object.keys(webpackRequire_default.c);
+	for (let index = keys.length - 1; index >= 0; index--) {
+		const module2 = webpackRequire_default.c[keys[index]];
+		const { exports: exports2 } = module2;
+		if (sanitizeExports(exports2)) continue;
+		const match = gauntlet(filter, module2, exports2);
+		if (match) yield match;
+	}
+}
+
+function getModules(filter, options) {
+	return [...moduleLookup(filter, options)];
+}
+
+function getModule2(filter, options) {
+	const b = moduleLookup(filter, options);
+	const res = b.next().value;
+	b.return();
+	return res;
+}
+var Modules = {
+	moduleById,
+	moduleLookup,
+	modulesImportedInModuleById,
+	modulesImportingModuleById,
+	getModules,
+	getModule: getModule2
+};
+
+// src/Devtools/webpack/Sources.js
+var Source = class {
+	constructor(id, loader) {
+		this.id = id;
+		this.loader = loader;
+	}
+	get module() {
+		return Modules.moduleById(this.id);
+	}
+	get code() {
+		return this.loader.toString();
+	}
+	get saveSourceToDesktop() {
+		try {
+			const path = `${process.env.USERPROFILE}\\Desktop\\${this.id}.js`;
+			saveFile(path, this.code);
+			return `Saved to: ${path}`;
+		} catch (e) {
+			return e;
+		}
+	}
+};
+
+function sourceById(id) {
+	return new Source(id, webpackRequire_default.m[id]);
+}
+
+function* sourceLookup(...args) {
+	const strArr = args;
+	for (const [id, source] of Object.entries(webpackRequire_default.m)) {
+		const sourceCode = source.toString().replace(/^\d+/, "function");
+		const result = strArr.every((str) => sourceCode.includes(str));
+		if (!result) continue;
+		yield new Source(id, source);
+	}
+}
+
+function getSources(...args) {
+	return [...sourceLookup(...args)];
+}
+
+function getSource(...args) {
+	const b = sourceLookup(...args);
+	const res = b.next().value;
+	b.return();
+	return res;
+}
+
+function getSourceByFunc(func) {
+	return getSources(String(func));
+}
+var Sources = {
+	getWebpackSources: () => webpackRequire_default.m,
+	sourceById,
+	getSource,
+	getSources,
+	getSourceByFunc
+};
+
+// src/Devtools/webpack/Decs.js
+var Dec = class {
+	constructor(mod, dec, key) {
+		this.mod = mod;
+		this.id = mod.id;
+		this.dec = dec;
+		this.key = key;
+		this.decs = mod.declarations;
+	}
+};
+
+function* decLookup(decFilter, ...args) {
+	const strArr = args;
+	for (const [id, source] of Object.entries(webpackRequire_default.m)) {
+		const sourceCode = source.toString().replace(/^\d+/, "function");
+		const result = strArr.every((str) => sourceCode.includes(str));
+		if (!result) continue;
+		const mod = webpackRequire_default.c[id];
+		if (!mod || !mod.declarations) continue;
+		const keys = Object.keys(mod.declarations);
+		for (let i = keys.length - 1; i >= 0; i--) {
+			const dec = mod.declarations[keys[i]];
+			if (decFilter(dec)) yield new Dec(mod, dec, keys[i]);
+		}
+	}
+}
+
+function getDecs(...args) {
+	return [...decLookup(...args)];
+}
+
+function getDec(...args) {
+	const b = decLookup(...args);
+	const res = b.next().value;
+	b.return();
+	return res;
+}
+var Decs = {
+	getDec,
+	getDecs
+};
+
+// src/Devtools/webpack/Stores.js
+var Store = class {
+	constructor(store) {
+		this.store = store;
+		this.module = Sources.getSourceByFunc(store.constructor)?.[0].module;
+		this.name = this.store.getName();
+		this.methods = {};
+		const _this = this;
+		Object.getOwnPropertyNames(this.store.__proto__).forEach((key) => {
+			if (key === "constructor") return;
+			const func = this.store[key];
+			if (typeof func !== "function") return;
+			if (func.length === 0)
+				return Object.defineProperty(this.methods, key, {
+					get() {
+						return _this.store[key]();
+					}
+				});
+			this.methods[key] = func;
+		});
+	}
+	get events() {
+		return Stores.getStoreListeners(this.name);
+	}
+};
+var FluxStore = Modules.getModule((a) => a.Store, { searchExports: true })?.target.Store;
+var stores = FluxStore.getAll();
+var Stores = {
+	getStore(storeName) {
+		const module2 = stores.find((a) => a.getName() === storeName);
+		if (!module2) return void 0;
+		return new Store(module2);
+	},
+	getStoreFuzzy(str = "") {
+		return stores.filter((a) => a.getName().toLowerCase().includes(str)).map((store) => new Store(store));
+	},
+	getStoreListeners(storeName) {
+		const nodes = Dispatcher_default._actionHandlers._dependencyGraph.nodes;
+		const storeHandlers = Object.values(nodes).filter(({ name: name2 }) => name2 === storeName);
+		return {
+			get store() {
+				return Stores.getStore(storeName);
+			},
+			events: storeHandlers[0]
+		};
+	},
+	getSortedStores: /* @__PURE__ */ (() => {
+		let stores2 = null;
+		return function getSortedStores(force) {
+			if (!stores2 || force) {
+				stores2 = Modules.getModule((a) => a?.Store, { searchExports: true }).target.Store.getAll().map((store) => [store.getName(), store]).sort((a, b) => a[0].localeCompare(b[0])).map(([a, b]) => ({
+					[a]: b }));
+			}
+			return stores2;
+		};
+	})(),
+	getZustanStores() {
+		const stores2 = Decs.getDecs((dec) => dec && typeof dec === "function" && dec.getState && dec.setState && dec.getInitialState);
+		return Object.values(stores2).map((val) => {
+			const state = val.dec.getState();
+			return Object.assign({}, state, {
+				get _mod() {
+					return val;
+				}
+			});
+		});
+	}
+};
+
+// src/Devtools/webpack/Misc.js
+var Misc = {
+	getAllAssets() {
+		return Modules.getModules((a) => typeof a.exports === "string" && a.exports.match(/\/assets\/.+/)).map((a) => a.exports);
+	},
+	getEventListeners(eventName) {
+		const nodes = Dispatcher_default._actionHandlers._dependencyGraph.nodes;
+		const subs = Dispatcher_default._subscriptions;
+		return {
+			stores: Object.values(nodes).map(
+				(a) => a.actionHandler[eventName] && Object.assign({
+						get store() {
+							return Stores.getStore(a.name);
+						}
+					},
+					a
+				)
+			).filter(Boolean),
+			subs: [eventName, subs[eventName]]
+		};
+	},
+	getEventListenersFuzzy(str = "") {
+		str = str.toLowerCase();
+		const nodes = Dispatcher_default._actionHandlers._dependencyGraph.nodes;
+		const subs = Dispatcher_default._subscriptions;
+		return {
+			stores: Object.values(nodes).filter((a) => Object.keys(a.actionHandler).some((key) => key.toLowerCase().includes(str))).map(
+				(a) => Object.assign({
+						get store() {
+							return Stores.getStore(a.name);
+						}
+					},
+					a
+				)
+			),
+			subs: Object.entries(subs).filter(([key]) => key.toLowerCase().includes(str)).map((a) => a)
+		};
+	},
+	getGraph: /* @__PURE__ */ (() => {
+		let graph = null;
+		return function getGraph(refresh = false) {
+			if (graph === null || refresh) graph = Object.keys(Modules.getCache()).map((a) => ({ id: a, modules: Modules.modulesImportedInModuleById(a) }));
+			return graph;
+		};
+	})()
+};
+
+// src/Devtools/webpack/index.js
+function s(a, ...args) {
+	if (typeof a === "function") return Sources.getSourceByFunc(a);
+	if (Number.isInteger(+a)) return Modules.moduleById(a);
+	if (typeof a === "string" && a.endsWith("Store")) return Stores.getStore(name);
+	return Sources.getSources(a, ...args);
+}
+var webpack_default = Object.assign(s, {
+	r: webpackRequire_default,
+	...Misc,
+	...Stores,
+	...Sources,
+	...Decs,
+	...Modules
+});
+
+// src/Devtools/index.jsx
+if (console.context) console = console.context();
 
 function init() {
-	window.s = Object.assign((id) => Modules.moduleById(id), {
-		bd: {
-			...BdApi.Webpack,
-			getModuleAndKey
-		},
+	window.s = Object.assign(webpack_default, {
 		Notification: Notification_default,
 		Utils: {
-			ChannelUtils,
-			transitionTo,
 			ErrorBoundary: ErrorBoundary_default,
 			...Utils_exports,
-			...utils_exports,
-			...d,
-			dispatcherEventInterceptor
+			...utils_exports
 		},
 		Webpack: Webpack_exports,
-		r: webpackRequire_default,
-		...Misc,
-		...Stores,
-		...Sources,
-		...Modules,
-		DiscordModules: {
-			MessageActions: MessageActions_default,
-			Dispatcher: Dispatcher_default,
-			DiscordPermissionsEnum: DiscordPermissionsEnum_default
-		}
+		DiscordModules: { DiscordModules: all_default, modules: Modules_exports }
 	});
 }
-var settings = {
-	expEnabled: false
-};
-var DeveloperExperimentStore = Stores.getStore("DeveloperExperimentStore");
-var ExperimentStore = Stores.getStore("ExperimentStore");
-var UserStore = Stores.getStore("UserStore").store;
-
-function updateStores() {
-	try {
-		DeveloperExperimentStore.events.actionHandler.CONNECTION_OPEN();
-		ExperimentStore.events.actionHandler.OVERLAY_INITIALIZE({
-			user: UserStore.getCurrentUser()
-		});
-		ExperimentStore.events.storeDidChange();
-	} catch {}
-}
-var enableExp = /* @__PURE__ */ (() => {
-	let unpatch = () => {};
-	return function enableExp2(b) {
-		if (!b) {
-			unpatch?.();
-			UserStore.getCurrentUser().flags = 256;
-		} else {
-			unpatch = Patcher.after(UserStore, "getCurrentUser", (_, __, ret) => {
-				if (!ret) return;
-				ret.flags = 1;
-			});
-		}
-		updateStores();
-	};
-})();
-var Devtools = class {
-	start() {
-		try {
-			init();
-		} catch (e) {
-			Logger_default.error(e);
-		}
-	}
-	stop() {
-		"s" in window && delete window.s;
-		enableExp(false);
-	}
-	getSettingsPanel() {
-		return /* @__PURE__ */ React_default.createElement(
-			SettingComponent_default, {
-				settings,
-				enableExp
-			}
-		);
-	}
-};
+Plugin_default.onStart(() => {
+	init();
+});
+Plugin_default.onStop(() => {
+	"s" in window && delete window.s;
+});
+module.exports = () => Plugin_default;

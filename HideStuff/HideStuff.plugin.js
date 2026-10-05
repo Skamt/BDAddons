@@ -47,10 +47,10 @@ var Plugin_default = {
 	onStart: (handler, props) => target.addEventListener("START", wrap(handler), props),
 	onStop: (handler, props) => target.addEventListener("STOP", wrap(handler), props),
 	start() {
-		target.dispatchEvent(new Event("START"));
+		setTimeout(target.dispatchEvent(new Event("START")));
 	},
 	stop() {
-		target.dispatchEvent(new Event("STOP"));
+		setTimeout(target.dispatchEvent(new Event("STOP")));
 	}
 };
 

@@ -2,7 +2,7 @@
  * @runAt idle
  * @name SpotifyEnhance
  * @description All in one better spotify-discord experience.
- * @version 1.1.18
+ * @version 1.1.19
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js
@@ -12,7 +12,7 @@
 var Config_default = {
 	"info": {
 		"name": "SpotifyEnhance",
-		"version": "1.1.18",
+		"version": "1.1.19",
 		"description": "All in one better spotify-discord experience.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance",
@@ -22,7 +22,6 @@ var Config_default = {
 	},
 	"settings": {
 		"spotifyEmbed": "REPLACE",
-		"spotifyPlayerPlace": "USERAREA",
 		"activityIndicator": true,
 		"enableListenAlong": true,
 		"playerBannerBackground": true,
@@ -68,10 +67,10 @@ var Plugin_default = {
 	onStart: (handler, props) => target.addEventListener("START", wrap(handler), props),
 	onStop: (handler, props) => target.addEventListener("STOP", wrap(handler), props),
 	start() {
-		target.dispatchEvent(new Event("START"));
+		setTimeout(target.dispatchEvent(new Event("START")));
 	},
 	stop() {
-		target.dispatchEvent(new Event("STOP"));
+		setTimeout(target.dispatchEvent(new Event("STOP")));
 	}
 };
 
@@ -145,6 +144,7 @@ var useMemo = /* @__PURE__ */ (() => BdApi.React.useMemo)();
 var Children = /* @__PURE__ */ (() => BdApi.React.Children)();
 var React = /* @__PURE__ */ (() => BdApi.React)();
 var React_default = React;
+var NoopComponent = () => null;
 
 // common/Components/Icon/index.jsx
 function svg(svgProps, ...paths) {
@@ -194,14 +194,6 @@ var SpotifyIcon = /* @__PURE__ */ (() => svg(null, "M12 2C6.47715 2 2 6.47715 2 
 var VolumeIcon = /* @__PURE__ */ (() => svg({ viewBox: "0 0 16 16" }, "M9.741.85a.75.75 0 0 1 .375.65v13a.75.75 0 0 1-1.125.65l-6.925-4a3.642 3.642 0 0 1-1.33-4.967 3.639 3.639 0 0 1 1.33-1.332l6.925-4a.75.75 0 0 1 .75 0zm-6.924 5.3a2.139 2.139 0 0 0 0 3.7l5.8 3.35V2.8l-5.8 3.35zm8.683 4.29V5.56a2.75 2.75 0 0 1 0 4.88z", "M11.5 13.614a5.752 5.752 0 0 0 0-11.228v1.55a4.252 4.252 0 0 1 0 8.127v1.55z"))();
 
 // common/Utils/index.js
-function hasOwn(object, key) {
-	return object && key && key in object;
-}
-
-function getObjectKey(object = {}, filter) {
-	for (const key in object)
-		if (filter(object[key])) return key;
-}
 var openLink = (link) => link && window.open(link, "_blank");
 
 function fit({ width, height, gap = 0.8 }) {
@@ -428,10 +420,23 @@ var SpotifyAPI_default = new class SpotifyClientAPI {
 	}
 }();
 
+// common/Utils/Object.js
+var map = (obj, fn) => Object.fromEntries(Object.entries(obj).map(([key, value]) => [key, fn({ value, key })]));
+
+function getObjectKey(object = {}, filter) {
+	for (const key in object)
+		if (filter(object[key])) return key;
+}
+
+function hasOwn(object, key) {
+	return object && key && key in object;
+}
+
 // common/consts.js
 var UNDEFINED_OBJECT_OR_KEY = "Undefined object or key";
 var PATCH_ERROR = "Could not perform a patch";
 var MISSING_ARGUMENTS = "Missing arguments";
+var LAZY_DISCORD_COMPONENT_WRAPPER = "LazyDiscordComponentWrapper";
 
 // common/Webpack.jsx
 var Webpack = /* @__PURE__ */ (() => BdApi.Webpack)();
@@ -462,6 +467,25 @@ function lazy(filter, { decFilter, ...options } = {}) {
 		resolve([object, key]);
 	}).catch((cause) => Logger_default.warn(new Error(PATCH_ERROR, { cause })));
 	return promise;
+}
+
+function Suspended({ promise, fallback, ...props }) {
+	const comp = React_default.use(promise);
+	if (comp) return React_default.createElement(comp, props);
+	return fallback;
+}
+
+function waitForComponent(filter, options, Fallback = NoopComponent) {
+	const promise = waitForModule(filter, options);
+	const placeHolderComponent = (props) => /* @__PURE__ */ React_default.createElement(React_default.Suspense, { fallback: /* @__PURE__ */ React_default.createElement(Fallback, null) }, /* @__PURE__ */ React_default.createElement(
+		Suspended, {
+			...props,
+			fallback: /* @__PURE__ */ React_default.createElement(Fallback, null),
+			promise
+		}
+	));
+	placeHolderComponent.displayName = LAZY_DISCORD_COMPONENT_WRAPPER;
+	return placeHolderComponent;
 }
 
 function reactRefMemoFilter(type, ...args) {
@@ -844,7 +868,7 @@ ${reason}`);
 	}
 });
 
-// src/SpotifyEnhance/store/store.js
+// src/SpotifyEnhance/store/actions.js
 var getters = {
 	getAlbum() {
 		const media = this.state.media;
@@ -882,8 +906,7 @@ var setters = {
 		this.setState({ account, isActive: !!account });
 	},
 	setPlayerState(playerState) {
-		if (!playerState || playerState.currently_playing_type === "ad")
-			return this.setState({ isPlaying: false });
+		if (!playerState || playerState.currently_playing_type === "ad") return this.setState({ isPlaying: false });
 		const state = this.state;
 		const newId = playerState.item?.linked_from?.id || playerState.item?.id;
 		const media = newId === state.media?.id ? state.media : playerState.item;
@@ -915,45 +938,13 @@ var setters = {
 		this.setState({ position: sum });
 	}
 };
-var store_default2 = {
-	state: {
-		account: void 0,
-		isActive: false,
-		media: {},
-		mediaType: void 0,
-		volume: void 0,
-		progress: void 0,
-		isPlaying: void 0,
-		mediaId: void 0,
-		repeat: void 0,
-		shuffle: void 0,
-		actions: void 0,
-		position: 0
-	},
-	selectors: {
-		isActive: (state) => state.isActive,
-		account: (state) => state.account,
-		media: (state) => state.media,
-		mediaType: (state) => state.mediaType,
-		volume: (state) => state.volume,
-		progress: (state) => state.progress,
-		mediaId: (state) => state.mediaId,
-		context: (state) => state.context,
-		isPlaying: (state) => state.isPlaying,
-		duration: (state) => state.duration,
-		repeat: (state) => state.repeat,
-		shuffle: (state) => state.shuffle,
-		position: (state) => state.position,
-		actions: (state) => state.actions
-	},
-	actions: {
-		...getters,
-		...setters,
-		async fetchPlayerState() {
-			const [err, playerState] = await promiseHandler(SpotifyAPIWrapper_default.getPlayerState());
-			if (err) return Logger_default.error("Could not fetch player state", err);
-			this.setPlayerState(playerState);
-		}
+var actions_default = {
+	...getters,
+	...setters,
+	async fetchPlayerState() {
+		const [err, playerState] = await promiseHandler(SpotifyAPIWrapper_default.getPlayerState());
+		if (err) return Logger_default.error("Could not fetch player state", err);
+		this.setPlayerState(playerState);
 	}
 };
 
@@ -1006,8 +997,8 @@ var subscribeWithSelector = /* @__PURE__ */ (() => getModule(Filters.byStrings("
 	searchExports: true
 }))();
 
-function create(initialState) {
-	const Store2 = zustand(initialState);
+function create(initialState2) {
+	const Store2 = zustand(initialState2);
 	Object.defineProperty(Store2, "state", {
 		configurable: false,
 		get: () => Store2.getState()
@@ -1016,15 +1007,30 @@ function create(initialState) {
 }
 
 // src/SpotifyEnhance/store/index.js
-var Store = create(subscribeWithSelector(() => store_default2));
+var initialState = {
+	account: void 0,
+	isActive: false,
+	media: {},
+	mediaType: void 0,
+	volume: void 0,
+	progress: void 0,
+	isPlaying: void 0,
+	mediaId: void 0,
+	repeat: void 0,
+	duration: void 0,
+	context: void 0,
+	shuffle: void 0,
+	actions: {},
+	position: 0
+};
+var Store = create(subscribeWithSelector(() => initialState));
 var store_default = Store;
-Object.assign(Store, {
+Object.assign(Store, actions_default, {
 	Api: SpotifyAPIWrapper_default,
-	selectors: store_default2.selectors,
+	selectors: map(initialState, ({ key }) => (state) => state[key]),
 	idleTimer: new Timer(() => Store.setDeviceState(false), 5 * 60 * 1e3, Timer.TIMEOUT),
 	positionInterval: new Timer(() => Store.incrementPosition(), 1e3, Timer.INTERVAL)
 });
-Object.assign(Store, store_default2.actions);
 Store.subscribe(Store.selectors.account, (account = {}) => {
 	SpotifyAPIWrapper_default.setAccount(account.accessToken, account.accountId);
 });
@@ -1052,7 +1058,7 @@ Store.subscribe(
 
 function onSpotifyStoreChange() {
 	try {
-		if (Store.account?.accountId && Store.account?.accessToken) return;
+		if (Store.state.account?.accountId && Store.state.account?.accessToken) return;
 		const { socket } = SpotifyStore_default.getActiveSocketAndDevice() || {};
 		if (!socket) return;
 		Store.setAccount(socket);
@@ -1064,11 +1070,9 @@ function onSpotifyStoreChange() {
 
 function onAccountsChanged() {
 	try {
-		if (!Store.account) return;
-		const connectedAccounts = ConnectedAccountsStore_default.getAccounts().filter(
-			(account) => account.type === "spotify"
-		);
-		if (connectedAccounts.some((a) => a.id === Store.account.accountId)) return;
+		if (!Store.state.account) return;
+		const connectedAccounts = ConnectedAccountsStore_default.getAccounts().filter((account) => account.type === "spotify");
+		if (connectedAccounts.some((a) => a.id === Store.state.account.accountId)) return;
 		Store.setAccount(void 0);
 	} catch (e) {
 		Logger_default.error(e);
@@ -1169,9 +1173,9 @@ function patch(type, object, key, callback) {
 	if (!hasOwn(object, key))
 		return Logger.error("Could not perform a patch, missing arguments", arguments);
 	const caller = {
-		after: (context2, args, ret) => callback({ context: context2, args, ret }),
-		before: (context2, args) => callback({ context: context2, args }),
-		instead: (context2, args, fn) => callback({ context: context2, args, fn })
+		after: (context, args, ret) => callback({ context, args, ret }),
+		before: (context, args) => callback({ context, args }),
+		instead: (context, args, fn) => callback({ context, args, fn })
 	} [type];
 	return Patcher[type](object, key, caller);
 }
@@ -1201,39 +1205,32 @@ Plugin_default.onStart(() => {
 	);
 });
 
-// common/Utils/Settings.js
+// common/Settings.js
 var Settings_default = /* @__PURE__ */ (() => {
-	const SettingsStore = create(
-		subscribeWithSelector(() => Object.assign(Config_default.settings || {}, Data.load("settings") || {}))
+	const SettingsStore = create(subscribeWithSelector(() => Object.assign(Config_default.settings || {}, Data.load("settings") || {})));
+	Object.assign(
+		SettingsStore,
+		map(
+			SettingsStore.getInitialState(),
+			({ key }) => Object.assign(() => SettingsStore((state) => state[key]), {
+				key,
+				get: () => SettingsStore.state[key],
+				set: (v) => SettingsStore.setState({
+					[key]: v })
+			})
+		)
 	);
-	const state = SettingsStore.getInitialState();
-	const selectors = {};
-	const actions = {};
-	for (const key of Object.keys(state)) {
-		actions[`set${key}`] = (newValue) => SettingsStore.setState({
-			[key]: newValue });
-		selectors[key] = (state2) => state2[key];
-	}
-	Object.defineProperty(SettingsStore, "selectors", { value: Object.assign(selectors) });
-	Object.assign(SettingsStore, actions);
 	SettingsStore.subscribe(
-		(state2) => state2,
+		(a) => a,
 		() => Data.save("settings", SettingsStore.state)
 	);
-	Object.assign(SettingsStore, {
-		// eslint-disable-next-line @eslint-react/no-unnecessary-use-prefix
-		useSetting: (key) => {
-			const val = SettingsStore((state2) => state2[key]);
-			return [val, SettingsStore[`set${key}`]];
-		}
-	});
 	return SettingsStore;
 })();
 
 // src/SpotifyEnhance/patches/patchListenAlong.js
 Plugin_default.onStart(() => {
 	after(SpotifyStore_default, "getActiveSocketAndDevice", ({ ret }) => {
-		if (!Settings_default.getState().enableListenAlong) return;
+		if (!Settings_default.state.enableListenAlong) return;
 		if (ret?.socket) ret.socket.isPremium = true;
 		return ret;
 	});
@@ -1302,7 +1299,7 @@ var Tooltip_default2 = ({ note, position, children }) => {
 
 // src/SpotifyEnhance/patches/patchMessageHeader.jsx
 function SpotifyActivityIndicator({ userId }) {
-	const activityIndicator = Settings_default(Settings_default.selectors.activityIndicator);
+	const activityIndicator = Settings_default.activityIndicator();
 	const spotifyActivity = useStateFromStores_default(
 		[PresenceStore_default],
 		() => PresenceStore_default.getActivities(userId).find(
@@ -1474,7 +1471,7 @@ var SpotifyActivityControls_default = ({ activity, user }) => {
 var ActivityComponent = getDeclarationAndKey(Filters.bySource("PRESS_LISTEN_ALONG_ON_SPOTIFY_BUTTON", "PRESS_PLAY_ON_SPOTIFY_BUTTON"), Filters.byStrings("PRESS_LISTEN_ALONG_ON_SPOTIFY_BUTTON", "PRESS_PLAY_ON_SPOTIFY_BUTTON"));
 Plugin_default.onStart(() => {
 	after(...ActivityComponent, ({ args: [{ user, activity }] }) => {
-		if (!Settings_default.getState().activity) return;
+		if (!Settings_default.state.activity) return;
 		if (activity?.name.toLowerCase() !== "spotify") return;
 		return /* @__PURE__ */ React_default.createElement(ErrorBoundary_default, { id: "SpotifyEmbed" }, /* @__PURE__ */ React_default.createElement(
 			SpotifyActivityControls_default, {
@@ -1490,15 +1487,6 @@ var EmbedStyleEnum = {
 	KEEP: "KEEP",
 	REPLACE: "REPLACE",
 	HIDE: "HIDE"
-};
-var PlayerButtonsEnum = {
-	SHARE: "Share",
-	SHUFFLE: "Shuffle",
-	PREVIOUS: "Previous",
-	PLAY: "Play",
-	NEXT: "Next",
-	REPEAT: "Repeat",
-	VOLUME: "Volume"
 };
 var ALLOWD_TYPES = ["track", "playlist", "album", "artist", "user", "show", "episode"];
 
@@ -1680,15 +1668,11 @@ StylesLoader_default.push(`.downloadLink {
 `);
 
 // common/Utils/ImageModal/index.jsx
-var RenderLinkComponent = getModule((m) => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false });
-var ImageModal = getModule(reactRefMemoFilter("type", "renderLinkComponent"), { searchExports: true });
-
-function h(e, t) {
-	const n = arguments.length > 2 && void 0 !== arguments[2] && arguments[2];
-	true === n || AccessibilityStore_default.useReducedMotion ? e.set(t) : e.start(t);
-}
+var RenderLinkComponent = waitForComponent((m) => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false });
+var ImageModal = waitForComponent(reactRefMemoFilter("type", "renderLinkComponent"), { searchExports: true });
+var ScaleProvider = waitForComponent((a) => a?._currentValue?.scale, { searchExports: true });
 var useSomeScalingHook = getModule(Filters.byStrings("reducedMotion.enabled", "useSpring", "respect-motion-settings"), { searchExports: true });
-var context = getModule((a) => a?._currentValue?.scale, { searchExports: true });
+var h = (e, t, n) => true === n || AccessibilityStore_default.useReducedMotion ? e.set(t) : e.start(t);
 var ImageComponent = ({ url, ...rest }) => {
 	const [x, P] = useState(false);
 	const [M] = useSomeScalingHook(() => ({
@@ -1718,7 +1702,7 @@ var ImageComponent = ({ url, ...rest }) => {
 		}),
 		[x, M]
 	);
-	return /* @__PURE__ */ React_default.createElement(context.Provider, { value: contextVal }, /* @__PURE__ */ React_default.createElement("div", { className: "imageModalwrapper" }, /* @__PURE__ */ React_default.createElement(
+	return /* @__PURE__ */ React_default.createElement(ScaleProvider, { value: contextVal }, /* @__PURE__ */ React_default.createElement("div", { className: "imageModalwrapper" }, /* @__PURE__ */ React_default.createElement(
 		ImageModal, {
 			maxWidth: rest.maxWidth,
 			maxHeight: rest.maxHeight,
@@ -2085,7 +2069,7 @@ var c3 = classNameFactory("spotify-embed");
 var SpotifyEmbed_default = ({ id, type }) => {
 	const data = useGetRessource(type, id);
 	const { thumbnail, rawTitle, rawDescription, url, preview_url } = data || {};
-	const embedBannerBackground = Settings_default(Settings_default.selectors.embedBannerBackground);
+	const embedBannerBackground = Settings_default.embedBannerBackground();
 	const useReducedMotion = useStateFromStores_default(
 		[AccessibilityStore_default],
 		() => AccessibilityStore_default.useReducedMotion
@@ -2158,7 +2142,7 @@ var SpotifyEmbed_default = ({ id, type }) => {
 
 // src/SpotifyEnhance/components/SpotifyEmbedWrapper/index.jsx
 function SpotifyEmbedWrapper({ id, type, embedObject, embedComponent }) {
-	const spotifyEmbed = Settings_default(Settings_default.selectors.spotifyEmbed);
+	const spotifyEmbed = Settings_default.spotifyEmbed();
 	switch (spotifyEmbed) {
 		case EmbedStyleEnum.KEEP:
 			return [
@@ -2483,29 +2467,32 @@ var repeatObj = {
 	}
 };
 var SpotifyPlayerControls_default = () => {
-	const playerButtons = Settings_default(Settings_default.selectors.playerButtons, shallow);
+	const shareBtn = Settings_default.Share();
+	const shuffleBtn = Settings_default.Shuffle();
+	const previousBtn = Settings_default.Previous();
+	const nextBtn = Settings_default.Next();
+	const repeatBtn = Settings_default.Repeat();
+	const volumeBtn = Settings_default.Volume();
 	const [isPlaying, shuffle, repeat] = store_default((_) => [_.isPlaying, _.shuffle, _.repeat], shallow);
 	const actions = store_default(store_default.selectors.actions, shallow);
 	const { bannerLg } = store_default.getSongBanners();
 	const { toggling_shuffle, toggling_repeat_track, skipping_next, skipping_prev } = actions || {};
 	const { repeatTooltip, repeatActive, repeatIcon, repeatArg } = repeatObj[repeat || "off"];
-	const shuffleHandler = () => store_default.Api.shuffle(!shuffle);
-	const repeatHandler = () => store_default.Api.repeat(repeatArg);
 	const { playPauseTooltip, playPauseHandler, playPauseIcon, playPauseClassName } = playpause[isPlaying];
-	return /* @__PURE__ */ React_default.createElement("div", { className: "spotify-player-controls" }, playerButtons[PlayerButtonsEnum.SHARE] && /* @__PURE__ */ React_default.createElement(HoverPopout, { popout: (e) => /* @__PURE__ */ React_default.createElement(ContextMenu.Menu, { onClose: e.closePopout }, ContextMenu.buildMenuChildren(storeContextMenu(store_default.getSongUrl(), bannerLg.url))) }, /* @__PURE__ */ React_default.createElement(
+	return /* @__PURE__ */ React_default.createElement("div", { className: "spotify-player-controls" }, shareBtn && /* @__PURE__ */ React_default.createElement(HoverPopout, { popout: (e) => /* @__PURE__ */ React_default.createElement(ContextMenu.Menu, { onClose: e.closePopout }, ContextMenu.buildMenuChildren(storeContextMenu(store_default.getSongUrl(), bannerLg.url))) }, /* @__PURE__ */ React_default.createElement(
 		ControlButton, {
 			className: c4("btn", "share"),
 			value: /* @__PURE__ */ React_default.createElement(ShareIcon, null)
 		}
 	)), [
-		playerButtons[PlayerButtonsEnum.SHUFFLE] && {
+		shuffleBtn && {
 			tooltip: "Shuffle",
 			value: /* @__PURE__ */ React_default.createElement(ShuffleIcon, null),
 			className: c4("btn", "shuffle", { enabled: shuffle }),
 			disabled: toggling_shuffle,
-			onClick: shuffleHandler
+			onClick: () => store_default.Api.shuffle(!shuffle)
 		},
-		playerButtons[PlayerButtonsEnum.PREVIOUS] && {
+		previousBtn && {
 			tooltip: "Previous",
 			value: /* @__PURE__ */ React_default.createElement(PreviousIcon, null),
 			className: c4("btn", "previous"),
@@ -2519,21 +2506,21 @@ var SpotifyPlayerControls_default = () => {
 			disabled: false,
 			onClick: playPauseHandler
 		},
-		playerButtons[PlayerButtonsEnum.NEXT] && {
+		nextBtn && {
 			tooltip: "Next",
 			value: /* @__PURE__ */ React_default.createElement(NextIcon, null),
 			className: c4("btn", "next"),
 			disabled: skipping_next,
 			onClick: nextHandler
 		},
-		playerButtons[PlayerButtonsEnum.REPEAT] && {
+		repeatBtn && {
 			tooltip: repeatTooltip,
 			value: repeatIcon,
 			className: c4("btn", "repeat", { enabled: repeatActive }),
 			disabled: toggling_repeat_track,
-			onClick: repeatHandler
+			onClick: () => store_default.Api.repeat(repeatArg)
 		}
-	].filter(Boolean).map(ControlButton), playerButtons[PlayerButtonsEnum.VOLUME] && /* @__PURE__ */ React_default.createElement(Volume, null));
+	].filter(Boolean).map(ControlButton), volumeBtn && /* @__PURE__ */ React_default.createElement(Volume, null));
 };
 
 function Volume() {
@@ -2761,14 +2748,15 @@ function Arrow() {
 // src/SpotifyEnhance/components/SpotifyPlayer/index.jsx
 var SpotifyPlayer_default = React_default.memo(function SpotifyPlayer() {
 	const [isActive, media, mediaType] = store_default((_) => [_.isActive, _.media, _.mediaType], shallow);
-	const [player, playerBannerBackground] = Settings_default((_) => [_.player, _.playerBannerBackground], shallow);
-	const [playerCompactMode, setplayerCompactMode] = Settings_default.useSetting("playerCompactMode");
+	const player = Settings_default.player();
+	const playerBannerBackground = Settings_default.playerBannerBackground();
+	const playerCompactMode = Settings_default.playerCompactMode();
 	if (!player || !isActive || !mediaType) return;
 	const { bannerMd, bannerSm, bannerLg } = store_default.getSongBanners();
 	let className = "spotify-player-container";
 	if (playerCompactMode) className += " compact";
 	if (playerBannerBackground) className += " bannerBackground";
-	const minmaxClickHandler = () => setplayerCompactMode(!playerCompactMode);
+	const minmaxClickHandler = () => Settings_default.playerCompactMode.set(!playerCompactMode);
 	return /* @__PURE__ */ React_default.createElement(
 		"div", {
 			className,
@@ -2827,8 +2815,8 @@ Plugin_default.onStart(() => {
 	lazy(Filters.byKeys("getActiveSocketAndDevice"), {
 		decFilter: Filters.byPrototypeKeys("handleEvent")
 	}).then(([m, k]) => {
-		after(m[k].prototype, "handleEvent", function onSocketEvent({ context: context2, args: [{ type, event }] }) {
-			if (store_default.state.account?.accountId && context2.accountId !== store_default.state.account?.accountId)
+		after(m[k].prototype, "handleEvent", function onSocketEvent({ context, args: [{ type, event }] }) {
+			if (store_default.state.account?.accountId && context.accountId !== store_default.state.account?.accountId)
 				return;
 			switch (type) {
 				case "PLAYER_STATE_CHANGED":
@@ -3021,26 +3009,23 @@ Divider.direction = {
 };
 
 // common/Components/SettingSwtich/index.jsx
-function SettingSwtich({ settingKey, note, border = false, onChange = nop, description, ...rest }) {
-	const [val, set] = Settings_default.useSetting(settingKey);
+function SettingSwtich({ setting, note, border = false, description, ...rest }) {
+	const val = Settings_default(setting.get);
 	return /* @__PURE__ */ React_default.createElement(React_default.Fragment, null, /* @__PURE__ */ React_default.createElement(
 		Switch_default, {
 			...rest,
 			hasIcon: true,
 			checked: val,
-			label: description || settingKey,
+			label: description || setting.key,
 			description: note,
-			onChange: (e) => {
-				set(e);
-				onChange?.(e);
-			}
+			onChange: setting.set
 		}
 	), border && /* @__PURE__ */ React_default.createElement(Divider, { gap: 15 }));
 }
 
 // src/SpotifyEnhance/components/SettingComponent/index.jsx
 function SpotifyEmbedOptions() {
-	const [val, set] = Settings_default.useSetting("spotifyEmbed");
+	const val = Settings_default.spotifyEmbed();
 	return /* @__PURE__ */ React_default.createElement(
 		RadioGroup, {
 			options: [{
@@ -3058,48 +3043,48 @@ function SpotifyEmbedOptions() {
 			],
 			orientation: "horizontal",
 			value: val,
-			onChange: (e) => set(e.value)
+			onChange: (e) => Settings_default.spotifyEmbed.set(e.value)
 		}
 	);
 }
 
 function SettingComponent() {
 	return /* @__PURE__ */ React_default.createElement("div", { className: `${Config_default.info.name}-settings` }, /* @__PURE__ */ React_default.createElement(Collapsible, { title: "miscellaneous" }, /* @__PURE__ */ React_default.createElement(FieldSet, { contentGap: 8 }, [{
-			settingKey: "player",
+			setting: Settings_default.player,
 			description: "Enable/Disable player."
 		},
 		{
-			settingKey: "enableListenAlong",
+			setting: Settings_default.enableListenAlong,
 			description: "Enables/Disable listen along without premium."
 		},
 		{
-			settingKey: "activity",
+			setting: Settings_default.activity,
 			description: "Modify Spotify activity."
 		},
 		{
-			settingKey: "activityIndicator",
+			setting: Settings_default.activityIndicator,
 			description: "Show user's Spotify activity in chat."
 		},
 		{
-			settingKey: "playerCompactMode",
+			setting: Settings_default.playerCompactMode,
 			description: "Player compact mode"
 		},
 		{
-			settingKey: "playerBannerBackground",
+			setting: Settings_default.playerBannerBackground,
 			description: "Use the banner as background for the player."
 		},
 		{
-			settingKey: "embedBannerBackground",
+			setting: Settings_default.embedBannerBackground,
 			description: "Use the banner as background for the embed."
 		}
 	].map(SettingSwtich))), /* @__PURE__ */ React_default.createElement(Gap, { gap: 15 }), /* @__PURE__ */ React_default.createElement(Collapsible, { title: "Show/Hide Player buttons" }, /* @__PURE__ */ React_default.createElement(FieldSet, { contentGap: 8 }, [
-		{ settingKey: PlayerButtonsEnum.SHARE, hideBorder: true },
-		{ settingKey: PlayerButtonsEnum.SHUFFLE, hideBorder: true },
-		{ settingKey: PlayerButtonsEnum.PREVIOUS, hideBorder: true },
-		{ settingKey: PlayerButtonsEnum.PLAY, hideBorder: true },
-		{ settingKey: PlayerButtonsEnum.NEXT, hideBorder: true },
-		{ settingKey: PlayerButtonsEnum.REPEAT, hideBorder: true },
-		{ settingKey: PlayerButtonsEnum.VOLUME, hideBorder: true, style: { marginBottom: 0 } }
+		{ setting: Settings_default.Share, hideBorder: true },
+		{ setting: Settings_default.Shuffle, hideBorder: true },
+		{ setting: Settings_default.Previous, hideBorder: true },
+		{ setting: Settings_default.Play, hideBorder: true },
+		{ setting: Settings_default.Next, hideBorder: true },
+		{ setting: Settings_default.Repeat, hideBorder: true },
+		{ setting: Settings_default.Volume, hideBorder: true }
 	].map(SettingSwtich))), /* @__PURE__ */ React_default.createElement(Gap, { gap: 15 }), /* @__PURE__ */ React_default.createElement(Collapsible, { title: "Spotify embed style" }, /* @__PURE__ */ React_default.createElement(SpotifyEmbedOptions, null)));
 }
 

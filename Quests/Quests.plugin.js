@@ -9,10 +9,6 @@
  * @credit https://gist.github.com/aamiaa/204cd9d42013ded9faf646fae7f89fbb
  */
 
-// common/React.jsx
-var React = /* @__PURE__ */ (() => BdApi.React)();
-var React_default = React;
-
 // config:@Config
 var Config_default = {
 	"info": {
@@ -34,28 +30,18 @@ var Patcher = /* @__PURE__ */ (() => Api.Patcher)();
 var Logger = /* @__PURE__ */ (() => Api.Logger)();
 var UI = /* @__PURE__ */ (() => BdApi.UI)();
 
+// common/React.jsx
+var useState = /* @__PURE__ */ (() => BdApi.React.useState)();
+var React = /* @__PURE__ */ (() => BdApi.React)();
+var React_default = React;
+
 // common/Utils/Logger.js
 var Logger_default = Logger;
 
-// common/Utils/index.js
+// common/Utils/Object.js
 function getObjectKey(object = {}, filter) {
-	for (const key in object) {
-		if (!filter(object[key])) continue;
-		return key;
-	}
-}
-var nop = () => {};
-
-function sleep(delay) {
-	return new Promise((done) => setTimeout(() => done(), delay * 1e3));
-}
-
-function preventDefault(handler = nop) {
-	return (e) => {
-		e.preventDefault();
-		e.stopPropagation();
-		handler.apply(null, [e]);
-	};
+	for (const key in object)
+		if (filter(object[key])) return key;
 }
 
 // common/Plugin.js
@@ -74,10 +60,10 @@ var Plugin_default = {
 	onStart: (handler, props) => target.addEventListener("START", wrap(handler), props),
 	onStop: (handler, props) => target.addEventListener("STOP", wrap(handler), props),
 	start() {
-		target.dispatchEvent(new Event("START"));
+		setTimeout(target.dispatchEvent(new Event("START")));
 	},
 	stop() {
-		target.dispatchEvent(new Event("STOP"));
+		setTimeout(target.dispatchEvent(new Event("STOP")));
 	}
 };
 
@@ -88,6 +74,21 @@ var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
 var waitForModule = /* @__PURE__ */ (() => Webpack.waitForModule)();
 var getMangled = /* @__PURE__ */ (() => Webpack.getMangled)();
 var getStore = /* @__PURE__ */ (() => Webpack.getStore)();
+
+// common/Utils/index.js
+var nop = () => {};
+
+function sleep(delay) {
+	return new Promise((done) => setTimeout(() => done(), delay * 1e3));
+}
+
+function preventDefault(handler = nop) {
+	return (e) => {
+		e.preventDefault();
+		e.stopPropagation();
+		handler.apply(null, [e]);
+	};
+}
 
 // MODULES-AUTO-LOADER:@Modules/Button
 var Button_default = /* @__PURE__ */ (() => getModule((a) => a && a.Link && a.Colors, { searchExports: true }))();
@@ -305,7 +306,7 @@ async function questTypes_default(quest) {
 
 // src/Quests/patches/patchQuestCard.jsx
 function CompleteQuest({ quest }) {
-	const [completing, setCompleting] = React_default.useState(false);
+	const [completing, setCompleting] = useState(false);
 	const questHandler = async () => {
 		try {
 			setCompleting(true);
@@ -326,7 +327,7 @@ function CompleteQuest({ quest }) {
 		"Complete Quest"
 	);
 }
-Plugin_default.on(Events.START, async () => {
+Plugin_default.onStart(async () => {
 	const QuestCard = await waitForModule(Filters.bySource("isQuestEnrollmentBlocked", "questNameHeadingId", "questOrQuests"), { raw: true });
 	if (!QuestCard) return Logger_default.patchError("QuestCard");
 	const declarationFilter = Filters.byStrings("sourceQuestContent", "questEnrollmentBlockedUntil");

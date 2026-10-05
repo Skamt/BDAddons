@@ -49,10 +49,10 @@ var Plugin_default = {
 	onStart: (handler, props) => target.addEventListener("START", wrap(handler), props),
 	onStop: (handler, props) => target.addEventListener("STOP", wrap(handler), props),
 	start() {
-		target.dispatchEvent(new Event("START"));
+		setTimeout(target.dispatchEvent(new Event("START")));
 	},
 	stop() {
-		target.dispatchEvent(new Event("STOP"));
+		setTimeout(target.dispatchEvent(new Event("STOP")));
 	}
 };
 
@@ -91,34 +91,14 @@ function reRender(selector) {
 	instance.forceUpdate(() => instance.forceUpdate());
 }
 
-// common/Utils/index.js
-function hasOwn(object, key) {
-	return object && key && key in object;
-}
-
+// common/Utils/Object.js
 function getObjectKey(object = {}, filter) {
 	for (const key in object)
 		if (filter(object[key])) return key;
 }
 
-function fit({ width, height, gap = 0.8 }) {
-	const ratio = Math.min(innerWidth / width, innerHeight / height);
-	width = Math.round(width * ratio);
-	height = Math.round(height * ratio);
-	return {
-		width,
-		height,
-		maxHeight: height * gap,
-		maxWidth: width * gap
-	};
-}
-
-function concateClassNames(...args) {
-	return args.filter(Boolean).join(" ");
-}
-
-function parseSnowflake(snowflake) {
-	return snowflake / 4194304 + 14200704e5;
+function hasOwn(object, key) {
+	return object && key && key in object;
 }
 
 // common/consts.js
@@ -164,6 +144,27 @@ function findKey(obj, filter) {
 function getDeclarationAndKey(moduleFilter, declarationFilter, options = {}) {
 	const module2 = getModule(moduleFilter, { ...options, raw: true });
 	return findKey(module2.declarations, declarationFilter);
+}
+
+// common/Utils/index.js
+function fit({ width, height, gap = 0.8 }) {
+	const ratio = Math.min(innerWidth / width, innerHeight / height);
+	width = Math.round(width * ratio);
+	height = Math.round(height * ratio);
+	return {
+		width,
+		height,
+		maxHeight: height * gap,
+		maxWidth: width * gap
+	};
+}
+
+function concateClassNames(...args) {
+	return args.filter(Boolean).join(" ");
+}
+
+function parseSnowflake(snowflake) {
+	return snowflake / 4194304 + 14200704e5;
 }
 
 // common/Utils/ImageModal/styles.css

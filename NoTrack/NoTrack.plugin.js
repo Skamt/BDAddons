@@ -33,9 +33,6 @@ var loop = (array, callback) => {
 };
 
 // common/Utils/index.js
-function hasOwn(object, key) {
-	return object && key && key in object;
-}
 var nop = () => {};
 
 // common/Utils/Logger.js
@@ -57,12 +54,17 @@ var Plugin_default = {
 	onStart: (handler, props) => target.addEventListener("START", wrap(handler), props),
 	onStop: (handler, props) => target.addEventListener("STOP", wrap(handler), props),
 	start() {
-		target.dispatchEvent(new Event("START"));
+		setTimeout(target.dispatchEvent(new Event("START")));
 	},
 	stop() {
-		target.dispatchEvent(new Event("STOP"));
+		setTimeout(target.dispatchEvent(new Event("STOP")));
 	}
 };
+
+// common/Utils/Object.js
+function hasOwn(object, key) {
+	return object && key && key in object;
+}
 
 // common/Webpack.jsx
 var Webpack = /* @__PURE__ */ (() => BdApi.Webpack)();
@@ -77,9 +79,7 @@ var Dispatcher_default = /* @__PURE__ */ (() => getModule(Filters.byKeys("dispat
 var handlers = /* @__PURE__ */ new Set();
 
 function intercept(event, fn) {
-	function interceptor(...args) {
-		if (args[0].type === event) fn.apply(null, args);
-	}
+	const interceptor = (...args) => args[0].type === event ? fn.apply(null, args) : null;
 	Dispatcher_default.addInterceptor(interceptor);
 	const undo = () => {
 		handlers.delete(undo);
@@ -94,7 +94,7 @@ function unsubscribeAll() {
 	handlers?.forEach?.(Reflect.apply);
 	handlers.length = 0;
 }
-var blockEvent = (e) => intercept(e, () => false);
+var blockEvent = (e) => intercept(e, () => true);
 Plugin_default.onStop(unsubscribeAll);
 
 // common/Patcher/shared.js
@@ -129,7 +129,7 @@ var MessageActions_default = /* @__PURE__ */ (() => getModule(Filters.byKeys("ju
 // src/NoTrack/index.js
 var Anchor = getModule(Filters.byKeys("Anchor"));
 var targets = ["spotify"];
-var blockedEvents = ["FINGERPRINT", "TRACK"];
+var blockedEvents = ["TYPING_START_LOCAL", "FINGERPRINT", "TRACK"];
 
 function urlRegex(name) {
 	return new RegExp(`((?:https|http)\\:\\/\\/(?:.*\\.)?${name}\\..*\\/\\S+)`, "g");

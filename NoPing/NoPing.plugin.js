@@ -73,41 +73,76 @@ var Plugin_default = {
 	onStart: (handler, props) => target.addEventListener("START", wrap(handler), props),
 	onStop: (handler, props) => target.addEventListener("STOP", wrap(handler), props),
 	start() {
-		target.dispatchEvent(new Event("START"));
+		setTimeout(target.dispatchEvent(new Event("START")));
 	},
 	stop() {
-		target.dispatchEvent(new Event("STOP"));
+		setTimeout(target.dispatchEvent(new Event("STOP")));
 	}
 };
 
+// common/Patcher/contextmenu.js
+var contextmenuUnPatches = [];
+Plugin_default.onStop(() => {
+	contextmenuUnPatches.filter(Boolean).forEach((a) => a());
+	contextmenuUnPatches = [];
+});
+var patch = (id, callback) => {
+	const undo = ContextMenu.patch(id, callback);
+	contextmenuUnPatches.push(undo);
+};
+var contextmenu_default = ContextMenu;
+
 // src/NoPing/patches/patchContextMenus.js
 Plugin_default.onStart(() => {
-	const unpatch = [
-		ContextMenu.patch("user-context", (retVal, { user }) => {
-			if (!user.id) return;
-			retVal.props.children.splice(
-				1,
-				0,
-				ContextMenu.buildItem({
-					type: "toggle",
-					label: "Never ping",
-					active: blacklist_default.has(user.id),
-					action: () => blacklist_default.toggle(user.id)
-				})
-			);
-		})
-	];
-	Plugin_default.once(Events.STOP, () => {
-		unpatch.forEach((a) => a && typeof a === "function" && a());
+	patch("user-context", (retVal, { user }) => {
+		if (!user.id) return;
+		retVal.props.children.splice(
+			1,
+			0,
+			contextmenu_default.buildItem({
+				type: "toggle",
+				label: "Never ping",
+				active: blacklist_default.has(user.id),
+				action: () => blacklist_default.toggle(user.id)
+			})
+		);
 	});
 });
 
+// common/Utils/Object.js
+var map = (obj, fn) => Object.fromEntries(Object.entries(obj).map(([key, value]) => [key, fn({ value, key })]));
+
+function getObjectKey(object = {}, filter) {
+	for (const key in object)
+		if (filter(object[key])) return key;
+}
+
+function hasOwn(object, key) {
+	return object && key && key in object;
+}
+
+// common/Patcher/shared.js
+Plugin_default.onStop(() => Patcher.unpatchAll());
+
+function patch2(type, object, key, callback) {
+	if (!hasOwn(object, key))
+		return Logger.error("Could not perform a patch, missing arguments", arguments);
+	const caller = {
+		after: (context, args, ret) => callback({ context, args, ret }),
+		before: (context, args) => callback({ context, args }),
+		instead: (context, args, fn) => callback({ context, args, fn })
+	} [type];
+	return Patcher[type](object, key, caller);
+}
+
+// common/Patcher/index.js
+var after = (...args) => patch2("after", ...args);
+var before = (...args) => patch2("before", ...args);
+
 // common/React.jsx
+var useState = /* @__PURE__ */ (() => BdApi.React.useState)();
 var React = /* @__PURE__ */ (() => BdApi.React)();
 var React_default = React;
-
-// common/Utils/index.js
-var nop = () => {};
 
 // common/Webpack.jsx
 var Webpack = /* @__PURE__ */ (() => BdApi.Webpack)();
@@ -115,14 +150,14 @@ var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
 var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
 var getMangled = /* @__PURE__ */ (() => Webpack.getMangled)();
 
+function findKey(obj, filter) {
+	const key = getObjectKey(obj, filter);
+	return key ? [obj, key] : [];
+}
+
 function getModuleAndKey(filter, options) {
-	let module2;
-	const target2 = getModule((entry, m) => filter(entry) ? module2 = m : false, options);
-	module2 = module2?.exports;
-	if (!module2) return;
-	const key = Object.keys(module2).find((k) => module2[k] === target2);
-	if (!key) return;
-	return [module2, key];
+	const { exports: exports2 } = getModule(filter, { ...options, raw: true }) || {};
+	return findKey(exports2, filter);
 }
 
 // common/DiscordModules/zustand.js
@@ -135,8 +170,7 @@ var subscribeWithSelector = /* @__PURE__ */ (() => getModule(Filters.byStrings("
 }))();
 
 function create(initialState) {
-	const Store = /* @__PURE__ */ zustand(initialState);
-	/* @__PURE__ */
+	const Store = zustand(initialState);
 	Object.defineProperty(Store, "state", {
 		configurable: false,
 		get: () => Store.getState()
@@ -144,40 +178,34 @@ function create(initialState) {
 	return Store;
 }
 
-// common/Utils/Settings.js
+// common/Settings.js
 var Settings_default = /* @__PURE__ */ (() => {
-	const SettingsStore = create(
-		subscribeWithSelector(() => Object.assign(Config_default.settings || {}, Data.load("settings") || {}))
+	const SettingsStore = create(subscribeWithSelector(() => Object.assign(Config_default.settings || {}, Data.load("settings") || {})));
+	Object.assign(
+		SettingsStore,
+		map(
+			SettingsStore.getInitialState(),
+			({ key }) => Object.assign(() => SettingsStore((state) => state[key]), {
+				key,
+				get: () => SettingsStore.state[key],
+				set: (v) => SettingsStore.setState({
+					[key]: v })
+			})
+		)
 	);
-	const state = SettingsStore.getInitialState();
-	const selectors = {};
-	const actions = {};
-	for (const key of Object.keys(state)) {
-		actions[`set${key}`] = (newValue) => SettingsStore.setState({
-			[key]: newValue });
-		selectors[key] = (state2) => state2[key];
-	}
-	Object.defineProperty(SettingsStore, "selectors", { value: Object.assign(selectors) });
-	Object.assign(SettingsStore, actions);
 	SettingsStore.subscribe(
-		(state2) => state2,
+		(a) => a,
 		() => Data.save("settings", SettingsStore.state)
 	);
-	Object.assign(SettingsStore, {
-		useSetting: (key) => {
-			const val = SettingsStore((state2) => state2[key]);
-			return [val, SettingsStore[`set${key}`]];
-		}
-	});
 	return SettingsStore;
 })();
 
 // src/NoPing/patches/patchCreatePendingReply.js
 var ReplyFunctions = getModuleAndKey(Filters.byStrings("CREATE_PENDING_REPLY", "dispatch"), { searchExports: true });
 Plugin_default.onStart(() => {
-	Patcher.before(...ReplyFunctions, (_, [args]) => {
-		if (blacklist_default.has(args.message.author.id)) args.shouldMention = false;
-		if (Settings_default.state.mentionToggle) args.showMentionToggle = true;
+	before(...ReplyFunctions, ({ args: [props] }) => {
+		if (blacklist_default.has(props.message.author.id)) props.shouldMention = false;
+		if (Settings_default.state.mentionToggle) props.showMentionToggle = true;
 	});
 });
 
@@ -186,8 +214,7 @@ var MessageActions_default = /* @__PURE__ */ (() => getModule(Filters.byKeys("ju
 
 // src/NoPing/patches/patchSendMessage.js
 Plugin_default.onStart(() => {
-	if (!MessageActions_default) return Logger_default.patchError("patchSendMessage");
-	Patcher.before(MessageActions_default, "_sendMessage", (_, args) => {
+	before(MessageActions_default, "_sendMessage", ({ args }) => {
 		if (!Settings_default.state.silent) return;
 		const shouldSilent = args[1].content.matchAll(/<@(\d+)>/gi).some((match) => blacklist_default.has(match[1]));
 		if (!shouldSilent) return;
@@ -253,8 +280,8 @@ var Heading_default = /* @__PURE__ */ (() => getModule((a) => a?.render?.toStrin
 
 // src/NoPing/components/PingToggle.jsx
 function PingToggle({ userId }) {
-	const [has, setHas] = React_default.useState(blacklist_default.has(userId));
-	const toggleHandler = (e) => {
+	const [has, setHas] = useState(blacklist_default.has(userId));
+	const toggleHandler = () => {
 		blacklist_default.toggle(userId);
 		setHas(!has);
 	};
@@ -278,13 +305,10 @@ function PingToggle({ userId }) {
 }
 
 // src/NoPing/patches/replayComponent.jsx
-var Module = getMangled("showMentionToggle", {
-	replayComponent: (a) => true
-});
+var Module = getMangled("showMentionToggle", { replayComponent: (a) => true });
 Plugin_default.onStart(() => {
-	Patcher.after(Module, "replayComponent", (_, [{ reply }], ret) => {
+	after(Module, "replayComponent", ({ args: [{ reply }], ret }) => {
 		const target2 = findInTree(ret, (a) => a?.className?.includes("actions"), { walkable: ["children", "props"] });
-		console.log(reply);
 		if (!target2 || !reply?.message?.author?.id) return ret;
 		target2.children.splice(0, 0, /* @__PURE__ */ React_default.createElement(PingToggle, { userId: reply.message.author.id }));
 	});
@@ -304,19 +328,16 @@ var Switch_default = getMangled(Filters.bySource("auxiliaryContentPosition", "ha
 };
 
 // common/Components/SettingSwtich/index.jsx
-function SettingSwtich({ settingKey, note, border = false, onChange = nop, description, ...rest }) {
-	const [val, set] = Settings_default.useSetting(settingKey);
+function SettingSwtich({ setting, note, border = false, description, ...rest }) {
+	const val = Settings_default(setting.get);
 	return /* @__PURE__ */ React_default.createElement(React_default.Fragment, null, /* @__PURE__ */ React_default.createElement(
 		Switch_default, {
 			...rest,
 			hasIcon: true,
 			checked: val,
-			label: description || settingKey,
+			label: description || setting.key,
 			description: note,
-			onChange: (e) => {
-				set(e);
-				onChange?.(e);
-			}
+			onChange: setting.set
 		}
 	), border && /* @__PURE__ */ React_default.createElement(Divider, { gap: 15 }));
 }
@@ -390,12 +411,12 @@ FieldSet.direction = {
 // src/NoPing/components/SettingComponent.jsx
 var SettingComponent_default = () => {
 	return /* @__PURE__ */ React_default.createElement(FieldSet, { contentGap: 8 }, [{
-			settingKey: "silent",
+			setting: Settings_default.silent,
 			description: "Prepend @silent",
 			note: "Insert @silent tag in messages containing mentions of users marked as never ping. @silent prevent messages containing mentions from pinging users"
 		},
 		{
-			settingKey: "mentionToggle",
+			setting: Settings_default.mentionToggle,
 			description: "Always show mention toggle",
 			note: "The mention toggle is usually hidden in DMs and probably other places."
 		}
@@ -404,7 +425,4 @@ var SettingComponent_default = () => {
 
 // src/NoPing/index.jsx
 Plugin_default.getSettingsPanel = () => /* @__PURE__ */ React_default.createElement(SettingComponent_default, null);
-Plugin_default.onStop(() => {
-	Patcher.unpatchAll();
-});
 module.exports = () => Plugin_default;

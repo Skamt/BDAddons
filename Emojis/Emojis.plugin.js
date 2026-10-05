@@ -8,23 +8,6 @@
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/Emojis/Emojis.plugin.js
  */
 
-// common/Utils/Array.js
-var add = (array, item, index) => array.toSpliced(index ?? array.length, 0, item);
-
-// common/React.jsx
-var useState = /* @__PURE__ */ (() => BdApi.React.useState)();
-var useEffect = /* @__PURE__ */ (() => BdApi.React.useEffect)();
-var useRef = /* @__PURE__ */ (() => BdApi.React.useRef)();
-var useMemo = /* @__PURE__ */ (() => BdApi.React.useMemo)();
-var React = /* @__PURE__ */ (() => BdApi.React)();
-var React_default = React;
-
-function insertChild(el, child, index) {
-	if (!el?.props?.children || !child) return;
-	const children = Array.isArray(el.props.children) ? el.props.children : [el.props.children];
-	el.props.children = add(children, child, index);
-}
-
 // config:@Config
 var Config_default = {
 	"info": {
@@ -54,6 +37,24 @@ var UI = /* @__PURE__ */ (() => BdApi.UI)();
 var findInTree = /* @__PURE__ */ (() => BdApi.Utils.findInTree)();
 var getInternalInstance = /* @__PURE__ */ (() => BdApi.ReactUtils.getInternalInstance.bind(BdApi.ReactUtils))();
 
+// common/Utils/Array.js
+var add = (array, item, index) => array.toSpliced(index ?? array.length, 0, item);
+
+// common/React.jsx
+var useState = /* @__PURE__ */ (() => BdApi.React.useState)();
+var useEffect = /* @__PURE__ */ (() => BdApi.React.useEffect)();
+var useRef = /* @__PURE__ */ (() => BdApi.React.useRef)();
+var useSyncExternalStore = /* @__PURE__ */ (() => BdApi.React.useSyncExternalStore)();
+var useMemo = /* @__PURE__ */ (() => BdApi.React.useMemo)();
+var React = /* @__PURE__ */ (() => BdApi.React)();
+var React_default = React;
+
+function insertChild(el, child, index) {
+	if (!el?.props?.children || !child) return;
+	const children = Array.isArray(el.props.children) ? el.props.children : [el.props.children];
+	el.props.children = add(children, child, index);
+}
+
 // common/Utils/Logger.js
 var Logger_default = Logger;
 
@@ -73,10 +74,10 @@ var Plugin_default = {
 	onStart: (handler, props) => target.addEventListener("START", wrap(handler), props),
 	onStop: (handler, props) => target.addEventListener("STOP", wrap(handler), props),
 	start() {
-		target.dispatchEvent(new Event("START"));
+		setTimeout(target.dispatchEvent(new Event("START")));
 	},
 	stop() {
-		target.dispatchEvent(new Event("STOP"));
+		setTimeout(target.dispatchEvent(new Event("STOP")));
 	}
 };
 
@@ -92,17 +93,11 @@ var patch = (id, callback) => {
 };
 var contextmenu_default = ContextMenu;
 
-// common/Utils/index.js
+// common/Utils/Object.js
+var map = (obj, fn) => Object.fromEntries(Object.entries(obj).map(([key, value]) => [key, fn({ value, key })]));
+
 function hasOwn(object, key) {
 	return object && key && key in object;
-}
-
-function clsx(prefix) {
-	return (...args) => args.filter(Boolean).map((a) => `${prefix}-${a}`).join(" ");
-}
-
-function copy(data) {
-	DiscordNative.clipboard.copy(data);
 }
 
 // common/Webpack.jsx
@@ -135,31 +130,25 @@ function create(initialState) {
 	return Store;
 }
 
-// common/Utils/Settings.js
+// common/Settings.js
 var Settings_default = /* @__PURE__ */ (() => {
-	const SettingsStore = create(
-		subscribeWithSelector(() => Object.assign(Config_default.settings || {}, Data.load("settings") || {}))
+	const SettingsStore = create(subscribeWithSelector(() => Object.assign(Config_default.settings || {}, Data.load("settings") || {})));
+	Object.assign(
+		SettingsStore,
+		map(
+			SettingsStore.getInitialState(),
+			({ key }) => Object.assign(() => SettingsStore((state) => state[key]), {
+				key,
+				get: () => SettingsStore.state[key],
+				set: (v) => SettingsStore.setState({
+					[key]: v })
+			})
+		)
 	);
-	const state = SettingsStore.getInitialState();
-	const selectors = {};
-	const actions = {};
-	for (const key of Object.keys(state)) {
-		actions[`set${key}`] = (newValue) => SettingsStore.setState({
-			[key]: newValue });
-		selectors[key] = (state2) => state2[key];
-	}
-	Object.defineProperty(SettingsStore, "selectors", { value: Object.assign(selectors) });
-	Object.assign(SettingsStore, actions);
 	SettingsStore.subscribe(
-		(state2) => state2,
+		(a) => a,
 		() => Data.save("settings", SettingsStore.state)
 	);
-	Object.assign(SettingsStore, {
-		useSetting: (key) => {
-			const val = SettingsStore((state2) => state2[key]);
-			return [val, SettingsStore[`set${key}`]];
-		}
-	});
 	return SettingsStore;
 })();
 
@@ -239,6 +228,15 @@ var Toast_default = {
 		showToast(content, "error");
 	}
 };
+
+// common/Utils/index.js
+function clsx(prefix) {
+	return (...args) => args.filter(Boolean).map((a) => `${prefix}-${a}`).join(" ");
+}
+
+function copy(data) {
+	DiscordNative.clipboard.copy(data);
+}
 
 // src/Emojis/Utils.js
 function copy2(content) {
@@ -608,7 +606,7 @@ function svg(svgProps, ...paths) {
 				...svgProps,
 				...comProps
 			},
-			paths.map((p) => typeof p === "string" ? /* @__PURE__ */ path(null, p) : p)
+			paths.map((p) => typeof p === "string" ? path(null, p) : p)
 		)
 	);
 }
@@ -621,7 +619,7 @@ function path(props, d) {
 		}
 	);
 }
-var MagnifyingGlassIcon = /* @__PURE__ */ svg({ fill: "none" }, path({ fill: "currentColor", "fill-rule": "evenodd", "clip-rule": "evenodd" }, "M15.62 17.03a9 9 0 1 1 1.41-1.41l4.68 4.67a1 1 0 0 1-1.42 1.42l-4.67-4.68ZM17 10a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z"));
+var MagnifyingGlassIcon = () => svg({ fill: "none" }, path({ fill: "currentColor", "fill-rule": "evenodd", "clip-rule": "evenodd" }, "M15.62 17.03a9 9 0 1 1 1.41-1.41l4.68 4.67a1 1 0 0 1-1.42 1.42l-4.67-4.68ZM17 10a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z"))();
 
 // MODULES-AUTO-LOADER:@Modules/Tooltip
 var Tooltip_default = /* @__PURE__ */ (() => getModule(Filters.byPrototypeKeys("renderTooltip"), { searchExports: true }))();
@@ -655,10 +653,10 @@ function getColNumberFromWidth(width, itemWidth, gap2) {
 function EmojisComponent() {
 	const [val, setVal] = useState("");
 	const [width, setWidth] = useState(window.innerWidth * 0.8);
-	const emojiRenderSize = Settings_default(Settings_default.selectors.emojiRenderSize) || desiredEmojiSize;
+	const emojiRenderSize = Settings_default.emojiRenderSize() || desiredEmojiSize;
 	const ref = useRef();
 	const scrollerRef = useRef();
-	const emojis = React_default.useSyncExternalStore(EmojisManager_default.on, EmojisManager_default.getEmojis);
+	const emojis = useSyncExternalStore(EmojisManager_default.on, EmojisManager_default.getEmojis);
 	const filteredEmojis = useMemo(() => emojis.filter((a) => a.name.toLowerCase().includes(val.toLowerCase())), [emojis, val]);
 	const columns = useMemo(() => getColNumberFromWidth(width, emojiRenderSize, gap), [emojiRenderSize, width]);
 	useEffect(() => {
@@ -734,7 +732,7 @@ function EmojisComponent() {
 
 function EmojiCard({ animated, name, id, style }) {
 	const [hover, setHover] = useState(false);
-	const EmojiContextMenu = React_default.useMemo(() => {
+	const EmojiContextMenu = useMemo(() => {
 		const Menu = ContextMenu.buildMenu(
 			[
 				getContextMenuItem("send", id, animated),
@@ -928,8 +926,8 @@ Divider.direction = {
 };
 
 // common/Components/SettingSlider/index.jsx
-function SettingSlider({ settingKey, border, label, description, ...props }) {
-	const [val, set] = Settings_default.useSetting(settingKey);
+function SettingSlider({ setting, border, processValue = Math.round, label, description, ...props }) {
+	const val = Settings_default(setting.get);
 	return /* @__PURE__ */ React_default.createElement(React_default.Fragment, null, /* @__PURE__ */ React_default.createElement(
 		Slider_default, {
 			...props,
@@ -937,7 +935,7 @@ function SettingSlider({ settingKey, border, label, description, ...props }) {
 			label,
 			description,
 			initialValue: val,
-			onValueChange: (e) => set(Math.round(e))
+			onValueChange: (e) => setting.set(processValue(e))
 		}
 	), border && /* @__PURE__ */ React_default.createElement(Divider, null));
 }
@@ -948,7 +946,7 @@ var emojiRenderSizes = [50, 75, 100, 125, 150, 175, 200, 225, 250];
 var SettingComponent_default = () => {
 	return /* @__PURE__ */ React_default.createElement(FieldSet, { contentGap: 8 }, /* @__PURE__ */ React_default.createElement(
 		SettingSlider, {
-			settingKey: "emojiSize",
+			setting: Settings_default.emojiSize,
 			label: "Emoji Size",
 			description: "The size of the Emoji in pixels",
 			stickToMarkers: true,
@@ -961,7 +959,7 @@ var SettingComponent_default = () => {
 		}
 	), /* @__PURE__ */ React_default.createElement(
 		SettingSlider, {
-			settingKey: "emojiRenderSize",
+			setting: Settings_default.emojiRenderSize,
 			label: "Saved Emoji Size",
 			markers: emojiRenderSizes,
 			minValue: emojiRenderSizes[0],
