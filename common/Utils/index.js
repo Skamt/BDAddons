@@ -1,14 +1,6 @@
 import config from "@Config";
 import React, { ReactDOM } from "@React";
 
-export function hasOwn(object, key) {
-	return object && key && key in object;
-}
-
-export function getObjectKey(object = {}, filter) {
-	for (const key in object) if (filter(object[key])) return key;
-}
-
 export const openLink = link => link && window.open(link, "_blank");
 
 export function fit({ width, height, gap = 0.8 }) {
@@ -127,9 +119,6 @@ export function copy(data) {
 	DiscordNative.clipboard.copy(data);
 }
 
-export function getNestedProp(obj, path) {
-	return path.split(".").reduce((ob, prop) => ob?.[prop], obj);
-}
 
 export class BrokenAddon {
 	stop() {}
@@ -148,7 +137,6 @@ export class Disposable {
 		this.patches = [];
 	}
 }
-
 
 export const nop = () => {};
 

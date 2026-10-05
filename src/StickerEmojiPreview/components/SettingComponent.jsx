@@ -1,16 +1,14 @@
 import React from "@React";
 import SettingSwtich from "@Components/SettingSwtich";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 
-// eslint-disable-next-line react/jsx-key
+Settings.subscribe(Settings.previewDefaultState.get, Settings.previewState.set);
+
 export default function SettingComponent() {
 	return [
 		{
-			settingKey: "previewDefaultState",
-			description: "Preview open by default.",
-			onChange() {
-				Settings.setpreviewState(Settings.state.previewDefaultState);
-			}
+			setting: Settings.previewDefaultState,
+			description: "Preview open by default."
 		}
 	].map(SettingSwtich);
 }

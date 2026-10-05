@@ -7,7 +7,7 @@ import DragHandle from "@/components/DragHandle";
 import Store from "@/Store";
 import { clsx } from "@Utils";
 import { join } from "@Utils/css";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 import { shallow } from "@Utils";
 
 const c = clsx("tabbar");

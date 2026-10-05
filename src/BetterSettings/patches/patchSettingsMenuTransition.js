@@ -1,8 +1,8 @@
 import { getBySource } from "@Webpack";
-import { hasOwn, getObjectKey } from "@Utils";
+import { hasOwn, getObjectKey } from "@Utils/Object";
 
 import { patchError } from "@Utils/Logger";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 import Plugin from "@common/Plugin";
 import { PATCH_ERROR } from "@common/consts";
 
@@ -21,7 +21,7 @@ Plugin.onStart(() => {
 	}
 
 	run();
-	const unsub = Settings.subscribe(Settings.selectors.disableFade, run);
+	const unsub = Settings.subscribe(Settings.disableFade.get, run);
 
 	Plugin.onStop(
 		() => {

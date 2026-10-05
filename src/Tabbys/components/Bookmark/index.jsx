@@ -7,7 +7,7 @@ import BookmarkContextMenu from "@/contextmenus/BookmarkContextMenu";
 import { ContextMenu } from "@Api";
 import useStateFromStores from "@Modules/useStateFromStores";
 import ReadStateStore from "@Stores/ReadStateStore";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 import { SubBookmarkSortable, BookmarkSortable } from "@/components/DND";
 import { makeDraggable } from "@/components/DND/shared";
 import ChannelStatus from "@/components/ChannelStatus";
@@ -16,7 +16,7 @@ import { shallow } from "@Utils";
 import { Content, HideTitleContext } from "@/components/Card";
 
 function BaseBookmark({ id, parentId, dragRef, onClose, className }) {
-	const shouldHightLight = Settings(Settings.selectors.highlightBookmarkUnread);
+	const shouldHightLight = Settings.highlightBookmarkUnread();
 	const bookmark = Store(() => (parentId ? Store.getFolderItem(parentId, id) : Store.getBookmark(id)), shallow) || {};
 	const { noName, guildId, userId, path, channelId } = bookmark;
 	const hasUnread = useStateFromStores([ReadStateStore], () => shouldHightLight && ReadStateStore.hasUnread(channelId), [shouldHightLight, channelId]);

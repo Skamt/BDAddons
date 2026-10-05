@@ -2,7 +2,7 @@ import "./styles";
 import React from "@React";
 import { shallow } from "@Utils";
 import { classNameFactory, join } from "@Utils/css";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 import TabBar from "@/components/TabBar";
 import BookmarkBar from "@/components/BookmarkBar";
 import SettingsButton from "@/components/SettingsButton";

@@ -1,21 +1,16 @@
 /* eslint-disable @eslint-react/use-state */
 import "./styles";
 import React, { useMemo, useState } from "@React";
-import { Filters, reactRefMemoFilter, getModule } from "@Webpack";
+import { Filters, waitForComponent, reactRefMemoFilter, getModule } from "@Webpack";
 import AccessibilityStore from "@Stores/AccessibilityStore";
 
-export const RenderLinkComponent = getModule(m => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false });
-export const ImageModal = getModule(reactRefMemoFilter("type", "renderLinkComponent"), { searchExports: true });
+const RenderLinkComponent = waitForComponent(m => m.type?.toString?.().includes("MASKED_LINK"), { searchExports: false });
+export const ImageModal = waitForComponent(reactRefMemoFilter("type", "renderLinkComponent"), { searchExports: true });
 
-function h(e, t) {
-	// biome-ignore lint/style/noArguments: <explanation>
-	const n = arguments.length > 2 && void 0 !== arguments[2] && arguments[2];
-	!0 === n || AccessibilityStore.useReducedMotion ? e.set(t) : e.start(t);
-}
-
+const ScaleProvider = waitForComponent(a => a?._currentValue?.scale, { searchExports: true });
 const useSomeScalingHook = getModule(Filters.byStrings("reducedMotion.enabled", "useSpring", "respect-motion-settings"), { searchExports: true });
-const context = getModule(a => a?._currentValue?.scale, { searchExports: true });
 
+const h = (e, t, n) => (!0 === n || AccessibilityStore.useReducedMotion ? e.set(t) : e.start(t));
 export const ImageComponent = ({ url, ...rest }) => {
 	const [x, P] = useState(false);
 	const [M] = useSomeScalingHook(() => ({
@@ -50,7 +45,7 @@ export const ImageComponent = ({ url, ...rest }) => {
 	);
 
 	return (
-		<context.Provider value={contextVal}>
+		<ScaleProvider value={contextVal}>
 			<div className="imageModalwrapper">
 				<ImageModal
 					maxWidth={rest.maxWidth}
@@ -72,6 +67,6 @@ export const ImageComponent = ({ url, ...rest }) => {
 					</div>
 				)}
 			</div>
-		</context.Provider>
+		</ScaleProvider>
 	);
 };

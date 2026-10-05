@@ -1,18 +1,14 @@
-import { Patcher } from "@Api";
-import Logger from "@Utils/Logger";
+import { before } from "@common/Patcher";
 import { getModuleAndKey, Filters } from "@Webpack";
 import Blacklist from "@/blacklist";
 import Plugin from "@common/Plugin";
+import Settings from "@Settings";
 
-import Settings from "@Utils/Settings";
 const ReplyFunctions = getModuleAndKey(Filters.byStrings("CREATE_PENDING_REPLY", "dispatch"), { searchExports: true });
 
 Plugin.onStart(() => {
-	// const { module, key } = ReplyFunctions;
-	// if (!module || !key) return Logger.patchError("patchCreatePendingReply");
-
-	Patcher.before(...ReplyFunctions, (_, [args]) => {
-		if (Blacklist.has(args.message.author.id)) args.shouldMention = false;
-		if (Settings.state.mentionToggle) args.showMentionToggle = true;
+	before(...ReplyFunctions, ({ args: [props] }) => {
+		if (Blacklist.has(props.message.author.id)) props.shouldMention = false;
+		if (Settings.state.mentionToggle) props.showMentionToggle = true;
 	});
 });

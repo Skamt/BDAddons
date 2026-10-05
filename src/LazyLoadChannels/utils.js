@@ -1,5 +1,5 @@
 import ChannelActions from "@Modules/ChannelActions";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 import ControlKeys from "@Utils/ControlKeys";
 import ChannelsStateManager from "@/ChannelsStateManager";
 import ChannelTypeEnum from "@Enums/ChannelTypeEnum";

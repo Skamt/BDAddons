@@ -2,41 +2,38 @@ import config from "@Config";
 import SettingSlider from "@Components/SettingSlider";
 import { valueToPx } from "@/utils";
 import { ContextMenu } from "@Api";
-import React, { useState } from "@React";
-import Settings from "@Utils/Settings";
+import React from "@React";
+import Settings from "@Settings";
 import { classNameFactory } from "@Utils/css";
 const c = classNameFactory(`${config.info.name}-menuitem`);
 
 const { Separator, CheckboxItem, ControlItem, Item, Menu } = ContextMenu;
 
-function ContextMenuToggle({ settingKey, label, color }) {
-	const [state, setState] = useState(Settings.state[settingKey]);
+function ContextMenuToggle({ setting, label, color }) {
+	const state = Settings(setting.get);
 	return (
 		<CheckboxItem
 			color={color}
 			label={label}
-			id={c(label, settingKey)}
+			id={c(label, setting.key)}
 			checked={state}
-			action={() => {
-				setState(!state);
-				Settings[`set${settingKey}`](!Settings.state[settingKey]);
-			}}
+			action={() => setting.set(!state)}
 		/>
 	);
 }
 
-function ContextMenuSlider({ settingKey, label, ...rest }) {
-	const [val] = Settings.useSetting(settingKey);
+function ContextMenuSlider({ setting, label, ...rest }) {
+	const val = Settings(setting.get);
 
 	return (
 		<ControlItem
-			id={c(settingKey)}
+			id={c(setting.key)}
 			label={`${label}: ${val}px`}
 			control={() => (
 				<div style={{ padding: "0 8px" }}>
 					<SettingSlider
 						{...rest}
-						settingKey={settingKey}
+						setting={setting}
 						onValueRender={valueToPx}
 					/>
 				</div>
@@ -52,10 +49,10 @@ function status() {
 				label={type}
 				id={c(type)}>
 				{[
-					{ settingKey: `show${type}Pings`, label: "Pings" },
-					{ settingKey: `show${type}Unreads`, label: "Unreads" },
-					{ settingKey: `show${type}Typing`, label: "Typings" },
-					{ settingKey: `highlight${type}Unread`, label: "Highlight Unread" }
+					{ setting: Settings[`show${type}Pings`], label: "Pings" },
+					{ setting: Settings[`show${type}Unreads`], label: "Unreads" },
+					{ setting: Settings[`show${type}Typing`], label: "Typings" },
+					{ setting: Settings[`highlight${type}Unread`], label: "Highlight Unread" }
 				].map(ContextMenuToggle)}
 			</Item>
 		);
@@ -79,20 +76,20 @@ function appearence() {
 			id={c("appearence")}>
 			{[
 				{
-					settingKey: "size",
+					setting: Settings.size,
 					label: "UI Size",
 					minValue: 24,
 					maxValue: 32
 				},
 				{
 					label: "Tab width",
-					settingKey: "tabWidth",
+					setting: Settings.tabWidth,
 					minValue: 50,
 					maxValue: 250
 				},
 				{
 					label: "Tab min width",
-					settingKey: "tabMinWidth",
+					setting: Settings.tabMinWidth,
 					minValue: 50,
 					maxValue: 250
 				}
@@ -101,11 +98,11 @@ function appearence() {
 			<Separator />
 
 			{[
-				{ settingKey: "showTabbar", label: "Show Tabbar" },
-				{ settingKey: "showBookmarkbar", label: "Show Bookmarks" },
-				{ settingKey: "keepTitle", label: "Keep TitleBar" },
-				{ settingKey: "privacyMode", label: "Privacy Mode" },
-				{ settingKey: "showSettingsButton", label: "Show Settings button", color: "danger" }
+				{ setting: Settings.showTabbar, label: "Show Tabbar" },
+				{ setting: Settings.showBookmarkbar, label: "Show Bookmarks" },
+				{ setting: Settings.keepTitle, label: "Keep TitleBar" },
+				{ setting: Settings.privacyMode, label: "Privacy Mode" },
+				{ setting: Settings.showSettingsButton, label: "Show Settings button", color: "danger" }
 			].map(ContextMenuToggle)}
 		</Item>
 	);
@@ -120,9 +117,9 @@ export default function () {
 				label="Functionality"
 				id={c("functionality")}>
 				{[
-					{ settingKey: "bookmarkOverflowWrap", label: "Wrap Bookmarks" },
-					{ settingKey: "ctrlClickChannel", label: "Ctrl+Click channel" },
-					{ settingKey: "tabSwitch", label: "Tab switch keybinds" }
+					{ setting: Settings.bookmarkOverflowWrap, label: "Wrap Bookmarks" },
+					{ setting: Settings.ctrlClickChannel, label: "Ctrl+Click channel" },
+					{ setting: Settings.tabSwitch, label: "Tab switch keybinds" }
 				].map(ContextMenuToggle)}
 			</Item>
 		</Menu>

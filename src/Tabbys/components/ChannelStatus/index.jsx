@@ -2,7 +2,7 @@ import Badge from "@/components/NumberBadge";
 import TypingDots from "@/components/TypingDots";
 import React from "@React";
 import { useChannelsState } from "@Utils/Hooks";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 import { shallow } from "@Utils";
 
 function getPropNames(type) {

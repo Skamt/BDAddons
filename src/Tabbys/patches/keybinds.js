@@ -1,5 +1,5 @@
 import Plugin from "@common/Plugin";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 import { switchLeft, switchRight } from "@/Store/methods";
 
 function onKeyDown(e) {

@@ -1,6 +1,6 @@
-import Flux from "@Utils/Flux";
+import { map } from "@common/Flux";
 import Logger from "@Utils/Logger";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 import WindowStore from "@Stores/WindowStore";
 import UserStore from "@Stores/UserStore";
 import PresenceStore from "@Stores/PresenceStore";
@@ -70,7 +70,7 @@ function shouldNotify(message, guildId, channelId, currentUser) {
 }
 
 Plugin.onStart(() => {
-	Flux.init({
+	map({
 		async MESSAGE_CREATE({ message, guildId, channelId }) {
 			try {
 				const currentUser = UserStore.getCurrentUser();
@@ -89,10 +89,6 @@ Plugin.onStart(() => {
 	});
 
 	patchContextMenu();
-});
-
-Plugin.onStop(() => {
-	Flux.dispose();
 });
 
 Plugin.getSettingsPanel = () => <SettingComponent />;

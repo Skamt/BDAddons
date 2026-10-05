@@ -1,7 +1,7 @@
 import { Filters } from "@Webpack";
 import { after } from "@common/Patcher";
 import { lazy } from "@Webpack";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 import Plugin from "@common/Plugin";
 import ChannelsStateManager from "../ChannelsStateManager";
 

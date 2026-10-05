@@ -1,5 +1,5 @@
 import { after } from "@common/Patcher";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 import StickerModule from "@Patch/StickerModule";
 import { isLottieSticker, isAnimatedSticker } from "../Utils";
 import Plugin from "@common/Plugin";

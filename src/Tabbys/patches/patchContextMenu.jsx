@@ -1,7 +1,7 @@
 import config from "@Config";
 
 import ContextMenu, { patch, patchMultiple } from "@common/Patcher/contextmenu";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 import { wrapMenuItem } from "@/contextmenus/helper";
 import Store from "@/Store";
 import React from "@React";

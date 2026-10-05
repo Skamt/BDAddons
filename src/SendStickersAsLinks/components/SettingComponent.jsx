@@ -1,5 +1,5 @@
 import React from "@React";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 import Slider from "@Modules/Slider";
 import SettingSwtich from "@Components/SettingSwtich";
 import FieldSet from "@Components/FieldSet";
@@ -7,7 +7,7 @@ import FieldSet from "@Components/FieldSet";
 const sizes = [80, 100, 128, 160];
 
 function StickerSize() {
-	const [val, set] = Settings.useSetting("stickerSize");
+	const val = Settings.stickerSize();
 	return (
 		<Slider
 			className="stickerSizeSlider"
@@ -20,7 +20,7 @@ function StickerSize() {
 			minValue={sizes[0]}
 			maxValue={sizes[sizes.length - 1]}
 			initialValue={val}
-			onValueChange={e => set(sizes.find(s => e <= s) ?? sizes[sizes.length - 1])}
+			onValueChange={e => Settings.stickerSize.set(sizes.find(s => e <= s) ?? sizes[sizes.length - 1])}
 		/>
 	);
 }
@@ -31,25 +31,25 @@ export default () => {
 			{[
 				{
 					border: true,
-					settingKey: "sendDirectly",
+					setting: Settings.sendDirectly,
 					description: "Send Directly",
 					note: "Send the sticker link in a message directly instead of putting it in the chat box."
 				},
 				{
 					border: true,
-					settingKey: "ignoreEmbedPermissions",
+					setting: Settings.ignoreEmbedPermissions,
 					description: "Ignore Embed Permissions",
 					note: "Send sticker links regardless of embed permissions, meaning links will not turn into images."
 				},
 				{
 					border: true,
-					settingKey: "shouldSendAnimatedStickers",
+					setting: Settings.shouldSendAnimatedStickers,
 					description: "Send animated stickers",
 					note: "Animated stickers do not animate, sending them will only send the first picture of the animation. (still useful)"
 				},
 				{
 					border: true,
-					settingKey: "shouldHighlightAnimated",
+					setting: Settings.shouldHighlightAnimated,
 					description: "Highlight animated stickers"
 				}
 			].map(SettingSwtich)}

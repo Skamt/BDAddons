@@ -1,6 +1,6 @@
 import { loop } from "@Utils/Array";
 import ContextMenu, { patch } from "@common/Patcher/contextmenu";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 import { isSelf } from "@Utils/User";
 
 export default () => {
@@ -27,7 +27,7 @@ export default () => {
 						let bypasses = Settings.state[`${id}s`].split(", ");
 						if (enabled) bypasses = bypasses.filter(id => id !== type.id);
 						else bypasses.push(type.id);
-						Settings[`set${id}s`](bypasses.filter(id => id.trim() !== "").join(", "));
+						Settings[`${id}s`].set(bypasses.filter(id => id.trim() !== "").join(", "));
 					}
 				})
 			);

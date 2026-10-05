@@ -7,11 +7,11 @@ import FolderContextMenu from "@/contextmenus/FolderContextMenu";
 import ChannelStatus from "@/components/ChannelStatus";
 import useStateFromStores from "@Modules/useStateFromStores";
 import ReadStateStore from "@Stores/ReadStateStore";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 const c = classNameFactory("folder");
 
 export default function BaseFolder({ id, channelIds, folderId, parentId, name, className, children, canDrop, isOver, ...rest }) {
-	const shouldHightLight = Settings(Settings.selectors.highlightFolderUnread);
+	const shouldHightLight = Settings.highlightFolderUnread();
 	const hasUnread = useStateFromStores(
 		[ReadStateStore],
 		() => {

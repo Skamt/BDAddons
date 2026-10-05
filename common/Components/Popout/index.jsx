@@ -9,8 +9,8 @@ export default Object.assign(({ children, targetElementRef, ...props }) => {
 
 	return (
 		<DiscordPopout
-			position={"top"}
-			align={"center"}
+			position="top"
+			align="center"
 			nudgeAlignIntoViewport={true}
 			animation={DiscordPopout.Animation.FADE}
 			spacing={4}

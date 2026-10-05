@@ -1,6 +1,7 @@
 import React from "@React";
 import FieldSet from "@Components/FieldSet";
 import SettingSlider from "@Components/SettingSlider";
+import Settings from "@Settings";
 
 const emojiSizes = [48, 56, 60, 64, 80, 96, 100, 128, 160, 240, 256, 300];
 const emojiRenderSizes = [50, 75, 100, 125, 150, 175, 200, 225, 250];
@@ -9,7 +10,7 @@ export default () => {
 	return (
 		<FieldSet contentGap={8}>
 			<SettingSlider
-				settingKey="emojiSize"
+				setting={Settings.emojiSize}
 				label="Emoji Size"
 				description="The size of the Emoji in pixels"
 				stickToMarkers={true}
@@ -21,7 +22,7 @@ export default () => {
 				onValueRender={Math.round}
 			/>
 			<SettingSlider
-				settingKey="emojiRenderSize"
+				setting={Settings.emojiRenderSize}
 				label="Saved Emoji Size"
 				markers={emojiRenderSizes}
 				minValue={emojiRenderSizes[0]}

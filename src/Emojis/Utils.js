@@ -1,4 +1,4 @@
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 import SelectedChannelStore from "@Stores/SelectedChannelStore";
 import { sendMessageDirectly, insertText } from "@Utils/Messages";
 import DraftStore from "@Stores/DraftStore";

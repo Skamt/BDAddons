@@ -1,6 +1,5 @@
 import React, { useState } from "@React";
-import Button from "@Components/Button";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 import Tooltip from "@Components/Tooltip";
 import { ImageIcon } from "@Components/icon";
 import { join } from "@Utils/css";
@@ -18,7 +17,7 @@ const palletHook = getModule(Filters.byStrings("toHexString", "toHsl", "palette"
 
 export default ({ className, user, displayProfile }) => {
 	const [fetching, setFetching] = useState(false);
-	const showOnHover = Settings(Settings.selectors.showOnHover);
+	const showOnHover = Settings.showOnHover();
 	const colorFromPfp = palletHook(user.getAvatarURL(displayProfile?.guildId, 80))[0];
 
 	const handler = async () => {

@@ -4,23 +4,19 @@ import Plugin from "@common/Plugin";
 import React from "@React";
 import FieldSet from "@Components/FieldSet";
 import SettingSwtich from "@Components/SettingSwtich";
-import "@/forceLoadSettings";
+import Settings from "@Settings";
 
 Plugin.getSettingsPanel = () => () => (
 	<FieldSet contentGap={8}>
 		{[
 			{
 				description: "Organizes Settings contextmenu",
-				settingKey: "organizeMenu",
+				setting: Settings.organizeMenu
 			},
 			{
 				description: "Disable the crossfade animation",
-				settingKey: "disableFade",
-			},
-			{
-				description: "Force load settings menu",
-				settingKey: "forceLoad",
-			},
+				setting: Settings.disableFade
+			}
 		].map(SettingSwtich)}
 	</FieldSet>
 );

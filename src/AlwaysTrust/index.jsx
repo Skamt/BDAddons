@@ -2,7 +2,7 @@ import { Filters, getByKeys, lazy, getMangled, getModule } from "@Webpack";
 import React from "@React";
 import Plugin from "@common/Plugin";
 import { after } from "@common/Patcher";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 import SettingSwtich from "@Components/SettingSwtich";
 import GuildStore from "@Stores/GuildStore";
 
@@ -55,24 +55,24 @@ Plugin.getSettingsPanel = () => () =>
 			border: true,
 			description: "Domain prompt",
 			note: "Remove the untrusted domain prompt when opening links",
-			settingKey: "domain"
+			setting: Settings.domain
 		},
 		{
 			border: true,
 			description: "Download prompt",
 			note: "Remove the 'Potentially Dangerous Download' prompt when opening links",
-			settingKey: "file"
+			setting: Settings.file
 		},
 		{
 			border: true,
 			description: "Server delete prompt",
 			note: "Removes the enter server name prompt when deleting a server",
-			settingKey: "noDeleteSafety"
+			setting: Settings.noDeleteSafety
 		},
 		{
 			description: "Server delete confirm",
 			note: "Show a simpler confirm prompt when deleting a server",
-			settingKey: "confirmModal"
+			setting: Settings.confirmModal
 		}
 	].map(SettingSwtich);
 

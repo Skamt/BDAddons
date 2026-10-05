@@ -1,5 +1,5 @@
 import { instead } from "@common/Patcher";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 import Toast from "@Utils/Toast";
 import Plugin from "@common/Plugin";
 import { hasEmbedPerms } from "@Utils/Permissions";

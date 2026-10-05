@@ -6,11 +6,11 @@ import useStateFromStores from "@Modules/useStateFromStores";
 import PresenceStore from "@Stores/PresenceStore";
 import { SpotifyIcon } from "@Components/Icon";
 import Tooltip from "@Components/Tooltip";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 import Plugin from "@common/Plugin";
 
 function SpotifyActivityIndicator({ userId }) {
-	const activityIndicator = Settings(Settings.selectors.activityIndicator);
+	const activityIndicator = Settings.activityIndicator();
 	const spotifyActivity = useStateFromStores([PresenceStore], () =>
 		PresenceStore.getActivities(userId).find(
 			(activity) => activity?.name?.toLowerCase() === "spotify",

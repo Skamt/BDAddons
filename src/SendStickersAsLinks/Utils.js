@@ -1,5 +1,5 @@
 import { getMangled, Filters } from "@Webpack";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 import UserStore from "@Stores/UserStore";
 import StickersStore from "@Stores/StickersStore";
 import ChannelStore from "@Stores/ChannelStore";

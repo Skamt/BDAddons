@@ -1,0 +1,12 @@
+{
+	"info": {
+		"name": "Username",
+		"version": "1.0.0",
+		"description": "Empty description",
+		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/Username/Username.plugin.js",
+		"github": "https://github.com/Skamt/BDAddons/tree/main/Username"
+	},
+	"settings":{
+		"showId":false
+	}
+}

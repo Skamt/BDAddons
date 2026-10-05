@@ -1,7 +1,7 @@
 import ContextMenu, { patch } from "@common/Patcher/contextmenu";
 import React from "@React";
 import { I18n } from "@Discord/Modules";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 import Plugin from "@common/Plugin";
 
 function transformSettingsEntries(list) {

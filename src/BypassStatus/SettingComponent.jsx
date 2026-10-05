@@ -2,13 +2,13 @@ import config from "@Config";
 import React from "@React";
 import SettingSwtich from "@Components/SettingSwtich";
 import SettingTextInput from "@Components/SettingTextInput";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 import FieldSet from "@Components/FieldSet";
 import Heading from "@Modules/Heading";
 import { RadioGroup } from "@Discord/Modules";
 
 function Status() {
-	const [val, set] = Settings.useSetting("statusToUse");
+	const val = Settings.statusToUse();
 	return (
 		<>
 			<Heading
@@ -38,7 +38,7 @@ function Status() {
 				]}
 				orientation={"horizontal"}
 				value={val}
-				onChange={e => set(e.value)}
+				onChange={e => Settings.statusToUse.set(e.value)}
 			/>
 		</>
 	);
@@ -61,21 +61,21 @@ export default () => (
 					processValue: processIds,
 					label: "Guild ids to let bypass (notified when pinged anywhere in guild)",
 					placeholder: "Separate with commas",
-					settingKey: "guilds"
+					setting: Settings.guilds
 				},
 				{
 					border: true,
 					processValue: processIds,
 					label: "Channel ids to let bypass (notified when pinged in that channel)",
 					placeholder: "Separate with commas",
-					settingKey: "channels"
+					setting: Settings.channels
 				},
 				{
 					border: true,
 					processValue: processIds,
 					label: "User ids to let bypass (notified for all messages sent in DMs)",
 					placeholder: "Separate with commas",
-					settingKey: "users"
+					setting: Settings.users
 				}
 			].map(SettingTextInput)}
 
@@ -85,24 +85,24 @@ export default () => (
 					border: true,
 					note: "Only get notified for messages that mentions you",
 					description: "Mentions only",
-					settingKey: "mentionOnly"
+					setting: Settings.mentionOnly
 				},{
 					border: true,
 					note: "Allow selected users to bypass status outside of DMs too (acts like a channel/guild bypass, but it's for all messages sent by the selected users)",
 					description: "Allow outside of DMs",
-					settingKey: "allowOutsideOfDms"
+					setting: Settings.allowOutsideOfDms
 				},
 				{
 					border: true,
 					note: "Whether the notification sound should be played",
 					description: "Notification sound",
-					settingKey: "notificationSound"
+					setting: Settings.notificationSound
 				},
 				{
 					border: true,
 					note: "Respect silent pings (@silent / suppress notifications)",
 					description: "Respect silent pings",
-					settingKey: "respectSilentPings"
+					setting: Settings.respectSilentPings
 				}
 			].map(SettingSwtich)}
 			<Status />

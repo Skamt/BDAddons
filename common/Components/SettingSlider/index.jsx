@@ -1,10 +1,10 @@
 import React from "@React";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 import Slider from "@Modules/Slider";
 import Divider from "@Components/Divider";
 
-export default function SettingSlider({ settingKey, border, label, description, ...props }) {
-	const [val, set] = Settings.useSetting(settingKey);
+export default function SettingSlider({ setting, border, processValue = Math.round, label, description, ...props }) {
+	const val = Settings(setting.get);
 
 	return (
 		<>
@@ -14,9 +14,9 @@ export default function SettingSlider({ settingKey, border, label, description, 
 				label={label}
 				description={description}
 				initialValue={val}
-				onValueChange={(e) => set(Math.round(e))}
+				onValueChange={e => setting.set(processValue(e))}
 			/>
-			{border && <Divider/>}
+			{border && <Divider />}
 		</>
 	);
 }

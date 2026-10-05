@@ -1,7 +1,7 @@
 import { after } from "@common/Patcher";
 import { lazy } from "@Webpack";
 import { reactRefMemoFilter } from "@Webpack";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 import ChannelsStateManager from "../ChannelsStateManager";
 import Plugin from "@common/Plugin";
 

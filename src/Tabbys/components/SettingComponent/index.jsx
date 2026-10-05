@@ -6,6 +6,7 @@ import SettingSlider from "@Components/SettingSlider";
 import FieldSet from "@Components/FieldSet";
 import Divider from "@Components/Divider";
 import { valueToPx } from "@/utils";
+import Settings from "@Settings";
 
 export default function SettingComponent() {
 	return (
@@ -15,18 +16,18 @@ export default function SettingComponent() {
 					<Collapsible title="toggles">
 						<FieldSet contentGap={8}>
 							{[
-								{ border: true, description: "Wrap Bookmarks", note: "Wrap overflowing bookmarks instead of clamping them into a overflow menu", settingKey: "bookmarkOverflowWrap" },
-								{ description: "Show/Hide Tabbar", settingKey: "showTabbar" },
-								{ description: "Show/Hide Bookmarkbar", settingKey: "showBookmarkbar" },
-								{ description: "Show/Hide Titlebar", settingKey: "keepTitle" },
-								{ description: "Show/Hide privacy mode", settingKey: "privacyMode" },
-								{ description: "Show/Hide SettingsButton", settingKey: "showSettingsButton" }
+								{ border: true, description: "Wrap Bookmarks", setting: Settings.bookmarkOverflowWrap, note: "Wrap overflowing bookmarks instead of clamping them into a overflow menu" },
+								{ description: "Show/Hide Tabbar", setting: Settings.showTabbar },
+								{ description: "Show/Hide Bookmarkbar", setting: Settings.showBookmarkbar },
+								{ description: "Show/Hide Titlebar", setting: Settings.keepTitle },
+								{ description: "Show/Hide privacy mode", setting: Settings.privacyMode },
+								{ description: "Show/Hide SettingsButton", setting: Settings.showSettingsButton }
 							].map(SettingSwtich)}
 						</FieldSet>
 					</Collapsible>
 					<Divider gap={15} />
 					<SettingSlider
-						settingKey="size"
+						setting={Settings.size}
 						label="UI Size"
 						description="overall scale for the entire UI"
 						minValue={24}
@@ -36,7 +37,7 @@ export default function SettingComponent() {
 					/>
 					<Divider gap={25} />
 					<SettingSlider
-						settingKey="tabWidth"
+						setting={Settings.tabWidth}
 						label="Tab width"
 						description="width a tab will take when there is enough space"
 						minValue={50}
@@ -46,7 +47,7 @@ export default function SettingComponent() {
 					/>
 					<Divider gap={25} />
 					<SettingSlider
-						settingKey="tabMinWidth"
+						setting={Settings.tabMinWidth}
 						label="Tab min width"
 						description="width at which a tab will stop shrinking when there is too many tabs"
 						minValue={50}
@@ -64,10 +65,10 @@ export default function SettingComponent() {
 								title={type}>
 								<FieldSet contentGap={5}>
 									{[
-										{ description: "Unreads", settingKey: `show${type}Unreads` },
-										{ description: "Pings", settingKey: `show${type}Pings` },
-										{ description: "Typing", settingKey: `show${type}Typing` },
-										{ description: "Highlight Unread", settingKey: `highlight${type}Unread` }
+										{ description: "Unreads", setting: Settings[`show${type}Unreads`] },
+										{ description: "Pings", setting: Settings[`show${type}Pings`] },
+										{ description: "Typing", setting: Settings[`show${type}Typing`] },
+										{ description: "Highlight Unread", setting: Settings[`highlight${type}Unread`] }
 									].map(SettingSwtich)}
 								</FieldSet>
 							</Collapsible>
@@ -78,9 +79,9 @@ export default function SettingComponent() {
 				<Collapsible title="Functionality">
 					<FieldSet contentGap={8}>
 						{[
-							{ settingKey: "ctrlClickChannel", description: "Ctrl+Click Channel to open in new tab" },
-							{ settingKey: "bookmarkOverflowWrap", description: "Wrap Bookmarks", note: "Wrap overflowing bookmarks instead of clamping them into a overflow menu" }
-							,{ settingKey: "tabSwitch", description: "Enable switch keybinds", note: "Switch between channels using keybinds --  switch right [Ctrl+Tab] / switch left [Ctrl+Shift+Tab]" }
+							{ setting: Settings.ctrlClickChannel, description: "Ctrl+Click Channel to open in new tab" },
+							{ setting: Settings.bookmarkOverflowWrap, description: "Wrap Bookmarks", note: "Wrap overflowing bookmarks instead of clamping them into a overflow menu" },
+							{ setting: Settings.tabSwitch, description: "Enable switch keybinds", note: "Switch between channels using keybinds --  switch right [Ctrl+Tab] / switch left [Ctrl+Shift+Tab]" }
 						].map(SettingSwtich)}
 					</FieldSet>
 				</Collapsible>

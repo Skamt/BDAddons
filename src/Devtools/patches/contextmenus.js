@@ -1,6 +1,6 @@
 import { findInTree } from "@Api";
 import React from "@React";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 import { copy } from "@Utils";
 import Plugin from "@common/Plugin";
 

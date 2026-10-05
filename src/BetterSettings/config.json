@@ -8,7 +8,6 @@
 		"credit":"https://github.com/Vendicated/Vencord/tree/main/src/plugins/betterSettings"
 	},
 	"settings":{
-		"forceLoad":true,
 		"organizeMenu":true,
 		"disableFade":true
 	}

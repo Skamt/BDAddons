@@ -8,7 +8,7 @@ import { fit, shallow } from "@Utils";
 import { ImageComponent } from "@Utils/ImageModal";
 import { openModal } from "@Utils/Modals";
 import { spotifyCopy, copySpotifyUrl, openSpotifyUrl, useGetRessource } from "@/utils";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 import Store from "@/store";
 import PreviewPlayer from "./PreviewPlayer";
 import TrackTimeLine from "../TrackTimeLine";
@@ -21,7 +21,7 @@ import ControlButton from "../ControlButton";
 export default ({ id, type }) => {
 	const data = useGetRessource(type, id);
 	const { thumbnail, rawTitle, rawDescription, url, preview_url } = data || {};
-	const embedBannerBackground = Settings(Settings.selectors.embedBannerBackground);
+	const embedBannerBackground = Settings.embedBannerBackground();
 	const useReducedMotion = useStateFromStores(
 		[AccessibilityStore],
 		() => AccessibilityStore.useReducedMotion,

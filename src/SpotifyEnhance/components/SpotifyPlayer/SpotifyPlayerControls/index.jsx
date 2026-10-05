@@ -3,13 +3,12 @@ import ControlButton from "@/components/ControlButton";
 import HoverPopout from "@Components/HoverPopout";
 import { MuteVolumeIcon, NextIcon, PauseIcon, PlayIcon, PreviousIcon, RepeatIcon, RepeatOneIcon, ShareIcon, ShuffleIcon, VolumeIcon } from "@Components/Icon";
 
-import React, {useRef,useState} from "@React";
-import { PlayerButtonsEnum } from "@/consts.js";
+import React, { useRef, useState } from "@React";
 import { storeContextMenu } from "@/contextmenu.js";
 import Store from "@/store";
 import { ContextMenu } from "@Api";
 import { shallow } from "@Utils";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 import { classNameFactory } from "@Utils/css";
 const c = classNameFactory("spotify-player-controls");
 
@@ -55,23 +54,25 @@ const repeatObj = {
 };
 
 export default () => {
-	const playerButtons = Settings(Settings.selectors.playerButtons, shallow);
+	const shareBtn = Settings.Share();
+	const shuffleBtn = Settings.Shuffle();
+	const previousBtn = Settings.Previous();
+	const nextBtn = Settings.Next();
+	const repeatBtn = Settings.Repeat();
+	const volumeBtn = Settings.Volume();
+
 	const [isPlaying, shuffle, repeat] = Store(_ => [_.isPlaying, _.shuffle, _.repeat], shallow);
 	const actions = Store(Store.selectors.actions, shallow);
 	const { bannerLg } = Store.getSongBanners();
 
 	const { toggling_shuffle, toggling_repeat_track, skipping_next, skipping_prev } = actions || {};
-
 	const { repeatTooltip, repeatActive, repeatIcon, repeatArg } = repeatObj[repeat || "off"];
-
-	const shuffleHandler = () => Store.Api.shuffle(!shuffle);
-	const repeatHandler = () => Store.Api.repeat(repeatArg);
 
 	const { playPauseTooltip, playPauseHandler, playPauseIcon, playPauseClassName } = playpause[isPlaying];
 
 	return (
 		<div className="spotify-player-controls">
-			{playerButtons[PlayerButtonsEnum.SHARE] && (
+			{shareBtn && (
 				<HoverPopout popout={e => <ContextMenu.Menu onClose={e.closePopout}>{ContextMenu.buildMenuChildren(storeContextMenu(Store.getSongUrl(), bannerLg.url))}</ContextMenu.Menu>}>
 					<ControlButton
 						className={c("btn", "share")}
@@ -80,14 +81,14 @@ export default () => {
 				</HoverPopout>
 			)}
 			{[
-				playerButtons[PlayerButtonsEnum.SHUFFLE] && {
+				shuffleBtn && {
 					tooltip: "Shuffle",
 					value: <ShuffleIcon />,
 					className: c("btn", "shuffle", { enabled: shuffle }),
 					disabled: toggling_shuffle,
-					onClick: shuffleHandler
+					onClick: () => Store.Api.shuffle(!shuffle)
 				},
-				playerButtons[PlayerButtonsEnum.PREVIOUS] && {
+				previousBtn && {
 					tooltip: "Previous",
 					value: <PreviousIcon />,
 					className: c("btn", "previous"),
@@ -101,24 +102,24 @@ export default () => {
 					disabled: false,
 					onClick: playPauseHandler
 				},
-				playerButtons[PlayerButtonsEnum.NEXT] && {
+				nextBtn && {
 					tooltip: "Next",
 					value: <NextIcon />,
 					className: c("btn", "next"),
 					disabled: skipping_next,
 					onClick: nextHandler
 				},
-				playerButtons[PlayerButtonsEnum.REPEAT] && {
+				repeatBtn && {
 					tooltip: repeatTooltip,
 					value: repeatIcon,
 					className: c("btn", "repeat", { enabled: repeatActive }),
 					disabled: toggling_repeat_track,
-					onClick: repeatHandler
+					onClick: () => Store.Api.repeat(repeatArg)
 				}
 			]
 				.filter(Boolean)
 				.map(ControlButton)}
-			{playerButtons[PlayerButtonsEnum.VOLUME] && <Volume />}
+			{volumeBtn && <Volume />}
 		</div>
 	);
 };

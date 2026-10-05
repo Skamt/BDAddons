@@ -3,7 +3,7 @@ import ErrorBoundary from "@Components/ErrorBoundary";
 import ErrorIcon from "@Components/icons/ErrorIcon";
 import Plugin from "@common/Plugin";
 import Logger from "@Utils/Logger";
-import { getNestedProp } from "@Utils";
+import { getNestedProp } from "@Utils/Object";
 import { Filters, getModule } from "@Webpack";
 import VPPButton from "../components/VPPButton";
 import { before } from "@common/Patcher";

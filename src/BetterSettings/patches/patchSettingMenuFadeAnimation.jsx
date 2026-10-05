@@ -1,8 +1,8 @@
 import { lazy, Filters } from "@Webpack";
 import { after, afterOnce } from "@common/Patcher";
-import { getNestedProp } from "@Utils";
+import { getNestedProp } from "@Utils/Object";
 import React from "@React";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 import Plugin from "@common/Plugin";
 
 Plugin.onStart(() => {

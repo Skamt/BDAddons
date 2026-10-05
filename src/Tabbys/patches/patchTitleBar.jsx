@@ -3,7 +3,7 @@ import { after } from "@common/Patcher";
 import ErrorBoundary from "@Components/ErrorBoundary";
 import { Filters, getModule, getModuleAndKey } from "@Webpack";
 import App from "../components/App";
-import { reRender } from "@Utils";
+import { reRender } from "@React";
 import Plugin from "@common/Plugin";
 
 const TitleBar = getModuleAndKey(Filters.byStrings("PlatformTypes", "windowKey", "title"), {

@@ -1,4 +1,4 @@
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 import ChannelsStateManager from "@/ChannelsStateManager";
 import ChannelTypeEnum from "@Enums/ChannelTypeEnum";
 import Plugin from "@common/Plugin";

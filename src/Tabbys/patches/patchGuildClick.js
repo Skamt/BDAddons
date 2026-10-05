@@ -1,10 +1,10 @@
 import { after } from "@common/Patcher";
 import { getBySource, Filters } from "@Webpack";
 import Store from "@/Store";
-import { getNestedProp } from "@Utils";
+import { getNestedProp } from "@Utils/Object";
 import { getGuildChannelPath } from "@/utils";
 import Plugin from "@common/Plugin";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 
 const GuildComponent = getBySource("guildsnav", {
 	declarationFilter: Filters.byComponentType(Filters.byStrings("aria-owns=folder-items-", "onDragOverChanged"))

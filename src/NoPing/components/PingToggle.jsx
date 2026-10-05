@@ -6,7 +6,7 @@ import Blacklist from "@/blacklist";
 export default function PingToggle({userId}) {
 	const [has, setHas] = useState(Blacklist.has(userId));
 	
-	const toggleHandler = e =>{
+	const toggleHandler = () =>{
 		Blacklist.toggle(userId)
 		setHas(!has);
 	}

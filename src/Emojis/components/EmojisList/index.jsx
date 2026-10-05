@@ -9,7 +9,7 @@ import Tooltip from "@Components/Tooltip";
 import React, { useSyncExternalStore, useMemo, useEffect, useRef, useState } from "@React";
 import { clsx } from "@Utils";
 import { getContextMenuItem, getCopyContextMenuItem, buildEmojiUrl, sendDirectly } from "@/Utils";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 
 const c = clsx("emoji-list");
 
@@ -24,7 +24,7 @@ export default function EmojisComponent() {
 	const [val, setVal] = useState("");
 	const [width, setWidth] = useState(window.innerWidth * 0.8);
 
-	const emojiRenderSize = Settings(Settings.selectors.emojiRenderSize) || desiredEmojiSize;
+	const emojiRenderSize = Settings.emojiRenderSize() || desiredEmojiSize;
 	const ref = useRef();
 	const scrollerRef = useRef();
 	const emojis = useSyncExternalStore(EmojisManager.on, EmojisManager.getEmojis);

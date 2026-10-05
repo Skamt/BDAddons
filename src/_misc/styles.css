@@ -27,10 +27,6 @@
 	background: red;
 }
 
-[class*="repliedMessage"] .messageHeaderItem {
-	display: none;
-}
-
 .messageHeaderItem {
 	display: inline-block;
 	font-weight: 500;

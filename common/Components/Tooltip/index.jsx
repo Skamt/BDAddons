@@ -16,3 +16,13 @@ export default ({ note, position, children }) => {
 		</Tooltip>
 	);
 };
+
+/*
+
+import Tooltip from "@Components/Tooltip";
+
+<Tooltip note="note">
+	<button>Submit</button>
+</Tooltip>
+
+*/

@@ -1,4 +1,4 @@
-import { EmbedStyleEnum, PlayerButtonsEnum  } from "@/consts.js";
+import { EmbedStyleEnum  } from "@/consts.js";
 import Collapsible from "@Components/Collapsible";
 import FieldSet from "@Components/FieldSet";
 import Gap from "@Components/Gap";
@@ -6,10 +6,10 @@ import SettingSwtich from "@Components/SettingSwtich";
 import config from "@Config";
 import { RadioGroup } from "@Discord/Modules";
 import React from "@React";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 
 function SpotifyEmbedOptions() {
-	const [val, set] = Settings.useSetting("spotifyEmbed");
+	const val = Settings.spotifyEmbed();
 	return (
 		<RadioGroup
 			options={[
@@ -28,7 +28,7 @@ function SpotifyEmbedOptions() {
 			]}
 			orientation={"horizontal"}
 			value={val}
-			onChange={e => set(e.value)}
+			onChange={e => Settings.spotifyEmbed.set(e.value)}
 		/>
 	);
 }
@@ -40,31 +40,31 @@ export default function SettingComponent() {
 				<FieldSet contentGap={8}>
 					{[
 						{
-							settingKey: "player",
+							setting: Settings.player,
 							description: "Enable/Disable player."
 						},
 						{
-							settingKey: "enableListenAlong",
+							setting: Settings.enableListenAlong,
 							description: "Enables/Disable listen along without premium."
 						},
 						{
-							settingKey: "activity",
+							setting: Settings.activity,
 							description: "Modify Spotify activity."
 						},
 						{
-							settingKey: "activityIndicator",
+							setting: Settings.activityIndicator,
 							description: "Show user's Spotify activity in chat."
 						},
 						{
-							settingKey: "playerCompactMode",
+							setting: Settings.playerCompactMode,
 							description: "Player compact mode"
 						},
 						{
-							settingKey: "playerBannerBackground",
+							setting: Settings.playerBannerBackground,
 							description: "Use the banner as background for the player."
 						},
 						{
-							settingKey: "embedBannerBackground",
+							setting: Settings.embedBannerBackground,
 							description: "Use the banner as background for the embed."
 						}
 					].map(SettingSwtich)}
@@ -74,13 +74,13 @@ export default function SettingComponent() {
 			<Collapsible title="Show/Hide Player buttons">
 				<FieldSet contentGap={8}>
 					{[
-						{ settingKey: PlayerButtonsEnum.SHARE, hideBorder: true },
-						{ settingKey: PlayerButtonsEnum.SHUFFLE, hideBorder: true },
-						{ settingKey: PlayerButtonsEnum.PREVIOUS, hideBorder: true },
-						{ settingKey: PlayerButtonsEnum.PLAY, hideBorder: true },
-						{ settingKey: PlayerButtonsEnum.NEXT, hideBorder: true },
-						{ settingKey: PlayerButtonsEnum.REPEAT, hideBorder: true },
-						{ settingKey: PlayerButtonsEnum.VOLUME, hideBorder: true, style: { marginBottom: 0 } }
+						{ setting: Settings.Share, hideBorder: true },
+						{ setting: Settings.Shuffle, hideBorder: true },
+						{ setting: Settings.Previous, hideBorder: true },
+						{ setting: Settings.Play, hideBorder: true },
+						{ setting: Settings.Next, hideBorder: true },
+						{ setting: Settings.Repeat, hideBorder: true },
+						{ setting: Settings.Volume, hideBorder: true }
 					].map(SettingSwtich)}
 				</FieldSet>
 			</Collapsible>
@@ -91,3 +91,9 @@ export default function SettingComponent() {
 		</div>
 	);
 }
+
+
+
+
+
+

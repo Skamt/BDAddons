@@ -2,7 +2,7 @@ import { getByKeys, Filters, getDeclarationAndKey } from "@Webpack";
 import { classNameFactory } from "@Utils/css";
 import Logger, { patchError } from "@Utils/Logger";
 import React, { useRef, useEffect } from "@React";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 import { FocusLock, ComponentDispatch } from "@Discord/Modules";
 import Plugin from "@common/Plugin";
 
@@ -64,7 +64,7 @@ Plugin.onStart(() => {
 	}
 
 	run();
-	const unsub = Settings.subscribe(Settings.selectors.disableFade, run);
+	const unsub = Settings.subscribe(Settings.disableFade.get, run);
 
 	Plugin.onStop(
 		() => {

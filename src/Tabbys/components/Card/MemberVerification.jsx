@@ -1,5 +1,5 @@
 import React from "@React";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 import { getSize } from "@/utils";
 import Markup from "./Markup";
 import Icon from "./Icon";

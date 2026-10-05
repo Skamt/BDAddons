@@ -2,7 +2,7 @@ import React from "@React";
 import useStateFromStores from "@Modules/useStateFromStores";
 import ChannelStore from "@Stores/ChannelStore";
 import { getGroupDmIcon } from "@Utils/Channel";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 import { getSize } from "@/utils";
 import { getUserName } from "@Utils/User";
 import Markup from "./Markup";

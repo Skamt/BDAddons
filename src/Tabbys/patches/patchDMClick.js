@@ -2,7 +2,7 @@ import Plugin from "@common/Plugin";
 import { before } from "@common/Patcher";
 import { reactRefMemoFilter, getModule } from "@Webpack";
 import Store from "@/Store";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 
 const DMChannel = getModule(
 	reactRefMemoFilter("render", "navigate", "location", "href", "createHref"),

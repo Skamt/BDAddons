@@ -1,17 +1,15 @@
 import React from "@React";
-import { Patcher, findInTree } from "@Api";
+import { after } from "@common/Patcher";
+import { findInTree } from "@Api";
 import { getMangled } from "@Webpack";
 import Plugin from "@common/Plugin";
 import PingToggle from "@/components/PingToggle";
 
-const Module = getMangled("showMentionToggle", {
-	replayComponent: a => true
-});
+const Module = getMangled("showMentionToggle", { replayComponent: a => true });
 
 Plugin.onStart(() => {
-	Patcher.after(Module, "replayComponent", (_, [{ reply }], ret) => {
+	after(Module, "replayComponent", ({ args: [{ reply }], ret }) => {
 		const target = findInTree(ret, a => a?.className?.includes("actions"), { walkable: ["children", "props"] });
-		console.log(reply)
 		if (!target || !reply?.message?.author?.id) return ret;
 		target.children.splice(0, 0, <PingToggle userId={reply.message.author.id} />);
 	});

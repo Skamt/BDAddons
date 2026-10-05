@@ -1,23 +1,19 @@
 import React from "@React";
-import { nop } from "@Utils";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 import Switch from "@Components/Switch";
 import Divider from "@Components/Divider";
 
-export default function SettingSwtich({ settingKey, note, border = false, onChange = nop, description, ...rest }) {
-	const [val, set] = Settings.useSetting(settingKey);
+export default function SettingSwtich({ setting, note, border = false, description, ...rest }) {
+	const val = Settings(setting.get);
 	return (
 		<>
 			<Switch
 				{...rest}
 				hasIcon={true}
 				checked={val}
-				label={description || settingKey}
+				label={description || setting.key}
 				description={note}
-				onChange={e => {
-					set(e);
-					onChange?.(e);
-				}}
+				onChange={setting.set}
 			/>
 			{border && <Divider gap={15} />}
 		</>

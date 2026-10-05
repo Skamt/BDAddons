@@ -9,7 +9,7 @@ import TabContextMenu from "@/contextmenus/TabContextMenu";
 import { ContextMenu } from "@Api";
 import useStateFromStores from "@Modules/useStateFromStores";
 import ReadStateStore from "@Stores/ReadStateStore";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 import ChannelStatus from "@/components/ChannelStatus";
 import { Content } from "@/components/Card";
 
@@ -19,7 +19,7 @@ function Tab({ id, isOver, canDrop, isDragging, dragRef, dropRef }) {
 	const tab = Store(() => Store.getTab(id), shallow);
 	const { guildId, userId, path, channelId } = tab;
 
-	const shouldHightLight = Settings(Settings.selectors.highlightTabUnread);
+	const shouldHightLight = Settings.highlightTabUnread();
 	const hasUnread = useStateFromStores([ReadStateStore], () => shouldHightLight && ReadStateStore.hasUnread(channelId), [shouldHightLight, channelId]);
 	const isSelected = Store(Store.selectors.selectedId) === id;
 	

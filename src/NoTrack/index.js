@@ -14,7 +14,7 @@ const Anchor = getModule(Filters.byKeys("Anchor"));
 
 
 const targets = ["spotify"];
-const blockedEvents = ["FINGERPRINT", "TRACK"];
+const blockedEvents = ["TYPING_START_LOCAL","FINGERPRINT", "TRACK"];
 
 function urlRegex(name) {
 	return new RegExp(`((?:https|http)\\:\\/\\/(?:.*\\.)?${name}\\..*\\/\\S+)`, "g");
@@ -28,6 +28,7 @@ function sanitizeUrls(content, filters) {
 }
 
 function handleMessage(msgcontent) {
+	if(!msgcontent) return;
 	const filters = [];
 	for (const target of targets) {
 		const regex = urlRegex(target);

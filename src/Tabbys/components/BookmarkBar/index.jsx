@@ -1,6 +1,6 @@
 import "./styles";
 import Store from "@/Store";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 import { Bookmark } from "@/components/Bookmark";
 import { Folder } from "@/components/Folder";
 import { ArrowIcon } from "@Components/Icon";
@@ -138,6 +138,6 @@ function OverflowMenu({ items }) {
 }
 
 export default function BookmarkBar() {
-	const bookmarkOverflowWrap = Settings(Settings.selectors.bookmarkOverflowWrap, shallow);
+	const bookmarkOverflowWrap = Settings(Settings.bookmarkOverflowWrap.get, shallow);
 	return bookmarkOverflowWrap ? <BookmarkBarWrapAround /> : <BookmarkBarOverflowMenu />;
 }

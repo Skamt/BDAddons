@@ -4,7 +4,7 @@ import UserStore from "@Stores/UserStore";
 // import { Fallback } from "@/components/Icons";
 import { getUserName } from "@Utils/User";
 import UserAvatar from "@Components/UserAvatar";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 import { getSize } from "@/utils";
 import { join } from "@Utils/css";
 import Markup from "./Markup";

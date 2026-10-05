@@ -1,7 +1,7 @@
 import React from "@React";
 import {after} from "@common/Patcher";
 import ErrorBoundary from "@Components/ErrorBoundary";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 import { Filters, getDeclarationAndKey } from "@Webpack";
 import SpotifyActivityControls from "@/components/SpotifyActivityControls";
 import Plugin from "@common/Plugin";
@@ -10,7 +10,7 @@ const ActivityComponent = getDeclarationAndKey(Filters.bySource("PRESS_LISTEN_AL
 
 Plugin.onStart(() => {
 	after(...ActivityComponent, ({args:[{ user, activity }]}) => {
-		if (!Settings.getState().activity) return;
+		if (!Settings.state.activity) return;
 		if (activity?.name.toLowerCase() !== "spotify") return;
 
 		return (

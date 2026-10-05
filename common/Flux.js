@@ -18,9 +18,8 @@ export function map(map) {
 }
 
 export function intercept(event, fn) {
-	function interceptor(...args) {
-		if (args[0].type === event) fn.apply(null, args);
-	}
+	const interceptor = (...args) => args[0].type === event ? fn.apply(null, args) : null
+	
 
 	Dispatcher.addInterceptor(interceptor);
 	const undo = () => {
@@ -37,6 +36,6 @@ export function unsubscribeAll() {
 	handlers.length = 0;
 }
 
-export const blockEvent = e => intercept(e, () => false);
+export const blockEvent = e => intercept(e, () => true);
 
 Plugin.onStop(unsubscribeAll);

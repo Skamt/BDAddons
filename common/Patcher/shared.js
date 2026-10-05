@@ -1,5 +1,5 @@
 import { Logger, Patcher } from "@Api";
-import { hasOwn } from "@Utils";
+import { hasOwn }  from "@Utils/Object";
 import Plugin from "@common/Plugin";
 
 Plugin.onStop(() => Patcher.unpatchAll());

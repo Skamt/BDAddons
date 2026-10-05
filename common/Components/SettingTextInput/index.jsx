@@ -1,33 +1,23 @@
 import TextInput from "@Components/TextInput";
 import React from "@React";
-import { nop } from "@Utils";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 import Divider from "@Components/Divider";
 import Heading from "@Modules/Heading";
 
-export default function SettingTextInput({
-	settingKey,
-	processValue = (a) => a,
-	border,
-	label,
-	onChange = nop,
-	...rest
-}) {
-	const [val, setVal] = React.useState(Settings.state[settingKey]);
+export default function SettingTextInput({ setting, processValue = a => a, border, label, ...rest }) {
+	const val = Settings(setting.get);
 	return (
 		<>
 			{label && (
-				<Heading tag="legend" variant="text-md/medium">
+				<Heading
+					tag="legend"
+					variant="text-md/medium">
 					{label}
 				</Heading>
 			)}
 			<TextInput
 				{...rest}
-				onChange={(e) => {
-					setVal(e)
-					Settings[`set${settingKey}`](processValue(e));
-					onChange?.(e);
-				}}
+				onChange={e => setting.set(processValue(e))}
 				value={val}
 			/>
 			{border && <Divider />}

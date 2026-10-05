@@ -1,23 +1,23 @@
-import React, { useEffect, useRef } from "@React";
-import Settings from "@Utils/Settings";
-import { DiscordPopout } from "@Discord/Modules";
+import React, { useEffect } from "@React";
+import Settings from "@Settings";
+import Popout from "@Components/Popout";
 import { PREVIEW_SIZE } from "../Constants";
 
 export default ({ target, previewComponent }) => {
-	const [show, setShow] = Settings.useSetting("previewState");
-	const ref = useRef();
+	const show = Settings.previewState();
+
 	useEffect(() => {
 		function keyupHandler(e) {
 			if (e.key === "Control") {
-				setShow(!show);
+				Settings.previewState.set(!show);
 			}
 		}
 		document.addEventListener("keyup", keyupHandler);
 		return () => document.removeEventListener("keyup", keyupHandler);
-	}, [setShow, show]);
+	}, [show]);
 
 	return (
-		<DiscordPopout
+		<Popout
 			renderPopout={() => (
 				<div
 					className="stickersPreview"
@@ -25,13 +25,12 @@ export default ({ target, previewComponent }) => {
 					{previewComponent}
 				</div>
 			)}
-			targetElementRef={ref}
 			shouldShow={show}
 			position="left"
 			align="bottom"
 			animation="1"
 			spacing={60}>
-			{() => React.cloneElement(target, { ref: ref })}
-		</DiscordPopout>
+			{() => target}
+		</Popout>
 	);
 };

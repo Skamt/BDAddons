@@ -1,11 +1,11 @@
 import React from "@React";
 import { Patcher } from "@Api";
 import { getModule } from "@Webpack";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 import Slider from "@Modules/Slider";
 
 function SettingComponent() {
-	const [val, set] = Settings.useSetting("notificationVolume");
+	const val = Settings.notificationVolume();
 	return (
 		<Slider
 			label="Notification volume"
@@ -14,7 +14,7 @@ function SettingComponent() {
 			equidistant={true}
 			markers={[0, 25, 50, 75, 100]}
 			initialValue={val}
-			onValueChange={e => set(e)}
+			onValueChange={Settings.notificationVolume.set}
 		/>
 	);
 }

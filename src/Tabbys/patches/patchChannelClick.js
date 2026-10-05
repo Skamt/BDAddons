@@ -1,9 +1,9 @@
 import { after } from "@common/Patcher";
 import { reactRefMemoFilter, getModule } from "@Webpack";
-import { getNestedProp } from "@Utils";
+import { getNestedProp } from "@Utils/Object";
 import Store from "@/Store";
 import Plugin from "@common/Plugin";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 
 const channelComponent = getModule(
 	reactRefMemoFilter("render", "children", "onClick", "onKeyPress", "focusProps"),

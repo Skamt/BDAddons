@@ -1,5 +1,5 @@
 import { patch } from "./shared";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 
 const getSettingsPatcher = type => {
 	const unpatchMap = new Map;

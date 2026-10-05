@@ -1,6 +1,6 @@
 import React, { NoopComponent, LazyComponent } from "@React";
 import Logger from "@Utils/Logger";
-import { getObjectKey } from "@Utils";
+import { getObjectKey } from "@Utils/Object";
 import { MISSING_ARGUMENTS, UNDEFINED_OBJECT_OR_KEY, PATCH_ERROR, LAZY_DISCORD_COMPONENT_WRAPPER } from "@common/consts";
 import Plugin from "@common/Plugin";
 

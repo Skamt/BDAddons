@@ -4,16 +4,16 @@ import SpotifyPlayerControls from "./SpotifyPlayerControls";
 import TrackMediaDetails from "./TrackMediaDetails";
 import TrackTimeLine from "../TrackTimeLine";
 import Store from "@/store";
-import Settings from "@Utils/Settings";
+import Settings from "@Settings";
 import { shallow } from "@Utils";
-
 import ArrowIcon from "@Components/icons/ArrowIcon";
 import Tooltip from "@Components/Tooltip";
 
 export default React.memo(function SpotifyPlayer() {
 	const [isActive, media, mediaType] = Store(_ => [_.isActive, _.media, _.mediaType], shallow);
-	const [player, playerBannerBackground] = Settings(_ => [_.player, _.playerBannerBackground], shallow);
-	const [playerCompactMode, setplayerCompactMode] = Settings.useSetting("playerCompactMode");
+	const player = Settings.player();
+	const playerBannerBackground = Settings.playerBannerBackground();
+	const playerCompactMode = Settings.playerCompactMode();
 
 	if (!player || !isActive || !mediaType) return;
 
@@ -23,7 +23,7 @@ export default React.memo(function SpotifyPlayer() {
 	if (playerCompactMode) className += " compact";
 	if (playerBannerBackground) className += " bannerBackground";
 
-	const minmaxClickHandler = () => setplayerCompactMode(!playerCompactMode);
+	const minmaxClickHandler = () => Settings.playerCompactMode.set(!playerCompactMode);
 
 	return (
 		<div
