@@ -2,7 +2,7 @@
  * @runAt idle
  * @name ViewProfilePicture
  * @description Adds a button to the user popout and profile that allows you to view the Avatar and banner.
- * @version 1.3.17
+ * @version 1.3.18
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js
@@ -12,7 +12,7 @@
 var Config_default = {
 	"info": {
 		"name": "ViewProfilePicture",
-		"version": "1.3.17",
+		"version": "1.3.18",
 		"description": "Adds a button to the user popout and profile that allows you to view the Avatar and banner.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture",
@@ -52,10 +52,10 @@ var Plugin_default = {
 	onStart: (handler, props) => target.addEventListener("START", wrap(handler), props),
 	onStop: (handler, props) => target.addEventListener("STOP", wrap(handler), props),
 	start() {
-		target.dispatchEvent(new Event("START"));
+		setTimeout(target.dispatchEvent(new Event("START")));
 	},
 	stop() {
-		target.dispatchEvent(new Event("STOP"));
+		setTimeout(target.dispatchEvent(new Event("STOP")));
 	}
 };
 
@@ -166,52 +166,62 @@ var ErrorIcon_default = (props) => /* @__PURE__ */ React_default.createElement("
 	React_default.createElement("path", { d: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" })
 ));
 
-// common/Utils/index.js
+// common/Utils/Object.js
+var map = (obj, fn) => Object.fromEntries(Object.entries(obj).map(([key, value]) => [key, fn({ value, key })]));
+
+function getObjectKey(object = {}, filter) {
+	for (const key in object)
+		if (filter(object[key])) return key;
+}
+
 function hasOwn(object, key) {
 	return object && key && key in object;
 }
 
-function fit({ width, height, gap = 0.8 }) {
-	const ratio = Math.min(innerWidth / width, innerHeight / height);
-	width = Math.round(width * ratio);
-	height = Math.round(height * ratio);
-	return {
-		width,
-		height,
-		maxHeight: height * gap,
-		maxWidth: width * gap
-	};
-}
-var promiseHandler = (promise) => promise.then((data) => [void 0, data]).catch((err) => [err]);
-
 function getNestedProp(obj, path2) {
 	return path2.split(".").reduce((ob, prop) => ob?.[prop], obj);
 }
-var nop = () => {};
 
-function getImageDimensions(url) {
-	return new Promise((resolve, reject) => {
-		const img = new Image();
-		img.onload = () => resolve({
-			width: img.width,
-			height: img.height
-		});
-		img.onerror = reject;
-		img.src = url;
-	});
-}
+// common/consts.js
+var UNDEFINED_OBJECT_OR_KEY = "Undefined object or key";
+var PATCH_ERROR = "Could not perform a patch";
+var MISSING_ARGUMENTS = "Missing arguments";
 
 // common/Webpack.jsx
 var Webpack = /* @__PURE__ */ (() => BdApi.Webpack)();
 var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
 var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
+var waitForModule = /* @__PURE__ */ (() => Webpack.waitForModule)();
 var getMangled = /* @__PURE__ */ (() => Webpack.getMangled)();
 var getStore = /* @__PURE__ */ (() => Webpack.getStore)();
+var abortController = /* @__PURE__ */ (() => {
+	Plugin_default.onStart(() => abortController = new AbortController());
+	Plugin_default.onStop(() => abortController.abort());
+	return new AbortController();
+})();
+
+function lazy(filter, { decFilter, ...options } = {}) {
+	if (!filter) return Logger_default.error(`[Webpack lazy] ${MISSING_ARGUMENTS}`);
+	const { promise, resolve } = Promise.withResolvers();
+	waitForModule(filter, {
+		...options,
+		raw: true,
+		fatal: false,
+		signal: abortController.signal
+	}).then((module2) => {
+		if (!module2) throw "waitForModule resolved with undefined";
+		const object = decFilter ? module2.declarations : module2.exports;
+		const key = getObjectKey(object, decFilter || filter);
+		if (!object || !key) throw UNDEFINED_OBJECT_OR_KEY;
+		resolve([object, key]);
+	}).catch((cause) => Logger_default.warn(new Error(PATCH_ERROR, { cause })));
+	return promise;
+}
 
 // MODULES-AUTO-LOADER:@Stores/UserStore
 var UserStore_default = /* @__PURE__ */ (() => getStore("UserStore"))();
 
-// common/DiscordModules/Modules.js
+// common/Discord/Modules.js
 var Spinner = /* @__PURE__ */ (() => getModule((a) => a?.Type?.CHASING_DOTS, { searchExports: true }))();
 var Color = /* @__PURE__ */ (() => getModule(Filters.byKeys("Color", "hex", "hsl"), { searchExports: false }))();
 var MediaViewerModal = /* @__PURE__ */ (() => getMangled("Media Viewer Modal", { MediaViewerModal: (a) => typeof a !== "string" }).MediaViewerModal)();
@@ -222,7 +232,7 @@ function isSelf(user) {
 	return user?.id === currentUser?.id;
 }
 
-// common/DiscordModules/zustand.js
+// common/Discord/zustand.js
 var zustand = /* @__PURE__ */ (() => getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
 	_: Filters.byStrings("subscribe"),
 	zustand: () => true
@@ -240,32 +250,25 @@ function create(initialState) {
 	return Store;
 }
 
-// common/Utils/Settings.js
+// common/Settings.js
 var Settings_default = /* @__PURE__ */ (() => {
-	const SettingsStore = create(
-		subscribeWithSelector(() => Object.assign(Config_default.settings || {}, Data.load("settings") || {}))
+	const SettingsStore = create(subscribeWithSelector(() => Object.assign(Config_default.settings || {}, Data.load("settings") || {})));
+	Object.assign(
+		SettingsStore,
+		map(
+			SettingsStore.getInitialState(),
+			({ key }) => Object.assign(() => SettingsStore((state) => state[key]), {
+				key,
+				get: () => SettingsStore.state[key],
+				set: (v) => SettingsStore.setState({
+					[key]: v })
+			})
+		)
 	);
-	const state = SettingsStore.getInitialState();
-	const selectors = {};
-	const actions = {};
-	for (const key of Object.keys(state)) {
-		actions[`set${key}`] = (newValue) => SettingsStore.setState({
-			[key]: newValue });
-		selectors[key] = (state2) => state2[key];
-	}
-	Object.defineProperty(SettingsStore, "selectors", { value: Object.assign(selectors) });
-	Object.assign(SettingsStore, actions);
 	SettingsStore.subscribe(
-		(state2) => state2,
+		(a) => a,
 		() => Data.save("settings", SettingsStore.state)
 	);
-	Object.assign(SettingsStore, {
-		// eslint-disable-next-line @eslint-react/no-unnecessary-use-prefix
-		useSetting: (key) => {
-			const val = SettingsStore((state2) => state2[key]);
-			return [val, SettingsStore[`set${key}`]];
-		}
-	});
 	return SettingsStore;
 })();
 
@@ -318,6 +321,32 @@ function path(props, d) {
 }
 var ImageIcon = /* @__PURE__ */ (() => svg({ viewBox: "-50 -50 484 484" }, "M341.333,0H42.667C19.093,0,0,19.093,0,42.667v298.667C0,364.907,19.093,384,42.667,384h298.667 C364.907,384,384,364.907,384,341.333V42.667C384,19.093,364.907,0,341.333,0z M42.667,320l74.667-96l53.333,64.107L245.333,192l96,128H42.667z"))();
 
+// common/Utils/index.js
+function fit({ width, height, gap = 0.8 }) {
+	const ratio = Math.min(innerWidth / width, innerHeight / height);
+	width = Math.round(width * ratio);
+	height = Math.round(height * ratio);
+	return {
+		width,
+		height,
+		maxHeight: height * gap,
+		maxWidth: width * gap
+	};
+}
+var promiseHandler = (promise) => promise.then((data) => [void 0, data]).catch((err) => [err]);
+
+function getImageDimensions(url) {
+	return new Promise((resolve, reject) => {
+		const img = new Image();
+		img.onload = () => resolve({
+			width: img.width,
+			height: img.height
+		});
+		img.onerror = reject;
+		img.src = url;
+	});
+}
+
 // common/Utils/Color.js
 function colorToImg(c3) {
 	const canvas = document.createElement("canvas");
@@ -342,7 +371,7 @@ async function getFittedDims(url) {
 var palletHook = getModule(Filters.byStrings("toHexString", "toHsl", "palette"), { searchExports: true }) || {};
 var VPPButton_default = ({ className, user, displayProfile }) => {
 	const [fetching, setFetching] = useState(false);
-	const showOnHover = Settings_default(Settings_default.selectors.showOnHover);
+	const showOnHover = Settings_default.showOnHover();
 	const colorFromPfp = palletHook(user.getAvatarURL(displayProfile?.guildId, 80))[0];
 	const handler = async () => {
 		const avatarURL = user.getAvatarURL(displayProfile.guildId, 4096, true);
@@ -418,34 +447,35 @@ Plugin_default.onStart(() => {
 });
 
 // src/ViewProfilePicture/patches/UserProfileModal.jsx
-var UserProfileModal = getModule(Filters.byKeys("Overlay", "render"));
 var paths = {
 	SIDEBAR: "2.props.children.0",
 	POPOUT: "2"
 };
 Plugin_default.onStart(() => {
-	before(UserProfileModal, "render", ({ args: [props] }) => {
-		const target2 = useMemo(() => getNestedProp(props.children, paths[props.themeType] || ""), [props]);
-		if (!target2) return Logger_default.warn("Unsupported themeType", props.themeType);
-		props.className = `${props.className} VPP-container`;
-		insertChild(
-			target2,
-			/* @__PURE__ */
-			React_default.createElement(
-				ErrorBoundary_default, {
-					id: "UserProfileModal",
-					fallback: /* @__PURE__ */ React_default.createElement(ErrorIcon_default, { className: "VPP-Button" })
-				},
+	lazy(Filters.bySource("has-animated-banner", "profileThemeClassName"), { decFilter: Filters.byStrings("secondaryColor") }).then((UserProfileModal) => {
+		before(...UserProfileModal, ({ args: [props] }) => {
+			const target2 = useMemo(() => getNestedProp(props.children, paths[props.themeType] || ""), [props]);
+			if (!target2) return Logger_default.warn("Unsupported themeType", props.themeType);
+			props.className = `${props.className} VPP-container`;
+			insertChild(
+				target2,
 				/* @__PURE__ */
 				React_default.createElement(
-					VPPButton_default, {
-						user: props.user,
-						displayProfile: props.displayProfile
-					}
-				)
-			),
-			0
-		);
+					ErrorBoundary_default, {
+						id: "UserProfileModal",
+						fallback: /* @__PURE__ */ React_default.createElement(ErrorIcon_default, { className: "VPP-Button" })
+					},
+					/* @__PURE__ */
+					React_default.createElement(
+						VPPButton_default, {
+							user: props.user,
+							displayProfile: props.displayProfile
+						}
+					)
+				),
+				0
+			);
+		});
 	});
 });
 
@@ -493,19 +523,16 @@ Divider.direction = {
 };
 
 // common/Components/SettingSwtich/index.jsx
-function SettingSwtich({ settingKey, note, border = false, onChange = nop, description, ...rest }) {
-	const [val, set] = Settings_default.useSetting(settingKey);
+function SettingSwtich({ setting, note, border = false, description, ...rest }) {
+	const val = Settings_default(setting.get);
 	return /* @__PURE__ */ React_default.createElement(React_default.Fragment, null, /* @__PURE__ */ React_default.createElement(
 		Switch_default, {
 			...rest,
 			hasIcon: true,
 			checked: val,
-			label: description || settingKey,
+			label: description || setting.key,
 			description: note,
-			onChange: (e) => {
-				set(e);
-				onChange?.(e);
-			}
+			onChange: setting.set
 		}
 	), border && /* @__PURE__ */ React_default.createElement(Divider, { gap: 15 }));
 }
@@ -583,12 +610,12 @@ FieldSet.direction = {
 function SettingComponent() {
 	return /* @__PURE__ */ React_default.createElement(FieldSet, { contentGap: 8 }, [{
 			border: true,
-			settingKey: "showOnHover",
+			setting: Settings_default.showOnHover,
 			note: "By default hide ViewProfilePicture button and show on hover.",
 			description: "Show on hover"
 		},
 		{
-			settingKey: "bannerColor",
+			setting: Settings_default.bannerColor,
 			note: "Always include banner color in carousel, even if a banner is present.",
 			description: "Include banner color."
 		}
