@@ -1,3 +1,3 @@
 # ChannelCompact
 
-Empty description
+Enable compact messages per channel
