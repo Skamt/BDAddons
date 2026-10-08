@@ -2,7 +2,7 @@
  * @runAt idle
  * @name SpotifyEnhance
  * @description All in one better spotify-discord experience.
- * @version 1.1.19
+ * @version 1.1.20
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js
@@ -12,7 +12,7 @@
 var Config_default = {
 	"info": {
 		"name": "SpotifyEnhance",
-		"version": "1.1.19",
+		"version": "1.1.20",
 		"description": "All in one better spotify-discord experience.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/SpotifyEnhance/SpotifyEnhance.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/SpotifyEnhance",
@@ -426,6 +426,11 @@ var map = (obj, fn) => Object.fromEntries(Object.entries(obj).map(([key, value])
 function getObjectKey(object = {}, filter) {
 	for (const key in object)
 		if (filter(object[key])) return key;
+}
+
+function getInObject(object = {}, filter) {
+	for (const key in object)
+		if (filter(object[key])) return object[key];
 }
 
 function hasOwn(object, key) {
@@ -988,7 +993,7 @@ var Timer = class _Timer {
 	}
 };
 
-// common/DiscordModules/zustand.js
+// common/Discord/zustand.js
 var zustand = /* @__PURE__ */ (() => getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
 	_: Filters.byStrings("subscribe"),
 	zustand: () => true
@@ -1369,7 +1374,7 @@ function ControlButton({ className, ref, onClick, tooltip, value, ...rest }) {
 	return !tooltip ? btn : /* @__PURE__ */ React_default.createElement(Tooltip_default2, { note: tooltip }, btn);
 }
 
-// common/DiscordModules/Modules.js
+// common/Discord/Modules.js
 var DiscordPopout = /* @__PURE__ */ (() => getModule((a) => a?.prototype?.render && a.Animation, { searchExports: true }))();
 var Anchor = /* @__PURE__ */ (() => getModule(Filters.byKeys("Anchor")).Anchor)();
 var RadioGroup = /* @__PURE__ */ (() => getMangled('data-toggleable-component":"radiogroup', { radioGroup: Filters.byStrings("label", "required") }).radioGroup)();
@@ -1984,8 +1989,11 @@ StylesLoader_default.push(`.fieldset-container {
 	flex-direction: column;
 }`);
 
-// MODULES-AUTO-LOADER:@Modules/Heading
-var Heading_default = /* @__PURE__ */ (() => getModule((a) => a?.render?.toString().includes("data-excessive-heading-level"), { searchExports: true }))();
+// common/Components/Heading/index.jsx
+var Heading = getInObject(getModule(Filters.bySource('text":', 'headin":', "data-excessive-heading-level", "heading-sm/normal")), Filters.byStrings("data-excessive-heading-level"));
+var Heading_default = Heading || function({ tag, ...rest }) {
+	return React_default.createElement(tag, rest);
+};
 
 // common/Components/FieldSet/index.jsx
 var c2 = classNameFactory("fieldset");
@@ -3089,5 +3097,7 @@ function SettingComponent() {
 }
 
 // src/SpotifyEnhance/index.jsx
-Plugin_default.getSettingsPanel = () => /* @__PURE__ */ React_default.createElement(SettingComponent, null);
+Plugin_default.getSettingsPanel = () => {
+	return /* @__PURE__ */ React_default.createElement(SettingComponent, null);
+};
 module.exports = () => Plugin_default;
