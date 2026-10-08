@@ -16,7 +16,7 @@ const jsconfig = (pluginRoot) => ({
 			"@React": ["./common/React"],
 			"@Utils": ["./common/Utils"],
 			"@Utils/*": ["./common/Utils/*"],
-			"@Discord/*": ["./common/DiscordModules/*"],
+			"@Discord/*": ["./common/Discord/*"],
 		},
 	},
 });

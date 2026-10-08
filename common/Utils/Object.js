@@ -5,6 +5,10 @@ export function getObjectKey(object = {}, filter) {
 	for (const key in object) if (filter(object[key])) return key;
 }
 
+export function getInObject(object = {}, filter) {
+	for (const key in object) if (filter(object[key])) return object[key];
+}
+
 export function hasOwn(object, key) {
 	return object && key && key in object;
 }

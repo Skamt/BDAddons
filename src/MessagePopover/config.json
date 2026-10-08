@@ -1,0 +1,13 @@
+{
+	"info": {
+		"name": "MessagePopover",
+		"version": "1.0.0",
+		"description": "Empty description",
+		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/MessagePopover/MessagePopover.plugin.js",
+		"github": "https://github.com/Skamt/BDAddons/tree/main/MessagePopover"
+	},
+	"settings":{
+		"quickReactsAmount":5,
+		"showAll":true
+	}
+}

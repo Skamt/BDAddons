@@ -3,7 +3,7 @@ import EmojisManager from "@/EmojisManager";
 import { ContextMenu } from "@Api";
 import GridScroller from "@Components/GridScroller";
 import TextInput from "@Components/TextInput";
-import Heading from "@Modules/Heading";
+import Heading from "@Components/Heading";
 import { MagnifyingGlassIcon } from "@Components/Icon";
 import Tooltip from "@Components/Tooltip";
 import React, { useSyncExternalStore, useMemo, useEffect, useRef, useState } from "@React";

@@ -18,7 +18,7 @@ import Plugin from "@common/Plugin";
 import { after } from "@common/Patcher";
 
 
-Plugin.onStop(() => {
+Plugin.onStart(() => {
 	after();
 });
 

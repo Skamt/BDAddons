@@ -1,0 +1,9 @@
+{
+	"info": {
+		"name": "ChannelCompact",
+		"version": "1.0.0",
+		"description": "Enable compact messages per channel",
+		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/ChannelCompact/ChannelCompact.plugin.js",
+		"github": "https://github.com/Skamt/BDAddons/tree/main/ChannelCompact"
+	}
+}

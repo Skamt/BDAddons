@@ -1,6 +1,6 @@
 import React, {useState} from "@React";
 import Divider from "@Components/Divider";
-import Heading from "@Modules/Heading";
+import Heading from "@Components/Heading";
 import Blacklist from "@/blacklist";
 
 export default function PingToggle({userId}) {

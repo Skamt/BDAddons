@@ -2,7 +2,7 @@ import TextInput from "@Components/TextInput";
 import React from "@React";
 import Settings from "@Settings";
 import Divider from "@Components/Divider";
-import Heading from "@Modules/Heading";
+import Heading from "@Components/Heading";
 
 export default function SettingTextInput({ setting, processValue = a => a, border, label, ...rest }) {
 	const val = Settings(setting.get);

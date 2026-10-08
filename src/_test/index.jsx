@@ -1,4 +1,6 @@
 import Plugin from "@common/Plugin";
+import React from "@React";
+import { after, before } from "@common/Patcher";
 // import { create, subscribeWithSelector } from "@Discord/zustand";
 // import { setProp, mapDeep, getNestedProp } from "@Utils/Object";
 
@@ -88,8 +90,9 @@ import Plugin from "@common/Plugin";
 // 	);
 // }
 
+
 Plugin.onStart(() => {
-	// BdApi.UI.showConfirmationModal("", <Comp />);
+	
 });
 
 module.exports = () => Plugin;

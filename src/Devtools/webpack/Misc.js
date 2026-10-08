@@ -7,7 +7,7 @@ export const Misc = {
 		return Modules.getModules(a => typeof a.exports === "string" && a.exports.match(/\/assets\/.+/)).map(a => a.exports);
 	},
 	getEventListeners(eventName) {
-		const nodes = Dispatcher._actionHandlers._dependencyGraph.nodes;
+		const nodes = Dispatcher._actionHandlers._nodes;
 		const subs = Dispatcher._subscriptions;
 		return {
 			stores: Object.values(nodes)
@@ -29,7 +29,7 @@ export const Misc = {
 	},
 	getEventListenersFuzzy(str = "") {
 		str = str.toLowerCase();
-		const nodes = Dispatcher._actionHandlers._dependencyGraph.nodes;
+		const nodes = Dispatcher._actionHandlers._nodes;
 		const subs = Dispatcher._subscriptions;
 		return {
 			stores: Object.values(nodes).filter(a => Object.keys(a.actionHandler).some(key => key.toLowerCase().includes(str))).map(

@@ -4,7 +4,7 @@ import SettingSwtich from "@Components/SettingSwtich";
 import SettingTextInput from "@Components/SettingTextInput";
 import Settings from "@Settings";
 import FieldSet from "@Components/FieldSet";
-import Heading from "@Modules/Heading";
+import Heading from "@Components/Heading";
 import { RadioGroup } from "@Discord/Modules";
 
 function Status() {

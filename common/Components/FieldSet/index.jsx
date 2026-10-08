@@ -1,6 +1,6 @@
 import "./styles";
 import React from "@React";
-import Heading from "@Modules/Heading";
+import Heading from "@Components/Heading";
 import { classNameFactory } from "@Utils/css";
 
 const c = classNameFactory("fieldset");

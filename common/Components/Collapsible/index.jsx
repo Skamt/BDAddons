@@ -1,7 +1,7 @@
 import "./styles";
 import React from "@React";
 import { classNameFactory } from "@Utils/css";
-import Heading from "@Modules/Heading";
+import Heading from "@Components/Heading";
 import {ArrowIcon}from "@Components/Icon";
 
 const c = classNameFactory("collapsible");

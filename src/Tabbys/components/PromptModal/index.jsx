@@ -1,6 +1,6 @@
 import "./styles";
 import React, { useRef, useState } from "@React";
-import Heading from "@Modules/Heading";
+import Heading from "@Components/Heading";
 import { ManaTextButton, ManaButton } from "@Components/Button";
 import TextInput from "@Components/TextInput";
 import { clsx } from "@Utils";
