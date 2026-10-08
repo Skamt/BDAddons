@@ -92,12 +92,41 @@ function patch(type, object, key, callback) {
 // common/Patcher/index.js
 var after = (...args) => patch("after", ...args);
 
+// common/consts.js
+var UNDEFINED_OBJECT_OR_KEY = "Undefined object or key";
+var PATCH_ERROR = "Could not perform a patch";
+var MISSING_ARGUMENTS = "Missing arguments";
+
 // common/Webpack.jsx
 var Webpack = /* @__PURE__ */ (() => BdApi.Webpack)();
 var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
 var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
+var waitForModule = /* @__PURE__ */ (() => Webpack.waitForModule)();
 var getMangled = /* @__PURE__ */ (() => Webpack.getMangled)();
 var getStore = /* @__PURE__ */ (() => Webpack.getStore)();
+var abortController = /* @__PURE__ */ (() => {
+	Plugin_default.onStart(() => abortController = new AbortController());
+	Plugin_default.onStop(() => abortController.abort());
+	return new AbortController();
+})();
+
+function lazy(filter, { decFilter, ...options } = {}) {
+	if (!filter) return Logger_default.error(`[Webpack lazy] ${MISSING_ARGUMENTS}`);
+	const { promise, resolve } = Promise.withResolvers();
+	waitForModule(filter, {
+		...options,
+		raw: true,
+		fatal: false,
+		signal: abortController.signal
+	}).then((module2) => {
+		if (!module2) throw "waitForModule resolved with undefined";
+		const object = decFilter ? module2.declarations : module2.exports;
+		const key = getObjectKey(object, decFilter || filter);
+		if (!object || !key) throw UNDEFINED_OBJECT_OR_KEY;
+		resolve([object, key]);
+	}).catch((cause) => Logger_default.warn(new Error(PATCH_ERROR, { cause })));
+	return promise;
+}
 
 function reactRefMemoFilter(type, ...args) {
 	const filter = Filters.byStrings(...args);
@@ -109,27 +138,23 @@ function findKey(obj, filter) {
 	return key ? [obj, key] : [];
 }
 
-function getDeclarationAndKey(moduleFilter, declarationFilter, options = {}) {
-	const module2 = getModule(moduleFilter, { ...options, raw: true });
-	return findKey(module2.declarations, declarationFilter);
-}
-
 // common/Components/ErrorBoundary/index.jsx
 var ErrorBoundary_default = (props) => /* @__PURE__ */ React_default.createElement(BdApi.Components.ErrorBoundary, { ...props, name: Config_default?.info?.name });
 
 // src/MessagePopover/patches/allButtons.jsx
 var $$ = getModule(Filters.bySource("__unsupportedReactNodeAsText", ".me", "onTooltipShow"), { declarationFilter: Filters.byStrings(".me") });
 var useShiftKey = findKey(getModule(Filters.bySource(`addEventListener("mousemove"`, "delete", "size", "shiftKey")), () => true);
-var MiniPopover = getDeclarationAndKey(BdApi.Webpack.Filters.bySource("reply-self", "mark-unread"), Filters.byStrings("isExpanded", "isModeratorReportChannel"));
 var NP = getModule(Filters.bySource("reply-self", "mark-unread"), { declarationFilter: reactRefMemoFilter("type", "isEmojiFilteredOrLocked") });
 Plugin_default.onStart(() => {
 	after(...useShiftKey, () => true);
-	after(...MiniPopover, ({ args: [props], ret }) => {
-		ret.props.children.unshift(
-			/* @__PURE__ */
-			React_default.createElement(ErrorBoundary_default, null, /* @__PURE__ */ React_default.createElement(NP, { ...props }), /* @__PURE__ */ React_default.createElement($$, null))
-		);
-	});
+	lazy(Filters.bySource("reply-self", "mark-unread"), { decFilter: Filters.byStrings("isExpanded", "isModeratorReportChannel") }).then(
+		(MiniPopover) => after(...MiniPopover, ({ args: [props], ret }) => {
+			ret.props.children.unshift(
+				/* @__PURE__ */
+				React_default.createElement(ErrorBoundary_default, null, /* @__PURE__ */ React_default.createElement(NP, { ...props }), /* @__PURE__ */ React_default.createElement($$, null))
+			);
+		})
+	);
 });
 
 // MODULES-AUTO-LOADER:@Stores/EmojiStore
