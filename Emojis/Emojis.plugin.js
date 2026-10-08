@@ -96,6 +96,11 @@ var contextmenu_default = ContextMenu;
 // common/Utils/Object.js
 var map = (obj, fn) => Object.fromEntries(Object.entries(obj).map(([key, value]) => [key, fn({ value, key })]));
 
+function getInObject(object = {}, filter) {
+	for (const key in object)
+		if (filter(object[key])) return object[key];
+}
+
 function hasOwn(object, key) {
 	return object && key && key in object;
 }
@@ -107,12 +112,7 @@ var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
 var getMangled = /* @__PURE__ */ (() => Webpack.getMangled)();
 var getStore = /* @__PURE__ */ (() => Webpack.getStore)();
 
-function reactRefMemoFilter(type, ...args) {
-	const filter = Filters.byStrings(...args);
-	return (target3) => target3[type] && filter(target3[type]);
-}
-
-// common/DiscordModules/zustand.js
+// common/Discord/zustand.js
 var zustand = /* @__PURE__ */ (() => getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
 	_: Filters.byStrings("subscribe"),
 	zustand: () => true
@@ -572,7 +572,7 @@ StylesLoader_default.push(`.emoji-list-container {
 }`);
 
 // common/Components/GridScroller/index.jsx
-var GridScroller = getModule(reactRefMemoFilter("render", "columns", "getSectionHeight"), { searchExports: true });
+var GridScroller = getInObject(getModule(Filters.bySource("columns", "getSectionHeight", "ResizeObserver", "forceUpdateOnChunkChange")), () => true);
 var GridScroller_default = GridScroller || function GridScrollerFallback(props) {
 	return /* @__PURE__ */ React_default.createElement("div", { ...props });
 };
@@ -589,8 +589,11 @@ var TextInput_default = TextInput || function TextInputFallback(props) {
 	));
 };
 
-// MODULES-AUTO-LOADER:@Modules/Heading
-var Heading_default = /* @__PURE__ */ (() => getModule((a) => a?.render?.toString().includes("data-excessive-heading-level"), { searchExports: true }))();
+// common/Components/Heading/index.jsx
+var Heading = getInObject(getModule(Filters.bySource('text":', 'headin":', "data-excessive-heading-level", "heading-sm/normal")), Filters.byStrings("data-excessive-heading-level"));
+var Heading_default = Heading || function({ tag, ...rest }) {
+	return React_default.createElement(tag, rest);
+};
 
 // common/Components/Icon/index.jsx
 function svg(svgProps, ...paths) {
@@ -673,7 +676,7 @@ function EmojisComponent() {
 		setWidth(node.clientWidth);
 	}, []);
 	useEffect(() => {
-		scrollerRef?.current?.scrollToTop();
+		scrollerRef?.current?.scrollToTop?.();
 	}, [val]);
 	return /* @__PURE__ */ React_default.createElement(
 		"div", {
