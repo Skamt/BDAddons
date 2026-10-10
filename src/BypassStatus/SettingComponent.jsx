@@ -83,25 +83,25 @@ export default () => (
 				
 				{
 					border: true,
-					note: "Only get notified for messages that mentions you",
-					description: "Mentions only",
+					description: "Only get notified for messages that mentions you",
+					label: "Mentions only",
 					setting: Settings.mentionOnly
 				},{
 					border: true,
-					note: "Allow selected users to bypass status outside of DMs too (acts like a channel/guild bypass, but it's for all messages sent by the selected users)",
-					description: "Allow outside of DMs",
+					description: "Allow selected users to bypass status outside of DMs too (acts like a channel/guild bypass, but it's for all messages sent by the selected users)",
+					label: "Allow outside of DMs",
 					setting: Settings.allowOutsideOfDms
 				},
 				{
 					border: true,
-					note: "Whether the notification sound should be played",
-					description: "Notification sound",
+					description: "Whether the notification sound should be played",
+					label: "Notification sound",
 					setting: Settings.notificationSound
 				},
 				{
 					border: true,
-					note: "Respect silent pings (@silent / suppress notifications)",
-					description: "Respect silent pings",
+					description: "Respect silent pings (@silent / suppress notifications)",
+					label: "Respect silent pings",
 					setting: Settings.respectSilentPings
 				}
 			].map(SettingSwtich)}

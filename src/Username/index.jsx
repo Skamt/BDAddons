@@ -56,7 +56,7 @@ Plugin.onStart(() => {
 Plugin.getSettingsPanel = () => () =>
 	[
 		{
-			description: "Show user ID",
+			label: "Show user ID",
 			setting: Settings.showId
 		}
 	].map(SettingSwtich);

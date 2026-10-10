@@ -53,25 +53,25 @@ Plugin.getSettingsPanel = () => () =>
 	[
 		{
 			border: true,
-			description: "Domain prompt",
-			note: "Remove the untrusted domain prompt when opening links",
+			label: "Domain prompt",
+			description: "Remove the untrusted domain prompt when opening links",
 			setting: Settings.domain
 		},
 		{
 			border: true,
-			description: "Download prompt",
-			note: "Remove the 'Potentially Dangerous Download' prompt when opening links",
+			label: "Download prompt",
+			description: "Remove the 'Potentially Dangerous Download' prompt when opening links",
 			setting: Settings.file
 		},
 		{
 			border: true,
-			description: "Server delete prompt",
-			note: "Removes the enter server name prompt when deleting a server",
+			label: "Server delete prompt",
+			description: "Removes the enter server name prompt when deleting a server",
 			setting: Settings.noDeleteSafety
 		},
 		{
-			description: "Server delete confirm",
-			note: "Show a simpler confirm prompt when deleting a server",
+			label: "Server delete confirm",
+			description: "Show a simpler confirm prompt when deleting a server",
 			setting: Settings.confirmModal
 		}
 	].map(SettingSwtich);

@@ -8,12 +8,12 @@ export default () => {
 			{[
 				{
 					setting: Settings.autoloadedChannelIndicator,
-					description: "Auto load indicator.",
+					label: "Auto load indicator.",
 					note: "Whether or not to show an indicator for channels set to auto load",
 				},
-				{ setting: Settings.lazyLoadDMs, description: "Lazy load DMs." },
-				{ setting: Settings.lazyLoadForum, description: "Lazy load Forums." },
-				{ setting: Settings.lazyLoadVoice, description: "Lazy load Voice channels." },
+				{ setting: Settings.lazyLoadDMs, label: "Lazy load DMs." },
+				{ setting: Settings.lazyLoadForum, label: "Lazy load Forums." },
+				{ setting: Settings.lazyLoadVoice, label: "Lazy load Voice channels." },
 			].map(SettingSwtich)}
 		</FieldSet>
 	);

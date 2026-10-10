@@ -1,5 +1,4 @@
 import EmojiStore from "@Stores/EmojiStore";
-import ErrorBoundary from "@Components/ErrorBoundary";
 import Plugin from "@common/Plugin";
 import { after } from "@common/Patcher";
 import Settings from "@Settings";

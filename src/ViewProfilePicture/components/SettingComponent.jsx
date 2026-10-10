@@ -11,14 +11,14 @@ function SettingComponent() {
 				{	
 					border:true,
 					setting: Settings.showOnHover,
-					note: "By default hide ViewProfilePicture button and show on hover.",
-					description: "Show on hover",
+					description: "By default hide ViewProfilePicture button and show on hover.",
+					label: "Show on hover",
 				},
 
 				{
 					setting: Settings.bannerColor,
-					note: "Always include banner color in carousel, even if a banner is present.",
-					description: "Include banner color.",
+					description: "Always include banner color in carousel, even if a banner is present.",
+					label: "Include banner color.",
 				},
 			].map(SettingSwtich)}
 		</FieldSet>

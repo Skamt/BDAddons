@@ -41,31 +41,31 @@ export default function SettingComponent() {
 					{[
 						{
 							setting: Settings.player,
-							description: "Enable/Disable player."
+							label: "Enable/Disable player."
 						},
 						{
 							setting: Settings.enableListenAlong,
-							description: "Enables/Disable listen along without premium."
+							label: "Enables/Disable listen along without premium."
 						},
 						{
 							setting: Settings.activity,
-							description: "Modify Spotify activity."
+							label: "Modify Spotify activity."
 						},
 						{
 							setting: Settings.activityIndicator,
-							description: "Show user's Spotify activity in chat."
+							label: "Show user's Spotify activity in chat."
 						},
 						{
 							setting: Settings.playerCompactMode,
-							description: "Player compact mode"
+							label: "Player compact mode"
 						},
 						{
 							setting: Settings.playerBannerBackground,
-							description: "Use the banner as background for the player."
+							label: "Use the banner as background for the player."
 						},
 						{
 							setting: Settings.embedBannerBackground,
-							description: "Use the banner as background for the embed."
+							label: "Use the banner as background for the embed."
 						}
 					].map(SettingSwtich)}
 				</FieldSet>

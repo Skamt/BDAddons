@@ -8,7 +8,7 @@ export default function SettingComponent() {
 	return [
 		{
 			setting: Settings.previewDefaultState,
-			description: "Preview open by default."
+			label: "Preview open by default."
 		}
 	].map(SettingSwtich);
 }

@@ -2,4 +2,4 @@ release
 /node_modules
 *.TODO
 .env
-_*
+*_*

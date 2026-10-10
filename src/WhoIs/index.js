@@ -42,7 +42,7 @@ Plugin.onStart(() => {
 Plugin.getSettingsPanel = () => () =>
 	[
 		{
-			description: "Auto load unknown users",
+			label: "Auto load unknown users",
 			setting: Settings.autoload
 		}
 	].map(SettingSwtich);

@@ -10,11 +10,11 @@ Plugin.getSettingsPanel = () => () => (
 	<FieldSet contentGap={8}>
 		{[
 			{
-				description: "Organizes Settings contextmenu",
+				label: "Organizes Settings contextmenu",
 				setting: Settings.organizeMenu
 			},
 			{
-				description: "Disable the crossfade animation",
+				label: "Disable the crossfade animation",
 				setting: Settings.disableFade
 			}
 		].map(SettingSwtich)}

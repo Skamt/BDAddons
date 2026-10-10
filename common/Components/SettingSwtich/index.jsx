@@ -3,7 +3,7 @@ import Settings from "@Settings";
 import Switch from "@Components/Switch";
 import Divider from "@Components/Divider";
 
-export default function SettingSwtich({ setting, note, border = false, description, ...rest }) {
+export default function SettingSwtich({ setting, label, border = false, description, ...rest }) {
 	const val = Settings(setting.get);
 	return (
 		<>
@@ -11,8 +11,8 @@ export default function SettingSwtich({ setting, note, border = false, descripti
 				{...rest}
 				hasIcon={true}
 				checked={val}
-				label={description || setting.key}
-				description={note}
+				label={label || setting.key}
+				description={description}
 				onChange={setting.set}
 			/>
 			{border && <Divider gap={15} />}

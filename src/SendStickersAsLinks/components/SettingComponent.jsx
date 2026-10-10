@@ -32,25 +32,25 @@ export default () => {
 				{
 					border: true,
 					setting: Settings.sendDirectly,
-					description: "Send Directly",
-					note: "Send the sticker link in a message directly instead of putting it in the chat box."
+					label: "Send Directly",
+					description: "Send the sticker link in a message directly instead of putting it in the chat box."
 				},
 				{
 					border: true,
 					setting: Settings.ignoreEmbedPermissions,
-					description: "Ignore Embed Permissions",
-					note: "Send sticker links regardless of embed permissions, meaning links will not turn into images."
+					label: "Ignore Embed Permissions",
+					description: "Send sticker links regardless of embed permissions, meaning links will not turn into images."
 				},
 				{
 					border: true,
 					setting: Settings.shouldSendAnimatedStickers,
-					description: "Send animated stickers",
-					note: "Animated stickers do not animate, sending them will only send the first picture of the animation. (still useful)"
+					label: "Send animated stickers",
+					description: "Animated stickers do not animate, sending them will only send the first picture of the animation. (still useful)"
 				},
 				{
 					border: true,
 					setting: Settings.shouldHighlightAnimated,
-					description: "Highlight animated stickers"
+					label: "Highlight animated stickers"
 				}
 			].map(SettingSwtich)}
 			<StickerSize />

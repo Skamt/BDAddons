@@ -16,12 +16,12 @@ export default function SettingComponent() {
 					<Collapsible title="toggles">
 						<FieldSet contentGap={8}>
 							{[
-								{ border: true, description: "Wrap Bookmarks", setting: Settings.bookmarkOverflowWrap, note: "Wrap overflowing bookmarks instead of clamping them into a overflow menu" },
-								{ description: "Show/Hide Tabbar", setting: Settings.showTabbar },
-								{ description: "Show/Hide Bookmarkbar", setting: Settings.showBookmarkbar },
-								{ description: "Show/Hide Titlebar", setting: Settings.keepTitle },
-								{ description: "Show/Hide privacy mode", setting: Settings.privacyMode },
-								{ description: "Show/Hide SettingsButton", setting: Settings.showSettingsButton }
+								{ border: true, label: "Wrap Bookmarks", setting: Settings.bookmarkOverflowWrap, description: "Wrap overflowing bookmarks instead of clamping them into a overflow menu" },
+								{ label: "Show/Hide Tabbar", setting: Settings.showTabbar },
+								{ label: "Show/Hide Bookmarkbar", setting: Settings.showBookmarkbar },
+								{ label: "Show/Hide Titlebar", setting: Settings.keepTitle },
+								{ label: "Show/Hide privacy mode", setting: Settings.privacyMode },
+								{ label: "Show/Hide SettingsButton", setting: Settings.showSettingsButton }
 							].map(SettingSwtich)}
 						</FieldSet>
 					</Collapsible>
@@ -65,10 +65,10 @@ export default function SettingComponent() {
 								title={type}>
 								<FieldSet contentGap={5}>
 									{[
-										{ description: "Unreads", setting: Settings[`show${type}Unreads`] },
-										{ description: "Pings", setting: Settings[`show${type}Pings`] },
-										{ description: "Typing", setting: Settings[`show${type}Typing`] },
-										{ description: "Highlight Unread", setting: Settings[`highlight${type}Unread`] }
+										{ label: "Unreads", setting: Settings[`show${type}Unreads`] },
+										{ label: "Pings", setting: Settings[`show${type}Pings`] },
+										{ label: "Typing", setting: Settings[`show${type}Typing`] },
+										{ label: "Highlight Unread", setting: Settings[`highlight${type}Unread`] }
 									].map(SettingSwtich)}
 								</FieldSet>
 							</Collapsible>
@@ -79,9 +79,9 @@ export default function SettingComponent() {
 				<Collapsible title="Functionality">
 					<FieldSet contentGap={8}>
 						{[
-							{ setting: Settings.ctrlClickChannel, description: "Ctrl+Click Channel to open in new tab" },
-							{ setting: Settings.bookmarkOverflowWrap, description: "Wrap Bookmarks", note: "Wrap overflowing bookmarks instead of clamping them into a overflow menu" },
-							{ setting: Settings.tabSwitch, description: "Enable switch keybinds", note: "Switch between channels using keybinds --  switch right [Ctrl+Tab] / switch left [Ctrl+Shift+Tab]" }
+							{ setting: Settings.ctrlClickChannel, label: "Ctrl+Click Channel to open in new tab" },
+							{ setting: Settings.bookmarkOverflowWrap, label: "Wrap Bookmarks", description: "Wrap overflowing bookmarks instead of clamping them into a overflow menu" },
+							{ setting: Settings.tabSwitch, label: "Enable switch keybinds", description: "Switch between channels using keybinds --  switch right [Ctrl+Tab] / switch left [Ctrl+Shift+Tab]" }
 						].map(SettingSwtich)}
 					</FieldSet>
 				</Collapsible>

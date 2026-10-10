@@ -51,7 +51,7 @@ export default function EmojisComponent() {
 	}, []);
 
 	useEffect(() => {
-		scrollerRef?.current?.scrollToTop();
+		scrollerRef?.current?.scrollToTop?.();
 	}, [val]);
 
 	return (
