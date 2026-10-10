@@ -60,8 +60,9 @@ var Plugin_default = {
 };
 
 // common/React.jsx
-var React2 = /* @__PURE__ */ (() => BdApi.React)();
-var React_default = React2;
+var React = /* @__PURE__ */ (() => BdApi.React)();
+var React_default = React;
+var NoopComponent = () => null;
 
 // common/Utils/Object.js
 var map = (obj, fn) => Object.fromEntries(Object.entries(obj).map(([key, value]) => [key, fn({ value, key })]));
@@ -69,6 +70,11 @@ var map = (obj, fn) => Object.fromEntries(Object.entries(obj).map(([key, value])
 function getObjectKey(object = {}, filter) {
 	for (const key in object)
 		if (filter(object[key])) return key;
+}
+
+function getInObject(object = {}, filter) {
+	for (const key in object)
+		if (filter(object[key])) return object[key];
 }
 
 function hasOwn(object, key) {
@@ -96,6 +102,7 @@ var after = (...args) => patch("after", ...args);
 var UNDEFINED_OBJECT_OR_KEY = "Undefined object or key";
 var PATCH_ERROR = "Could not perform a patch";
 var MISSING_ARGUMENTS = "Missing arguments";
+var LAZY_DISCORD_COMPONENT_WRAPPER = "LazyDiscordComponentWrapper";
 
 // common/Webpack.jsx
 var Webpack = /* @__PURE__ */ (() => BdApi.Webpack)();
@@ -104,6 +111,7 @@ var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
 var waitForModule = /* @__PURE__ */ (() => Webpack.waitForModule)();
 var getMangled = /* @__PURE__ */ (() => Webpack.getMangled)();
 var getStore = /* @__PURE__ */ (() => Webpack.getStore)();
+var getByKeys = /* @__PURE__ */ (() => Webpack.getByKeys)();
 var abortController = /* @__PURE__ */ (() => {
 	Plugin_default.onStart(() => abortController = new AbortController());
 	Plugin_default.onStop(() => abortController.abort());
@@ -128,6 +136,25 @@ function lazy(filter, { decFilter, ...options } = {}) {
 	return promise;
 }
 
+function Suspended({ promise, fallback, ...props }) {
+	const comp = React_default.use(promise);
+	if (comp) return React_default.createElement(comp, props);
+	return fallback;
+}
+
+function waitForComponent(filter, options, Fallback = NoopComponent) {
+	const promise = waitForModule(filter, options);
+	const placeHolderComponent = (props) => /* @__PURE__ */ React_default.createElement(React_default.Suspense, { fallback: /* @__PURE__ */ React_default.createElement(Fallback, null) }, /* @__PURE__ */ React_default.createElement(
+		Suspended, {
+			...props,
+			fallback: /* @__PURE__ */ React_default.createElement(Fallback, null),
+			promise
+		}
+	));
+	placeHolderComponent.displayName = LAZY_DISCORD_COMPONENT_WRAPPER;
+	return placeHolderComponent;
+}
+
 function reactRefMemoFilter(type, ...args) {
 	const filter = Filters.byStrings(...args);
 	return (target2) => target2[type] && filter(target2[type]);
@@ -140,25 +167,6 @@ function findKey(obj, filter) {
 
 // common/Components/ErrorBoundary/index.jsx
 var ErrorBoundary_default = (props) => /* @__PURE__ */ React_default.createElement(BdApi.Components.ErrorBoundary, { ...props, name: Config_default?.info?.name });
-
-// src/MessagePopover/patches/allButtons.jsx
-var $$ = getModule(Filters.bySource("__unsupportedReactNodeAsText", ".me", "onTooltipShow"), { declarationFilter: Filters.byStrings(".me") });
-var useShiftKey = findKey(getModule(Filters.bySource(`addEventListener("mousemove"`, "delete", "size", "shiftKey")), () => true);
-var NP = getModule(Filters.bySource("reply-self", "mark-unread"), { declarationFilter: reactRefMemoFilter("type", "isEmojiFilteredOrLocked") });
-Plugin_default.onStart(() => {
-	after(...useShiftKey, () => true);
-	lazy(Filters.bySource("reply-self", "mark-unread"), { decFilter: Filters.byStrings("isExpanded", "isModeratorReportChannel") }).then(
-		(MiniPopover) => after(...MiniPopover, ({ args: [props], ret }) => {
-			ret.props.children.unshift(
-				/* @__PURE__ */
-				React_default.createElement(ErrorBoundary_default, null, /* @__PURE__ */ React_default.createElement(NP, { ...props }), /* @__PURE__ */ React_default.createElement($$, null))
-			);
-		})
-	);
-});
-
-// MODULES-AUTO-LOADER:@Stores/EmojiStore
-var EmojiStore_default = /* @__PURE__ */ (() => getStore("EmojiStore"))();
 
 // common/Discord/zustand.js
 var zustand = /* @__PURE__ */ (() => getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
@@ -200,6 +208,26 @@ var Settings_default = /* @__PURE__ */ (() => {
 	return SettingsStore;
 })();
 
+// src/MessagePopover/patches/allButtons.jsx
+var PopoverClasses = getByKeys("separator", "popover");
+var useShiftKey = findKey(getModule(Filters.bySource(`addEventListener("mousemove"`, `addEventListener("blur"`, "useState")), () => true);
+var NP = waitForComponent(Filters.bySource("reply-self", "mark-unread"), { declarationFilter: reactRefMemoFilter("type", "isEmojiFilteredOrLocked") });
+Plugin_default.onStart(() => {
+	after(...useShiftKey, () => Settings_default.state.showAll);
+	lazy(Filters.bySource("reply-self", "mark-unread"), { decFilter: Filters.byStrings("isExpanded", "isModeratorReportChannel") }).then(
+		(MiniPopover) => after(...MiniPopover, ({ args: [props], ret }) => {
+			if (!Settings_default.state.showAll) return ret;
+			ret.props.children.unshift(
+				/* @__PURE__ */
+				React_default.createElement(ErrorBoundary_default, null, /* @__PURE__ */ React_default.createElement(NP, { ...props }), /* @__PURE__ */ React_default.createElement("div", { className: PopoverClasses.separator }))
+			);
+		})
+	);
+});
+
+// MODULES-AUTO-LOADER:@Stores/EmojiStore
+var EmojiStore_default = /* @__PURE__ */ (() => getStore("EmojiStore"))();
+
 // src/MessagePopover/patches/moreReacts.js
 var DisambiguatedEmojiContexPrototype = EmojiStore_default.getDisambiguatedEmojiContext()?.constructor.prototype;
 Plugin_default.onStart(() => {
@@ -213,8 +241,18 @@ Plugin_default.onStart(() => {
 	});
 });
 
-// MODULES-AUTO-LOADER:@Modules/Slider
-var Slider_default = /* @__PURE__ */ (() => getModule(Filters.byPrototypeKeys("renderMark"), { searchExports: true }))();
+// common/Components/Switch/index.jsx
+var Switch_default = getMangled(Filters.bySource("auxiliaryContentPosition", "hasIcon"), {
+	Switch: () => true
+})?.Switch || function SwitchComponentFallback(props) {
+	return /* @__PURE__ */ React_default.createElement("div", { style: { color: "#fff" } }, props.label, /* @__PURE__ */ React_default.createElement(
+		"input", {
+			type: "checkbox",
+			checked: props.checked,
+			onChange: (e) => props.onChange(e.target.checked)
+		}
+	));
+};
 
 // common/Utils/StylesLoader.js
 var styleLoader = {
@@ -269,6 +307,24 @@ Divider.direction = {
 	VERTICAL: "vertical"
 };
 
+// common/Components/SettingSwtich/index.jsx
+function SettingSwtich({ setting, label, border = false, description, ...rest }) {
+	const val = Settings_default(setting.get);
+	return /* @__PURE__ */ React_default.createElement(React_default.Fragment, null, /* @__PURE__ */ React_default.createElement(
+		Switch_default, {
+			...rest,
+			hasIcon: true,
+			checked: val,
+			label: label || setting.key,
+			description,
+			onChange: setting.set
+		}
+	), border && /* @__PURE__ */ React_default.createElement(Divider, { gap: 15 }));
+}
+
+// MODULES-AUTO-LOADER:@Modules/Slider
+var Slider_default = /* @__PURE__ */ (() => getModule(Filters.byPrototypeKeys("renderMark"), { searchExports: true }))();
+
 // common/Components/SettingSlider/index.jsx
 function SettingSlider({ setting, border, processValue = Math.round, label, description, ...props }) {
 	const val = Settings_default(setting.get);
@@ -284,10 +340,89 @@ function SettingSlider({ setting, border, processValue = Math.round, label, desc
 	), border && /* @__PURE__ */ React_default.createElement(Divider, null));
 }
 
-// src/MessagePopover/index.js
-var sizes = [0, 5, 10, 15, 20];
+// common/Components/FieldSet/styles.css
+StylesLoader_default.push(`.fieldset-container {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+
+.fieldset-label {
+	margin-bottom: 12px;
+}
+
+.fieldset-description {
+	margin-bottom: 12px;
+}
+
+.fieldset-label + .fieldset-description{
+	margin-top:-8px;
+	margin-bottom: 0;
+}
+
+.fieldset-content {
+	display: flex;
+	width: 100%;
+	justify-content: flex-start;
+}
+
+.fieldset-content.fieldset-horizontal {
+	flex-direction: row;
+}
+
+.fieldset-content.fieldset-vertical {
+	flex-direction: column;
+}`);
+
+// common/Components/Heading/index.jsx
+var Heading = getInObject(getModule(Filters.bySource('text":', 'headin":', "data-excessive-heading-level", "heading-sm/normal")), Filters.byStrings("data-excessive-heading-level"));
+var Heading_default = Heading || function({ tag, ...rest }) {
+	return React_default.createElement(tag, rest);
+};
+
+// common/Components/FieldSet/index.jsx
+var c2 = classNameFactory("fieldset");
+
+function FieldSet({ label, description, children, gap = 15, direction = FieldSet.direction.VERTICAL }) {
+	return /* @__PURE__ */ React_default.createElement("fieldset", { className: c2("container") }, label && /* @__PURE__ */ React_default.createElement(
+		Heading_default, {
+			className: c2("label"),
+			tag: "legend",
+			variant: "text-lg/medium"
+		},
+		label
+	), description && /* @__PURE__ */ React_default.createElement(
+		Heading_default, {
+			className: c2("description"),
+			variant: "text-sm/normal",
+			color: "text-secondary"
+		},
+		description
+	), /* @__PURE__ */ React_default.createElement(
+		"div", {
+			className: c2("content", direction),
+			style: { gap }
+		},
+		children
+	));
+}
+FieldSet.direction = {
+	HORIZONTAL: "horizontal",
+	VERTICAL: "vertical"
+};
+
+// src/MessagePopover/index.jsx
+var sizes = [...Array(13)].map((a, i) => i + 3);
 Plugin_default.getSettingsPanel = () => () => {
-	return /* @__PURE__ */ React.createElement(
+	return /* @__PURE__ */ React_default.createElement(FieldSet, null, /* @__PURE__ */ React_default.createElement(
+		SettingSwtich, {
+			setting: Settings_default.showAll,
+			border: true,
+			label: "Show all buttons",
+			description: "always show all buttons in message popover (without holding shift)"
+		}
+	), /* @__PURE__ */ React_default.createElement(
 		SettingSlider, {
 			setting: Settings_default.quickReactsAmount,
 			label: "Amount of Quick Reacts",
@@ -300,6 +435,6 @@ Plugin_default.getSettingsPanel = () => () => {
 			maxValue: sizes[sizes.length - 1],
 			onValueRender: Math.round
 		}
-	);
+	));
 };
 module.exports = () => Plugin_default;
