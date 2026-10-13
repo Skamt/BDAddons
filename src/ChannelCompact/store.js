@@ -3,9 +3,7 @@ import { create, subscribeWithSelector } from "@Discord/zustand";
 import { Data } from "@Api";
 import { shallow } from "@Utils";
 
-const initialState = {
-	channels: new Set()
-};
+const initialState = { channels: new Set() };
 
 const Store = create(subscribeWithSelector(() => initialState));
 export default Store;
@@ -36,7 +34,3 @@ Plugin.onStart(() => {
 	const channels = Data.load("channels") || [];
 	Store.setState({ channels: new Set(channels) });
 });
-
-window.Store = Store;
-
-

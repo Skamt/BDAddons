@@ -1,5 +1,6 @@
 import React, { NoopComponent, LazyComponent } from "@React";
 import Logger from "@Utils/Logger";
+import { Defer } from "@Utils";
 import { getObjectKey } from "@Utils/Object";
 import { MISSING_ARGUMENTS, UNDEFINED_OBJECT_OR_KEY, PATCH_ERROR, LAZY_DISCORD_COMPONENT_WRAPPER } from "@common/consts";
 import Plugin from "@common/Plugin";
@@ -22,10 +23,10 @@ let abortController = /*@__PURE__*/ (() => {
 	return new AbortController();
 })();
 
-export function lazy(filter, { decFilter, ...options } = {}) {
+export function lazy(filter, { sourceFilter, decFilter, ...options } = {}) {
 	if (!filter) return Logger.error(`[Webpack lazy] ${MISSING_ARGUMENTS}`);
 
-	const { promise, resolve } = Promise.withResolvers();
+	const defer = new Defer();
 	waitForModule(filter, {
 		...options,
 		raw: true,
@@ -36,14 +37,18 @@ export function lazy(filter, { decFilter, ...options } = {}) {
 			if (!module) throw "waitForModule resolved with undefined";
 
 			const object = decFilter ? module.declarations : module.exports;
-			const key = getObjectKey(object, decFilter || filter);
+			const key = getObjectKey(object, decFilter || sourceFilter || filter);
 			if (!object || !key) throw UNDEFINED_OBJECT_OR_KEY;
 
-			resolve([object, key]);
+			defer.success([object, key]);
+			defer.dispose();
 		})
-		.catch(cause => Logger.warn(new Error(PATCH_ERROR, { cause })));
+		.catch(cause => {
+			defer.dispose();
+			Logger.warn(new Error(PATCH_ERROR, { cause }));
+		});
 
-	return promise;
+	return { then: defer.then.bind(defer) };
 }
 
 function Suspended({ promise, fallback, ...props }) {

@@ -7,23 +7,15 @@ import Plugin from "@common/Plugin";
 import { insertChild } from "@React";
 import Store from "@/store";
 
-function ChannelCompact({ props, fn }) {
-	const compact = Store(() => Store.has(props.channel.id));
-	props.messageDisplayCompact = compact;
-	return React.createElement(fn, props);
-}
-
 Plugin.onStart(() => {
 	lazy(Filters.bySource("useConversationScroll"), { decFilter: Filters.byStrings("customUserThemeSettings") }).then(ChannelContent =>
 		instead(...ChannelContent, ({ args: [props], fn }) => {
+			const compact = Store(() => Store.has(props.channel.id));
+
 			return (
 				<ErrorBoundary
-					id="ChannelCompact"
 					fallback={React.createElement(fn, props)}>
-					<ChannelCompact
-						fn={fn}
-						props={props}
-					/>
+					{React.createElement(fn, Object.assign(props, { messageDisplayCompact: compact }))}
 				</ErrorBoundary>
 			);
 		})

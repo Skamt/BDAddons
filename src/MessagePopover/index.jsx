@@ -1,3 +1,4 @@
+import "./styles";
 import "./patches/*";
 import React from "@React";
 import Plugin from "@common/Plugin";

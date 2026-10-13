@@ -250,3 +250,15 @@ export const memoize = func => {
 		return cache.get(key);
 	};
 };
+
+export class Defer {
+	dispose() {
+		this.caller = null;
+	}
+	then(fn = nop) {
+		this.caller = fn;
+	}
+	success(payload) {
+		this.caller(payload);
+	}
+}

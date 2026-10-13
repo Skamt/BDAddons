@@ -63,7 +63,7 @@ export default function TabsScroller({ items, renderItem, shouldScroll, scrollTo
 
 	useEffect(() => {
 		// eslint-disable-next-line @eslint-react/web-api-no-leaked-timeout
-		setTimeout(() => scrollItemIntoView(scrollerNode, scrollTo), 0);
+		setTimeout(() => scrollItemIntoView(scrollerNode, scrollTo));
 	}, [scrollTo, scrollerNode, shouldScroll]);
 
 	function scrollDelta() {

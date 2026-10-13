@@ -1,0 +1,11 @@
+.messagepopover_separator {
+	border: 0;
+	font-size: 100%;
+	padding: 0;
+	outline: 0;
+	background: var(--border-subtle);
+	border-radius: 100px;
+	height: 24px;
+	margin: 2px 4px;
+	width: 1px;
+}
