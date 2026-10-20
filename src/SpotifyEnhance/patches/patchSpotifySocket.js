@@ -1,4 +1,4 @@
-import Logger from "@Utils/Logger";
+import {Logger} from "@Api";
 import Store from "@/store";
 import Plugin from "@common/Plugin";
 import { Filters, lazy } from "@Webpack";

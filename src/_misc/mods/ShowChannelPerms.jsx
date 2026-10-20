@@ -3,7 +3,7 @@ import ErrorBoundary from "@Components/ErrorBoundary";
 import Tooltip from "@Components/Tooltip";
 import UserStore from "@Stores/UserStore";
 import { Disposable } from "@Utils";
-import Logger from "@Utils/Logger";
+import {Logger} from "@Api";
 import { hasExternalEmojisPerms, hasEmbedPerms } from "@Utils/Permissions";
 import { Filters, getModuleAndKey } from "@Webpack";
 

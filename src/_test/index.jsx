@@ -5,7 +5,9 @@ import Plugin from "@common/Plugin";
 // import MessageStore from "@Stores/MessageStore";
 // import { after } from "@common/Patcher";
 // import { Filters, getDeclarationAndKey } from "@Webpack";
-// import { getUserName } from "@Utils/User";
+import { getUserName } from "@Utils/Discord";
+
+import { create } from "@common/structs/zustand";
 // import HoverPopout from "@Components/HoverPopout";
 // import useStateFromStores from "@Modules/useStateFromStores";
 
@@ -30,20 +32,39 @@ import Plugin from "@common/Plugin";
 // 	);
 // }
 
-Plugin.onStart(() => {
-	// after(...DirectMessageTooltip, ({ args: [{ channel }], ret }) => {
-	// 	// console.log(args,ret);
+// const Store = create(() => ({
+// 	"size": 32,
+// 	"tabMinWidth": 150,
+// 	"tabWidth": 250,
+// 	"showSettingsButton": true,
+// 	"showTabbar": true,
+// 	"showBookmarkbar": false,
+// 	"keepTitle": false,
+// 	"privacyMode": false,
 
-	// 	return (
-	// 		<HoverPopout
-	// 			spacing={12}
-	// 			align="top"
-	// 			position="right"
-	// 			popout={() => <DO channel={channel} />}>
-	// 			<div>{ret.props.children}</div>
-	// 		</HoverPopout>
-	// 	);
-	// });
-});
+// 	"bookmarkOverflowWrap": false,
+// 	"ctrlClickChannel": true,
+
+// 	"showTabUnreads": true,
+// 	"showTabPings": true,
+// 	"showTabTyping": true,
+// 	"highlightTabUnread": true,
+
+// 	"showBookmarkUnreads": true,
+// 	"showBookmarkPings": true,
+// 	"showBookmarkTyping": true,
+// 	"highlightBookmarkUnread": true,
+
+// 	"showFolderUnreads": true,
+// 	"showFolderPings": true,
+// 	"showFolderTyping": true,
+// 	"highlightFolderUnread": true,
+
+// 	"tabSwitch": false
+// }));
+
+
+// window.test = Store;
+Plugin.onStart(() => {});
 
 module.exports = () => Plugin;

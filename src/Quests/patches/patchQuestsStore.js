@@ -1,5 +1,5 @@
 // import { Patcher } from "@Api";
-// import Logger from "@Utils/Logger";
+// import {Logger} from "@Api";
 // import { Filters, getModule } from "@Webpack";
 // import QuestStore from "@Stores/QuestStore";
 // import Plugin from "@common/Plugin";

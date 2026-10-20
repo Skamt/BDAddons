@@ -1,5 +1,5 @@
 import { Patcher } from "@Api";
-import Logger from "@Utils/Logger";
+import {Logger} from "@Api";
 import { Disposable } from "@Utils";
 
 import MessageActions from "@Modules/MessageActions";

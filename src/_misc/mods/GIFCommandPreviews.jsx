@@ -1,6 +1,6 @@
 import ErrorBoundary from "@Components/ErrorBoundary";
 import HoverPopout from "@Components/HoverPopout";
-import Logger from "@Utils/Logger";
+import {Logger} from "@Api";
 import { copy, Disposable, nop } from "@Utils";
 import { Filters, getMangled, getModule } from "@Webpack";
 import { ContextMenu, Patcher } from "@Api";

@@ -14,3 +14,16 @@ export const classNameFactory =
 	(prefix = "", connector = "-") =>
 	(...args) =>
 		Array.from(transform(...args), name => `${prefix}${connector}${name}`).join(" ");
+
+
+// export function concateClassNames(...args) {
+// 	return args.filter(Boolean).join(" ");
+// }
+
+// export function clsx(prefix) {
+// 	return (...args) =>
+// 		args
+// 			.filter(Boolean)
+// 			.map(a => `${prefix}-${a}`)
+// 			.join(" ");
+// }

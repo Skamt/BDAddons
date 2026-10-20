@@ -8,12 +8,6 @@ import ErrorBoundary from "@Components/ErrorBoundary";
 
 export const ModalActions = getModule(a => a.useModalsStore);
 
-//  /*@__PURE__*/ getMangled("onCloseRequest:null!=", {
-// 	openModal: /*@__PURE__*/ Filters.byStrings("onCloseRequest:null!="),
-// 	closeModal: /*@__PURE__*/ Filters.byStrings(".setState", ".getState()["),
-// 	ModalStore: /*@__PURE__*/ Filters.byKeys("getState")
-// });
-
 export const Modals = /*@__PURE__*/ getMangled(/*@__PURE__*/ Filters.bySource("MODAL_ROOT", "transitionState"), {
 	ModalRoot: /*@__PURE__*/ Filters.byStrings("transitionState"),
 	ModalFooter: /*@__PURE__*/ Filters.byStrings(".HORIZONTAL_REVERSE"),
@@ -23,8 +17,6 @@ export const Modals = /*@__PURE__*/ getMangled(/*@__PURE__*/ Filters.bySource("M
 	Sizes: /*@__PURE__*/ a => a.DYNAMIC,
 	ModalCloseButton: Filters.byStrings("withCircleBackground")
 });
-
-// const _openModal = /*@__PURE__*/ getModule(/*@__PURE__*/Filters.byStrings("onCloseCallback", "onCloseRequest", "modalKey", "backdropStyle"), { searchExports: true });
 
 export const openModal = (children, tag, { className, ...modalRootProps } = {}) => {
 	const id = `${tag ? `${tag}-` : ""}modal`;
@@ -47,8 +39,6 @@ export const openModal = (children, tag, { className, ...modalRootProps } = {}) 
 	});
 };
 
-export function closeModal(id) {
-	ModalActions.closeModal(id);
-}
+export const closeModal = id => ModalActions.closeModal(id);
 
 export const openImageModal = /*@__PURE__*/ getMangled("Media Viewer Modal", { openImageModal: a => typeof a !== "string" });

@@ -1,6 +1,6 @@
 import SpotifyAPI from "@Utils/SpotifyAPI";
 import RefreshToken from "@Modules/RefreshToken";
-import Logger from "@Utils/Logger";
+import {Logger} from "@Api";
 import Toast from "@Utils/Toast";
 import DB from "./DB";
 import { promiseHandler } from "@Utils";

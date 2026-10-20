@@ -1,4 +1,4 @@
-import Logger from "@Utils/Logger";
+import {Logger} from "@Api";
 import { Disposable } from "@Utils";
 import { Patcher, React } from "@Api";
 import { reactRefMemoFilter, waitForModule } from "@Webpack";

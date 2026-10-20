@@ -1,7 +1,7 @@
 import { findInTree } from "@Api";
 import { after, afterOnce } from "@common/Patcher";
 import { Filters, getMangled, getModule } from "@Webpack";
-import Logger from "@Utils/Logger";
+import {Logger} from "@Api";
 import React from "@React";
 import ErrorBoundary from "@Components/ErrorBoundary";
 import EmojisList from "@/components/EmojisList";

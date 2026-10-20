@@ -6,7 +6,7 @@ import Timer from "@Utils/Timer";
 import { create, subscribeWithSelector } from "@Discord/zustand";
 import { shallow } from "@Utils";
 import { map } from "@Utils/Object";
-import Logger from "@Utils/Logger";
+import {Logger} from "@Api";
 import SpotifyAPIWrapper from "@/SpotifyAPIWrapper";
 import SpotifyAPI from "@Utils/SpotifyAPI";
 

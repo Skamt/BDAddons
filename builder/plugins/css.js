@@ -9,7 +9,7 @@ module.exports = function css() {
 			build.onLoad({ filter }, async ({ path }) => {
 				const file = await readFile(path, "utf-8");
 				return {
-					contents: !file ? "" :`import StylesLoader from "@Utils/StylesLoader";
+					contents: !file ? "" :`import StylesLoader from "@common/StylesLoader";
 				StylesLoader.push(\`${file}\`);`
 				};
 			});

@@ -1,7 +1,7 @@
 import { ContextMenu, Patcher, Data, React } from "@Api";
 import { copy, Disposable } from "@Utils";
 import Toast from "@Utils/Toast";
-import Logger from "@Utils/Logger";
+import {Logger} from "@Api";
 import GuildRoleStore from "@Stores/GuildRoleStore";
 import SelectedGuildStore from "@Stores/SelectedGuildStore";
 import GuildMemberStore from "@Stores/GuildMemberStore";

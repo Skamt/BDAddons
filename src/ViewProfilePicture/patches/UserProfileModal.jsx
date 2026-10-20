@@ -2,7 +2,7 @@ import React, { useMemo, insertChild } from "@React";
 import ErrorBoundary from "@Components/ErrorBoundary";
 import ErrorIcon from "@Components/icons/ErrorIcon";
 import Plugin from "@common/Plugin";
-import Logger from "@Utils/Logger";
+import {Logger} from "@Api";
 import { getNestedProp } from "@Utils/Object";
 import { Filters, lazy } from "@Webpack";
 import VPPButton from "../components/VPPButton";

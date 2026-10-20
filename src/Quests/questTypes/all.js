@@ -4,7 +4,7 @@ import { isQuestExpired, isQuestSupported, isQuestCompleted, isQuestAccepted } f
 import { sleep } from "@Utils";
 import { supportedTasks } from "@/consts";
 import Toast from "@Utils/Toast";
-import Logger from "@Utils/Logger";
+import {Logger} from "@Api";
 
 export default async function () {
 	const quests = [...QuestStore.quests.values()].filter(q => isQuestAccepted(q) && !isQuestExpired(q) && !isQuestCompleted(q) && isQuestSupported(q));

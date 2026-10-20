@@ -4,7 +4,7 @@ import ChannelStore from "@Stores/ChannelStore";
 import GuildMemberStore from "@Stores/GuildMemberStore";
 import SelectedChannelStore from "@Stores/SelectedChannelStore";
 import SelectedGuildStore from "@Stores/SelectedGuildStore";
-import Logger from "@Utils/Logger";
+import {Logger} from "@Api";
 import FetchUser from "@Modules/FetchUser";
 import {UserProfileActions} from "@Discord/Modules";
 

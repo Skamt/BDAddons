@@ -1,5 +1,4 @@
 import React from "@React";
-import ErrorBoundary from "@Components/ErrorBoundary";
 import { lazy, Filters } from "@Webpack";
 import { instead } from "@common/Patcher";
 import ContextMenu, { patch } from "@common/Patcher/contextmenu";
@@ -9,15 +8,9 @@ import Store from "@/store";
 
 Plugin.onStart(() => {
 	lazy(Filters.bySource("useConversationScroll"), { decFilter: Filters.byStrings("customUserThemeSettings") }).then(ChannelContent =>
-		instead(...ChannelContent, ({ args: [props], fn }) => {
+		instead(...ChannelContent, ({ context, args: [props], fn }) => {
 			const compact = Store(() => Store.has(props.channel.id));
-
-			return (
-				<ErrorBoundary
-					fallback={React.createElement(fn, props)}>
-					{React.createElement(fn, Object.assign(props, { messageDisplayCompact: compact }))}
-				</ErrorBoundary>
-			);
+			return fn.apply(context, [Object.assign(props, { messageDisplayCompact: compact })]);
 		})
 	);
 

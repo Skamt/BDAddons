@@ -1,5 +1,5 @@
 import { map } from "@common/Flux";
-import Logger from "@Utils/Logger";
+import {Logger} from "@Api";
 import Settings from "@Settings";
 import WindowStore from "@Stores/WindowStore";
 import UserStore from "@Stores/UserStore";

@@ -1,4 +1,4 @@
-import { getUserName } from "@Utils/User";
+import { getUserName } from "@Utils/Discord";;
 import GuildStore from "@Stores/GuildStore";
 import ChannelStore from "@Stores/ChannelStore";
 import SelectedChannelStore from "@Stores/SelectedChannelStore";

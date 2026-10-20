@@ -5,11 +5,9 @@ import { before } from "@common/Patcher";
 import { patch } from "@common/Patcher/contextmenu";
 import { getModuleAndKey, Filters } from "@Webpack";
 import _FetchUser from "@Modules/FetchUser";
-import Toast from "@Utils/Toast";
 import UserStore from "@Stores/UserStore";
-import { memoize } from "@Utils";
+import { showToast, queue, memoize } from "@Utils";
 import Settings from "@Settings";
-import { queue } from "@Utils/Tasks";
 import SettingSwtich from "@Components/SettingSwtich";
 
 const UserMention = getModuleAndKey(Filters.byStrings(".A.USER_MENTION),"));
@@ -27,10 +25,10 @@ Plugin.onStart(() => {
 		const MenuItem = BdApi.ContextMenu.buildItem({
 			label: "Load User",
 			action() {
-				if (UserStore.getUser(userId)) return Toast.info("User alreayd loaded");
+				if (UserStore.getUser(userId)) return showToast("info", "User alreayd loaded");
 				FetchUser(userId).then(
-					() => Toast.success("User Loaded!"),
-					() => Toast.error(`Could not load user: ${userId}`)
+					() => showToast("success", "User Loaded!"),
+					() => showToast("error", `Could not load user: ${userId}`)
 				);
 			}
 		});

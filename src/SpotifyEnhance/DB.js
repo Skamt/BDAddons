@@ -1,5 +1,5 @@
 import config from "@Config";
-import Logger from "@Utils/Logger";
+import {Logger} from "@Api";
 import Plugin from "@common/Plugin";
 
 const DB = new (class {

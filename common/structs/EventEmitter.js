@@ -1,4 +1,4 @@
-import Logger from "@Utils/Logger";
+import {Logger} from "@Api";
 
 export default class {
 	constructor() {

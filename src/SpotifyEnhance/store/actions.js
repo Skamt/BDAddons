@@ -1,4 +1,4 @@
-import Logger from "@Utils/Logger";
+import {Logger} from "@Api";
 import SpotifyAPIWrapper from "@/SpotifyAPIWrapper";
 import { sanitizeSpotifyLink } from "@/utils";
 import { promiseHandler } from "@Utils";

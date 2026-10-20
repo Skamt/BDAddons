@@ -2,7 +2,7 @@ import React from "@React";
 import { Patcher } from "@Api";
 import { reRender } from "@Utils";
 import ErrorBoundary from "@Components/ErrorBoundary";
-import Logger from "@Utils/Logger";
+import {Logger} from "@Api";
 import FloatingWindowContainer from "@/components/FloatingWindowContainer";
 import { getModuleAndKey } from "@Webpack";
 import Plugin from "@common/Plugin";

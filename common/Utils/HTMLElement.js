@@ -80,3 +80,4 @@ export function animate(property, element, to, options = {}, cb = () => {}) {
 	requestAnimationFrame(step);
 	return cancel;
 }
+

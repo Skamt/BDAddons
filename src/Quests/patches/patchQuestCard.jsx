@@ -1,6 +1,6 @@
 import { waitForModule, Filters } from "@Webpack";
 import { Patcher } from "@Api";
-import Logger from "@Utils/Logger";
+import {Logger} from "@Api";
 import Plugin from "@common/Plugin";
 import { getObjectKey } from "@Utils/Object";
 import { preventDefault } from "@Utils";

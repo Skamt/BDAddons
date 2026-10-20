@@ -1,5 +1,5 @@
 import { promiseHandler, buildUrl } from "@Utils";
-import Logger from "@Utils/Logger";
+import {Logger} from "@Api";
 const API_ENDPOINT = "https://api.spotify.com/v1";
 import { queue } from "@Utils/Tasks";
 

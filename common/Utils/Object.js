@@ -1,5 +1,8 @@
 export const map = (obj, fn) => Object.fromEntries(Object.entries(obj).map(([key, value]) => [key, fn({value, key})]));
-export const mapDeep = (obj, fn) => Object.entries(obj).reduce((a, [key, value]) => ((a[key] = typeof value === "object" && !Array.isArray(value) ? mapDeep(value, ({ path, ...rest }) => fn({ ...rest, path: `${key}.${path}` })) : fn({ value, path: key, key })), a), {});
+export const mapDeep = (obj, fn) => Object.entries(obj).reduce((a, [key, value]) => 
+	((a[key] = typeof value === "object" && !Array.isArray(value) ? mapDeep(value, 
+		({ path, ...rest }) => fn({ ...rest, path: `${key}.${path}` })) : 
+	fn({ value, path: key, key })), a), {});
 
 export function getObjectKey(object = {}, filter) {
 	for (const key in object) if (filter(object[key])) return key;

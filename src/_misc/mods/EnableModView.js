@@ -1,4 +1,4 @@
-import Logger from "@Utils/Logger";
+import {Logger} from "@Api";
 import PermissionStore from "@Stores/PermissionStore";
 import { Disposable } from "@Utils";
 import { isSelf } from "@Utils/User";

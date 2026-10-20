@@ -1,5 +1,6 @@
 import { Color } from "@Discord/Modules";
-import {  fit } from "@Utils";
+import { fit } from "@Utils";
+
 export function colorToImg(c) {
 	const canvas = document.createElement("canvas");
 	const width = window.innerWidth * 0.7;
@@ -12,6 +13,6 @@ export function colorToImg(c) {
 
 	return {
 		url: canvas.toDataURL(),
-		...fit({ width, height }),
+		...fit({ width, height })
 	};
 }
