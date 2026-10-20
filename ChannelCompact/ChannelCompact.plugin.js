@@ -2,7 +2,7 @@
  * @runAt idle
  * @name ChannelCompact
  * @description Enable compact messages per channel
- * @version 1.0.0
+ * @version 1.0.1
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/ChannelCompact
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/ChannelCompact/ChannelCompact.plugin.js
@@ -12,7 +12,7 @@
 var Config_default = {
 	"info": {
 		"name": "ChannelCompact",
-		"version": "1.0.0",
+		"version": "1.0.1",
 		"description": "Enable compact messages per channel",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/ChannelCompact/ChannelCompact.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/ChannelCompact",
@@ -33,22 +33,26 @@ var Logger = /* @__PURE__ */ (() => Api.Logger)();
 var add = (array, item, index) => array.toSpliced(index ?? array.length, 0, item);
 
 // common/React.jsx
-var React = /* @__PURE__ */ (() => BdApi.React)();
-var React_default = React;
-
 function insertChild(el, child, index) {
 	if (!el?.props?.children || !child) return;
 	const children = Array.isArray(el.props.children) ? el.props.children : [el.props.children];
 	el.props.children = add(children, child, index);
 }
 
-// common/Components/ErrorBoundary/index.jsx
-var ErrorBoundary_default = (props) => /* @__PURE__ */ React_default.createElement(BdApi.Components.ErrorBoundary, { ...props, name: Config_default?.info?.name });
+// common/Utils/async.js
+var Defer = class {
+	dispose() {
+		this.caller = null;
+	}
+	then(fn = nop) {
+		this.caller = fn;
+	}
+	success(payload) {
+		this.caller(payload);
+	}
+};
 
-// common/Utils/Logger.js
-var Logger_default = Logger;
-
-// common/Utils/Object.js
+// common/Utils/object.js
 function getObjectKey(object = {}, filter) {
 	for (const key in object)
 		if (filter(object[key])) return key;
@@ -56,6 +60,17 @@ function getObjectKey(object = {}, filter) {
 
 function hasOwn(object, key) {
 	return object && key && key in object;
+}
+
+// common/Utils/utils.js
+function shallow(objA, objB) {
+	if (Object.is(objA, objB)) return true;
+	if (typeof objA !== "object" || objA === null || typeof objB !== "object" || objB === null) return false;
+	const keysA = Object.keys(objA);
+	if (keysA.length !== Object.keys(objB).length) return false;
+	for (let i = 0; i < keysA.length; i++)
+		if (!Object.prototype.hasOwnProperty.call(objB, keysA[i]) || !Object.is(objA[keysA[i]], objB[keysA[i]])) return false;
+	return true;
 }
 
 // common/consts.js
@@ -71,7 +86,7 @@ function wrap(handler) {
 		try {
 			handler.apply(null, e);
 		} catch (err) {
-			Logger_default.error(`Could not run [${e.type}] handler`, { handler }, "\n", err);
+			Logger.error(`Could not run [${e.type}] handler`, { handler }, "\n", err);
 		}
 	};
 }
@@ -98,9 +113,9 @@ var abortController = /* @__PURE__ */ (() => {
 	return new AbortController();
 })();
 
-function lazy(filter, { decFilter, ...options } = {}) {
-	if (!filter) return Logger_default.error(`[Webpack lazy] ${MISSING_ARGUMENTS}`);
-	const { promise, resolve } = Promise.withResolvers();
+function lazy(filter, { sourceFilter, decFilter, ...options } = {}) {
+	if (!filter) return Logger.error(`[Webpack lazy] ${MISSING_ARGUMENTS}`);
+	const defer = new Defer();
 	waitForModule(filter, {
 		...options,
 		raw: true,
@@ -109,11 +124,15 @@ function lazy(filter, { decFilter, ...options } = {}) {
 	}).then((module2) => {
 		if (!module2) throw "waitForModule resolved with undefined";
 		const object = decFilter ? module2.declarations : module2.exports;
-		const key = getObjectKey(object, decFilter || filter);
+		const key = getObjectKey(object, decFilter || sourceFilter || filter);
 		if (!object || !key) throw UNDEFINED_OBJECT_OR_KEY;
-		resolve([object, key]);
-	}).catch((cause) => Logger_default.warn(new Error(PATCH_ERROR, { cause })));
-	return promise;
+		defer.success([object, key]);
+		defer.dispose();
+	}).catch((cause) => {
+		defer.dispose();
+		Logger.warn(new Error(PATCH_ERROR, { cause }));
+	});
+	return { then: defer.then.bind(defer) };
 }
 
 // common/Patcher/shared.js
@@ -163,21 +182,8 @@ function create(initialState2) {
 	return Store2;
 }
 
-// common/Utils/index.js
-function shallow(objA, objB) {
-	if (Object.is(objA, objB)) return true;
-	if (typeof objA !== "object" || objA === null || typeof objB !== "object" || objB === null) return false;
-	const keysA = Object.keys(objA);
-	if (keysA.length !== Object.keys(objB).length) return false;
-	for (let i = 0; i < keysA.length; i++)
-		if (!Object.prototype.hasOwnProperty.call(objB, keysA[i]) || !Object.is(objA[keysA[i]], objB[keysA[i]])) return false;
-	return true;
-}
-
 // src/ChannelCompact/store.js
-var initialState = {
-	channels: /* @__PURE__ */ new Set()
-};
+var initialState = { channels: /* @__PURE__ */ new Set() };
 var Store = create(subscribeWithSelector(() => initialState));
 var store_default = Store;
 Object.assign(Store, {
@@ -205,30 +211,13 @@ Plugin_default.onStart(() => {
 	const channels = Data.load("channels") || [];
 	Store.setState({ channels: new Set(channels) });
 });
-window.Store = Store;
 
-// src/ChannelCompact/index.js
-function ChannelCompact({ props, fn }) {
-	const compact = store_default(() => store_default.has(props.channel.id));
-	props.messageDisplayCompact = compact;
-	return React_default.createElement(fn, props);
-}
+// src/ChannelCompact/index.jsx
 Plugin_default.onStart(() => {
 	lazy(Filters.bySource("useConversationScroll"), { decFilter: Filters.byStrings("customUserThemeSettings") }).then(
-		(ChannelContent) => instead(...ChannelContent, ({ args: [props], fn }) => {
-			return /* @__PURE__ */ React_default.createElement(
-				ErrorBoundary_default, {
-					id: "ChannelCompact",
-					fallback: React_default.createElement(fn, props)
-				},
-				/* @__PURE__ */
-				React_default.createElement(
-					ChannelCompact, {
-						fn,
-						props
-					}
-				)
-			);
+		(ChannelContent) => instead(...ChannelContent, ({ context, args: [props], fn }) => {
+			const compact = store_default(() => store_default.has(props.channel.id));
+			return fn.apply(context, [Object.assign(props, { messageDisplayCompact: compact })]);
 		})
 	);
 	patch2("channel-context", (retVal, { channel }) => {

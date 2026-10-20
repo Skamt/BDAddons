@@ -32,7 +32,6 @@ var Patcher = /* @__PURE__ */ (() => Api.Patcher)();
 var ContextMenu = /* @__PURE__ */ (() => Api.ContextMenu)();
 var Logger = /* @__PURE__ */ (() => Api.Logger)();
 var DOM = /* @__PURE__ */ (() => Api.DOM)();
-var UI = /* @__PURE__ */ (() => BdApi.UI)();
 
 // common/Utils/Array.js
 var add = (array, item, index) => array.toSpliced(index ?? array.length, 0, item);
@@ -113,6 +112,44 @@ var patch2 = (id, callback) => {
 	contextmenuUnPatches.push(undo);
 };
 
+// common/Utils/async.js
+var queue = (fn, concurrent = 1) => {
+	const queue2 = [];
+	let runningCount = 0;
+	const next = async () => {
+		if (runningCount >= concurrent || queue2.length === 0) return;
+		const { resolve, reject, args } = queue2.shift();
+		try {
+			runningCount++;
+			resolve(await fn(...args));
+		} catch (error) {
+			reject(error);
+		} finally {
+			runningCount--;
+			next();
+		}
+	};
+	return (...args) => {
+		const { promise, resolve, reject } = Promise.withResolvers();
+		queue2.push({ resolve, reject, args });
+		next();
+		return promise;
+	};
+};
+
+// common/Utils/utils.js
+var showToast = (type, content, opts) => BdApi.UI.showToast(`[${Config_default.info.name}] ${content}`, { timeout: 5e3, ...opts, type });
+var argsToKey = (...args) => args.map((o) => JSON.stringify(o)).join("");
+
+function memoize(func) {
+	const cache = /* @__PURE__ */ new Map();
+	return (...args) => {
+		const key = argsToKey(...args);
+		if (!cache.has(key)) cache.set(key, func(...args));
+		return cache.get(key);
+	};
+}
+
 // common/Webpack.jsx
 var Webpack = /* @__PURE__ */ (() => BdApi.Webpack)();
 var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
@@ -133,42 +170,10 @@ function getModuleAndKey(filter, options) {
 // MODULES-AUTO-LOADER:@Modules/FetchUser
 var FetchUser_default = /* @__PURE__ */ (() => getModule(Filters.byStrings("USER_UPDATE", "default.getUser", "oldFormErrors"), { searchExports: true }))();
 
-// common/Utils/Toast.js
-function showToast(content, type) {
-	UI.showToast(`[${Config_default.info.name}] ${content}`, { timeout: 5e3, type });
-}
-var Toast_default = {
-	success(content) {
-		showToast(content, "success");
-	},
-	info(content) {
-		showToast(content, "info");
-	},
-	warning(content) {
-		showToast(content, "warning");
-	},
-	error(content) {
-		showToast(content, "error");
-	}
-};
-
 // MODULES-AUTO-LOADER:@Stores/UserStore
 var UserStore_default = /* @__PURE__ */ (() => getStore("UserStore"))();
 
-// common/Utils/index.js
-var makeKey = (...args) => {
-	return args.map((o) => JSON.stringify(o)).join("");
-};
-var memoize = (func) => {
-	const cache = /* @__PURE__ */ new Map();
-	return (...args) => {
-		const key = makeKey(...args);
-		if (!cache.has(key)) cache.set(key, func(...args));
-		return cache.get(key);
-	};
-};
-
-// common/DiscordModules/zustand.js
+// common/Discord/zustand.js
 var zustand = /* @__PURE__ */ (() => getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
 	_: Filters.byStrings("subscribe"),
 	zustand: () => true
@@ -208,32 +213,6 @@ var Settings_default = /* @__PURE__ */ (() => {
 	return SettingsStore;
 })();
 
-// common/Utils/Tasks.js
-var queue = (fn, concurrent) => {
-	const queue2 = [];
-	let runningCount = 0;
-	const next = async () => {
-		if (runningCount >= concurrent || queue2.length === 0)
-			return;
-		const { resolve, reject, args } = queue2.shift();
-		try {
-			runningCount++;
-			resolve(await fn(...args));
-		} catch (error) {
-			reject(error);
-		} finally {
-			runningCount--;
-			next();
-		}
-	};
-	return (...args) => {
-		const { promise, resolve, reject } = Promise.withResolvers();
-		queue2.push({ resolve, reject, args });
-		next();
-		return promise;
-	};
-};
-
 // common/Components/Switch/index.jsx
 var Switch_default = getMangled(Filters.bySource("auxiliaryContentPosition", "hasIcon"), {
 	Switch: () => true
@@ -247,16 +226,16 @@ var Switch_default = getMangled(Filters.bySource("auxiliaryContentPosition", "ha
 	));
 };
 
-// common/Utils/StylesLoader.js
-var styleLoader = {
+// common/StylesLoader.js
+var stylesLoader = {
 	_styles: [],
 	push(styles) {
 		this._styles.push(styles);
 	}
 };
-Plugin_default.onStart(() => DOM.addStyle(styleLoader._styles.join("\n")));
+Plugin_default.onStart(() => DOM.addStyle(stylesLoader._styles.join("\n")));
 Plugin_default.onStop(() => DOM.removeStyle());
-var StylesLoader_default = styleLoader;
+var StylesLoader_default = stylesLoader;
 
 // common/Components/Divider/styles.css
 StylesLoader_default.push(`.divider-horizontal {
@@ -301,15 +280,15 @@ Divider.direction = {
 };
 
 // common/Components/SettingSwtich/index.jsx
-function SettingSwtich({ setting, note, border = false, description, ...rest }) {
+function SettingSwtich({ setting, label, border = false, description, ...rest }) {
 	const val = Settings_default(setting.get);
 	return /* @__PURE__ */ React_default.createElement(React_default.Fragment, null, /* @__PURE__ */ React_default.createElement(
 		Switch_default, {
 			...rest,
 			hasIcon: true,
 			checked: val,
-			label: description || setting.key,
-			description: note,
+			label: label || setting.key,
+			description,
 			onChange: setting.set
 		}
 	), border && /* @__PURE__ */ React_default.createElement(Divider, { gap: 15 }));
@@ -331,10 +310,10 @@ Plugin_default.onStart(() => {
 		const MenuItem = BdApi.ContextMenu.buildItem({
 			label: "Load User",
 			action() {
-				if (UserStore_default.getUser(userId)) return Toast_default.info("User alreayd loaded");
+				if (UserStore_default.getUser(userId)) return showToast("info", "User alreayd loaded");
 				FetchUser(userId).then(
-					() => Toast_default.success("User Loaded!"),
-					() => Toast_default.error(`Could not load user: ${userId}`)
+					() => showToast("success", "User Loaded!"),
+					() => showToast("error", `Could not load user: ${userId}`)
 				);
 			}
 		});
@@ -342,7 +321,7 @@ Plugin_default.onStart(() => {
 	});
 });
 Plugin_default.getSettingsPanel = () => () => [{
-	description: "Auto load unknown users",
+	label: "Auto load unknown users",
 	setting: Settings_default.autoload
 }].map(SettingSwtich);
 module.exports = () => Plugin_default;
