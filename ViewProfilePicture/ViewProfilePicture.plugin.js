@@ -2,7 +2,7 @@
  * @runAt idle
  * @name ViewProfilePicture
  * @description Adds a button to the user popout and profile that allows you to view the Avatar and banner.
- * @version 1.3.18
+ * @version 1.3.19
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js
@@ -12,7 +12,7 @@
 var Config_default = {
 	"info": {
 		"name": "ViewProfilePicture",
-		"version": "1.3.18",
+		"version": "1.3.19",
 		"description": "Adds a button to the user popout and profile that allows you to view the Avatar and banner.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture",
@@ -33,9 +33,6 @@ var Patcher = /* @__PURE__ */ (() => Api.Patcher)();
 var Logger = /* @__PURE__ */ (() => Api.Logger)();
 var DOM = /* @__PURE__ */ (() => Api.DOM)();
 
-// common/Utils/Logger.js
-var Logger_default = Logger;
-
 // common/Plugin.js
 var target = /* @__PURE__ */ (() => new EventTarget())();
 
@@ -44,7 +41,7 @@ function wrap(handler) {
 		try {
 			handler.apply(null, e);
 		} catch (err) {
-			Logger_default.error(`Could not run [${e.type}] handler`, { handler }, "\n", err);
+			Logger.error(`Could not run [${e.type}] handler`, { handler }, "\n", err);
 		}
 	};
 }
@@ -59,16 +56,16 @@ var Plugin_default = {
 	}
 };
 
-// common/Utils/StylesLoader.js
-var styleLoader = {
+// common/StylesLoader.js
+var stylesLoader = {
 	_styles: [],
 	push(styles) {
 		this._styles.push(styles);
 	}
 };
-Plugin_default.onStart(() => DOM.addStyle(styleLoader._styles.join("\n")));
+Plugin_default.onStart(() => DOM.addStyle(stylesLoader._styles.join("\n")));
 Plugin_default.onStop(() => DOM.removeStyle());
-var StylesLoader_default = styleLoader;
+var StylesLoader_default = stylesLoader;
 
 // src/ViewProfilePicture/styles.css
 StylesLoader_default.push(`/* View Profile Button */
@@ -115,7 +112,7 @@ StylesLoader_default.push(`/* View Profile Button */
 }
 `);
 
-// common/Utils/Array.js
+// common/Utils/array.js
 var add = (array, item, index) => array.toSpliced(index ?? array.length, 0, item);
 
 // common/React.jsx
@@ -130,6 +127,66 @@ function insertChild(el, child, index) {
 	el.props.children = add(children, child, index);
 }
 
+// common/Utils/async.js
+var promiseHandler = (promise) => promise.then((data) => [void 0, data]).catch((err) => [err]);
+var Defer = class {
+	dispose() {
+		this.caller = null;
+	}
+	then(fn = nop) {
+		this.caller = fn;
+	}
+	success(payload) {
+		this.caller(payload);
+	}
+};
+
+// common/Utils/object.js
+var map = (obj, fn) => Object.fromEntries(Object.entries(obj).map(([key, value]) => [key, fn({ value, key })]));
+
+function getObjectKey(object = {}, filter) {
+	for (const key in object)
+		if (filter(object[key])) return key;
+}
+
+function getInObject(object = {}, filter) {
+	for (const key in object)
+		if (filter(object[key])) return object[key];
+}
+
+function hasOwn(object, key) {
+	return object && key && key in object;
+}
+
+function getNestedProp(obj, path2) {
+	return path2.split(".").reduce((ob, prop) => ob?.[prop], obj);
+}
+
+// common/Utils/utils.js
+function fit({ width, height, gap = 0.8 }) {
+	const ratio = Math.min(innerWidth / width, innerHeight / height);
+	width = Math.round(width * ratio);
+	height = Math.round(height * ratio);
+	return {
+		width,
+		height,
+		maxHeight: height * gap,
+		maxWidth: width * gap
+	};
+}
+
+function getImageDimensions(url) {
+	return new Promise((resolve, reject) => {
+		const img = new Image();
+		img.onload = () => resolve({
+			width: img.width,
+			height: img.height
+		});
+		img.onerror = reject;
+		img.src = url;
+	});
+}
+
 // common/Utils/css.js
 function transform(...args) {
 	const classNames = /* @__PURE__ */ new Set();
@@ -140,7 +197,7 @@ function transform(...args) {
 	}
 	return classNames;
 }
-var join = (...args) => Array.from(transform(...args)).join(" ");
+var joinClassNames = (...args) => Array.from(transform(...args)).join(" ");
 var classNameFactory = (prefix = "", connector = "-") => (...args) => Array.from(transform(...args), (name) => `${prefix}${connector}${name}`).join(" ");
 
 // common/Components/ErrorBoundary/index.jsx
@@ -166,25 +223,8 @@ var ErrorIcon_default = (props) => /* @__PURE__ */ React_default.createElement("
 	React_default.createElement("path", { d: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" })
 ));
 
-// common/Utils/Object.js
-var map = (obj, fn) => Object.fromEntries(Object.entries(obj).map(([key, value]) => [key, fn({ value, key })]));
-
-function getObjectKey(object = {}, filter) {
-	for (const key in object)
-		if (filter(object[key])) return key;
-}
-
-function hasOwn(object, key) {
-	return object && key && key in object;
-}
-
-function getNestedProp(obj, path2) {
-	return path2.split(".").reduce((ob, prop) => ob?.[prop], obj);
-}
-
 // common/consts.js
 var UNDEFINED_OBJECT_OR_KEY = "Undefined object or key";
-var PATCH_ERROR = "Could not perform a patch";
 var MISSING_ARGUMENTS = "Missing arguments";
 
 // common/Webpack.jsx
@@ -192,6 +232,7 @@ var Webpack = /* @__PURE__ */ (() => BdApi.Webpack)();
 var getModule = /* @__PURE__ */ (() => Webpack.getModule)();
 var Filters = /* @__PURE__ */ (() => Webpack.Filters)();
 var waitForModule = /* @__PURE__ */ (() => Webpack.waitForModule)();
+var getBySource = /* @__PURE__ */ (() => Webpack.getBySource)();
 var getMangled = /* @__PURE__ */ (() => Webpack.getMangled)();
 var getStore = /* @__PURE__ */ (() => Webpack.getStore)();
 var abortController = /* @__PURE__ */ (() => {
@@ -200,9 +241,9 @@ var abortController = /* @__PURE__ */ (() => {
 	return new AbortController();
 })();
 
-function lazy(filter, { decFilter, ...options } = {}) {
-	if (!filter) return Logger_default.error(`[Webpack lazy] ${MISSING_ARGUMENTS}`);
-	const { promise, resolve } = Promise.withResolvers();
+function lazy(filter, { exportsFilter, decFilter, ...options } = {}) {
+	if (!filter) return Logger.error(new Error(`[Webpack lazy] ${MISSING_ARGUMENTS}`));
+	const defer = new Defer();
 	waitForModule(filter, {
 		...options,
 		raw: true,
@@ -211,11 +252,15 @@ function lazy(filter, { decFilter, ...options } = {}) {
 	}).then((module2) => {
 		if (!module2) throw "waitForModule resolved with undefined";
 		const object = decFilter ? module2.declarations : module2.exports;
-		const key = getObjectKey(object, decFilter || filter);
+		const key = getObjectKey(object, decFilter || exportsFilter || filter);
 		if (!object || !key) throw UNDEFINED_OBJECT_OR_KEY;
-		resolve([object, key]);
-	}).catch((cause) => Logger_default.warn(new Error(PATCH_ERROR, { cause })));
-	return promise;
+		defer.success([object, key]);
+		defer.dispose();
+	}).catch((err) => {
+		defer.dispose();
+		Logger.warn(new Error(err));
+	});
+	return { then: defer.then.bind(defer) };
 }
 
 // MODULES-AUTO-LOADER:@Stores/UserStore
@@ -226,7 +271,7 @@ var Spinner = /* @__PURE__ */ (() => getModule((a) => a?.Type?.CHASING_DOTS, { s
 var Color = /* @__PURE__ */ (() => getModule(Filters.byKeys("Color", "hex", "hsl"), { searchExports: false }))();
 var MediaViewerModal = /* @__PURE__ */ (() => getMangled("Media Viewer Modal", { MediaViewerModal: (a) => typeof a !== "string" }).MediaViewerModal)();
 
-// common/Utils/User.js
+// common/Utils/discord/User.js
 function isSelf(user) {
 	const currentUser = UserStore_default.getCurrentUser();
 	return user?.id === currentUser?.id;
@@ -321,32 +366,6 @@ function path(props, d) {
 }
 var ImageIcon = /* @__PURE__ */ (() => svg({ viewBox: "-50 -50 484 484" }, "M341.333,0H42.667C19.093,0,0,19.093,0,42.667v298.667C0,364.907,19.093,384,42.667,384h298.667 C364.907,384,384,364.907,384,341.333V42.667C384,19.093,364.907,0,341.333,0z M42.667,320l74.667-96l53.333,64.107L245.333,192l96,128H42.667z"))();
 
-// common/Utils/index.js
-function fit({ width, height, gap = 0.8 }) {
-	const ratio = Math.min(innerWidth / width, innerHeight / height);
-	width = Math.round(width * ratio);
-	height = Math.round(height * ratio);
-	return {
-		width,
-		height,
-		maxHeight: height * gap,
-		maxWidth: width * gap
-	};
-}
-var promiseHandler = (promise) => promise.then((data) => [void 0, data]).catch((err) => [err]);
-
-function getImageDimensions(url) {
-	return new Promise((resolve, reject) => {
-		const img = new Image();
-		img.onload = () => resolve({
-			width: img.width,
-			height: img.height
-		});
-		img.onerror = reject;
-		img.src = url;
-	});
-}
-
 // common/Utils/Color.js
 function colorToImg(c3) {
 	const canvas = document.createElement("canvas");
@@ -397,7 +416,7 @@ var VPPButton_default = ({ className, user, displayProfile }) => {
 	return /* @__PURE__ */ React_default.createElement(Tooltip_default2, { note: "View profile picture" }, /* @__PURE__ */ React_default.createElement(
 		"div", {
 			onClick: fetching ? null : handler,
-			className: join("VPP-Button", className, showOnHover && "VPP-hover")
+			className: joinClassNames("VPP-Button", className, showOnHover && "VPP-hover")
 		},
 		fetching ? /* @__PURE__ */ React_default.createElement(Spinner, { type: Spinner.Type.SPINNING_CIRCLE_SIMPLE }) : /* @__PURE__ */ React_default.createElement(ImageIcon, null)
 	));
@@ -437,7 +456,7 @@ Plugin_default.onStart(() => {
 			/* @__PURE__ */
 			React_default.createElement(
 				VPPButton_default, {
-					className: join("VPP-float", { isMe }),
+					className: joinClassNames("VPP-float", { isMe }),
 					user: props.user,
 					displayProfile: props.displayProfile
 				}
@@ -452,10 +471,12 @@ var paths = {
 	POPOUT: "2"
 };
 Plugin_default.onStart(() => {
-	lazy(Filters.bySource("has-animated-banner", "profileThemeClassName"), { decFilter: Filters.byStrings("secondaryColor") }).then((UserProfileModal) => {
+	lazy(Filters.bySource("has-animated-banner", "profileThemeClassName"), {
+		exportsFilter: Filters.byStrings("secondaryColor")
+	}).then((UserProfileModal) => {
 		before(...UserProfileModal, ({ args: [props] }) => {
 			const target2 = useMemo(() => getNestedProp(props.children, paths[props.themeType] || ""), [props]);
-			if (!target2) return Logger_default.warn("Unsupported themeType", props.themeType);
+			if (!target2) return Logger.warn("Unsupported themeType", props.themeType);
 			props.className = `${props.className} VPP-container`;
 			insertChild(
 				target2,
@@ -480,9 +501,7 @@ Plugin_default.onStart(() => {
 });
 
 // common/Components/Switch/index.jsx
-var Switch_default = getMangled(Filters.bySource("auxiliaryContentPosition", "hasIcon"), {
-	Switch: () => true
-})?.Switch || function SwitchComponentFallback(props) {
+var Switch_default = getInObject(getBySource("checked", "interactiveLabel", "switchIconsEnabled"), Filters.byStrings("switchIconsEnabled")) || function SwitchComponentFallback(props) {
 	return /* @__PURE__ */ React_default.createElement("div", { style: { color: "#fff" } }, props.label, /* @__PURE__ */ React_default.createElement(
 		"input", {
 			type: "checkbox",
@@ -523,15 +542,15 @@ Divider.direction = {
 };
 
 // common/Components/SettingSwtich/index.jsx
-function SettingSwtich({ setting, note, border = false, description, ...rest }) {
+function SettingSwtich({ setting, label, border = false, description, ...rest }) {
 	const val = Settings_default(setting.get);
 	return /* @__PURE__ */ React_default.createElement(React_default.Fragment, null, /* @__PURE__ */ React_default.createElement(
 		Switch_default, {
 			...rest,
 			hasIcon: true,
 			checked: val,
-			label: description || setting.key,
-			description: note,
+			label: label || setting.key,
+			description,
 			onChange: setting.set
 		}
 	), border && /* @__PURE__ */ React_default.createElement(Divider, { gap: 15 }));
@@ -572,8 +591,11 @@ StylesLoader_default.push(`.fieldset-container {
 	flex-direction: column;
 }`);
 
-// MODULES-AUTO-LOADER:@Modules/Heading
-var Heading_default = /* @__PURE__ */ (() => getModule((a) => a?.render?.toString().includes("data-excessive-heading-level"), { searchExports: true }))();
+// common/Components/Heading/index.jsx
+var Heading = getInObject(getModule(Filters.bySource('text":', 'headin":', "data-excessive-heading-level", "heading-sm/normal")), Filters.byStrings("data-excessive-heading-level"));
+var Heading_default = Heading || function({ tag, ...rest }) {
+	return React_default.createElement(tag, rest);
+};
 
 // common/Components/FieldSet/index.jsx
 var c2 = classNameFactory("fieldset");
@@ -611,13 +633,13 @@ function SettingComponent() {
 	return /* @__PURE__ */ React_default.createElement(FieldSet, { contentGap: 8 }, [{
 			border: true,
 			setting: Settings_default.showOnHover,
-			note: "By default hide ViewProfilePicture button and show on hover.",
-			description: "Show on hover"
+			description: "By default hide ViewProfilePicture button and show on hover.",
+			label: "Show on hover"
 		},
 		{
 			setting: Settings_default.bannerColor,
-			note: "Always include banner color in carousel, even if a banner is present.",
-			description: "Include banner color."
+			description: "Always include banner color in carousel, even if a banner is present.",
+			label: "Include banner color."
 		}
 	].map(SettingSwtich));
 }
