@@ -1,9 +1,9 @@
 import React from "@React";
-import { join } from "@Utils/css";
+import { joinClassNames } from "@Utils";
 import ErrorBoundary from "@Components/ErrorBoundary";
 import ErrorIcon from "@Components/icons/ErrorIcon";
 import Plugin from "@common/Plugin";
-import { isSelf } from "@Utils/User";
+import { isSelf } from "@Utils/discord/User";
 import { Filters, getMangled } from "@Webpack";
 import VPPButton from "../components/VPPButton";
 import { after } from "@common/Patcher";
@@ -23,7 +23,7 @@ Plugin.onStart(() => {
 					id="UserProfileBanner"
 					fallback={<ErrorIcon className="VPP-Button" />}>
 					<VPPButton
-						className={join("VPP-float", { isMe })}
+						className={joinClassNames("VPP-float", { isMe })}
 						user={props.user}
 						displayProfile={props.displayProfile}
 					/>

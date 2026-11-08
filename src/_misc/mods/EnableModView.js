@@ -1,7 +1,7 @@
 import {Logger} from "@Api";
 import PermissionStore from "@Stores/PermissionStore";
 import { Disposable } from "@Utils";
-import { isSelf } from "@Utils/User";
+import { isSelf } from "@Utils/discord/User";
 import { Patcher } from "@Api";
 import { Filters, getById, waitForModule, getModule } from "@Webpack";
 

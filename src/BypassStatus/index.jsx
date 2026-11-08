@@ -1,4 +1,4 @@
-import { map } from "@common/Flux";
+import { map } from "@Utils/Flux";
 import {Logger} from "@Api";
 import Settings from "@Settings";
 import WindowStore from "@Stores/WindowStore";
@@ -6,7 +6,7 @@ import UserStore from "@Stores/UserStore";
 import PresenceStore from "@Stores/PresenceStore";
 import ChannelStore from "@Stores/ChannelStore";
 import { transitionTo } from "@Discord/Modules";
-import { getCurrentChannel } from "@Utils/Channel";
+import { getCurrentChannel } from "@Utils/discord/Channel";
 import SettingComponent from "./SettingComponent";
 import patchContextMenu from "./patchContextMenu";
 import { playMessageNotificationSounce } from "@/utils";

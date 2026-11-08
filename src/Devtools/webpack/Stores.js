@@ -6,7 +6,7 @@ import Dispatcher from "@Modules/Dispatcher";
 class Store {
 	constructor(store) {
 		this.store = store;
-		this.module = Sources.getSourceByFunc(store.constructor)?.[0].module;
+		this.module = Sources.getSourceByFunc(store.constructor)?.[0]?.module;
 		this.name = this.store.getName();
 
 		this.methods = {};
@@ -41,11 +41,11 @@ export const Stores = {
 		return new Store(module);
 	},
 	getStoreFuzzy(str = "") {
-		return stores.filter(a => a.getName().toLowerCase().includes(str)).map(store => new Store(store));
+		return stores.filter(a => a.getName().toLowerCase().includes(str.toLowerCase())).map(store => new Store(store));
 	},
 	getStoreListeners(storeName) {
-		const nodes = Dispatcher._actionHandlers._dependencyGraph.nodes;
-		const storeHandlers = Object.values(nodes).filter(({ name }) => name === storeName);
+		const nodes = Dispatcher._actionHandlers._nodes;
+		const storeHandlers = [...nodes.values()].filter(({ name }) => name === storeName);
 		return {
 			get store(){ return Stores.getStore(storeName)},
 			events: storeHandlers[0],

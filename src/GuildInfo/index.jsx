@@ -1,14 +1,14 @@
 import "./styles";
 import { getDeclarationAndKey, Filters } from "@Webpack";
-import {  fit, parseSnowflake } from "@Utils";
-import { ImageComponent } from "@Utils/ImageModal";
+import { fit, parseSnowflake } from "@Utils";
+import { ImageComponent } from "@Components/ImageModal";
 import { openModal } from "@Utils/Modals";
-import { getGuildIcon } from "@Utils/Channel";
+import { getGuildIcon } from "@Utils/discord/Channel";
 import GuildRoleStore from "@Stores/GuildRoleStore";
 import GuildChannelStore from "@Stores/GuildChannelStore";
 import GuildMemberCountStore from "@Stores/GuildMemberCountStore";
-import { getGuildMemberName } from "@Utils/User";
-import React, { reRender } from "@React";
+import { getGuildMemberName } from "@Utils/discord/User";
+import React from "@React";
 import Plugin from "@common/Plugin";
 import { after } from "@common/Patcher";
 import ContextMenu, { patch } from "@common/Patcher/contextmenu";
@@ -23,18 +23,9 @@ const el = (children, props) => (
 	</div>
 );
 
-
 Plugin.onStart(() => {
-	after(...GuildTooltip, ({args: [{ guild }], ret}) => {
-		ret.props.children.push(...[
-			el(`Owner: ${getGuildMemberName(guild.id, guild.ownerId)}`), 
-			el(`OwnerId: ${guild.ownerId}`), 
-			el(`Created At: ${new Date(parseSnowflake(+guild.id)).toLocaleDateString()}`), 
-			el(`Joined At: ${guild.joinedAt?.toLocaleDateString()}`), 
-			el(`Roles: ${GuildRoleStore.getSortedRoles(guild.id).length}`), 
-			el(`Channels: ${GuildChannelStore.getChannels(guild.id).count}`), 
-			el(`Members: ${GuildMemberCountStore.getMemberCount(guild.id)}`)
-		]);
+	after(...GuildTooltip, ({ args: [{ guild }], ret }) => {
+		ret.props.children.push(...[el(`Owner: ${getGuildMemberName(guild.id, guild.ownerId)}`), el(`OwnerId: ${guild.ownerId}`), el(`Created At: ${new Date(parseSnowflake(+guild.id)).toLocaleDateString()}`), el(`Joined At: ${guild.joinedAt?.toLocaleDateString()}`), el(`Roles: ${GuildRoleStore.getSortedRoles(guild.id).length}`), el(`Channels: ${GuildChannelStore.getChannels(guild.id).count}`), el(`Members: ${GuildMemberCountStore.getMemberCount(guild.id)}`)]);
 	});
 
 	patch("guild-context", (retVal, { guild }) => {
@@ -58,9 +49,6 @@ Plugin.onStart(() => {
 			})
 		);
 	});
-	reRender('#guild-list-unread-dms');
 });
-
-Plugin.onStop(() => reRender('#guild-list-unread-dms'));
 
 module.exports = () => Plugin;

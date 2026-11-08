@@ -1,5 +1,5 @@
 import { useRef, useEffect } from "@React";
-import { getUserName } from "@Utils/User";
+import { getUserName } from "@Utils/discord/User";
 
 export function getChannelName(channel) {
 	if (!channel) return;

@@ -10,7 +10,8 @@ export const Misc = {
 		const nodes = Dispatcher._actionHandlers._nodes;
 		const subs = Dispatcher._subscriptions;
 		return {
-			stores: Object.values(nodes)
+			listeners: subs[eventName],
+			stores: [...nodes.values()]
 				.map(
 					a =>
 						a.actionHandler[eventName] &&
@@ -23,8 +24,7 @@ export const Misc = {
 							a
 						)
 				)
-				.filter(Boolean),
-			subs: [eventName, subs[eventName]]
+				.filter(Boolean)
 		};
 	},
 	getEventListenersFuzzy(str = "") {
@@ -32,16 +32,17 @@ export const Misc = {
 		const nodes = Dispatcher._actionHandlers._nodes;
 		const subs = Dispatcher._subscriptions;
 		return {
-			stores: Object.values(nodes).filter(a => Object.keys(a.actionHandler).some(key => key.toLowerCase().includes(str))).map(
-					a =>
-						Object.assign(
-							{
-								get store() {
-									return Stores.getStore(a.name);
-								}
-							},
-							a
-						)
+			stores: [...nodes.values()]
+				.filter(a => Object.keys(a.actionHandler).some(key => key.toLowerCase().includes(str)))
+				.map(a =>
+					Object.assign(
+						{
+							get store() {
+								return Stores.getStore(a.name);
+							}
+						},
+						a
+					)
 				),
 			subs: Object.entries(subs)
 				.filter(([key]) => key.toLowerCase().includes(str))

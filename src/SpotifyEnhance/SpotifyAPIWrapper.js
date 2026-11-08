@@ -1,9 +1,8 @@
-import SpotifyAPI from "@Utils/SpotifyAPI";
+import SpotifyAPI from "@common/structs/SpotifyAPI";
 import RefreshToken from "@Modules/RefreshToken";
-import {Logger} from "@Api";
-import Toast from "@Utils/Toast";
+import { Logger } from "@Api";
 import DB from "./DB";
-import { promiseHandler } from "@Utils";
+import { showToast, promiseHandler } from "@Utils";
 import { parsers } from "@/utils";
 
 async function requestHandler(action) {
@@ -42,10 +41,10 @@ function ressourceActions(prop) {
 	return (type, id, description) =>
 		requestHandler(() => SpotifyAPI[prop](type, id))
 			.then(() => {
-				Toast.success(success(type, description));
+				showToast("success", success(type, description));
 			})
 			.catch(reason => {
-				Toast.error(error(type, description, reason));
+				showToast("error", error(type, description, reason));
 			});
 }
 
@@ -87,7 +86,7 @@ export default new Proxy(
 				case "volume":
 					return (...args) =>
 						requestHandler(() => SpotifyAPI[prop].apply(SpotifyAPI, args)).catch(reason => {
-							Toast.error(`Could not execute ${prop} command\n${reason}`);
+							showToast("error", `Could not execute ${prop} command\n${reason}`);
 						});
 				case "getPlayerState":
 				case "getDevices":

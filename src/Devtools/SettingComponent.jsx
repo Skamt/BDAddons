@@ -1,19 +1,23 @@
-import React, {useState} from "@React";
-import Switch from "@Components/Switch";
+import React from "@React";
+import SettingSwtich from "@Components/SettingSwtich";
+import FieldSet from "@Components/FieldSet";
+import Plugin from "@common/Plugin";
+import Settings from "@Settings";
 
-export default function ({ settings, enableExp }) {
-	const [enabled, setEnabled] = useState(settings.expEnabled);
-
+function SettingComponent() {
 	return (
-		<Switch
-			value={enabled}
-			hideBorder={false}
-			onChange={e => {
-				settings.expEnabled = e;
-				setEnabled(e);
-				enableExp(e);
-			}}>
-			enableExperiments
-		</Switch>
+		<FieldSet contentGap={8}>
+			{[
+				{	
+					setting: Settings.expEnabled,
+					label: "Enabled experiments",
+				},{	
+					setting: Settings.devMode,
+					label: "Enabled dev mode",
+				}
+			].map(SettingSwtich)}
+		</FieldSet>
 	);
 }
+
+Plugin.getSettingsPanel = () => <SettingComponent />;

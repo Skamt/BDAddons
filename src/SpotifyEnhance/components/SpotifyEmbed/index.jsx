@@ -5,7 +5,7 @@ import { AddToQueueIcon, CopyIcon, ImageIcon, ListenIcon, SpotifyIcon } from "@C
 import useStateFromStores from "@Modules/useStateFromStores";
 import AccessibilityStore from "@Stores/AccessibilityStore";
 import { fit, shallow } from "@Utils";
-import { ImageComponent } from "@Utils/ImageModal";
+import { ImageComponent } from "@Components/ImageModal";
 import { openModal } from "@Utils/Modals";
 import { spotifyCopy, copySpotifyUrl, openSpotifyUrl, useGetRessource } from "@/utils";
 import Settings from "@Settings";

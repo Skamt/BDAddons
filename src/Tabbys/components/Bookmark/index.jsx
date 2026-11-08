@@ -2,7 +2,6 @@ import "./styles";
 import Store from "@/Store";
 import { openBookmark } from "@/Store/methods";
 import React from "@React";
-import { join } from "@Utils/css";
 import BookmarkContextMenu from "@/contextmenus/BookmarkContextMenu";
 import { ContextMenu } from "@Api";
 import useStateFromStores from "@Modules/useStateFromStores";
@@ -12,7 +11,7 @@ import { SubBookmarkSortable, BookmarkSortable } from "@/components/DND";
 import { makeDraggable } from "@/components/DND/shared";
 import ChannelStatus from "@/components/ChannelStatus";
 import { DNDTypes } from "@/consts";
-import { shallow } from "@Utils";
+import { joinClassNames, shallow } from "@Utils";
 import { Content, HideTitleContext } from "@/components/Card";
 
 function BaseBookmark({ id, parentId, dragRef, onClose, className }) {
@@ -58,7 +57,7 @@ function BaseBookmark({ id, parentId, dragRef, onClose, className }) {
 			data-id={isSubBookmark ? null : id}
 			ref={dragRef}
 			onContextMenu={contextmenuHandler}
-			className={join("bookmark-container", "card", isSubBookmark && "folder-item", className, { hasUnread })}
+			className={joinClassNames("bookmark-container", "card", isSubBookmark && "folder-item", className, { hasUnread })}
 			onClick={onClick}>
 			<HideTitleContext value={noName}>
 				<Content {...bookmark} />

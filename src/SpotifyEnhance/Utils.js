@@ -1,23 +1,23 @@
-import { openLink, copy, getPathName } from "@Utils";
+import { showToast ,openLink, copy, getPathName } from "@Utils";
 import Store from "@/store";
 import React, { useEffect, useState } from "@React";
-import { insertText, sendMessageDirectly } from "@Utils/Messages";
+import { insertText, sendMessageDirectly } from "@Utils/discord/Message";
 import SelectedChannelStore from "@Stores/SelectedChannelStore";
-import Toast from "@Utils/Toast";
+
 
 export function spotifyCopy(content) {
-	if (!content) return Toast.error("Copy failed!");
+	if (!content) return showToast("error","Copy failed!");
 	copy(content);
-	Toast.success("Copied!");
+	showToast("success","Copied!");
 }
 
 export const copySpotifyUrl = url => spotifyCopy(sanitizeSpotifyLink(url));
 export const openSpotifyUrl = url => openLink(sanitizeSpotifyLink(url));
 
 export function spotifyShare(content) {
-	if (!content) return Toast.error("Share failed");
+	if (!content) return showToast("error","Share failed");
 	const id = SelectedChannelStore.getCurrentlySelectedChannelId();
-	if (!id) return Toast.info("There is no Selected Channel");
+	if (!id) return showToast("info","There is no Selected Channel");
 
 	sendMessageDirectly(content, id).catch(() => {
 		insertText(content);

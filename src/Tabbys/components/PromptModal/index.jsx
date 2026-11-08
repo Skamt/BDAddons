@@ -3,12 +3,12 @@ import React, { useRef, useState } from "@React";
 import Heading from "@Components/Heading";
 import { ManaTextButton, ManaButton } from "@Components/Button";
 import TextInput from "@Components/TextInput";
-import { clsx } from "@Utils";
+import { classNameFactory } from "@Utils";
 import ErrorBoundary from "@Components/ErrorBoundary";
 import FieldSet from "@Components/FieldSet";
 import { ModalActions, Modals } from "@Utils/Modals";
 
-const c = clsx("create-folder-modal");
+const c = classNameFactory("create-folder-modal");
 
 export default function PromptModal({ modalProps, required, title, placeholder, label, initialValue = "", onSubmit }) {
 	const [val, setVal] = useState(initialValue);

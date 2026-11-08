@@ -14,7 +14,9 @@ const paths = {
 };
 
 Plugin.onStart(() => {
-	lazy(Filters.bySource("has-animated-banner","profileThemeClassName"), { decFilter: Filters.byStrings("secondaryColor") }).then(UserProfileModal => {
+	lazy(Filters.bySource("has-animated-banner","profileThemeClassName"), { 
+		exportsFilter: Filters.byStrings("secondaryColor") 
+	}).then(UserProfileModal => {
 		before(...UserProfileModal, ({ args: [props] }) => {
 			const target = useMemo(() => getNestedProp(props.children, paths[props.themeType] || ""), [props]);
 			if (!target) return Logger.warn("Unsupported themeType", props.themeType);

@@ -2,21 +2,32 @@
 import "./styles";
 import config from "@Config";
 import React from "@React";
-import { concateClassNames } from "@Utils";
-import { getModule, getMangled, Filters } from "@Webpack";
+import { joinClassNames } from "@Utils";
+import { getBySource, getModule, getMangled, Filters } from "@Webpack";
 import ErrorBoundary from "@Components/ErrorBoundary";
 
-export const ModalActions = getModule(a => a.useModalsStore);
+export const ModalActions = /*@__PURE__*/ (() =>
+	getBySource("?.stackNextByDefault", {
+		map: {
+			openModal: Filters.byStrings("?.stackNextByDefault"),
+			closeModal: Filters.byStrings(".setState", ".getState()["),
+			closeAllModals: Filters.byStrings(".getState();for"),
+			useModalsStore: a => a.getState
+		}
+	}))();
 
-export const Modals = /*@__PURE__*/ getMangled(/*@__PURE__*/ Filters.bySource("MODAL_ROOT", "transitionState"), {
-	ModalRoot: /*@__PURE__*/ Filters.byStrings("transitionState"),
-	ModalFooter: /*@__PURE__*/ Filters.byStrings(".HORIZONTAL_REVERSE"),
-	ModalContent: /*@__PURE__*/ Filters.byStrings("scrollbarType", "scrollerRef"),
-	ModalHeader: /*@__PURE__*/ Filters.byStrings("headerIdIsManaged", "headerId", ".HORIZONTAL"),
-	Animations: /*@__PURE__*/ a => a.SUBTLE,
-	Sizes: /*@__PURE__*/ a => a.DYNAMIC,
-	ModalCloseButton: Filters.byStrings("withCircleBackground")
-});
+export const Modals = /*@__PURE__*/ (() =>
+	getBySource("MODAL_ROOT", "transitionState", {
+		map: {
+			ModalRoot: Filters.byStrings("transitionState"),
+			ModalFooter: Filters.byStrings(".HORIZONTAL_REVERSE"),
+			ModalContent: Filters.byStrings("scrollbarType", "scrollerRef"),
+			ModalHeader: Filters.byStrings("headerIdIsManaged", "headerId", ".HORIZONTAL"),
+			Animations: a => a.SUBTLE,
+			Sizes: a => a.DYNAMIC,
+			ModalCloseButton: Filters.byStrings("withCircleBackground")
+		}
+	}))();
 
 export const openModal = (children, tag, { className, ...modalRootProps } = {}) => {
 	const id = `${tag ? `${tag}-` : ""}modal`;
@@ -29,7 +40,7 @@ export const openModal = (children, tag, { className, ...modalRootProps } = {}) 
 				<Modals.ModalRoot
 					onClick={props.onClose}
 					transitionState={props.transitionState}
-					className={concateClassNames("transparent-background", className)}
+					className={joinClassNames("transparent-background", className)}
 					size={Modals.Sizes.DYNAMIC}
 					{...modalRootProps}>
 					{React.cloneElement(children, { ...props })}

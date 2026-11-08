@@ -2,11 +2,11 @@ import React from "@React";
 import useStateFromStores from "@Modules/useStateFromStores";
 import UserStore from "@Stores/UserStore";
 // import { Fallback } from "@/components/Icons";
-import { getUserName } from "@Utils/User";
+import { getUserName } from "@Utils/discord/User";
 import UserAvatar from "@Components/UserAvatar";
 import Settings from "@Settings";
 import { getSize } from "@/utils";
-import { join } from "@Utils/css";
+import { joinClassNames } from "@Utils";
 import Markup from "./Markup";
 import Icon from "./Icon";
 
@@ -24,7 +24,7 @@ export default function DM({ name, userId, avatar, username }) {
 		<Markup
 			icon={
 				<Icon
-					className={join("fcc")}
+					className={joinClassNames("fcc")}
 					icon={
 						<UserAvatar
 							id={user.id}

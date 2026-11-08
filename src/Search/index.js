@@ -1,13 +1,14 @@
 import "./patches/*";
 import Plugin from "@common/Plugin";
 import SelectedChannelStore from "@Stores/SelectedChannelStore";
-import { getModule } from "@Webpack";
+import { wait, getModule } from "@Webpack";
 import ContextMenu, { patch } from "@common/Patcher/contextmenu";
 import { insertChild } from "@React";
 
-const Dispatcher = getModule(a => a?.emitter?._events?.FOCUS_SEARCH, { searchExports: true });
+const Dispatcher = wait(() => getModule(a => a?.emitter?._events?.FOCUS_SEARCH, { searchExports: true }));
+
 function search(query) {
-	Dispatcher.dispatch("SET_SEARCH_QUERY", {
+	Dispatcher.dispatch?.("SET_SEARCH_QUERY", {
 		query,
 		performSearch: false,
 		focus: true,
@@ -36,7 +37,7 @@ Plugin.onStart(() => {
 			ret,
 			ContextMenu.buildItem({
 				label: "Search",
-				type:"submenu",
+				type: "submenu",
 				items: [
 					{
 						label: "Messages in channel",

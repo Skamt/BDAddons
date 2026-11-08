@@ -1,7 +1,7 @@
 import "./styles";
 import React from "@React";
 import { shallow } from "@Utils";
-import { classNameFactory, join } from "@Utils/css";
+import { classNameFactory, joinClassNames } from "@Utils";
 import Settings from "@Settings";
 import TabBar from "@/components/TabBar";
 import BookmarkBar from "@/components/BookmarkBar";
@@ -31,7 +31,7 @@ export default function App({ leading, title, trailing }) {
 				})}
 			</div>
 			{showBookmarkbar && (
-				<div className={join(c("bookmarkbar"))}>
+				<div className={joinClassNames(c("bookmarkbar"))}>
 					<BookmarkBar />
 				</div>
 			)}

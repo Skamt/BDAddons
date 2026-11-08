@@ -18,8 +18,7 @@ export function map(map) {
 }
 
 export function intercept(event, fn) {
-	const interceptor = (...args) => args[0].type === event ? fn.apply(null, args) : null
-	
+	const interceptor = (...args) => (args[0].type === event ? fn.apply(null, args) : null);
 
 	Dispatcher.addInterceptor(interceptor);
 	const undo = () => {

@@ -7,11 +7,11 @@ import Heading from "@Components/Heading";
 import { MagnifyingGlassIcon } from "@Components/Icon";
 import Tooltip from "@Components/Tooltip";
 import React, { useSyncExternalStore, useMemo, useEffect, useRef, useState } from "@React";
-import { clsx } from "@Utils";
+import { classNameFactory } from "@Utils";
 import { getContextMenuItem, getCopyContextMenuItem, buildEmojiUrl, sendDirectly } from "@/Utils";
 import Settings from "@Settings";
 
-const c = clsx("emoji-list");
+const c = classNameFactory("emoji-list");
 
 const desiredEmojiSize = 80;
 const gap = 12;
@@ -59,7 +59,7 @@ export default function EmojisComponent() {
 			ref={ref}
 			style={{ "--emoji-size": emojiRenderSize }}
 			className={c("container")}>
-			{!filteredEmojis.length ? (
+			{!emojis.length ? (
 				<Heading
 					className={c("empty")}
 					tag="h1"

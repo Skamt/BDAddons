@@ -8,7 +8,7 @@ function transform(...args) {
 	return classNames;
 }
 
-export const join = (...args) => Array.from(transform(...args)).join(" ");
+export const joinClassNames = (...args) => Array.from(transform(...args)).join(" ");
 
 export const classNameFactory =
 	(prefix = "", connector = "-") =>

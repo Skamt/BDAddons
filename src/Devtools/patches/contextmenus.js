@@ -8,7 +8,7 @@ import { patch } from "@common/Patcher/contextmenu";
 
 Plugin.onStart(() => {
 	patch("*", ret => {
-		// if (!Settings.state.showContextmenuNavId) return;
+		if (!Settings.state.devMode) return;
 		const target = findInTree(ret, a => a.navId, { walkable: ["children", "props"] });
 		if (!target) return console.error("ContextmenusNavId", ret);
 

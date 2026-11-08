@@ -1,7 +1,7 @@
 import "./styles";
 import { FolderIcon } from "@Components/Icon";
 import React from "@React";
-import { classNameFactory, join } from "@Utils/css";
+import { classNameFactory, joinClassNames } from "@Utils/css";
 import { ContextMenu } from "@Api";
 import FolderContextMenu from "@/contextmenus/FolderContextMenu";
 import ChannelStatus from "@/components/ChannelStatus";
@@ -32,9 +32,9 @@ export default function BaseFolder({ id, channelIds, folderId, parentId, name, c
 		<div
 			{...rest}
 			onContextMenu={contextmenuHandler}
-			className={join(c("container", isOver && canDrop && "canDrop"), { hasUnread }, "card", className)}>
-			<div className={join(c("icon"), "icon-wrapper", "card-icon")}>{<FolderIcon />}</div>
-			<div className={join(c("title"), "card-title")}>{name}</div>
+			className={joinClassNames(c("container", isOver && canDrop && "canDrop"), { hasUnread }, "card", className)}>
+			<div className={joinClassNames(c("icon"), "icon-wrapper", "card-icon")}>{<FolderIcon />}</div>
+			<div className={joinClassNames(c("title"), "card-title")}>{name}</div>
 			<ChannelStatus
 				type="Folder"
 				channelIds={channelIds}

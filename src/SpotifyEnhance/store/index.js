@@ -2,13 +2,13 @@ import Plugin from "@common/Plugin";
 import actions from "./actions";
 import ConnectedAccountsStore from "@Stores/ConnectedAccountsStore";
 import SpotifyStore from "@Stores/SpotifyStore";
-import Timer from "@Utils/Timer";
+import Timer from "@common/structs/Timer";
 import { create, subscribeWithSelector } from "@Discord/zustand";
 import { shallow } from "@Utils";
 import { map } from "@Utils/Object";
 import {Logger} from "@Api";
 import SpotifyAPIWrapper from "@/SpotifyAPIWrapper";
-import SpotifyAPI from "@Utils/SpotifyAPI";
+import SpotifyAPI from "@common/structs/SpotifyAPI";
 
 const initialState = {
 	account: undefined,

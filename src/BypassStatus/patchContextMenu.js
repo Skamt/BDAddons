@@ -1,7 +1,7 @@
 import { loop } from "@Utils/Array";
 import ContextMenu, { patch } from "@common/Patcher/contextmenu";
 import Settings from "@Settings";
-import { isSelf } from "@Utils/User";
+import { isSelf } from "@Utils/discord/User";
 
 export default () => {
 	const ids = ["user", "guild", "channel"];

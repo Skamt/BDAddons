@@ -7,11 +7,7 @@ export default () => {
 	return (
 		<FieldSet contentGap={8}>
 			{[
-				{
-					setting: Settings.silent,
-					label: "Prepend @silent",
-					description: "Insert @silent tag in messages containing mentions of users marked as never ping. @silent prevent messages containing mentions from pinging users"
-				},
+				
 				{
 					setting: Settings.mentionToggle,
 					label: "Always show mention toggle",

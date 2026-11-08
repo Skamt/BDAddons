@@ -1,9 +1,8 @@
 import React from "@React";
-import { getMangled, Filters } from "@Webpack";
+import { getBySource, Filters } from "@Webpack";
+import { getInObject } from "@Utils/object";
 
-export default getMangled(Filters.bySource("auxiliaryContentPosition", "hasIcon"), {
-	Switch: () => true,
-})?.Switch ||
+export default getInObject(getBySource("checked", "interactiveLabel","switchIconsEnabled"), Filters.byStrings("switchIconsEnabled"))||
 	function SwitchComponentFallback(props) {
 		return (
 			<div style={{ color: "#fff" }}>

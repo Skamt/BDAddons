@@ -6,8 +6,7 @@ import { Folder } from "@/components/Folder";
 import { ArrowIcon } from "@Components/Icon";
 import Popout from "@Components/Popout";
 import React, { useRef, useEffect, useState } from "@React";
-import { shallow } from "@Utils";
-import { classNameFactory, join } from "@Utils/css";
+import { classNameFactory, joinClassNames , shallow } from "@Utils";
 import DragHandle from "@/components/DragHandle";
 const c = classNameFactory("bookmarkbar");
 
@@ -127,7 +126,7 @@ function OverflowMenu({ items }) {
 			{e => {
 				return (
 					<div
-						className={join(c("overflow-button"), "icon-wrapper")}
+						className={joinClassNames(c("overflow-button"), "icon-wrapper")}
 						onClick={e.onClick}>
 						<ArrowIcon />
 					</div>

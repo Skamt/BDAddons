@@ -1,4 +1,4 @@
-import { getUserName } from "@Utils/User";
+import { getUserName } from "@Utils/discord/User";
 import { pathTypes } from "@/consts";
 import ChannelStore from "@Stores/ChannelStore";
 import UserStore from "@Stores/UserStore";

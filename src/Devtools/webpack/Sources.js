@@ -5,7 +5,7 @@ import { saveFile } from "@Utils/fs";
 class Source {
 	constructor(id, loader) {
 		this.id = id;
-		this.loader = loader;
+		this.loader = loader.__early_patched__ ? loader.__raw_module__() : loader;;
 	}
 
 	get module() {
@@ -33,10 +33,16 @@ function sourceById(id) {
 }
 
 function* sourceLookup(...args) {
-	const strArr = args;
+	const filters = args.map(arg=>{
+		if(arg instanceof RegExp)
+			return str => str.match(arg) !== null
+		if(typeof arg === "string")
+			return str => str.includes(arg)	
+		return ()=>false;
+	});
 	for (const [id, source] of Object.entries(webpackRequire.m)) {
 		const sourceCode = source.toString().replace(/^\d+/, "function");
-		const result = strArr.every(str => sourceCode.includes(str));
+		const result = filters.every(filter => filter(sourceCode));
 		if (!result) continue;
 		yield new Source(id, source);
 	}

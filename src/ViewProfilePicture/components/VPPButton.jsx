@@ -2,8 +2,8 @@ import React, { useState } from "@React";
 import Settings from "@Settings";
 import Tooltip from "@Components/Tooltip";
 import { ImageIcon } from "@Components/icon";
-import { join } from "@Utils/css";
-import { promiseHandler, fit, getImageDimensions } from "@Utils";
+
+import { joinClassNames, promiseHandler, fit, getImageDimensions } from "@Utils";
 import { colorToImg } from "@Utils/Color";
 import { Filters, getModule } from "@Webpack";
 import { Spinner, MediaViewerModal } from "@Discord/Modules";
@@ -52,7 +52,7 @@ export default ({ className, user, displayProfile }) => {
 		<Tooltip note="View profile picture">
 			<div
 				onClick={fetching ? null : handler}
-				className={join("VPP-Button", className, showOnHover && "VPP-hover")}>
+				className={joinClassNames("VPP-Button", className, showOnHover && "VPP-hover")}>
 				{fetching ? <Spinner type={Spinner.Type.SPINNING_CIRCLE_SIMPLE} /> : <ImageIcon />}
 			</div>
 		</Tooltip>

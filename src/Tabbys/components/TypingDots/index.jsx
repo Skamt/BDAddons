@@ -1,6 +1,6 @@
 import React from "@React";
 import {  waitForComponent, reactRefMemoFilter } from "@Webpack";
-import { getUserName } from "@Utils/User";
+import { getUserName } from "@Utils/discord/User";
 
 import { join } from "@Utils/String";
 import Tooltip from "@Components/Tooltip";

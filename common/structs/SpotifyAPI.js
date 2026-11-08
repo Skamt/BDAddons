@@ -1,7 +1,7 @@
 import { promiseHandler, buildUrl } from "@Utils";
 import {Logger} from "@Api";
 const API_ENDPOINT = "https://api.spotify.com/v1";
-import { queue } from "@Utils/Tasks";
+import { queue } from "@Utils";
 
 const fetch = queue(window.fetch, 3);
 

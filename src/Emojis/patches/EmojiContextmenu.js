@@ -2,7 +2,7 @@ import { insertChild } from "@React";
 import { getInternalInstance } from "@Api";
 import Plugin from "@common/Plugin";
 import ContextMenu, { patch } from "@common/Patcher/contextmenu";
-import { getCopyContextMenuItem, getContextMenuItem } from "../Utils";
+import { getCopyContextMenuItem, getContextMenuItem } from "@/utils";
 import EmojiStore from "@Stores/EmojiStore";
 
 import EmojisManager from "@/EmojisManager";

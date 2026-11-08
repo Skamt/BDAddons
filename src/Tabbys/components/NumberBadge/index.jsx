@@ -1,9 +1,9 @@
 import "./styles";
 import React from "@React";
-import { clsx } from "@Utils";
+import { classNameFactory } from "@Utils";
 import { join } from "@Utils/String";
 
-const c = clsx("badge");
+const c = classNameFactory("badge");
 
 function m(e) {
 	return e < 10 ? 13 : e < 100 ? 19 : 27;

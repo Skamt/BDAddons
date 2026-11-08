@@ -3,8 +3,8 @@ import Store from "@/Store";
 import { TabDroppable, TabSortable } from "@/components/DND";
 import { CloseIcon } from "@Components/Icon";
 import React from "@React";
-import { shallow } from "@Utils";
-import { classNameFactory, join } from "@Utils/css";
+import { classNameFactory, joinClassNames, shallow } from "@Utils";
+
 import TabContextMenu from "@/contextmenus/TabContextMenu";
 import { ContextMenu } from "@Api";
 import useStateFromStores from "@Modules/useStateFromStores";
@@ -52,7 +52,7 @@ function Tab({ id, isOver, canDrop, isDragging, dragRef, dropRef }) {
 			onAuxClick={onMiddleClick}
 			onContextMenu={contextmenuHandler}
 			ref={e => dragRef(dropRef(e))}
-			className={join(c("container", isOver && canDrop && "canDrop"), { isSelected, hasUnread, isDragging }, "card")}
+			className={joinClassNames(c("container", isOver && canDrop && "canDrop"), { isSelected, hasUnread, isDragging }, "card")}
 			onClick={onClick}>
 			<TabSortable id={id} />
 			<Content {...tab} />
@@ -61,7 +61,7 @@ function Tab({ id, isOver, canDrop, isDragging, dragRef, dropRef }) {
 				channelIds={[channelId]}
 			/>
 			<div
-				className={join(c("close-button"), "icon-wrapper", "card-button")}
+				className={joinClassNames(c("close-button"), "icon-wrapper", "card-button")}
 				onClick={onCloseClick}>
 				<CloseIcon />
 			</div>

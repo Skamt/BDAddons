@@ -1,5 +1,7 @@
 import { findInTree, getInternalInstance } from "@Api";
 import Dispatcher from "@Modules/Dispatcher";
+import webpack from "./webpack";
+import Plugin from "@common/Plugin";
 
 export function walkFiber(filter = a => a, depth, el) {
 	el ??= $0;
@@ -113,5 +115,112 @@ export const d = (() => {
 	return {
 		getCssRulesForElement,
 		scrollerStylesForElement
+	};
+})();
+
+export const logDispatcherEvents = (function () {
+	let active = false;
+	let events = [];
+
+	function handler(e) {
+		if (events.includes(e.type)) return;
+		const es = webpack.getEventListeners(e.type);
+		console.log(e, es);
+	}
+
+	function sub(args) {
+		active = true;
+		events = args;
+		Dispatcher.addInterceptor(handler);
+	}
+
+	function undo() {
+		active = false;
+		const index = Dispatcher._interceptors.indexOf(handler);
+		Dispatcher._interceptors.splice(index, 1);
+	}
+
+	Plugin.onStop(() => {
+		undo();
+	});
+
+	return (...args) => {
+		if (!active) {
+			sub(args);
+		} else {
+			undo();
+		}
+	};
+})();
+
+export const logGateway = (function () {
+	let active = false;
+
+	function sub() {
+		active = true;
+		Dispatcher.dispatch({
+			"type": "DEVELOPER_OPTIONS_UPDATE_SETTINGS",
+			"settings": {
+				"logGatewayEvents": true
+			}
+		});
+	}
+
+	function undo() {
+		active = false;
+		Dispatcher.dispatch({
+			"type": "DEVELOPER_OPTIONS_UPDATE_SETTINGS",
+			"settings": {
+				"logGatewayEvents": false
+			}
+		});
+	}
+
+	Plugin.onStop(() => {
+		undo();
+	});
+
+	return (...args) => {
+		if (!active) {
+			sub(args);
+		} else {
+			undo();
+		}
+	};
+})();
+
+export const keepPopoutOpen = (function () {
+	let active = false;
+
+	function sub() {
+		active = true;
+		Dispatcher.dispatch({
+			"type": "DEVELOPER_OPTIONS_UPDATE_SETTINGS",
+			"settings": {
+				"preventPopoutClose": true
+			}
+		});
+	}
+
+	function undo() {
+		active = false;
+		Dispatcher.dispatch({
+			"type": "DEVELOPER_OPTIONS_UPDATE_SETTINGS",
+			"settings": {
+				"preventPopoutClose": false
+			}
+		});
+	}
+
+	Plugin.onStop(() => {
+		undo();
+	});
+
+	return (...args) => {
+		if (!active) {
+			sub(args);
+		} else {
+			undo();
+		}
 	};
 })();

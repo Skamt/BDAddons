@@ -1,5 +1,5 @@
 import React from "@React";
-import Toast from "@Utils/Toast";
+import { showToast } from "@Utils";
 import { PlayIcon, PauseIcon } from "@Components/Icon";
 import ControlButton from "../ControlButton";
 
@@ -21,7 +21,7 @@ class audioPlayer {
 		};
 		this.audio.onerror = () => {
 			this.failed = true;
-			Toast.error("Could not load preview");
+			showToast("error","Could not load preview");
 		};
 
 		this.audio.onended = () => {

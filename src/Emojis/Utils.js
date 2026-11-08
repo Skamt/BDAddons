@@ -1,14 +1,14 @@
 import Settings from "@Settings";
 import SelectedChannelStore from "@Stores/SelectedChannelStore";
-import { sendMessageDirectly, insertText } from "@Utils/Messages";
+import { sendMessageDirectly, insertText } from "@Utils/discord/Message";
 import DraftStore from "@Stores/DraftStore";
-import Toast from "@Utils/Toast";
-import { copy as _copy } from "@Utils";
+
+import { showToast, copy as _copy } from "@Utils";
 
 export function copy(content) {
-	if (!content) return Toast.error("Copy failed!");
+	if (!content) return showToast("error", "Copy failed!");
 	_copy(content);
-	Toast.success("Copied!");
+	showToast("success", "Copied!");
 }
 function sendEmojiAsLink(content) {
 	const channelId = SelectedChannelStore.getChannelId();
@@ -16,7 +16,7 @@ function sendEmojiAsLink(content) {
 	if (draft) return insertText(`[󠇫](${content})`);
 
 	sendMessageDirectly(content, channelId).catch(() => {
-		Toast.error("Could not send directly.");
+		showToast("error", "Could not send directly.");
 		insertText(content);
 	});
 }
@@ -48,13 +48,26 @@ export function copyEmojiUrl(id) {
 export function getContextMenuItem(label, id, animated) {
 	const item = { label };
 
+	const action = {
+		insert: () => insert(id),
+		send: () => sendDirectly(id)
+	}[label];
+
+	const actions = {
+		insert: [
+			{ label: "unanimated", action },
+			{ label: "animated", action: () => insertAnimated(id) }
+		],
+		send: [
+			{ label: "unanimated", action },
+			{ label: "animated", action: () => sendAnimatedDirectly(id) }
+		]
+	}[label];
+
 	if (animated) {
 		item.type = "submenu";
-		item.items = [
-			{ label: "unanimated", action: () => sendDirectly(id) },
-			{ label: "animated", action: () => sendAnimatedDirectly(id) }
-		];
-	} else item.action = () => sendDirectly(id);
+		item.items = actions;
+	} else item.action = action;
 
 	return item;
 }

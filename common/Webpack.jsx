@@ -1,8 +1,8 @@
 import React, { NoopComponent, LazyComponent } from "@React";
-import {Logger} from "@Api";
-import { Defer } from "@Utils";
-import { getObjectKey } from "@Utils/Object";
-import { MISSING_ARGUMENTS, UNDEFINED_OBJECT_OR_KEY, PATCH_ERROR, LAZY_DISCORD_COMPONENT_WRAPPER } from "@common/consts";
+import { Logger } from "@Api";
+import { Defer, nop } from "@Utils";
+import { getObjectKey } from "@Utils/object";
+import { MISSING_ARGUMENTS, UNDEFINED_OBJECT_OR_KEY, LAZY_DISCORD_COMPONENT_WRAPPER } from "@common/consts";
 import Plugin from "@common/Plugin";
 
 export const Webpack = /*@__PURE__*/ (() => BdApi.Webpack)();
@@ -23,8 +23,8 @@ let abortController = /*@__PURE__*/ (() => {
 	return new AbortController();
 })();
 
-export function lazy(filter, { sourceFilter, decFilter, ...options } = {}) {
-	if (!filter) return Logger.error(`[Webpack lazy] ${MISSING_ARGUMENTS}`);
+export function lazy(filter, { exportsFilter, decFilter, ...options } = {}) {
+	if (!filter) return Logger.error(new Error(`[Webpack lazy] ${MISSING_ARGUMENTS}`));
 
 	const defer = new Defer();
 	waitForModule(filter, {
@@ -37,15 +37,15 @@ export function lazy(filter, { sourceFilter, decFilter, ...options } = {}) {
 			if (!module) throw "waitForModule resolved with undefined";
 
 			const object = decFilter ? module.declarations : module.exports;
-			const key = getObjectKey(object, decFilter || sourceFilter || filter);
+			const key = getObjectKey(object, decFilter || exportsFilter || filter);
 			if (!object || !key) throw UNDEFINED_OBJECT_OR_KEY;
 
 			defer.success([object, key]);
 			defer.dispose();
 		})
-		.catch(cause => {
+		.catch(err => {
 			defer.dispose();
-			Logger.warn(new Error(PATCH_ERROR, { cause }));
+			Logger.warn(new Error(err));
 		});
 
 	return { then: defer.then.bind(defer) };
@@ -72,6 +72,21 @@ export function waitForComponent(filter, options, Fallback = NoopComponent) {
 	);
 	placeHolderComponent.displayName = LAZY_DISCORD_COMPONENT_WRAPPER;
 	return placeHolderComponent;
+}
+
+export function wait(getter) {
+	let cached = undefined;
+	const get = () => cache ?? (cache = getter());
+	return new Proxy(
+		{},
+		{
+			get: (target, key) => get()?.[key],
+			apply(target, thisArg, args) {
+				const func = get();
+				if (func && typeof func === "function") return func.apply(thisArg, args);
+			}
+		}
+	);
 }
 
 export function _waitForComponent(filter, options) {

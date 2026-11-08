@@ -1,6 +1,10 @@
 import webpackRequire from "./webpackRequire";
 import { Sources } from "./Sources";
-import {mkdir, saveFile} from "@Utils/fs";
+import { mkdir, saveFile } from "@Utils/fs";
+
+function idRegex(id) {
+	return new RegExp(`=[\\D]{1}\\((${id})\\)`, "gi");
+}
 
 const defineModuleGetter = (obj, id) =>
 	Object.defineProperty(obj, id, {
@@ -14,14 +18,27 @@ class Module {
 	constructor(id, module) {
 		this.id = id;
 		this.rawModule = module;
-		this.exports = module.exports;
-		const source = Sources.sourceById(id);
-		this.loader = source.loader;
 	}
 
+	get loader() {
+		try {
+			const source = Sources.sourceById(this.id);
+			return source.loader;
+		} catch {
+			return null;
+		}
+	}
+
+	get exports() {
+		return this.rawModule.exports;
+	}
+
+	get dec() {
+		return this.rawModule.declarations;
+	}
 
 	get code() {
-		return this.loader.toString().replace(/^\d+/,"function");
+		return this.loader.toString().replace(/^\d+/, "function");
 	}
 
 	get imports() {
@@ -29,7 +46,7 @@ class Module {
 	}
 
 	get modulesUsingThisModule() {
-		return Modules.modulesImportingModuleById(this.id).reduce((acc, id) => defineModuleGetter(acc, id), {});
+		return Modules.modulesImportingModuleById(this.id);
 	}
 
 	get saveSourceToDesktop() {
@@ -44,7 +61,7 @@ class Module {
 	get saveAllToDesktop() {
 		try {
 			const path = `${process.env.USERPROFILE}\\Desktop\\${this.id}`;
-			
+
 			saveFile(`${path}\\__MAIN-${this.id}.js`, this.code);
 			mkdir(`${path}\\modulesUsingThisModule`);
 			mkdir(`${path}\\imports`);
@@ -74,8 +91,6 @@ class Module {
 	}
 }
 
-
-
 function moduleById(id) {
 	const module = webpackRequire.c[id];
 	if (!module) return;
@@ -94,9 +109,8 @@ function modulesImportedInModuleById(id) {
 	return imports.map(id => id[1]);
 }
 
-
 function modulesImportingModuleById(id) {
-	return Object.keys(Sources.getWebpackSources()).filter(sourceId => modulesImportedInModuleById(sourceId).includes(`${id}`));
+	return Sources.getSources(idRegex(id));
 }
 
 function noExports(filter, module, exports) {
@@ -155,6 +169,7 @@ function getModule(filter, options) {
 }
 
 export const Modules = {
+	idRegex,
 	moduleById,
 	moduleLookup,
 	modulesImportedInModuleById,

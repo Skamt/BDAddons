@@ -1,6 +1,6 @@
 import config from "@Config";
 import React from "@React";
-import { map } from "@Utils/Object";
+import { map } from "@Utils/object";
 import { create, subscribeWithSelector } from "@Discord/zustand";
 import { Data } from "@Api";
 
