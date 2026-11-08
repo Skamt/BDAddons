@@ -2,7 +2,7 @@
  * @runAt idle
  * @name ViewProfilePicture
  * @description Adds a button to the user popout and profile that allows you to view the Avatar and banner.
- * @version 1.3.19
+ * @version 1.3.20
  * @author Skamt
  * @website https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture
  * @source https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js
@@ -12,7 +12,7 @@
 var Config_default = {
 	"info": {
 		"name": "ViewProfilePicture",
-		"version": "1.3.19",
+		"version": "1.3.20",
 		"description": "Adds a button to the user popout and profile that allows you to view the Avatar and banner.",
 		"source": "https://raw.githubusercontent.com/Skamt/BDAddons/main/ViewProfilePicture/ViewProfilePicture.plugin.js",
 		"github": "https://github.com/Skamt/BDAddons/tree/main/ViewProfilePicture",
@@ -269,7 +269,7 @@ var UserStore_default = /* @__PURE__ */ (() => getStore("UserStore"))();
 // common/Discord/Modules.js
 var Spinner = /* @__PURE__ */ (() => getModule((a) => a?.Type?.CHASING_DOTS, { searchExports: true }))();
 var Color = /* @__PURE__ */ (() => getModule(Filters.byKeys("Color", "hex", "hsl"), { searchExports: false }))();
-var MediaViewerModal = /* @__PURE__ */ (() => getMangled("Media Viewer Modal", { MediaViewerModal: (a) => typeof a !== "string" }).MediaViewerModal)();
+var MediaViewerModal = /* @__PURE__ */ (() => getBySource("Media Viewer Modal", "modalKey", { map: { MediaViewerModal: (a) => typeof a !== "string" } }).MediaViewerModal)();
 
 // common/Utils/discord/User.js
 function isSelf(user) {
@@ -278,9 +278,11 @@ function isSelf(user) {
 }
 
 // common/Discord/zustand.js
-var zustand = /* @__PURE__ */ (() => getMangled(Filters.bySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe"), {
-	_: Filters.byStrings("subscribe"),
-	zustand: () => true
+var zustand = /* @__PURE__ */ (() => getBySource("useSyncExternalStoreWithSelector", "useDebugValue", "subscribe", {
+	map: {
+		_: Filters.byStrings("subscribe"),
+		zustand: () => true
+	}
 })?.zustand)();
 var subscribeWithSelector = /* @__PURE__ */ (() => getModule(Filters.byStrings("getState", "equalityFn", "fireImmediately"), {
 	searchExports: true
